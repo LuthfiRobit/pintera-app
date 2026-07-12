@@ -72,4 +72,9 @@ class Lembaga extends Model
     {
         return $this->hasMany(EkstrakurikulerLembaga::class);
     }
+
+    public function dataPeriodik(): HasMany
+    {
+        return $this->hasMany(LembagaDataPeriodik::class);
+    }
 }
