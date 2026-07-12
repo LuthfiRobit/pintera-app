@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Guru extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use HasFactory, BelongsToTenant, LogsActivity;
 
     protected $table = 'guru';
 
@@ -66,5 +68,13 @@ class Guru extends Model
             ->withPivot(['mulai_periode', 'akhir_periode', 'no_sk'])
             ->withTimestamps()
             ->using(GuruJabatanTambahan::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['nama', 'jenis_ptk', 'status_kepegawaian', 'status_aktif', 'lembaga_id'])
+            ->logOnlyDirty()
+            ->useLogName('guru');
     }
 }

@@ -3,10 +3,14 @@
 namespace App\Models;
 
 use RuntimeException;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Permission\Models\Role as SpatieRole;
 
 class Role extends SpatieRole
 {
+    use LogsActivity;
+
     protected function casts(): array
     {
         return [
@@ -27,5 +31,13 @@ class Role extends SpatieRole
                 throw new RuntimeException('Role yang dilindungi tidak dapat dihapus.');
             }
         });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'scope_level', 'is_protected'])
+            ->logOnlyDirty()
+            ->useLogName('role');
     }
 }

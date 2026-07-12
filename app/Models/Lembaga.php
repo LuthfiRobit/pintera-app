@@ -7,10 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Lembaga extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'lembaga';
 
@@ -76,5 +78,16 @@ class Lembaga extends Model
     public function dataPeriodik(): HasMany
     {
         return $this->hasMany(LembagaDataPeriodik::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'nama', 'npsn', 'nss', 'bentuk_pendidikan', 'status_sekolah', 'status_kepemilikan',
+                'naungan', 'akreditasi', 'status_aktif', 'nama_kepala_sekolah', 'nama_bendahara_bosp',
+            ])
+            ->logOnlyDirty()
+            ->useLogName('lembaga');
     }
 }
