@@ -15,6 +15,31 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    @can('manage-roles')
+                        <x-nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.roles.*')">
+                            {{ __('Roles') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('manage-users')
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                            {{ __('Users') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('manage-lembaga')
+                        <x-nav-link :href="route('admin.lembaga.index')" :active="request()->routeIs('admin.lembaga.*')">
+                            {{ __('Lembaga') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('manage-guru')
+                        <x-nav-link :href="route('admin.guru.index')" :active="request()->routeIs('admin.guru.*')">
+                            {{ __('Guru') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('manage-tahun-ajaran')
+                        <x-nav-link :href="route('admin.tahun-ajaran.index')" :active="request()->routeIs('admin.tahun-ajaran.*')">
+                            {{ __('Tahun Ajaran') }}
+                        </x-nav-link>
+                    @endcan
                 </div>
             </div>
 
