@@ -13,6 +13,8 @@ it('casts is_protected to boolean and stores scope_level', function () {
         'scope_level' => 'lembaga',
     ]);
 
+    $role->refresh();
+
     expect($role->scope_level)->toBe('lembaga');
     expect($role->is_protected)->toBeFalse();
     expect($role->is_protected)->toBeBool();
