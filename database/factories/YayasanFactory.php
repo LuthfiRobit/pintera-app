@@ -12,7 +12,7 @@ class YayasanFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama' => 'Yayasan '.$this->faker->word(),
+            'nama' => 'Yayasan '.$this->faker->company(),
         ];
     }
 }
