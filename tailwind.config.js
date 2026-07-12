@@ -11,8 +11,17 @@ export default {
 
     theme: {
         extend: {
+            colors: {
+                ink: '#1E2A38',
+                paper: '#F7F7F5',
+                slate: '#5B6B7A',
+                brass: '#B08D4C',
+                'signal-red': '#B3261E',
+                'signal-green': '#2E6B4F',
+            },
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', ...defaultTheme.fontFamily.sans],
+                display: ['Fraunces', ...defaultTheme.fontFamily.serif],
             },
         },
     },
