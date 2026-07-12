@@ -39,6 +39,11 @@ class RoleController extends BaseController
             'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
 
+        $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
+        if ($this->scopeRank($data['scope_level']) > $actingRank) {
+            return back()->withErrors(['scope_level' => 'Anda tidak dapat membuat role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+        }
+
         $role = Role::create([
             'name' => $data['name'],
             'guard_name' => 'web',
@@ -79,6 +84,10 @@ class RoleController extends BaseController
         $role->name = $data['name'];
 
         if (! $role->is_protected) {
+            $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
+            if ($this->scopeRank($data['scope_level']) > $actingRank) {
+                return back()->withErrors(['scope_level' => 'Anda tidak dapat mengubah role ke scope lebih luas dari scope Anda sendiri.'])->withInput();
+            }
             $role->scope_level = $data['scope_level'];
         }
 
@@ -99,5 +108,14 @@ class RoleController extends BaseController
         $role->delete();
 
         return redirect()->route('admin.roles.index')->with('status', 'Role berhasil dihapus.');
+    }
+
+    private function scopeRank(string $level): int
+    {
+        return match ($level) {
+            'yayasan' => 3,
+            'lembaga' => 2,
+            default => 1, // diri_sendiri
+        };
     }
 }

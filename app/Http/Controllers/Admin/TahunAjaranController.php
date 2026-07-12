@@ -39,6 +39,16 @@ class TahunAjaranController extends BaseController
             'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
         ]);
 
+        if ($request->user()->widestScopeLevel() === 'yayasan') {
+            $lembagaId = session('active_lembaga_id');
+
+            if ($lembagaId === null) {
+                return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat tahun ajaran.'])->withInput();
+            }
+
+            $data['lembaga_id'] = $lembagaId;
+        }
+
         TahunAjaran::create($data);
 
         return redirect()->route('admin.tahun-ajaran.index')->with('status', 'Tahun ajaran berhasil dibuat.');

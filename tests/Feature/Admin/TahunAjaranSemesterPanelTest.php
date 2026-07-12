@@ -100,3 +100,44 @@ it('shows a friendly error instead of a 500 when activating a semester whose tah
 
     expect($semester->fresh()->status_aktif)->toBeFalse();
 });
+
+it('lets a yayasan-scoped user create a tahun ajaran for the lembaga they have switched into', function () {
+    Permission::firstOrCreate(['name' => 'manage-tahun-ajaran', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo('manage-tahun-ajaran');
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+    $this->actingAs($manager);
+
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->post(route('admin.tahun-ajaran.store'), [
+        'nama' => '2027/2028',
+        'tanggal_mulai' => '2027-07-01',
+        'tanggal_selesai' => '2028-06-30',
+    ])->assertRedirect(route('admin.tahun-ajaran.index'));
+
+    $tahunAjaran = TahunAjaran::where('nama', '2027/2028')->first();
+    expect($tahunAjaran)->not->toBeNull();
+    expect($tahunAjaran->lembaga_id)->toBe($lembaga->id);
+});
+
+it('shows a friendly error instead of a 500 when a yayasan-scoped user creates a tahun ajaran without switching to a lembaga', function () {
+    Permission::firstOrCreate(['name' => 'manage-tahun-ajaran', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo('manage-tahun-ajaran');
+
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->post(route('admin.tahun-ajaran.store'), [
+        'nama' => '2027/2028',
+        'tanggal_mulai' => '2027-07-01',
+        'tanggal_selesai' => '2028-06-30',
+    ])->assertSessionHasErrors('lembaga_id');
+
+    expect(TahunAjaran::withoutGlobalScopes()->where('nama', '2027/2028')->exists())->toBeFalse();
+});

@@ -36,7 +36,11 @@ class GuruController extends BaseController
 
         $data = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
-            'nik' => ['required', 'digits:16'],
+            'nik' => ['required', 'digits:16', function ($attribute, $value, $fail) {
+                if (Guru::withoutGlobalScopes()->where('nik_hash', hash('sha256', $value))->exists()) {
+                    $fail('NIK sudah terdaftar untuk guru lain.');
+                }
+            }],
             'nama' => ['required', 'string', 'max:255'],
             'jenis_kelamin' => ['required', 'in:L,P'],
             'jenis_ptk' => ['required', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi'],
@@ -65,7 +69,15 @@ class GuruController extends BaseController
         $this->authorize('manage-guru');
 
         $data = $request->validate([
-            'nik' => ['required', 'digits:16'],
+            'nik' => ['required', 'digits:16', function ($attribute, $value, $fail) use ($guru) {
+                $exists = Guru::withoutGlobalScopes()
+                    ->where('nik_hash', hash('sha256', $value))
+                    ->where('id', '!=', $guru->id)
+                    ->exists();
+                if ($exists) {
+                    $fail('NIK sudah terdaftar untuk guru lain.');
+                }
+            }],
             'nama' => ['required', 'string', 'max:255'],
             'jenis_kelamin' => ['required', 'in:L,P'],
             'jenis_ptk' => ['required', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi'],

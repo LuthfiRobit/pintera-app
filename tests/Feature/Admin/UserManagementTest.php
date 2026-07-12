@@ -97,3 +97,25 @@ it('deactivates a staff account so it can no longer log in', function () {
 
     expect($staff->fresh()->is_active)->toBeFalse();
 });
+
+it('refuses to let a lembaga-scoped manager assign a yayasan-scoped role to a new user', function () {
+    Permission::firstOrCreate(['name' => 'manage-users', 'guard_name' => 'web']);
+    $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $lembagaRole->givePermissionTo('manage-users');
+    Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager->assignRole($lembagaRole);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Sneaky User',
+        'email' => 'sneaky@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'yayasan_super_admin',
+    ])->assertSessionHasErrors('role');
+
+    expect(User::withoutGlobalScopes()->where('email', 'sneaky@example.test')->exists())->toBeFalse();
+});

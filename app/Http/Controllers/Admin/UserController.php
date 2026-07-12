@@ -27,8 +27,11 @@ class UserController extends BaseController
     {
         $this->authorize('manage-users');
 
+        $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
+        $roles = Role::all()->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)->values();
+
         return view('admin.users.create', [
-            'roles' => Role::all(),
+            'roles' => $roles,
             'lembaga' => $request->user()->widestScopeLevel() === 'yayasan'
                 ? Lembaga::withoutGlobalScopes()->get()
                 : collect(),
@@ -53,6 +56,11 @@ class UserController extends BaseController
 
         $selectedRole = Role::where('name', $data['role'])->firstOrFail();
 
+        $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
+        if ($this->scopeRank($selectedRole->scope_level) > $actingRank) {
+            return back()->withErrors(['role' => 'Anda tidak dapat memberikan role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+        }
+
         if ($selectedRole->scope_level !== 'yayasan' && $lembagaId === null) {
             return back()->withErrors(['lembaga_id' => 'Lembaga wajib diisi untuk role ini.'])->withInput();
         }
@@ -69,13 +77,16 @@ class UserController extends BaseController
         return redirect()->route('admin.users.index')->with('status', 'Akun staff berhasil dibuat.');
     }
 
-    public function edit(User $user): View
+    public function edit(Request $request, User $user): View
     {
         $this->authorize('manage-users');
 
+        $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
+        $roles = Role::all()->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)->values();
+
         return view('admin.users.edit', [
             'targetUser' => $user,
-            'roles' => Role::all(),
+            'roles' => $roles,
         ]);
     }
 
@@ -88,6 +99,12 @@ class UserController extends BaseController
             'email' => ['required', 'email', 'unique:users,email,'.$user->id],
             'role' => ['required', 'exists:roles,name'],
         ]);
+
+        $selectedRole = Role::where('name', $data['role'])->firstOrFail();
+        $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
+        if ($this->scopeRank($selectedRole->scope_level) > $actingRank) {
+            return back()->withErrors(['role' => 'Anda tidak dapat memberikan role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+        }
 
         $user->update(['name' => $data['name'], 'email' => $data['email']]);
         $user->syncRoles([$data['role']]);
@@ -102,5 +119,14 @@ class UserController extends BaseController
         $user->update(['is_active' => ! $user->is_active]);
 
         return redirect()->route('admin.users.index')->with('status', 'Status akun berhasil diperbarui.');
+    }
+
+    private function scopeRank(string $level): int
+    {
+        return match ($level) {
+            'yayasan' => 3,
+            'lembaga' => 2,
+            default => 1, // diri_sendiri
+        };
     }
 }

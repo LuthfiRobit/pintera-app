@@ -94,3 +94,63 @@ it('only lists guru belonging to the acting lembaga-scoped manager\'s own lembag
     $response->assertSee('Guru Lembaga A');
     $response->assertDontSee('Guru Lembaga B');
 });
+
+it('shows a friendly validation error instead of a 500 when creating a guru with a duplicate NIK', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $firstUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $firstUser->assignRole('guru');
+
+    Guru::create([
+        'user_id' => $firstUser->id,
+        'lembaga_id' => $lembaga->id,
+        'nik' => '3201234567899999',
+        'nama' => 'Guru Pertama',
+        'jenis_kelamin' => 'L',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ]);
+
+    $secondUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $secondUser->assignRole('guru');
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), [
+        'user_id' => $secondUser->id,
+        'nik' => '3201234567899999',
+        'nama' => 'Guru Kedua',
+        'jenis_kelamin' => 'P',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ])->assertSessionHasErrors('nik');
+
+    expect(Guru::where('user_id', $secondUser->id)->exists())->toBeFalse();
+});
+
+it('allows updating a guru while keeping their own unchanged NIK', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+
+    $guru = Guru::create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id,
+        'nik' => '3201234567898888',
+        'nama' => 'Guru Uji Update',
+        'jenis_kelamin' => 'L',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ]);
+
+    $this->actingAs($manager)->put(route('admin.guru.update', $guru), [
+        'nik' => '3201234567898888',
+        'nama' => 'Guru Uji Update Baru',
+        'jenis_kelamin' => 'L',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ])->assertRedirect(route('admin.guru.index'));
+
+    expect($guru->fresh()->nama)->toBe('Guru Uji Update Baru');
+});

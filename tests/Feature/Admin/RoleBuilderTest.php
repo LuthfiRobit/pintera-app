@@ -86,3 +86,19 @@ it('refuses to delete a role that still has assigned users', function () {
 
     expect(Role::find($role->id))->not->toBeNull();
 });
+
+it('refuses to let a lembaga-scoped role-manager create a yayasan-scoped role', function () {
+    Permission::firstOrCreate(['name' => 'manage-roles', 'guard_name' => 'web']);
+    $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $lembagaRole->givePermissionTo('manage-roles');
+    $manager = User::factory()->create();
+    $manager->assignRole($lembagaRole);
+
+    $this->actingAs($manager)->post(route('admin.roles.store'), [
+        'name' => 'sneaky_admin',
+        'scope_level' => 'yayasan',
+        'permissions' => [],
+    ])->assertSessionHasErrors('scope_level');
+
+    expect(Role::where('name', 'sneaky_admin')->exists())->toBeFalse();
+});
