@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 class Lembaga extends Model
@@ -55,5 +56,20 @@ class Lembaga extends Model
     public function yayasan(): BelongsTo
     {
         return $this->belongsTo(Yayasan::class);
+    }
+
+    public function layananKhusus(): HasMany
+    {
+        return $this->hasMany(LayananKhususLembaga::class);
+    }
+
+    public function programInklusi(): HasMany
+    {
+        return $this->hasMany(ProgramInklusiLembaga::class);
+    }
+
+    public function ekstrakurikuler(): HasMany
+    {
+        return $this->hasMany(EkstrakurikulerLembaga::class);
     }
 }
