@@ -9,21 +9,35 @@ use Illuminate\Database\Eloquent\Scope;
 
 class TenantScope implements Scope
 {
+    private static bool $resolvingActingUser = false;
+
     public function apply(Builder $builder, Model $model): void
     {
-        $userId = auth()->id();
+        // Re-entrancy guard: Laravel's SessionGuard::id() calls $this->user() internally
+        // (it is NOT a plain session read), so the very first cold resolution of the
+        // authenticated user triggers User::retrieveById(), which builds a User query and
+        // re-applies this same scope, which calls auth()->id() again, recursing forever
+        // until memory is exhausted. This flag breaks the cycle: the one re-entrant call
+        // (which only ever fetches the acting user's own row by primary key) skips
+        // filtering and lets the outer call's auth()->id() resolve normally once it
+        // returns. It doesn't weaken isolation — the re-entrant query is already
+        // constrained to a single id by retrieveById() itself.
+        if (self::$resolvingActingUser) {
+            return;
+        }
+
+        self::$resolvingActingUser = true;
+
+        try {
+            $userId = auth()->id();
+        } finally {
+            self::$resolvingActingUser = false;
+        }
 
         if (! $userId) {
             return;
         }
 
-        // Deliberately re-queries User with this scope removed, instead of calling
-        // auth()->user(). User itself uses BelongsToTenant (see step 7 below), and
-        // auth()->user() triggers a DB lookup the first time it's called in a request
-        // (session-based re-authentication) — if that lookup re-entered this same
-        // apply() method via auth()->user(), it would recurse forever. auth()->id()
-        // is safe here because Laravel's SessionGuard reads the id straight out of
-        // the session without querying the database.
         $actingUser = User::withoutGlobalScope(self::class)->find($userId);
 
         if (! $actingUser) {
