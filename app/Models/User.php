@@ -7,6 +7,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -56,6 +57,11 @@ class User extends Authenticatable
     public function lembaga(): BelongsTo
     {
         return $this->belongsTo(Lembaga::class);
+    }
+
+    public function guru(): HasOne
+    {
+        return $this->hasOne(Guru::class);
     }
 
     public function widestScopeLevel(): string
