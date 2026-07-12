@@ -64,6 +64,7 @@ class Guru extends Model
     {
         return $this->belongsToMany(JabatanTambahanMaster::class, 'guru_jabatan_tambahan')
             ->withPivot(['mulai_periode', 'akhir_periode', 'no_sk'])
-            ->withTimestamps();
+            ->withTimestamps()
+            ->using(GuruJabatanTambahan::class);
     }
 }
