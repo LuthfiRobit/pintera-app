@@ -3,6 +3,8 @@
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SemesterController;
+use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -12,4 +14,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::resource('lembaga', LembagaController::class)->except(['show', 'destroy']);
     Route::resource('guru', GuruController::class)->except(['show', 'destroy']);
+
+    Route::get('tahun-ajaran', [TahunAjaranController::class, 'index'])->name('tahun-ajaran.index');
+    Route::get('tahun-ajaran/create', [TahunAjaranController::class, 'create'])->name('tahun-ajaran.create');
+    Route::post('tahun-ajaran', [TahunAjaranController::class, 'store'])->name('tahun-ajaran.store');
+    Route::patch('tahun-ajaran/{tahunAjaran}/activate', [TahunAjaranController::class, 'activate'])->name('tahun-ajaran.activate');
+
+    Route::post('semester', [SemesterController::class, 'store'])->name('semester.store');
+    Route::patch('semester/{semester}/activate', [SemesterController::class, 'activate'])->name('semester.activate');
 });
