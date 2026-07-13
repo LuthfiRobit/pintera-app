@@ -49,11 +49,11 @@ function buatKonteksDuplikasi(): array
         'kriteria_kelulusan' => 'Lolos wawancara', 'bobot' => 30,
     ]);
 
-    return [$lembaga, $user, $tahunLama, $tahunBaru];
+    return [$lembaga, $user, $tahunLama, $tahunBaru, $jenisTes];
 }
 
 it('duplicates the entire SPMB configuration chain into the target tahun ajaran', function () {
-    [$lembaga, $user, $tahunLama, $tahunBaru] = buatKonteksDuplikasi();
+    [$lembaga, $user, $tahunLama, $tahunBaru, $jenisTes] = buatKonteksDuplikasi();
 
     $this->actingAs($user)->post(route('admin.spmb-konfigurasi.duplikasi'), [
         'tahun_ajaran_sumber_id' => $tahunLama->id,
@@ -74,7 +74,7 @@ it('duplicates the entire SPMB configuration chain into the target tahun ajaran'
 
     $seleksiBaru = $jalurBaru->seleksi->first();
     expect($seleksiBaru->gelombang_ppdb_id)->toBe($gelombangBaru->id);
-    expect($seleksiBaru->jenis_tes_master_id)->toBe($jalurBaru->seleksi->first()->jenis_tes_master_id);
+    expect($seleksiBaru->jenis_tes_master_id)->toBe($jenisTes->id);
 });
 
 it('refuses to duplicate into a tahun ajaran that already has gelombang or jalur data', function () {
@@ -86,6 +86,21 @@ it('refuses to duplicate into a tahun ajaran that already has gelombang or jalur
     ])->assertSessionHasErrors('tahun_ajaran_sumber_id');
 
     expect(JalurPpdb::where('tahun_ajaran_id', $tahunBaru->id)->count())->toBe(1);
+});
+
+it('refuses to duplicate into a tahun ajaran that already has gelombang data', function () {
+    [$lembaga, $user, $tahunLama, $tahunBaru] = buatKonteksDuplikasi();
+    GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => 'Sudah Ada',
+        'tanggal_buka' => '2026-08-01', 'tanggal_tutup' => '2026-09-01', 'kuota' => 10,
+    ]);
+
+    $this->actingAs($user)->post(route('admin.spmb-konfigurasi.duplikasi'), [
+        'tahun_ajaran_sumber_id' => $tahunLama->id,
+    ])->assertSessionHasErrors('tahun_ajaran_sumber_id');
+
+    expect(GelombangPpdb::where('tahun_ajaran_id', $tahunBaru->id)->count())->toBe(1);
+    expect(JalurPpdb::where('tahun_ajaran_id', $tahunBaru->id)->count())->toBe(0);
 });
 
 it('rejects duplicating from a tahun ajaran belonging to another lembaga', function () {
