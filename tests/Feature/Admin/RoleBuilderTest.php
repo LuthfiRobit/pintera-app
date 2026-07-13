@@ -126,3 +126,121 @@ it('refuses to let a lembaga-scoped role-manager create a yayasan-scoped role', 
 
     expect(Role::where('name', 'sneaky_admin')->exists())->toBeFalse();
 });
+
+it('returns a paginated, searchable, sortable JSON payload from the datatable endpoint', function () {
+    $admin = actingAsSuperAdmin();
+    Role::create(['name' => 'zzz_role', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+    Role::create(['name' => 'aaa_role', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+
+    $response = $this->actingAs($admin)->getJson(route('admin.roles.data', ['sort' => 'name', 'direction' => 'asc']));
+
+    $response->assertOk();
+    $names = collect($response->json('data'))->pluck('name')->values();
+    expect($names->first())->toBe('aaa_role');
+    expect($response->json('meta.total'))->toBeGreaterThanOrEqual(3);
+});
+
+it('filters the datatable endpoint by search and scope', function () {
+    $admin = actingAsSuperAdmin();
+    Role::create(['name' => 'admin_perpustakaan', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+    Role::create(['name' => 'admin_gudang', 'guard_name' => 'web', 'scope_level' => 'diri_sendiri']);
+
+    $response = $this->actingAs($admin)->getJson(route('admin.roles.data', ['search' => 'perpustakaan']));
+
+    $response->assertOk();
+    $names = collect($response->json('data'))->pluck('name');
+    expect($names)->toContain('admin_perpustakaan');
+    expect($names)->not->toContain('admin_gudang');
+
+    $response = $this->actingAs($admin)->getJson(route('admin.roles.data', ['scope' => 'diri_sendiri']));
+    $names = collect($response->json('data'))->pluck('name');
+    expect($names)->toContain('admin_gudang');
+    expect($names)->not->toContain('admin_perpustakaan');
+});
+
+it('denies the datatable endpoint to a user without roles.view permission', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->getJson(route('admin.roles.data'))->assertForbidden();
+});
+
+it('returns the permission catalog grouped by module', function () {
+    $admin = actingAsSuperAdmin();
+
+    $response = $this->actingAs($admin)->getJson(route('admin.roles.permissions-catalog'));
+
+    $response->assertOk();
+    $modules = collect($response->json('modules'))->keyBy('module');
+    expect($modules->has('guru'))->toBeTrue();
+    expect(collect($modules['guru']['permissions'])->pluck('name')->sort()->values()->all())
+        ->toBe(['guru.create', 'guru.edit', 'guru.view']);
+});
+
+it('creates a role via AJAX and returns JSON instead of redirecting', function () {
+    $admin = actingAsSuperAdmin();
+    Permission::firstOrCreate(['name' => 'guru.view', 'guard_name' => 'web']);
+
+    $response = $this->actingAs($admin)->postJson(route('admin.roles.store'), [
+        'name' => 'admin_ajax',
+        'scope_level' => 'lembaga',
+        'permissions' => [Permission::where('name', 'guru.view')->first()->id],
+    ]);
+
+    $response->assertCreated();
+    expect(Role::where('name', 'admin_ajax')->exists())->toBeTrue();
+});
+
+it('returns a JSON 422 with field errors when an AJAX store fails validation via the scope ceiling check', function () {
+    Permission::firstOrCreate(['name' => 'roles.view', 'guard_name' => 'web']);
+    Permission::firstOrCreate(['name' => 'roles.create', 'guard_name' => 'web']);
+    $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $lembagaRole->givePermissionTo(['roles.view', 'roles.create']);
+    $manager = User::factory()->create();
+    $manager->assignRole($lembagaRole);
+
+    $response = $this->actingAs($manager)->postJson(route('admin.roles.store'), [
+        'name' => 'sneaky_ajax',
+        'scope_level' => 'yayasan',
+        'permissions' => [],
+    ]);
+
+    $response->assertStatus(422);
+    expect($response->json('errors.scope_level'))->not->toBeNull();
+    expect(Role::where('name', 'sneaky_ajax')->exists())->toBeFalse();
+});
+
+it('updates a role via AJAX and returns JSON instead of redirecting', function () {
+    $admin = actingAsSuperAdmin();
+    $role = Role::create(['name' => 'ajax-editable', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+
+    $response = $this->actingAs($admin)->putJson(route('admin.roles.update', $role), [
+        'name' => 'ajax-editable-renamed',
+        'scope_level' => 'lembaga',
+        'permissions' => [],
+    ]);
+
+    $response->assertOk();
+    expect($role->fresh()->name)->toBe('ajax-editable-renamed');
+});
+
+it('deletes a role via AJAX and returns JSON instead of redirecting', function () {
+    $admin = actingAsSuperAdmin();
+    $role = Role::create(['name' => 'ajax-deletable', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+
+    $response = $this->actingAs($admin)->deleteJson(route('admin.roles.destroy', $role));
+
+    $response->assertOk();
+    expect(Role::find($role->id))->toBeNull();
+});
+
+it('returns a JSON 422 instead of a redirect when an AJAX delete targets a role still in use', function () {
+    $admin = actingAsSuperAdmin();
+    $role = Role::create(['name' => 'ajax-in-use', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+    User::factory()->create()->assignRole($role);
+
+    $response = $this->actingAs($admin)->deleteJson(route('admin.roles.destroy', $role));
+
+    $response->assertStatus(422);
+    expect($response->json('errors.role'))->not->toBeNull();
+    expect(Role::find($role->id))->not->toBeNull();
+});

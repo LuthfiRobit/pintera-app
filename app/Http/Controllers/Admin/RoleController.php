@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Role;
+use App\Services\PermissionCatalog;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -18,17 +20,64 @@ class RoleController extends BaseController
     {
         $this->authorize('viewAny', Role::class);
 
-        return view('admin.roles.index', ['roles' => Role::withCount('users')->get()]);
+        return view('admin.roles.index');
+    }
+
+    public function data(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Role::class);
+
+        $query = Role::withCount(['users', 'permissions']);
+
+        if ($search = trim((string) $request->string('search'))) {
+            $query->where('name', 'like', '%'.$search.'%');
+        }
+
+        if ($scope = $request->string('scope')->value()) {
+            $query->where('scope_level', $scope);
+        }
+
+        $sortable = ['name', 'scope_level', 'users_count', 'permissions_count'];
+        $sort = in_array($request->string('sort')->value(), $sortable, true) ? $request->string('sort')->value() : 'name';
+        $direction = $request->string('direction')->value() === 'desc' ? 'desc' : 'asc';
+        $query->orderBy($sort, $direction);
+
+        $perPage = min(max((int) $request->integer('per_page', 15), 1), 100);
+        $paginated = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $paginated->getCollection()->map(fn (Role $role) => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'scope_level' => $role->scope_level,
+                'is_protected' => $role->is_protected,
+                'users_count' => $role->users_count,
+                'permissions_count' => $role->permissions_count,
+            ])->values(),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ]);
+    }
+
+    public function permissionsCatalog(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('roles.create') || $request->user()->can('roles.edit'), 403);
+
+        return response()->json(['modules' => PermissionCatalog::grouped()]);
     }
 
     public function create(): View
     {
         $this->authorize('create', Role::class);
 
-        return view('admin.roles.create', ['permissions' => Permission::all()]);
+        return view('admin.roles.create', ['moduleGroups' => PermissionCatalog::grouped()]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorize('create', Role::class);
 
@@ -41,7 +90,11 @@ class RoleController extends BaseController
 
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
         if ($this->scopeRank($data['scope_level']) > $actingRank) {
-            return back()->withErrors(['scope_level' => 'Anda tidak dapat membuat role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+            return $this->errorResponse(
+                $request,
+                'scope_level',
+                'Anda tidak dapat membuat role dengan scope lebih luas dari scope Anda sendiri.'
+            );
         }
 
         $role = Role::create([
@@ -52,6 +105,10 @@ class RoleController extends BaseController
 
         $role->syncPermissions(Permission::whereIn('id', $data['permissions'] ?? [])->get());
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Role berhasil dibuat.'], 201);
+        }
+
         return redirect()->route('admin.roles.index')->with('status', 'Role berhasil dibuat.');
     }
 
@@ -61,11 +118,12 @@ class RoleController extends BaseController
 
         return view('admin.roles.edit', [
             'role' => $role,
-            'permissions' => Permission::all(),
+            'moduleGroups' => PermissionCatalog::grouped(),
+            'checkedIds' => $role->permissions->pluck('id')->all(),
         ]);
     }
 
-    public function update(Request $request, Role $role): RedirectResponse
+    public function update(Request $request, Role $role): RedirectResponse|JsonResponse
     {
         $this->authorize('update', $role);
 
@@ -86,7 +144,11 @@ class RoleController extends BaseController
         if (! $role->is_protected) {
             $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
             if ($this->scopeRank($data['scope_level']) > $actingRank) {
-                return back()->withErrors(['scope_level' => 'Anda tidak dapat mengubah role ke scope lebih luas dari scope Anda sendiri.'])->withInput();
+                return $this->errorResponse(
+                    $request,
+                    'scope_level',
+                    'Anda tidak dapat mengubah role ke scope lebih luas dari scope Anda sendiri.'
+                );
             }
             $role->scope_level = $data['scope_level'];
         }
@@ -94,20 +156,41 @@ class RoleController extends BaseController
         $role->save();
         $role->syncPermissions(Permission::whereIn('id', $data['permissions'] ?? [])->get());
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Role berhasil diperbarui.']);
+        }
+
         return redirect()->route('admin.roles.index')->with('status', 'Role berhasil diperbarui.');
     }
 
-    public function destroy(Role $role): RedirectResponse
+    public function destroy(Request $request, Role $role): RedirectResponse|JsonResponse
     {
         $this->authorize('delete', $role);
 
         if ($role->users()->exists()) {
-            return back()->withErrors(['role' => 'Role masih dipakai user aktif, pindahkan dulu sebelum menghapus.']);
+            return $this->errorResponse(
+                $request,
+                'role',
+                'Role masih dipakai user aktif, pindahkan dulu sebelum menghapus.'
+            );
         }
 
         $role->delete();
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Role berhasil dihapus.']);
+        }
+
         return redirect()->route('admin.roles.index')->with('status', 'Role berhasil dihapus.');
+    }
+
+    private function errorResponse(Request $request, string $field, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message, 'errors' => [$field => [$message]]], 422);
+        }
+
+        return back()->withErrors([$field => $message])->withInput();
     }
 
     private function scopeRank(string $level): int
