@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\GelombangPpdb;
 use App\Models\JalurPpdb;
+use App\Models\JenisTesMaster;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class JalurPpdbController extends BaseController
@@ -20,17 +23,28 @@ class JalurPpdbController extends BaseController
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
 
+        $tahunAjaranSebelumnya = $tahunAjaranAktif
+            ? TahunAjaran::where('id', '!=', $tahunAjaranAktif->id)
+                ->where('tanggal_mulai', '<', $tahunAjaranAktif->tanggal_mulai)
+                ->orderByDesc('tanggal_mulai')
+                ->first()
+            : null;
+
+        // Only offer the "copy from previous year" callout if that candidate
+        // year actually has Gelombang or Jalur data to copy — otherwise the
+        // button would silently succeed while copying zero rows.
+        if ($tahunAjaranSebelumnya
+            && ! GelombangPpdb::where('tahun_ajaran_id', $tahunAjaranSebelumnya->id)->exists()
+            && ! JalurPpdb::where('tahun_ajaran_id', $tahunAjaranSebelumnya->id)->exists()) {
+            $tahunAjaranSebelumnya = null;
+        }
+
         return view('admin.jalur-ppdb.index', [
             'tahunAjaranAktif' => $tahunAjaranAktif,
             'jalurList' => $tahunAjaranAktif
                 ? JalurPpdb::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
                 : collect(),
-            'tahunAjaranSebelumnya' => $tahunAjaranAktif
-                ? TahunAjaran::where('id', '!=', $tahunAjaranAktif->id)
-                    ->where('tanggal_mulai', '<', $tahunAjaranAktif->tanggal_mulai)
-                    ->orderByDesc('tanggal_mulai')
-                    ->first()
-                : null,
+            'tahunAjaranSebelumnya' => $tahunAjaranSebelumnya,
         ]);
     }
 
@@ -58,7 +72,13 @@ class JalurPpdbController extends BaseController
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->firstOrFail();
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
+            'nama' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('jalur_ppdb', 'nama')
+                    ->where(fn ($query) => $query->where('tahun_ajaran_id', $tahunAjaranAktif->id)),
+            ],
             'deskripsi' => ['nullable', 'string', 'max:2000'],
         ]);
         $data['tahun_ajaran_id'] = $tahunAjaranAktif->id;
@@ -82,8 +102,8 @@ class JalurPpdbController extends BaseController
 
         return view('admin.jalur-ppdb.edit', [
             'jalur' => $jalurPpdb,
-            'gelombangList' => \App\Models\GelombangPpdb::where('tahun_ajaran_id', $jalurPpdb->tahun_ajaran_id)->orderBy('nama')->get(),
-            'jenisTesList' => \App\Models\JenisTesMaster::orderBy('nama')->get(),
+            'gelombangList' => GelombangPpdb::where('tahun_ajaran_id', $jalurPpdb->tahun_ajaran_id)->orderBy('nama')->get(),
+            'jenisTesList' => JenisTesMaster::orderBy('nama')->get(),
         ]);
     }
 
@@ -92,7 +112,14 @@ class JalurPpdbController extends BaseController
         $this->authorize('manage-ppdb');
 
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
+            'nama' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('jalur_ppdb', 'nama')
+                    ->where(fn ($query) => $query->where('tahun_ajaran_id', $jalurPpdb->tahun_ajaran_id))
+                    ->ignore($jalurPpdb->id),
+            ],
             'deskripsi' => ['nullable', 'string', 'max:2000'],
             'status_aktif' => ['required', 'boolean'],
         ]);

@@ -74,3 +74,43 @@ it('denies access without the manage-ppdb permission', function () {
 
     $this->actingAs($noRoleUser)->get(route('admin.jalur-ppdb.index'))->assertForbidden();
 });
+
+it('rejects a duplicate jalur nama within the same tahun ajaran instead of crashing', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Prestasi']);
+
+    $this->actingAs($user)->post(route('admin.jalur-ppdb.store'), [
+        'nama' => 'Prestasi',
+        'deskripsi' => 'Jalur berdasarkan nilai rapor',
+    ])->assertSessionHasErrors('nama');
+
+    expect(JalurPpdb::count())->toBe(1);
+});
+
+it('lets an update keep its own unchanged nama without a false-positive uniqueness error', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Prestasi']);
+
+    $this->actingAs($user)->put(route('admin.jalur-ppdb.update', $jalur), [
+        'nama' => 'Prestasi',
+        'deskripsi' => 'Jalur berdasarkan nilai rapor, diperbarui',
+        'status_aktif' => true,
+    ])->assertRedirect(route('admin.jalur-ppdb.edit', $jalur));
+
+    expect($jalur->fresh()->deskripsi)->toBe('Jalur berdasarkan nilai rapor, diperbarui');
+});
+
+it('does not show the "Salin dari" callout when the only prior tahun ajaran has no gelombang or jalur data', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
+        'tanggal_mulai' => '2025-07-01', 'tanggal_selesai' => '2026-06-30', 'status_aktif' => false,
+    ]);
+
+    $this->actingAs($user)->get(route('admin.jalur-ppdb.index'))
+        ->assertOk()
+        ->assertDontSee('Salin dari');
+});

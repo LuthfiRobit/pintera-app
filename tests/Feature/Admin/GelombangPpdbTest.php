@@ -124,6 +124,55 @@ it('rejects a store from a yayasan-scoped user with no active lembaga selected, 
     expect(GelombangPpdb::count())->toBe(0);
 });
 
+it('rejects a duplicate gelombang nama within the same tahun ajaran instead of crashing', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Gelombang 1', 'tanggal_buka' => '2026-08-01', 'tanggal_tutup' => '2026-09-01', 'kuota' => 40,
+    ]);
+
+    $this->actingAs($user)->post(route('admin.gelombang-ppdb.store'), [
+        'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 40,
+    ])->assertSessionHasErrors('nama');
+
+    expect(GelombangPpdb::count())->toBe(1);
+});
+
+it('lets an update keep its own unchanged nama without a false-positive uniqueness error', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    $gelombang = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Gelombang 1', 'tanggal_buka' => '2026-08-01', 'tanggal_tutup' => '2026-09-01', 'kuota' => 40,
+    ]);
+
+    $this->actingAs($user)->put(route('admin.gelombang-ppdb.update', $gelombang), [
+        'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 50,
+    ])->assertRedirect(route('admin.gelombang-ppdb.index'));
+
+    expect($gelombang->fresh()->kuota)->toBe(50);
+});
+
+it('does not show the "Salin dari" callout when the only prior tahun ajaran has no gelombang or jalur data', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
+        'tanggal_mulai' => '2025-07-01', 'tanggal_selesai' => '2026-06-30', 'status_aktif' => false,
+    ]);
+
+    $this->actingAs($user)->get(route('admin.gelombang-ppdb.index'))
+        ->assertOk()
+        ->assertDontSee('Salin dari');
+});
+
 it('lets a yayasan-scoped user with an active lembaga selected via the switcher create a gelombang scoped to it', function () {
     [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
 
