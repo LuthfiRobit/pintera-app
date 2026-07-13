@@ -10,6 +10,12 @@ class RolePermissionSeeder extends Seeder
 {
     public function run(): void
     {
+        Permission::whereIn('name', [
+            'manage-roles', 'manage-users', 'manage-yayasan',
+            'manage-lembaga', 'manage-tahun-ajaran', 'manage-guru',
+            'view-audit-log', 'manage-ppdb',
+        ])->delete();
+
         $permissions = [
             'roles.view', 'roles.create', 'roles.edit', 'roles.delete',
             'users.view', 'users.create', 'users.edit', 'users.toggle-active',

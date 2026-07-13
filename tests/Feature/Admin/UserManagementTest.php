@@ -102,6 +102,37 @@ it('deactivates a staff account so it can no longer log in', function () {
     expect($staff->fresh()->is_active)->toBeFalse();
 });
 
+it('lets a user manager update an existing staff account\'s name and email', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $staff = User::factory()->create(['name' => 'Old Name', 'email' => 'oldemail@example.test']);
+    $staff->assignRole('kepala_sekolah');
+
+    $this->actingAs($manager)->put(route('admin.users.update', $staff), [
+        'name' => 'New Name',
+        'email' => 'newemail@example.test',
+        'role' => 'kepala_sekolah',
+    ])->assertRedirect(route('admin.users.index'));
+
+    $updated = $staff->fresh();
+    expect($updated->name)->toBe('New Name');
+    expect($updated->email)->toBe('newemail@example.test');
+});
+
+it('denies access to admin.users.edit for a user without users.edit permission', function () {
+    Permission::firstOrCreate(['name' => 'users.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['users.view']);
+
+    $viewer = User::factory()->create();
+    $viewer->assignRole($role);
+
+    $staff = User::factory()->create();
+
+    $this->actingAs($viewer)->get(route('admin.users.edit', $staff))->assertForbidden();
+});
+
 it('refuses to let a lembaga-scoped manager assign a yayasan-scoped role to a new user', function () {
     foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);

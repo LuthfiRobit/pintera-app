@@ -72,3 +72,11 @@ it('is idempotent when run twice', function () {
     expect(Role::count())->toBe(5);
     expect(Permission::count())->toBe(36);
 });
+
+it('removes orphaned old flat permission rows on re-seed', function () {
+    Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
+
+    (new RolePermissionSeeder())->run();
+
+    expect(Permission::where('name', 'manage-guru')->exists())->toBeFalse();
+});
