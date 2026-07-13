@@ -8,7 +8,6 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class GelombangPpdbController extends BaseController
@@ -35,9 +34,14 @@ class GelombangPpdbController extends BaseController
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('manage-ppdb');
+
+        if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
+            return redirect()->route('admin.gelombang-ppdb.index')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah gelombang.']);
+        }
 
         return view('admin.gelombang-ppdb.create', [
             'tahunAjaranAktif' => TahunAjaran::where('status_aktif', true)->firstOrFail(),
@@ -47,6 +51,10 @@ class GelombangPpdbController extends BaseController
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('manage-ppdb');
+
+        if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah gelombang.'])->withInput();
+        }
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->firstOrFail();
         $data = $this->validated($request);

@@ -88,3 +88,65 @@ it('denies access without the manage-ppdb permission', function () {
 
     $this->actingAs($noRoleUser)->get(route('admin.gelombang-ppdb.index'))->assertForbidden();
 });
+
+it('redirects a yayasan-scoped user with no active lembaga selected away from the create page', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $yayasanRole->givePermissionTo('manage-ppdb');
+
+    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser->assignRole($yayasanRole);
+
+    $this->actingAs($yayasanUser)->get(route('admin.gelombang-ppdb.create'))
+        ->assertRedirect(route('admin.gelombang-ppdb.index'))
+        ->assertSessionHasErrors('lembaga_id');
+});
+
+it('rejects a store from a yayasan-scoped user with no active lembaga selected, without creating a row', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $yayasanRole->givePermissionTo('manage-ppdb');
+
+    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser->assignRole($yayasanRole);
+
+    $this->actingAs($yayasanUser)->post(route('admin.gelombang-ppdb.store'), [
+        'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 40,
+    ])->assertSessionHasErrors('lembaga_id');
+
+    expect(GelombangPpdb::count())->toBe(0);
+});
+
+it('lets a yayasan-scoped user with an active lembaga selected via the switcher create a gelombang scoped to it', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $yayasanRole->givePermissionTo('manage-ppdb');
+
+    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser->assignRole($yayasanRole);
+
+    // Switch to the target lembaga via the ResolveTenant middleware query param.
+    $this->actingAs($yayasanUser)->get('/dashboard?switch_lembaga='.$lembaga->id);
+
+    $this->actingAs($yayasanUser)->get(route('admin.gelombang-ppdb.create'))->assertOk();
+
+    $this->actingAs($yayasanUser)->post(route('admin.gelombang-ppdb.store'), [
+        'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 40,
+    ])->assertRedirect(route('admin.gelombang-ppdb.index'));
+
+    $gelombang = GelombangPpdb::first();
+    expect($gelombang->tahun_ajaran_id)->toBe($tahunAjaran->id);
+    expect($gelombang->lembaga_id)->toBe($lembaga->id);
+});
