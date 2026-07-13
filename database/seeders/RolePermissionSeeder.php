@@ -13,6 +13,7 @@ class RolePermissionSeeder extends Seeder
         $permissions = [
             'manage-roles', 'manage-users', 'manage-yayasan',
             'manage-lembaga', 'manage-tahun-ajaran', 'manage-guru', 'view-audit-log',
+            'manage-ppdb',
         ];
 
         foreach ($permissions as $name) {
@@ -35,6 +36,10 @@ class RolePermissionSeeder extends Seeder
 
             if ($name === 'yayasan_super_admin') {
                 $role->syncPermissions($permissions);
+            }
+
+            if ($name === 'admin_administrasi') {
+                $role->givePermissionTo('manage-ppdb');
             }
         }
     }
