@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\JalurPpdbController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
@@ -41,4 +42,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::post('dokumen-syarat', [DokumenSyaratController::class, 'store'])->name('dokumen-syarat.store');
     Route::delete('dokumen-syarat/{dokumenSyarat}', [DokumenSyaratController::class, 'destroy'])->name('dokumen-syarat.destroy');
+
+    Route::post('seleksi', [SeleksiController::class, 'store'])->name('seleksi.store');
+    Route::delete('seleksi/{seleksi}', [SeleksiController::class, 'destroy'])->name('seleksi.destroy');
 });
