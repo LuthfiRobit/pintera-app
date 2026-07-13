@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DokumenSyaratController;
 use App\Http\Controllers\Admin\FormulirFieldController;
 use App\Http\Controllers\Admin\GelombangPpdbController;
 use App\Http\Controllers\Admin\GuruController;
@@ -37,4 +38,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::post('formulir-field', [FormulirFieldController::class, 'store'])->name('formulir-field.store');
     Route::delete('formulir-field/{formulirField}', [FormulirFieldController::class, 'destroy'])->name('formulir-field.destroy');
+
+    Route::post('dokumen-syarat', [DokumenSyaratController::class, 'store'])->name('dokumen-syarat.store');
+    Route::delete('dokumen-syarat/{dokumenSyarat}', [DokumenSyaratController::class, 'destroy'])->name('dokumen-syarat.destroy');
 });
