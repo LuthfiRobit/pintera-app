@@ -12,9 +12,11 @@ function buatAdminJalur(): array
 {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    foreach (['jalur-ppdb.view', 'jalur-ppdb.create', 'jalur-ppdb.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-ppdb');
+    $role->givePermissionTo(['jalur-ppdb.view', 'jalur-ppdb.create', 'jalur-ppdb.edit']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
 

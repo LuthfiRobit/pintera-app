@@ -19,7 +19,7 @@ class JalurPpdbController extends BaseController
 
     public function index(): View
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jalur-ppdb.view');
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
 
@@ -50,7 +50,7 @@ class JalurPpdbController extends BaseController
 
     public function create(Request $request): View|RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jalur-ppdb.create');
 
         if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
             return redirect()->route('admin.jalur-ppdb.index')
@@ -64,7 +64,7 @@ class JalurPpdbController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jalur-ppdb.create');
 
         if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
             return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jalur.'])->withInput();
@@ -96,7 +96,7 @@ class JalurPpdbController extends BaseController
 
     public function edit(JalurPpdb $jalurPpdb): View
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jalur-ppdb.edit');
 
         $jalurPpdb->load(['formulirField', 'dokumenSyarat', 'seleksi.gelombangPpdb', 'seleksi.jenisTesMaster']);
 
@@ -109,7 +109,7 @@ class JalurPpdbController extends BaseController
 
     public function update(Request $request, JalurPpdb $jalurPpdb): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jalur-ppdb.edit');
 
         $data = $request->validate([
             'nama' => [

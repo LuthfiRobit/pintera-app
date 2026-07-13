@@ -18,7 +18,7 @@ class GelombangPpdbController extends BaseController
 
     public function index(): View
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('gelombang-ppdb.view');
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
 
@@ -49,7 +49,7 @@ class GelombangPpdbController extends BaseController
 
     public function create(Request $request): View|RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('gelombang-ppdb.create');
 
         if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
             return redirect()->route('admin.gelombang-ppdb.index')
@@ -63,7 +63,7 @@ class GelombangPpdbController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('gelombang-ppdb.create');
 
         if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
             return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah gelombang.'])->withInput();
@@ -86,14 +86,14 @@ class GelombangPpdbController extends BaseController
 
     public function edit(GelombangPpdb $gelombangPpdb): View
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('gelombang-ppdb.edit');
 
         return view('admin.gelombang-ppdb.edit', ['gelombang' => $gelombangPpdb]);
     }
 
     public function update(Request $request, GelombangPpdb $gelombangPpdb): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('gelombang-ppdb.edit');
 
         $gelombangPpdb->update($this->validated($request, $gelombangPpdb->tahun_ajaran_id, $gelombangPpdb));
 

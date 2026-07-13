@@ -12,9 +12,11 @@ function buatAdminPpdbDenganTahunAktif(): array
 {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-ppdb');
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
 
@@ -28,9 +30,11 @@ function buatAdminPpdbDenganTahunAktif(): array
 
 it('shows an empty-state prompt when the lembaga has no active tahun ajaran', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
-    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-ppdb');
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
 
@@ -92,9 +96,11 @@ it('denies access without the manage-ppdb permission', function () {
 it('redirects a yayasan-scoped user with no active lembaga selected away from the create page', function () {
     [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
 
-    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $yayasanRole->givePermissionTo('manage-ppdb');
+    $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
 
     $yayasanUser = User::factory()->create(['lembaga_id' => null]);
     $yayasanUser->assignRole($yayasanRole);
@@ -107,9 +113,11 @@ it('redirects a yayasan-scoped user with no active lembaga selected away from th
 it('rejects a store from a yayasan-scoped user with no active lembaga selected, without creating a row', function () {
     [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
 
-    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $yayasanRole->givePermissionTo('manage-ppdb');
+    $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
 
     $yayasanUser = User::factory()->create(['lembaga_id' => null]);
     $yayasanUser->assignRole($yayasanRole);
@@ -176,9 +184,11 @@ it('does not show the "Salin dari" callout when the only prior tahun ajaran has 
 it('lets a yayasan-scoped user with an active lembaga selected via the switcher create a gelombang scoped to it', function () {
     [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
 
-    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $yayasanRole->givePermissionTo('manage-ppdb');
+    $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
 
     $yayasanUser = User::factory()->create(['lembaga_id' => null]);
     $yayasanUser->assignRole($yayasanRole);

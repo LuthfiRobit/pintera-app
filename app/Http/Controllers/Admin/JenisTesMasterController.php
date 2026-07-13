@@ -17,14 +17,14 @@ class JenisTesMasterController extends BaseController
 
     public function index(): View
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jenis-tes.view');
 
         return view('admin.jenis-tes.index', ['jenisTesList' => JenisTesMaster::orderBy('nama')->get()]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jenis-tes.create');
 
         $isYayasanScope = $request->user()->widestScopeLevel() === 'yayasan';
 
@@ -59,7 +59,7 @@ class JenisTesMasterController extends BaseController
 
     public function destroy(JenisTesMaster $jenisTes): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('jenis-tes.delete');
 
         if (SeleksiPpdb::where('jenis_tes_master_id', $jenisTes->id)->exists()) {
             return redirect()->route('admin.jenis-tes.index')
