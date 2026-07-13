@@ -37,11 +37,13 @@
                 @csrf
                 <div class="flex-1">
                     <x-input-label value="Nama Jenis Tes" />
-                    <x-text-input type="text" name="nama" placeholder="mis. Tes Tulis, Wawancara" class="mt-1.5" />
+                    <x-text-input type="text" name="nama" value="{{ old('nama') }}" placeholder="mis. Tes Tulis, Wawancara" class="mt-1.5" />
+                    <x-input-error :messages="$errors->get('nama')" class="mt-1.5" />
                 </div>
                 <div class="flex-1">
                     <x-input-label value="Deskripsi (opsional)" />
-                    <x-text-input type="text" name="deskripsi" class="mt-1.5" />
+                    <x-text-input type="text" name="deskripsi" value="{{ old('deskripsi') }}" class="mt-1.5" />
+                    <x-input-error :messages="$errors->get('deskripsi')" class="mt-1.5" />
                 </div>
                 <x-primary-button>Tambah</x-primary-button>
             </form>

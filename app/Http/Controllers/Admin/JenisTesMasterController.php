@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class JenisTesMasterController extends BaseController
@@ -25,10 +26,31 @@ class JenisTesMasterController extends BaseController
     {
         $this->authorize('manage-ppdb');
 
+        $isYayasanScope = $request->user()->widestScopeLevel() === 'yayasan';
+
+        if ($isYayasanScope) {
+            $lembagaId = session('active_lembaga_id');
+
+            if ($lembagaId === null) {
+                return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tes.'])->withInput();
+            }
+        } else {
+            $lembagaId = $request->user()->lembaga_id;
+        }
+
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
+            'nama' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('jenis_tes_master', 'nama')->where(fn ($query) => $query->where('lembaga_id', $lembagaId)),
+            ],
             'deskripsi' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        if ($isYayasanScope) {
+            $data['lembaga_id'] = $lembagaId;
+        }
 
         JenisTesMaster::create($data);
 

@@ -20,6 +20,22 @@ function buatAdminPpdb(): array
     return [$lembaga, $user];
 }
 
+function buatYayasanSuperAdminDenganLembagaAktif(): array
+{
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    Permission::firstOrCreate(['name' => 'manage-ppdb', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo('manage-ppdb');
+    $user = User::factory()->create();
+    $user->assignRole($role);
+
+    test()->actingAs($user);
+    test()->get('/dashboard?switch_lembaga='.$lembaga->id);
+
+    return [$lembaga, $user];
+}
+
 it('denies access without the manage-ppdb permission', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -37,6 +53,32 @@ it('creates a jenis tes scoped to the acting user lembaga', function () {
     $jenisTes = JenisTesMaster::first();
     expect($jenisTes->nama)->toBe('Tes Tulis');
     expect($jenisTes->lembaga_id)->toBe($lembaga->id);
+});
+
+it('lets a yayasan-scoped admin with an active lembaga create a jenis tes scoped to that lembaga', function () {
+    [$lembaga, $user] = buatYayasanSuperAdminDenganLembagaAktif();
+
+    $this->actingAs($user)
+        ->post(route('admin.jenis-tes.store'), ['nama' => 'Tes Tulis', 'deskripsi' => 'Tes tertulis akademik'])
+        ->assertRedirect(route('admin.jenis-tes.index'));
+
+    $jenisTes = JenisTesMaster::withoutGlobalScopes()->first();
+    expect($jenisTes->nama)->toBe('Tes Tulis');
+    expect($jenisTes->lembaga_id)->toBe($lembaga->id);
+});
+
+it('returns a validation error instead of crashing when nama is duplicated for the same lembaga', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+
+    $this->actingAs($user)
+        ->post(route('admin.jenis-tes.store'), ['nama' => 'Tes Tulis'])
+        ->assertRedirect(route('admin.jenis-tes.index'));
+
+    $this->actingAs($user)
+        ->post(route('admin.jenis-tes.store'), ['nama' => 'Tes Tulis'])
+        ->assertSessionHasErrors('nama');
+
+    expect(JenisTesMaster::count())->toBe(1);
 });
 
 it('404s when a lembaga-scoped admin tries to delete a jenis tes belonging to another lembaga', function () {
