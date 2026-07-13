@@ -15,7 +15,15 @@
             ]),
         ],
         [
-            'label' => 'III. Akses & Peran',
+            'label' => 'III. SPMB',
+            'items' => array_filter([
+                Auth::user()->can('manage-ppdb') ? ['route' => 'admin.gelombang-ppdb.index', 'pattern' => 'admin.gelombang-ppdb.*', 'label' => 'Gelombang PPDB', 'icon' => 'waves'] : null,
+                Auth::user()->can('manage-ppdb') ? ['route' => 'admin.jalur-ppdb.index', 'pattern' => 'admin.jalur-ppdb.*', 'label' => 'Jalur PPDB', 'icon' => 'signpost'] : null,
+                Auth::user()->can('manage-ppdb') ? ['route' => 'admin.jenis-tes.index', 'pattern' => 'admin.jenis-tes.*', 'label' => 'Jenis Tes', 'icon' => 'quiz'] : null,
+            ]),
+        ],
+        [
+            'label' => 'IV. Akses & Peran',
             'items' => array_filter([
                 Auth::user()->can('manage-users') ? ['route' => 'admin.users.index', 'pattern' => 'admin.users.*', 'label' => 'Pengguna', 'icon' => 'group'] : null,
                 Auth::user()->can('manage-roles') ? ['route' => 'admin.roles.index', 'pattern' => 'admin.roles.*', 'label' => 'Peran', 'icon' => 'shield_person'] : null,
