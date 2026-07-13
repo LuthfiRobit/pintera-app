@@ -6,12 +6,14 @@ use Spatie\Permission\Models\Permission;
 
 function actingAsSuperAdmin(): User
 {
-    Permission::firstOrCreate(['name' => 'manage-roles', 'guard_name' => 'web']);
+    foreach (['roles.view', 'roles.create', 'roles.edit', 'roles.delete'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(
         ['name' => 'yayasan_super_admin', 'guard_name' => 'web'],
         ['scope_level' => 'yayasan', 'is_protected' => true]
     );
-    $role->givePermissionTo('manage-roles');
+    $role->givePermissionTo(['roles.view', 'roles.create', 'roles.edit', 'roles.delete']);
 
     $user = User::factory()->create();
     $user->assignRole($role);
@@ -19,7 +21,7 @@ function actingAsSuperAdmin(): User
     return $user;
 }
 
-it('denies access to a user without manage-roles permission', function () {
+it('denies access to a user without roles.view permission', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)->get(route('admin.roles.index'))->assertForbidden();
@@ -27,17 +29,17 @@ it('denies access to a user without manage-roles permission', function () {
 
 it('lets an authorized user create a role with a scope level and permissions', function () {
     $admin = actingAsSuperAdmin();
-    Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
+    Permission::firstOrCreate(['name' => 'guru.view', 'guard_name' => 'web']);
 
     $this->actingAs($admin)->post(route('admin.roles.store'), [
         'name' => 'admin_perpustakaan',
         'scope_level' => 'lembaga',
-        'permissions' => [Permission::where('name', 'manage-guru')->first()->id],
+        'permissions' => [Permission::where('name', 'guru.view')->first()->id],
     ])->assertRedirect(route('admin.roles.index'));
 
     $created = Role::where('name', 'admin_perpustakaan')->first();
     expect($created->scope_level)->toBe('lembaga');
-    expect($created->hasPermissionTo('manage-guru'))->toBeTrue();
+    expect($created->hasPermissionTo('guru.view'))->toBeTrue();
 });
 
 it('syncs permissions when their ids arrive as strings, matching a real HTML checkbox submission', function () {
@@ -47,8 +49,8 @@ it('syncs permissions when their ids arrive as strings, matching a real HTML che
     // Permission::first()->id, which masked the original bug. Casting to string
     // here forces the same string-typed input a real submission produces.
     $admin = actingAsSuperAdmin();
-    Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
-    $permissionId = Permission::where('name', 'manage-guru')->first()->id;
+    Permission::firstOrCreate(['name' => 'guru.view', 'guard_name' => 'web']);
+    $permissionId = Permission::where('name', 'guru.view')->first()->id;
 
     $this->actingAs($admin)->post(route('admin.roles.store'), [
         'name' => 'admin_string_ids',
@@ -57,7 +59,7 @@ it('syncs permissions when their ids arrive as strings, matching a real HTML che
     ])->assertRedirect(route('admin.roles.index'));
 
     $created = Role::where('name', 'admin_string_ids')->first();
-    expect($created->hasPermissionTo('manage-guru'))->toBeTrue();
+    expect($created->hasPermissionTo('guru.view'))->toBeTrue();
 });
 
 it('lets an authorized user edit a non-protected role, including its scope level', function () {
@@ -108,9 +110,11 @@ it('refuses to delete a role that still has assigned users', function () {
 });
 
 it('refuses to let a lembaga-scoped role-manager create a yayasan-scoped role', function () {
-    Permission::firstOrCreate(['name' => 'manage-roles', 'guard_name' => 'web']);
+    foreach (['roles.view', 'roles.create', 'roles.edit', 'roles.delete'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $lembagaRole->givePermissionTo('manage-roles');
+    $lembagaRole->givePermissionTo(['roles.view', 'roles.create', 'roles.edit', 'roles.delete']);
     $manager = User::factory()->create();
     $manager->assignRole($lembagaRole);
 

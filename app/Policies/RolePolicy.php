@@ -9,21 +9,21 @@ class RolePolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->can('manage-roles');
+        return $user->can('roles.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->can('manage-roles');
+        return $user->can('roles.create');
     }
 
     public function update(User $user, Role $role): bool
     {
-        return $user->can('manage-roles');
+        return $user->can('roles.edit');
     }
 
     public function delete(User $user, Role $role): bool
     {
-        return $user->can('manage-roles') && ! $role->is_protected;
+        return $user->can('roles.delete') && ! $role->is_protected;
     }
 }
