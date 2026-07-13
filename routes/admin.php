@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\GelombangPpdbController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\LembagaController;
@@ -27,4 +28,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('jenis-tes', [JenisTesMasterController::class, 'index'])->name('jenis-tes.index');
     Route::post('jenis-tes', [JenisTesMasterController::class, 'store'])->name('jenis-tes.store');
     Route::delete('jenis-tes/{jenisTes}', [JenisTesMasterController::class, 'destroy'])->name('jenis-tes.destroy');
+
+    Route::resource('gelombang-ppdb', GelombangPpdbController::class)->except(['show', 'destroy']);
 });
