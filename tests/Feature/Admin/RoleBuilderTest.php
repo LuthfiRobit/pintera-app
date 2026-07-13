@@ -247,3 +247,12 @@ it('returns a JSON 422 instead of a redirect when an AJAX delete targets a role 
     expect($response->json('errors.role'))->not->toBeNull();
     expect(Role::find($role->id))->not->toBeNull();
 });
+
+it('renders the roles index page with the datatable mount point instead of a server-rendered table', function () {
+    $admin = actingAsSuperAdmin();
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.index'));
+
+    $response->assertOk();
+    $response->assertSee('rolesTable(', false);
+});
