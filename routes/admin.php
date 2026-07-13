@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\FormulirFieldController;
 use App\Http\Controllers\Admin\GelombangPpdbController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\JalurPpdbController;
@@ -33,4 +34,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('gelombang-ppdb', GelombangPpdbController::class)->except(['show', 'destroy']);
 
     Route::resource('jalur-ppdb', JalurPpdbController::class)->except(['show', 'destroy']);
+
+    Route::post('formulir-field', [FormulirFieldController::class, 'store'])->name('formulir-field.store');
+    Route::delete('formulir-field/{formulirField}', [FormulirFieldController::class, 'destroy'])->name('formulir-field.destroy');
 });
