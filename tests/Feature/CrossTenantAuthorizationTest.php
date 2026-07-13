@@ -36,9 +36,9 @@ it('404s when a lembaga-scoped admin opens the edit page for a guru in another l
 });
 
 it('404s when a lembaga-scoped admin tries to activate a tahun ajaran belonging to another lembaga', function () {
-    Permission::firstOrCreate(['name' => 'manage-tahun-ajaran', 'guard_name' => 'web']);
+    Permission::firstOrCreate(['name' => 'tahun-ajaran.activate', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-tahun-ajaran');
+    $role->givePermissionTo('tahun-ajaran.activate');
 
     $yayasan = Yayasan::factory()->create();
     $ownLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

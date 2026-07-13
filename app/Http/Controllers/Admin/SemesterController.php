@@ -15,7 +15,7 @@ class SemesterController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-tahun-ajaran');
+        $this->authorize('semester.create');
 
         $data = $request->validate([
             'tahun_ajaran_id' => ['required', 'exists:tahun_ajaran,id'],
@@ -33,7 +33,7 @@ class SemesterController extends BaseController
 
     public function activate(Semester $semester): RedirectResponse
     {
-        $this->authorize('manage-tahun-ajaran');
+        $this->authorize('semester.activate');
 
         try {
             $semester->activate();

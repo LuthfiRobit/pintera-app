@@ -10,9 +10,12 @@ use Spatie\Permission\Models\Permission;
 
 function actingAsTahunAjaranManager(Lembaga $lembaga): User
 {
-    Permission::firstOrCreate(['name' => 'manage-tahun-ajaran', 'guard_name' => 'web']);
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-tahun-ajaran');
+    $role->givePermissionTo($permissions);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
@@ -102,9 +105,12 @@ it('shows a friendly error instead of a 500 when activating a semester whose tah
 });
 
 it('lets a yayasan-scoped user create a tahun ajaran for the lembaga they have switched into', function () {
-    Permission::firstOrCreate(['name' => 'manage-tahun-ajaran', 'guard_name' => 'web']);
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $role->givePermissionTo('manage-tahun-ajaran');
+    $role->givePermissionTo($permissions);
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -126,9 +132,12 @@ it('lets a yayasan-scoped user create a tahun ajaran for the lembaga they have s
 });
 
 it('shows a friendly error instead of a 500 when a yayasan-scoped user creates a tahun ajaran without switching to a lembaga', function () {
-    Permission::firstOrCreate(['name' => 'manage-tahun-ajaran', 'guard_name' => 'web']);
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $role->givePermissionTo('manage-tahun-ajaran');
+    $role->givePermissionTo($permissions);
 
     $manager = User::factory()->create();
     $manager->assignRole($role);

@@ -15,7 +15,7 @@ class TahunAjaranController extends BaseController
 
     public function index(): View
     {
-        $this->authorize('manage-tahun-ajaran');
+        $this->authorize('tahun-ajaran.view');
 
         return view('admin.tahun-ajaran.index', [
             'tahunAjaranList' => TahunAjaran::with('semester')->get(),
@@ -24,14 +24,14 @@ class TahunAjaranController extends BaseController
 
     public function create(): View
     {
-        $this->authorize('manage-tahun-ajaran');
+        $this->authorize('tahun-ajaran.create');
 
         return view('admin.tahun-ajaran.create');
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-tahun-ajaran');
+        $this->authorize('tahun-ajaran.create');
 
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:20'],
@@ -56,7 +56,7 @@ class TahunAjaranController extends BaseController
 
     public function activate(TahunAjaran $tahunAjaran): RedirectResponse
     {
-        $this->authorize('manage-tahun-ajaran');
+        $this->authorize('tahun-ajaran.activate');
 
         $tahunAjaran->activate();
 
