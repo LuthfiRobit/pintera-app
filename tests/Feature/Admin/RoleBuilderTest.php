@@ -40,6 +40,26 @@ it('lets an authorized user create a role with a scope level and permissions', f
     expect($created->hasPermissionTo('manage-guru'))->toBeTrue();
 });
 
+it('syncs permissions when their ids arrive as strings, matching a real HTML checkbox submission', function () {
+    // Regression test: a real browser form-urlencoded POST always sends checkbox
+    // values as strings (e.g. "6"), never as native PHP ints. Pest's ->post() with
+    // a PHP array literal does NOT reproduce this — it preserves the int type from
+    // Permission::first()->id, which masked the original bug. Casting to string
+    // here forces the same string-typed input a real submission produces.
+    $admin = actingAsSuperAdmin();
+    Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
+    $permissionId = Permission::where('name', 'manage-guru')->first()->id;
+
+    $this->actingAs($admin)->post(route('admin.roles.store'), [
+        'name' => 'admin_string_ids',
+        'scope_level' => 'lembaga',
+        'permissions' => [(string) $permissionId],
+    ])->assertRedirect(route('admin.roles.index'));
+
+    $created = Role::where('name', 'admin_string_ids')->first();
+    expect($created->hasPermissionTo('manage-guru'))->toBeTrue();
+});
+
 it('lets an authorized user edit a non-protected role, including its scope level', function () {
     $admin = actingAsSuperAdmin();
     $role = Role::create(['name' => 'editable', 'guard_name' => 'web', 'scope_level' => 'lembaga']);

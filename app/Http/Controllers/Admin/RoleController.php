@@ -50,7 +50,7 @@ class RoleController extends BaseController
             'scope_level' => $data['scope_level'],
         ]);
 
-        $role->syncPermissions($data['permissions'] ?? []);
+        $role->syncPermissions(Permission::whereIn('id', $data['permissions'] ?? [])->get());
 
         return redirect()->route('admin.roles.index')->with('status', 'Role berhasil dibuat.');
     }
@@ -92,7 +92,7 @@ class RoleController extends BaseController
         }
 
         $role->save();
-        $role->syncPermissions($data['permissions'] ?? []);
+        $role->syncPermissions(Permission::whereIn('id', $data['permissions'] ?? [])->get());
 
         return redirect()->route('admin.roles.index')->with('status', 'Role berhasil diperbarui.');
     }
