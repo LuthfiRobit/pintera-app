@@ -6,14 +6,16 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
-it('denies access to a user without manage-lembaga permission', function () {
+it('denies access to a user without lembaga.view permission', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.lembaga.index'))->assertForbidden();
 });
 
 it('lets a yayasan-scoped user create a new lembaga', function () {
-    Permission::firstOrCreate(['name' => 'manage-lembaga', 'guard_name' => 'web']);
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $role->givePermissionTo('manage-lembaga');
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
     $manager = User::factory()->create();
     $manager->assignRole($role);
 
@@ -32,9 +34,11 @@ it('lets a yayasan-scoped user create a new lembaga', function () {
 });
 
 it('forbids a lembaga-scoped user from editing a lembaga that is not their own', function () {
-    Permission::firstOrCreate(['name' => 'manage-lembaga', 'guard_name' => 'web']);
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-lembaga');
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
 
     $yayasan = Yayasan::factory()->create();
     $ownLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -47,9 +51,11 @@ it('forbids a lembaga-scoped user from editing a lembaga that is not their own',
 });
 
 it('lets a lembaga-scoped user edit their own lembaga', function () {
-    Permission::firstOrCreate(['name' => 'manage-lembaga', 'guard_name' => 'web']);
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-lembaga');
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
 
     $yayasan = Yayasan::factory()->create();
     $ownLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

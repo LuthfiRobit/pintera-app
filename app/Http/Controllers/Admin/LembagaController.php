@@ -16,7 +16,7 @@ class LembagaController extends BaseController
 
     public function index(Request $request): View
     {
-        $this->authorize('manage-lembaga');
+        $this->authorize('lembaga.view');
 
         $lembaga = $request->user()->widestScopeLevel() === 'yayasan'
             ? Lembaga::all()
@@ -27,7 +27,7 @@ class LembagaController extends BaseController
 
     public function create(Request $request): View
     {
-        $this->authorize('manage-lembaga');
+        $this->authorize('lembaga.create');
         abort_unless($request->user()->widestScopeLevel() === 'yayasan', 403);
 
         return view('admin.lembaga.create', ['yayasanList' => Yayasan::all()]);
@@ -35,7 +35,7 @@ class LembagaController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-lembaga');
+        $this->authorize('lembaga.create');
         abort_unless($request->user()->widestScopeLevel() === 'yayasan', 403);
 
         $data = $this->validated($request);
@@ -47,7 +47,7 @@ class LembagaController extends BaseController
 
     public function edit(Request $request, Lembaga $lembaga): View
     {
-        $this->authorize('manage-lembaga');
+        $this->authorize('lembaga.edit');
         $this->authorizeOwnLembaga($request, $lembaga);
 
         return view('admin.lembaga.edit', ['lembaga' => $lembaga]);
@@ -55,7 +55,7 @@ class LembagaController extends BaseController
 
     public function update(Request $request, Lembaga $lembaga): RedirectResponse
     {
-        $this->authorize('manage-lembaga');
+        $this->authorize('lembaga.edit');
         $this->authorizeOwnLembaga($request, $lembaga);
 
         $lembaga->update($this->validated($request));
