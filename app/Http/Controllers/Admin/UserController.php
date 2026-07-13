@@ -18,14 +18,14 @@ class UserController extends BaseController
 
     public function index(Request $request): View
     {
-        $this->authorize('manage-users');
+        $this->authorize('users.view');
 
         return view('admin.users.index', ['users' => User::with('roles', 'lembaga')->get()]);
     }
 
     public function create(Request $request): View
     {
-        $this->authorize('manage-users');
+        $this->authorize('users.create');
 
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
         $roles = Role::all()->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)->values();
@@ -40,7 +40,7 @@ class UserController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-users');
+        $this->authorize('users.create');
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -79,7 +79,7 @@ class UserController extends BaseController
 
     public function edit(Request $request, User $user): View
     {
-        $this->authorize('manage-users');
+        $this->authorize('users.edit');
 
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
         $roles = Role::all()->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)->values();
@@ -92,7 +92,7 @@ class UserController extends BaseController
 
     public function update(Request $request, User $user): RedirectResponse
     {
-        $this->authorize('manage-users');
+        $this->authorize('users.edit');
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -114,7 +114,7 @@ class UserController extends BaseController
 
     public function toggleActive(User $user): RedirectResponse
     {
-        $this->authorize('manage-users');
+        $this->authorize('users.toggle-active');
 
         $user->update(['is_active' => ! $user->is_active]);
 

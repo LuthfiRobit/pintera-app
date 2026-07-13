@@ -8,12 +8,14 @@ use Spatie\Permission\Models\Permission;
 
 function actingAsUserManager(): User
 {
-    Permission::firstOrCreate(['name' => 'manage-users', 'guard_name' => 'web']);
+    foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(
         ['name' => 'yayasan_super_admin', 'guard_name' => 'web'],
         ['scope_level' => 'yayasan', 'is_protected' => true]
     );
-    $role->givePermissionTo('manage-users');
+    $role->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
 
     $user = User::factory()->create();
     $user->assignRole($role);
@@ -21,7 +23,7 @@ function actingAsUserManager(): User
     return $user;
 }
 
-it('denies access to a user without manage-users permission', function () {
+it('denies access to a user without users.view permission', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.users.index'))->assertForbidden();
 });
 
@@ -47,9 +49,11 @@ it('lets a yayasan-scoped manager create a staff account with a role and a lemba
 });
 
 it('forces lembaga_id to the acting lembaga-scoped manager\'s own lembaga, ignoring submitted input', function () {
-    Permission::firstOrCreate(['name' => 'manage-users', 'guard_name' => 'web']);
+    foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $lembagaRole->givePermissionTo('manage-users');
+    $lembagaRole->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
 
     $yayasan = Yayasan::factory()->create();
     $ownLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -99,9 +103,11 @@ it('deactivates a staff account so it can no longer log in', function () {
 });
 
 it('refuses to let a lembaga-scoped manager assign a yayasan-scoped role to a new user', function () {
-    Permission::firstOrCreate(['name' => 'manage-users', 'guard_name' => 'web']);
+    foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $lembagaRole->givePermissionTo('manage-users');
+    $lembagaRole->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
     Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
 
     $yayasan = Yayasan::factory()->create();
