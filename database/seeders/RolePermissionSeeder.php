@@ -11,9 +11,20 @@ class RolePermissionSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
-            'manage-roles', 'manage-users', 'manage-yayasan',
-            'manage-lembaga', 'manage-tahun-ajaran', 'manage-guru', 'view-audit-log',
-            'manage-ppdb',
+            'roles.view', 'roles.create', 'roles.edit', 'roles.delete',
+            'users.view', 'users.create', 'users.edit', 'users.toggle-active',
+            'lembaga.view', 'lembaga.create', 'lembaga.edit',
+            'guru.view', 'guru.create', 'guru.edit',
+            'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
+            'semester.create', 'semester.activate',
+            'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete',
+            'gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit',
+            'jalur-ppdb.view', 'jalur-ppdb.create', 'jalur-ppdb.edit',
+            'formulir-field.create', 'formulir-field.delete',
+            'dokumen-syarat.create', 'dokumen-syarat.delete',
+            'seleksi.create', 'seleksi.delete',
+            'spmb-konfigurasi.duplikasi',
+            'audit-log.view',
         ];
 
         foreach ($permissions as $name) {
@@ -39,7 +50,15 @@ class RolePermissionSeeder extends Seeder
             }
 
             if ($name === 'admin_administrasi') {
-                $role->givePermissionTo('manage-ppdb');
+                $role->givePermissionTo([
+                    'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete',
+                    'gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit',
+                    'jalur-ppdb.view', 'jalur-ppdb.create', 'jalur-ppdb.edit',
+                    'formulir-field.create', 'formulir-field.delete',
+                    'dokumen-syarat.create', 'dokumen-syarat.delete',
+                    'seleksi.create', 'seleksi.delete',
+                    'spmb-konfigurasi.duplikasi',
+                ]);
             }
         }
     }

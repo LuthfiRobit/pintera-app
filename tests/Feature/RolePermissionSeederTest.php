@@ -8,14 +8,27 @@ it('seeds the initial permissions', function () {
     (new RolePermissionSeeder())->run();
 
     $expected = [
-        'manage-roles', 'manage-users', 'manage-yayasan',
-        'manage-lembaga', 'manage-tahun-ajaran', 'manage-guru', 'view-audit-log',
-        'manage-ppdb',
+        'roles.view', 'roles.create', 'roles.edit', 'roles.delete',
+        'users.view', 'users.create', 'users.edit', 'users.toggle-active',
+        'lembaga.view', 'lembaga.create', 'lembaga.edit',
+        'guru.view', 'guru.create', 'guru.edit',
+        'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
+        'semester.create', 'semester.activate',
+        'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete',
+        'gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit',
+        'jalur-ppdb.view', 'jalur-ppdb.create', 'jalur-ppdb.edit',
+        'formulir-field.create', 'formulir-field.delete',
+        'dokumen-syarat.create', 'dokumen-syarat.delete',
+        'seleksi.create', 'seleksi.delete',
+        'spmb-konfigurasi.duplikasi',
+        'audit-log.view',
     ];
 
     foreach ($expected as $name) {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
+
+    expect(Permission::count())->toBe(36);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -24,7 +37,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(8);
+    expect($superAdmin->permissions()->count())->toBe(36);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -32,11 +45,24 @@ it('seeds the initial roles with correct scope and protection', function () {
     expect(Role::where('name', 'guru')->first()->scope_level)->toBe('diri_sendiri');
 });
 
-it('gives admin_administrasi the manage-ppdb permission by default', function () {
+it('gives admin_administrasi the SPMB-related granular permissions by default', function () {
     (new RolePermissionSeeder())->run();
 
     $adminAdministrasi = Role::where('name', 'admin_administrasi')->first();
-    expect($adminAdministrasi->hasPermissionTo('manage-ppdb'))->toBeTrue();
+    $expected = [
+        'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete',
+        'gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit',
+        'jalur-ppdb.view', 'jalur-ppdb.create', 'jalur-ppdb.edit',
+        'formulir-field.create', 'formulir-field.delete',
+        'dokumen-syarat.create', 'dokumen-syarat.delete',
+        'seleksi.create', 'seleksi.delete',
+        'spmb-konfigurasi.duplikasi',
+    ];
+
+    foreach ($expected as $name) {
+        expect($adminAdministrasi->hasPermissionTo($name))->toBeTrue();
+    }
+    expect($adminAdministrasi->permissions()->count())->toBe(16);
 });
 
 it('is idempotent when run twice', function () {
@@ -44,5 +70,5 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
 
     expect(Role::count())->toBe(5);
-    expect(Permission::count())->toBe(8);
+    expect(Permission::count())->toBe(36);
 });
