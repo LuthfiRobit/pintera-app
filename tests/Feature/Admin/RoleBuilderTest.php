@@ -256,3 +256,25 @@ it('renders the roles index page with the datatable mount point instead of a ser
     $response->assertOk();
     $response->assertSee('rolesTable(', false);
 });
+
+it('renders the create-role page with the permission-matrix mount point', function () {
+    $admin = actingAsSuperAdmin();
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.create'));
+
+    $response->assertOk();
+    $response->assertSee('roleForm(', false);
+});
+
+it('renders the edit-role page with the permission-matrix mount point pre-filled with the role\'s permissions', function () {
+    $admin = actingAsSuperAdmin();
+    Permission::firstOrCreate(['name' => 'guru.view', 'guard_name' => 'web']);
+    $role = Role::create(['name' => 'editable-matrix', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+    $role->givePermissionTo('guru.view');
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.edit', $role));
+
+    $response->assertOk();
+    $response->assertSee('roleForm(', false);
+    $response->assertSee((string) Permission::where('name', 'guru.view')->first()->id, false);
+});

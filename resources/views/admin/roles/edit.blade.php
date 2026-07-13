@@ -4,49 +4,57 @@
         <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Edit Role: {{ $role->name }}</h2>
     </x-slot>
 
-    <div class="mx-auto max-w-2xl">
+    <div
+        class="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[minmax(0,320px)_1fr]"
+        x-data="roleForm({
+            catalogUrl: @js(route('admin.roles.permissions-catalog')),
+            submitUrl: @js(route('admin.roles.update', $role)),
+            method: 'PUT',
+            indexUrl: @js(route('admin.roles.index')),
+            initialModuleGroups: @js($moduleGroups),
+            initialCheckedIds: @js($checkedIds),
+            initialName: @js(old('name', $role->name)),
+            initialScopeLevel: @js(old('scope_level', $role->scope_level)),
+            initialIsProtected: @js($role->is_protected),
+        })"
+    >
         <x-panel>
-            <form method="POST" action="{{ route('admin.roles.update', $role) }}" class="space-y-5 p-6">
-                @csrf
-                @method('PUT')
-
+            <div class="space-y-5 p-6">
                 <div>
                     <x-input-label value="Nama Role" />
-                    <x-text-input type="text" name="name" value="{{ old('name', $role->name) }}" class="mt-1.5" />
-                    <x-input-error :messages="$errors->get('name')" class="mt-1.5" />
+                    <x-text-input type="text" x-model="name" class="mt-1.5" />
+                    <p x-show="errors.name" class="mt-1.5 text-sm text-signal-red" x-text="errors.name && errors.name[0]"></p>
                 </div>
 
                 <div>
                     <x-input-label value="Scope Level" />
-                    @if ($role->is_protected)
-                        <p class="mt-1.5 rounded-xl bg-brass/10 p-2.5 text-sm text-brass">{{ $role->scope_level }} (terkunci, role ini dilindungi)</p>
-                    @else
-                        <select name="scope_level" class="mt-1.5 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                            <option value="yayasan" @selected(old('scope_level', $role->scope_level) === 'yayasan')>Yayasan</option>
-                            <option value="lembaga" @selected(old('scope_level', $role->scope_level) === 'lembaga')>Lembaga</option>
-                            <option value="diri_sendiri" @selected(old('scope_level', $role->scope_level) === 'diri_sendiri')>Diri Sendiri</option>
+                    <template x-if="isProtected">
+                        <p class="mt-1.5 rounded-xl bg-brass/10 p-2.5 text-sm text-brass" x-text="scopeLevel + ' (terkunci, role ini dilindungi)'"></p>
+                    </template>
+                    <template x-if="!isProtected">
+                        <select x-model="scopeLevel" class="mt-1.5 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                            <option value="yayasan">Yayasan</option>
+                            <option value="lembaga">Lembaga</option>
+                            <option value="diri_sendiri">Diri Sendiri</option>
                         </select>
-                    @endif
-                    <x-input-error :messages="$errors->get('scope_level')" class="mt-1.5" />
-                </div>
-
-                <div>
-                    <x-input-label value="Permission" />
-                    <div class="mt-2 space-y-1.5 rounded-xl border border-ink/10 bg-paper/50 p-3">
-                        @foreach ($permissions as $permission)
-                            <label class="flex items-center gap-2 text-sm text-slate">
-                                <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" class="rounded border-ink/25 text-brass focus:ring-brass" @checked($role->hasPermissionTo($permission))>
-                                {{ $permission->name }}
-                            </label>
-                        @endforeach
-                    </div>
+                    </template>
+                    <p x-show="errors.scope_level" class="mt-1.5 text-sm text-signal-red" x-text="errors.scope_level && errors.scope_level[0]"></p>
                 </div>
 
                 <div class="flex items-center gap-3 pt-2">
-                    <x-primary-button>Simpan</x-primary-button>
+                    <button
+                        type="button"
+                        @click="submit()"
+                        :disabled="submitting"
+                        class="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-bold text-paper shadow-sm transition hover:bg-ink/90 active:scale-[0.98] disabled:opacity-60"
+                    >
+                        <span x-text="submitting ? 'Menyimpan...' : 'Simpan'"></span>
+                    </button>
                     <a href="{{ route('admin.roles.index') }}" class="text-sm text-slate hover:text-ink">Batal</a>
                 </div>
-            </form>
+            </div>
         </x-panel>
+
+        @include('admin.roles._permission-matrix')
     </div>
 </x-app-layout>
