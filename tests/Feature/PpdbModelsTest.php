@@ -31,9 +31,18 @@ function buatKonteksLembaga(): array
     return [$lembaga, $user, $tahunAjaran];
 }
 
+function buatAktorYayasan(): User
+{
+    Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $user = User::factory()->create();
+    $user->assignRole('yayasan_super_admin');
+
+    return $user;
+}
+
 it('copies lembaga_id from the parent jalur onto a new formulir field', function () {
-    [$lembaga, $user, $tahunAjaran] = buatKonteksLembaga();
-    test()->actingAs($user);
+    [$lembaga, , $tahunAjaran] = buatKonteksLembaga();
+    test()->actingAs(buatAktorYayasan());
 
     $jalur = JalurPpdb::create([
         'lembaga_id' => $lembaga->id,
@@ -51,8 +60,8 @@ it('copies lembaga_id from the parent jalur onto a new formulir field', function
 });
 
 it('copies lembaga_id from the parent jalur onto a new dokumen syarat', function () {
-    [$lembaga, $user, $tahunAjaran] = buatKonteksLembaga();
-    test()->actingAs($user);
+    [$lembaga, , $tahunAjaran] = buatKonteksLembaga();
+    test()->actingAs(buatAktorYayasan());
 
     $jalur = JalurPpdb::create([
         'lembaga_id' => $lembaga->id,
@@ -69,8 +78,8 @@ it('copies lembaga_id from the parent jalur onto a new dokumen syarat', function
 });
 
 it('copies lembaga_id from the parent jalur onto a new seleksi row', function () {
-    [$lembaga, $user, $tahunAjaran] = buatKonteksLembaga();
-    test()->actingAs($user);
+    [$lembaga, , $tahunAjaran] = buatKonteksLembaga();
+    test()->actingAs(buatAktorYayasan());
 
     $jalur = JalurPpdb::create([
         'lembaga_id' => $lembaga->id,
