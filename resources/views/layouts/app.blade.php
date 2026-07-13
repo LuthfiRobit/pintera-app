@@ -17,6 +17,8 @@
     </head>
     <body class="h-full font-sans antialiased text-ink">
         <div x-data="{ sidebarOpen: false }" class="min-h-full bg-paper lg:flex">
+            <x-toast />
+
             @include('layouts.sidebar')
 
             <div class="flex min-w-0 flex-1 flex-col">
