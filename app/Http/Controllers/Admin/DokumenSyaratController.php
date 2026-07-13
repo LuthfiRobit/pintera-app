@@ -16,7 +16,7 @@ class DokumenSyaratController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('dokumen-syarat.create');
 
         $data = $request->validate([
             'jalur_ppdb_id' => ['required', Rule::exists('jalur_ppdb', 'id')->where(fn ($query) => $query->whereIn('id', JalurPpdb::pluck('id')))],
@@ -38,7 +38,7 @@ class DokumenSyaratController extends BaseController
 
     public function destroy(DokumenSyaratPpdb $dokumenSyarat): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('dokumen-syarat.delete');
 
         $jalur = $dokumenSyarat->jalurPpdb;
         $dokumenSyarat->delete();

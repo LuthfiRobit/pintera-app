@@ -16,7 +16,7 @@ class FormulirFieldController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('formulir-field.create');
 
         $data = $request->validate([
             'jalur_ppdb_id' => ['required', Rule::exists('jalur_ppdb', 'id')->where(fn ($query) => $query->whereIn('id', JalurPpdb::pluck('id')))],
@@ -51,7 +51,7 @@ class FormulirFieldController extends BaseController
 
     public function destroy(FormulirField $formulirField): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('formulir-field.delete');
 
         $jalur = $formulirField->jalurPpdb;
         $formulirField->delete();

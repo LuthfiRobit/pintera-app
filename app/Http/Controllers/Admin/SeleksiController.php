@@ -18,7 +18,7 @@ class SeleksiController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('seleksi.create');
 
         $data = $request->validate([
             'jalur_ppdb_id' => ['required', Rule::exists('jalur_ppdb', 'id')->where(fn ($query) => $query->whereIn('id', JalurPpdb::pluck('id')))],
@@ -43,7 +43,7 @@ class SeleksiController extends BaseController
 
     public function destroy(SeleksiPpdb $seleksi): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('seleksi.delete');
 
         $jalur = $seleksi->jalurPpdb;
         $seleksi->delete();

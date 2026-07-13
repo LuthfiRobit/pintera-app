@@ -18,7 +18,7 @@ class SpmbKonfigurasiController extends BaseController
 
     public function duplikasi(Request $request, SpmbKonfigurasiDuplikasi $duplikasi): RedirectResponse
     {
-        $this->authorize('manage-ppdb');
+        $this->authorize('spmb-konfigurasi.duplikasi');
 
         $tujuan = TahunAjaran::where('status_aktif', true)->firstOrFail();
 
