@@ -1,29 +1,20 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Profile') }}
-        </h2>
+        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Akun</p>
+        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">{{ __('Profile') }}</h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
+    <div class="mx-auto max-w-2xl space-y-6">
+        <x-panel class="p-6">
+            @include('profile.partials.update-profile-information-form')
+        </x-panel>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.update-password-form')
-                </div>
-            </div>
+        <x-panel class="p-6">
+            @include('profile.partials.update-password-form')
+        </x-panel>
 
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <div class="max-w-xl">
-                    @include('profile.partials.delete-user-form')
-                </div>
-            </div>
-        </div>
+        <x-panel class="p-6">
+            @include('profile.partials.delete-user-form')
+        </x-panel>
     </div>
 </x-app-layout>

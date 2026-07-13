@@ -12,16 +12,22 @@ export default {
     theme: {
         extend: {
             colors: {
-                ink: '#1E2A38',
-                paper: '#F7F7F5',
-                slate: '#5B6B7A',
-                brass: '#B08D4C',
-                'signal-red': '#B3261E',
-                'signal-green': '#2E6B4F',
+                ink: '#0F2547',
+                paper: '#F7F9FC',
+                slate: '#5B6478',
+                brass: '#C9A227',
+                'signal-red': '#C81E3A',
+                'signal-green': '#1E8F63',
+                'signal-amber': '#C9820F',
             },
             fontFamily: {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],
-                display: ['Fraunces', ...defaultTheme.fontFamily.serif],
+                display: ['"Plus Jakarta Sans"', ...defaultTheme.fontFamily.sans],
+                mono: ['"IBM Plex Mono"', ...defaultTheme.fontFamily.mono],
+            },
+            boxShadow: {
+                card: '0 1px 2px rgba(15, 37, 71, 0.06), 0 1px 1px rgba(15, 37, 71, 0.04)',
+                elevated: '0 12px 32px rgba(15, 37, 71, 0.14)',
             },
         },
     },

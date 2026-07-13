@@ -1,46 +1,54 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-semibold text-xl text-ink leading-tight">Data Lembaga</h2>
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Data Induk</p>
+                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Data Lembaga</h2>
+            </div>
+            @if (auth()->user()->widestScopeLevel() === 'yayasan')
+                <x-link-button href="{{ route('admin.lembaga.create') }}">
+                    <span class="text-base leading-none">+</span> Tambah Lembaga
+                </x-link-button>
+            @endif
+        </div>
     </x-slot>
 
-    <div class="py-8 max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-6xl space-y-6">
         @if (session('status'))
-            <div class="mb-4 p-4 bg-signal-green/10 text-signal-green rounded">{{ session('status') }}</div>
+            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
         @endif
 
-        @if (auth()->user()->widestScopeLevel() === 'yayasan')
-            <a href="{{ route('admin.lembaga.create') }}" class="inline-block mb-4 px-4 py-2 bg-ink text-white rounded">
-                Tambah Lembaga
-            </a>
-        @endif
-
-        <table class="w-full bg-white shadow rounded">
-            <thead>
-                <tr class="text-left border-b border-slate/20">
-                    <th class="p-3 text-ink">NPSN</th>
-                    <th class="p-3 text-ink">Nama</th>
-                    <th class="p-3 text-ink">Bentuk</th>
-                    <th class="p-3 text-ink">Status</th>
-                    <th class="p-3 text-ink">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($lembaga as $item)
-                    <tr class="border-b border-slate/20">
-                        <td class="p-3 font-mono text-slate">{{ $item->npsn }}</td>
-                        <td class="p-3 text-ink">{{ $item->nama }}</td>
-                        <td class="p-3 text-slate">{{ $item->bentuk_pendidikan }}</td>
-                        <td class="p-3">
-                            @if ($item->status_sekolah === 'negeri')
-                                <span class="px-2 py-0.5 rounded text-xs bg-brass/10 text-brass">Negeri</span>
-                            @else
-                                <span class="px-2 py-0.5 rounded text-xs bg-slate/10 text-slate">Swasta</span>
-                            @endif
-                        </td>
-                        <td class="p-3"><a href="{{ route('admin.lembaga.edit', $item) }}" class="text-ink underline">Edit</a></td>
+        <x-panel>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                        <th class="px-5 py-3 font-display font-semibold">NPSN</th>
+                        <th class="px-5 py-3 font-display font-semibold">Nama</th>
+                        <th class="px-5 py-3 font-display font-semibold">Bentuk</th>
+                        <th class="px-5 py-3 font-display font-semibold">Status</th>
+                        <th class="px-5 py-3 font-display font-semibold">Aksi</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-ink/10">
+                    @foreach ($lembaga as $item)
+                        <tr class="transition hover:bg-paper/50">
+                            <td class="px-5 py-3.5 font-mono text-slate">{{ $item->npsn }}</td>
+                            <td class="px-5 py-3.5 font-medium text-ink">{{ $item->nama }}</td>
+                            <td class="px-5 py-3.5 text-slate">{{ $item->bentuk_pendidikan }}</td>
+                            <td class="px-5 py-3.5">
+                                @if ($item->status_sekolah === 'negeri')
+                                    <x-badge tone="brass">Negeri</x-badge>
+                                @else
+                                    <x-badge tone="slate">Swasta</x-badge>
+                                @endif
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <a href="{{ route('admin.lembaga.edit', $item) }}" class="font-medium text-ink hover:text-brass">Edit</a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </x-panel>
     </div>
 </x-app-layout>

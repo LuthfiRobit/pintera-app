@@ -1,31 +1,38 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-semibold text-xl text-ink leading-tight">Tambah Tahun Ajaran</h2>
+        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Data Induk</p>
+        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Tambah Tahun Ajaran</h2>
     </x-slot>
 
-    <div class="py-8 max-w-2xl mx-auto sm:px-6 lg:px-8">
-        <form method="POST" action="{{ route('admin.tahun-ajaran.store') }}" class="bg-white shadow rounded p-6 space-y-4">
-            @csrf
+    <div class="mx-auto max-w-2xl">
+        <x-panel>
+            <form method="POST" action="{{ route('admin.tahun-ajaran.store') }}" class="space-y-5 p-6">
+                @csrf
 
-            <div>
-                <label class="block font-medium text-ink">Nama (mis. 2026/2027)</label>
-                <input type="text" name="nama" value="{{ old('nama') }}" class="w-full border border-slate/30 rounded p-2">
-                @error('nama') <p class="text-signal-red text-sm">{{ $message }}</p> @enderror
-            </div>
+                <div>
+                    <x-input-label value="Nama (mis. 2026/2027)" />
+                    <x-text-input type="text" name="nama" value="{{ old('nama') }}" class="mt-1.5" />
+                    <x-input-error :messages="$errors->get('nama')" class="mt-1.5" />
+                </div>
 
-            <div>
-                <label class="block font-medium text-ink">Tanggal Mulai</label>
-                <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" class="w-full border border-slate/30 rounded p-2">
-                @error('tanggal_mulai') <p class="text-signal-red text-sm">{{ $message }}</p> @enderror
-            </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <x-input-label value="Tanggal Mulai" />
+                        <x-text-input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" class="mt-1.5" />
+                        <x-input-error :messages="$errors->get('tanggal_mulai')" class="mt-1.5" />
+                    </div>
+                    <div>
+                        <x-input-label value="Tanggal Selesai" />
+                        <x-text-input type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" class="mt-1.5" />
+                        <x-input-error :messages="$errors->get('tanggal_selesai')" class="mt-1.5" />
+                    </div>
+                </div>
 
-            <div>
-                <label class="block font-medium text-ink">Tanggal Selesai</label>
-                <input type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" class="w-full border border-slate/30 rounded p-2">
-                @error('tanggal_selesai') <p class="text-signal-red text-sm">{{ $message }}</p> @enderror
-            </div>
-
-            <button type="submit" class="px-4 py-2 bg-ink text-white rounded">Simpan</button>
-        </form>
+                <div class="flex items-center gap-3 pt-2">
+                    <x-primary-button>Simpan</x-primary-button>
+                    <a href="{{ route('admin.tahun-ajaran.index') }}" class="text-sm text-slate hover:text-ink">Batal</a>
+                </div>
+            </form>
+        </x-panel>
     </div>
 </x-app-layout>

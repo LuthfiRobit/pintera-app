@@ -1,39 +1,47 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-semibold text-xl text-ink leading-tight">Buat Role Baru</h2>
+        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Akses &amp; Peran</p>
+        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Buat Role Baru</h2>
     </x-slot>
 
-    <div class="py-8 max-w-2xl mx-auto sm:px-6 lg:px-8">
-        <form method="POST" action="{{ route('admin.roles.store') }}" class="bg-white shadow rounded p-6 space-y-4">
-            @csrf
+    <div class="mx-auto max-w-2xl">
+        <x-panel>
+            <form method="POST" action="{{ route('admin.roles.store') }}" class="space-y-5 p-6">
+                @csrf
 
-            <div>
-                <label class="block font-medium text-ink">Nama Role</label>
-                <input type="text" name="name" value="{{ old('name') }}" class="w-full border border-slate/30 rounded p-2">
-                @error('name') <p class="text-signal-red text-sm">{{ $message }}</p> @enderror
-            </div>
+                <div>
+                    <x-input-label value="Nama Role" />
+                    <x-text-input type="text" name="name" value="{{ old('name') }}" class="mt-1.5" />
+                    <x-input-error :messages="$errors->get('name')" class="mt-1.5" />
+                </div>
 
-            <div>
-                <label class="block font-medium text-ink">Scope Level</label>
-                <select name="scope_level" class="w-full border border-slate/30 rounded p-2">
-                    <option value="yayasan" @selected(old('scope_level') === 'yayasan')>Yayasan</option>
-                    <option value="lembaga" @selected(old('scope_level') === 'lembaga')>Lembaga</option>
-                    <option value="diri_sendiri" @selected(old('scope_level') === 'diri_sendiri')>Diri Sendiri</option>
-                </select>
-                @error('scope_level') <p class="text-signal-red text-sm">{{ $message }}</p> @enderror
-            </div>
+                <div>
+                    <x-input-label value="Scope Level" />
+                    <select name="scope_level" class="mt-1.5 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                        <option value="yayasan" @selected(old('scope_level') === 'yayasan')>Yayasan</option>
+                        <option value="lembaga" @selected(old('scope_level') === 'lembaga')>Lembaga</option>
+                        <option value="diri_sendiri" @selected(old('scope_level') === 'diri_sendiri')>Diri Sendiri</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('scope_level')" class="mt-1.5" />
+                </div>
 
-            <div>
-                <label class="block font-medium text-ink">Permission</label>
-                @foreach ($permissions as $permission)
-                    <label class="block text-slate">
-                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}">
-                        {{ $permission->name }}
-                    </label>
-                @endforeach
-            </div>
+                <div>
+                    <x-input-label value="Permission" />
+                    <div class="mt-2 space-y-1.5 rounded-xl border border-ink/10 bg-paper/50 p-3">
+                        @foreach ($permissions as $permission)
+                            <label class="flex items-center gap-2 text-sm text-slate">
+                                <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" class="rounded border-ink/25 text-brass focus:ring-brass">
+                                {{ $permission->name }}
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
 
-            <button type="submit" class="px-4 py-2 bg-ink text-white rounded">Simpan</button>
-        </form>
+                <div class="flex items-center gap-3 pt-2">
+                    <x-primary-button>Simpan</x-primary-button>
+                    <a href="{{ route('admin.roles.index') }}" class="text-sm text-slate hover:text-ink">Batal</a>
+                </div>
+            </form>
+        </x-panel>
     </div>
 </x-app-layout>

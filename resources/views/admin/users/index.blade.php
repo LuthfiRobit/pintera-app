@@ -1,55 +1,63 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-semibold text-xl text-ink leading-tight">Manajemen Akun Staff</h2>
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Akses &amp; Peran</p>
+                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Manajemen Akun Staff</h2>
+            </div>
+            <x-link-button href="{{ route('admin.users.create') }}">
+                <span class="text-base leading-none">+</span> Buat Akun Staff
+            </x-link-button>
+        </div>
     </x-slot>
 
-    <div class="py-8 max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-6xl space-y-6">
         @if (session('status'))
-            <div class="mb-4 p-4 bg-signal-green/10 text-signal-green rounded">{{ session('status') }}</div>
+            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
         @endif
 
-        <a href="{{ route('admin.users.create') }}" class="inline-block mb-4 px-4 py-2 bg-ink text-white rounded">
-            Buat Akun Staff
-        </a>
-
-        <table class="w-full bg-white shadow rounded">
-            <thead>
-                <tr class="text-left border-b border-slate/20">
-                    <th class="p-3 text-ink">Nama</th>
-                    <th class="p-3 text-ink">Email</th>
-                    <th class="p-3 text-ink">Role</th>
-                    <th class="p-3 text-ink">Lembaga</th>
-                    <th class="p-3 text-ink">Status</th>
-                    <th class="p-3 text-ink">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($users as $user)
-                    <tr class="border-b border-slate/20">
-                        <td class="p-3 text-ink">{{ $user->name }}</td>
-                        <td class="p-3 text-slate">{{ $user->email }}</td>
-                        <td class="p-3 text-slate">{{ $user->roles->pluck('name')->implode(', ') }}</td>
-                        <td class="p-3 text-slate">{{ $user->lembaga?->nama ?? '-' }}</td>
-                        <td class="p-3">
-                            @if ($user->is_active)
-                                <span class="px-2 py-0.5 rounded text-xs bg-signal-green/10 text-signal-green">Aktif</span>
-                            @else
-                                <span class="px-2 py-0.5 rounded text-xs bg-slate/10 text-slate">Nonaktif</span>
-                            @endif
-                        </td>
-                        <td class="p-3 space-x-2">
-                            <a href="{{ route('admin.users.edit', $user) }}" class="text-ink underline">Edit</a>
-                            <form method="POST" action="{{ route('admin.users.toggle-active', $user) }}" class="inline">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="text-brass">
-                                    {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                </button>
-                            </form>
-                        </td>
+        <x-panel>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                        <th class="px-5 py-3 font-display font-semibold">Nama</th>
+                        <th class="px-5 py-3 font-display font-semibold">Email</th>
+                        <th class="px-5 py-3 font-display font-semibold">Role</th>
+                        <th class="px-5 py-3 font-display font-semibold">Lembaga</th>
+                        <th class="px-5 py-3 font-display font-semibold">Status</th>
+                        <th class="px-5 py-3 font-display font-semibold">Aksi</th>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody class="divide-y divide-ink/10">
+                    @foreach ($users as $user)
+                        <tr class="transition hover:bg-paper/50">
+                            <td class="px-5 py-3.5 font-medium text-ink">{{ $user->name }}</td>
+                            <td class="px-5 py-3.5 text-slate">{{ $user->email }}</td>
+                            <td class="px-5 py-3.5 text-slate">{{ $user->roles->pluck('name')->implode(', ') }}</td>
+                            <td class="px-5 py-3.5 text-slate">{{ $user->lembaga?->nama ?? '—' }}</td>
+                            <td class="px-5 py-3.5">
+                                @if ($user->is_active)
+                                    <x-badge tone="green">Aktif</x-badge>
+                                @else
+                                    <x-badge tone="slate">Nonaktif</x-badge>
+                                @endif
+                            </td>
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('admin.users.edit', $user) }}" class="font-medium text-ink hover:text-brass">Edit</a>
+                                    <form method="POST" action="{{ route('admin.users.toggle-active', $user) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="font-medium text-brass hover:text-brass/80">
+                                            {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </x-panel>
     </div>
 </x-app-layout>

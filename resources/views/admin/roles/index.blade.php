@@ -1,57 +1,64 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-display font-semibold text-xl text-ink leading-tight">Role Builder</h2>
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Akses &amp; Peran</p>
+                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Role Builder</h2>
+            </div>
+            <x-link-button href="{{ route('admin.roles.create') }}">
+                <span class="text-base leading-none">+</span> Buat Role Baru
+            </x-link-button>
+        </div>
     </x-slot>
 
-    <div class="py-8 max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-6xl space-y-6">
         @if (session('status'))
-            <div class="mb-4 p-4 bg-signal-green/10 text-signal-green rounded">{{ session('status') }}</div>
+            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
         @endif
-
-        <a href="{{ route('admin.roles.create') }}" class="inline-block mb-4 px-4 py-2 bg-ink text-white rounded">
-            Buat Role Baru
-        </a>
-
-        <table class="w-full bg-white shadow rounded">
-            <thead>
-                <tr class="text-left border-b border-slate/20">
-                    <th class="p-3 text-ink">Nama</th>
-                    <th class="p-3 text-ink">Scope</th>
-                    <th class="p-3 text-ink">Protected</th>
-                    <th class="p-3 text-ink">Jumlah User</th>
-                    <th class="p-3 text-ink">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($roles as $role)
-                    <tr class="border-b border-slate/20">
-                        <td class="p-3 text-ink">{{ $role->name }}</td>
-                        <td class="p-3">
-                            @if ($role->scope_level === 'yayasan')
-                                <span class="px-2 py-0.5 rounded text-xs bg-brass/10 text-brass">{{ $role->scope_level }}</span>
-                            @else
-                                <span class="text-slate">{{ $role->scope_level }}</span>
-                            @endif
-                        </td>
-                        <td class="p-3 text-slate">{{ $role->is_protected ? 'Ya' : 'Tidak' }}</td>
-                        <td class="p-3 text-slate">{{ $role->users_count }}</td>
-                        <td class="p-3 space-x-2">
-                            <a href="{{ route('admin.roles.edit', $role) }}" class="text-ink underline">Edit</a>
-                            @unless ($role->is_protected)
-                                <form method="POST" action="{{ route('admin.roles.destroy', $role) }}" class="inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-signal-red">Hapus</button>
-                                </form>
-                            @endunless
-                        </td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-
         @error('role')
-            <p class="mt-4 text-signal-red">{{ $message }}</p>
+            <div class="rounded-xl bg-signal-red/10 p-4 text-sm text-signal-red">{{ $message }}</div>
         @enderror
+
+        <x-panel>
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                        <th class="px-5 py-3 font-display font-semibold">Nama</th>
+                        <th class="px-5 py-3 font-display font-semibold">Scope</th>
+                        <th class="px-5 py-3 font-display font-semibold">Protected</th>
+                        <th class="px-5 py-3 font-display font-semibold">Jumlah User</th>
+                        <th class="px-5 py-3 font-display font-semibold">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-ink/10">
+                    @foreach ($roles as $role)
+                        <tr class="transition hover:bg-paper/50">
+                            <td class="px-5 py-3.5 font-medium text-ink">{{ $role->name }}</td>
+                            <td class="px-5 py-3.5">
+                                @if ($role->scope_level === 'yayasan')
+                                    <x-badge tone="brass">{{ $role->scope_level }}</x-badge>
+                                @else
+                                    <span class="text-slate">{{ $role->scope_level }}</span>
+                                @endif
+                            </td>
+                            <td class="px-5 py-3.5 text-slate">{{ $role->is_protected ? 'Ya' : 'Tidak' }}</td>
+                            <td class="px-5 py-3.5 font-mono text-slate">{{ $role->users_count }}</td>
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('admin.roles.edit', $role) }}" class="font-medium text-ink hover:text-brass">Edit</a>
+                                    @unless ($role->is_protected)
+                                        <form method="POST" action="{{ route('admin.roles.destroy', $role) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="font-medium text-signal-red hover:text-signal-red/80">Hapus</button>
+                                        </form>
+                                    @endunless
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </x-panel>
     </div>
 </x-app-layout>
