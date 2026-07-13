@@ -16,14 +16,14 @@ class GuruController extends BaseController
 
     public function index(): View
     {
-        $this->authorize('manage-guru');
+        $this->authorize('guru.view');
 
         return view('admin.guru.index', ['guru' => Guru::with('user')->get()]);
     }
 
     public function create(): View
     {
-        $this->authorize('manage-guru');
+        $this->authorize('guru.create');
 
         $eligibleUsers = User::role('guru')->whereDoesntHave('guru')->get();
 
@@ -32,7 +32,7 @@ class GuruController extends BaseController
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('manage-guru');
+        $this->authorize('guru.create');
 
         $data = $request->validate([
             'user_id' => ['required', 'exists:users,id'],
@@ -59,14 +59,14 @@ class GuruController extends BaseController
 
     public function edit(Guru $guru): View
     {
-        $this->authorize('manage-guru');
+        $this->authorize('guru.edit');
 
         return view('admin.guru.edit', ['guru' => $guru]);
     }
 
     public function update(Request $request, Guru $guru): RedirectResponse
     {
-        $this->authorize('manage-guru');
+        $this->authorize('guru.edit');
 
         $data = $request->validate([
             'nik' => ['required', 'digits:16', function ($attribute, $value, $fail) use ($guru) {

@@ -9,9 +9,11 @@ use Spatie\Permission\Models\Permission;
 
 function actingAsGuruManager(Lembaga $lembaga): User
 {
-    Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
+    foreach (['guru.view', 'guru.create', 'guru.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-guru');
+    $role->givePermissionTo(['guru.view', 'guru.create', 'guru.edit']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
@@ -19,7 +21,7 @@ function actingAsGuruManager(Lembaga $lembaga): User
     return $manager;
 }
 
-it('denies access to a user without manage-guru permission', function () {
+it('denies access to a user without guru.view permission', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.guru.index'))->assertForbidden();
 });
 

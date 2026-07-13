@@ -9,9 +9,11 @@ use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
 it('404s when a lembaga-scoped admin opens the edit page for a guru in another lembaga', function () {
-    Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
+    foreach (['guru.view', 'guru.create', 'guru.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo('manage-guru');
+    $role->givePermissionTo(['guru.view', 'guru.create', 'guru.edit']);
 
     $yayasan = Yayasan::factory()->create();
     $ownLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -58,9 +60,11 @@ it('404s when a lembaga-scoped admin tries to activate a tahun ajaran belonging 
 });
 
 it('lets a yayasan-scoped user filter the guru list down to one lembaga via the switcher, and back to all', function () {
-    Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
+    foreach (['guru.view', 'guru.create', 'guru.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $role->givePermissionTo('manage-guru');
+    $role->givePermissionTo(['guru.view', 'guru.create', 'guru.edit']);
 
     $yayasan = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
