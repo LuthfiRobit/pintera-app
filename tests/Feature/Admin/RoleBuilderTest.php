@@ -166,6 +166,9 @@ it('denies the datatable endpoint to a user without roles.view permission', func
 
 it('returns the permission catalog grouped by module', function () {
     $admin = actingAsSuperAdmin();
+    foreach (['guru.view', 'guru.create', 'guru.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
 
     $response = $this->actingAs($admin)->getJson(route('admin.roles.permissions-catalog'));
 
