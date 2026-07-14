@@ -1,7 +1,11 @@
 <x-spmb-public-layout :lembaga="$lembaga" title="Review" :langkah="5">
     <x-panel class="p-6">
-        <h2 class="font-display text-lg font-bold text-ink">Review Data</h2>
+        <h2 class="font-display text-lg font-bold text-spmb-primary">Review Data</h2>
         <p class="mt-1 text-sm text-slate">Periksa kembali sebelum mengirim.</p>
+
+        @error('submit')
+            <div class="mt-4 rounded-xl border border-signal-red/30 bg-signal-red/5 p-4 text-sm text-signal-red">{{ $message }}</div>
+        @enderror
 
         <dl class="mt-5 divide-y divide-ink/10 text-sm">
             <div class="flex justify-between py-2"><dt class="text-slate">Nama Lengkap</dt><dd class="font-medium text-ink">{{ $session['data_pribadi']['nama_lengkap'] ?? '-' }}</dd></div>
@@ -11,7 +15,7 @@
 
         <form method="POST" action="{{ route('spmb.submit', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]) }}" class="mt-6">
             @csrf
-            <x-primary-button>Kirim Pendaftaran</x-primary-button>
+            <x-spmb-primary-button>Kirim Pendaftaran</x-spmb-primary-button>
         </form>
     </x-panel>
 </x-spmb-public-layout>

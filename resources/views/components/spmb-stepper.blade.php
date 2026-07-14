@@ -13,16 +13,16 @@
     $persen = (int) round(($langkah / $total) * 100);
 @endphp
 
-<nav aria-label="Tahapan pendaftaran" class="mb-6">
+<nav aria-label="Tahapan pendaftaran" class="mb-6 rounded-2xl border border-slate/10 bg-white p-4 shadow-card">
     <ol class="flex items-center">
         @foreach ($daftarLangkah as $nomor => $label)
             <li class="flex items-center {{ $nomor < $total ? 'flex-1' : '' }}">
                 <span
                     @class([
-                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                        'bg-signal-green text-white' => $nomor < $langkah,
-                        'bg-brass text-white' => $nomor === $langkah,
-                        'bg-slate/20 text-slate' => $nomor > $langkah,
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-4',
+                        'bg-signal-green text-white ring-signal-green/15' => $nomor < $langkah,
+                        'bg-spmb-primary text-white ring-spmb-accent/20' => $nomor === $langkah,
+                        'bg-spmb-bg text-slate ring-transparent' => $nomor > $langkah,
                     ])
                     title="{{ $label }}"
                 >
@@ -35,12 +35,12 @@
                     @endif
                 </span>
                 @if ($nomor < $total)
-                    <span @class(['mx-2 h-0.5 flex-1', 'bg-signal-green' => $nomor < $langkah, 'bg-slate/20' => $nomor >= $langkah])></span>
+                    <span @class(['mx-2 h-0.5 flex-1 rounded-full', 'bg-signal-green' => $nomor < $langkah, 'bg-spmb-bg' => $nomor >= $langkah])></span>
                 @endif
             </li>
         @endforeach
     </ol>
-    <p class="mt-2 text-center text-xs font-medium text-slate">
-        Tahap {{ $langkah }}: {{ $daftarLangkah[$langkah] }} — {{ $persen }}%
+    <p class="mt-3 text-center text-xs font-semibold text-spmb-primary">
+        Tahap {{ $langkah }}: {{ $daftarLangkah[$langkah] }} <span class="text-slate">— {{ $persen }}%</span>
     </p>
 </nav>

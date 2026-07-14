@@ -1,6 +1,6 @@
 <x-spmb-public-layout :lembaga="$lembaga" title="Upload Dokumen" :langkah="4">
     <x-panel class="p-6">
-        <h2 class="font-display text-lg font-bold text-ink">Upload Dokumen</h2>
+        <h2 class="font-display text-lg font-bold text-spmb-primary">Upload Dokumen</h2>
 
         <form method="POST" action="{{ route('spmb.dokumen.store', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]) }}" enctype="multipart/form-data" class="mt-5 space-y-4">
             @csrf
@@ -9,7 +9,7 @@
                 <div
                     x-data="{ namaFile: null }"
                     class="rounded-xl border-2 border-dashed p-4 transition"
-                    :class="namaFile ? 'border-brass/30 bg-brass/5' : 'border-slate/30'"
+                    :class="namaFile ? 'border-spmb-accent/40 bg-spmb-tint' : 'border-slate/30'"
                 >
                     <x-input-label :value="$syarat->nama_dokumen . ($syarat->wajib ? ' *' : ' (opsional)')" />
                     <p class="mt-1 text-xs text-slate">PDF/JPG/PNG, maks 2MB</p>
@@ -35,7 +35,7 @@
                 <p class="text-sm text-slate">Tidak ada dokumen yang perlu diupload untuk jalur ini.</p>
             @endforelse
 
-            <x-primary-button>Lanjut ke Review</x-primary-button>
+            <x-spmb-primary-button>Lanjut ke Review</x-spmb-primary-button>
         </form>
     </x-panel>
 </x-spmb-public-layout>

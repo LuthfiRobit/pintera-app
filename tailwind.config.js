@@ -19,6 +19,10 @@ export default {
                 'signal-red': '#C81E3A',
                 'signal-green': '#1E8F63',
                 'signal-amber': '#C9820F',
+                'spmb-primary': '#1E3A8A',
+                'spmb-accent': '#2563EB',
+                'spmb-bg': '#F1F2FA',
+                'spmb-tint': '#EFF4FF',
             },
             fontFamily: {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],

@@ -1,6 +1,6 @@
 <x-spmb-public-layout :lembaga="$lembaga" title="Status Pendaftaran">
     <x-panel class="p-6">
-        <h2 class="font-display text-lg font-bold text-ink">Status Pendaftaran</h2>
+        <h2 class="font-display text-lg font-bold text-spmb-primary">Status Pendaftaran</h2>
 
         @php
             $tonePerStatus = ['menunggu_verifikasi' => 'amber', 'diterima' => 'green', 'ditolak' => 'red'];
