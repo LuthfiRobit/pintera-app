@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             YayasanSeeder::class,
             JabatanTambahanMasterSeeder::class,
             DemoDataSeeder::class,
+            M3DemoDataSeeder::class,
         ]);
     }
 }

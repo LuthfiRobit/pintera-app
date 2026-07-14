@@ -21,5 +21,9 @@
         <tr><td class="label">Tanggal Submit</td><td>{{ $pendaftaran->submitted_at->format('d F Y H:i') }}</td></tr>
         <tr><td class="label">Status</td><td>{{ $pendaftaran->status }}</td></tr>
     </table>
+
+    @if ($pendaftaran->sk_ppdb_id)
+        <p style="margin-top: 16px;">Ditetapkan berdasarkan SK No. {{ $pendaftaran->skPpdb->nomor_sk }} tanggal {{ $pendaftaran->skPpdb->tanggal_terbit->translatedFormat('d F Y') }}.</p>
+    @endif
 </body>
 </html>
