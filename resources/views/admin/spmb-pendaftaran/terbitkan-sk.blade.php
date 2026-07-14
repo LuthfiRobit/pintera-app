@@ -5,6 +5,12 @@
     </x-slot>
 
     <div class="mx-auto max-w-2xl space-y-6">
+        @if ($lembagaBelumDipilih ?? false)
+            <div class="rounded-xl bg-signal-amber/10 p-4 text-sm text-signal-amber">
+                Pilih lembaga aktif melalui pengalih lembaga untuk menerbitkan SK.
+            </div>
+        @endif
+
         <x-panel class="p-6">
             <form method="GET" action="{{ route('admin.sk-ppdb.create') }}" class="flex items-end gap-3">
                 <div class="flex-1">

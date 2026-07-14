@@ -5,6 +5,12 @@
     </x-slot>
 
     <div class="mx-auto max-w-4xl space-y-6">
+        @if ($lembagaBelumDipilih ?? false)
+            <div class="rounded-xl bg-signal-amber/10 p-4 text-sm text-signal-amber">
+                Pilih lembaga aktif melalui pengalih lembaga untuk menginput nilai SPMB.
+            </div>
+        @endif
+
         <x-panel class="p-6">
             <form method="GET" action="{{ route('admin.spmb-pendaftaran.nilai-massal') }}" class="flex items-end gap-3">
                 <div class="flex-1">

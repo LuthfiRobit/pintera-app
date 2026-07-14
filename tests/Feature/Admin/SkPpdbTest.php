@@ -127,6 +127,41 @@ it('denies the terbitkan sk form without the terbitkan-sk permission', function 
     $this->actingAs($user)->get(route('admin.sk-ppdb.create'))->assertForbidden();
 });
 
+it('issues a SK for a yayasan-scoped user once an active lembaga is selected in session', function () {
+    Storage::fake('public');
+    [$lembaga, , $gelombang, $diterima] = buatPendaftaranUntukAdmin(namaCalon: 'Sudah Diterima', status: 'diterima');
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $response = $this->actingAs($user)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->post(route('admin.sk-ppdb.store'), [
+            'gelombang_ppdb_id' => $gelombang->id,
+            'nomor_sk' => '421.3/SK-PPDB.YAY/2026',
+            'tanggal_terbit' => now()->toDateString(),
+        ]);
+
+    $response->assertRedirect();
+    $sk = SkPpdb::first();
+    expect($sk)->not->toBeNull();
+    expect($diterima->fresh()->sk_ppdb_id)->toBe($sk->id);
+});
+
+it('redirects back with a lembaga_id error, not a 500, for a yayasan-scoped user with no active lembaga selected', function () {
+    [, , $gelombang] = buatPendaftaranUntukAdmin(status: 'diterima');
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $response = $this->actingAs($user)->post(route('admin.sk-ppdb.store'), [
+        'gelombang_ppdb_id' => $gelombang->id,
+        'nomor_sk' => '421.3/SK-PPDB.YAY/2026',
+        'tanggal_terbit' => now()->toDateString(),
+    ]);
+
+    $response->assertSessionHasErrors('lembaga_id');
+    expect(SkPpdb::count())->toBe(0);
+});
+
 it('excludes pendaftaran already linked to a prior sk from the create-form summary count', function () {
     Storage::fake('public');
     [$lembaga, , $gelombang] = buatPendaftaranUntukAdmin(namaCalon: 'Batch Pertama', status: 'diterima');

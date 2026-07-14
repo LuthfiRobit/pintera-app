@@ -155,6 +155,57 @@ it('denies mass nilai entry page access without the nilai-seleksi permission, ev
         ->assertForbidden();
 });
 
+it('shows peserta and bulk-saves nilai for a yayasan-scoped user once an active lembaga is selected in session', function () {
+    [$lembaga, $jalur, $gelombang, $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Peserta A');
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+    $seleksi = SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id, 'jenis_tes_master_id' => $jenisTes->id,
+        'jadwal' => now()->addWeek(), 'kriteria_kelulusan' => 'Nilai minimal 65', 'bobot' => 60,
+    ]);
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $pageResponse = $this->actingAs($user)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->get(route('admin.spmb-pendaftaran.nilai-massal', ['seleksi_ppdb_id' => $seleksi->id]));
+    $pageResponse->assertOk()->assertSee('Peserta A');
+
+    $storeResponse = $this->actingAs($user)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->postJson(route('admin.spmb-pendaftaran.nilai-massal.store'), [
+            'seleksi_ppdb_id' => $seleksi->id,
+            'nilai' => [$pendaftaranA->id => 88],
+        ]);
+    $storeResponse->assertOk();
+    expect((float) HasilSeleksi::where('pendaftaran_id', $pendaftaranA->id)->first()->nilai)->toBe(88.0);
+});
+
+it('returns an empty peserta list on GET and a 422 on POST, not a 500, for a yayasan-scoped user with no active lembaga selected', function () {
+    [$lembaga, $jalur, $gelombang, $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Peserta A');
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+    $seleksi = SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id, 'jenis_tes_master_id' => $jenisTes->id,
+        'jadwal' => now()->addWeek(), 'kriteria_kelulusan' => 'Nilai minimal 65', 'bobot' => 60,
+    ]);
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $pageResponse = $this->actingAs($user)
+        ->get(route('admin.spmb-pendaftaran.nilai-massal', ['seleksi_ppdb_id' => $seleksi->id]));
+    $pageResponse->assertOk();
+
+    // A non-empty, otherwise-valid payload: without the guard this reaches
+    // SeleksiPpdb::where('lembaga_id', null)->findOrFail(...), which throws
+    // (404), not 422 — so this only passes 422 once the guard short-circuits
+    // before that query runs. An empty 'nilai' array would 422 anyway on the
+    // "required" rule alone and wouldn't prove the guard did anything.
+    $storeResponse = $this->actingAs($user)->postJson(route('admin.spmb-pendaftaran.nilai-massal.store'), [
+        'seleksi_ppdb_id' => $seleksi->id,
+        'nilai' => [$pendaftaranA->id => 80],
+    ]);
+    $storeResponse->assertStatus(422);
+});
+
 it('denies mass nilai entry without the nilai-seleksi permission, even with other spmb-pendaftaran permissions', function () {
     [$lembaga, $jalur, $gelombang] = buatPendaftaranUntukAdmin();
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);

@@ -16,18 +16,50 @@ class PendaftaranAdminController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(): View
+    /**
+     * Resolve the acting user's effective lembaga scope. Yayasan-scoped
+     * actors (lembaga_id is always null on their user row) fall back to
+     * whichever lembaga is currently selected via the lembaga-switcher UI;
+     * lembaga-scoped actors just use their own fixed lembaga_id. Pendaftaran,
+     * DokumenPendaftaran, and HasilSeleksi deliberately do NOT use
+     * BelongsToTenant (M2's public unauthenticated routes write them), so
+     * every action below must apply this scope manually.
+     */
+    private function lembagaId(Request $request): ?int
+    {
+        return $request->user()->widestScopeLevel() === 'yayasan'
+            ? session('active_lembaga_id')
+            : $request->user()->lembaga_id;
+    }
+
+    public function index(Request $request): View
     {
         $this->authorize('spmb-pendaftaran.view');
 
-        return view('admin.spmb-pendaftaran.index');
+        return view('admin.spmb-pendaftaran.index', [
+            'lembagaBelumDipilih' => $this->lembagaId($request) === null,
+        ]);
     }
 
     public function data(Request $request): JsonResponse
     {
         $this->authorize('spmb-pendaftaran.view');
 
-        $query = Pendaftaran::where('lembaga_id', $request->user()->lembaga_id)
+        $lembagaId = $this->lembagaId($request);
+
+        if ($lembagaId === null) {
+            return response()->json([
+                'data' => [],
+                'meta' => [
+                    'current_page' => 0,
+                    'last_page' => 0,
+                    'per_page' => 0,
+                    'total' => 0,
+                ],
+            ]);
+        }
+
+        $query = Pendaftaran::where('lembaga_id', $lembagaId)
             ->with(['calonMurid', 'jalurPpdb', 'gelombangPpdb'])
             ->withCount([
                 'dokumen as dokumen_total',
@@ -85,7 +117,7 @@ class PendaftaranAdminController extends BaseController
     public function show(Request $request, Pendaftaran $pendaftaran): View
     {
         $this->authorize('spmb-pendaftaran.view');
-        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+        abort_unless($pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
         $pendaftaran->load([
             'calonMurid.alamat', 'calonMurid.keluarga', 'calonMurid.dataPeriodik', 'calonMurid.dataKhusus',
@@ -109,7 +141,7 @@ class PendaftaranAdminController extends BaseController
     public function verifikasiDokumen(Request $request, Pendaftaran $pendaftaran, DokumenPendaftaran $dokumen): JsonResponse
     {
         $this->authorize('spmb-pendaftaran.verifikasi-dokumen');
-        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+        abort_unless($pendaftaran->lembaga_id === $this->lembagaId($request), 404);
         abort_unless($dokumen->pendaftaran_id === $pendaftaran->id, 404);
 
         $data = $request->validate([
@@ -130,7 +162,7 @@ class PendaftaranAdminController extends BaseController
     public function simpanNilai(Request $request, Pendaftaran $pendaftaran): JsonResponse
     {
         $this->authorize('spmb-pendaftaran.nilai-seleksi');
-        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+        abort_unless($pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
         $data = $request->validate([
             'seleksi_ppdb_id' => ['required', 'integer', 'exists:seleksi_ppdb,id'],
@@ -154,7 +186,7 @@ class PendaftaranAdminController extends BaseController
     public function tetapkanKeputusan(Request $request, Pendaftaran $pendaftaran): JsonResponse
     {
         $this->authorize('spmb-pendaftaran.tetapkan-keputusan');
-        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+        abort_unless($pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
         $data = $request->validate([
             'status' => ['required', 'in:diterima,ditolak'],
@@ -175,7 +207,18 @@ class PendaftaranAdminController extends BaseController
     {
         $this->authorize('spmb-pendaftaran.nilai-seleksi');
 
-        $daftarSeleksi = SeleksiPpdb::where('lembaga_id', $request->user()->lembaga_id)
+        $lembagaId = $this->lembagaId($request);
+
+        if ($lembagaId === null) {
+            return view('admin.spmb-pendaftaran.nilai-massal', [
+                'daftarSeleksi' => collect(),
+                'seleksiTerpilih' => null,
+                'pesertaList' => collect(),
+                'lembagaBelumDipilih' => true,
+            ]);
+        }
+
+        $daftarSeleksi = SeleksiPpdb::where('lembaga_id', $lembagaId)
             ->with(['jenisTesMaster', 'jalurPpdb', 'gelombangPpdb'])
             ->get();
 
@@ -183,10 +226,10 @@ class PendaftaranAdminController extends BaseController
         $pesertaList = collect();
 
         if ($seleksiId = $request->integer('seleksi_ppdb_id')) {
-            $seleksiTerpilih = SeleksiPpdb::where('lembaga_id', $request->user()->lembaga_id)->find($seleksiId);
+            $seleksiTerpilih = SeleksiPpdb::where('lembaga_id', $lembagaId)->find($seleksiId);
 
             if ($seleksiTerpilih) {
-                $pesertaList = Pendaftaran::where('lembaga_id', $request->user()->lembaga_id)
+                $pesertaList = Pendaftaran::where('lembaga_id', $lembagaId)
                     ->where('jalur_ppdb_id', $seleksiTerpilih->jalur_ppdb_id)
                     ->where('gelombang_ppdb_id', $seleksiTerpilih->gelombang_ppdb_id)
                     ->with(['calonMurid', 'hasilSeleksi' => fn ($q) => $q->where('seleksi_ppdb_id', $seleksiId)])
@@ -198,6 +241,7 @@ class PendaftaranAdminController extends BaseController
             'daftarSeleksi' => $daftarSeleksi,
             'seleksiTerpilih' => $seleksiTerpilih,
             'pesertaList' => $pesertaList,
+            'lembagaBelumDipilih' => false,
         ]);
     }
 
@@ -205,15 +249,23 @@ class PendaftaranAdminController extends BaseController
     {
         $this->authorize('spmb-pendaftaran.nilai-seleksi');
 
+        $lembagaId = $this->lembagaId($request);
+
+        if ($lembagaId === null) {
+            return response()->json([
+                'message' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menyimpan nilai.',
+            ], 422);
+        }
+
         $data = $request->validate([
             'seleksi_ppdb_id' => ['required', 'integer', 'exists:seleksi_ppdb,id'],
             'nilai' => ['required', 'array'],
             'nilai.*' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
-        $seleksi = SeleksiPpdb::where('lembaga_id', $request->user()->lembaga_id)->findOrFail($data['seleksi_ppdb_id']);
+        $seleksi = SeleksiPpdb::where('lembaga_id', $lembagaId)->findOrFail($data['seleksi_ppdb_id']);
 
-        $pendaftaranIds = Pendaftaran::where('lembaga_id', $request->user()->lembaga_id)
+        $pendaftaranIds = Pendaftaran::where('lembaga_id', $lembagaId)
             ->where('jalur_ppdb_id', $seleksi->jalur_ppdb_id)
             ->where('gelombang_ppdb_id', $seleksi->gelombang_ppdb_id)
             ->pluck('id');

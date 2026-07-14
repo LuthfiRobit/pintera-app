@@ -189,6 +189,39 @@ it('404s tetapkan keputusan for a pendaftaran belonging to a different lembaga',
     )->assertNotFound();
 });
 
+it('shows the detail page and verifies a dokumen for a yayasan-scoped user once an active lembaga is selected in session', function () {
+    [$lembaga, $jalur, , $pendaftaran] = buatPendaftaranUntukAdmin();
+    $syarat = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
+    $dokumen = DokumenPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syarat->id,
+        'file_path' => 'x.pdf', 'nama_file_asli' => 'x.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 10,
+    ]);
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $showResponse = $this->actingAs($user)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->get(route('admin.spmb-pendaftaran.show', $pendaftaran));
+    $showResponse->assertOk()->assertSee($pendaftaran->calonMurid->nama_lengkap);
+
+    $verifyResponse = $this->actingAs($user)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->postJson(
+            route('admin.spmb-pendaftaran.verifikasi-dokumen', [$pendaftaran, $dokumen]),
+            ['status_verifikasi' => 'diterima']
+        );
+    $verifyResponse->assertOk();
+    expect($dokumen->fresh()->status_verifikasi)->toBe('diterima');
+});
+
+it('404s the detail page, not a 500, for a yayasan-scoped user with no active lembaga selected', function () {
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin();
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $this->actingAs($user)->get(route('admin.spmb-pendaftaran.show', $pendaftaran))->assertNotFound();
+});
+
 it('verifies a dokumen without requiring catatan when accepting', function () {
     [$lembaga, $jalur, , $pendaftaran] = buatPendaftaranUntukAdmin();
     $syarat = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);

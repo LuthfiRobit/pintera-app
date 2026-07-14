@@ -81,3 +81,40 @@ it('includes a dokumen progress count per row', function () {
     expect($row['dokumen_terverifikasi'])->toBe(1);
     expect($row['dokumen_total'])->toBe(1);
 });
+
+it('returns pendaftaran data for a yayasan-scoped user once an active lembaga is selected in session', function () {
+    [$lembaga] = buatPendaftaranUntukAdmin(namaCalon: 'Ahmad Fauzan');
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $response = $this->actingAs($user)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->getJson(route('admin.spmb-pendaftaran.data'));
+
+    $response->assertOk();
+    expect(collect($response->json('data'))->pluck('nama_calon_murid'))->toContain('Ahmad Fauzan');
+});
+
+it('returns an empty data array, not a 500, for a yayasan-scoped user with no active lembaga selected', function () {
+    buatPendaftaranUntukAdmin(namaCalon: 'Ahmad Fauzan');
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('yayasan_super_admin');
+
+    $response = $this->actingAs($user)->getJson(route('admin.spmb-pendaftaran.data'));
+
+    $response->assertOk();
+    expect($response->json('data'))->toBeEmpty();
+    // Assert the full zeroed meta shape, not just total === 0: an unguarded
+    // ->where('lembaga_id', null) query also happens to return zero rows (no
+    // Pendaftaran literally has a NULL lembaga_id), which would make a
+    // total-only assertion pass even without the guard. Laravel's paginate()
+    // on that unguarded query still reports current_page=1/per_page=15, so
+    // pinning the whole meta array to zero only passes once the guard
+    // short-circuits the query entirely.
+    expect($response->json('meta'))->toBe([
+        'current_page' => 0,
+        'last_page' => 0,
+        'per_page' => 0,
+        'total' => 0,
+    ]);
+});

@@ -21,6 +21,12 @@
             showUrlTemplate: @js(route('admin.spmb-pendaftaran.show', ['pendaftaran' => '__ID__'])),
         })"
     >
+        @if ($lembagaBelumDipilih ?? false)
+            <div class="rounded-xl bg-signal-amber/10 p-4 text-sm text-signal-amber">
+                Pilih lembaga aktif melalui pengalih lembaga untuk melihat pendaftaran SPMB.
+            </div>
+        @endif
+
         <x-panel>
             <div class="flex flex-wrap items-center gap-3 border-b border-ink/10 p-4">
                 <input
