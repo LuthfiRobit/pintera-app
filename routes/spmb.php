@@ -3,6 +3,7 @@
 use App\Http\Controllers\Spmb\DataDiriController;
 use App\Http\Controllers\Spmb\FormulirTambahanController;
 use App\Http\Controllers\Spmb\PortalController;
+use App\Http\Controllers\Spmb\ReviewSubmitController;
 use App\Http\Controllers\Spmb\UploadDokumenController;
 use App\Http\Controllers\Spmb\VerifikasiEmailController;
 use Illuminate\Support\Facades\Route;
@@ -21,11 +22,13 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
     Route::post('{lembagaSlug}/{jalur}/formulir-tambahan', [FormulirTambahanController::class, 'store'])->name('formulir-tambahan.store');
     Route::get('{lembagaSlug}/{jalur}/dokumen', [UploadDokumenController::class, 'create'])->name('dokumen');
     Route::post('{lembagaSlug}/{jalur}/dokumen', [UploadDokumenController::class, 'store'])->name('dokumen.store');
+    Route::get('{lembagaSlug}/{jalur}/review', [ReviewSubmitController::class, 'show'])->name('review');
+    Route::post('{lembagaSlug}/{jalur}/submit', [ReviewSubmitController::class, 'submit'])
+        ->middleware('throttle:10,1')->name('submit');
+    Route::get('{lembagaSlug}/berhasil/{kodePendaftaran}', [ReviewSubmitController::class, 'berhasil'])->name('berhasil');
 
-    // Placeholders: named routes referenced by this task's redirects/views but implemented by
-    // later tasks in the M2 wizard plan (review & submit step, "check status" lookup form).
-    // Registered here only so `route()`/`redirect()->route()` resolve without throwing;
-    // a later task should replace these with real controllers/views.
-    Route::get('{lembagaSlug}/{jalur}/review', fn () => abort(404))->name('review');
+    // Placeholder: named route referenced by later tasks in the M2 wizard plan ("check status"
+    // lookup form). Registered here only so `route()`/`redirect()->route()` resolve without
+    // throwing; a later task should replace this with a real controller/view.
     Route::get('{lembagaSlug}/status', fn () => abort(404))->name('status.form');
 });
