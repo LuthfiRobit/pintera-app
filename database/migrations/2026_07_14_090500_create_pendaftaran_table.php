@@ -15,7 +15,7 @@ return new class extends Migration
             $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran');
             $table->foreignId('jalur_ppdb_id')->constrained('jalur_ppdb');
             $table->foreignId('gelombang_ppdb_id')->constrained('gelombang_ppdb');
-            $table->string('kode_pendaftaran')->unique();
+            $table->string('kode_pendaftaran');
             $table->string('email_pendaftaran');
             $table->enum('status', ['menunggu_verifikasi', 'diterima', 'ditolak', 'daftar_ulang', 'aktif'])
                 ->default('menunggu_verifikasi');
@@ -23,6 +23,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['calon_murid_id', 'gelombang_ppdb_id']);
+            $table->unique(['lembaga_id', 'kode_pendaftaran']);
         });
     }
 

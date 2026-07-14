@@ -106,3 +106,23 @@ it('rejects a duplicate kode_pendaftaran', function () {
         'kode_pendaftaran' => 'REG-2026-00001', 'email_pendaftaran' => 'lain@example.test', 'submitted_at' => now(),
     ]))->toThrow(\Illuminate\Database\QueryException::class);
 });
+
+it('allows two different lembaga to independently use the same kode_pendaftaran, since numbering restarts per lembaga', function () {
+    [$lembagaA, $tahunAjaranA, $jalurA, $gelombangA, $calonMuridA] = buatKonteksPendaftaran();
+    [$lembagaB, $tahunAjaranB, $jalurB, $gelombangB, $calonMuridB] = buatKonteksPendaftaran();
+
+    $pendaftaranA = Pendaftaran::create([
+        'calon_murid_id' => $calonMuridA->id, 'lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $tahunAjaranA->id,
+        'jalur_ppdb_id' => $jalurA->id, 'gelombang_ppdb_id' => $gelombangA->id,
+        'kode_pendaftaran' => 'REG-2026-00001', 'email_pendaftaran' => 'wali-a@example.test', 'submitted_at' => now(),
+    ]);
+
+    $pendaftaranB = Pendaftaran::create([
+        'calon_murid_id' => $calonMuridB->id, 'lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $tahunAjaranB->id,
+        'jalur_ppdb_id' => $jalurB->id, 'gelombang_ppdb_id' => $gelombangB->id,
+        'kode_pendaftaran' => 'REG-2026-00001', 'email_pendaftaran' => 'wali-b@example.test', 'submitted_at' => now(),
+    ]);
+
+    expect($pendaftaranA->id)->not->toBe($pendaftaranB->id);
+    expect($pendaftaranA->kode_pendaftaran)->toBe($pendaftaranB->kode_pendaftaran);
+});
