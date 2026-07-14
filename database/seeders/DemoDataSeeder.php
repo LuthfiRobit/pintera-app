@@ -30,9 +30,13 @@ use Illuminate\Database\Seeder;
  * guru lengkap, tahun ajaran, dan konfigurasi PPDB.
  *
  * SMP: tahun ajaran 2025/2026 (nonaktif) sudah penuh terisi konfigurasi PPDB —
- * untuk menguji fitur duplikasi ke 2026/2027 (aktif, sengaja dikosongkan).
- * SMA: tahun ajaran 2026/2027 (aktif) langsung terisi penuh —
- * untuk menguji halaman dossier Jalur tanpa perlu duplikasi dulu.
+ * untuk menguji fitur duplikasi ke 2026/2027 (aktif). Tahun ajaran aktif JUGA
+ * diisi konfigurasi PPDB sendiri (gelombang bertanggal relatif ke hari ini),
+ * supaya wizard SPMB publik langsung bisa diuji untuk SMP tanpa perlu
+ * menjalankan fitur duplikasi terlebih dahulu.
+ * SMA: tahun ajaran 2026/2027 (aktif) langsung terisi penuh, gelombang juga
+ * bertanggal relatif ke hari ini — untuk menguji halaman dossier Jalur dan
+ * wizard SPMB publik tanpa perlu duplikasi dulu.
  */
 class DemoDataSeeder extends Seeder
 {
@@ -55,9 +59,13 @@ class DemoDataSeeder extends Seeder
         $this->seedLayananProgramEkskul($smp, 'SMP');
         $this->seedLayananProgramEkskul($sma, 'SMA');
 
-        // SMP: konfigurasi PPDB lengkap di tahun ajaran LAMA (2025/2026) — tahun aktif dibiarkan kosong untuk uji duplikasi.
+        // SMP: konfigurasi PPDB lengkap di tahun ajaran LAMA (2025/2026) — untuk uji fitur duplikasi.
         $jenisTesSmp = $this->seedJenisTes($smp, ['Tes Tulis', 'Wawancara', 'Tes Baca Al-Qur\'an']);
         $this->seedKonfigurasiPpdb($smp, $smpTaLama, $jenisTesSmp, $this->gelombangSmp(), $this->jalurSmp());
+
+        // SMP: konfigurasi PPDB juga di tahun ajaran AKTIF, supaya wizard SPMB publik
+        // bisa langsung diuji untuk SMP tanpa perlu menjalankan fitur duplikasi dulu.
+        $this->seedKonfigurasiPpdb($smp, $smpTaBaru, $jenisTesSmp, $this->gelombangSmpAktif(), $this->jalurSmp());
 
         // SMA: konfigurasi PPDB lengkap langsung di tahun ajaran AKTIF (2026/2027).
         $jenisTesSma = $this->seedJenisTes($sma, ['Tes Tulis', 'Tes Wawancara', 'Tes Potensi Akademik']);
@@ -501,8 +509,23 @@ class DemoDataSeeder extends Seeder
     private function gelombangSma(): array
     {
         return [
-            ['nama' => 'Gelombang 1', 'tanggal_buka' => '2026-07-20', 'tanggal_tutup' => '2026-08-21', 'kuota' => 120],
-            ['nama' => 'Gelombang 2', 'tanggal_buka' => '2026-08-24', 'tanggal_tutup' => '2026-09-18', 'kuota' => 60],
+            ['nama' => 'Gelombang 1', 'tanggal_buka' => now()->subDays(5)->toDateString(), 'tanggal_tutup' => now()->addMonths(2)->toDateString(), 'kuota' => 120],
+            ['nama' => 'Gelombang 2', 'tanggal_buka' => now()->addMonths(3)->toDateString(), 'tanggal_tutup' => now()->addMonths(4)->toDateString(), 'kuota' => 60],
+        ];
+    }
+
+    /**
+     * Konfigurasi PPDB SMP di atas sengaja hanya diisi di tahun ajaran LAMA (nonaktif)
+     * untuk menguji fitur duplikasi. Gelombang di bawah ini dipakai khusus untuk
+     * mengisi tahun ajaran AKTIF SMP juga, supaya wizard SPMB publik langsung bisa
+     * diuji untuk SMP tanpa perlu menjalankan fitur duplikasi terlebih dahulu.
+     * Tanggal relatif terhadap now() supaya selalu "sedang buka" kapan pun seeder dijalankan.
+     */
+    private function gelombangSmpAktif(): array
+    {
+        return [
+            ['nama' => 'Gelombang 1', 'tanggal_buka' => now()->subDays(5)->toDateString(), 'tanggal_tutup' => now()->addMonths(2)->toDateString(), 'kuota' => 80],
+            ['nama' => 'Gelombang 2', 'tanggal_buka' => now()->addMonths(3)->toDateString(), 'tanggal_tutup' => now()->addMonths(4)->toDateString(), 'kuota' => 40],
         ];
     }
 
