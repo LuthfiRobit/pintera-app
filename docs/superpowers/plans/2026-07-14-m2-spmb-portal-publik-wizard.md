@@ -1424,7 +1424,7 @@ Expected: FAIL — route/controller/views don't exist yet.
 
 - [ ] **Step 3: Add routes**
 
-Add to `routes/spmb.php` (after the `dokumen.store` route), plus the import at the top:
+Task 3 registered a placeholder for `spmb.review` (`Route::get('{lembagaSlug}/{jalur}/review', fn () => abort(404))->name('review');`, with a preceding comment block that also covers `spmb.status.form`) so its own `UploadDokumenController::store()` redirect could resolve the route name before this task existed. **Remove the `review` placeholder line** (leave the `status.form` placeholder and its comment in place — that one is still Task 5's responsibility) and replace it with the real routes below. Add to `routes/spmb.php` (after the `dokumen.store` route), plus the import at the top:
 
 ```php
 use App\Http\Controllers\Spmb\ReviewSubmitController;
