@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\DokumenPendaftaran;
+use App\Models\HasilSeleksi;
 use App\Models\Pendaftaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
@@ -77,5 +80,94 @@ class PendaftaranAdminController extends BaseController
                 'total' => $paginated->total(),
             ],
         ]);
+    }
+
+    public function show(Request $request, Pendaftaran $pendaftaran): View
+    {
+        $this->authorize('spmb-pendaftaran.view');
+        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+
+        $pendaftaran->load([
+            'calonMurid.alamat', 'calonMurid.keluarga', 'calonMurid.dataPeriodik', 'calonMurid.dataKhusus',
+            'jalurPpdb', 'gelombangPpdb',
+            'dokumen.dokumenSyaratPpdb',
+            'jawabanFormulir.formulirField',
+            'hasilSeleksi.seleksiPpdb.jenisTesMaster',
+        ]);
+
+        $seleksiTersedia = \App\Models\SeleksiPpdb::where('jalur_ppdb_id', $pendaftaran->jalur_ppdb_id)
+            ->where('gelombang_ppdb_id', $pendaftaran->gelombang_ppdb_id)
+            ->with('jenisTesMaster')
+            ->get();
+
+        return view('admin.spmb-pendaftaran.show', [
+            'pendaftaran' => $pendaftaran,
+            'seleksiTersedia' => $seleksiTersedia,
+        ]);
+    }
+
+    public function verifikasiDokumen(Request $request, Pendaftaran $pendaftaran, DokumenPendaftaran $dokumen): JsonResponse
+    {
+        $this->authorize('spmb-pendaftaran.verifikasi-dokumen');
+        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+        abort_unless($dokumen->pendaftaran_id === $pendaftaran->id, 404);
+
+        $data = $request->validate([
+            'status_verifikasi' => ['required', 'in:diterima,ditolak'],
+            'catatan_verifikasi' => ['required_if:status_verifikasi,ditolak', 'nullable', 'string', 'max:1000'],
+        ]);
+
+        $dokumen->update([
+            'status_verifikasi' => $data['status_verifikasi'],
+            'catatan_verifikasi' => $data['catatan_verifikasi'] ?? null,
+            'diverifikasi_oleh_user_id' => $request->user()->id,
+            'diverifikasi_pada' => now(),
+        ]);
+
+        return response()->json(['message' => 'Dokumen berhasil diverifikasi.']);
+    }
+
+    public function simpanNilai(Request $request, Pendaftaran $pendaftaran): JsonResponse
+    {
+        $this->authorize('spmb-pendaftaran.nilai-seleksi');
+        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+
+        $data = $request->validate([
+            'seleksi_ppdb_id' => ['required', 'integer', 'exists:seleksi_ppdb,id'],
+            'nilai' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'catatan' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        HasilSeleksi::updateOrCreate(
+            ['pendaftaran_id' => $pendaftaran->id, 'seleksi_ppdb_id' => $data['seleksi_ppdb_id']],
+            [
+                'nilai' => $data['nilai'] ?? null,
+                'catatan' => $data['catatan'] ?? null,
+                'dinilai_oleh_user_id' => $request->user()->id,
+                'dinilai_pada' => now(),
+            ]
+        );
+
+        return response()->json(['message' => 'Nilai berhasil disimpan.']);
+    }
+
+    public function tetapkanKeputusan(Request $request, Pendaftaran $pendaftaran): JsonResponse
+    {
+        $this->authorize('spmb-pendaftaran.tetapkan-keputusan');
+        abort_unless($pendaftaran->lembaga_id === $request->user()->lembaga_id, 404);
+
+        $data = $request->validate([
+            'status' => ['required', 'in:diterima,ditolak'],
+            'catatan_keputusan' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $pendaftaran->update([
+            'status' => $data['status'],
+            'catatan_keputusan' => $data['catatan_keputusan'] ?? null,
+            'ditetapkan_oleh_user_id' => $request->user()->id,
+            'ditetapkan_pada' => now(),
+        ]);
+
+        return response()->json(['message' => 'Keputusan berhasil ditetapkan.']);
     }
 }
