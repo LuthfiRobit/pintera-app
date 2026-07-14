@@ -57,9 +57,14 @@ it('allows issuing a second sk for pendaftaran that became final after the first
     ]);
 
     expect(SkPpdb::count())->toBe(2);
+    $skPertama = SkPpdb::where('nomor_sk', '421.3/SK-PPDB.001/2026')->first();
     $skKedua = SkPpdb::where('nomor_sk', '421.3/SK-PPDB.002-SUSULAN/2026')->first();
     expect($susulan->fresh()->sk_ppdb_id)->toBe($skKedua->id);
-    expect($pertama->fresh()->sk_ppdb_id)->not->toBe($skKedua->id);
+    // Asserting equality with the ORIGINAL sk (not just inequality with the new one) is the
+    // real "unchanged" claim: inequality alone would still pass if a regression nulled the
+    // field out instead of overwriting it, which is not what actually happened here but is
+    // exactly the kind of drift this test exists to catch.
+    expect($pertama->fresh()->sk_ppdb_id)->toBe($skPertama->id);
 });
 
 it('rejects a duplicate nomor_sk for the same lembaga with a validation error', function () {
