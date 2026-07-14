@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Spmb\CekStatusController;
 use App\Http\Controllers\Spmb\DataDiriController;
 use App\Http\Controllers\Spmb\FormulirTambahanController;
 use App\Http\Controllers\Spmb\PortalController;
@@ -27,8 +28,8 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
         ->middleware('throttle:10,1')->name('submit');
     Route::get('{lembagaSlug}/berhasil/{kodePendaftaran}', [ReviewSubmitController::class, 'berhasil'])->name('berhasil');
 
-    // Placeholder: named route referenced by later tasks in the M2 wizard plan ("check status"
-    // lookup form). Registered here only so `route()`/`redirect()->route()` resolve without
-    // throwing; a later task should replace this with a real controller/view.
-    Route::get('{lembagaSlug}/status', fn () => abort(404))->name('status.form');
+    Route::get('{lembagaSlug}/status', [CekStatusController::class, 'create'])->name('status.form');
+    Route::post('{lembagaSlug}/status', [CekStatusController::class, 'show'])
+        ->middleware('throttle:10,1')->name('status.show');
+    Route::get('{lembagaSlug}/bukti/{kodePendaftaran}', [CekStatusController::class, 'unduhBukti'])->name('bukti');
 });
