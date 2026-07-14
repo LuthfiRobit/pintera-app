@@ -1,4 +1,4 @@
-<x-spmb-public-layout :lembaga="$lembaga" title="Pendaftaran Berhasil">
+<x-spmb-public-layout :lembaga="$lembaga" title="Pendaftaran Berhasil" :langkah="6">
     <x-panel class="p-6 text-center">
         <p class="font-display text-lg font-bold text-signal-green">Pendaftaran Berhasil</p>
         <p class="mt-3 text-sm text-slate">Kode Pendaftaran Anda:</p>

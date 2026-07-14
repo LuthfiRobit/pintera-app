@@ -1,4 +1,4 @@
-<x-spmb-public-layout :lembaga="$lembaga" title="Verifikasi Email">
+<x-spmb-public-layout :lembaga="$lembaga" title="Verifikasi Email" :langkah="1">
     <x-panel class="p-6">
         <h2 class="font-display text-lg font-bold text-ink">Verifikasi Email</h2>
         <p class="mt-1 text-sm text-slate">Masukkan email aktif Anda. Kami akan kirim kode verifikasi 6 digit.</p>

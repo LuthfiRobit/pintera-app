@@ -1,4 +1,4 @@
-<x-spmb-public-layout :lembaga="$lembaga" title="Review">
+<x-spmb-public-layout :lembaga="$lembaga" title="Review" :langkah="5">
     <x-panel class="p-6">
         <h2 class="font-display text-lg font-bold text-ink">Review Data</h2>
         <p class="mt-1 text-sm text-slate">Periksa kembali sebelum mengirim.</p>

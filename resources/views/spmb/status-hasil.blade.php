@@ -2,13 +2,13 @@
     <x-panel class="p-6">
         <h2 class="font-display text-lg font-bold text-ink">Status Pendaftaran</h2>
 
-        <span class="mt-3 inline-flex items-center rounded-full bg-signal-amber/10 px-3 py-1 text-sm font-bold text-signal-amber">
-            @if ($pendaftaran->status === 'menunggu_verifikasi') Menunggu Verifikasi
-            @elseif ($pendaftaran->status === 'diterima') Diterima
-            @elseif ($pendaftaran->status === 'ditolak') Ditolak
-            @else {{ $pendaftaran->status }}
-            @endif
-        </span>
+        @php
+            $tonePerStatus = ['menunggu_verifikasi' => 'amber', 'diterima' => 'green', 'ditolak' => 'red'];
+            $labelPerStatus = ['menunggu_verifikasi' => 'Menunggu Verifikasi', 'diterima' => 'Diterima', 'ditolak' => 'Ditolak'];
+        @endphp
+        <x-badge :tone="$tonePerStatus[$pendaftaran->status] ?? 'slate'" class="mt-3">
+            {{ $labelPerStatus[$pendaftaran->status] ?? $pendaftaran->status }}
+        </x-badge>
 
         <dl class="mt-5 divide-y divide-ink/10 text-sm">
             <div class="flex justify-between py-2"><dt class="text-slate">Nama</dt><dd class="font-medium text-ink">{{ $pendaftaran->calonMurid->nama_lengkap }}</dd></div>
@@ -17,11 +17,12 @@
             <div class="flex justify-between py-2"><dt class="text-slate">Tanggal Submit</dt><dd class="text-ink">{{ $pendaftaran->submitted_at->translatedFormat('d F Y H:i') }}</dd></div>
         </dl>
 
-        <a
+        <x-link-button
+            variant="ghost"
             href="{{ route('spmb.bukti', ['lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $pendaftaran->kode_pendaftaran, 'email' => $pendaftaran->email_pendaftaran]) }}"
-            class="mt-6 inline-flex items-center gap-2 rounded-xl border border-ink/15 px-4 py-2.5 text-sm font-bold text-ink hover:bg-paper"
+            class="mt-6"
         >
             Unduh Bukti Pendaftaran (PDF)
-        </a>
+        </x-link-button>
     </x-panel>
 </x-spmb-public-layout>

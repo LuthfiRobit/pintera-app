@@ -1,4 +1,4 @@
-<x-spmb-public-layout :lembaga="$lembaga" title="Data Diri">
+<x-spmb-public-layout :lembaga="$lembaga" title="Data Diri" :langkah="2">
     <div
         x-data="dataDiriForm({
             cekNikUrl: '{{ route('spmb.data-diri.cek-nik', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]) }}',

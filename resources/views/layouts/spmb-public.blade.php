@@ -20,6 +20,10 @@
             </header>
 
             <main class="flex-1">
+                @isset($langkah)
+                    <x-spmb-stepper :langkah="$langkah" />
+                @endisset
+
                 {{ $slot }}
             </main>
 
