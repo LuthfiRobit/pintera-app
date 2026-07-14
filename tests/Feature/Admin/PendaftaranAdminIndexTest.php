@@ -1,14 +1,6 @@
 <?php
 
-use App\Models\CalonMurid;
-use App\Models\GelombangPpdb;
-use App\Models\JalurPpdb;
-use App\Models\Lembaga;
-use App\Models\Pendaftaran;
-use App\Models\Role;
-use App\Models\TahunAjaran;
 use App\Models\User;
-use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
 
 uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -16,35 +8,6 @@ uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
 beforeEach(function () {
     (new RolePermissionSeeder())->run();
 });
-
-function buatPendaftaranUntukAdmin(?Lembaga $lembaga = null, string $namaCalon = 'Ahmad Fauzan', string $status = 'menunggu_verifikasi'): array
-{
-    $yayasan = Yayasan::factory()->create();
-    $lembaga = $lembaga ?? Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    // firstOrCreate: buatPendaftaranUntukAdmin() is called multiple times with the same
-    // $lembaga in some tests, and tahun_ajaran/jalur_ppdb/gelombang_ppdb each carry a unique
-    // constraint that a plain create() would violate on the second call.
-    $tahunAjaran = TahunAjaran::firstOrCreate(
-        ['lembaga_id' => $lembaga->id, 'nama' => '2026/2027'],
-        ['tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true],
-    );
-    $jalur = JalurPpdb::firstOrCreate(
-        ['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler'],
-    );
-    $gelombang = GelombangPpdb::firstOrCreate(
-        ['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1'],
-        ['tanggal_buka' => now()->subDay(), 'tanggal_tutup' => now()->addMonth(), 'kuota' => 40],
-    );
-    $calonMurid = CalonMurid::factory()->create(['yayasan_id' => $yayasan->id, 'nama_lengkap' => $namaCalon]);
-    $pendaftaran = Pendaftaran::create([
-        'calon_murid_id' => $calonMurid->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
-        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
-        'kode_pendaftaran' => 'REG-2026-'.random_int(10000, 99999), 'email_pendaftaran' => 'wali@example.test',
-        'status' => $status, 'submitted_at' => now(),
-    ]);
-
-    return [$lembaga, $jalur, $gelombang, $pendaftaran];
-}
 
 it('denies access to the index page without the spmb-pendaftaran.view permission', function () {
     [$lembaga] = buatPendaftaranUntukAdmin();
