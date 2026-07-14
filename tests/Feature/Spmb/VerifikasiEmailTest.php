@@ -48,3 +48,16 @@ it('rejects a wrong otp and stays on the otp step', function () {
     $session = (new PendaftaranWizardSession)->get($lembaga, $jalur);
     expect($session['email_pendaftaran'] ?? null)->toBeNull();
 });
+
+it('404s every wizard-entry route when the jalur belongs to a different lembaga than the url slug', function () {
+    Mail::fake();
+    [$lembagaA] = buatLembagaDenganGelombangBuka();
+    [, , $jalurB] = buatLembagaDenganGelombangBuka();
+
+    $this->get("/spmb/{$lembagaA->slug}/{$jalurB->id}/mulai")->assertNotFound();
+    $this->post("/spmb/{$lembagaA->slug}/{$jalurB->id}/mulai", ['email' => 'wali@example.test'])->assertNotFound();
+    $this->get("/spmb/{$lembagaA->slug}/{$jalurB->id}/verifikasi-otp")->assertNotFound();
+    $this->post("/spmb/{$lembagaA->slug}/{$jalurB->id}/verifikasi-otp", ['kode_otp' => '123456'])->assertNotFound();
+
+    expect(VerifikasiEmailOtp::count())->toBe(0);
+});
