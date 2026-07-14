@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
 use App\Models\GelombangPpdb;
 use App\Models\JalurPpdb;
 use App\Models\Lembaga;
@@ -12,9 +13,11 @@ use Illuminate\View\View;
 
 class PortalController extends BaseController
 {
+    use ResolvesSpmbTenant;
+
     public function index(Request $request, string $lembagaSlug): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
         $gelombang = $this->cariGelombangAktif($lembaga);
 
         if (! $gelombang) {

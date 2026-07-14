@@ -1,5 +1,10 @@
 <?php
 
+use App\Models\GelombangPpdb;
+use App\Models\JalurPpdb;
+use App\Models\Lembaga;
+use App\Models\TahunAjaran;
+use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -47,4 +52,21 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+function buatLembagaDenganGelombangBuka(): array
+{
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
+    ]);
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => now()->subDay(), 'tanggal_tutup' => now()->addMonth(), 'kuota' => 40,
+    ]);
+
+    return [$lembaga, $tahunAjaran, $jalur, $gelombang];
 }

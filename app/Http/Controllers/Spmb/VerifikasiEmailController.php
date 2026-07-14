@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
 use App\Models\JalurPpdb;
-use App\Models\Lembaga;
 use App\Services\OtpService;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\RedirectResponse;
@@ -13,16 +13,20 @@ use Illuminate\View\View;
 
 class VerifikasiEmailController extends BaseController
 {
+    use ResolvesSpmbTenant;
+
     public function create(string $lembagaSlug, JalurPpdb $jalur): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
 
         return view('spmb.verifikasi-email', ['lembaga' => $lembaga, 'jalur' => $jalur]);
     }
 
     public function store(Request $request, string $lembagaSlug, JalurPpdb $jalur, OtpService $otpService): RedirectResponse
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
 
         $data = $request->validate([
             'email' => ['required', 'email'],
@@ -37,7 +41,8 @@ class VerifikasiEmailController extends BaseController
 
     public function edit(string $lembagaSlug, JalurPpdb $jalur): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
 
         return view('spmb.verifikasi-otp', ['lembaga' => $lembaga, 'jalur' => $jalur]);
     }
@@ -49,7 +54,8 @@ class VerifikasiEmailController extends BaseController
         OtpService $otpService,
         PendaftaranWizardSession $wizardSession
     ): RedirectResponse {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
 
         $data = $request->validate([
             'kode_otp' => ['required', 'string'],
