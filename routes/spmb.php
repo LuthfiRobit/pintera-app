@@ -26,7 +26,8 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
     Route::get('{lembagaSlug}/{jalur}/review', [ReviewSubmitController::class, 'show'])->name('review');
     Route::post('{lembagaSlug}/{jalur}/submit', [ReviewSubmitController::class, 'submit'])
         ->middleware('throttle:10,1')->name('submit');
-    Route::get('{lembagaSlug}/berhasil/{kodePendaftaran}', [ReviewSubmitController::class, 'berhasil'])->name('berhasil');
+    Route::get('{lembagaSlug}/berhasil/{kodePendaftaran}', [ReviewSubmitController::class, 'berhasil'])
+        ->middleware('throttle:10,1')->name('berhasil');
 
     Route::get('{lembagaSlug}/status', [CekStatusController::class, 'create'])->name('status.form');
     Route::post('{lembagaSlug}/status', [CekStatusController::class, 'show'])

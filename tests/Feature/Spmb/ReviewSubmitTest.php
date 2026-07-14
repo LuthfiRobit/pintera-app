@@ -44,7 +44,9 @@ it('submits the full pendaftaran atomically and clears the wizard session', func
     $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
 
     $pendaftaran = Pendaftaran::first();
-    $response->assertRedirect("/spmb/{$lembaga->slug}/berhasil/{$pendaftaran->kode_pendaftaran}");
+    $response->assertRedirect(route('spmb.berhasil', [
+        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $pendaftaran->kode_pendaftaran, 'email' => $pendaftaran->email_pendaftaran,
+    ]));
 
     expect($pendaftaran->status)->toBe('menunggu_verifikasi');
     expect($pendaftaran->email_pendaftaran)->toBe('wali@example.test');
@@ -102,7 +104,9 @@ it('retries with a fresh kode when the generated kode collides with a race-condi
 
     $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
 
-    $response->assertRedirect("/spmb/{$lembaga->slug}/berhasil/REG-2026-00002");
+    $response->assertRedirect(route('spmb.berhasil', [
+        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => 'REG-2026-00002', 'email' => 'wali@example.test',
+    ]));
     expect(Pendaftaran::where('kode_pendaftaran', 'REG-2026-00002')->exists())->toBeTrue();
 });
 
@@ -162,5 +166,59 @@ it('shows the success page with the kode pendaftaran', function () {
     $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
     $kode = Pendaftaran::first()->kode_pendaftaran;
 
-    $this->get("/spmb/{$lembaga->slug}/berhasil/{$kode}")->assertOk()->assertSee($kode);
+    $this->get(route('spmb.berhasil', [
+        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $kode, 'email' => 'wali@example.test',
+    ]))->assertOk()->assertSee($kode);
+});
+
+it('404s the success page when the email does not match', function () {
+    Mail::fake();
+    Storage::fake('public');
+    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $kode = Pendaftaran::first()->kode_pendaftaran;
+
+    $this->get(route('spmb.berhasil', [
+        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $kode, 'email' => 'salah@example.test',
+    ]))->assertNotFound();
+});
+
+it('redirects to review with a friendly message instead of a 500 when the calon murid already registered for this gelombang', function () {
+    Mail::fake();
+    Storage::fake('public');
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $calonMuridLama = CalonMurid::factory()->create(['yayasan_id' => $lembaga->yayasan_id, 'nik' => '3201234567890123']);
+    Pendaftaran::factory()->create([
+        'calon_murid_id' => $calonMuridLama->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'kode_pendaftaran' => 'REG-2026-00001', 'email_pendaftaran' => 'wali@example.test',
+    ]);
+    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+
+    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+
+    $response->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/review");
+    $response->assertSessionHasErrors('submit');
+    expect(Pendaftaran::count())->toBe(1);
+});
+
+it('redirects to data-diri instead of crashing when submit is hit with an incomplete session', function () {
+    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    (new PendaftaranWizardSession())->put($lembaga, $jalur, ['email_pendaftaran' => 'wali@example.test']);
+
+    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+
+    $response->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri");
+    $response->assertSessionHasErrors('sesi');
+    expect(Pendaftaran::count())->toBe(0);
+});
+
+it('redirects to mulai instead of crashing when review is visited with no verified email in session', function () {
+    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+
+    $response = $this->get("/spmb/{$lembaga->slug}/{$jalur->id}/review");
+
+    $response->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/mulai");
+    $response->assertSessionHasErrors('sesi');
 });

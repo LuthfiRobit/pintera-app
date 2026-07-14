@@ -20,6 +20,7 @@ use App\Services\KodePendaftaranGenerator;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -33,11 +34,15 @@ class ReviewSubmitController extends BaseController
 
     private const MAKS_PERCOBAAN_KODE = 5;
 
-    public function show(string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): View
+    public function show(string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): View|RedirectResponse
     {
         $lembaga = $this->resolveLembaga($lembagaSlug);
         $this->assertJalurBelongsToLembaga($lembaga, $jalur);
         $session = $wizardSession->get($lembaga, $jalur);
+
+        if ($redirect = $this->redirectJikaSesiBelumLengkap($lembaga, $jalur, $session)) {
+            return $redirect;
+        }
 
         return view('spmb.review', ['lembaga' => $lembaga, 'jalur' => $jalur, 'session' => $session]);
     }
@@ -52,52 +57,65 @@ class ReviewSubmitController extends BaseController
         $this->assertJalurBelongsToLembaga($lembaga, $jalur);
         $session = $wizardSession->get($lembaga, $jalur);
 
-        $pendaftaran = DB::transaction(function () use ($lembaga, $jalur, $session, $kodeGenerator) {
-            $gelombang = $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
-            $tahunAjaran = $gelombang->tahunAjaran;
+        if ($redirect = $this->redirectJikaSesiBelumLengkap($lembaga, $jalur, $session)) {
+            return $redirect;
+        }
 
-            $calonMurid = CalonMurid::updateOrCreate(
-                ['nik_hash' => hash('sha256', $session['nik'])],
-                array_merge(['yayasan_id' => $lembaga->yayasan_id, 'nik' => $session['nik']], $session['data_pribadi'])
-            );
+        try {
+            $pendaftaran = DB::transaction(function () use ($lembaga, $jalur, $session, $kodeGenerator) {
+                $gelombang = $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
+                $tahunAjaran = $gelombang->tahunAjaran;
 
-            AlamatCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['alamat']);
+                $calonMurid = CalonMurid::updateOrCreate(
+                    ['nik_hash' => hash('sha256', $session['nik'])],
+                    array_merge(['yayasan_id' => $lembaga->yayasan_id, 'nik' => $session['nik']], $session['data_pribadi'])
+                );
 
-            KeluargaCalonMurid::where('calon_murid_id', $calonMurid->id)->delete();
-            foreach ($session['keluarga'] as $anggota) {
-                KeluargaCalonMurid::create(array_merge(['calon_murid_id' => $calonMurid->id], $anggota));
+                AlamatCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['alamat']);
+
+                KeluargaCalonMurid::where('calon_murid_id', $calonMurid->id)->delete();
+                foreach ($session['keluarga'] as $anggota) {
+                    KeluargaCalonMurid::create(array_merge(['calon_murid_id' => $calonMurid->id], $anggota));
+                }
+
+                if (! empty($session['data_periodik'])) {
+                    DataPeriodikCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['data_periodik']);
+                }
+                if (! empty($session['data_khusus'])) {
+                    DataKhususCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['data_khusus']);
+                }
+
+                $pendaftaran = $this->buatPendaftaranDenganRetryKode(
+                    $calonMurid, $lembaga, $tahunAjaran, $jalur, $gelombang, $session, $kodeGenerator
+                );
+
+                foreach ($session['jawaban_formulir'] ?? [] as $fieldId => $nilai) {
+                    JawabanFormulirPendaftaran::create([
+                        'pendaftaran_id' => $pendaftaran->id, 'formulir_field_id' => $fieldId, 'nilai' => $nilai,
+                    ]);
+                }
+
+                foreach ($session['dokumen'] ?? [] as $syaratId => $berkas) {
+                    DokumenPendaftaran::create([
+                        'pendaftaran_id' => $pendaftaran->id,
+                        'dokumen_syarat_ppdb_id' => $syaratId,
+                        'file_path' => $berkas['file_path'],
+                        'nama_file_asli' => $berkas['nama_file_asli'],
+                        'mime_type' => $berkas['mime_type'],
+                        'ukuran_bytes' => $berkas['ukuran_bytes'],
+                    ]);
+                }
+
+                return $pendaftaran;
+            });
+        } catch (QueryException $exception) {
+            if (str_contains($exception->getMessage(), 'pendaftaran_calon_murid_id_gelombang_ppdb_id_unique')) {
+                return redirect()->route('spmb.review', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id])
+                    ->withErrors(['submit' => 'Anda sudah terdaftar untuk gelombang ini. Silakan cek status pendaftaran Anda.']);
             }
 
-            if (! empty($session['data_periodik'])) {
-                DataPeriodikCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['data_periodik']);
-            }
-            if (! empty($session['data_khusus'])) {
-                DataKhususCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['data_khusus']);
-            }
-
-            $pendaftaran = $this->buatPendaftaranDenganRetryKode(
-                $calonMurid, $lembaga, $tahunAjaran, $jalur, $gelombang, $session, $kodeGenerator
-            );
-
-            foreach ($session['jawaban_formulir'] ?? [] as $fieldId => $nilai) {
-                JawabanFormulirPendaftaran::create([
-                    'pendaftaran_id' => $pendaftaran->id, 'formulir_field_id' => $fieldId, 'nilai' => $nilai,
-                ]);
-            }
-
-            foreach ($session['dokumen'] ?? [] as $syaratId => $berkas) {
-                DokumenPendaftaran::create([
-                    'pendaftaran_id' => $pendaftaran->id,
-                    'dokumen_syarat_ppdb_id' => $syaratId,
-                    'file_path' => $berkas['file_path'],
-                    'nama_file_asli' => $berkas['nama_file_asli'],
-                    'mime_type' => $berkas['mime_type'],
-                    'ukuran_bytes' => $berkas['ukuran_bytes'],
-                ]);
-            }
-
-            return $pendaftaran;
-        });
+            throw $exception;
+        }
 
         $this->pindahkanDokumenKeLokasiFinal($pendaftaran);
 
@@ -105,7 +123,28 @@ class ReviewSubmitController extends BaseController
 
         $wizardSession->clear($lembaga, $jalur);
 
-        return redirect()->route('spmb.berhasil', ['lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $pendaftaran->kode_pendaftaran]);
+        return redirect()->route('spmb.berhasil', [
+            'lembagaSlug' => $lembaga->slug,
+            'kodePendaftaran' => $pendaftaran->kode_pendaftaran,
+            'email' => $pendaftaran->email_pendaftaran,
+        ]);
+    }
+
+    private function redirectJikaSesiBelumLengkap(Lembaga $lembaga, JalurPpdb $jalur, array $session): ?RedirectResponse
+    {
+        if (empty($session['email_pendaftaran'])) {
+            return redirect()->route('spmb.mulai', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id])
+                ->withErrors(['sesi' => 'Sesi Anda telah berakhir. Silakan mulai dari awal.']);
+        }
+
+        foreach (['nik', 'data_pribadi', 'alamat', 'keluarga'] as $kunci) {
+            if (empty($session[$kunci])) {
+                return redirect()->route('spmb.data-diri', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id])
+                    ->withErrors(['sesi' => 'Data belum lengkap. Silakan lengkapi data diri terlebih dahulu.']);
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -133,7 +172,8 @@ class ReviewSubmitController extends BaseController
      * candidate code, but a second request can insert the same code in the gap between
      * that check and this create() call. Retry with a freshly generated code when the
      * (lembaga_id, kode_pendaftaran) unique constraint is the one that failed — any other
-     * constraint violation is a real data problem and must propagate.
+     * constraint violation (e.g. a genuine duplicate calon_murid+gelombang registration)
+     * is a real, different condition and must propagate to the caller in submit().
      */
     private function buatPendaftaranDenganRetryKode(
         CalonMurid $calonMurid,
@@ -170,11 +210,12 @@ class ReviewSubmitController extends BaseController
         throw new RuntimeException('Gagal membuat pendaftaran setelah '.self::MAKS_PERCOBAAN_KODE.' percobaan kode.');
     }
 
-    public function berhasil(string $lembagaSlug, string $kodePendaftaran): View
+    public function berhasil(Request $request, string $lembagaSlug, string $kodePendaftaran): View
     {
         $lembaga = $this->resolveLembaga($lembagaSlug);
         $pendaftaran = Pendaftaran::where('lembaga_id', $lembaga->id)
             ->where('kode_pendaftaran', $kodePendaftaran)
+            ->where('email_pendaftaran', $request->query('email'))
             ->firstOrFail();
 
         return view('spmb.berhasil', ['lembaga' => $lembaga, 'pendaftaran' => $pendaftaran]);
