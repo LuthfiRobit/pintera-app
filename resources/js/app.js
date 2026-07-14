@@ -8,6 +8,7 @@ import { dataDiriForm } from './data-diri-form';
 import { otpInput } from './otp-input';
 import { pendaftaranTable } from './pendaftaran-table';
 import { pendaftaranDetail } from './pendaftaran-detail';
+import { nilaiMassal } from './nilai-massal';
 
 window.Alpine = Alpine;
 
@@ -18,5 +19,6 @@ Alpine.data('dataDiriForm', dataDiriForm);
 Alpine.data('otpInput', otpInput);
 Alpine.data('pendaftaranTable', pendaftaranTable);
 Alpine.data('pendaftaranDetail', pendaftaranDetail);
+Alpine.data('nilaiMassal', nilaiMassal);
 
 Alpine.start();

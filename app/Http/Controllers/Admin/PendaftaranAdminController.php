@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\DokumenPendaftaran;
 use App\Models\HasilSeleksi;
 use App\Models\Pendaftaran;
+use App\Models\SeleksiPpdb;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -168,5 +169,66 @@ class PendaftaranAdminController extends BaseController
         ]);
 
         return response()->json(['message' => 'Keputusan berhasil ditetapkan.']);
+    }
+
+    public function nilaiMassal(Request $request): View
+    {
+        $this->authorize('spmb-pendaftaran.nilai-seleksi');
+
+        $daftarSeleksi = SeleksiPpdb::where('lembaga_id', $request->user()->lembaga_id)
+            ->with(['jenisTesMaster', 'jalurPpdb', 'gelombangPpdb'])
+            ->get();
+
+        $seleksiTerpilih = null;
+        $pesertaList = collect();
+
+        if ($seleksiId = $request->integer('seleksi_ppdb_id')) {
+            $seleksiTerpilih = SeleksiPpdb::where('lembaga_id', $request->user()->lembaga_id)->find($seleksiId);
+
+            if ($seleksiTerpilih) {
+                $pesertaList = Pendaftaran::where('lembaga_id', $request->user()->lembaga_id)
+                    ->where('jalur_ppdb_id', $seleksiTerpilih->jalur_ppdb_id)
+                    ->where('gelombang_ppdb_id', $seleksiTerpilih->gelombang_ppdb_id)
+                    ->with(['calonMurid', 'hasilSeleksi' => fn ($q) => $q->where('seleksi_ppdb_id', $seleksiId)])
+                    ->get();
+            }
+        }
+
+        return view('admin.spmb-pendaftaran.nilai-massal', [
+            'daftarSeleksi' => $daftarSeleksi,
+            'seleksiTerpilih' => $seleksiTerpilih,
+            'pesertaList' => $pesertaList,
+        ]);
+    }
+
+    public function simpanNilaiMassal(Request $request): JsonResponse
+    {
+        $this->authorize('spmb-pendaftaran.nilai-seleksi');
+
+        $data = $request->validate([
+            'seleksi_ppdb_id' => ['required', 'integer', 'exists:seleksi_ppdb,id'],
+            'nilai' => ['required', 'array'],
+            'nilai.*' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $seleksi = SeleksiPpdb::where('lembaga_id', $request->user()->lembaga_id)->findOrFail($data['seleksi_ppdb_id']);
+
+        $pendaftaranIds = Pendaftaran::where('lembaga_id', $request->user()->lembaga_id)
+            ->where('jalur_ppdb_id', $seleksi->jalur_ppdb_id)
+            ->where('gelombang_ppdb_id', $seleksi->gelombang_ppdb_id)
+            ->pluck('id');
+
+        foreach ($data['nilai'] as $pendaftaranId => $nilai) {
+            if (! $pendaftaranIds->contains((int) $pendaftaranId)) {
+                continue;
+            }
+
+            HasilSeleksi::updateOrCreate(
+                ['pendaftaran_id' => $pendaftaranId, 'seleksi_ppdb_id' => $seleksi->id],
+                ['nilai' => $nilai, 'dinilai_oleh_user_id' => $request->user()->id, 'dinilai_pada' => now()]
+            );
+        }
+
+        return response()->json(['message' => 'Nilai berhasil disimpan.']);
     }
 }
