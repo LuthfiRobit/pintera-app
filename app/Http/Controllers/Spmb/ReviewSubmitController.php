@@ -51,9 +51,11 @@ class ReviewSubmitController extends BaseController
         $lembaga = $this->resolveLembaga($lembagaSlug);
         $this->assertJalurBelongsToLembaga($lembaga, $jalur);
         $session = $wizardSession->get($lembaga, $jalur);
-        $tahunAjaranAktif = PortalController::cariGelombangAktif($lembaga)?->tahunAjaran;
 
-        $pendaftaran = DB::transaction(function () use ($lembaga, $jalur, $session, $kodeGenerator, $tahunAjaranAktif) {
+        $pendaftaran = DB::transaction(function () use ($lembaga, $jalur, $session, $kodeGenerator) {
+            $gelombang = $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
+            $tahunAjaran = $gelombang->tahunAjaran;
+
             $calonMurid = CalonMurid::updateOrCreate(
                 ['nik_hash' => hash('sha256', $session['nik'])],
                 array_merge(['yayasan_id' => $lembaga->yayasan_id, 'nik' => $session['nik']], $session['data_pribadi'])
@@ -73,10 +75,8 @@ class ReviewSubmitController extends BaseController
                 DataKhususCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['data_khusus']);
             }
 
-            $gelombang = PortalController::cariGelombangAktif($lembaga);
-
             $pendaftaran = $this->buatPendaftaranDenganRetryKode(
-                $calonMurid, $lembaga, $tahunAjaranAktif, $jalur, $gelombang, $session, $kodeGenerator
+                $calonMurid, $lembaga, $tahunAjaran, $jalur, $gelombang, $session, $kodeGenerator
             );
 
             foreach ($session['jawaban_formulir'] ?? [] as $fieldId => $nilai) {
@@ -86,13 +86,10 @@ class ReviewSubmitController extends BaseController
             }
 
             foreach ($session['dokumen'] ?? [] as $syaratId => $berkas) {
-                $tujuan = 'pendaftaran/'.$pendaftaran->id.'/'.basename($berkas['file_path']);
-                Storage::disk('public')->move($berkas['file_path'], $tujuan);
-
                 DokumenPendaftaran::create([
                     'pendaftaran_id' => $pendaftaran->id,
                     'dokumen_syarat_ppdb_id' => $syaratId,
-                    'file_path' => $tujuan,
+                    'file_path' => $berkas['file_path'],
                     'nama_file_asli' => $berkas['nama_file_asli'],
                     'mime_type' => $berkas['mime_type'],
                     'ukuran_bytes' => $berkas['ukuran_bytes'],
@@ -102,11 +99,33 @@ class ReviewSubmitController extends BaseController
             return $pendaftaran;
         });
 
+        $this->pindahkanDokumenKeLokasiFinal($pendaftaran);
+
         Mail::to($pendaftaran->email_pendaftaran)->send(new PendaftaranBerhasilMail($pendaftaran));
 
         $wizardSession->clear($lembaga, $jalur);
 
         return redirect()->route('spmb.berhasil', ['lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $pendaftaran->kode_pendaftaran]);
+    }
+
+    /**
+     * Runs after the DB transaction commits, not inside it — Storage::move() is not
+     * rollback-safe, so keeping it out of the transaction means a failed move never
+     * orphans a file against a rolled-back Pendaftaran, and never leaves the wizard
+     * session pointing at a tmp path that a mid-transaction failure already invalidated.
+     * The Pendaftaran row itself is already durably committed by the time this runs.
+     */
+    private function pindahkanDokumenKeLokasiFinal(Pendaftaran $pendaftaran): void
+    {
+        foreach ($pendaftaran->dokumen as $dokumen) {
+            if (! Storage::disk('public')->exists($dokumen->file_path)) {
+                continue;
+            }
+
+            $tujuan = 'pendaftaran/'.$pendaftaran->id.'/'.basename($dokumen->file_path);
+            Storage::disk('public')->move($dokumen->file_path, $tujuan);
+            $dokumen->update(['file_path' => $tujuan]);
+        }
     }
 
     /**

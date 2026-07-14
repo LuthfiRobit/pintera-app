@@ -110,6 +110,50 @@ afterEach(function () {
     Mockery::close();
 });
 
+it('rolls back the whole submission and never moves the file when a document row fails to insert', function () {
+    Mail::fake();
+    Storage::fake('public');
+    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+
+    $wizardSession = new PendaftaranWizardSession();
+    $wizardSession->put($lembaga, $jalur, [
+        'email_pendaftaran' => 'wali@example.test',
+        'nik' => '3201234567890123',
+        'data_pribadi' => [
+            'nama_lengkap' => 'Ahmad Fauzan', 'jenis_kelamin' => 'L', 'tempat_lahir' => 'Bandung',
+            'tanggal_lahir' => '2015-03-10', 'agama' => 'Islam',
+        ],
+        'alamat' => [
+            'alamat_jalan' => 'Jl. Merdeka 10', 'desa_kelurahan' => 'Sukamaju',
+            'kecamatan' => 'Cibeunying', 'kabupaten_kota' => 'Bandung', 'provinsi' => 'Jawa Barat',
+        ],
+        'keluarga' => [['jenis' => 'ayah', 'nama' => 'Budi Santoso']],
+        'jawaban_formulir' => [],
+        'dokumen' => [],
+    ]);
+
+    $tmpPath = 'pendaftaran-tmp/'.session()->getId().'/kartu-keluarga.pdf';
+    Storage::disk('public')->put($tmpPath, 'isi dokumen palsu');
+
+    $syaratIdTakDikenal = 999999;
+    $wizardSession->put($lembaga, $jalur, [
+        'dokumen' => [
+            $syaratIdTakDikenal => [
+                'file_path' => $tmpPath,
+                'nama_file_asli' => 'kartu-keluarga.pdf',
+                'mime_type' => 'application/pdf',
+                'ukuran_bytes' => 18,
+            ],
+        ],
+    ]);
+
+    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+
+    expect(Pendaftaran::count())->toBe(0);
+    Storage::disk('public')->assertExists($tmpPath);
+    expect(Storage::disk('public')->allFiles('pendaftaran'))->toBeEmpty();
+});
+
 it('shows the success page with the kode pendaftaran', function () {
     Mail::fake();
     Storage::fake('public');
