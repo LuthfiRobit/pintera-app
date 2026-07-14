@@ -634,7 +634,7 @@ Expected: FAIL — route/controller/view don't exist yet.
 
 - [ ] **Step 3: Add routes**
 
-Add to `routes/spmb.php` (inside the `spmb.` group, after the `verifikasi-otp.store` route):
+Task 1 registered a placeholder for `spmb.data-diri` (`Route::get('{lembagaSlug}/{jalur}/data-diri', fn () => abort(404))->name('data-diri');`, with a preceding comment block) so its own views/redirects could resolve the route name before this task existed. **Remove that placeholder line** (and its comment, unless the comment also still covers `spmb.status.form` — in that case only remove the `data-diri` line and leave the comment covering the remaining placeholder) and replace it with the real routes below, inside the `spmb.` group, after the `verifikasi-otp.store` route:
 
 ```php
     Route::get('{lembagaSlug}/{jalur}/data-diri', [DataDiriController::class, 'create'])->name('data-diri');
@@ -1769,7 +1769,7 @@ Expected: FAIL — routes/controller/views don't exist yet.
 
 - [ ] **Step 3: Add routes**
 
-Add to `routes/spmb.php`, plus the import at the top:
+Task 1 registered a placeholder for `spmb.status.form` (`Route::get('{lembagaSlug}/status', fn () => abort(404))->name('status.form');`, with a preceding comment block explaining it's a stub) so its own `pilih-jalur.blade.php` link could resolve the route name before this task existed. **Remove that placeholder line entirely** (and its comment block, since by this task no other placeholder from Task 1 should remain) and replace it with the real routes below. Add to `routes/spmb.php`, plus the import at the top:
 
 ```php
 use App\Http\Controllers\Spmb\CekStatusController;
