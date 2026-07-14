@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
+use App\Http\Controllers\Admin\SkPpdbController;
 use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
@@ -60,4 +61,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('spmb-pendaftaran/{pendaftaran}/keputusan', [PendaftaranAdminController::class, 'tetapkanKeputusan'])->name('spmb-pendaftaran.keputusan');
     Route::get('spmb-pendaftaran-nilai-massal', [PendaftaranAdminController::class, 'nilaiMassal'])->name('spmb-pendaftaran.nilai-massal');
     Route::post('spmb-pendaftaran-nilai-massal', [PendaftaranAdminController::class, 'simpanNilaiMassal'])->name('spmb-pendaftaran.nilai-massal.store');
+
+    Route::get('sk-ppdb/create', [SkPpdbController::class, 'create'])->name('sk-ppdb.create');
+    Route::post('sk-ppdb', [SkPpdbController::class, 'store'])->name('sk-ppdb.store');
 });

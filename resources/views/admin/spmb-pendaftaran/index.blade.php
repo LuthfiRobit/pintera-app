@@ -1,7 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">SPMB</p>
-        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Verifikasi &amp; Keputusan Pendaftaran</h2>
+        <div class="flex items-center justify-between gap-4">
+            <div>
+                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">SPMB</p>
+                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Verifikasi &amp; Keputusan Pendaftaran</h2>
+            </div>
+            @can('spmb-pendaftaran.terbitkan-sk')
+                <x-link-button variant="ghost" href="{{ route('admin.sk-ppdb.create') }}">Terbitkan SK</x-link-button>
+            @endcan
+            @can('spmb-pendaftaran.nilai-seleksi')
+                <x-link-button variant="ghost" href="{{ route('admin.spmb-pendaftaran.nilai-massal') }}">Input Nilai Massal</x-link-button>
+            @endcan
+        </div>
     </x-slot>
 
     <div
