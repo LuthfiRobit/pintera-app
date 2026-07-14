@@ -6,10 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Pendaftaran extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'pendaftaran';
 
@@ -27,12 +29,17 @@ class Pendaftaran extends Model
         'email_pendaftaran',
         'status',
         'submitted_at',
+        'catatan_keputusan',
+        'ditetapkan_oleh_user_id',
+        'ditetapkan_pada',
+        'sk_ppdb_id',
     ];
 
     protected function casts(): array
     {
         return [
             'submitted_at' => 'datetime',
+            'ditetapkan_pada' => 'datetime',
         ];
     }
 
@@ -69,5 +76,28 @@ class Pendaftaran extends Model
     public function dokumen(): HasMany
     {
         return $this->hasMany(DokumenPendaftaran::class);
+    }
+
+    public function hasilSeleksi(): HasMany
+    {
+        return $this->hasMany(HasilSeleksi::class);
+    }
+
+    public function ditetapkanOleh(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ditetapkan_oleh_user_id');
+    }
+
+    public function skPpdb(): BelongsTo
+    {
+        return $this->belongsTo(SkPpdb::class);
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['status', 'catatan_keputusan', 'ditetapkan_oleh_user_id', 'sk_ppdb_id'])
+            ->logOnlyDirty()
+            ->useLogName('pendaftaran');
     }
 }
