@@ -19,6 +19,8 @@
 - Rate limiting (Laravel `throttle` middleware) on the OTP-send and final-submit routes, since both are public and unauthenticated.
 - NIK reuse (Task 2) must enforce the email-match safeguard from the design spec §2.3: if a submitted NIK matches an existing `CalonMurid` but the submitted email does NOT match any of that `CalonMurid`'s prior `Pendaftaran.email_pendaftaran` values, the flow is **blocked** with an explanatory message — never silently treated as a fresh/blank entry (that would let the submission overwrite the real owner's data, since `nik_hash` is globally unique).
 - Reuses these Plan-1 building blocks exactly as built: `CalonMurid::findByNik()`, `OtpService::kirim()`/`verifikasi()`, `KodePendaftaranGenerator::generate()`, and the 9 Plan-1 models.
+- Every controller action that receives both `{lembagaSlug}` and `{jalur}` route parameters MUST use the `App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant` trait (added in Task 1) — call `$this->resolveLembaga($lembagaSlug)` instead of an ad-hoc `Lembaga::where('slug', ...)->firstOrFail()`, and `$this->assertJalurBelongsToLembaga($lembaga, $jalur)` (or `$this->resolveGelombangAktifUntukJalur($lembaga, $jalur)` where the step must also confirm a gelombang is currently open) so a `{jalur}` id from a different lembaga is always rejected with 404. This closes a cross-tenant data leak: without it, a route model bound `{jalur}` is resolved by ID alone, so a guessed/stale URL could pair one lembaga's slug with another lembaga's (or another yayasan's) `jalur_ppdb_id`.
+- Shared Pest test helpers used by more than one test file in this plan (`buatLembagaDenganGelombangBuka()`, and any later-added equivalents) live in `tests/Pest.php`'s "Functions" section, not redefined or left dependent on file-execution-order inside a single Feature test file — Pest's global functions are only safe to share this way when declared where every test file loads them.
 
 ---
 
@@ -530,13 +532,25 @@ git commit -m "feat: add public SPMB entry point, jalur selection, and email OTP
 - Create: `app/Http/Controllers/Spmb/DataDiriController.php`
 - Create: `resources/views/spmb/data-diri.blade.php`
 - Modify: `routes/spmb.php`
+- Modify: `tests/Pest.php` (adds the shared `siapkanEmailTerverifikasi()` helper)
 - Test: `tests/Feature/Spmb/DataDiriTest.php`
 
 **Interfaces:**
-- Consumes: `PendaftaranWizardSession` (Task 1), `CalonMurid::findByNik()` (Plan 1).
+- Consumes: `PendaftaranWizardSession` (Task 1), `CalonMurid::findByNik()` (Plan 1), `App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant` (Task 1).
 - Produces: wizard session now additionally holds `nik`, `data_pribadi` (array: nama_lengkap, nisn, no_kk, jenis_kelamin, tempat_lahir, tanggal_lahir, agama, golongan_darah, no_telepon), `alamat` (array), `keluarga` (array of arrays, one per ayah/ibu/wali).
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Add the shared `siapkanEmailTerverifikasi()` helper to `tests/Pest.php`**
+
+`Task 3` (`FormulirTambahanTest.php`, `UploadDokumenTest.php`) also calls this helper, so — per this plan's Global Constraints — it must live in `tests/Pest.php`'s "Functions" section (loaded by every test file), not be defined locally inside `DataDiriTest.php`. Add this function to `tests/Pest.php`, alongside the existing `buatLembagaDenganGelombangBuka()` that Task 1 already placed there:
+
+```php
+function siapkanEmailTerverifikasi($lembaga, $jalur, string $email): void
+{
+    (new \App\Services\PendaftaranWizardSession())->put($lembaga, $jalur, ['email_pendaftaran' => $email]);
+}
+```
+
+- [ ] **Step 2: Write the failing test**
 
 Create `tests/Feature/Spmb/DataDiriTest.php`:
 
@@ -546,11 +560,6 @@ Create `tests/Feature/Spmb/DataDiriTest.php`:
 use App\Models\CalonMurid;
 use App\Models\Pendaftaran;
 use App\Services\PendaftaranWizardSession;
-
-function siapkanEmailTerverifikasi($lembaga, $jalur, string $email): void
-{
-    (new PendaftaranWizardSession())->put($lembaga, $jalur, ['email_pendaftaran' => $email]);
-}
 
 it('shows the data diri form for a new nik', function () {
     [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
@@ -627,12 +636,12 @@ it('blocks the flow when nik matches but email does not match any prior pendafta
 });
 ```
 
-- [ ] **Step 2: Run the test to confirm it fails**
+- [ ] **Step 3: Run the test to confirm it fails**
 
 Run: `"D:\laragon\bin\php\php-8.3.29-Win32-vs16-x64\php.exe" artisan test tests/Feature/Spmb/DataDiriTest.php`
 Expected: FAIL — route/controller/view don't exist yet.
 
-- [ ] **Step 3: Add routes**
+- [ ] **Step 4: Add routes**
 
 Task 1 registered a placeholder for `spmb.data-diri` (`Route::get('{lembagaSlug}/{jalur}/data-diri', fn () => abort(404))->name('data-diri');`, with a preceding comment block) so its own views/redirects could resolve the route name before this task existed. **Remove that placeholder line** (and its comment, unless the comment also still covers `spmb.status.form` — in that case only remove the `data-diri` line and leave the comment covering the remaining placeholder) and replace it with the real routes below, inside the `spmb.` group, after the `verifikasi-otp.store` route:
 
@@ -648,7 +657,7 @@ Add the import at the top of `routes/spmb.php`:
 use App\Http\Controllers\Spmb\DataDiriController;
 ```
 
-- [ ] **Step 4: Create `DataDiriController`**
+- [ ] **Step 5: Create `DataDiriController`**
 
 Create `app/Http/Controllers/Spmb/DataDiriController.php`:
 
@@ -657,9 +666,9 @@ Create `app/Http/Controllers/Spmb/DataDiriController.php`:
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
 use App\Models\CalonMurid;
 use App\Models\JalurPpdb;
-use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\JsonResponse;
@@ -670,16 +679,20 @@ use Illuminate\View\View;
 
 class DataDiriController extends BaseController
 {
+    use ResolvesSpmbTenant;
+
     public function create(string $lembagaSlug, JalurPpdb $jalur): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
 
         return view('spmb.data-diri', ['lembaga' => $lembaga, 'jalur' => $jalur]);
     }
 
     public function cekNik(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): JsonResponse
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
 
         $data = $request->validate(['nik' => ['required', 'digits:16']]);
 
@@ -724,7 +737,8 @@ class DataDiriController extends BaseController
 
     public function store(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): RedirectResponse
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
 
         $data = $request->validate([
             'nik' => ['required', 'digits:16'],
@@ -775,7 +789,7 @@ class DataDiriController extends BaseController
 }
 ```
 
-- [ ] **Step 5: Create `data-diri.blade.php`**
+- [ ] **Step 6: Create `data-diri.blade.php`**
 
 Create `resources/views/spmb/data-diri.blade.php`:
 
@@ -907,15 +921,15 @@ Create `resources/views/spmb/data-diri.blade.php`:
 </x-spmb-public-layout>
 ```
 
-- [ ] **Step 6: Run the test to confirm it passes**
+- [ ] **Step 7: Run the test to confirm it passes**
 
 Run: `"D:\laragon\bin\php\php-8.3.29-Win32-vs16-x64\php.exe" artisan test tests/Feature/Spmb/DataDiriTest.php`
 Expected: PASS (4 tests).
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add app/Http/Controllers/Spmb/DataDiriController.php resources/views/spmb/data-diri.blade.php routes/spmb.php tests/Feature/Spmb/DataDiriTest.php
+git add app/Http/Controllers/Spmb/DataDiriController.php resources/views/spmb/data-diri.blade.php routes/spmb.php tests/Feature/Spmb/DataDiriTest.php tests/Pest.php
 git commit -m "feat: add data diri step with NIK-reuse-with-email-verification safeguard"
 ```
 
@@ -933,7 +947,7 @@ git commit -m "feat: add data diri step with NIK-reuse-with-email-verification s
 - Test: `tests/Feature/Spmb/UploadDokumenTest.php`
 
 **Interfaces:**
-- Consumes: `PendaftaranWizardSession` (Task 1), `FormulirField`/`DokumenSyaratPpdb` (Plan 1's M1 models, queried by `jalur_ppdb_id`).
+- Consumes: `PendaftaranWizardSession` (Task 1), `FormulirField`/`DokumenSyaratPpdb` (Plan 1's M1 models, queried by `jalur_ppdb_id`), `App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant` (Task 1), `siapkanEmailTerverifikasi()` test helper (Task 2, in `tests/Pest.php`).
 - Produces: wizard session now additionally holds `jawaban_formulir` (array keyed by `formulir_field_id`) and `dokumen` (array keyed by `dokumen_syarat_ppdb_id` → temp file path under `storage/app/public/pendaftaran-tmp/{session id}/`).
 
 - [ ] **Step 1: Write the failing tests**
@@ -1058,9 +1072,9 @@ Create `app/Http/Controllers/Spmb/FormulirTambahanController.php`:
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
 use App\Models\FormulirField;
 use App\Models\JalurPpdb;
-use App\Models\Lembaga;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -1069,9 +1083,12 @@ use Illuminate\View\View;
 
 class FormulirTambahanController extends BaseController
 {
+    use ResolvesSpmbTenant;
+
     public function create(string $lembagaSlug, JalurPpdb $jalur): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
         $fieldList = FormulirField::where('jalur_ppdb_id', $jalur->id)->orderBy('urutan')->get();
 
         return view('spmb.formulir-tambahan', ['lembaga' => $lembaga, 'jalur' => $jalur, 'fieldList' => $fieldList]);
@@ -1079,7 +1096,8 @@ class FormulirTambahanController extends BaseController
 
     public function store(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): RedirectResponse
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
 
         $fieldList = FormulirField::where('jalur_ppdb_id', $jalur->id)->get();
         $rules = [];
@@ -1148,9 +1166,9 @@ Create `app/Http/Controllers/Spmb/UploadDokumenController.php`:
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
 use App\Models\DokumenSyaratPpdb;
 use App\Models\JalurPpdb;
-use App\Models\Lembaga;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -1159,9 +1177,12 @@ use Illuminate\View\View;
 
 class UploadDokumenController extends BaseController
 {
+    use ResolvesSpmbTenant;
+
     public function create(string $lembagaSlug, JalurPpdb $jalur): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
         $syaratList = DokumenSyaratPpdb::where('jalur_ppdb_id', $jalur->id)->orderBy('urutan')->get();
 
         return view('spmb.upload-dokumen', ['lembaga' => $lembaga, 'jalur' => $jalur, 'syaratList' => $syaratList]);
@@ -1169,7 +1190,8 @@ class UploadDokumenController extends BaseController
 
     public function store(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): RedirectResponse
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
 
         $syaratList = DokumenSyaratPpdb::where('jalur_ppdb_id', $jalur->id)->get();
         $rules = [];
@@ -1467,6 +1489,7 @@ Create `app/Http/Controllers/Spmb/ReviewSubmitController.php`:
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
 use App\Mail\PendaftaranBerhasilMail;
 use App\Models\AlamatCalonMurid;
 use App\Models\CalonMurid;
@@ -1493,11 +1516,14 @@ use RuntimeException;
 
 class ReviewSubmitController extends BaseController
 {
+    use ResolvesSpmbTenant;
+
     private const MAKS_PERCOBAAN_KODE = 5;
 
     public function show(string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
         $session = $wizardSession->get($lembaga, $jalur);
 
         return view('spmb.review', ['lembaga' => $lembaga, 'jalur' => $jalur, 'session' => $session]);
@@ -1509,7 +1535,8 @@ class ReviewSubmitController extends BaseController
         PendaftaranWizardSession $wizardSession,
         KodePendaftaranGenerator $kodeGenerator
     ): RedirectResponse {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
+        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
         $session = $wizardSession->get($lembaga, $jalur);
         $tahunAjaranAktif = PortalController::cariGelombangAktif($lembaga)?->tahunAjaran;
 
@@ -1613,7 +1640,7 @@ class ReviewSubmitController extends BaseController
 
     public function berhasil(string $lembagaSlug, string $kodePendaftaran): View
     {
-        $lembaga = Lembaga::where('slug', $lembagaSlug)->firstOrFail();
+        $lembaga = $this->resolveLembaga($lembagaSlug);
         $pendaftaran = Pendaftaran::where('lembaga_id', $lembaga->id)
             ->where('kode_pendaftaran', $kodePendaftaran)
             ->firstOrFail();
