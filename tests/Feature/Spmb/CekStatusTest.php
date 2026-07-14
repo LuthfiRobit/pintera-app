@@ -63,3 +63,31 @@ it('404s the pdf download when the email does not match', function () {
 
     $this->get("/spmb/{$lembaga->slug}/bukti/REG-2026-00001?email=salah@example.test")->assertNotFound();
 });
+
+it('gives identical responses for a wrong email on a real kode and a kode that does not exist at all, for both status lookup and pdf download', function () {
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $calonMurid = CalonMurid::factory()->create(['yayasan_id' => $lembaga->yayasan_id]);
+    Pendaftaran::factory()->create([
+        'calon_murid_id' => $calonMurid->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'kode_pendaftaran' => 'REG-2026-00001', 'email_pendaftaran' => 'wali@example.test',
+    ]);
+
+    $statusWrongEmail = $this->post("/spmb/{$lembaga->slug}/status", [
+        'kode_pendaftaran' => 'REG-2026-00001', 'email' => 'salah@example.test',
+    ]);
+    $statusNonexistentKode = $this->post("/spmb/{$lembaga->slug}/status", [
+        'kode_pendaftaran' => 'REG-2026-99999', 'email' => 'wali@example.test',
+    ]);
+
+    $statusWrongEmail->assertSessionHasErrors('kode_pendaftaran');
+    $statusNonexistentKode->assertSessionHasErrors('kode_pendaftaran');
+    expect($statusWrongEmail->status())->toBe($statusNonexistentKode->status());
+
+    $pdfWrongEmail = $this->get("/spmb/{$lembaga->slug}/bukti/REG-2026-00001?email=salah@example.test");
+    $pdfNonexistentKode = $this->get("/spmb/{$lembaga->slug}/bukti/REG-2026-99999?email=wali@example.test");
+
+    $pdfWrongEmail->assertNotFound();
+    $pdfNonexistentKode->assertNotFound();
+    expect($pdfWrongEmail->status())->toBe($pdfNonexistentKode->status());
+});

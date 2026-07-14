@@ -31,5 +31,6 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
     Route::get('{lembagaSlug}/status', [CekStatusController::class, 'create'])->name('status.form');
     Route::post('{lembagaSlug}/status', [CekStatusController::class, 'show'])
         ->middleware('throttle:10,1')->name('status.show');
-    Route::get('{lembagaSlug}/bukti/{kodePendaftaran}', [CekStatusController::class, 'unduhBukti'])->name('bukti');
+    Route::get('{lembagaSlug}/bukti/{kodePendaftaran}', [CekStatusController::class, 'unduhBukti'])
+        ->middleware('throttle:10,1')->name('bukti');
 });
