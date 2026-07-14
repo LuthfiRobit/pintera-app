@@ -77,3 +77,40 @@ it('blocks the flow when nik matches but email does not match any prior pendafta
     $response->assertStatus(422);
     $response->assertDontSee('Nama Lama');
 });
+
+it('blocks store() from writing to the session when nik matches but email does not match any prior pendaftaran', function () {
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $calonMurid = CalonMurid::factory()->create([
+        'yayasan_id' => $lembaga->yayasan_id,
+        'nik' => '3201234567890999',
+        'nama_lengkap' => 'Nama Lama',
+    ]);
+    Pendaftaran::factory()->create([
+        'calon_murid_id' => $calonMurid->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'email_pendaftaran' => 'wali-asli@example.test',
+    ]);
+    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali-beda@example.test');
+
+    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri", [
+        'nik' => '3201234567890999',
+        'nama_lengkap' => 'Percobaan Curi Data',
+        'jenis_kelamin' => 'L',
+        'tempat_lahir' => 'Bandung',
+        'tanggal_lahir' => '2015-03-10',
+        'agama' => 'Islam',
+        'alamat_jalan' => 'Jl. Merdeka 10',
+        'desa_kelurahan' => 'Sukamaju',
+        'kecamatan' => 'Cibeunying',
+        'kabupaten_kota' => 'Bandung',
+        'provinsi' => 'Jawa Barat',
+        'keluarga' => [['jenis' => 'ayah', 'nama' => 'Percobaan']],
+    ]);
+
+    $response->assertSessionHasErrors('nik');
+
+    $session = (new PendaftaranWizardSession())->get($lembaga, $jalur);
+    expect($session['nik'] ?? null)->toBeNull();
+    $calonMurid->refresh();
+    expect($calonMurid->nama_lengkap)->toBe('Nama Lama');
+});

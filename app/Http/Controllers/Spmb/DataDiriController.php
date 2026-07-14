@@ -17,6 +17,8 @@ class DataDiriController extends BaseController
 {
     use ResolvesSpmbTenant;
 
+    private const PESAN_NIK_DIBLOKIR = 'NIK ini sudah pernah terdaftar. Gunakan email yang sama dengan pendaftaran sebelumnya, atau hubungi admin sekolah untuk bantuan.';
+
     public function create(string $lembagaSlug, JalurPpdb $jalur): View
     {
         $lembaga = $this->resolveLembaga($lembagaSlug);
@@ -39,15 +41,12 @@ class DataDiriController extends BaseController
         }
 
         $emailSesi = $wizardSession->get($lembaga, $jalur)['email_pendaftaran'] ?? null;
-        $emailCocok = Pendaftaran::where('calon_murid_id', $calonMurid->id)
-            ->where('email_pendaftaran', $emailSesi)
-            ->exists();
 
-        if (! $emailCocok) {
+        if (! $this->emailCocokDenganCalonMurid($calonMurid, $emailSesi)) {
             return response()->json([
                 'ditemukan' => true,
                 'diblokir' => true,
-                'pesan' => 'NIK ini sudah pernah terdaftar. Gunakan email yang sama dengan pendaftaran sebelumnya, atau hubungi admin sekolah untuk bantuan.',
+                'pesan' => self::PESAN_NIK_DIBLOKIR,
             ], 422);
         }
 
@@ -107,6 +106,16 @@ class DataDiriController extends BaseController
             'data_khusus' => ['nullable', 'array'],
         ]);
 
+        $calonMuridLama = CalonMurid::findByNik($data['nik']);
+
+        if ($calonMuridLama) {
+            $emailSesi = $wizardSession->get($lembaga, $jalur)['email_pendaftaran'] ?? null;
+
+            if (! $this->emailCocokDenganCalonMurid($calonMuridLama, $emailSesi)) {
+                return back()->withErrors(['nik' => self::PESAN_NIK_DIBLOKIR])->withInput();
+            }
+        }
+
         $wizardSession->put($lembaga, $jalur, [
             'nik' => $data['nik'],
             'data_pribadi' => collect($data)->only([
@@ -121,5 +130,12 @@ class DataDiriController extends BaseController
         ]);
 
         return redirect()->route('spmb.formulir-tambahan', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]);
+    }
+
+    private function emailCocokDenganCalonMurid(CalonMurid $calonMurid, ?string $emailSesi): bool
+    {
+        return Pendaftaran::where('calon_murid_id', $calonMurid->id)
+            ->where('email_pendaftaran', $emailSesi)
+            ->exists();
     }
 }
