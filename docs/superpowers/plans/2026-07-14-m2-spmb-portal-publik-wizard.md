@@ -1049,7 +1049,7 @@ Expected: FAIL — routes/controllers/views don't exist yet.
 
 - [ ] **Step 3: Add routes**
 
-Add to `routes/spmb.php` (after the `data-diri.store` route), plus the two new imports at the top:
+Task 2 registered a placeholder for `spmb.formulir-tambahan` (`Route::get('{lembagaSlug}/{jalur}/formulir-tambahan', fn () => abort(404))->name('formulir-tambahan');`, with a preceding comment block that also covers `spmb.status.form`) so its own `store()` redirect could resolve the route name before this task existed. **Remove the `formulir-tambahan` placeholder line** (leave the `status.form` placeholder and its comment in place — that one is still Task 5's responsibility) and replace it with the real routes below. Add to `routes/spmb.php` (after the `data-diri.store` route), plus the two new imports at the top:
 
 ```php
 use App\Http\Controllers\Spmb\FormulirTambahanController;
