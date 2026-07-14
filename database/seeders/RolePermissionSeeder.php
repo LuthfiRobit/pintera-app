@@ -31,6 +31,8 @@ class RolePermissionSeeder extends Seeder
             'seleksi.create', 'seleksi.delete',
             'spmb-konfigurasi.duplikasi',
             'audit-log.view',
+            'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
+            'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
         ];
 
         foreach ($permissions as $name) {
@@ -64,6 +66,14 @@ class RolePermissionSeeder extends Seeder
                     'dokumen-syarat.create', 'dokumen-syarat.delete',
                     'seleksi.create', 'seleksi.delete',
                     'spmb-konfigurasi.duplikasi',
+                    'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
+                ]);
+            }
+
+            if ($name === 'kepala_sekolah') {
+                $role->givePermissionTo([
+                    'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
+                    'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
                 ]);
             }
         }

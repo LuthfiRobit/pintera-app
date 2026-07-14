@@ -22,13 +22,15 @@ it('seeds the initial permissions', function () {
         'seleksi.create', 'seleksi.delete',
         'spmb-konfigurasi.duplikasi',
         'audit-log.view',
+        'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
+        'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
     ];
 
     foreach ($expected as $name) {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(36);
+    expect(Permission::count())->toBe(41);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -37,7 +39,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(36);
+    expect($superAdmin->permissions()->count())->toBe(41);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -57,12 +59,28 @@ it('gives admin_administrasi the SPMB-related granular permissions by default', 
         'dokumen-syarat.create', 'dokumen-syarat.delete',
         'seleksi.create', 'seleksi.delete',
         'spmb-konfigurasi.duplikasi',
+        'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
     ];
 
     foreach ($expected as $name) {
         expect($adminAdministrasi->hasPermissionTo($name))->toBeTrue();
     }
-    expect($adminAdministrasi->permissions()->count())->toBe(16);
+    expect($adminAdministrasi->permissions()->count())->toBe(19);
+});
+
+it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, including tetapkan-keputusan and terbitkan-sk', function () {
+    (new RolePermissionSeeder())->run();
+
+    $kepalaSekolah = Role::where('name', 'kepala_sekolah')->first();
+    $expected = [
+        'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
+        'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
+    ];
+
+    foreach ($expected as $name) {
+        expect($kepalaSekolah->hasPermissionTo($name))->toBeTrue();
+    }
+    expect($kepalaSekolah->permissions()->count())->toBe(5);
 });
 
 it('is idempotent when run twice', function () {
@@ -70,7 +88,7 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
 
     expect(Role::count())->toBe(5);
-    expect(Permission::count())->toBe(36);
+    expect(Permission::count())->toBe(41);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {

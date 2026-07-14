@@ -20,6 +20,7 @@ class PermissionCatalog
         'dokumen-syarat' => 'Dokumen Syarat',
         'seleksi' => 'Seleksi',
         'spmb-konfigurasi' => 'Konfigurasi SPMB',
+        'spmb-pendaftaran' => 'Verifikasi & Keputusan SPMB',
         'audit-log' => 'Log Aktivitas',
     ];
 
@@ -31,6 +32,10 @@ class PermissionCatalog
         'activate' => 'Aktifkan',
         'toggle-active' => 'Aktif/Nonaktifkan',
         'duplikasi' => 'Duplikasi',
+        'verifikasi-dokumen' => 'Verifikasi Dokumen',
+        'nilai-seleksi' => 'Input Nilai',
+        'tetapkan-keputusan' => 'Tetapkan Keputusan',
+        'terbitkan-sk' => 'Terbitkan SK',
     ];
 
     /**
