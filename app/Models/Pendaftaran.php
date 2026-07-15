@@ -33,6 +33,7 @@ class Pendaftaran extends Model
         'ditetapkan_oleh_user_id',
         'ditetapkan_pada',
         'sk_ppdb_id',
+        'akun_pendaftar_id',
     ];
 
     protected function casts(): array
@@ -91,6 +92,11 @@ class Pendaftaran extends Model
     public function skPpdb(): BelongsTo
     {
         return $this->belongsTo(SkPpdb::class);
+    }
+
+    public function akunPendaftar(): BelongsTo
+    {
+        return $this->belongsTo(AkunPendaftar::class);
     }
 
     public function getActivitylogOptions(): LogOptions
