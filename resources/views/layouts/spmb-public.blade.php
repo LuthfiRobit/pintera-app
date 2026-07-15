@@ -22,7 +22,7 @@
                 </span>
                 <div>
                     <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-spmb-accent">Pendaftaran SPMB</p>
-                    <h1 class="font-display text-lg font-bold text-spmb-primary">{{ $lembaga->nama ?? '' }}</h1>
+                    <h1 class="font-display text-lg font-bold text-spmb-primary">{{ $lembaga->nama ?? config('app.name') }}</h1>
                 </div>
             </header>
 

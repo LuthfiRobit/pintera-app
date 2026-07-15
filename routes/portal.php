@@ -6,6 +6,8 @@ use App\Http\Controllers\Portal\Auth\NewPasswordController;
 use App\Http\Controllers\Portal\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Portal\Auth\RegisteredAkunController;
 use App\Http\Controllers\Portal\Auth\VerifikasiOtpController;
+use App\Http\Controllers\Portal\BuktiPendaftaranController;
+use App\Http\Controllers\Portal\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('portal')->name('portal.')->group(function () {
@@ -30,9 +32,9 @@ Route::prefix('portal')->name('portal.')->group(function () {
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->middleware('auth:portal')->name('logout');
 
-    // Placeholder from Task 2, carried forward as-is: Task 4 replaces this with a real
-    // DashboardController + view. Needed here because AuthenticatedSessionController::store()
-    // (this task) and VerifikasiOtpController::store() (Task 2) both redirect to it.
-    Route::get('dashboard', fn () => response('OK'))
-        ->middleware('auth:portal')->name('dashboard');
+    Route::middleware(['auth:portal', 'portal.verified'])->group(function () {
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('pendaftaran/{pendaftaran}/bukti', [BuktiPendaftaranController::class, 'unduh'])
+            ->name('pendaftaran.bukti');
+    });
 });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Spmb;
 
 use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
 use App\Mail\PendaftaranBerhasilMail;
+use App\Models\AkunPendaftar;
 use App\Models\AlamatCalonMurid;
 use App\Models\CalonMurid;
 use App\Models\DataKhususCalonMurid;
@@ -115,6 +116,14 @@ class ReviewSubmitController extends BaseController
             }
 
             throw $exception;
+        }
+
+        $akun = AkunPendaftar::where('email', $pendaftaran->email_pendaftaran)
+            ->whereNotNull('email_verified_at')
+            ->first();
+
+        if ($akun) {
+            $pendaftaran->update(['akun_pendaftar_id' => $akun->id]);
         }
 
         $this->pindahkanDokumenKeLokasiFinal($pendaftaran);
