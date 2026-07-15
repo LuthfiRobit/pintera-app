@@ -576,7 +576,10 @@ class VerifikasiOtpController extends BaseController
         }
 
         $akun = AkunPendaftar::where('email', $email)->firstOrFail();
-        $akun->update(['email_verified_at' => now()]);
+        // update() no-ops here: email_verified_at is intentionally not in AkunPendaftar's
+        // $fillable (it must only ever be set by this verification flow, never mass-assigned
+        // from user input) — forceFill() bypasses that guard for this one trusted write.
+        $akun->forceFill(['email_verified_at' => now()])->save();
 
         Pendaftaran::where('email_pendaftaran', $email)
             ->whereNull('akun_pendaftar_id')
@@ -803,6 +806,12 @@ Route::prefix('portal')->name('portal.')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->middleware('auth:portal')->name('logout');
+
+    // Placeholder from Task 2, carried forward as-is: Task 4 replaces this with a real
+    // DashboardController + view. Needed here because AuthenticatedSessionController::store()
+    // (this task) and VerifikasiOtpController::store() (Task 2) both redirect to it.
+    Route::get('dashboard', fn () => response('OK'))
+        ->middleware('auth:portal')->name('dashboard');
 });
 ```
 
@@ -1490,7 +1499,9 @@ class BuktiPendaftaranController extends BaseController
 
 - [ ] **Step 8: Extend `routes/portal.php` with the protected group**
 
-Add to `routes/portal.php` (inside the `Route::prefix('portal')->name('portal.')->group(...)` closure, alongside the existing groups):
+**Remove** the placeholder route from Tasks 2/3 (`Route::get('dashboard', fn () => response('OK'))->middleware('auth:portal')->name('dashboard');` at the end of the `Route::prefix('portal')->name('portal.')->group(...)` closure) — its comment says Task 4 replaces it, this is that replacement. Leaving both in place would register two routes named `portal.dashboard`.
+
+In its place, add (inside the same closure, alongside the existing groups):
 
 ```php
     Route::middleware(['auth:portal', 'portal.verified'])->group(function () {
