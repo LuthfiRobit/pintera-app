@@ -4,11 +4,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Pendaftaran;
+use App\Models\Tagihan;
 use App\Services\TagihanGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\View\View;
 
 class TagihanController extends BaseController
 {
@@ -45,5 +48,65 @@ class TagihanController extends BaseController
         }
 
         return back()->with('status', 'Tagihan susulan berhasil dibuat.');
+    }
+
+    public function index(Request $request): View
+    {
+        $this->authorize('tagihan.view');
+
+        return view('admin.tagihan.index', [
+            'lembagaBelumDipilih' => $this->lembagaId($request) === null,
+        ]);
+    }
+
+    public function data(Request $request): JsonResponse
+    {
+        $this->authorize('tagihan.view');
+
+        $lembagaId = $this->lembagaId($request);
+
+        if ($lembagaId === null) {
+            return response()->json([
+                'data' => [],
+                'meta' => ['current_page' => 0, 'last_page' => 0, 'per_page' => 0, 'total' => 0],
+            ]);
+        }
+
+        $query = Tagihan::whereHas('pendaftaran', fn ($q) => $q->where('lembaga_id', $lembagaId))
+            ->with(['pendaftaran.calonMurid']);
+
+        if ($status = $request->string('status')->value()) {
+            $query->where('status', $status);
+        }
+
+        if ($kategori = $request->string('kategori')->value()) {
+            $query->where('kategori', $kategori);
+        }
+
+        $sortable = ['created_at', 'total_tagihan'];
+        $sort = in_array($request->string('sort')->value(), $sortable, true) ? $request->string('sort')->value() : 'created_at';
+        $direction = $request->string('direction')->value() === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sort, $direction);
+
+        $perPage = min(max((int) $request->integer('per_page', 15), 1), 100);
+        $paginated = $query->paginate($perPage);
+
+        return response()->json([
+            'data' => $paginated->getCollection()->map(fn (Tagihan $tagihan) => [
+                'id' => $tagihan->id,
+                'nama_calon_murid' => $tagihan->pendaftaran->calonMurid->nama_lengkap,
+                'kode_pendaftaran' => $tagihan->pendaftaran->kode_pendaftaran,
+                'kategori' => $tagihan->kategori,
+                'total_tagihan' => (float) $tagihan->total_tagihan,
+                'status' => $tagihan->status,
+                'pendaftaran_id' => $tagihan->pendaftaran_id,
+            ])->values(),
+            'meta' => [
+                'current_page' => $paginated->currentPage(),
+                'last_page' => $paginated->lastPage(),
+                'per_page' => $paginated->perPage(),
+                'total' => $paginated->total(),
+            ],
+        ]);
     }
 }

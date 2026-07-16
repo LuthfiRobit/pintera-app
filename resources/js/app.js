@@ -9,6 +9,7 @@ import { otpInput } from './otp-input';
 import { pendaftaranTable } from './pendaftaran-table';
 import { pendaftaranDetail } from './pendaftaran-detail';
 import { nilaiMassal } from './nilai-massal';
+import { tagihanTable } from './tagihan-table';
 
 window.Alpine = Alpine;
 
@@ -20,5 +21,6 @@ Alpine.data('otpInput', otpInput);
 Alpine.data('pendaftaranTable', pendaftaranTable);
 Alpine.data('pendaftaranDetail', pendaftaranDetail);
 Alpine.data('nilaiMassal', nilaiMassal);
+Alpine.data('tagihanTable', tagihanTable);
 
 Alpine.start();
