@@ -67,8 +67,12 @@ class PembayaranService
     {
         $cicilanByUrutan = $skemaCicilan->cicilan()->get()->keyBy('urutan');
 
+        if ($cicilanByUrutan->keys()->sort()->values()->all() !== collect(array_keys($nominalPerUrutan))->sort()->values()->all()) {
+            throw new InvalidArgumentException('Nominal harus diisi untuk semua termin, tidak boleh sebagian.');
+        }
+
         foreach ($nominalPerUrutan as $urutan => $nominal) {
-            if (($cicilanByUrutan[$urutan] ?? null)?->status === 'lunas') {
+            if ($cicilanByUrutan[$urutan]->status === 'lunas') {
                 throw new InvalidArgumentException("Termin {$urutan} sudah lunas, tidak bisa diubah.");
             }
         }
@@ -101,15 +105,24 @@ class PembayaranService
             $this->pastikanUrutanBoleh($cicilan);
         }
 
-        $adaPembayaranAktif = $tagihan
-            ? Pembayaran::where('tagihan_id', $tagihan->id)->whereIn('status', ['menunggu_verifikasi', 'lunas'])->exists()
-            : Pembayaran::where('cicilan_id', $cicilan->id)->whereIn('status', ['menunggu_verifikasi', 'lunas'])->exists();
-
-        if ($adaPembayaranAktif) {
-            throw new RuntimeException('Sudah ada pembayaran yang menunggu verifikasi atau sudah lunas untuk ini.');
-        }
-
         return DB::transaction(function () use ($tagihan, $cicilan, $sumber, $filePath, $userId) {
+            // Lock the target row so concurrent attempts for the same
+            // tagihan/cicilan serialize on this row instead of racing past
+            // the "already has an active payment" check below.
+            if ($tagihan) {
+                $tagihan = Tagihan::whereKey($tagihan->id)->lockForUpdate()->first();
+            } else {
+                $cicilan = Cicilan::whereKey($cicilan->id)->lockForUpdate()->first();
+            }
+
+            $adaPembayaranAktif = $tagihan
+                ? Pembayaran::where('tagihan_id', $tagihan->id)->whereIn('status', ['menunggu_verifikasi', 'lunas'])->exists()
+                : Pembayaran::where('cicilan_id', $cicilan->id)->whereIn('status', ['menunggu_verifikasi', 'lunas'])->exists();
+
+            if ($adaPembayaranAktif) {
+                throw new RuntimeException('Sudah ada pembayaran yang menunggu verifikasi atau sudah lunas untuk ini.');
+            }
+
             $statusAwal = $sumber === 'admin' ? 'lunas' : 'menunggu_verifikasi';
 
             $pembayaran = Pembayaran::create([

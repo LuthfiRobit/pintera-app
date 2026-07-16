@@ -62,6 +62,17 @@ it('accepts a manual nominal edit whose total matches exactly, even with an unev
     expect((int) $skema->cicilan()->where('urutan', 1)->value('nominal'))->toBe(500000);
 });
 
+it('rejects a manual nominal edit that omits a termin, even if the submitted subset sums to total_tagihan', function () {
+    $tagihan = buatTagihanDaftarUlangUntukPembayaran(900000);
+    $skema = app(PembayaranService::class)->buatSkemaCicilan($tagihan, 3, 'calon_siswa');
+    $nominalTermin3Semula = (int) $skema->cicilan()->where('urutan', 3)->value('nominal');
+
+    expect(fn () => app(PembayaranService::class)->simpanNominalManual($skema, [1 => 400000, 2 => 500000]))
+        ->toThrow(InvalidArgumentException::class);
+
+    expect((int) $skema->cicilan()->where('urutan', 3)->value('nominal'))->toBe($nominalTermin3Semula);
+});
+
 it('records a self-reported payment as menunggu_verifikasi, never lunas immediately', function () {
     $tagihan = buatTagihanDaftarUlangUntukPembayaran(500000);
 
