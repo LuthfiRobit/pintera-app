@@ -135,3 +135,40 @@ it('lets the candidate choose cicilan and then upload bukti for the first termin
     $this->actingAs($akun, 'portal')->post(route('portal.tagihan.bayar-cicilan', $termin2), ['bukti' => $file])
         ->assertSessionHasErrors();
 });
+
+it('no longer shows the Bayar Lunas form once a lump-sum bukti transfer is pending verification', function () {
+    Storage::fake('public');
+    $akun = AkunPendaftar::factory()->create();
+    $tagihan = siapkanTagihanUntukPortal($akun);
+
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.tagihan.index'));
+    $response->assertOk();
+    $response->assertSee(route('portal.tagihan.bayar-lunas', $tagihan), false);
+
+    Pembayaran::create([
+        'tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual',
+        'file_path' => 'bukti/pending.pdf', 'status' => 'menunggu_verifikasi',
+    ]);
+
+    $afterUpload = $this->actingAs($akun, 'portal')->get(route('portal.tagihan.index'));
+    $afterUpload->assertOk();
+    $afterUpload->assertDontSee(route('portal.tagihan.bayar-lunas', $tagihan), false);
+});
+
+it('shows the Kirim Bukti upload form again for a cicilan termin that was rejected', function () {
+    Storage::fake('public');
+    $akun = AkunPendaftar::factory()->create();
+    $tagihan = siapkanTagihanUntukPortal($akun, 900000);
+    \App\Models\JenisTagihan::create(['lembaga_id' => $tagihan->pendaftaran->lembaga_id, 'nama' => 'Uang Pangkal', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => true, 'maks_cicilan' => 3]);
+    \App\Models\TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => \App\Models\JenisTagihan::first()->id, 'jumlah' => 900000]);
+    $skema = app(\App\Services\PembayaranService::class)->buatSkemaCicilan($tagihan, 3, 'calon_siswa');
+    $termin1 = $skema->cicilan()->where('urutan', 1)->firstOrFail();
+    $termin1->update(['status' => 'ditolak']);
+    Pembayaran::create(['cicilan_id' => $termin1->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'file_path' => 'bukti/1.pdf', 'status' => 'ditolak', 'catatan_verifikasi' => 'Buram']);
+
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.tagihan.index'));
+
+    $response->assertOk();
+    $response->assertSee(route('portal.tagihan.bayar-cicilan', $termin1), false);
+    $response->assertSee('Kirim Bukti');
+});

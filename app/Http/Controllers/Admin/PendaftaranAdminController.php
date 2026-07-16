@@ -126,7 +126,7 @@ class PendaftaranAdminController extends BaseController
             'dokumen.dokumenSyaratPpdb',
             'jawabanFormulir.formulirField',
             'hasilSeleksi.seleksiPpdb.jenisTesMaster',
-            'tagihan',
+            'tagihan.skemaCicilan', 'tagihan.cicilan.pembayaran', 'tagihan.pembayaran',
         ]);
 
         $seleksiTersedia = \App\Models\SeleksiPpdb::where('jalur_ppdb_id', $pendaftaran->jalur_ppdb_id)

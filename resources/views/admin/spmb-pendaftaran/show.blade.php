@@ -224,6 +224,7 @@
                         <div class="ml-0 mt-2 space-y-2 border-l-2 border-ink/10 pl-4">
                             @if ($tagihan->skemaCicilan)
                                 @foreach ($tagihan->cicilan as $termin)
+                                    @php $pembayaranPendingTermin = $termin->pembayaran->firstWhere('status', 'menunggu_verifikasi'); @endphp
                                     <div class="flex items-center justify-between gap-3 text-xs">
                                         <span class="text-slate">Termin {{ $termin->urutan }} — Rp {{ number_format($termin->nominal, 0, ',', '.') }}</span>
                                         <div class="flex items-center gap-2">
@@ -238,27 +239,78 @@
                                             @endif
                                         </div>
                                     </div>
+                                    @if ($pembayaranPendingTermin && auth()->user()->can('pembayaran.verifikasi'))
+                                        <div class="rounded-lg bg-signal-amber/10 p-3 text-xs">
+                                            @if ($pembayaranPendingTermin->file_path)
+                                                <a href="{{ Storage::url($pembayaranPendingTermin->file_path) }}" target="_blank" class="text-slate hover:text-ink hover:underline">Lihat bukti transfer</a>
+                                            @endif
+                                            <div class="mt-2 flex items-center gap-3">
+                                                <form method="POST" action="{{ route('admin.pembayaran.verifikasi', $pembayaranPendingTermin) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="keputusan" value="lunas">
+                                                    <button type="submit" class="font-bold text-signal-green hover:underline">Terima</button>
+                                                </form>
+                                                <details>
+                                                    <summary class="cursor-pointer font-bold text-signal-red hover:underline">Tolak</summary>
+                                                    <form method="POST" action="{{ route('admin.pembayaran.verifikasi', $pembayaranPendingTermin) }}" class="mt-2 space-y-2">
+                                                        @csrf
+                                                        <input type="hidden" name="keputusan" value="ditolak">
+                                                        <textarea name="catatan_verifikasi" required placeholder="Alasan penolakan" class="w-full rounded-lg border-ink/15 text-xs"></textarea>
+                                                        <button type="submit" class="font-bold text-signal-red hover:underline">Kirim Penolakan</button>
+                                                    </form>
+                                                </details>
+                                            </div>
+                                        </div>
+                                    @endif
                                 @endforeach
                             @else
-                                <div class="flex items-center gap-3 text-xs">
-                                    @if ($tagihan->status !== 'lunas' && auth()->user()->can('pembayaran.catat-manual'))
-                                        <form method="POST" action="{{ route('admin.tagihan.catat-manual', $tagihan) }}">
-                                            @csrf
-                                            <button type="submit" class="font-bold text-ink hover:underline">Catat Lunas (Tanpa Cicilan)</button>
-                                        </form>
-                                    @endif
-                                    @if ($tagihan->status === 'belum_bayar' && $tagihan->bisaDicicil() && auth()->user()->can('cicilan.kelola'))
-                                        <form method="POST" action="{{ route('admin.tagihan.skema-cicilan.store', $tagihan) }}" class="flex items-center gap-2">
-                                            @csrf
-                                            <select name="jumlah_termin" class="rounded-lg border-ink/15 text-xs">
-                                                @for ($n = 2; $n <= $tagihan->maksCicilan(); $n++)
-                                                    <option value="{{ $n }}">{{ $n }}x cicilan</option>
-                                                @endfor
-                                            </select>
-                                            <button type="submit" class="font-bold text-ink hover:underline">Buat Skema</button>
-                                        </form>
-                                    @endif
-                                </div>
+                                @php $pembayaranPendingTagihan = $tagihan->pembayaran->firstWhere('status', 'menunggu_verifikasi'); @endphp
+                                @if ($pembayaranPendingTagihan)
+                                    <div class="rounded-lg bg-signal-amber/10 p-3 text-xs">
+                                        <p class="font-medium text-ink">Menunggu verifikasi bukti transfer</p>
+                                        @if ($pembayaranPendingTagihan->file_path)
+                                            <a href="{{ Storage::url($pembayaranPendingTagihan->file_path) }}" target="_blank" class="text-slate hover:text-ink hover:underline">Lihat bukti transfer</a>
+                                        @endif
+                                        @can('pembayaran.verifikasi')
+                                            <div class="mt-2 flex items-center gap-3">
+                                                <form method="POST" action="{{ route('admin.pembayaran.verifikasi', $pembayaranPendingTagihan) }}">
+                                                    @csrf
+                                                    <input type="hidden" name="keputusan" value="lunas">
+                                                    <button type="submit" class="font-bold text-signal-green hover:underline">Terima</button>
+                                                </form>
+                                                <details>
+                                                    <summary class="cursor-pointer font-bold text-signal-red hover:underline">Tolak</summary>
+                                                    <form method="POST" action="{{ route('admin.pembayaran.verifikasi', $pembayaranPendingTagihan) }}" class="mt-2 space-y-2">
+                                                        @csrf
+                                                        <input type="hidden" name="keputusan" value="ditolak">
+                                                        <textarea name="catatan_verifikasi" required placeholder="Alasan penolakan" class="w-full rounded-lg border-ink/15 text-xs"></textarea>
+                                                        <button type="submit" class="font-bold text-signal-red hover:underline">Kirim Penolakan</button>
+                                                    </form>
+                                                </details>
+                                            </div>
+                                        @endcan
+                                    </div>
+                                @else
+                                    <div class="flex items-center gap-3 text-xs">
+                                        @if ($tagihan->status !== 'lunas' && auth()->user()->can('pembayaran.catat-manual'))
+                                            <form method="POST" action="{{ route('admin.tagihan.catat-manual', $tagihan) }}">
+                                                @csrf
+                                                <button type="submit" class="font-bold text-ink hover:underline">Catat Lunas (Tanpa Cicilan)</button>
+                                            </form>
+                                        @endif
+                                        @if ($tagihan->status === 'belum_bayar' && $tagihan->bisaDicicil() && auth()->user()->can('cicilan.kelola'))
+                                            <form method="POST" action="{{ route('admin.tagihan.skema-cicilan.store', $tagihan) }}" class="flex items-center gap-2">
+                                                @csrf
+                                                <select name="jumlah_termin" class="rounded-lg border-ink/15 text-xs">
+                                                    @for ($n = 2; $n <= $tagihan->maksCicilan(); $n++)
+                                                        <option value="{{ $n }}">{{ $n }}x cicilan</option>
+                                                    @endfor
+                                                </select>
+                                                <button type="submit" class="font-bold text-ink hover:underline">Buat Skema</button>
+                                            </form>
+                                        @endif
+                                    </div>
+                                @endif
                             @endif
                         </div>
                     @endif

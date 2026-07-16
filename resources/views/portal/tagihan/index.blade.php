@@ -18,6 +18,7 @@
                 <div class="mt-4 space-y-6">
                     @foreach ($pendaftaran->tagihan as $tagihan)
                         <div class="border-t border-ink/10 pt-4 first:border-t-0 first:pt-0">
+                            @php $pembayaranAktifTagihan = $tagihan->pembayaran->whereIn('status', ['menunggu_verifikasi', 'lunas'])->isNotEmpty(); @endphp
                             <div class="flex items-center justify-between">
                                 <p class="text-sm font-medium text-ink">
                                     {{ $tagihan->kategori === 'pendaftaran' ? 'Tagihan Pendaftaran' : 'Tagihan Daftar Ulang' }}
@@ -33,7 +34,7 @@
                                     @foreach ($tagihan->cicilan as $termin)
                                         <div class="flex items-center justify-between rounded-xl bg-spmb-tint px-4 py-3 text-sm">
                                             <span class="text-ink">Termin {{ $termin->urutan }} — Rp {{ number_format($termin->nominal, 0, ',', '.') }}</span>
-                                            @if ($termin->status === 'belum_bayar' && $termin->urutan === 1 || ($termin->status === 'belum_bayar' && optional($tagihan->cicilan->firstWhere('urutan', $termin->urutan - 1))->status === 'lunas'))
+                                            @if (in_array($termin->status, ['belum_bayar', 'ditolak']) && ($termin->urutan === 1 || optional($tagihan->cicilan->firstWhere('urutan', $termin->urutan - 1))->status === 'lunas'))
                                                 <form method="POST" action="{{ route('portal.tagihan.bayar-cicilan', $termin) }}" enctype="multipart/form-data" class="flex items-center gap-2">
                                                     @csrf
                                                     <input type="file" name="bukti" required class="text-xs">
@@ -47,7 +48,7 @@
                                         </div>
                                     @endforeach
                                 </div>
-                            @elseif ($tagihan->status === 'belum_bayar')
+                            @elseif ($tagihan->status === 'belum_bayar' && ! $pembayaranAktifTagihan)
                                 <div class="mt-3 flex flex-wrap items-center gap-3">
                                     <form method="POST" action="{{ route('portal.tagihan.bayar-lunas', $tagihan) }}" enctype="multipart/form-data" class="flex items-center gap-2">
                                         @csrf

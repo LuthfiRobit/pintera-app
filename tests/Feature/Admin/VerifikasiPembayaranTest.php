@@ -130,3 +130,38 @@ it('lets admin_keuangan approve a cicilan-reachable pending payment', function (
     $response->assertRedirect();
     expect($pembayaran->fresh()->status)->toBe('lunas');
 });
+
+it('renders Terima/Tolak verification controls and the bukti transfer link on the pendaftaran detail page for a pending lump-sum payment', function () {
+    [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
+    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $pembayaran = Pembayaran::create([
+        'tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual',
+        'file_path' => 'bukti-transfer/contoh.pdf', 'status' => 'menunggu_verifikasi',
+    ]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $user->givePermissionTo('spmb-pendaftaran.view');
+
+    $response = $this->actingAs($user)->get(route('admin.spmb-pendaftaran.show', $pendaftaran));
+
+    $response->assertOk();
+    $response->assertSee('Terima');
+    $response->assertSee('Lihat bukti transfer');
+    $response->assertSee(route('admin.pembayaran.verifikasi', $pembayaran), false);
+});
+
+it('does not render verification controls for a user without pembayaran.verifikasi permission', function () {
+    [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
+    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $pembayaran = Pembayaran::create([
+        'tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual',
+        'file_path' => 'bukti-transfer/contoh.pdf', 'status' => 'menunggu_verifikasi',
+    ]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->givePermissionTo('spmb-pendaftaran.view');
+
+    $response = $this->actingAs($user)->get(route('admin.spmb-pendaftaran.show', $pendaftaran));
+
+    $response->assertOk();
+    $response->assertDontSee(route('admin.pembayaran.verifikasi', $pembayaran), false);
+});
