@@ -55,6 +55,11 @@ class JenisTagihanController extends BaseController
 
         $jenisTagihan = JenisTagihan::create($data);
 
+        if ($jenisTagihan->kategori === 'lainnya') {
+            return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)
+                ->with('status', 'Jenis tagihan berhasil ditambahkan. Kategori "Lainnya" belum punya mekanisme penentuan nominal — itu akan dibangun bersama modul yang memakainya nanti (misalnya SPP).');
+        }
+
         return redirect()->route('admin.jenis-tagihan.nominal', $jenisTagihan)
             ->with('status', 'Jenis tagihan berhasil ditambahkan. Atur nominal per jalur di bawah.');
     }
@@ -96,9 +101,14 @@ class JenisTagihanController extends BaseController
         return redirect()->route('admin.jenis-tagihan.index')->with('status', 'Jenis tagihan berhasil dihapus.');
     }
 
-    public function nominal(JenisTagihan $jenisTagihan): View
+    public function nominal(JenisTagihan $jenisTagihan): View|RedirectResponse
     {
         $this->authorize('jenis-tagihan.edit');
+
+        if ($jenisTagihan->kategori === 'lainnya') {
+            return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)
+                ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang. Kategori "Lainnya" belum punya mekanisme penentuan nominal.']);
+        }
 
         $tahunAjaranAktif = TahunAjaran::where('lembaga_id', $jenisTagihan->lembaga_id)->where('status_aktif', true)->first();
 
@@ -115,6 +125,11 @@ class JenisTagihanController extends BaseController
     public function simpanNominal(Request $request, JenisTagihan $jenisTagihan): RedirectResponse
     {
         $this->authorize('jenis-tagihan.edit');
+
+        if ($jenisTagihan->kategori === 'lainnya') {
+            return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)
+                ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang.']);
+        }
 
         $data = $request->validate([
             'nominal' => ['required', 'array'],

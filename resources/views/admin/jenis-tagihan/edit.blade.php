@@ -5,6 +5,13 @@
     </x-slot>
 
     <div class="mx-auto max-w-xl space-y-6">
+        @if (session('status'))
+            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
+        @endif
+        @error('kategori')
+            <div class="rounded-xl bg-signal-red/10 p-4 text-sm text-signal-red">{{ $message }}</div>
+        @enderror
+
         <x-panel class="p-6">
             <form method="POST" action="{{ route('admin.jenis-tagihan.update', $jenisTagihan) }}" class="space-y-4">
                 @csrf
@@ -36,9 +43,17 @@
             </form>
         </x-panel>
 
-        <x-panel class="p-6">
-            <p class="text-sm text-slate">Atur nominal per jalur untuk jenis tagihan ini.</p>
-            <a href="{{ route('admin.jenis-tagihan.nominal', $jenisTagihan) }}" class="mt-2 inline-block text-sm font-semibold text-ink hover:underline">Kelola Nominal &rarr;</a>
-        </x-panel>
+        @if (in_array($jenisTagihan->kategori, ['pendaftaran', 'daftar_ulang']))
+            <x-panel class="p-6">
+                <p class="text-sm text-slate">Atur nominal per jalur untuk jenis tagihan ini.</p>
+                <a href="{{ route('admin.jenis-tagihan.nominal', $jenisTagihan) }}" class="mt-2 inline-block text-sm font-semibold text-ink hover:underline">Kelola Nominal &rarr;</a>
+            </x-panel>
+        @else
+            <x-panel class="p-6">
+                <p class="text-sm text-slate">
+                    Kategori "Lainnya" belum punya mekanisme penentuan nominal — nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran dan Daftar Ulang. Cara penetapan harga untuk kategori ini (misalnya SPP) akan dibangun bersama modul yang memakainya.
+                </p>
+            </x-panel>
+        @endif
     </div>
 </x-app-layout>

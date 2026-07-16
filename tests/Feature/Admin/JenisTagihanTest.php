@@ -85,6 +85,46 @@ it('only lists jenis tagihan belonging to the acting lembaga-scoped user own lem
     $response->assertOk()->assertSee('Punya A')->assertDontSee('Punya B');
 });
 
+it('does not send kategori lainnya through the jalur-based nominal flow after create', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
+        'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false,
+    ]);
+
+    $jenisTagihan = JenisTagihan::where('nama', 'SPP Bulanan')->firstOrFail();
+    $response->assertRedirect(route('admin.jenis-tagihan.edit', $jenisTagihan));
+});
+
+it('redirects away from the nominal page for a kategori lainnya jenis tagihan instead of showing a jalur list', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false]);
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.nominal', $jenisTagihan));
+
+    $response->assertRedirect(route('admin.jenis-tagihan.edit', $jenisTagihan));
+    $response->assertSessionHasErrors('kategori');
+});
+
+it('rejects a direct post to simpan nominal for a kategori lainnya jenis tagihan without creating rows', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false]);
+
+    $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.nominal.store', $jenisTagihan), [
+        'nominal' => [$jalur->id => 100000],
+    ]);
+
+    $response->assertRedirect(route('admin.jenis-tagihan.edit', $jenisTagihan));
+    $response->assertSessionHasErrors('kategori');
+    expect(NominalTagihanJalur::where('jenis_tagihan_id', $jenisTagihan->id)->exists())->toBeFalse();
+});
+
 it('denies kepala_sekolah from creating a jenis tagihan (view-only role for this module)', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
