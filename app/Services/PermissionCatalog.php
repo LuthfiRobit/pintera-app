@@ -22,6 +22,8 @@ class PermissionCatalog
         'spmb-konfigurasi' => 'Konfigurasi SPMB',
         'spmb-pendaftaran' => 'Verifikasi & Keputusan SPMB',
         'audit-log' => 'Log Aktivitas',
+        'jenis-tagihan' => 'Jenis Tagihan',
+        'tagihan' => 'Tagihan',
     ];
 
     private const ACTION_LABELS = [
@@ -36,6 +38,7 @@ class PermissionCatalog
         'nilai-seleksi' => 'Input Nilai',
         'tetapkan-keputusan' => 'Tetapkan Keputusan',
         'terbitkan-sk' => 'Terbitkan SK',
+        'buat-susulan' => 'Buat Tagihan Susulan',
     ];
 
     /**

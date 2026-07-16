@@ -33,6 +33,8 @@ class RolePermissionSeeder extends Seeder
             'audit-log.view',
             'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
             'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
+            'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
+            'tagihan.view', 'tagihan.buat-susulan',
         ];
 
         foreach ($permissions as $name) {
@@ -70,10 +72,18 @@ class RolePermissionSeeder extends Seeder
                 ]);
             }
 
+            if ($name === 'admin_keuangan') {
+                $role->givePermissionTo([
+                    'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
+                    'tagihan.view', 'tagihan.buat-susulan',
+                ]);
+            }
+
             if ($name === 'kepala_sekolah') {
                 $role->givePermissionTo([
                     'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
                     'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
+                    'tagihan.view',
                 ]);
             }
         }
