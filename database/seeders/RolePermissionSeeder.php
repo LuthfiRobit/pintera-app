@@ -80,6 +80,7 @@ class RolePermissionSeeder extends Seeder
                     'tagihan.view', 'tagihan.buat-susulan',
                     'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
                     'cicilan.kelola',
+                    'spmb-pendaftaran.view',
                 ]);
             }
 

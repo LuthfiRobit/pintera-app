@@ -97,12 +97,13 @@ it('gives admin_keuangan the jenis-tagihan and tagihan permissions by default', 
         'tagihan.view', 'tagihan.buat-susulan',
         'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
         'cicilan.kelola',
+        'spmb-pendaftaran.view',
     ];
 
     foreach ($expected as $name) {
         expect($adminKeuangan->hasPermissionTo($name))->toBeTrue();
     }
-    expect($adminKeuangan->permissions()->count())->toBe(10);
+    expect($adminKeuangan->permissions()->count())->toBe(11);
 });
 
 it('is idempotent when run twice', function () {

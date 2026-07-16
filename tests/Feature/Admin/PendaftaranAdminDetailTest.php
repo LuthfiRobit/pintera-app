@@ -25,6 +25,16 @@ it('shows the detail page with calon murid data, dokumen, and nilai panels', fun
         ->assertSee($pendaftaran->calonMurid->nama_lengkap);
 });
 
+it('lets admin_keuangan view the detail page, since the tagihan/pembayaran panel lives here', function () {
+    [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $this->actingAs($user)->get(route('admin.spmb-pendaftaran.show', $pendaftaran))
+        ->assertOk()
+        ->assertSee($pendaftaran->calonMurid->nama_lengkap);
+});
+
 it('404s the detail page for a pendaftaran belonging to a different lembaga', function () {
     [$lembagaA] = buatPendaftaranUntukAdmin();
     [, , , $pendaftaranB] = buatPendaftaranUntukAdmin();
