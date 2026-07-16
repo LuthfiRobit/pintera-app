@@ -191,5 +191,39 @@
                 </div>
             </div>
         </x-panel>
+
+        <x-panel>
+            <div class="border-b border-ink/10 px-6 py-4">
+                <h3 class="font-display font-semibold text-ink">Tagihan</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                @forelse (['pendaftaran' => 'Tagihan Pendaftaran', 'daftar_ulang' => 'Tagihan Daftar Ulang'] as $kategori => $label)
+                    @php $tagihan = $pendaftaran->tagihan->firstWhere('kategori', $kategori); @endphp
+                    <div class="flex items-center justify-between gap-3">
+                        <div>
+                            <p class="text-sm font-medium text-ink">{{ $label }}</p>
+                            @if ($tagihan)
+                                <p class="text-xs text-slate">Rp {{ number_format($tagihan->total_tagihan, 0, ',', '.') }}</p>
+                            @else
+                                <p class="text-xs text-slate">Belum ada tagihan</p>
+                            @endif
+                        </div>
+                        @if ($tagihan)
+                            <x-badge :tone="$tagihan->status === 'lunas' ? 'green' : ($tagihan->status === 'dicicil' ? 'blue' : 'amber')">
+                                {{ ucfirst(str_replace('_', ' ', $tagihan->status)) }}
+                            </x-badge>
+                        @elseif (auth()->user()->can('tagihan.buat-susulan'))
+                            <form method="POST" action="{{ route('admin.tagihan.susulan', $pendaftaran) }}">
+                                @csrf
+                                <input type="hidden" name="kategori" value="{{ $kategori }}">
+                                <button type="submit" class="text-xs font-bold text-ink hover:underline">Buat Tagihan Susulan</button>
+                            </form>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-sm text-slate">Belum ada kategori tagihan.</p>
+                @endforelse
+            </div>
+        </x-panel>
     </div>
 </x-app-layout>

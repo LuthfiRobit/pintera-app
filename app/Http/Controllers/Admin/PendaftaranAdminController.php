@@ -6,6 +6,7 @@ use App\Models\DokumenPendaftaran;
 use App\Models\HasilSeleksi;
 use App\Models\Pendaftaran;
 use App\Models\SeleksiPpdb;
+use App\Services\TagihanGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -125,6 +126,7 @@ class PendaftaranAdminController extends BaseController
             'dokumen.dokumenSyaratPpdb',
             'jawabanFormulir.formulirField',
             'hasilSeleksi.seleksiPpdb.jenisTesMaster',
+            'tagihan',
         ]);
 
         $seleksiTersedia = \App\Models\SeleksiPpdb::where('jalur_ppdb_id', $pendaftaran->jalur_ppdb_id)
@@ -183,7 +185,7 @@ class PendaftaranAdminController extends BaseController
         return response()->json(['message' => 'Nilai berhasil disimpan.']);
     }
 
-    public function tetapkanKeputusan(Request $request, Pendaftaran $pendaftaran): JsonResponse
+    public function tetapkanKeputusan(Request $request, Pendaftaran $pendaftaran, TagihanGenerator $tagihanGenerator): JsonResponse
     {
         $this->authorize('spmb-pendaftaran.tetapkan-keputusan');
         abort_unless($pendaftaran->lembaga_id === $this->lembagaId($request), 404);
@@ -199,6 +201,10 @@ class PendaftaranAdminController extends BaseController
             'ditetapkan_oleh_user_id' => $request->user()->id,
             'ditetapkan_pada' => now(),
         ]);
+
+        if ($data['status'] === 'diterima') {
+            $tagihanGenerator->generate($pendaftaran, 'daftar_ulang');
+        }
 
         return response()->json(['message' => 'Keputusan berhasil ditetapkan.']);
     }
