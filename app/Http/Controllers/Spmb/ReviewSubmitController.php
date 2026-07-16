@@ -19,6 +19,7 @@ use App\Models\Pendaftaran;
 use App\Models\TahunAjaran;
 use App\Services\KodePendaftaranGenerator;
 use App\Services\PendaftaranWizardSession;
+use App\Services\TagihanGenerator;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -52,7 +53,8 @@ class ReviewSubmitController extends BaseController
         string $lembagaSlug,
         JalurPpdb $jalur,
         PendaftaranWizardSession $wizardSession,
-        KodePendaftaranGenerator $kodeGenerator
+        KodePendaftaranGenerator $kodeGenerator,
+        TagihanGenerator $tagihanGenerator
     ): RedirectResponse {
         $lembaga = $this->resolveLembaga($lembagaSlug);
         $this->assertJalurBelongsToLembaga($lembaga, $jalur);
@@ -127,6 +129,8 @@ class ReviewSubmitController extends BaseController
         }
 
         $this->pindahkanDokumenKeLokasiFinal($pendaftaran);
+
+        $tagihanGenerator->generate($pendaftaran, 'pendaftaran');
 
         Mail::to($pendaftaran->email_pendaftaran)->send(new PendaftaranBerhasilMail($pendaftaran));
 
