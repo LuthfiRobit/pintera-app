@@ -35,6 +35,14 @@ it('ignores a Laravel Policy-style two-argument authorize() call, since its bare
     hapusDirektoriUjiPermissionAudit($dir);
 });
 
+it('scans app/Policies by default, so a permission only referenced inside a Policy class is not reported as unused', function () {
+    Permission::firstOrCreate(['name' => 'roles.delete', 'guard_name' => 'web']);
+
+    $result = (new PermissionAuditService())->audit();
+
+    expect($result['unusedInCode'])->not->toContain('roles.delete');
+});
+
 it('detects a permission used in code but missing from the database, and creates it', function () {
     $dir = buatDirektoriUjiPermissionAudit("<?php\nclass FakeController {\n    public function index() {\n        \$this->authorize('contoh-modul.aksi-baru');\n    }\n}\n");
 

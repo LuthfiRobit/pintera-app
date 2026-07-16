@@ -21,6 +21,7 @@ class PermissionAuditService
     {
         $this->scanDirectories = $scanDirectories ?? [
             app_path('Http/Controllers'),
+            app_path('Policies'),
             resource_path('views'),
         ];
     }
