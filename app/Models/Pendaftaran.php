@@ -84,6 +84,11 @@ class Pendaftaran extends Model
         return $this->hasMany(HasilSeleksi::class);
     }
 
+    public function tagihan(): HasMany
+    {
+        return $this->hasMany(Tagihan::class);
+    }
+
     public function ditetapkanOleh(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ditetapkan_oleh_user_id');
