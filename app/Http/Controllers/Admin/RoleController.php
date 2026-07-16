@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Role;
+use App\Services\PermissionAuditService;
 use App\Services\PermissionCatalog;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -15,6 +16,10 @@ use Spatie\Permission\Models\Permission;
 class RoleController extends BaseController
 {
     use AuthorizesRequests;
+
+    public function __construct(private PermissionAuditService $permissionAudit)
+    {
+    }
 
     public function index(): View
     {
@@ -67,7 +72,12 @@ class RoleController extends BaseController
     {
         abort_unless($request->user()->can('roles.create') || $request->user()->can('roles.edit'), 403);
 
-        return response()->json(['modules' => PermissionCatalog::grouped()]);
+        $audit = $this->permissionAudit->audit();
+
+        return response()->json([
+            'modules' => PermissionCatalog::grouped(),
+            'audit' => $audit,
+        ]);
     }
 
     public function create(): View
