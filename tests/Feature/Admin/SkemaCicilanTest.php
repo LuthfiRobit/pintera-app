@@ -75,3 +75,19 @@ it('lets admin_keuangan edit nominal manually and rejects a mismatched total', f
     $responseBenar->assertRedirect();
     expect((int) Cicilan::where('skema_cicilan_id', $skema->id)->where('urutan', 1)->value('nominal'))->toBe(500000);
 });
+
+it('404s editing nominal manually for a skema cicilan belonging to a different lembaga', function () {
+    [$lembaga, , $tagihan] = siapkanTagihanDaftarUlangBisaDicicil();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $this->actingAs($user)->post(route('admin.tagihan.skema-cicilan.store', $tagihan), ['jumlah_termin' => 3]);
+    $skema = SkemaCicilan::where('tagihan_id', $tagihan->id)->first();
+
+    $lembagaLain = \App\Models\Lembaga::factory()->create();
+    $userLain = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $userLain->assignRole('admin_keuangan');
+
+    $this->actingAs($userLain)->post(route('admin.skema-cicilan.nominal.store', $skema), [
+        'nominal' => [1 => 500000, 2 => 200000, 3 => 200000],
+    ])->assertNotFound();
+});
