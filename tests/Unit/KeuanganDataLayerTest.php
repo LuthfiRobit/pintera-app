@@ -9,6 +9,7 @@ use App\Models\Pendaftaran;
 use App\Models\Tagihan;
 use App\Models\TagihanItem;
 use App\Models\TahunAjaran;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,9 +18,11 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 it('creates a jenis_tagihan scoped to the acting lembaga-scoped user', function () {
+    Role::firstOrCreate(['name' => 'admin_keuangan', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
 
     $this->actingAs($user);
     $jenisTagihan = JenisTagihan::create([
@@ -30,6 +33,7 @@ it('creates a jenis_tagihan scoped to the acting lembaga-scoped user', function 
 
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $userLain = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $userLain->assignRole('admin_keuangan');
     $this->actingAs($userLain);
     expect(JenisTagihan::find($jenisTagihan->id))->toBeNull();
 });
