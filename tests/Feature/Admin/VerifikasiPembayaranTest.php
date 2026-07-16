@@ -31,6 +31,22 @@ function buatPembayaranViaCicilan(?Lembaga $lembaga = null, string $namaCalon = 
     return [$lembagaAktual, $pembayaran];
 }
 
+it('labels two pending payments for the same candidate distinguishably by kategori and nominal', function () {
+    [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
+    $tagihanPendaftaran = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar']);
+    $tagihanDaftarUlang = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
+    Pembayaran::create(['tagihan_id' => $tagihanPendaftaran->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
+    Pembayaran::create(['tagihan_id' => $tagihanDaftarUlang->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->getJson(route('admin.pembayaran.data'));
+
+    $jenis = collect($response->json('data'))->pluck('jenis');
+    expect($jenis)->toContain('Tagihan Pendaftaran — Rp 150.000');
+    expect($jenis)->toContain('Tagihan Daftar Ulang — Rp 900.000');
+});
+
 it('denies access to the payment verification queue without pembayaran.view', function () {
     [$lembaga] = buatPendaftaranUntukAdmin();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);

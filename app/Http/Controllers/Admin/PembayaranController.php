@@ -23,6 +23,20 @@ class PembayaranController extends BaseController
             : $request->user()->lembaga_id;
     }
 
+    private function labelJenis(Pembayaran $pembayaran): string
+    {
+        if ($pembayaran->cicilan_id) {
+            $nominal = number_format($pembayaran->cicilan->nominal, 0, ',', '.');
+
+            return "Cicilan Termin {$pembayaran->cicilan->urutan} — Rp {$nominal}";
+        }
+
+        $label = $pembayaran->tagihan->kategori === 'pendaftaran' ? 'Tagihan Pendaftaran' : 'Tagihan Daftar Ulang';
+        $nominal = number_format($pembayaran->tagihan->total_tagihan, 0, ',', '.');
+
+        return "{$label} — Rp {$nominal}";
+    }
+
     public function index(Request $request): View
     {
         $this->authorize('pembayaran.view');
@@ -64,7 +78,7 @@ class PembayaranController extends BaseController
                     'id' => $pembayaran->id,
                     'nama_calon_murid' => $pendaftaran->calonMurid->nama_lengkap,
                     'kode_pendaftaran' => $pendaftaran->kode_pendaftaran,
-                    'jenis' => $pembayaran->cicilan_id ? 'Cicilan Termin '.$pembayaran->cicilan->urutan : 'Lunas Langsung',
+                    'jenis' => $this->labelJenis($pembayaran),
                     'sumber' => $pembayaran->sumber,
                     'pendaftaran_id' => $pendaftaran->id,
                 ];
