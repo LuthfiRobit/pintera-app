@@ -41,6 +41,14 @@ class DashboardController extends BaseController
             // branch before this task (also unfiltered Lembaga::all()) — do not invent a
             // yayasan_id relationship on User to "fix" this; that would be a schema change
             // outside this plan's scope.
+            // Deliberate trade-off vs. the design spec's "single groupBy('lembaga_id')
+            // query" wording: this calls DashboardStatsService once per lembaga instead,
+            // so the yayasan view reuses the exact same aggregation methods as the lembaga
+            // view (one definition of every metric, per the plan's Architecture section).
+            // A dedicated batched-aggregation variant would satisfy the spec's query-count
+            // wording but require a second, parallel implementation of the same metrics.
+            // Negligible at pilot scale (a yayasan has a handful of lembaga); revisit if a
+            // yayasan ever grows to dozens.
             $lembagaList = Lembaga::all();
             $ringkasanPerLembaga = $lembagaList->map(function (Lembaga $lembaga) {
                 return [
