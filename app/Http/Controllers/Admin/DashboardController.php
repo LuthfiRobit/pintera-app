@@ -28,8 +28,34 @@ class DashboardController extends BaseController
         }
 
         if ($user->widestScopeLevel() === 'yayasan') {
+            $lembagaAktifId = session('active_lembaga_id');
+
+            if ($lembagaAktifId !== null) {
+                return view('admin.dashboard.lembaga', $this->lembagaViewData((int) $lembagaAktifId, $user));
+            }
+
+            // Lembaga::all(), not filtered by any yayasan_id on $user: the User model has
+            // no yayasan_id column (only lembaga_id) — a yayasan-scoped user is identified
+            // purely by an assigned role with scope_level='yayasan', not by any FK to a
+            // specific Yayasan row. This matches the pre-existing behavior of this exact
+            // branch before this task (also unfiltered Lembaga::all()) — do not invent a
+            // yayasan_id relationship on User to "fix" this; that would be a schema change
+            // outside this plan's scope.
+            $lembagaList = Lembaga::all();
+            $ringkasanPerLembaga = $lembagaList->map(function (Lembaga $lembaga) {
+                return [
+                    'lembaga' => $lembaga,
+                    'spmb' => $this->dashboardStats->statistikSpmb($lembaga->id),
+                    'keuangan' => $this->dashboardStats->statistikKeuangan($lembaga->id),
+                ];
+            });
+
             return view('admin.dashboard.yayasan', [
-                'lembagaList' => Lembaga::all(),
+                'lembagaList' => $lembagaList,
+                'ringkasanPerLembaga' => $ringkasanPerLembaga,
+                'totalPendaftar' => $ringkasanPerLembaga->sum(fn ($r) => $r['spmb']['total']),
+                'totalDiterima' => $ringkasanPerLembaga->sum(fn ($r) => $r['spmb']['diterima']),
+                'totalRpTerkumpul' => $ringkasanPerLembaga->sum(fn ($r) => $r['keuangan']['rpTerkumpul']),
                 'stats' => [
                     'lembaga' => Lembaga::count(),
                     'guru' => Guru::count(),

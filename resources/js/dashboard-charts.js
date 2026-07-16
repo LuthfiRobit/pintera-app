@@ -31,3 +31,18 @@ export function donutTagihanChart(labels, data) {
         },
     };
 }
+
+export function perLembagaBarChart(labels, data) {
+    return {
+        init() {
+            new Chart(this.$refs.canvas, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{ label: 'Pendaftar', data, backgroundColor: '#123363' }],
+                },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+            });
+        },
+    };
+}

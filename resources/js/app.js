@@ -11,7 +11,7 @@ import { pendaftaranDetail } from './pendaftaran-detail';
 import { nilaiMassal } from './nilai-massal';
 import { tagihanTable } from './tagihan-table';
 import { pembayaranTable } from './pembayaran-table';
-import { trenPendaftaranChart, donutTagihanChart } from './dashboard-charts';
+import { trenPendaftaranChart, donutTagihanChart, perLembagaBarChart } from './dashboard-charts';
 
 window.Alpine = Alpine;
 
@@ -27,5 +27,6 @@ Alpine.data('tagihanTable', tagihanTable);
 Alpine.data('pembayaranTable', pembayaranTable);
 Alpine.data('trenPendaftaranChart', trenPendaftaranChart);
 Alpine.data('donutTagihanChart', donutTagihanChart);
+Alpine.data('perLembagaBarChart', perLembagaBarChart);
 
 Alpine.start();

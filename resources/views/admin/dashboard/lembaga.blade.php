@@ -9,7 +9,15 @@
             eyebrow="Panel Administrasi Lembaga"
             :title="'Halo, ' . Auth::user()->name . '!'"
             subtitle="Kelola data guru, pengguna, dan tahun ajaran di lembaga Anda."
-        />
+        >
+            @if (Auth::user()->widestScopeLevel() === 'yayasan')
+                <x-slot name="actions">
+                    <a href="{{ route('dashboard', ['switch_lembaga' => 'all']) }}" class="inline-flex items-center rounded-xl border border-white/30 px-4 py-2 text-sm text-paper transition hover:bg-white/10">
+                        &larr; Kembali ke Ringkasan Yayasan
+                    </a>
+                </x-slot>
+            @endif
+        </x-hero-banner>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar di lembaga Anda" icon="school" />
