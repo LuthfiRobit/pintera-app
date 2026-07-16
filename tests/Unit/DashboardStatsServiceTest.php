@@ -5,9 +5,11 @@ use App\Models\Cicilan;
 use App\Models\Lembaga;
 use App\Models\Pembayaran;
 use App\Models\Pendaftaran;
+use App\Models\Role;
 use App\Models\SkemaCicilan;
 use App\Models\TahunAjaran;
 use App\Models\Tagihan;
+use App\Models\User;
 use App\Services\DashboardStatsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -105,4 +107,79 @@ it('returns all-zero keuangan stats when the lembaga has no active tahun ajaran'
         'rpTerkumpul' => 0, 'rpBelumLunas' => 0, 'pembayaranMenungguVerifikasi' => 0,
         'donut' => ['belum_bayar' => 0, 'dicicil' => 0, 'lunas' => 0],
     ]);
+});
+
+it('does not leak keuangan data from another lembaga into the requested lembaga\'s stats', function () {
+    $lembaga = Lembaga::factory()->create();
+    $tahunAjaran = siapkanTahunAjaranAktifUntukDashboard($lembaga);
+    $pendaftaran = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
+
+    $lembagaLain = Lembaga::factory()->create();
+    $tahunAjaranLain = siapkanTahunAjaranAktifUntukDashboard($lembagaLain);
+    $pendaftaranLain = Pendaftaran::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
+    $tagihanLain = Tagihan::create(['pendaftaran_id' => $pendaftaranLain->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'dicicil']);
+    Pembayaran::create(['tagihan_id' => $tagihanLain->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
+    $skemaLain = SkemaCicilan::create(['tagihan_id' => $tagihanLain->id, 'jumlah_termin' => 3, 'dibuat_oleh' => 'calon_siswa']);
+    $terminLain = Cicilan::create(['skema_cicilan_id' => $skemaLain->id, 'urutan' => 1, 'nominal' => 300000, 'jatuh_tempo' => now(), 'status' => 'belum_bayar']);
+    Pembayaran::create(['cicilan_id' => $terminLain->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
+
+    $hasil = app(DashboardStatsService::class)->statistikKeuangan($lembaga->id);
+
+    expect($hasil['rpTerkumpul'])->toBe(150000);
+    expect($hasil['rpBelumLunas'])->toBe(0);
+    expect($hasil['donut'])->toBe(['belum_bayar' => 0, 'dicicil' => 0, 'lunas' => 1]);
+    expect($hasil['pembayaranMenungguVerifikasi'])->toBe(0);
+});
+
+it('does not include pendaftaran from another lembaga in the daily trend', function () {
+    $lembaga = Lembaga::factory()->create();
+    $tahunAjaran = siapkanTahunAjaranAktifUntukDashboard($lembaga);
+    Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'submitted_at' => now()]);
+
+    $lembagaLain = Lembaga::factory()->create();
+    $tahunAjaranLain = siapkanTahunAjaranAktifUntukDashboard($lembagaLain);
+    Pendaftaran::factory()->count(5)->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id, 'submitted_at' => now()]);
+
+    $hasil = app(DashboardStatsService::class)->trenPendaftaranHarian($lembaga->id);
+
+    expect($hasil['data'])->toHaveCount(30);
+    expect(array_sum($hasil['data']))->toBe(1);
+    expect($hasil['data'][29])->toBe(1);
+});
+
+it('bypasses TahunAjaran tenant scoping: statistikSpmb still finds the requested lembaga\'s active tahun ajaran when the acting user belongs to a different lembaga', function () {
+    Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembagaActing = Lembaga::factory()->create();
+    $actingUser = User::factory()->create(['lembaga_id' => $lembagaActing->id]);
+    $actingUser->assignRole('admin_administrasi');
+    $this->actingAs($actingUser);
+
+    $lembagaTarget = Lembaga::factory()->create();
+    $tahunAjaranTarget = siapkanTahunAjaranAktifUntukDashboard($lembagaTarget);
+    Pendaftaran::factory()->count(3)->create(['lembaga_id' => $lembagaTarget->id, 'tahun_ajaran_id' => $tahunAjaranTarget->id, 'status' => 'diterima']);
+
+    $hasil = app(DashboardStatsService::class)->statistikSpmb($lembagaTarget->id);
+
+    expect($hasil)->toBe(['total' => 3, 'menunggu_verifikasi' => 0, 'diterima' => 3, 'ditolak' => 0]);
+});
+
+it('bypasses TahunAjaran tenant scoping: statistikKeuangan still finds the requested lembaga\'s active tahun ajaran when the acting user belongs to a different lembaga', function () {
+    Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembagaActing = Lembaga::factory()->create();
+    $actingUser = User::factory()->create(['lembaga_id' => $lembagaActing->id]);
+    $actingUser->assignRole('admin_administrasi');
+    $this->actingAs($actingUser);
+
+    $lembagaTarget = Lembaga::factory()->create();
+    $tahunAjaranTarget = siapkanTahunAjaranAktifUntukDashboard($lembagaTarget);
+    $pendaftaranTarget = Pendaftaran::factory()->create(['lembaga_id' => $lembagaTarget->id, 'tahun_ajaran_id' => $tahunAjaranTarget->id]);
+    Tagihan::create(['pendaftaran_id' => $pendaftaranTarget->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
+
+    $hasil = app(DashboardStatsService::class)->statistikKeuangan($lembagaTarget->id);
+
+    expect($hasil['rpTerkumpul'])->toBe(150000);
+    expect($hasil['donut'])->toBe(['belum_bayar' => 0, 'dicicil' => 0, 'lunas' => 1]);
 });

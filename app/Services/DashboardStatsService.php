@@ -99,6 +99,9 @@ class DashboardStatsService
 
     private function tahunAjaranAktif(int $lembagaId): ?TahunAjaran
     {
-        return TahunAjaran::where('lembaga_id', $lembagaId)->where('status_aktif', true)->first();
+        return TahunAjaran::withoutGlobalScopes()
+            ->where('lembaga_id', $lembagaId)
+            ->where('status_aktif', true)
+            ->first();
     }
 }
