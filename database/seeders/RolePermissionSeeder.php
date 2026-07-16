@@ -35,6 +35,8 @@ class RolePermissionSeeder extends Seeder
             'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
             'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
             'tagihan.view', 'tagihan.buat-susulan',
+            'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
+            'cicilan.kelola',
         ];
 
         foreach ($permissions as $name) {
@@ -76,6 +78,8 @@ class RolePermissionSeeder extends Seeder
                 $role->givePermissionTo([
                     'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
                     'tagihan.view', 'tagihan.buat-susulan',
+                    'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
+                    'cicilan.kelola',
                 ]);
             }
 

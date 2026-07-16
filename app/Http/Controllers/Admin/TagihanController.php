@@ -3,8 +3,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Cicilan;
 use App\Models\Pendaftaran;
+use App\Models\SkemaCicilan;
 use App\Models\Tagihan;
+use App\Services\PembayaranService;
 use App\Services\TagihanGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -115,5 +118,70 @@ class TagihanController extends BaseController
                 'total' => $paginated->total(),
             ],
         ]);
+    }
+
+    public function buatSkemaCicilan(Request $request, Tagihan $tagihan, PembayaranService $service): RedirectResponse
+    {
+        $this->authorize('cicilan.kelola');
+        abort_unless($tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+
+        $data = $request->validate([
+            'jumlah_termin' => ['required', 'integer', 'min:2', 'max:'.($tagihan->maksCicilan() ?? 2)],
+        ]);
+
+        try {
+            $service->buatSkemaCicilan($tagihan, $data['jumlah_termin'], 'admin', $request->user()->id);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['jumlah_termin' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Skema cicilan berhasil dibuat.');
+    }
+
+    public function simpanNominalCicilan(Request $request, SkemaCicilan $skemaCicilan, PembayaranService $service): RedirectResponse
+    {
+        $this->authorize('cicilan.kelola');
+        abort_unless($skemaCicilan->tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+
+        $data = $request->validate([
+            'nominal' => ['required', 'array'],
+            'nominal.*' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        try {
+            $service->simpanNominalManual($skemaCicilan, array_map('intval', $data['nominal']));
+        } catch (\InvalidArgumentException $exception) {
+            return back()->withErrors(['nominal' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Nominal cicilan berhasil diperbarui.');
+    }
+
+    public function catatManualTagihan(Request $request, Tagihan $tagihan, PembayaranService $service): RedirectResponse
+    {
+        $this->authorize('pembayaran.catat-manual');
+        abort_unless($tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+
+        try {
+            $service->catatPembayaran($tagihan, null, 'admin', null, $request->user()->id);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['pembayaran' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Pembayaran berhasil dicatat.');
+    }
+
+    public function catatManualCicilan(Request $request, Cicilan $cicilan, PembayaranService $service): RedirectResponse
+    {
+        $this->authorize('pembayaran.catat-manual');
+        abort_unless($cicilan->skemaCicilan->tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+
+        try {
+            $service->catatPembayaran(null, $cicilan, 'admin', null, $request->user()->id);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['pembayaran' => $exception->getMessage()]);
+        }
+
+        return back()->with('status', 'Pembayaran termin berhasil dicatat.');
     }
 }

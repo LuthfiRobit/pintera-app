@@ -220,6 +220,48 @@
                             </form>
                         @endif
                     </div>
+                    @if ($tagihan)
+                        <div class="ml-0 mt-2 space-y-2 border-l-2 border-ink/10 pl-4">
+                            @if ($tagihan->skemaCicilan)
+                                @foreach ($tagihan->cicilan as $termin)
+                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                        <span class="text-slate">Termin {{ $termin->urutan }} — Rp {{ number_format($termin->nominal, 0, ',', '.') }}</span>
+                                        <div class="flex items-center gap-2">
+                                            <x-badge :tone="$termin->status === 'lunas' ? 'green' : ($termin->status === 'menunggu_verifikasi' ? 'amber' : ($termin->status === 'ditolak' ? 'red' : 'slate'))">
+                                                {{ ucfirst(str_replace('_', ' ', $termin->status)) }}
+                                            </x-badge>
+                                            @if ($termin->status === 'belum_bayar' && auth()->user()->can('pembayaran.catat-manual'))
+                                                <form method="POST" action="{{ route('admin.cicilan.catat-manual', $termin) }}">
+                                                    @csrf
+                                                    <button type="submit" class="font-bold text-ink hover:underline">Catat Lunas</button>
+                                                </form>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div class="flex items-center gap-3 text-xs">
+                                    @if ($tagihan->status !== 'lunas' && auth()->user()->can('pembayaran.catat-manual'))
+                                        <form method="POST" action="{{ route('admin.tagihan.catat-manual', $tagihan) }}">
+                                            @csrf
+                                            <button type="submit" class="font-bold text-ink hover:underline">Catat Lunas (Tanpa Cicilan)</button>
+                                        </form>
+                                    @endif
+                                    @if ($tagihan->status === 'belum_bayar' && $tagihan->bisaDicicil() && auth()->user()->can('cicilan.kelola'))
+                                        <form method="POST" action="{{ route('admin.tagihan.skema-cicilan.store', $tagihan) }}" class="flex items-center gap-2">
+                                            @csrf
+                                            <select name="jumlah_termin" class="rounded-lg border-ink/15 text-xs">
+                                                @for ($n = 2; $n <= $tagihan->maksCicilan(); $n++)
+                                                    <option value="{{ $n }}">{{ $n }}x cicilan</option>
+                                                @endfor
+                                            </select>
+                                            <button type="submit" class="font-bold text-ink hover:underline">Buat Skema</button>
+                                        </form>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 @empty
                     <p class="text-sm text-slate">Belum ada kategori tagihan.</p>
                 @endforelse

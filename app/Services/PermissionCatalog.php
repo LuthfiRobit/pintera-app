@@ -24,6 +24,8 @@ class PermissionCatalog
         'audit-log' => 'Log Aktivitas',
         'jenis-tagihan' => 'Jenis Tagihan',
         'tagihan' => 'Tagihan',
+        'pembayaran' => 'Pembayaran',
+        'cicilan' => 'Cicilan',
     ];
 
     private const ACTION_LABELS = [
@@ -39,6 +41,9 @@ class PermissionCatalog
         'tetapkan-keputusan' => 'Tetapkan Keputusan',
         'terbitkan-sk' => 'Terbitkan SK',
         'buat-susulan' => 'Buat Tagihan Susulan',
+        'verifikasi' => 'Verifikasi',
+        'catat-manual' => 'Catat Manual',
+        'kelola' => 'Kelola',
     ];
 
     /**
