@@ -8,7 +8,12 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionAuditService
 {
-    private const PATTERN = '/\b(?:authorize|can)\(\s*\'([a-z0-9\-\.]+)\'/';
+    // Requires at least one literal dot (every real permission in this codebase follows
+    // the `modul.aksi` convention) so this never matches a Laravel Policy-style two-argument
+    // call like `authorize('create', Role::class)` -- those take a bare ability name
+    // ("create", "update", "viewAny"...), not a Spatie permission string, and would
+    // otherwise get scanned, matched, and auto-created as bogus permission rows.
+    private const PATTERN = '/\b(?:authorize|can)\(\s*\'([a-z0-9\-]+(?:\.[a-z0-9\-]+)+)\'/';
 
     private array $scanDirectories;
 

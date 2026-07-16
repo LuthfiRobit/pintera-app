@@ -23,6 +23,18 @@ function hapusDirektoriUjiPermissionAudit(string $dir): void
     rmdir($dir);
 }
 
+it('ignores a Laravel Policy-style two-argument authorize() call, since its bare ability name is not a Spatie permission string', function () {
+    $dir = buatDirektoriUjiPermissionAudit("<?php\nuse App\\Models\\Role;\nclass FakeController {\n    public function store() {\n        \$this->authorize('create', Role::class);\n    }\n    public function update(Role \$role) {\n        \$this->authorize('update', \$role);\n    }\n}\n");
+
+    $result = (new PermissionAuditService([$dir]))->audit();
+
+    expect($result['missingFromDatabase'])->toBe([]);
+    expect(Permission::where('name', 'create')->exists())->toBeFalse();
+    expect(Permission::where('name', 'update')->exists())->toBeFalse();
+
+    hapusDirektoriUjiPermissionAudit($dir);
+});
+
 it('detects a permission used in code but missing from the database, and creates it', function () {
     $dir = buatDirektoriUjiPermissionAudit("<?php\nclass FakeController {\n    public function index() {\n        \$this->authorize('contoh-modul.aksi-baru');\n    }\n}\n");
 
