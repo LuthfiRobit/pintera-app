@@ -10,6 +10,7 @@ import { pendaftaranTable } from './pendaftaran-table';
 import { pendaftaranDetail } from './pendaftaran-detail';
 import { nilaiMassal } from './nilai-massal';
 import { tagihanTable } from './tagihan-table';
+import { pembayaranTable } from './pembayaran-table';
 
 window.Alpine = Alpine;
 
@@ -22,5 +23,6 @@ Alpine.data('pendaftaranTable', pendaftaranTable);
 Alpine.data('pendaftaranDetail', pendaftaranDetail);
 Alpine.data('nilaiMassal', nilaiMassal);
 Alpine.data('tagihanTable', tagihanTable);
+Alpine.data('pembayaranTable', pembayaranTable);
 
 Alpine.start();
