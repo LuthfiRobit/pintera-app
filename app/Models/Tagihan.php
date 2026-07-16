@@ -46,6 +46,11 @@ class Tagihan extends Model
         return $this->hasManyThrough(Cicilan::class, SkemaCicilan::class, 'tagihan_id', 'skema_cicilan_id');
     }
 
+    public function pembayaran(): HasMany
+    {
+        return $this->hasMany(Pembayaran::class);
+    }
+
     /**
      * A tagihan can bundle multiple jenis_tagihan (line items) with different
      * bisa_dicicil rules — offering installment is allowed if ANY item is

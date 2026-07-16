@@ -8,6 +8,7 @@ use App\Http\Controllers\Portal\Auth\RegisteredAkunController;
 use App\Http\Controllers\Portal\Auth\VerifikasiOtpController;
 use App\Http\Controllers\Portal\BuktiPendaftaranController;
 use App\Http\Controllers\Portal\DashboardController;
+use App\Http\Controllers\Portal\TagihanController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('portal')->name('portal.')->group(function () {
@@ -36,5 +37,10 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('pendaftaran/{pendaftaran}/bukti', [BuktiPendaftaranController::class, 'unduh'])
             ->name('pendaftaran.bukti');
+
+        Route::get('tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
+        Route::post('tagihan/{tagihan}/skema-cicilan', [TagihanController::class, 'buatSkemaCicilan'])->name('tagihan.skema-cicilan');
+        Route::post('tagihan/{tagihan}/bayar-lunas', [TagihanController::class, 'bayarLunas'])->name('tagihan.bayar-lunas');
+        Route::post('cicilan/{cicilan}/bayar', [TagihanController::class, 'bayarCicilan'])->name('tagihan.bayar-cicilan');
     });
 });
