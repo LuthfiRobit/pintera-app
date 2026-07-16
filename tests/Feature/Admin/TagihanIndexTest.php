@@ -46,6 +46,27 @@ it('returns only tagihan belonging to the acting user own lembaga, via the linke
     expect($names)->not->toContain('Milik B');
 });
 
+it('filters by search on candidate name or kode pendaftaran', function () {
+    [$lembaga, , , $pendaftaranAhmad] = buatPendaftaranUntukAdmin(namaCalon: 'Ahmad Fauzan');
+    [, , , $pendaftaranBudi] = buatPendaftaranUntukAdmin($lembaga, 'Budi Santoso');
+    Tagihan::create(['pendaftaran_id' => $pendaftaranAhmad->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
+    Tagihan::create(['pendaftaran_id' => $pendaftaranBudi->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $responseNama = $this->actingAs($user)->getJson(route('admin.tagihan.data', ['search' => 'Ahmad']));
+    expect(collect($responseNama->json('data'))->pluck('nama_calon_murid'))->toContain('Ahmad Fauzan')
+        ->not->toContain('Budi Santoso');
+
+    $kode = $pendaftaranBudi->fresh()->kode_pendaftaran;
+    $responseKode = $this->actingAs($user)->getJson(route('admin.tagihan.data', ['search' => $kode]));
+    expect(collect($responseKode->json('data'))->pluck('nama_calon_murid'))->toContain('Budi Santoso')
+        ->not->toContain('Ahmad Fauzan');
+
+    $responseTidakAda = $this->actingAs($user)->getJson(route('admin.tagihan.data', ['search' => 'Tidak Ada Sama Sekali']));
+    expect($responseTidakAda->json('data'))->toBeEmpty();
+});
+
 it('filters by status', function () {
     [$lembaga, , , $pendaftaranLunas] = buatPendaftaranUntukAdmin(namaCalon: 'Sudah Lunas');
     [, , , $pendaftaranBelumBayar] = buatPendaftaranUntukAdmin($lembaga, 'Belum Bayar');

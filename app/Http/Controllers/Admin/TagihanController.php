@@ -75,6 +75,13 @@ class TagihanController extends BaseController
         $query = Tagihan::whereHas('pendaftaran', fn ($q) => $q->where('lembaga_id', $lembagaId))
             ->with(['pendaftaran.calonMurid']);
 
+        if ($search = trim((string) $request->string('search'))) {
+            $query->whereHas('pendaftaran', function ($q) use ($search) {
+                $q->where('kode_pendaftaran', 'like', '%'.$search.'%')
+                    ->orWhereHas('calonMurid', fn ($cm) => $cm->where('nama_lengkap', 'like', '%'.$search.'%'));
+            });
+        }
+
         if ($status = $request->string('status')->value()) {
             $query->where('status', $status);
         }
