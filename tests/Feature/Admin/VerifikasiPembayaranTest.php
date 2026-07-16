@@ -1,9 +1,11 @@
 <?php
 // tests/Feature/Admin/VerifikasiPembayaranTest.php
 
+use App\Models\Lembaga;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
 use App\Models\User;
+use App\Services\PembayaranService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -12,6 +14,22 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     (new RolePermissionSeeder)->run();
 });
+
+/**
+ * Builds a Pembayaran reachable ONLY via cicilan_id (tagihan_id null) — the
+ * skema-cicilan ownership path — as opposed to the direct tagihan_id path
+ * every other test in this file exercises. Returns [Lembaga, Pembayaran].
+ */
+function buatPembayaranViaCicilan(?Lembaga $lembaga = null, string $namaCalon = 'Ahmad Fauzan'): array
+{
+    [$lembagaAktual, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga, namaCalon: $namaCalon, status: 'diterima');
+    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
+    $skema = app(PembayaranService::class)->buatSkemaCicilan($tagihan, 3, 'calon_siswa');
+    $termin1 = $skema->cicilan()->where('urutan', 1)->first();
+    $pembayaran = Pembayaran::create(['cicilan_id' => $termin1->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
+
+    return [$lembagaAktual, $pembayaran];
+}
 
 it('denies access to the payment verification queue without pembayaran.view', function () {
     [$lembaga] = buatPendaftaranUntukAdmin();
@@ -75,4 +93,40 @@ it('404s verifying a payment belonging to a pendaftaran in a different lembaga',
 
     $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaranLain), ['keputusan' => 'lunas'])
         ->assertNotFound();
+});
+
+it('lists a payment reachable only via the cicilan ownership path, scoped to the acting user own lembaga', function () {
+    [$lembagaA, $pembayaranA] = buatPembayaranViaCicilan(namaCalon: 'Cicilan Milik A');
+    [, $pembayaranB] = buatPembayaranViaCicilan(namaCalon: 'Cicilan Milik B');
+    $user = User::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->getJson(route('admin.pembayaran.data'));
+
+    $names = collect($response->json('data'))->pluck('nama_calon_murid');
+    expect($names)->toContain('Cicilan Milik A');
+    expect($names)->not->toContain('Cicilan Milik B');
+    expect($pembayaranA->tagihan_id)->toBeNull();
+    expect($pembayaranA->cicilan_id)->not->toBeNull();
+});
+
+it('404s verifying a cicilan-reachable payment belonging to a pendaftaran in a different lembaga', function () {
+    [, $pembayaranLain] = buatPembayaranViaCicilan();
+    $lembagaSaya = Lembaga::factory()->create();
+    $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $user->assignRole('admin_keuangan');
+
+    $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaranLain), ['keputusan' => 'lunas'])
+        ->assertNotFound();
+});
+
+it('lets admin_keuangan approve a cicilan-reachable pending payment', function () {
+    [$lembaga, $pembayaran] = buatPembayaranViaCicilan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaran), ['keputusan' => 'lunas']);
+
+    $response->assertRedirect();
+    expect($pembayaran->fresh()->status)->toBe('lunas');
 });
