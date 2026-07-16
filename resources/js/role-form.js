@@ -12,6 +12,9 @@ export function roleForm(config) {
         errors: {},
         submitting: false,
         syncing: false,
+        auditMissingFromDatabase: [],
+        auditUnusedInCode: [],
+        showAuditBanner: false,
 
         isChecked(id) {
             return this.checkedIds.includes(id);
@@ -49,6 +52,10 @@ export function roleForm(config) {
             this.checkedIds = [];
         },
 
+        dismissAuditBanner() {
+            this.showAuditBanner = false;
+        },
+
         async syncPermissions() {
             this.syncing = true;
             try {
@@ -60,6 +67,11 @@ export function roleForm(config) {
                 const validIds = json.modules.flatMap((group) => group.permissions.map((permission) => permission.id));
                 this.moduleGroups = json.modules;
                 this.checkedIds = this.checkedIds.filter((id) => validIds.includes(id));
+
+                this.auditMissingFromDatabase = json.audit?.missingFromDatabase ?? [];
+                this.auditUnusedInCode = json.audit?.unusedInCode ?? [];
+                this.showAuditBanner = this.auditMissingFromDatabase.length > 0 || this.auditUnusedInCode.length > 0;
+
                 Alpine.store('toast').push('success', 'Katalog permission diperbarui.');
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal menyegarkan katalog permission.');

@@ -16,6 +16,28 @@
             </div>
         </div>
 
+        <div x-show="showAuditBanner" x-cloak class="rounded-xl border border-signal-amber/40 bg-signal-amber/10 p-4 text-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div class="space-y-2">
+                    <template x-if="auditMissingFromDatabase.length > 0">
+                        <p>
+                            <span class="font-semibold text-ink" x-text="auditMissingFromDatabase.length"></span>
+                            permission baru ditemukan di kode, belum ada di database — sudah otomatis ditambahkan ke daftar checkbox di bawah:
+                            <span class="font-mono text-xs" x-text="auditMissingFromDatabase.join(', ')" data-testid="auditMissingFromDatabase"></span>
+                        </p>
+                    </template>
+                    <template x-if="auditUnusedInCode.length > 0">
+                        <p>
+                            <span class="font-semibold text-ink" x-text="auditUnusedInCode.length"></span>
+                            permission di database tidak dipakai di kode manapun:
+                            <span class="font-mono text-xs" x-text="auditUnusedInCode.join(', ')" data-testid="auditUnusedInCode"></span>
+                        </p>
+                    </template>
+                </div>
+                <button type="button" @click="dismissAuditBanner()" class="text-xs font-semibold text-slate hover:text-ink">Tutup</button>
+            </div>
+        </div>
+
         <div class="grid gap-3 sm:grid-cols-2">
             <template x-for="group in moduleGroups" :key="group.module">
                 <div class="rounded-xl border border-ink/10 p-4">
