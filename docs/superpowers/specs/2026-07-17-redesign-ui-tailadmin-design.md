@@ -39,9 +39,9 @@ Semua token warna diambil langsung dari `demo.tailadmin.com/style.css` (bukan te
 --gray-400: #98A2B3  --gray-500: #667085  --gray-600: #475467  --gray-700: #344054
 --gray-800: #1D2939  --gray-900: #101828
 
---success-50: #ECFDF3  --success-500: #12B76A  --success-700: #027A48
+--success-50: #ECFDF3  --success-500: #12B76A  --success-600: #039855  --success-700: #027A48
 --error-50:   #FEF3F2  --error-500:   #F04438  --error-600: #D92D20  --error-700: #B42318
---warning-50: #FFFAEB  --warning-500: #F79009  --warning-700: #B54708
+--warning-50: #FFFAEB  --warning-500: #F79009  --warning-600: #DC6803  --warning-700: #B54708
 
 --shadow-card: 0px 1px 3px 0px rgba(16,24,40,.10)
 --shadow-pop:  0 12px 28px rgba(16,24,40,.16)
@@ -53,12 +53,14 @@ Font: **Outfit** (400/500/600/700), satu keluarga untuk semua — heading dan bo
 ### 3.2 Portal publik (navy) — SPMB & portal akun pendaftar/wali murid
 
 ```
---rg-primary: #1E3A5F     --rg-primary-tint: #E7EEF5
+--rg-primary: #1E3A5F     --rg-primary-tint: #E7EEF5   --rg-primary-hover: #16324F
 --rg-bg: #F4F5F9          --rg-card: #FFFFFF
 --rg-ink: #101828         --rg-ink-soft: #667085   --rg-border: #E4E7EC
 --rg-info-bg: #EAF4FC     --rg-info-ink: #1D4ED8   --rg-info-icon: #2F86D6
 --rg-required: #F04438    --rg-track: #E7E9F0
 ```
+
+`--rg-primary-hover` (`portal-600` di Tailwind config) **bukan nilai dari `demo.tailadmin.com`** — TailAdmin tidak punya palet navy sama sekali (portal publik sengaja beda dari indigo admin, lihat §3.1). Ini warna hover/pressed yang dibuat manual sebagai versi lebih gelap dari `--rg-primary`, mengikuti pola yang sama seperti `brand-500`→`brand-600` di §3.1.
 
 Font tetap **Outfit** — satu keluarga tipografi lintas admin & portal, hanya token warna primary yang beda (indigo vs navy), supaya sistemnya tetap terasa satu produk.
 
