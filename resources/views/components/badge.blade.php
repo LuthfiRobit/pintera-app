@@ -2,15 +2,15 @@
 
 @php
     $tones = [
-        'brass' => 'bg-brass/10 text-brass',
-        'green' => 'bg-signal-green/10 text-signal-green',
-        'red' => 'bg-signal-red/10 text-signal-red',
-        'amber' => 'bg-signal-amber/10 text-signal-amber',
-        'blue' => 'bg-spmb-accent/10 text-spmb-primary',
-        'slate' => 'bg-slate/10 text-slate',
+        'brass' => 'bg-brand-50 text-brand-600',
+        'green' => 'bg-success-50 text-success-700',
+        'red' => 'bg-error-50 text-error-700',
+        'amber' => 'bg-warning-50 text-warning-700',
+        'blue' => 'bg-blue-100 text-blue-700',
+        'slate' => 'bg-gray-100 text-gray-600',
     ];
 @endphp
 
-<span {{ $attributes->merge(['class' => 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ' . ($tones[$tone] ?? $tones['slate'])]) }}>
+<span {{ $attributes->merge(['class' => 'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ' . ($tones[$tone] ?? $tones['slate'])]) }}>
     {{ $slot }}
 </span>
