@@ -37,7 +37,17 @@ class DatabaseSeeder extends Seeder
             SeleksiPpdbSeeder::class,
             JenisTagihanSeeder::class,
             NominalTagihanJalurSeeder::class,
-            M3DemoDataSeeder::class,
+            CalonMuridSeeder::class,
+            PendaftaranSeeder::class,
+            DokumenPendaftaranSeeder::class,
+            HasilSeleksiSeeder::class,
+            SkPpdbSeeder::class,
+            TagihanSeeder::class,
+            TagihanItemSeeder::class,
+            SkemaCicilanSeeder::class,
+            CicilanSeeder::class,
+            PembayaranSeeder::class,
+            AkunPendaftarSeeder::class,
         ]);
     }
 }
