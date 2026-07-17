@@ -1,8 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Yayasan &middot; Ringkasan Konsolidasi</p>
-        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Dashboard Yayasan</h2>
-    </x-slot>
+    <h1 class="sr-only">Dashboard Yayasan</h1>
 
     <div class="mx-auto max-w-6xl space-y-8">
         <x-hero-banner
