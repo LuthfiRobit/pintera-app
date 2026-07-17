@@ -51,20 +51,37 @@ beforeEach(function () {
 it('seeds mixed-status dokumen for the menunggu-verifikasi pendaftaran and all-diterima for the diterima pendaftaran', function () {
     (new DokumenPendaftaranSeeder())->run();
 
+    // Test SMP (NPSN 20223344)
     $smp = Lembaga::where('npsn', '20223344')->first();
-    $jalur = JalurPpdb::where('lembaga_id', $smp->id)->where('nama', 'Reguler')
+    $jalurSmp = JalurPpdb::where('lembaga_id', $smp->id)->where('nama', 'Reguler')
         ->whereHas('tahunAjaran', fn ($q) => $q->where('status_aktif', true))->first();
-    $jumlahSyarat = $jalur->dokumenSyarat()->count();
+    $jumlahSyaratSmp = $jalurSmp->dokumenSyarat()->count();
 
-    $menunggu = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.menunggu@example.test')->first();
-    $dokumenMenunggu = DokumenPendaftaran::where('pendaftaran_id', $menunggu->id)->get();
-    expect($dokumenMenunggu)->toHaveCount($jumlahSyarat);
-    expect($dokumenMenunggu->pluck('status_verifikasi')->unique()->count())->toBeGreaterThan(1);
+    $menungguSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.menunggu@example.test')->first();
+    $dokumenMenungguSmp = DokumenPendaftaran::where('pendaftaran_id', $menungguSmp->id)->get();
+    expect($dokumenMenungguSmp)->toHaveCount($jumlahSyaratSmp);
+    expect($dokumenMenungguSmp->pluck('status_verifikasi')->unique()->count())->toBeGreaterThan(1);
 
-    $diterima = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $dokumenDiterima = DokumenPendaftaran::where('pendaftaran_id', $diterima->id)->get();
-    expect($dokumenDiterima)->toHaveCount($jumlahSyarat);
-    expect($dokumenDiterima->pluck('status_verifikasi')->unique()->all())->toBe(['diterima']);
+    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $dokumenDiterimaSmp = DokumenPendaftaran::where('pendaftaran_id', $diterimaSmp->id)->get();
+    expect($dokumenDiterimaSmp)->toHaveCount($jumlahSyaratSmp);
+    expect($dokumenDiterimaSmp->pluck('status_verifikasi')->unique()->all())->toBe(['diterima']);
+
+    // Test SMA (NPSN 20223355)
+    $sma = Lembaga::where('npsn', '20223355')->first();
+    $jalurSma = JalurPpdb::where('lembaga_id', $sma->id)->where('nama', 'Reguler')
+        ->whereHas('tahunAjaran', fn ($q) => $q->where('status_aktif', true))->first();
+    $jumlahSyaratSma = $jalurSma->dokumenSyarat()->count();
+
+    $menungguSma = Pendaftaran::where('lembaga_id', $sma->id)->where('email_pendaftaran', 'wali.menunggu@example.test')->first();
+    $dokumenMenungguSma = DokumenPendaftaran::where('pendaftaran_id', $menungguSma->id)->get();
+    expect($dokumenMenungguSma)->toHaveCount($jumlahSyaratSma);
+    expect($dokumenMenungguSma->pluck('status_verifikasi')->unique()->count())->toBeGreaterThan(1);
+
+    $diterimaSma = Pendaftaran::where('lembaga_id', $sma->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $dokumenDiterimaSma = DokumenPendaftaran::where('pendaftaran_id', $diterimaSma->id)->get();
+    expect($dokumenDiterimaSma)->toHaveCount($jumlahSyaratSma);
+    expect($dokumenDiterimaSma->pluck('status_verifikasi')->unique()->all())->toBe(['diterima']);
 });
 
 it('is idempotent when run twice', function () {

@@ -48,19 +48,37 @@ beforeEach(function () {
 it('seeds passing-range nilai for diterima and failing-range nilai for ditolak', function () {
     (new HasilSeleksiSeeder())->run();
 
+    // Test SMP (NPSN 20223344)
     $smp = Lembaga::where('npsn', '20223344')->first();
 
-    $diterima = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $nilaiDiterima = HasilSeleksi::where('pendaftaran_id', $diterima->id)->get();
-    expect($nilaiDiterima)->not->toBeEmpty();
-    foreach ($nilaiDiterima as $hasil) {
+    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $nilaiDiterimaSmp = HasilSeleksi::where('pendaftaran_id', $diterimaSmp->id)->get();
+    expect($nilaiDiterimaSmp)->not->toBeEmpty();
+    foreach ($nilaiDiterimaSmp as $hasil) {
         expect((float) $hasil->nilai)->toBeGreaterThanOrEqual(75)->toBeLessThanOrEqual(95);
     }
 
-    $ditolak = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
-    $nilaiDitolak = HasilSeleksi::where('pendaftaran_id', $ditolak->id)->get();
-    expect($nilaiDitolak)->not->toBeEmpty();
-    foreach ($nilaiDitolak as $hasil) {
+    $ditolakSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
+    $nilaiDitolakSmp = HasilSeleksi::where('pendaftaran_id', $ditolakSmp->id)->get();
+    expect($nilaiDitolakSmp)->not->toBeEmpty();
+    foreach ($nilaiDitolakSmp as $hasil) {
+        expect((float) $hasil->nilai)->toBeGreaterThanOrEqual(30)->toBeLessThanOrEqual(55);
+    }
+
+    // Test SMA (NPSN 20223355)
+    $sma = Lembaga::where('npsn', '20223355')->first();
+
+    $diterimaSma = Pendaftaran::where('lembaga_id', $sma->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $nilaiDiterimaSma = HasilSeleksi::where('pendaftaran_id', $diterimaSma->id)->get();
+    expect($nilaiDiterimaSma)->not->toBeEmpty();
+    foreach ($nilaiDiterimaSma as $hasil) {
+        expect((float) $hasil->nilai)->toBeGreaterThanOrEqual(75)->toBeLessThanOrEqual(95);
+    }
+
+    $ditolakSma = Pendaftaran::where('lembaga_id', $sma->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
+    $nilaiDitolakSma = HasilSeleksi::where('pendaftaran_id', $ditolakSma->id)->get();
+    expect($nilaiDitolakSma)->not->toBeEmpty();
+    foreach ($nilaiDitolakSma as $hasil) {
         expect((float) $hasil->nilai)->toBeGreaterThanOrEqual(30)->toBeLessThanOrEqual(55);
     }
 });
