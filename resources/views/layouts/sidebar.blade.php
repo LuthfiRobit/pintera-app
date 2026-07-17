@@ -46,21 +46,21 @@
     x-show="sidebarOpen"
     x-transition.opacity
     @click="sidebarOpen = false"
-    class="fixed inset-0 z-30 bg-ink/40 lg:hidden"
+    class="fixed inset-0 z-30 bg-gray-900/40 lg:hidden"
     style="display: none;"
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-ink transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+    class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-gray-200 bg-white transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
     :class="{ 'translate-x-0': sidebarOpen }"
 >
-    <div class="flex h-20 shrink-0 items-center gap-3 border-b border-paper/10 px-6">
-        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brass/15 font-display text-lg font-bold text-brass">
-            {{ Str::of(config('app.name', 'Y'))->substr(0, 1) }}
+    <div class="flex h-20 shrink-0 items-center gap-3 border-b border-gray-200 px-6">
+        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 font-display text-lg font-bold text-white">
+            {{ Str::of(config('app.name', 'P'))->substr(0, 1) }}
         </span>
         <div class="leading-tight">
-            <p class="font-display text-base font-bold text-paper">{{ config('app.name', 'Yayasan') }}</p>
-            <p class="text-[11px] uppercase tracking-[0.14em] text-paper/40">Sistem Administrasi</p>
+            <p class="font-display text-base font-bold text-gray-900">{{ config('app.name', 'Pintera') }}</p>
+            <p class="text-[11px] uppercase tracking-[0.14em] text-gray-400">Sistem Administrasi</p>
         </div>
     </div>
 
@@ -68,7 +68,7 @@
         @foreach ($navGroups as $group)
             @if (count($group['items']))
                 <div class="mb-7">
-                    <p class="mb-2 px-2 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-paper/35">
+                    <p class="mb-2 px-2 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
                         {{ $group['label'] }}
                     </p>
                     <ul class="space-y-0.5">
@@ -77,13 +77,10 @@
                             <li>
                                 <a
                                     href="{{ route($item['route']) }}"
-                                    class="group relative flex items-center gap-3 rounded-r-xl py-2.5 pl-3 pr-3 text-sm transition
-                                        {{ $active ? 'bg-paper/[0.08] font-semibold text-paper' : 'text-paper/60 hover:bg-paper/5 hover:text-paper/90' }}"
+                                    class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
+                                        {{ $active ? 'bg-brand-50 font-semibold text-brand-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}"
                                 >
-                                    <span
-                                        class="absolute inset-y-1 -left-4 w-[3px] rounded-full bg-brass transition-opacity {{ $active ? 'opacity-100' : 'opacity-0' }}"
-                                    ></span>
-                                    <span class="material-symbols-outlined shrink-0 {{ $active ? 'text-brass' : 'text-paper/40 group-hover:text-paper/70' }}" style="font-variation-settings: 'FILL' {{ $active ? 1 : 0 }}, 'wght' 400;">{{ $item['icon'] }}</span>
+                                    <x-icon :name="$item['icon']" class="h-[18px] w-[18px] shrink-0 {{ $active ? 'text-brand-500' : 'text-gray-400 group-hover:text-gray-500' }}" />
                                     {{ $item['label'] }}
                                 </a>
                             </li>
@@ -94,8 +91,8 @@
         @endforeach
     </nav>
 
-    <div class="border-t border-paper/10 px-6 py-4">
-        <p class="text-[11px] leading-relaxed text-paper/30">
+    <div class="border-t border-gray-200 px-6 py-4">
+        <p class="text-[11px] leading-relaxed text-gray-400">
             &copy; {{ now()->year }} {{ config('app.name') }}. Sistem administrasi internal.
         </p>
     </div>
