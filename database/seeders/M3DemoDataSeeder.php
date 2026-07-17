@@ -17,7 +17,7 @@ use Illuminate\Database\Seeder;
 
 /**
  * Data demo M3 (Verifikasi & Keputusan): untuk setiap lembaga demo (SMP & SMA,
- * dibuat oleh DemoDataSeeder), menambahkan sebaran pendaftaran yang mencakup
+ * dibuat oleh LembagaSeeder), menambahkan sebaran pendaftaran yang mencakup
  * setiap kondisi yang perlu diuji manual: menunggu verifikasi dengan dokumen
  * campuran (sebagian terverifikasi, sebagian ditolak, sebagian belum), diterima
  * dengan nilai terisi dan SK sudah terbit, dan ditolak. Supaya M3 langsung bisa
