@@ -1,7 +1,7 @@
 # Redesign UI/UX (arah TailAdmin) — Design Spec
 
 **Tanggal:** 2026-07-17
-**Status:** Disetujui sebagai arah visual, siap masuk writing-plans
+**Status:** Fondasi (token + komponen bersama) selesai diimplementasi — lihat docs/superpowers/plans/2026-07-17-redesign-ui-foundation.md. Rollout per halaman menyusul di plan terpisah.
 **Referensi visual:** https://claude.ai/code/artifact/3684b529-993e-4198-b528-4ec290ba86d9
 
 ## 1. Latar Belakang & Tujuan
