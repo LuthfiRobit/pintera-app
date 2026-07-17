@@ -11,9 +11,37 @@
         <x-icon name="menu" class="h-5 w-5" />
     </button>
 
-    <div class="min-w-0 flex-1"></div>
+    <div class="hidden min-w-0 flex-1 max-w-[320px] items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 sm:flex">
+        <x-icon name="search" class="h-[15px] w-[15px] shrink-0" />
+        <span class="truncate">Cari menu atau perintah&hellip;</span>
+        <kbd class="ml-auto shrink-0 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 font-sans text-[10.5px] text-gray-400">&#8984;K</kbd>
+    </div>
+
+    <div class="min-w-0 flex-1 sm:hidden"></div>
 
     <div class="flex items-center gap-3 sm:gap-5">
+        <button type="button" class="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Mode gelap" title="Mode gelap belum tersedia">
+            <x-icon name="dark_mode" class="h-4 w-4" />
+        </button>
+
+        <x-dropdown align="right" width="w-80">
+            <x-slot name="trigger">
+                <button type="button" class="relative flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Notifikasi">
+                    <x-icon name="notifications" class="h-4 w-4" />
+                </button>
+            </x-slot>
+
+            <x-slot name="content">
+                <div class="flex items-center justify-between border-b border-gray-200 px-4 pb-3 pt-1">
+                    <p class="font-display text-sm font-bold text-gray-900">Notifikasi</p>
+                </div>
+                <div class="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                    <x-icon name="notifications" class="h-6 w-6 text-gray-300" />
+                    <p class="text-sm text-gray-500">Belum ada notifikasi.</p>
+                </div>
+            </x-slot>
+        </x-dropdown>
+
         @if ($isYayasan)
             <div x-data="{ open: false }" class="relative">
                 <button
