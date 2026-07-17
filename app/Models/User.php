@@ -28,6 +28,7 @@ class User extends Authenticatable
         'password',
         'lembaga_id',
         'is_active',
+        'email_verified_at',
     ];
 
     /**
