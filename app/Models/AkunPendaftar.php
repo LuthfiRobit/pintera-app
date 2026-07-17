@@ -19,6 +19,7 @@ class AkunPendaftar extends Authenticatable
         'nama',
         'email',
         'password',
+        'email_verified_at',
     ];
 
     protected $hidden = [
