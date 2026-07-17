@@ -50,6 +50,73 @@ it('forbids a lembaga-scoped user from editing a lembaga that is not their own',
     $this->actingAs($manager)->get(route('admin.lembaga.edit', $otherLembaga))->assertForbidden();
 });
 
+it('filters the index by name or npsn when cari is given', function () {
+    Permission::firstOrCreate(['name' => 'lembaga.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Pintera Satu', 'npsn' => '20111111']);
+    Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Pintera Dua', 'npsn' => '20222222']);
+
+    $byName = $this->actingAs($manager)->get(route('admin.lembaga.index', ['cari' => 'Pintera Satu']));
+    expect($byName->viewData('lembaga')->pluck('nama')->all())->toBe(['SD Pintera Satu']);
+
+    $byNpsn = $this->actingAs($manager)->get(route('admin.lembaga.index', ['cari' => '20222222']));
+    expect($byNpsn->viewData('lembaga')->pluck('nama')->all())->toBe(['SMP Pintera Dua']);
+});
+
+it('filters the index by bentuk pendidikan', function () {
+    Permission::firstOrCreate(['name' => 'lembaga.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Pintera', 'bentuk_pendidikan' => 'SD']);
+    Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Pintera', 'bentuk_pendidikan' => 'SMP']);
+
+    $response = $this->actingAs($manager)->get(route('admin.lembaga.index', ['bentuk' => 'SD']));
+
+    expect($response->viewData('lembaga')->pluck('nama')->all())->toBe(['SD Pintera']);
+});
+
+it('filters the index by status sekolah', function () {
+    Permission::firstOrCreate(['name' => 'lembaga.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga Negeri', 'status_sekolah' => 'negeri']);
+    Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga Swasta', 'status_sekolah' => 'swasta']);
+
+    $response = $this->actingAs($manager)->get(route('admin.lembaga.index', ['status' => 'negeri']));
+
+    expect($response->viewData('lembaga')->pluck('nama')->all())->toBe(['Lembaga Negeri']);
+});
+
+it('paginates the index at 10 per page', function () {
+    Permission::firstOrCreate(['name' => 'lembaga.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    Lembaga::factory()->count(12)->create(['yayasan_id' => $yayasan->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.lembaga.index'));
+
+    $response->assertOk();
+    expect($response->viewData('lembaga'))->toHaveCount(10);
+    expect($response->viewData('lembaga')->total())->toBe(12);
+});
+
 it('lets a lembaga-scoped user edit their own lembaga', function () {
     foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);

@@ -18,9 +18,20 @@ class LembagaController extends BaseController
     {
         $this->authorize('lembaga.view');
 
-        $lembaga = $request->user()->widestScopeLevel() === 'yayasan'
-            ? Lembaga::all()
-            : Lembaga::where('id', $request->user()->lembaga_id)->get();
+        $query = $request->user()->widestScopeLevel() === 'yayasan'
+            ? Lembaga::query()
+            : Lembaga::where('id', $request->user()->lembaga_id);
+
+        $query->when($request->filled('cari'), function ($q) use ($request) {
+            $cari = $request->query('cari');
+            $q->where(function ($q) use ($cari) {
+                $q->where('nama', 'like', "%{$cari}%")->orWhere('npsn', 'like', "%{$cari}%");
+            });
+        })
+            ->when($request->filled('bentuk'), fn ($q) => $q->where('bentuk_pendidikan', $request->query('bentuk')))
+            ->when($request->filled('status'), fn ($q) => $q->where('status_sekolah', $request->query('status')));
+
+        $lembaga = $query->orderBy('nama')->paginate(10)->withQueryString();
 
         return view('admin.lembaga.index', ['lembaga' => $lembaga]);
     }
