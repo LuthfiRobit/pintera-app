@@ -23,7 +23,7 @@
 
     <div class="min-w-0 flex-1 sm:hidden"></div>
 
-    <div class="flex items-center gap-3 sm:gap-5">
+    <div class="ml-auto flex items-center gap-3 sm:gap-5">
         <button type="button" class="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Mode gelap" title="Mode gelap belum tersedia">
             <x-icon name="dark_mode" class="h-4 w-4" />
         </button>
