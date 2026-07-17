@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -17,13 +16,28 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             YayasanSeeder::class,
             JabatanTambahanMasterSeeder::class,
-            DemoDataSeeder::class,
-            M3DemoDataSeeder::class,
-            // EssentialUserSeeder runs last for now because it needs at least one Lembaga to
-            // exist for 4 of its 5 accounts -- DemoDataSeeder is what creates Lembaga rows
-            // today. Once a dedicated LembagaSeeder exists (seeder-architecture-cleanup
-            // sub-project 2), move this line to run right after it instead.
+            LembagaSeeder::class,
             EssentialUserSeeder::class,
+            UserSeeder::class,
+            TahunAjaranSeeder::class,
+            SemesterSeeder::class,
+            GuruSeeder::class,
+            RiwayatPendidikanGuruSeeder::class,
+            SertifikasiGuruSeeder::class,
+            GuruJabatanTambahanSeeder::class,
+            LembagaDataPeriodikSeeder::class,
+            LayananKhususLembagaSeeder::class,
+            ProgramInklusiLembagaSeeder::class,
+            EkstrakurikulerLembagaSeeder::class,
+            JenisTesMasterSeeder::class,
+            GelombangPpdbSeeder::class,
+            JalurPpdbSeeder::class,
+            FormulirFieldSeeder::class,
+            DokumenSyaratPpdbSeeder::class,
+            SeleksiPpdbSeeder::class,
+            JenisTagihanSeeder::class,
+            NominalTagihanJalurSeeder::class,
+            M3DemoDataSeeder::class,
         ]);
     }
 }
