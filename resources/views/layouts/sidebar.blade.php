@@ -51,8 +51,8 @@
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-gray-200 bg-white transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
-    :class="{ 'translate-x-0': sidebarOpen }"
+    class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-gray-300 bg-white transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+    :class="{ 'translate-x-0': sidebarOpen, 'lg:hidden': sidebarCollapsed }"
 >
     <div class="flex h-20 shrink-0 items-center gap-3 border-b border-gray-200 px-6">
         <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 font-display text-lg font-bold text-white">
@@ -64,7 +64,7 @@
         </div>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-4 py-6">
+    <nav class="scrollbar-none flex-1 overflow-y-auto px-4 py-6">
         @foreach ($navGroups as $group)
             @if (count($group['items']))
                 <div class="mb-7">
