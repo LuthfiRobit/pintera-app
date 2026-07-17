@@ -9,7 +9,7 @@
 <header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-300 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">
     <button
         @click="window.innerWidth >= 1024 ? sidebarCollapsed = !sidebarCollapsed : sidebarOpen = true"
-        class="text-gray-500 hover:text-gray-700"
+        class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50"
         aria-label="Buka/tutup sidebar"
     >
         <x-icon name="menu" class="h-5 w-5" />

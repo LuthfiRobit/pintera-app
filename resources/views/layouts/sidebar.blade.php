@@ -51,10 +51,10 @@
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-gray-300 bg-white transition-transform duration-200 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
-    :class="{ 'translate-x-0': sidebarOpen, 'lg:hidden': sidebarCollapsed }"
+    class="fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 -translate-x-full flex-col overflow-hidden border-r border-gray-300 bg-white transition-all duration-200 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+    :class="{ 'translate-x-0': sidebarOpen, 'lg:w-0 lg:border-r-0': sidebarCollapsed, 'lg:w-72': !sidebarCollapsed }"
 >
-    <div class="flex h-20 shrink-0 items-center gap-3 border-b border-gray-200 px-6">
+    <div class="flex h-20 shrink-0 items-center gap-3 px-6">
         <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 font-display text-lg font-bold text-white">
             {{ Str::of(config('app.name', 'P'))->substr(0, 1) }}
         </span>
