@@ -16,11 +16,19 @@ class GelombangPpdbController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('gelombang-ppdb.view');
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
+        $tahunAjaranOptions = TahunAjaran::orderByDesc('tanggal_mulai')->get();
+
+        // The "tahun_ajaran" filter lets an admin browse a past year's gelombang
+        // instead of only ever seeing the currently-active one. No filter given
+        // falls back to the active year, matching the page's original behaviour.
+        $tahunAjaranTerpilih = $request->filled('tahun_ajaran')
+            ? $tahunAjaranOptions->firstWhere('id', (int) $request->query('tahun_ajaran'))
+            : $tahunAjaranAktif;
 
         $tahunAjaranSebelumnya = $tahunAjaranAktif
             ? TahunAjaran::where('id', '!=', $tahunAjaranAktif->id)
@@ -38,11 +46,17 @@ class GelombangPpdbController extends BaseController
             $tahunAjaranSebelumnya = null;
         }
 
+        $query = $tahunAjaranTerpilih
+            ? GelombangPpdb::where('tahun_ajaran_id', $tahunAjaranTerpilih->id)
+            : GelombangPpdb::whereRaw('1 = 0');
+
+        $query->when($request->filled('cari'), fn ($q) => $q->where('nama', 'like', '%'.$request->query('cari').'%'));
+
         return view('admin.gelombang-ppdb.index', [
             'tahunAjaranAktif' => $tahunAjaranAktif,
-            'gelombangList' => $tahunAjaranAktif
-                ? GelombangPpdb::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('tanggal_buka')->get()
-                : collect(),
+            'tahunAjaranOptions' => $tahunAjaranOptions,
+            'tahunAjaranTerpilih' => $tahunAjaranTerpilih,
+            'gelombangList' => $query->orderBy('tanggal_buka')->paginate(10)->withQueryString(),
             'tahunAjaranSebelumnya' => $tahunAjaranSebelumnya,
         ]);
     }

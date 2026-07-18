@@ -181,6 +181,64 @@ it('does not show the "Salin dari" callout when the only prior tahun ajaran has 
         ->assertDontSee('Salin dari');
 });
 
+it('filters the index by nama when cari is given', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Gelombang Prestasi', 'tanggal_buka' => '2026-08-01', 'tanggal_tutup' => '2026-09-01', 'kuota' => 40,
+    ]);
+    GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Gelombang Reguler', 'tanggal_buka' => '2026-09-02', 'tanggal_tutup' => '2026-10-01', 'kuota' => 60,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('admin.gelombang-ppdb.index', ['cari' => 'Prestasi']));
+
+    expect($response->viewData('gelombangList')->pluck('nama')->all())->toBe(['Gelombang Prestasi']);
+});
+
+it('lets the tahun_ajaran filter browse a past year instead of only the active one', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    $tahunLalu = TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
+        'tanggal_mulai' => '2025-07-01', 'tanggal_selesai' => '2026-06-30', 'status_aktif' => false,
+    ]);
+    GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id,
+        'nama' => 'Gelombang Tahun Lalu', 'tanggal_buka' => '2025-08-01', 'tanggal_tutup' => '2025-09-01', 'kuota' => 30,
+    ]);
+    GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Gelombang Tahun Ini', 'tanggal_buka' => '2026-08-01', 'tanggal_tutup' => '2026-09-01', 'kuota' => 40,
+    ]);
+
+    $default = $this->actingAs($user)->get(route('admin.gelombang-ppdb.index'));
+    expect($default->viewData('gelombangList')->pluck('nama')->all())->toBe(['Gelombang Tahun Ini']);
+
+    $pastYear = $this->actingAs($user)->get(route('admin.gelombang-ppdb.index', ['tahun_ajaran' => $tahunLalu->id]));
+    expect($pastYear->viewData('gelombangList')->pluck('nama')->all())->toBe(['Gelombang Tahun Lalu']);
+});
+
+it('paginates the index at 10 per page', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    foreach (range(1, 12) as $i) {
+        $day = str_pad((string) $i, 2, '0', STR_PAD_LEFT);
+        GelombangPpdb::create([
+            'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+            'nama' => "Gelombang {$i}", 'tanggal_buka' => "2026-08-{$day}", 'tanggal_tutup' => "2026-09-{$day}", 'kuota' => 10,
+        ]);
+    }
+
+    $response = $this->actingAs($user)->get(route('admin.gelombang-ppdb.index'));
+
+    $response->assertOk();
+    expect($response->viewData('gelombangList'))->toHaveCount(10);
+    expect($response->viewData('gelombangList')->total())->toBe(12);
+});
+
 it('lets a yayasan-scoped user with an active lembaga selected via the switcher create a gelombang scoped to it', function () {
     [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
 
