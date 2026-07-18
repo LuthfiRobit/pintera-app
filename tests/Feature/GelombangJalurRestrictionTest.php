@@ -242,3 +242,25 @@ it('shows a "N Jalur Dibatasi" badge for a restricted gelombang on the index', f
         ->assertOk()
         ->assertSee('1 Jalur Dibatasi');
 });
+
+it('seeds a restricted demo gelombang for SMP alongside unrestricted ones', function () {
+    $this->seed();
+
+    $smp = \App\Models\Lembaga::where('npsn', '20223344')->firstOrFail();
+    $smpAktif = \App\Models\TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->firstOrFail();
+    $gelombang1 = GelombangPpdb::where('lembaga_id', $smp->id)
+        ->where('tahun_ajaran_id', $smpAktif->id)
+        ->where('nama', 'Gelombang 1')
+        ->firstOrFail();
+
+    expect($gelombang1->jalur()->pluck('jalur_ppdb.nama')->sort()->values()->all())->toBe(['Prestasi', 'Reguler']);
+
+    $sma = \App\Models\Lembaga::where('npsn', '20223355')->firstOrFail();
+    $smaAktif = \App\Models\TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->firstOrFail();
+    $smaGelombang1 = GelombangPpdb::where('lembaga_id', $sma->id)
+        ->where('tahun_ajaran_id', $smaAktif->id)
+        ->where('nama', 'Gelombang 1')
+        ->firstOrFail();
+
+    expect($smaGelombang1->jalur()->exists())->toBeFalse();
+});

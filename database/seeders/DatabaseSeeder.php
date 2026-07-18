@@ -48,6 +48,7 @@ class DatabaseSeeder extends Seeder
             CicilanSeeder::class,
             PembayaranSeeder::class,
             AkunPendaftarSeeder::class,
+            GelombangJalurSeeder::class,
         ]);
     }
 }
