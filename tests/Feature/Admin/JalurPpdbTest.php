@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\GelombangPpdb;
 use App\Models\JalurPpdb;
 use App\Models\Lembaga;
 use App\Models\Role;
@@ -115,4 +116,109 @@ it('does not show the "Salin dari" callout when the only prior tahun ajaran has 
     $this->actingAs($user)->get(route('admin.jalur-ppdb.index'))
         ->assertOk()
         ->assertDontSee('Salin dari');
+});
+
+it('rejects deactivating a jalur that is still used by a gelombang', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler', 'status_aktif' => true]);
+    $gelombang = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => now(), 'tanggal_tutup' => now()->addMonth(), 'kuota' => 10,
+    ]);
+    $gelombang->jalur()->attach($jalur->id);
+
+    // This is exactly the scenario that previously wiped the gelombang's
+    // pivot silently: the only jalur it uses gets deactivated, then any
+    // save on the gelombang cleared the restriction with no warning.
+    $this->actingAs($user)->put(route('admin.jalur-ppdb.update', $jalur), [
+        'nama' => 'Reguler',
+        'deskripsi' => null,
+        'status_aktif' => 0,
+    ])->assertSessionHasErrors('status_aktif');
+
+    expect($jalur->fresh()->status_aktif)->toBeTrue();
+    expect($gelombang->jalur()->count())->toBe(1);
+});
+
+it('names the affected gelombang in the deactivation error message', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler', 'status_aktif' => true]);
+    $gelombang = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => now(), 'tanggal_tutup' => now()->addMonth(), 'kuota' => 10,
+    ]);
+    $gelombang->jalur()->attach($jalur->id);
+
+    $this->actingAs($user)->put(route('admin.jalur-ppdb.update', $jalur), [
+        'nama' => 'Reguler',
+        'deskripsi' => null,
+        'status_aktif' => 0,
+    ]);
+
+    expect(session('errors')->get('status_aktif')[0])->toContain('Gelombang 1');
+});
+
+it('allows deactivating a jalur that is not used by any gelombang', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler', 'status_aktif' => true]);
+
+    $this->actingAs($user)->put(route('admin.jalur-ppdb.update', $jalur), [
+        'nama' => 'Reguler',
+        'deskripsi' => null,
+        'status_aktif' => 0,
+    ])->assertRedirect(route('admin.jalur-ppdb.edit', $jalur));
+
+    expect($jalur->fresh()->status_aktif)->toBeFalse();
+});
+
+it('allows reactivating a jalur without any restriction check', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler', 'status_aktif' => false]);
+    $gelombang = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => now(), 'tanggal_tutup' => now()->addMonth(), 'kuota' => 10,
+    ]);
+    // A pivot row referencing an already-inactive jalur can only exist from
+    // data created before this safeguard — reactivating must never be
+    // blocked regardless, only the true -> false transition is guarded.
+    $gelombang->jalur()->attach($jalur->id);
+
+    $this->actingAs($user)->put(route('admin.jalur-ppdb.update', $jalur), [
+        'nama' => 'Reguler',
+        'deskripsi' => null,
+        'status_aktif' => 1,
+    ])->assertRedirect(route('admin.jalur-ppdb.edit', $jalur));
+
+    expect($jalur->fresh()->status_aktif)->toBeTrue();
+});
+
+it('lets the tahun_ajaran filter browse a past year instead of only the active one', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+    JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Jalur Baru']);
+
+    $tahunLama = TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
+        'tanggal_mulai' => '2025-07-01', 'tanggal_selesai' => '2026-06-30', 'status_aktif' => false,
+    ]);
+    JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLama->id, 'nama' => 'Jalur Lama']);
+
+    $this->actingAs($user)->get(route('admin.jalur-ppdb.index', ['tahun_ajaran' => $tahunLama->id]))
+        ->assertOk()
+        ->assertSee('Jalur Lama')
+        ->assertDontSee('Jalur Baru');
+});
+
+it('filters the index by nama when cari is given', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+    JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Prestasi']);
+
+    $this->actingAs($user)->get(route('admin.jalur-ppdb.index', ['cari' => 'Reg']))
+        ->assertOk()
+        ->assertSee('Reguler')
+        ->assertDontSee('Prestasi');
 });

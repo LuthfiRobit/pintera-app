@@ -17,11 +17,20 @@ class JalurPpdbController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('jalur-ppdb.view');
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
+        $tahunAjaranOptions = TahunAjaran::orderByDesc('tanggal_mulai')->get();
+
+        // The "tahun_ajaran" filter lets an admin browse a past year's jalur
+        // instead of only ever seeing the currently-active one. No filter
+        // given falls back to the active year, matching the page's original
+        // behaviour.
+        $tahunAjaranTerpilih = $request->filled('tahun_ajaran')
+            ? $tahunAjaranOptions->firstWhere('id', (int) $request->query('tahun_ajaran'))
+            : $tahunAjaranAktif;
 
         $tahunAjaranSebelumnya = $tahunAjaranAktif
             ? TahunAjaran::where('id', '!=', $tahunAjaranAktif->id)
@@ -39,11 +48,17 @@ class JalurPpdbController extends BaseController
             $tahunAjaranSebelumnya = null;
         }
 
+        $query = $tahunAjaranTerpilih
+            ? JalurPpdb::withCount('gelombang')->where('tahun_ajaran_id', $tahunAjaranTerpilih->id)
+            : JalurPpdb::whereRaw('1 = 0');
+
+        $query->when($request->filled('cari'), fn ($q) => $q->where('nama', 'like', '%'.$request->query('cari').'%'));
+
         return view('admin.jalur-ppdb.index', [
             'tahunAjaranAktif' => $tahunAjaranAktif,
-            'jalurList' => $tahunAjaranAktif
-                ? JalurPpdb::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
-                : collect(),
+            'tahunAjaranOptions' => $tahunAjaranOptions,
+            'tahunAjaranTerpilih' => $tahunAjaranTerpilih,
+            'jalurList' => $query->orderBy('nama')->get(),
             'tahunAjaranSebelumnya' => $tahunAjaranSebelumnya,
         ]);
     }
@@ -104,6 +119,7 @@ class JalurPpdbController extends BaseController
             'jalur' => $jalurPpdb,
             'gelombangList' => GelombangPpdb::where('tahun_ajaran_id', $jalurPpdb->tahun_ajaran_id)->orderBy('nama')->get(),
             'jenisTesList' => JenisTesMaster::orderBy('nama')->get(),
+            'gelombangPemakai' => $jalurPpdb->gelombang()->orderBy('nama')->pluck('nama'),
         ]);
     }
 
@@ -123,6 +139,14 @@ class JalurPpdbController extends BaseController
             'deskripsi' => ['nullable', 'string', 'max:2000'],
             'status_aktif' => ['required', 'boolean'],
         ]);
+
+        if ($jalurPpdb->status_aktif && ! $data['status_aktif'] && $jalurPpdb->gelombang()->exists()) {
+            $namaGelombang = $jalurPpdb->gelombang()->orderBy('nama')->pluck('gelombang_ppdb.nama')->implode(', ');
+
+            return back()->withErrors([
+                'status_aktif' => "Tidak bisa menonaktifkan jalur ini karena masih dipakai di gelombang: {$namaGelombang}. Hapus centang jalur ini dari gelombang tersebut terlebih dahulu.",
+            ])->withInput();
+        }
 
         $jalurPpdb->update($data);
 
