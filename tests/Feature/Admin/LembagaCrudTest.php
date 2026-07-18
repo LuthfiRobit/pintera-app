@@ -141,3 +141,127 @@ it('lets a lembaga-scoped user edit their own lembaga', function () {
 
     expect($ownLembaga->fresh()->nama)->toBe('Nama Baru');
 });
+
+it('defaults status_aktif to true on create when the checkbox key is absent from the request', function () {
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+
+    $this->actingAs($manager)->post(route('admin.lembaga.store'), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => '20301235',
+        'nama' => 'SMA Pintera Empat',
+        'bentuk_pendidikan' => 'SMA',
+        'status_sekolah' => 'swasta',
+        'naungan' => 'kemendikdasmen',
+        // status_aktif deliberately omitted, like an unchecked box or a raw API call
+    ]);
+
+    expect(Lembaga::where('npsn', '20301235')->first()->status_aktif)->toBeTrue();
+});
+
+it('turns status_aktif, mbs, and memungut_iuran off when their checkboxes are left unchecked on update', function () {
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create([
+        'yayasan_id' => $yayasan->id,
+        'status_aktif' => true,
+        'mbs' => true,
+        'memungut_iuran' => true,
+    ]);
+
+    $this->actingAs($manager)->put(route('admin.lembaga.update', $lembaga), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => $lembaga->npsn,
+        'nama' => $lembaga->nama,
+        'bentuk_pendidikan' => $lembaga->bentuk_pendidikan,
+        'status_sekolah' => $lembaga->status_sekolah,
+        'naungan' => $lembaga->naungan,
+        // all three checkboxes omitted, simulating the user unchecking them
+    ])->assertRedirect(route('admin.lembaga.index'));
+
+    $fresh = $lembaga->fresh();
+    expect($fresh->status_aktif)->toBeFalse();
+    expect($fresh->mbs)->toBeFalse();
+    expect($fresh->memungut_iuran)->toBeFalse();
+});
+
+it('rejects a duplicate npsn on create but allows a lembaga to keep its own npsn on update', function () {
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    $existing = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'npsn' => '20301236']);
+
+    $this->actingAs($manager)->post(route('admin.lembaga.store'), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => '20301236',
+        'nama' => 'SMA Pintera Lima',
+        'bentuk_pendidikan' => 'SMA',
+        'status_sekolah' => 'swasta',
+        'naungan' => 'kemendikdasmen',
+    ])->assertSessionHasErrors('npsn');
+
+    $this->actingAs($manager)->put(route('admin.lembaga.update', $existing), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => '20301236',
+        'nama' => 'Nama Diperbarui',
+        'bentuk_pendidikan' => $existing->bentuk_pendidikan,
+        'status_sekolah' => $existing->status_sekolah,
+        'naungan' => $existing->naungan,
+    ])->assertSessionDoesntHaveErrors('npsn');
+});
+
+it('persists the extended profile fields (alamat, kontak, bank) on create', function () {
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+
+    $this->actingAs($manager)->post(route('admin.lembaga.store'), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => '20301237',
+        'nama' => 'SMA Pintera Enam',
+        'bentuk_pendidikan' => 'SMA',
+        'status_sekolah' => 'swasta',
+        'naungan' => 'kemendikdasmen',
+        'kecamatan' => 'Lowokwaru',
+        'kabupaten_kota' => 'Malang',
+        'provinsi' => 'Jawa Timur',
+        'telepon' => '0341-123456',
+        'nama_bank' => 'Bank Jatim',
+        'nominal_iuran' => '150000',
+        'periode_iuran' => 'bulanan',
+    ])->assertRedirect(route('admin.lembaga.index'));
+
+    $created = Lembaga::where('npsn', '20301237')->first();
+    expect($created->kecamatan)->toBe('Lowokwaru');
+    expect($created->kabupaten_kota)->toBe('Malang');
+    expect($created->provinsi)->toBe('Jawa Timur');
+    expect($created->nama_bank)->toBe('Bank Jatim');
+    expect((float) $created->nominal_iuran)->toBe(150000.0);
+    expect($created->periode_iuran)->toBe('bulanan');
+});

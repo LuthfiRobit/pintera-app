@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class LembagaController extends BaseController
@@ -50,6 +51,7 @@ class LembagaController extends BaseController
         abort_unless($request->user()->widestScopeLevel() === 'yayasan', 403);
 
         $data = $this->validated($request);
+        $data = array_merge($data, $this->booleans($request, isCreate: true));
 
         Lembaga::create($data);
 
@@ -69,7 +71,10 @@ class LembagaController extends BaseController
         $this->authorize('lembaga.edit');
         $this->authorizeOwnLembaga($request, $lembaga);
 
-        $lembaga->update($this->validated($request));
+        $data = $this->validated($request, $lembaga);
+        $data = array_merge($data, $this->booleans($request, isCreate: false));
+
+        $lembaga->update($data);
 
         return redirect()->route('admin.lembaga.index')->with('status', 'Lembaga berhasil diperbarui.');
     }
@@ -82,17 +87,67 @@ class LembagaController extends BaseController
         abort_unless($isYayasanScope || $isOwnLembaga, 403);
     }
 
-    private function validated(Request $request): array
+    /**
+     * HTML checkboxes omit their key entirely when unchecked, so these three
+     * booleans are read directly off the request rather than through
+     * validate() — otherwise unchecking one on an edit form would silently
+     * leave the previous value in place instead of turning it off.
+     */
+    private function booleans(Request $request, bool $isCreate): array
+    {
+        return [
+            'mbs' => $request->boolean('mbs'),
+            'memungut_iuran' => $request->boolean('memungut_iuran'),
+            // On create, a request that never sent status_aktif at all (e.g. a raw API
+            // call that predates this form) should still land active, matching the
+            // migration's own default(true) — only an edit's unchecked box means "off".
+            'status_aktif' => $isCreate && ! $request->has('status_aktif') ? true : $request->boolean('status_aktif'),
+        ];
+    }
+
+    private function validated(Request $request, ?Lembaga $lembaga = null): array
     {
         return $request->validate([
             'yayasan_id' => ['required', 'exists:yayasan,id'],
-            'npsn' => ['required', 'string', 'max:20'],
+            'npsn' => ['required', 'string', 'max:20', Rule::unique('lembaga', 'npsn')->ignore($lembaga?->id)],
+            'nss' => ['nullable', 'string', 'max:255'],
             'nama' => ['required', 'string', 'max:255'],
             'bentuk_pendidikan' => ['required', 'in:KB,TPA,SPS,TK,SD,SMP,SMA,SMK,SLB'],
             'status_sekolah' => ['required', 'in:negeri,swasta'],
+            'status_kepemilikan' => ['nullable', 'string', 'max:255'],
             'naungan' => ['required', 'in:kemendikdasmen,kemenag'],
+            'akreditasi' => ['nullable', 'in:A,B,C,belum'],
+            'sk_pendirian_nomor' => ['nullable', 'string', 'max:255'],
+            'sk_pendirian_tanggal' => ['nullable', 'date'],
+            'sk_izin_operasional_nomor' => ['nullable', 'string', 'max:255'],
+            'sk_izin_operasional_tanggal' => ['nullable', 'date'],
+            'sk_akreditasi_nomor' => ['nullable', 'string', 'max:255'],
+            'tanggal_sk_akreditasi' => ['nullable', 'date'],
+            'nama_kepala_sekolah' => ['nullable', 'string', 'max:255'],
+            'nama_bendahara_bosp' => ['nullable', 'string', 'max:255'],
+            'alamat_jalan' => ['nullable', 'string'],
+            'rt' => ['nullable', 'string', 'max:5'],
+            'rw' => ['nullable', 'string', 'max:5'],
+            'nama_dusun' => ['nullable', 'string', 'max:255'],
+            'desa_kelurahan' => ['nullable', 'string', 'max:255'],
+            'kecamatan' => ['nullable', 'string', 'max:255'],
+            'kabupaten_kota' => ['nullable', 'string', 'max:255'],
+            'provinsi' => ['nullable', 'string', 'max:255'],
+            'kode_pos' => ['nullable', 'string', 'max:10'],
+            'lintang' => ['nullable', 'numeric', 'between:-90,90'],
+            'bujur' => ['nullable', 'numeric', 'between:-180,180'],
             'telepon' => ['nullable', 'string', 'max:30'],
-            'email' => ['nullable', 'email'],
+            'fax' => ['nullable', 'string', 'max:30'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'website' => ['nullable', 'string', 'max:255'],
+            'nama_bank' => ['nullable', 'string', 'max:255'],
+            'cabang_kcp_unit' => ['nullable', 'string', 'max:255'],
+            'rekening_atas_nama' => ['nullable', 'string', 'max:255'],
+            'nomor_rekening' => ['nullable', 'string'],
+            'nama_wajib_pajak' => ['nullable', 'string', 'max:255'],
+            'npwp' => ['nullable', 'string'],
+            'nominal_iuran' => ['nullable', 'numeric', 'min:0'],
+            'periode_iuran' => ['nullable', 'in:bulanan,tahunan'],
         ]);
     }
 }
