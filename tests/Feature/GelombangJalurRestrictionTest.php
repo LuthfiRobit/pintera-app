@@ -39,3 +39,33 @@ it('has zero pivot rows for a gelombang by default (unrestricted)', function () 
 
     expect($gelombang->jalur()->exists())->toBeFalse();
 });
+
+it('shows every active jalur to the public when the gelombang is unrestricted', function () {
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+
+    $this->get("/spmb/{$lembaga->slug}")
+        ->assertOk()
+        ->assertSee('Reguler')
+        ->assertSee('Prestasi');
+});
+
+it('shows only the assigned jalur to the public when the gelombang is restricted', function () {
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    $gelombang->jalur()->attach($jalurReguler->id);
+
+    $this->get("/spmb/{$lembaga->slug}")
+        ->assertOk()
+        ->assertSee('Reguler')
+        ->assertDontSee('Prestasi');
+});
+
+it('never shows an inactive jalur to the public even if explicitly assigned to the gelombang', function () {
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    $jalurPrestasi->update(['status_aktif' => false]);
+    $gelombang->jalur()->attach([$jalurReguler->id, $jalurPrestasi->id]);
+
+    $this->get("/spmb/{$lembaga->slug}")
+        ->assertOk()
+        ->assertSee('Reguler')
+        ->assertDontSee('Prestasi');
+});

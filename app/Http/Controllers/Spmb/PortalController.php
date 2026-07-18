@@ -24,8 +24,11 @@ class PortalController extends BaseController
             return view('spmb.tertutup', ['lembaga' => $lembaga]);
         }
 
+        $dibatasi = $gelombang->jalur()->exists();
+
         $jalurList = JalurPpdb::where('tahun_ajaran_id', $gelombang->tahun_ajaran_id)
             ->where('status_aktif', true)
+            ->when($dibatasi, fn ($q) => $q->whereHas('gelombang', fn ($q2) => $q2->whereKey($gelombang->id)))
             ->orderBy('nama')
             ->get();
 
