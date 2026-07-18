@@ -239,6 +239,20 @@ it('paginates the index at 10 per page', function () {
     expect($response->viewData('gelombangList')->total())->toBe(12);
 });
 
+it('shows the owning lembaga name under each gelombang name', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Gelombang 1', 'tanggal_buka' => '2026-08-01', 'tanggal_tutup' => '2026-09-01', 'kuota' => 40,
+    ]);
+
+    $this->actingAs($user)->get(route('admin.gelombang-ppdb.index'))
+        ->assertOk()
+        ->assertSee('Gelombang 1')
+        ->assertSee($lembaga->nama);
+});
+
 it('lets a yayasan-scoped user with an active lembaga selected via the switcher create a gelombang scoped to it', function () {
     [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
 

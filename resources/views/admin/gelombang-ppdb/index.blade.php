@@ -111,7 +111,13 @@
                                             </x-dropdown-link>
                                         </x-table-actions>
                                     </td>
-                                    <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $gelombang->nama }}</td>
+                                    <td class="px-5 py-3.5">
+                                        <p class="font-semibold text-gray-900">{{ $gelombang->nama }}</p>
+                                        <p class="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                                            <x-icon name="apartment" class="h-3 w-3 shrink-0 text-gray-400" />
+                                            {{ $gelombang->lembaga->nama }}
+                                        </p>
+                                    </td>
                                     <td class="px-5 py-3.5 text-gray-600">{{ $gelombang->tanggal_buka->format('d M Y') }}</td>
                                     <td class="px-5 py-3.5 text-gray-600">{{ $gelombang->tanggal_tutup->format('d M Y') }}</td>
                                     <td class="px-5 py-3.5 font-mono text-gray-600">{{ $gelombang->kuota }}</td>

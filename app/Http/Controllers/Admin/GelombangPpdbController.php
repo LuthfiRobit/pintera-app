@@ -47,7 +47,7 @@ class GelombangPpdbController extends BaseController
         }
 
         $query = $tahunAjaranTerpilih
-            ? GelombangPpdb::where('tahun_ajaran_id', $tahunAjaranTerpilih->id)
+            ? GelombangPpdb::with('lembaga')->where('tahun_ajaran_id', $tahunAjaranTerpilih->id)
             : GelombangPpdb::whereRaw('1 = 0');
 
         $query->when($request->filled('cari'), fn ($q) => $q->where('nama', 'like', '%'.$request->query('cari').'%'));
