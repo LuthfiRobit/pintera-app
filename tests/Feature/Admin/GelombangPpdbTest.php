@@ -110,6 +110,24 @@ it('redirects a yayasan-scoped user with no active lembaga selected away from th
         ->assertSessionHasErrors('lembaga_id');
 });
 
+it('shows the "pilih lembaga aktif" error banner on the index after the create redirect', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
+
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser->assignRole($yayasanRole);
+
+    $this->actingAs($yayasanUser)->get(route('admin.gelombang-ppdb.create'));
+
+    $this->actingAs($yayasanUser)->get(route('admin.gelombang-ppdb.index'))
+        ->assertSee('Pilih lembaga aktif melalui pengalih lembaga sebelum menambah gelombang.');
+});
+
 it('rejects a store from a yayasan-scoped user with no active lembaga selected, without creating a row', function () {
     [$lembaga, $user, $tahunAjaran] = buatAdminPpdbDenganTahunAktif();
 

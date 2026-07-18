@@ -3,6 +3,9 @@
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700">{{ $errors->first() }}</div>
+        @endif
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="font-display text-lg font-bold text-gray-900">

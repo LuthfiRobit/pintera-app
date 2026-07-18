@@ -46,9 +46,9 @@
             <div class="mt-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
                 <p class="mb-1 flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <x-icon name="signpost" class="h-[15px] w-[15px] text-gray-400" />
-                    Batasi Jalur (Opsional)
+                    Jalur yang Digunakan
                 </p>
-                <p class="mb-4 text-xs text-gray-500">Kosongkan semua supaya semua jalur aktif tersedia untuk gelombang ini. Centang jalur tertentu untuk membatasi hanya jalur itu yang bisa dipilih calon murid.</p>
+                <p class="mb-4 text-xs text-gray-500">Jalur yang tercentang adalah jalur yang bisa dipilih calon murid untuk gelombang ini. Minimal satu jalur harus dicentang.</p>
 
                 @if ($jalurAktif->isEmpty())
                     <p class="text-sm text-gray-500">
@@ -59,11 +59,12 @@
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                         @foreach ($jalurAktif as $jalur)
                             <label class="flex items-center gap-2 text-sm text-gray-700">
-                                <input type="checkbox" name="jalur_ids[]" value="{{ $jalur->id }}" class="rounded border-gray-300 text-brand-500 focus:ring-brand-500" @checked(in_array($jalur->id, old('jalur_ids', [])))>
+                                <input type="checkbox" name="jalur_ids[]" value="{{ $jalur->id }}" class="rounded border-gray-300 text-brand-500 focus:ring-brand-500" @checked(in_array($jalur->id, old('jalur_ids', $jalurAktif->pluck('id')->all())))>
                                 {{ $jalur->nama }}
                             </label>
                         @endforeach
                     </div>
+                    <x-input-error :messages="$errors->get('jalur_ids')" class="mt-2" />
                 @endif
             </div>
 

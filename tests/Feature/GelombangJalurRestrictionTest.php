@@ -121,7 +121,7 @@ it('syncs jalur_ids to the pivot on create', function () {
     expect($gelombangBaru->jalur()->pluck('jalur_ppdb.id')->all())->toBe([$jalurReguler->id]);
 });
 
-it('creates an unrestricted gelombang when jalur_ids is omitted entirely', function () {
+it('rejects creating a gelombang when jalur_ids is omitted and active jalur exist', function () {
     foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
         \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
@@ -137,13 +137,13 @@ it('creates an unrestricted gelombang when jalur_ids is omitted entirely', funct
         'tanggal_buka' => '2026-08-01',
         'tanggal_tutup' => '2026-09-01',
         'kuota' => 30,
-    ])->assertRedirect(route('admin.gelombang-ppdb.index'));
+        // jalur_ids omitted entirely
+    ])->assertSessionHasErrors('jalur_ids');
 
-    $gelombangBaru = GelombangPpdb::where('nama', 'Gelombang 2')->firstOrFail();
-    expect($gelombangBaru->jalur()->exists())->toBeFalse();
+    expect(GelombangPpdb::where('nama', 'Gelombang 2')->exists())->toBeFalse();
 });
 
-it('clears the pivot back to unrestricted when an update omits jalur_ids after it was previously restricted', function () {
+it('rejects updating a gelombang when jalur_ids is omitted, leaving its existing pivot untouched', function () {
     foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
         \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
@@ -160,13 +160,35 @@ it('clears the pivot back to unrestricted when an update omits jalur_ids after i
         'tanggal_buka' => $gelombang->tanggal_buka->format('Y-m-d'),
         'tanggal_tutup' => $gelombang->tanggal_tutup->format('Y-m-d'),
         'kuota' => $gelombang->kuota,
-        // jalur_ids omitted entirely, simulating every checkbox left unchecked
-    ])->assertRedirect(route('admin.gelombang-ppdb.index'));
+        // jalur_ids omitted entirely
+    ])->assertSessionHasErrors('jalur_ids');
 
-    expect($gelombang->jalur()->exists())->toBeFalse();
+    expect($gelombang->jalur()->pluck('jalur_ppdb.id')->all())->toBe([$jalurReguler->id]);
 });
 
-it('shows a checkbox per active jalur on the create form, none pre-checked', function () {
+it('rejects saving when every jalur checkbox is unchecked', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombangLama] = buatGelombangDenganDuaJalur();
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->post(route('admin.gelombang-ppdb.store'), [
+        'nama' => 'Gelombang 2',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 30,
+        'jalur_ids' => [],
+    ])->assertSessionHasErrors('jalur_ids');
+
+    expect(GelombangPpdb::where('nama', 'Gelombang 2')->exists())->toBeFalse();
+});
+
+it('shows a checkbox per active jalur on the create form, all pre-checked by default', function () {
     foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
         \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
@@ -177,13 +199,39 @@ it('shows a checkbox per active jalur on the create form, none pre-checked', fun
     $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
 
-    $this->actingAs($user)->get(route('admin.gelombang-ppdb.create'))
-        ->assertOk()
-        ->assertSee('Batasi Jalur')
+    $response = $this->actingAs($user)->get(route('admin.gelombang-ppdb.create'));
+
+    $response->assertOk()
+        ->assertSee('Jalur yang Digunakan')
         ->assertSee('Reguler')
-        ->assertSee('Prestasi')
-        ->assertSee('value="'.$jalurReguler->id.'"', false)
-        ->assertDontSee('checked', false);
+        ->assertSee('Prestasi');
+
+    preg_match_all('/<input type="checkbox" name="jalur_ids\[\]" value="(\d+)"[^>]*>/', $response->getContent(), $matches, PREG_SET_ORDER);
+    $checkedIds = collect($matches)->filter(fn ($m) => str_contains($m[0], 'checked'))->map(fn ($m) => (int) $m[1])->sort()->values()->all();
+
+    expect($checkedIds)->toBe(collect([$jalurReguler->id, $jalurPrestasi->id])->sort()->values()->all());
+});
+
+it('pre-checks all active jalur on the edit form when the gelombang has no explicit restriction yet', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    // No attach() call here — this gelombang still has zero pivot rows,
+    // the legacy/never-restricted state that predates this form.
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('admin.gelombang-ppdb.edit', $gelombang));
+
+    $response->assertOk();
+    preg_match_all('/<input type="checkbox" name="jalur_ids\[\]" value="(\d+)"[^>]*>/', $response->getContent(), $matches, PREG_SET_ORDER);
+    $checkedIds = collect($matches)->filter(fn ($m) => str_contains($m[0], 'checked'))->map(fn ($m) => (int) $m[1])->sort()->values()->all();
+
+    expect($checkedIds)->toBe(collect([$jalurReguler->id, $jalurPrestasi->id])->sort()->values()->all());
 });
 
 it('pre-checks only the jalur already assigned on the edit form', function () {

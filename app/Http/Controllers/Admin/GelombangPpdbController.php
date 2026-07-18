@@ -108,10 +108,21 @@ class GelombangPpdbController extends BaseController
     {
         $this->authorize('gelombang-ppdb.edit');
 
+        $jalurAktif = JalurPpdb::where('tahun_ajaran_id', $gelombangPpdb->tahun_ajaran_id)->where('status_aktif', true)->orderBy('nama')->get();
+        $jalurTerpilih = $gelombangPpdb->jalur()->pluck('jalur_ppdb.id')->all();
+
+        // A gelombang nobody has ever saved through this form yet has zero
+        // pivot rows (today's "unrestricted" state). Pre-check every active
+        // jalur in that case so the form visually reflects what's actually
+        // being offered right now, instead of looking like nothing is used.
+        if (empty($jalurTerpilih)) {
+            $jalurTerpilih = $jalurAktif->pluck('id')->all();
+        }
+
         return view('admin.gelombang-ppdb.edit', [
             'gelombang' => $gelombangPpdb,
-            'jalurAktif' => JalurPpdb::where('tahun_ajaran_id', $gelombangPpdb->tahun_ajaran_id)->where('status_aktif', true)->orderBy('nama')->get(),
-            'jalurTerpilih' => $gelombangPpdb->jalur()->pluck('jalur_ppdb.id')->all(),
+            'jalurAktif' => $jalurAktif,
+            'jalurTerpilih' => $jalurTerpilih,
         ]);
     }
 
@@ -131,6 +142,12 @@ class GelombangPpdbController extends BaseController
 
     private function validated(Request $request, int $tahunAjaranId, ?GelombangPpdb $current = null): array
     {
+        // jalur_ids is only required when the tahun ajaran actually has an
+        // active jalur to choose from — the form falls back to a "no jalur
+        // yet" message instead of an empty checkbox list in that case, so
+        // there's nothing a user could ever check.
+        $adaJalurAktif = JalurPpdb::where('tahun_ajaran_id', $tahunAjaranId)->where('status_aktif', true)->exists();
+
         return $request->validate([
             'nama' => [
                 'required',
@@ -143,11 +160,14 @@ class GelombangPpdbController extends BaseController
             'tanggal_buka' => ['required', 'date'],
             'tanggal_tutup' => ['required', 'date', 'after:tanggal_buka'],
             'kuota' => ['required', 'integer', 'min:1'],
-            'jalur_ids' => ['nullable', 'array'],
+            'jalur_ids' => $adaJalurAktif ? ['required', 'array', 'min:1'] : ['nullable', 'array'],
             'jalur_ids.*' => [
                 'integer',
                 Rule::exists('jalur_ppdb', 'id')->where('tahun_ajaran_id', $tahunAjaranId),
             ],
+        ], [
+            'jalur_ids.required' => 'Pilih minimal satu jalur yang digunakan untuk gelombang ini.',
+            'jalur_ids.min' => 'Pilih minimal satu jalur yang digunakan untuk gelombang ini.',
         ]);
     }
 }
