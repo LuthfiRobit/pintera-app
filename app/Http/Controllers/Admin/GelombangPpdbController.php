@@ -70,8 +70,11 @@ class GelombangPpdbController extends BaseController
                 ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah gelombang.']);
         }
 
+        $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->firstOrFail();
+
         return view('admin.gelombang-ppdb.create', [
-            'tahunAjaranAktif' => TahunAjaran::where('status_aktif', true)->firstOrFail(),
+            'tahunAjaranAktif' => $tahunAjaranAktif,
+            'jalurAktif' => JalurPpdb::where('tahun_ajaran_id', $tahunAjaranAktif->id)->where('status_aktif', true)->orderBy('nama')->get(),
         ]);
     }
 
@@ -105,7 +108,11 @@ class GelombangPpdbController extends BaseController
     {
         $this->authorize('gelombang-ppdb.edit');
 
-        return view('admin.gelombang-ppdb.edit', ['gelombang' => $gelombangPpdb]);
+        return view('admin.gelombang-ppdb.edit', [
+            'gelombang' => $gelombangPpdb,
+            'jalurAktif' => JalurPpdb::where('tahun_ajaran_id', $gelombangPpdb->tahun_ajaran_id)->where('status_aktif', true)->orderBy('nama')->get(),
+            'jalurTerpilih' => $gelombangPpdb->jalur()->pluck('jalur_ppdb.id')->all(),
+        ]);
     }
 
     public function update(Request $request, GelombangPpdb $gelombangPpdb): RedirectResponse

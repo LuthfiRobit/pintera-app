@@ -165,3 +165,47 @@ it('clears the pivot back to unrestricted when an update omits jalur_ids after i
 
     expect($gelombang->jalur()->exists())->toBeFalse();
 });
+
+it('shows a checkbox per active jalur on the create form, none pre-checked', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->get(route('admin.gelombang-ppdb.create'))
+        ->assertOk()
+        ->assertSee('Batasi Jalur')
+        ->assertSee('Reguler')
+        ->assertSee('Prestasi')
+        ->assertSee('value="'.$jalurReguler->id.'"', false)
+        ->assertDontSee('checked', false);
+});
+
+it('pre-checks only the jalur already assigned on the edit form', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    $gelombang->jalur()->attach($jalurReguler->id);
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('admin.gelombang-ppdb.edit', $gelombang));
+
+    $response->assertOk();
+    // The Reguler checkbox carries `checked`, Prestasi's does not — assert by
+    // finding each input's own tag rather than a page-wide checked count,
+    // since both inputs share surrounding markup.
+    preg_match_all('/<input type="checkbox" name="jalur_ids\[\]" value="(\d+)"[^>]*>/', $response->getContent(), $matches, PREG_SET_ORDER);
+    $checkedIds = collect($matches)->filter(fn ($m) => str_contains($m[0], 'checked'))->map(fn ($m) => (int) $m[1])->values()->all();
+
+    expect($checkedIds)->toBe([$jalurReguler->id]);
+});
