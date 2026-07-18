@@ -52,12 +52,21 @@ class GelombangPpdbController extends BaseController
 
         $query->when($request->filled('cari'), fn ($q) => $q->where('nama', 'like', '%'.$request->query('cari').'%'));
 
+        // The badge compares each gelombang's jalur count against this total
+        // to decide "N Jalur Aktif" (using all of them) vs "N Jalur Dibatasi"
+        // (using fewer) — a raw pivot-row count alone can't tell those apart
+        // now that every saved gelombang always has at least one row.
+        $totalJalurAktif = $tahunAjaranTerpilih
+            ? JalurPpdb::where('tahun_ajaran_id', $tahunAjaranTerpilih->id)->where('status_aktif', true)->count()
+            : 0;
+
         return view('admin.gelombang-ppdb.index', [
             'tahunAjaranAktif' => $tahunAjaranAktif,
             'tahunAjaranOptions' => $tahunAjaranOptions,
             'tahunAjaranTerpilih' => $tahunAjaranTerpilih,
             'gelombangList' => $query->orderBy('tanggal_buka')->paginate(10)->withQueryString(),
             'tahunAjaranSebelumnya' => $tahunAjaranSebelumnya,
+            'totalJalurAktif' => $totalJalurAktif,
         ]);
     }
 

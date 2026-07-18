@@ -258,7 +258,7 @@ it('pre-checks only the jalur already assigned on the edit form', function () {
     expect($checkedIds)->toBe([$jalurReguler->id]);
 });
 
-it('shows a "Semua Jalur" badge for an unrestricted gelombang on the index', function () {
+it('shows a "N Jalur Aktif" badge for a gelombang with no explicit restriction yet (legacy zero pivot rows)', function () {
     foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
         \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
@@ -271,10 +271,31 @@ it('shows a "Semua Jalur" badge for an unrestricted gelombang on the index', fun
 
     $this->actingAs($user)->get(route('admin.gelombang-ppdb.index'))
         ->assertOk()
-        ->assertSee('Semua Jalur');
+        ->assertSee('2 Jalur Aktif')
+        ->assertDontSee('Jalur Dibatasi');
 });
 
-it('shows a "N Jalur Dibatasi" badge for a restricted gelombang on the index', function () {
+it('shows a "N Jalur Aktif" badge (not Dibatasi) when every active jalur is checked', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    // Simulates saving the form with every checkbox left checked: both of
+    // the tahun ajaran's active jalur end up in the pivot, not zero rows.
+    $gelombang->jalur()->attach([$jalurReguler->id, $jalurPrestasi->id]);
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->get(route('admin.gelombang-ppdb.index'))
+        ->assertOk()
+        ->assertSee('2 Jalur Aktif')
+        ->assertDontSee('Jalur Dibatasi');
+});
+
+it('shows a "N Jalur Dibatasi" badge for a gelombang using fewer than all active jalur', function () {
     foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
         \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }

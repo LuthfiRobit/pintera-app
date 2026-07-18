@@ -126,10 +126,16 @@
                                     <td class="px-5 py-3.5 text-gray-600">{{ $gelombang->tanggal_tutup->format('d M Y') }}</td>
                                     <td class="px-5 py-3.5 font-mono text-gray-600">{{ $gelombang->kuota }}</td>
                                     <td class="px-5 py-3.5">
-                                        @if ($gelombang->jalur_count > 0)
-                                            <x-badge tone="brass">{{ $gelombang->jalur_count }} Jalur Dibatasi</x-badge>
+                                        @php
+                                            // A gelombang nobody has saved through this form yet
+                                            // has zero pivot rows (legacy "unrestricted" state) —
+                                            // treat that as using every currently active jalur.
+                                            $jalurDipakai = $gelombang->jalur_count > 0 ? $gelombang->jalur_count : $totalJalurAktif;
+                                        @endphp
+                                        @if ($jalurDipakai < $totalJalurAktif)
+                                            <x-badge tone="brass">{{ $jalurDipakai }} Jalur Dibatasi</x-badge>
                                         @else
-                                            <x-badge tone="slate">Semua Jalur</x-badge>
+                                            <x-badge tone="slate">{{ $jalurDipakai }} Jalur Aktif</x-badge>
                                         @endif
                                     </td>
                                 </tr>
