@@ -6,9 +6,16 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="font-display text-lg font-bold text-gray-900">Lembaga</h1>
-            <div class="flex items-center gap-4">
-                <p class="text-sm text-gray-500">
-                    Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Lembaga</b>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Lembaga</b>
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                    Filter Data
                 </p>
                 @if (auth()->user()->widestScopeLevel() === 'yayasan')
                     <x-link-button href="{{ route('admin.lembaga.create') }}">
@@ -16,13 +23,6 @@
                     </x-link-button>
                 @endif
             </div>
-        </div>
-
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-            <p class="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
-                Filter Data
-            </p>
 
             <form method="GET" action="{{ route('admin.lembaga.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
@@ -32,6 +32,7 @@
                         <input
                             type="text" name="cari" id="cari" value="{{ request('cari') }}"
                             placeholder="Nama atau NPSN"
+                            @input.debounce.500ms="$el.form.submit()"
                             class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
                         >
                     </div>
@@ -39,7 +40,7 @@
 
                 <div>
                     <label for="bentuk" class="mb-1.5 block text-xs font-semibold text-gray-500">Bentuk Pendidikan</label>
-                    <select name="bentuk" id="bentuk" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <select name="bentuk" id="bentuk" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Semua Bentuk</option>
                         @foreach (['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB'] as $bentuk)
                             <option value="{{ $bentuk }}" @selected(request('bentuk') === $bentuk)>{{ $bentuk }}</option>
@@ -49,17 +50,16 @@
 
                 <div>
                     <label for="status" class="mb-1.5 block text-xs font-semibold text-gray-500">Status Sekolah</label>
-                    <select name="status" id="status" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <select name="status" id="status" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Semua Status</option>
                         <option value="negeri" @selected(request('status') === 'negeri')>Negeri</option>
                         <option value="swasta" @selected(request('status') === 'swasta')>Swasta</option>
                     </select>
                 </div>
 
-                <div class="flex items-end gap-2">
-                    <x-primary-button type="submit" class="w-full justify-center">Terapkan</x-primary-button>
+                <div class="flex items-end">
                     @if (request()->anyFilled(['cari', 'bentuk', 'status']))
-                        <a href="{{ route('admin.lembaga.index') }}" class="flex h-[42px] shrink-0 items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">Reset</a>
+                        <a href="{{ route('admin.lembaga.index') }}" class="flex h-[42px] w-full items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">Reset Filter</a>
                     @endif
                 </div>
             </form>

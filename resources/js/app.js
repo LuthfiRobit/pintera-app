@@ -1,6 +1,7 @@
 import './bootstrap';
 
 import Alpine from 'alpinejs';
+import anchor from '@alpinejs/anchor';
 import { registerToastStore } from './toast-store';
 import { rolesTable } from './roles-table';
 import { roleForm } from './role-form';
@@ -14,6 +15,8 @@ import { pembayaranTable } from './pembayaran-table';
 import { trenPendaftaranChart, donutTagihanChart, perLembagaBarChart } from './dashboard-charts';
 
 window.Alpine = Alpine;
+
+Alpine.plugin(anchor);
 
 registerToastStore(Alpine);
 Alpine.data('rolesTable', rolesTable);
