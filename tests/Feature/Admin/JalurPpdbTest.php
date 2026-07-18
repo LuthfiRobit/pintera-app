@@ -247,3 +247,30 @@ it('shows a "Tidak Dipakai" badge on the index for a jalur not used by any gelom
         ->assertOk()
         ->assertSee('Tidak Dipakai');
 });
+
+it('shows the Gelombang kelengkapan badge and gelombang names on the edit page', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => now(), 'tanggal_tutup' => now()->addMonth(), 'kuota' => 10,
+    ]);
+    $gelombang->jalur()->attach($jalur->id);
+
+    $this->actingAs($user)->get(route('admin.jalur-ppdb.edit', $jalur))
+        ->assertOk()
+        ->assertSee('Gelombang (1)')
+        ->assertSee('Dipakai di gelombang: Gelombang 1');
+});
+
+it('shows a "tidak dipakai" message near the status toggle when no gelombang uses the jalur', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+
+    $this->actingAs($user)->get(route('admin.jalur-ppdb.edit', $jalur))
+        ->assertOk()
+        ->assertSee('Gelombang (0)')
+        ->assertSee('Tidak dipakai di gelombang manapun saat ini.');
+});

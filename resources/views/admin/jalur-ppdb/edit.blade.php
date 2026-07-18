@@ -1,51 +1,71 @@
 <x-app-layout>
-    <x-slot name="header">
-        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">SPMB</p>
-        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Jalur: {{ $jalur->nama }}</h2>
-    </x-slot>
+    <div class="mx-auto max-w-6xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Jalur: {{ $jalur->nama }}</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.jalur-ppdb.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Jalur PPDB</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Edit</b>
+            </p>
+        </div>
 
-    <div class="mx-auto max-w-4xl space-y-6">
         @if (session('status'))
-            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif
-        @error('seleksi')
-            <div class="rounded-xl bg-signal-red/10 p-4 text-sm text-signal-red">{{ $message }}</div>
-        @enderror
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700">{{ $errors->first() }}</div>
+        @endif
 
-        <x-panel>
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-ink/10 px-6 py-4">
-                <h3 class="font-display font-semibold text-ink">Kelengkapan</h3>
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+                <p class="font-display text-sm font-bold text-gray-900">Kelengkapan</p>
                 <div class="flex flex-wrap gap-2">
                     <x-badge :tone="$jalur->formulirField->count() > 0 ? 'brass' : 'slate'">Formulir ({{ $jalur->formulirField->count() }})</x-badge>
                     <x-badge :tone="$jalur->dokumenSyarat->count() > 0 ? 'brass' : 'slate'">Dokumen ({{ $jalur->dokumenSyarat->count() }})</x-badge>
                     <x-badge :tone="$jalur->seleksi->count() > 0 ? 'brass' : 'slate'">Seleksi ({{ $jalur->seleksi->count() }})</x-badge>
+                    <x-badge :tone="$gelombangPemakai->isNotEmpty() ? 'brass' : 'slate'">Gelombang ({{ $gelombangPemakai->count() }})</x-badge>
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('admin.jalur-ppdb.update', $jalur) }}" class="space-y-5 p-6">
+            <form method="POST" action="{{ route('admin.jalur-ppdb.update', $jalur) }}" class="p-5">
                 @csrf
                 @method('PUT')
 
-                <div>
-                    <x-input-label value="Nama Jalur" />
-                    <x-text-input type="text" name="nama" value="{{ old('nama', $jalur->nama) }}" class="mt-1.5" />
-                    <x-input-error :messages="$errors->get('nama')" class="mt-1.5" />
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                        <x-input-label value="Nama Jalur" />
+                        <x-text-input type="text" name="nama" value="{{ old('nama', $jalur->nama) }}" placeholder="Contoh: Reguler, Prestasi, Afirmasi" class="mt-1.5" />
+                        <x-input-error :messages="$errors->get('nama')" class="mt-1.5" />
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <x-input-label value="Deskripsi (Opsional)" />
+                        <textarea name="deskripsi" rows="3" placeholder="Jelaskan kriteria atau ketentuan jalur ini" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-brand-500 focus:ring-brand-500">{{ old('deskripsi', $jalur->deskripsi) }}</textarea>
+                        <x-input-error :messages="$errors->get('deskripsi')" class="mt-1.5" />
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label class="flex items-center gap-2 text-sm text-gray-700">
+                            <input type="hidden" name="status_aktif" value="0">
+                            <input type="checkbox" name="status_aktif" value="1" class="rounded border-gray-300 text-brand-500 focus:ring-brand-500" @checked(old('status_aktif', $jalur->status_aktif))>
+                            Jalur aktif (bisa dipilih calon murid saat portal pendaftaran dibuka)
+                        </label>
+                        <p class="mt-1.5 text-xs text-gray-500">
+                            @if ($gelombangPemakai->isNotEmpty())
+                                Dipakai di gelombang: {{ $gelombangPemakai->implode(', ') }}. Jalur tidak bisa dinonaktifkan selama masih dipakai.
+                            @else
+                                Tidak dipakai di gelombang manapun saat ini.
+                            @endif
+                        </p>
+                        <x-input-error :messages="$errors->get('status_aktif')" class="mt-1.5" />
+                    </div>
                 </div>
 
-                <div>
-                    <x-input-label value="Deskripsi" />
-                    <textarea name="deskripsi" rows="3" class="mt-1.5 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">{{ old('deskripsi', $jalur->deskripsi) }}</textarea>
+                <div class="mt-4 flex items-center gap-3">
+                    <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
                 </div>
-
-                <label class="flex items-center gap-2 text-sm text-ink">
-                    <input type="hidden" name="status_aktif" value="0">
-                    <input type="checkbox" name="status_aktif" value="1" class="rounded border-ink/25 text-brass focus:ring-brass" @checked($jalur->status_aktif)>
-                    Jalur aktif (bisa dipilih calon murid saat portal pendaftaran dibuka)
-                </label>
-
-                <x-primary-button>Simpan Perubahan</x-primary-button>
             </form>
-        </x-panel>
+        </div>
 
         @include('admin.jalur-ppdb.partials.formulir-field')
         @include('admin.jalur-ppdb.partials.dokumen-syarat')
