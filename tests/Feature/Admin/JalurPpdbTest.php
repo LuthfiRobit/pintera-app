@@ -222,3 +222,28 @@ it('filters the index by nama when cari is given', function () {
         ->assertSee('Reguler')
         ->assertDontSee('Prestasi');
 });
+
+it('shows a "Dipakai di N Gelombang" badge on the index for a jalur in use', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => now(), 'tanggal_tutup' => now()->addMonth(), 'kuota' => 10,
+    ]);
+    $gelombang->jalur()->attach($jalur->id);
+
+    $this->actingAs($user)->get(route('admin.jalur-ppdb.index'))
+        ->assertOk()
+        ->assertSee('Dipakai di 1 Gelombang');
+});
+
+it('shows a "Tidak Dipakai" badge on the index for a jalur not used by any gelombang', function () {
+    [$lembaga, $user, $tahunAjaran] = buatAdminJalur();
+
+    JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+
+    $this->actingAs($user)->get(route('admin.jalur-ppdb.index'))
+        ->assertOk()
+        ->assertSee('Tidak Dipakai');
+});

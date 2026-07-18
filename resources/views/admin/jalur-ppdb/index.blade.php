@@ -1,76 +1,139 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">SPMB</p>
-                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">
-                    Jalur PPDB
-                    @if ($tahunAjaranAktif)
-                        <span class="text-base font-normal text-slate">— {{ $tahunAjaranAktif->nama }}</span>
-                    @endif
-                </h2>
-            </div>
-            @if ($tahunAjaranAktif)
-                <x-link-button href="{{ route('admin.jalur-ppdb.create') }}">
-                    <span class="text-base leading-none">+</span> Tambah Jalur
-                </x-link-button>
-            @endif
-        </div>
-    </x-slot>
-
-    <div class="mx-auto max-w-6xl space-y-6">
+    <div class="mx-auto max-w-6xl space-y-4">
         @if (session('status'))
-            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700">{{ $errors->first() }}</div>
         @endif
 
-        @if (! $tahunAjaranAktif)
-            <x-panel class="p-6 text-center text-sm text-slate">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">
+                Jalur PPDB
+                @if ($tahunAjaranTerpilih)
+                    <span class="text-sm font-normal text-gray-500">&mdash; {{ $tahunAjaranTerpilih->nama }}</span>
+                @endif
+            </h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Jalur PPDB</b>
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                    Filter Data
+                </p>
+                @if ($tahunAjaranAktif)
+                    <x-link-button href="{{ route('admin.jalur-ppdb.create') }}">
+                        <span class="text-base leading-none">+</span> Tambah Jalur
+                    </x-link-button>
+                @endif
+            </div>
+
+            <form method="GET" action="{{ route('admin.jalur-ppdb.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                    <label for="cari" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
+                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                        <input
+                            type="text" name="cari" id="cari" value="{{ request('cari') }}"
+                            placeholder="Nama jalur"
+                            @input.debounce.500ms="$el.form.submit()"
+                            class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
+                        >
+                    </div>
+                </div>
+
+                <div>
+                    <label for="tahun_ajaran" class="mb-1.5 block text-xs font-semibold text-gray-500">Tahun Ajaran</label>
+                    <select name="tahun_ajaran" id="tahun_ajaran" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        @foreach ($tahunAjaranOptions as $option)
+                            <option value="{{ $option->id }}" @selected($tahunAjaranTerpilih?->id === $option->id)>
+                                {{ $option->nama }} @if ($option->status_aktif) (Aktif) @endif
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    @if (request()->filled('cari') || (request()->filled('tahun_ajaran') && (int) request('tahun_ajaran') !== $tahunAjaranAktif?->id))
+                        <a href="{{ route('admin.jalur-ppdb.index') }}" class="flex h-[42px] w-full items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">Reset Filter</a>
+                    @endif
+                </div>
+            </form>
+        </div>
+
+        @if (! $tahunAjaranTerpilih)
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-500 shadow-card">
                 Aktifkan tahun ajaran terlebih dahulu di menu
-                <a href="{{ route('admin.tahun-ajaran.index') }}" class="font-medium text-ink underline">Tahun Ajaran</a>
+                <a href="{{ route('admin.tahun-ajaran.index') }}" class="font-semibold text-brand-600 hover:underline">Tahun Ajaran</a>
                 sebelum mengatur jalur PPDB.
-            </x-panel>
+            </div>
         @elseif ($jalurList->isEmpty())
-            <x-panel class="p-6">
-                <p class="text-sm text-slate">Belum ada konfigurasi SPMB untuk {{ $tahunAjaranAktif->nama }}.</p>
-                @if ($tahunAjaranSebelumnya)
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
+                <p class="text-sm text-gray-500">Belum ada konfigurasi SPMB untuk {{ $tahunAjaranTerpilih->nama }}.</p>
+                @if ($tahunAjaranSebelumnya && $tahunAjaranTerpilih->id === $tahunAjaranAktif?->id)
                     <form method="POST" action="{{ route('admin.spmb-konfigurasi.duplikasi') }}" class="mt-3">
                         @csrf
                         <input type="hidden" name="tahun_ajaran_sumber_id" value="{{ $tahunAjaranSebelumnya->id }}">
-                        <button type="submit" class="rounded-xl bg-brass/10 px-4 py-2 text-sm font-bold text-brass transition hover:bg-brass/20">
+                        <button type="submit" class="rounded-lg bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-600 transition hover:bg-brand-100">
                             Salin dari {{ $tahunAjaranSebelumnya->nama }}
                         </button>
                     </form>
                 @endif
-            </x-panel>
+            </div>
         @else
-            <x-panel>
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
-                            <th class="px-5 py-3 font-display font-semibold">Nama</th>
-                            <th class="px-5 py-3 font-display font-semibold">Status</th>
-                            <th class="px-5 py-3 font-display font-semibold">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-ink/10">
-                        @foreach ($jalurList as $jalur)
-                            <tr class="transition hover:bg-paper/50">
-                                <td class="px-5 py-3.5 font-medium text-ink">{{ $jalur->nama }}</td>
-                                <td class="px-5 py-3.5">
-                                    @if ($jalur->status_aktif)
-                                        <x-badge tone="brass">Aktif</x-badge>
-                                    @else
-                                        <x-badge tone="slate">Nonaktif</x-badge>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-3.5">
-                                    <a href="{{ route('admin.jalur-ppdb.edit', $jalur) }}" class="font-medium text-ink hover:text-brass">Kelola</a>
-                                </td>
+            <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
+                <div class="border-b border-gray-200 px-5 py-4">
+                    <p class="font-display text-sm font-bold text-gray-900">Daftar Jalur</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
+                                <th class="px-5 py-3">Nama</th>
+                                <th class="px-5 py-3">Status</th>
+                                <th class="px-5 py-3">Dipakai di Gelombang</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </x-panel>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach ($jalurList as $jalur)
+                                <tr class="transition hover:bg-gray-50">
+                                    <td class="sticky left-0 z-10 bg-white px-5 py-3">
+                                        <x-table-actions>
+                                            <x-dropdown-link :href="route('admin.jalur-ppdb.edit', $jalur)">
+                                                <span class="inline-flex items-center gap-2.5">
+                                                    <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                                    Kelola Jalur
+                                                </span>
+                                            </x-dropdown-link>
+                                        </x-table-actions>
+                                    </td>
+                                    <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $jalur->nama }}</td>
+                                    <td class="px-5 py-3.5">
+                                        @if ($jalur->status_aktif)
+                                            <x-badge tone="brass">Aktif</x-badge>
+                                        @else
+                                            <x-badge tone="slate">Nonaktif</x-badge>
+                                        @endif
+                                    </td>
+                                    <td class="px-5 py-3.5">
+                                        @if ($jalur->gelombang_count > 0)
+                                            <x-badge tone="brass">Dipakai di {{ $jalur->gelombang_count }} Gelombang</x-badge>
+                                        @else
+                                            <x-badge tone="slate">Tidak Dipakai</x-badge>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         @endif
     </div>
 </x-app-layout>
