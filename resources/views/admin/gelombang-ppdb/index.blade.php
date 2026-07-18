@@ -96,6 +96,7 @@
                                 <th class="px-5 py-3">Tanggal Buka</th>
                                 <th class="px-5 py-3">Tanggal Tutup</th>
                                 <th class="px-5 py-3">Kuota</th>
+                                <th class="px-5 py-3">Jalur</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -121,6 +122,13 @@
                                     <td class="px-5 py-3.5 text-gray-600">{{ $gelombang->tanggal_buka->format('d M Y') }}</td>
                                     <td class="px-5 py-3.5 text-gray-600">{{ $gelombang->tanggal_tutup->format('d M Y') }}</td>
                                     <td class="px-5 py-3.5 font-mono text-gray-600">{{ $gelombang->kuota }}</td>
+                                    <td class="px-5 py-3.5">
+                                        @if ($gelombang->jalur_count > 0)
+                                            <x-badge tone="brass">{{ $gelombang->jalur_count }} Jalur Dibatasi</x-badge>
+                                        @else
+                                            <x-badge tone="slate">Semua Jalur</x-badge>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
