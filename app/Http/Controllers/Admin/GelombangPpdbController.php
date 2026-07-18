@@ -85,6 +85,8 @@ class GelombangPpdbController extends BaseController
 
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->firstOrFail();
         $data = $this->validated($request, $tahunAjaranAktif->id);
+        $jalurIds = $data['jalur_ids'] ?? [];
+        unset($data['jalur_ids']);
         $data['tahun_ajaran_id'] = $tahunAjaranAktif->id;
         // BelongsToTenant only auto-fills lembaga_id when the acting user's
         // widestScopeLevel() === 'lembaga'. A yayasan-scoped actor with
@@ -93,7 +95,8 @@ class GelombangPpdbController extends BaseController
         // lembaga_id is authoritative for both scopes, so set it explicitly.
         $data['lembaga_id'] = $tahunAjaranAktif->lembaga_id;
 
-        GelombangPpdb::create($data);
+        $gelombang = GelombangPpdb::create($data);
+        $gelombang->jalur()->sync($jalurIds);
 
         return redirect()->route('admin.gelombang-ppdb.index')->with('status', 'Gelombang berhasil ditambahkan.');
     }
@@ -109,7 +112,12 @@ class GelombangPpdbController extends BaseController
     {
         $this->authorize('gelombang-ppdb.edit');
 
-        $gelombangPpdb->update($this->validated($request, $gelombangPpdb->tahun_ajaran_id, $gelombangPpdb));
+        $data = $this->validated($request, $gelombangPpdb->tahun_ajaran_id, $gelombangPpdb);
+        $jalurIds = $data['jalur_ids'] ?? [];
+        unset($data['jalur_ids']);
+
+        $gelombangPpdb->update($data);
+        $gelombangPpdb->jalur()->sync($jalurIds);
 
         return redirect()->route('admin.gelombang-ppdb.index')->with('status', 'Gelombang berhasil diperbarui.');
     }
@@ -128,6 +136,11 @@ class GelombangPpdbController extends BaseController
             'tanggal_buka' => ['required', 'date'],
             'tanggal_tutup' => ['required', 'date', 'after:tanggal_buka'],
             'kuota' => ['required', 'integer', 'min:1'],
+            'jalur_ids' => ['nullable', 'array'],
+            'jalur_ids.*' => [
+                'integer',
+                Rule::exists('jalur_ppdb', 'id')->where('tahun_ajaran_id', $tahunAjaranId),
+            ],
         ]);
     }
 }

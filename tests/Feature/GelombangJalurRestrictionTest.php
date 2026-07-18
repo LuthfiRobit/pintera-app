@@ -69,3 +69,99 @@ it('never shows an inactive jalur to the public even if explicitly assigned to t
         ->assertSee('Reguler')
         ->assertDontSee('Prestasi');
 });
+
+it('rejects a jalur_id that belongs to a different tahun ajaran', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $tahunLain = TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
+        'tanggal_mulai' => '2025-07-01', 'tanggal_selesai' => '2026-06-30', 'status_aktif' => false,
+    ]);
+    $jalurTahunLain = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLain->id, 'nama' => 'Reguler Lama']);
+
+    $this->actingAs($user)->post(route('admin.gelombang-ppdb.store'), [
+        'nama' => 'Gelombang 2',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 30,
+        'jalur_ids' => [$jalurTahunLain->id],
+    ])->assertSessionHasErrors('jalur_ids.0');
+
+    expect(GelombangPpdb::where('nama', 'Gelombang 2')->exists())->toBeFalse();
+});
+
+it('syncs jalur_ids to the pivot on create', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombangLama] = buatGelombangDenganDuaJalur();
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->post(route('admin.gelombang-ppdb.store'), [
+        'nama' => 'Gelombang 2',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 30,
+        'jalur_ids' => [$jalurReguler->id],
+    ])->assertRedirect(route('admin.gelombang-ppdb.index'));
+
+    $gelombangBaru = GelombangPpdb::where('nama', 'Gelombang 2')->firstOrFail();
+    expect($gelombangBaru->jalur()->pluck('jalur_ppdb.id')->all())->toBe([$jalurReguler->id]);
+});
+
+it('creates an unrestricted gelombang when jalur_ids is omitted entirely', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombangLama] = buatGelombangDenganDuaJalur();
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->post(route('admin.gelombang-ppdb.store'), [
+        'nama' => 'Gelombang 2',
+        'tanggal_buka' => '2026-08-01',
+        'tanggal_tutup' => '2026-09-01',
+        'kuota' => 30,
+    ])->assertRedirect(route('admin.gelombang-ppdb.index'));
+
+    $gelombangBaru = GelombangPpdb::where('nama', 'Gelombang 2')->firstOrFail();
+    expect($gelombangBaru->jalur()->exists())->toBeFalse();
+});
+
+it('clears the pivot back to unrestricted when an update omits jalur_ids after it was previously restricted', function () {
+    foreach (['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit'] as $permission) {
+        \Spatie\Permission\Models\Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
+
+    [$lembaga, $tahunAjaran, $jalurReguler, $jalurPrestasi, $gelombang] = buatGelombangDenganDuaJalur();
+    $gelombang->jalur()->attach($jalurReguler->id);
+    $user = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->put(route('admin.gelombang-ppdb.update', $gelombang), [
+        'nama' => $gelombang->nama,
+        'tanggal_buka' => $gelombang->tanggal_buka->format('Y-m-d'),
+        'tanggal_tutup' => $gelombang->tanggal_tutup->format('Y-m-d'),
+        'kuota' => $gelombang->kuota,
+        // jalur_ids omitted entirely, simulating every checkbox left unchecked
+    ])->assertRedirect(route('admin.gelombang-ppdb.index'));
+
+    expect($gelombang->jalur()->exists())->toBeFalse();
+});
