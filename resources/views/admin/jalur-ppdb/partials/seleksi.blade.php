@@ -52,14 +52,23 @@
                         <option value="{{ $jenisTes->id }}">{{ $jenisTes->nama }}</option>
                     @endforeach
                 </select>
+                <template x-if="errors.jenis_tes_master_id">
+                    <p class="mt-1.5 text-sm text-error-600" x-text="errors.jenis_tes_master_id[0]"></p>
+                </template>
             </div>
             <div>
                 <x-input-label value="Jadwal" />
                 <x-text-input type="datetime-local" x-model="form.jadwal" class="mt-1.5" />
+                <template x-if="errors.jadwal">
+                    <p class="mt-1.5 text-sm text-error-600" x-text="errors.jadwal[0]"></p>
+                </template>
             </div>
             <div>
                 <x-input-label value="Bobot (%)" />
                 <x-text-input type="number" x-model="form.bobot" class="mt-1.5 w-24" />
+                <template x-if="errors.bobot">
+                    <p class="mt-1.5 text-sm text-error-600" x-text="errors.bobot[0]"></p>
+                </template>
             </div>
         </div>
         <div>
