@@ -17,12 +17,28 @@
         @endif
 
         <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+            <div
+                class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4"
+                x-data
+                x-init="$store.kelengkapan.formulir = {{ $jalur->formulirField->count() }}; $store.kelengkapan.dokumen = {{ $jalur->dokumenSyarat->count() }}; $store.kelengkapan.seleksi = {{ $jalur->seleksi->count() }}"
+            >
                 <p class="font-display text-sm font-bold text-gray-900">Kelengkapan</p>
                 <div class="flex flex-wrap gap-2">
-                    <x-badge :tone="$jalur->formulirField->count() > 0 ? 'brass' : 'slate'">Formulir ({{ $jalur->formulirField->count() }})</x-badge>
-                    <x-badge :tone="$jalur->dokumenSyarat->count() > 0 ? 'brass' : 'slate'">Dokumen ({{ $jalur->dokumenSyarat->count() }})</x-badge>
-                    <x-badge :tone="$jalur->seleksi->count() > 0 ? 'brass' : 'slate'">Seleksi ({{ $jalur->seleksi->count() }})</x-badge>
+                    <span
+                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                        :class="$store.kelengkapan.formulir > 0 ? 'bg-brand-50 text-brand-600' : 'bg-gray-100 text-gray-600'"
+                        x-text="'Formulir (' + $store.kelengkapan.formulir + ')'"
+                    ></span>
+                    <span
+                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                        :class="$store.kelengkapan.dokumen > 0 ? 'bg-brand-50 text-brand-600' : 'bg-gray-100 text-gray-600'"
+                        x-text="'Dokumen (' + $store.kelengkapan.dokumen + ')'"
+                    ></span>
+                    <span
+                        class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+                        :class="$store.kelengkapan.seleksi > 0 ? 'bg-brand-50 text-brand-600' : 'bg-gray-100 text-gray-600'"
+                        x-text="'Seleksi (' + $store.kelengkapan.seleksi + ')'"
+                    ></span>
                     <x-badge :tone="$gelombangPemakai->isNotEmpty() ? 'brass' : 'slate'">Gelombang ({{ $gelombangPemakai->count() }})</x-badge>
                 </div>
             </div>

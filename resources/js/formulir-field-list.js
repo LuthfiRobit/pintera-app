@@ -38,6 +38,7 @@ export function formulirFieldList(config) {
 
                 this.items.push(json.data);
                 this.form = { label: '', field_type: 'text', is_required: false, options: '' };
+                Alpine.store('kelengkapan').formulir++;
                 Alpine.store('toast').push('success', 'Field formulir berhasil ditambahkan.');
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal menambah field.');
@@ -47,7 +48,11 @@ export function formulirFieldList(config) {
         },
 
         async deleteItem(item) {
-            if (!confirm(`Hapus field "${item.label}"?`)) {
+            const confirmed = await confirmDialog(
+                'Hapus Field Formulir?',
+                `Apakah Anda yakin ingin menghapus field "${item.label}"?`
+            );
+            if (!confirmed) {
                 return;
             }
 
@@ -68,6 +73,7 @@ export function formulirFieldList(config) {
                 }
 
                 this.items = this.items.filter((existing) => existing.id !== item.id);
+                Alpine.store('kelengkapan').formulir--;
                 Alpine.store('toast').push('success', json.message ?? 'Field formulir berhasil dihapus.');
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal menghapus field.');

@@ -59,6 +59,7 @@ export function seleksiList(config) {
                     bobot: '',
                     kriteria_kelulusan: '',
                 };
+                Alpine.store('kelengkapan').seleksi++;
                 Alpine.store('toast').push('success', 'Jadwal seleksi berhasil ditambahkan.');
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal menambah jadwal seleksi.');
@@ -68,7 +69,11 @@ export function seleksiList(config) {
         },
 
         async deleteItem(item) {
-            if (!confirm('Hapus jadwal seleksi ini?')) {
+            const confirmed = await confirmDialog(
+                'Hapus Jadwal Seleksi?',
+                'Apakah Anda yakin ingin menghapus jadwal seleksi ini?'
+            );
+            if (!confirmed) {
                 return;
             }
 
@@ -89,6 +94,7 @@ export function seleksiList(config) {
                 }
 
                 this.items = this.items.filter((existing) => existing.id !== item.id);
+                Alpine.store('kelengkapan').seleksi--;
                 Alpine.store('toast').push('success', json.message ?? 'Jadwal seleksi berhasil dihapus.');
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal menghapus jadwal seleksi.');

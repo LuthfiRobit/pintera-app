@@ -51,10 +51,14 @@ it('shows the kelengkapan indicator as empty when a jalur has no children yet', 
 
     $response = $this->get(route('admin.jalur-ppdb.edit', $jalur));
 
+    // The Kelengkapan badges are seeded into a reactive Alpine store and
+    // rendered client-side (so counts auto-update after AJAX add/delete
+    // without a page reload) — the server response only carries the
+    // seeded initial values via x-init, not the literal "Formulir (0)" text.
     $response->assertOk();
-    $response->assertSee('Formulir (0)');
-    $response->assertSee('Dokumen (0)');
-    $response->assertSee('Seleksi (0)');
+    $response->assertSee('$store.kelengkapan.formulir = 0', false);
+    $response->assertSee('$store.kelengkapan.dokumen = 0', false);
+    $response->assertSee('$store.kelengkapan.seleksi = 0', false);
 });
 
 it('404s when a lembaga-scoped admin opens the edit page for a jalur in another lembaga', function () {

@@ -38,6 +38,7 @@ export function dokumenSyaratList(config) {
 
                 this.items.push(json.data);
                 this.form = { nama_dokumen: '', wajib: true };
+                Alpine.store('kelengkapan').dokumen++;
                 Alpine.store('toast').push('success', 'Dokumen syarat berhasil ditambahkan.');
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal menambah dokumen.');
@@ -47,7 +48,11 @@ export function dokumenSyaratList(config) {
         },
 
         async deleteItem(item) {
-            if (!confirm(`Hapus dokumen "${item.nama_dokumen}"?`)) {
+            const confirmed = await confirmDialog(
+                'Hapus Dokumen Syarat?',
+                `Apakah Anda yakin ingin menghapus dokumen "${item.nama_dokumen}"?`
+            );
+            if (!confirmed) {
                 return;
             }
 
@@ -68,6 +73,7 @@ export function dokumenSyaratList(config) {
                 }
 
                 this.items = this.items.filter((existing) => existing.id !== item.id);
+                Alpine.store('kelengkapan').dokumen--;
                 Alpine.store('toast').push('success', json.message ?? 'Dokumen syarat berhasil dihapus.');
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal menghapus dokumen.');

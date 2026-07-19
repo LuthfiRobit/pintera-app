@@ -21,6 +21,7 @@
             class="min-h-full bg-gray-50 lg:flex"
         >
             <x-toast />
+            <x-confirm-dialog />
 
             @include('layouts.sidebar')
 

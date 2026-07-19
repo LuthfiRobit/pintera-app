@@ -3,6 +3,8 @@ import './bootstrap';
 import Alpine from 'alpinejs';
 import anchor from '@alpinejs/anchor';
 import { registerToastStore } from './toast-store';
+import { registerConfirmDialogStore } from './confirm-dialog-store';
+import { registerKelengkapanStore } from './kelengkapan-store';
 import { rolesTable } from './roles-table';
 import { roleForm } from './role-form';
 import { dataDiriForm } from './data-diri-form';
@@ -22,6 +24,8 @@ window.Alpine = Alpine;
 Alpine.plugin(anchor);
 
 registerToastStore(Alpine);
+registerConfirmDialogStore(Alpine);
+registerKelengkapanStore(Alpine);
 Alpine.data('rolesTable', rolesTable);
 Alpine.data('roleForm', roleForm);
 Alpine.data('dataDiriForm', dataDiriForm);
