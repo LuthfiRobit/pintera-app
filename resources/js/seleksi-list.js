@@ -17,10 +17,10 @@ export function seleksiList(config) {
         formatJadwal(iso) {
             const bulan = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
             const tanggalObj = new Date(iso);
-            const tanggal = String(tanggalObj.getDate()).padStart(2, '0');
-            const jam = String(tanggalObj.getHours()).padStart(2, '0');
-            const menit = String(tanggalObj.getMinutes()).padStart(2, '0');
-            return `${tanggal} ${bulan[tanggalObj.getMonth()]} ${tanggalObj.getFullYear()} ${jam}:${menit}`;
+            const tanggal = String(tanggalObj.getUTCDate()).padStart(2, '0');
+            const jam = String(tanggalObj.getUTCHours()).padStart(2, '0');
+            const menit = String(tanggalObj.getUTCMinutes()).padStart(2, '0');
+            return `${tanggal} ${bulan[tanggalObj.getUTCMonth()]} ${tanggalObj.getUTCFullYear()} ${jam}:${menit}`;
         },
 
         async addItem() {
