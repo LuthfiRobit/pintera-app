@@ -101,3 +101,74 @@ it('exposes the dokumenPendaftaran relation with real registrant document data',
 
     expect($dokumen->dokumenPendaftaran()->count())->toBe(1);
 });
+
+it('rejects deleting a dokumen syarat that already has a registrant document', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukDokumen();
+    $dokumen = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    DokumenPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $dokumen->id,
+        'file_path' => 'dokumen/akta.pdf', 'nama_file_asli' => 'akta.pdf', 'mime_type' => 'application/pdf',
+        'ukuran_bytes' => 123456,
+    ]);
+
+    $this->actingAs($user)->delete(route('admin.dokumen-syarat.destroy', $dokumen))
+        ->assertSessionHasErrors('dokumen_syarat');
+
+    expect(DokumenSyaratPpdb::find($dokumen->id))->not->toBeNull();
+});
+
+it('names the related document count in the deletion error message', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukDokumen();
+    $dokumen = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    DokumenPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $dokumen->id,
+        'file_path' => 'dokumen/akta.pdf', 'nama_file_asli' => 'akta.pdf', 'mime_type' => 'application/pdf',
+        'ukuran_bytes' => 123456,
+    ]);
+
+    $this->actingAs($user)->delete(route('admin.dokumen-syarat.destroy', $dokumen));
+
+    expect(session('errors')->get('dokumen_syarat')[0])->toContain('1 dokumen');
+});
+
+it('responds with JSON on store when requested', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukDokumen();
+
+    $response = $this->actingAs($user)->postJson(route('admin.dokumen-syarat.store'), [
+        'jalur_ppdb_id' => $jalur->id,
+        'nama_dokumen' => 'Kartu Keluarga',
+        'wajib' => '1',
+    ]);
+
+    $response->assertCreated();
+    expect($response->json('data.nama_dokumen'))->toBe('Kartu Keluarga');
+});
+
+it('responds with a JSON 422 and the correct message when a blocked deletion is requested via AJAX', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukDokumen();
+    $dokumen = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    DokumenPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $dokumen->id,
+        'file_path' => 'dokumen/akta.pdf', 'nama_file_asli' => 'akta.pdf', 'mime_type' => 'application/pdf',
+        'ukuran_bytes' => 123456,
+    ]);
+
+    $blocked = $this->actingAs($user)->deleteJson(route('admin.dokumen-syarat.destroy', $dokumen));
+    $blocked->assertStatus(422);
+    expect($blocked->json('message'))->toContain('1 dokumen');
+    expect(DokumenSyaratPpdb::find($dokumen->id))->not->toBeNull();
+});
+
+it('responds with a JSON success message when an unblocked deletion is requested via AJAX', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukDokumen();
+    $dokumen = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Kartu Keluarga']);
+
+    $response = $this->actingAs($user)->deleteJson(route('admin.dokumen-syarat.destroy', $dokumen));
+
+    $response->assertOk();
+    expect($response->json('message'))->toBe('Dokumen syarat berhasil dihapus.');
+    expect(DokumenSyaratPpdb::find($dokumen->id))->toBeNull();
+});
