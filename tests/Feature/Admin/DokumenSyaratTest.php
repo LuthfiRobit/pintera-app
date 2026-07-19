@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\DokumenPendaftaran;
 use App\Models\DokumenSyaratPpdb;
 use App\Models\JalurPpdb;
 use App\Models\Lembaga;
@@ -82,4 +83,21 @@ it('denies access without the manage-ppdb permission', function () {
         'jalur_ppdb_id' => $jalur->id,
         'nama_dokumen' => 'Akta Kelahiran',
     ])->assertForbidden();
+});
+
+it('exposes the dokumenPendaftaran relation with real registrant document data', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukDokumen();
+    $dokumen = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+
+    DokumenPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id,
+        'dokumen_syarat_ppdb_id' => $dokumen->id,
+        'file_path' => 'dokumen/akta.pdf',
+        'nama_file_asli' => 'akta.pdf',
+        'mime_type' => 'application/pdf',
+        'ukuran_bytes' => 1024,
+    ]);
+
+    expect($dokumen->dokumenPendaftaran()->count())->toBe(1);
 });

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DokumenSyaratPpdb extends Model
 {
@@ -35,5 +36,10 @@ class DokumenSyaratPpdb extends Model
     public function jalurPpdb(): BelongsTo
     {
         return $this->belongsTo(JalurPpdb::class, 'jalur_ppdb_id');
+    }
+
+    public function dokumenPendaftaran(): HasMany
+    {
+        return $this->hasMany(DokumenPendaftaran::class);
     }
 }

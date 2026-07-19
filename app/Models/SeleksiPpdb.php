@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SeleksiPpdb extends Model
 {
@@ -47,5 +48,10 @@ class SeleksiPpdb extends Model
     public function jenisTesMaster(): BelongsTo
     {
         return $this->belongsTo(JenisTesMaster::class, 'jenis_tes_master_id');
+    }
+
+    public function hasilSeleksi(): HasMany
+    {
+        return $this->hasMany(HasilSeleksi::class);
     }
 }

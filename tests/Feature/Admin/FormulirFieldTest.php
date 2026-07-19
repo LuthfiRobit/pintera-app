@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\FormulirField;
+use App\Models\JawabanFormulirPendaftaran;
 use App\Models\JalurPpdb;
 use App\Models\Lembaga;
 use App\Models\Role;
@@ -122,4 +123,18 @@ it('denies access without the manage-ppdb permission', function () {
         'label' => 'Field',
         'field_type' => 'text',
     ])->assertForbidden();
+});
+
+it('exposes the jawabanFormulir relation with real registrant answer data', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukFormulir();
+    $field = FormulirField::create(['jalur_ppdb_id' => $jalur->id, 'label' => 'Field A', 'field_type' => 'text']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+
+    JawabanFormulirPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id,
+        'formulir_field_id' => $field->id,
+        'nilai' => 'jawaban contoh',
+    ]);
+
+    expect($field->jawabanFormulir()->count())->toBe(1);
 });
