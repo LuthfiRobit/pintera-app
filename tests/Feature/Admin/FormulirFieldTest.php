@@ -138,3 +138,71 @@ it('exposes the jawabanFormulir relation with real registrant answer data', func
 
     expect($field->jawabanFormulir()->count())->toBe(1);
 });
+
+it('rejects deleting a formulir field that already has a registrant answer', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukFormulir();
+    $field = FormulirField::create(['jalur_ppdb_id' => $jalur->id, 'label' => 'Field A', 'field_type' => 'text']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    JawabanFormulirPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id, 'formulir_field_id' => $field->id, 'nilai' => 'jawaban',
+    ]);
+
+    $this->actingAs($user)->delete(route('admin.formulir-field.destroy', $field))
+        ->assertSessionHasErrors('formulir_field');
+
+    expect(FormulirField::find($field->id))->not->toBeNull();
+});
+
+it('names the related answer count in the deletion error message', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukFormulir();
+    $field = FormulirField::create(['jalur_ppdb_id' => $jalur->id, 'label' => 'Field A', 'field_type' => 'text']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    JawabanFormulirPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id, 'formulir_field_id' => $field->id, 'nilai' => 'jawaban',
+    ]);
+
+    $this->actingAs($user)->delete(route('admin.formulir-field.destroy', $field));
+
+    expect(session('errors')->get('formulir_field')[0])->toContain('1 jawaban');
+});
+
+it('responds with JSON on store when requested', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukFormulir();
+
+    $response = $this->actingAs($user)->postJson(route('admin.formulir-field.store'), [
+        'jalur_ppdb_id' => $jalur->id,
+        'label' => 'Field Baru',
+        'field_type' => 'text',
+    ]);
+
+    $response->assertCreated();
+    expect($response->json('data.label'))->toBe('Field Baru');
+});
+
+it('responds with a JSON 422 including field errors for the select-options rule when requested via AJAX', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukFormulir();
+
+    $response = $this->actingAs($user)->postJson(route('admin.formulir-field.store'), [
+        'jalur_ppdb_id' => $jalur->id,
+        'label' => 'Pilihan',
+        'field_type' => 'select',
+        'options' => 'Satu',
+    ]);
+
+    $response->assertStatus(422);
+    expect($response->json('errors.options.0'))->toContain('minimal 2 opsi');
+});
+
+it('responds with a JSON 422 and the correct message when a blocked deletion is requested via AJAX', function () {
+    [$lembaga, $user, $jalur] = buatJalurUntukFormulir();
+    $field = FormulirField::create(['jalur_ppdb_id' => $jalur->id, 'label' => 'Field A', 'field_type' => 'text']);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    JawabanFormulirPendaftaran::create([
+        'pendaftaran_id' => $pendaftaran->id, 'formulir_field_id' => $field->id, 'nilai' => 'jawaban',
+    ]);
+
+    $response = $this->actingAs($user)->deleteJson(route('admin.formulir-field.destroy', $field));
+
+    $response->assertStatus(422);
+    expect($response->json('message'))->toContain('1 jawaban');
+});
