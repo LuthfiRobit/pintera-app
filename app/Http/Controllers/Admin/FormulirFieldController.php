@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\FormulirField;
 use App\Models\JalurPpdb;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -14,7 +15,7 @@ class FormulirFieldController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorize('formulir-field.create');
 
@@ -33,11 +34,17 @@ class FormulirFieldController extends BaseController
             $options = array_values(array_filter(array_map('trim', explode("\n", $data['options'] ?? ''))));
 
             if (count($options) < 2) {
-                return back()->withErrors(['options' => 'Field bertipe pilihan butuh minimal 2 opsi (satu opsi per baris).'])->withInput();
+                $message = 'Field bertipe pilihan butuh minimal 2 opsi (satu opsi per baris).';
+
+                if ($request->wantsJson()) {
+                    return response()->json(['message' => $message, 'errors' => ['options' => [$message]]], 422);
+                }
+
+                return back()->withErrors(['options' => $message])->withInput();
             }
         }
 
-        FormulirField::create([
+        $field = FormulirField::create([
             'jalur_ppdb_id' => $jalur->id,
             'label' => $data['label'],
             'field_type' => $data['field_type'],
@@ -46,16 +53,41 @@ class FormulirFieldController extends BaseController
             'urutan' => $jalur->formulirField()->count(),
         ]);
 
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $field], 201);
+        }
+
         return redirect()->route('admin.jalur-ppdb.edit', $jalur)->with('status', 'Field formulir berhasil ditambahkan.');
     }
 
-    public function destroy(FormulirField $formulirField): RedirectResponse
+    public function destroy(Request $request, FormulirField $formulirField): RedirectResponse|JsonResponse
     {
         $this->authorize('formulir-field.delete');
+
+        $jumlahJawaban = $formulirField->jawabanFormulir()->count();
+        if ($jumlahJawaban > 0) {
+            return $this->errorResponse(
+                $request,
+                "Tidak bisa dihapus, sudah ada {$jumlahJawaban} jawaban terkait dari calon murid."
+            );
+        }
 
         $jalur = $formulirField->jalurPpdb;
         $formulirField->delete();
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Field formulir berhasil dihapus.']);
+        }
+
         return redirect()->route('admin.jalur-ppdb.edit', $jalur)->with('status', 'Field formulir berhasil dihapus.');
+    }
+
+    private function errorResponse(Request $request, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message], 422);
+        }
+
+        return back()->withErrors(['formulir_field' => $message]);
     }
 }

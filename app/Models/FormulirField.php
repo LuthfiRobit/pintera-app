@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class FormulirField extends Model
 {
@@ -36,5 +37,10 @@ class FormulirField extends Model
     public function jalurPpdb(): BelongsTo
     {
         return $this->belongsTo(JalurPpdb::class, 'jalur_ppdb_id');
+    }
+
+    public function jawabanFormulir(): HasMany
+    {
+        return $this->hasMany(JawabanFormulirPendaftaran::class);
     }
 }

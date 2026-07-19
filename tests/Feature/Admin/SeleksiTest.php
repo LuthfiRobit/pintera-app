@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\GelombangPpdb;
+use App\Models\HasilSeleksi;
 use App\Models\JalurPpdb;
 use App\Models\JenisTesMaster;
 use App\Models\Lembaga;
@@ -115,4 +116,111 @@ it('denies access without the manage-ppdb permission', function () {
         'jenis_tes_master_id' => $jenisTes->id,
         'jadwal' => '2026-08-15 09:00',
     ])->assertForbidden();
+});
+
+it('exposes the hasilSeleksi relation with real registrant result data', function () {
+    [$lembaga, $user, $tahunAjaran, $jalur, $gelombang, $jenisTes] = buatKonteksSeleksi();
+    $seleksi = SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-08-15 09:00:00',
+    ]);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+
+    HasilSeleksi::create(['pendaftaran_id' => $pendaftaran->id, 'seleksi_ppdb_id' => $seleksi->id, 'nilai' => 80]);
+
+    expect($seleksi->hasilSeleksi()->count())->toBe(1);
+});
+
+it('restricts deleting a seleksi_ppdb row at the database level when hasil_seleksi references it', function () {
+    [$lembaga, $user, $tahunAjaran, $jalur, $gelombang, $jenisTes] = buatKonteksSeleksi();
+    $seleksi = SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-08-15 09:00:00',
+    ]);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    HasilSeleksi::create(['pendaftaran_id' => $pendaftaran->id, 'seleksi_ppdb_id' => $seleksi->id, 'nilai' => 80]);
+
+    expect(fn () => $seleksi->delete())->toThrow(\Illuminate\Database\QueryException::class);
+    expect(SeleksiPpdb::find($seleksi->id))->not->toBeNull();
+});
+
+it('rejects deleting a seleksi row that already has a registrant result', function () {
+    [$lembaga, $user, $tahunAjaran, $jalur, $gelombang, $jenisTes] = buatKonteksSeleksi();
+    $seleksi = SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-08-15 09:00:00',
+    ]);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    HasilSeleksi::create(['pendaftaran_id' => $pendaftaran->id, 'seleksi_ppdb_id' => $seleksi->id, 'nilai' => 80]);
+
+    $this->actingAs($user)->delete(route('admin.seleksi.destroy', $seleksi))
+        ->assertSessionHasErrors('seleksi');
+
+    expect(SeleksiPpdb::find($seleksi->id))->not->toBeNull();
+});
+
+it('names the related result count in the deletion error message', function () {
+    [$lembaga, $user, $tahunAjaran, $jalur, $gelombang, $jenisTes] = buatKonteksSeleksi();
+    $seleksi = SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-08-15 09:00:00',
+    ]);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    HasilSeleksi::create(['pendaftaran_id' => $pendaftaran->id, 'seleksi_ppdb_id' => $seleksi->id, 'nilai' => 80]);
+
+    $this->actingAs($user)->delete(route('admin.seleksi.destroy', $seleksi));
+
+    expect(session('errors')->get('seleksi')[0])->toContain('1 hasil penilaian');
+});
+
+it('responds with JSON on store when requested, including the loaded gelombang and jenis tes names', function () {
+    [$lembaga, $user, $tahunAjaran, $jalur, $gelombang, $jenisTes] = buatKonteksSeleksi();
+
+    $response = $this->actingAs($user)->postJson(route('admin.seleksi.store'), [
+        'jalur_ppdb_id' => $jalur->id,
+        'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id,
+        'jadwal' => '2026-08-15 09:00',
+    ]);
+
+    $response->assertCreated();
+    expect($response->json('data.gelombang_ppdb.nama'))->toBe('Gelombang 1');
+    expect($response->json('data.jenis_tes_master.nama'))->toBe('Tes Tulis');
+});
+
+it('responds with a JSON 422 including field errors for the tahun-ajaran-mismatch rule when requested via AJAX', function () {
+    [$lembaga, $user, $tahunAjaran, $jalur, $gelombang, $jenisTes] = buatKonteksSeleksi();
+    $tahunLain = TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
+        'tanggal_mulai' => '2025-07-01', 'tanggal_selesai' => '2026-06-30', 'status_aktif' => false,
+    ]);
+    $gelombangTahunLain = GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLain->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2025-08-01', 'tanggal_tutup' => '2025-09-01', 'kuota' => 40,
+    ]);
+
+    $response = $this->actingAs($user)->postJson(route('admin.seleksi.store'), [
+        'jalur_ppdb_id' => $jalur->id,
+        'gelombang_ppdb_id' => $gelombangTahunLain->id,
+        'jenis_tes_master_id' => $jenisTes->id,
+        'jadwal' => '2026-08-15 09:00',
+    ]);
+
+    $response->assertStatus(422);
+    expect($response->json('errors.gelombang_ppdb_id.0'))->toContain('tahun ajaran yang sama');
+});
+
+it('responds with a JSON 422 and the correct message when a blocked deletion is requested via AJAX', function () {
+    [$lembaga, $user, $tahunAjaran, $jalur, $gelombang, $jenisTes] = buatKonteksSeleksi();
+    $seleksi = SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-08-15 09:00:00',
+    ]);
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga);
+    HasilSeleksi::create(['pendaftaran_id' => $pendaftaran->id, 'seleksi_ppdb_id' => $seleksi->id, 'nilai' => 80]);
+
+    $response = $this->actingAs($user)->deleteJson(route('admin.seleksi.destroy', $seleksi));
+
+    $response->assertStatus(422);
+    expect($response->json('message'))->toContain('1 hasil penilaian');
 });
