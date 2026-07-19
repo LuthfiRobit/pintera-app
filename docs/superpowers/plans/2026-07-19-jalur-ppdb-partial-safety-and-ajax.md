@@ -369,7 +369,7 @@ class DokumenSyaratController extends BaseController
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `php artisan test --filter=DokumenSyaratTest`
-Expected: `10 passed` (4 pre-existing + 1 from Task 1 + 5 new — note: `'deletes a dokumen syarat'` from before Task 1 still passes unchanged, since a dokumen with zero related documents is never blocked).
+Expected: `12 passed` (7 pre-existing + 1 from Task 1 + 5 new — note: `'deletes a dokumen syarat'` from before Task 1 still passes unchanged, since a dokumen with zero related documents is never blocked).
 
 - [ ] **Step 5: Commit**
 
@@ -780,7 +780,7 @@ class SeleksiController extends BaseController
 - [ ] **Step 4: Run the tests to verify they pass**
 
 Run: `php artisan test --filter=SeleksiTest`
-Expected: `12 passed` (5 pre-existing + 2 from Task 1 + 5 new).
+Expected: `14 passed` (7 pre-existing + 2 from Task 1 + 5 new).
 
 - [ ] **Step 5: Commit**
 
@@ -967,7 +967,7 @@ Expected: no syntax errors.
 - [ ] **Step 6: Run the regression tests**
 
 Run: `php artisan test --filter=DokumenSyaratTest`
-Expected: `10 passed` — the controller-level tests from Task 2 don't touch the view at all (they call the routes directly), so they must stay green untouched by this purely-frontend task.
+Expected: `12 passed` — the controller-level tests from Task 2 don't touch the view at all (they call the routes directly), so they must stay green untouched by this purely-frontend task.
 
 - [ ] **Step 7: Commit**
 
@@ -1408,7 +1408,7 @@ Expected: no syntax errors.
 - [ ] **Step 6: Run the regression tests**
 
 Run: `php artisan test --filter=SeleksiTest`
-Expected: `12 passed`.
+Expected: `14 passed`.
 
 - [ ] **Step 7: Commit**
 
@@ -1426,7 +1426,7 @@ git commit -m "feat: convert Seleksi & Tes CRUD to Alpine, no page reload on add
 - [ ] **Step 1: Run the full test suite**
 
 Run: `php artisan test`
-Expected: every test passes, 0 failures — including `FormulirFieldTest` (13), `DokumenSyaratTest` (10), `SeleksiTest` (12), `JalurPpdbTest`, `GelombangPpdbTest`, `GelombangJalurRestrictionTest`, alongside the full pre-existing suite.
+Expected: every test passes, 0 failures — including `FormulirFieldTest` (13), `DokumenSyaratTest` (12), `SeleksiTest` (14), `JalurPpdbTest`, `GelombangPpdbTest`, `GelombangJalurRestrictionTest`, alongside the full pre-existing suite.
 
 - [ ] **Step 2: Rebuild frontend assets**
 
