@@ -32,4 +32,9 @@ class JenisTagihan extends Model
     {
         return $this->hasMany(NominalTagihanJalur::class);
     }
+
+    public function tagihanItem(): HasMany
+    {
+        return $this->hasMany(TagihanItem::class);
+    }
 }

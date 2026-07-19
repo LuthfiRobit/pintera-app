@@ -5,6 +5,7 @@ use App\Models\JalurPpdb;
 use App\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\NominalTagihanJalur;
+use App\Models\TagihanItem;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -133,4 +134,20 @@ it('denies kepala_sekolah from creating a jenis tagihan (view-only role for this
     $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
         'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false,
     ])->assertForbidden();
+});
+
+it('exposes a tagihanItem relation counting real billing rows for a jenis tagihan', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+
+    TagihanItem::factory()->create(['jenis_tagihan_id' => $jenisTagihan->id]);
+
+    expect($jenisTagihan->tagihanItem()->count())->toBe(1);
+});
+
+it('still allows creating and reading tagihan_item rows normally after the FK is changed to restrict', function () {
+    $item = TagihanItem::factory()->create();
+
+    expect(TagihanItem::find($item->id))->not->toBeNull();
+    expect($item->jenisTagihan)->not->toBeNull();
 });
