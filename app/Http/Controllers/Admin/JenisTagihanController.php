@@ -7,6 +7,7 @@ use App\Models\JenisTagihan;
 use App\Models\NominalTagihanJalur;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -88,17 +89,42 @@ class JenisTagihanController extends BaseController
         return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)->with('status', 'Jenis tagihan berhasil diperbarui.');
     }
 
-    public function destroy(JenisTagihan $jenisTagihan): RedirectResponse
+    public function destroy(Request $request, JenisTagihan $jenisTagihan): RedirectResponse|JsonResponse
     {
         $this->authorize('jenis-tagihan.delete');
 
-        if ($jenisTagihan->nominalJalur()->exists()) {
-            return back()->withErrors(['jenis_tagihan' => 'Tidak bisa menghapus jenis tagihan yang sudah punya nominal terkonfigurasi.']);
+        $jumlahTagihan = $jenisTagihan->tagihanItem()->count();
+        if ($jumlahTagihan > 0) {
+            return $this->errorResponse(
+                $request,
+                "Tidak bisa dihapus, sudah dipakai di {$jumlahTagihan} tagihan milik calon murid."
+            );
+        }
+
+        $jumlahNominal = $jenisTagihan->nominalJalur()->count();
+        if ($jumlahNominal > 0) {
+            return $this->errorResponse(
+                $request,
+                "Tidak bisa dihapus, sudah ada {$jumlahNominal} nominal jalur yang dikonfigurasi. Hapus dulu di halaman Kelola Nominal."
+            );
         }
 
         $jenisTagihan->delete();
 
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Jenis tagihan berhasil dihapus.']);
+        }
+
         return redirect()->route('admin.jenis-tagihan.index')->with('status', 'Jenis tagihan berhasil dihapus.');
+    }
+
+    private function errorResponse(Request $request, string $message): RedirectResponse|JsonResponse
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message], 422);
+        }
+
+        return back()->withErrors(['jenis_tagihan' => $message]);
     }
 
     public function nominal(JenisTagihan $jenisTagihan): View|RedirectResponse
