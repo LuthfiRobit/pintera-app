@@ -39,6 +39,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::get('jenis-tes', [JenisTesMasterController::class, 'index'])->name('jenis-tes.index');
     Route::post('jenis-tes', [JenisTesMasterController::class, 'store'])->name('jenis-tes.store');
+    Route::put('jenis-tes/{jenisTes}', [JenisTesMasterController::class, 'update'])->name('jenis-tes.update');
     Route::delete('jenis-tes/{jenisTes}', [JenisTesMasterController::class, 'destroy'])->name('jenis-tes.destroy');
 
     Route::resource('gelombang-ppdb', GelombangPpdbController::class)->except(['show', 'destroy']);

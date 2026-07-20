@@ -30,7 +30,7 @@ class RoleSeeder extends Seeder
 
             if ($name === 'admin_administrasi') {
                 $role->givePermissionTo([
-                    'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete',
+                    'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete',
                     'gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit',
                     'jalur-ppdb.view', 'jalur-ppdb.create', 'jalur-ppdb.edit',
                     'formulir-field.create', 'formulir-field.delete',

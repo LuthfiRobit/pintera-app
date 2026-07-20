@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\JenisTesMaster;
 use App\Models\SeleksiPpdb;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -55,6 +56,26 @@ class JenisTesMasterController extends BaseController
         JenisTesMaster::create($data);
 
         return redirect()->route('admin.jenis-tes.index')->with('status', 'Jenis tes berhasil ditambahkan.');
+    }
+
+    public function update(Request $request, JenisTesMaster $jenisTes): RedirectResponse|JsonResponse
+    {
+        $this->authorize('jenis-tes.edit');
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_tes_master', 'nama')
+                ->where(fn ($query) => $query->where('lembaga_id', $jenisTes->lembaga_id))
+                ->ignore($jenisTes->id)],
+            'deskripsi' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $jenisTes->update($data);
+
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $jenisTes->fresh()]);
+        }
+
+        return redirect()->route('admin.jenis-tes.index')->with('status', 'Jenis tes berhasil diperbarui.');
     }
 
     public function destroy(JenisTesMaster $jenisTes): RedirectResponse

@@ -18,7 +18,7 @@ it('seeds 5 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(51);
+    expect($superAdmin->permissions()->count())->toBe(52);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -26,11 +26,11 @@ it('seeds 5 roles with correct scope and protection', function () {
     expect(Role::where('name', 'guru')->first()->scope_level)->toBe('diri_sendiri');
 });
 
-it('gives admin_administrasi the correct 19 SPMB-related permissions', function () {
+it('gives admin_administrasi the correct 20 SPMB-related permissions', function () {
     (new RoleSeeder())->run();
 
     $adminAdministrasi = Role::where('name', 'admin_administrasi')->first();
-    expect($adminAdministrasi->permissions()->count())->toBe(19);
+    expect($adminAdministrasi->permissions()->count())->toBe(20);
     expect($adminAdministrasi->hasPermissionTo('jalur-ppdb.create'))->toBeTrue();
 });
 

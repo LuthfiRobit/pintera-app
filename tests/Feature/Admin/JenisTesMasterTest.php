@@ -11,11 +11,11 @@ function buatAdminPpdb(): array
 {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    foreach (['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete'] as $permission) {
+    foreach (['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
     $role = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo(['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete']);
+    $role->givePermissionTo(['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
 
@@ -26,11 +26,11 @@ function buatYayasanSuperAdminDenganLembagaAktif(): array
 {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    foreach (['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete'] as $permission) {
+    foreach (['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
-    $role->givePermissionTo(['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.delete']);
+    $role->givePermissionTo(['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete']);
     $user = User::factory()->create();
     $user->assignRole($role);
 
@@ -123,4 +123,54 @@ it('blocks deleting a jenis tes that is still referenced by a seleksi row', func
         ->assertSessionHasErrors('jenis_tes');
 
     expect(JenisTesMaster::find($jenisTes->id))->not->toBeNull();
+});
+
+it('updates a jenis tes nama and deskripsi', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+
+    $response = $this->actingAs($user)->put(route('admin.jenis-tes.update', $jenisTes), [
+        'nama' => 'Tes Tulis Akademik', 'deskripsi' => 'Diperbarui',
+    ]);
+
+    $response->assertRedirect(route('admin.jenis-tes.index'));
+    expect($jenisTes->fresh()->nama)->toBe('Tes Tulis Akademik');
+    expect($jenisTes->fresh()->deskripsi)->toBe('Diperbarui');
+});
+
+it('denies updating a jenis tes without the jenis-tes.edit permission', function () {
+    [$lembaga] = buatAdminPpdb();
+    $bareUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+
+    $this->actingAs($bareUser)
+        ->put(route('admin.jenis-tes.update', $jenisTes), ['nama' => 'Coba Ubah'])
+        ->assertForbidden();
+});
+
+it('rejects updating a jenis tes nama to one already used by another jenis tes in the same lembaga, but allows keeping its own name', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+    JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+    $target = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Wawancara']);
+
+    $this->actingAs($user)
+        ->put(route('admin.jenis-tes.update', $target), ['nama' => 'Tes Tulis'])
+        ->assertSessionHasErrors('nama');
+
+    $this->actingAs($user)
+        ->put(route('admin.jenis-tes.update', $target), ['nama' => 'Wawancara'])
+        ->assertSessionDoesntHaveErrors('nama');
+
+    expect($target->fresh()->nama)->toBe('Wawancara');
+});
+
+it('responds with json after updating a jenis tes', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+
+    $response = $this->actingAs($user)->putJson(route('admin.jenis-tes.update', $jenisTes), [
+        'nama' => 'Tes Tulis Akademik',
+    ]);
+
+    $response->assertOk()->assertJson(['data' => ['nama' => 'Tes Tulis Akademik']]);
 });
