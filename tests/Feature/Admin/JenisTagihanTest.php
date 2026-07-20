@@ -288,3 +288,17 @@ it('responds with json after updating a jenis tagihan', function () {
 
     $response->assertOk()->assertJson(['data' => ['nama' => 'Biaya Pendaftaran Baru']]);
 });
+
+it('includes usage counts in the json response after updating a jenis tagihan already in use', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+    TagihanItem::factory()->create(['jenis_tagihan_id' => $jenisTagihan->id]);
+
+    $response = $this->actingAs($user)->putJson(route('admin.jenis-tagihan.update', $jenisTagihan), [
+        'nama' => 'Biaya Pendaftaran Baru', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false,
+    ]);
+
+    $response->assertOk()->assertJson(['data' => ['tagihan_item_count' => 1, 'nominal_jalur_count' => 0]]);
+});

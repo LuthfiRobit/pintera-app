@@ -96,7 +96,7 @@ class JenisTagihanController extends BaseController
         $jenisTagihan->update($data);
 
         if ($request->wantsJson()) {
-            return response()->json(['data' => $jenisTagihan->fresh()]);
+            return response()->json(['data' => $jenisTagihan->fresh()->loadCount(['nominalJalur', 'tagihanItem'])]);
         }
 
         return redirect()->route('admin.jenis-tagihan.index')->with('status', 'Jenis tagihan berhasil diperbarui.');
