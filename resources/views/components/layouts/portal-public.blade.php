@@ -9,7 +9,23 @@
     </head>
     <body class="bg-gray-50 font-sans text-gray-900 antialiased">
         <x-portal-navbar :active="$active ?? null" />
-        <main>{{ $slot }}</main>
+        <main>
+            @if (session('status'))
+                <div class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-10">
+                    <div class="rounded-xl bg-success-50 px-4 py-3 text-[13px] font-semibold text-success-700">
+                        {{ session('status') }}
+                    </div>
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-10">
+                    <div class="rounded-xl bg-error-50 px-4 py-3 text-[13px] font-semibold text-error-700">
+                        {{ session('error') }}
+                    </div>
+                </div>
+            @endif
+            {{ $slot }}
+        </main>
         <x-portal-footer :yayasan="$yayasan ?? null" />
     </body>
 </html>
