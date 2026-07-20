@@ -151,3 +151,68 @@ it('still allows creating and reading tagihan_item rows normally after the FK is
     expect(TagihanItem::find($item->id))->not->toBeNull();
     expect($item->jenisTagihan)->not->toBeNull();
 });
+
+it('blocks deleting a jenis tagihan already billed to a registrant, naming the number of tagihan', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+    TagihanItem::factory()->create(['jenis_tagihan_id' => $jenisTagihan->id]);
+
+    $response = $this->actingAs($user)->delete(route('admin.jenis-tagihan.destroy', $jenisTagihan));
+
+    $response->assertRedirect()->assertSessionHasErrors([
+        'jenis_tagihan' => 'Tidak bisa dihapus, sudah dipakai di 1 tagihan milik calon murid.',
+    ]);
+    expect(JenisTagihan::find($jenisTagihan->id))->not->toBeNull();
+});
+
+it('blocks deleting a jenis tagihan with configured nominal but no real billing yet', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+    NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
+
+    $response = $this->actingAs($user)->delete(route('admin.jenis-tagihan.destroy', $jenisTagihan));
+
+    $response->assertRedirect()->assertSessionHasErrors([
+        'jenis_tagihan' => 'Tidak bisa dihapus, sudah ada 1 nominal jalur yang dikonfigurasi. Hapus dulu di halaman Kelola Nominal.',
+    ]);
+    expect(JenisTagihan::find($jenisTagihan->id))->not->toBeNull();
+});
+
+it('allows deleting a jenis tagihan with no related tagihan or nominal rows', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+
+    $response = $this->actingAs($user)->delete(route('admin.jenis-tagihan.destroy', $jenisTagihan));
+
+    $response->assertRedirect(route('admin.jenis-tagihan.index'));
+    expect(JenisTagihan::find($jenisTagihan->id))->toBeNull();
+});
+
+it('responds with json when deleting a jenis tagihan blocked by real billing rows', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+    TagihanItem::factory()->create(['jenis_tagihan_id' => $jenisTagihan->id]);
+
+    $response = $this->actingAs($user)->deleteJson(route('admin.jenis-tagihan.destroy', $jenisTagihan));
+
+    $response->assertStatus(422)->assertJson(['message' => 'Tidak bisa dihapus, sudah dipakai di 1 tagihan milik calon murid.']);
+});
+
+it('responds with json on a successful jenis tagihan delete', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+
+    $response = $this->actingAs($user)->deleteJson(route('admin.jenis-tagihan.destroy', $jenisTagihan));
+
+    $response->assertOk()->assertJson(['message' => 'Jenis tagihan berhasil dihapus.']);
+});
