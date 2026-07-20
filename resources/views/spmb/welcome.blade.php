@@ -19,24 +19,24 @@
             </div>
 
             <div class="rounded-[20px] bg-gradient-to-br from-portal-600 to-portal-500 p-7 text-white shadow-elevated">
-                <p class="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-portal-100">Ringkasan Penerimaan</p>
+                <p class="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-white/70">Ringkasan Penerimaan</p>
                 <p class="mb-5 text-lg font-bold">Tahun Ajaran {{ now()->year }}/{{ now()->year + 1 }}</p>
                 <div class="mb-5 grid grid-cols-3 gap-2.5">
                     <div class="rounded-xl border border-white/15 bg-white/10 p-3.5 text-center">
                         <p class="text-[22px] font-bold tabular-nums">{{ $jumlahLembaga }}</p>
-                        <p class="text-[10.5px] uppercase text-portal-100">Lembaga</p>
+                        <p class="text-[10.5px] uppercase text-white/70">Lembaga</p>
                     </div>
                     <div class="rounded-xl border border-white/15 bg-white/10 p-3.5 text-center">
                         <p class="text-[22px] font-bold tabular-nums">{{ $jumlahSedangBuka }}</p>
-                        <p class="text-[10.5px] uppercase text-portal-100">Sedang Buka</p>
+                        <p class="text-[10.5px] uppercase text-white/70">Sedang Buka</p>
                     </div>
                     <div class="rounded-xl border border-white/15 bg-white/10 p-3.5 text-center">
                         <p class="text-[22px] font-bold tabular-nums">{{ $jumlahJalurAktif }}</p>
-                        <p class="text-[10.5px] uppercase text-portal-100">Jalur Aktif</p>
+                        <p class="text-[10.5px] uppercase text-white/70">Jalur Aktif</p>
                     </div>
                 </div>
                 @if ($gelombangTerdekat)
-                    <div class="mb-5 rounded-xl border border-white/15 bg-white/10 p-3.5 text-[11.5px] leading-relaxed text-portal-100">
+                    <div class="mb-5 rounded-xl border border-white/15 bg-white/10 p-3.5 text-[11.5px] leading-relaxed text-white/70">
                         <span class="font-bold text-white">{{ $gelombangTerdekat->lembaga->nama }}</span> — {{ $gelombangTerdekat->nama }} tutup {{ $gelombangTerdekat->tanggal_tutup->translatedFormat('d F Y') }}
                     </div>
                 @endif

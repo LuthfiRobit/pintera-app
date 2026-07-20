@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Models\JalurPpdb;
+use App\Models\JenisTagihan;
 use App\Models\Lembaga;
+use App\Models\NominalTagihanJalur;
+use App\Models\TahunAjaran;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
 
@@ -10,26 +14,47 @@ class WelcomeController extends BaseController
 {
     public function index(): View
     {
-        $lembagaList = Lembaga::with('yayasan')->orderBy('nama')->get()->map(function (Lembaga $lembaga) {
+        $lembagaList = Lembaga::with('yayasan')->orderBy('nama')->get();
+        $lembagaIds = $lembagaList->pluck('id');
+
+        $tahunAjaranAktifByLembaga = TahunAjaran::whereIn('lembaga_id', $lembagaIds)
+            ->where('status_aktif', true)
+            ->get()
+            ->keyBy('lembaga_id');
+        $tahunAjaranIds = $tahunAjaranAktifByLembaga->pluck('id');
+
+        $jalurAktifCountByTahunAjaran = JalurPpdb::whereIn('tahun_ajaran_id', $tahunAjaranIds)
+            ->where('status_aktif', true)
+            ->selectRaw('tahun_ajaran_id, count(*) as jumlah')
+            ->groupBy('tahun_ajaran_id')
+            ->pluck('jumlah', 'tahun_ajaran_id');
+
+        $jenisPendaftaranByLembaga = JenisTagihan::whereIn('lembaga_id', $lembagaIds)
+            ->where('kategori', 'pendaftaran')
+            ->get()
+            ->keyBy('lembaga_id');
+        $jenisTagihanIds = $jenisPendaftaranByLembaga->pluck('id');
+
+        $biayaTermurahByJenisTagihan = NominalTagihanJalur::whereIn('jenis_tagihan_id', $jenisTagihanIds)
+            ->whereHas('jalurPpdb', fn ($q) => $q->whereIn('tahun_ajaran_id', $tahunAjaranIds))
+            ->selectRaw('jenis_tagihan_id, min(nominal) as termurah')
+            ->groupBy('jenis_tagihan_id')
+            ->pluck('termurah', 'jenis_tagihan_id');
+
+        $lembagaList = $lembagaList->map(function (Lembaga $lembaga) use ($tahunAjaranAktifByLembaga, $jalurAktifCountByTahunAjaran, $jenisPendaftaranByLembaga, $biayaTermurahByJenisTagihan) {
             $gelombang = PortalController::cariGelombangAktif($lembaga);
 
-            $tahunAjaranAktif = \App\Models\TahunAjaran::where('lembaga_id', $lembaga->id)->where('status_aktif', true)->first();
+            $tahunAjaranAktif = $tahunAjaranAktifByLembaga->get($lembaga->id);
             $jalurAktifCount = $tahunAjaranAktif
-                ? \App\Models\JalurPpdb::where('lembaga_id', $lembaga->id)
-                    ->where('tahun_ajaran_id', $tahunAjaranAktif->id)
-                    ->where('status_aktif', true)
-                    ->count()
+                ? (int) ($jalurAktifCountByTahunAjaran->get($tahunAjaranAktif->id) ?? 0)
                 : 0;
 
             $biayaTermurah = null;
             if ($tahunAjaranAktif) {
-                $jenisPendaftaran = \App\Models\JenisTagihan::where('lembaga_id', $lembaga->id)
-                    ->where('kategori', 'pendaftaran')->first();
+                $jenisPendaftaran = $jenisPendaftaranByLembaga->get($lembaga->id);
 
                 if ($jenisPendaftaran) {
-                    $biayaTermurah = \App\Models\NominalTagihanJalur::where('jenis_tagihan_id', $jenisPendaftaran->id)
-                        ->whereHas('jalurPpdb', fn ($q) => $q->where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $tahunAjaranAktif->id))
-                        ->min('nominal');
+                    $biayaTermurah = $biayaTermurahByJenisTagihan->get($jenisPendaftaran->id);
                 }
             }
 
