@@ -7,9 +7,11 @@ use App\Http\Controllers\Spmb\PortalController;
 use App\Http\Controllers\Spmb\ReviewSubmitController;
 use App\Http\Controllers\Spmb\UploadDokumenController;
 use App\Http\Controllers\Spmb\VerifikasiEmailController;
+use App\Http\Controllers\Spmb\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('spmb')->name('spmb.')->group(function () {
+    Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
     Route::get('{lembagaSlug}', [PortalController::class, 'index'])->name('index');
     Route::get('{lembagaSlug}/{jalur}/mulai', [VerifikasiEmailController::class, 'create'])->name('mulai');
     Route::post('{lembagaSlug}/{jalur}/mulai', [VerifikasiEmailController::class, 'store'])
