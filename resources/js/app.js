@@ -18,6 +18,7 @@ import { trenPendaftaranChart, donutTagihanChart, perLembagaBarChart } from './d
 import { dokumenSyaratList } from './dokumen-syarat-list';
 import { formulirFieldList } from './formulir-field-list';
 import { seleksiList } from './seleksi-list';
+import { jenisTesTable } from './jenis-tes-table';
 
 window.Alpine = Alpine;
 
@@ -41,5 +42,6 @@ Alpine.data('perLembagaBarChart', perLembagaBarChart);
 Alpine.data('dokumenSyaratList', dokumenSyaratList);
 Alpine.data('formulirFieldList', formulirFieldList);
 Alpine.data('seleksiList', seleksiList);
+Alpine.data('jenisTesTable', jenisTesTable);
 
 Alpine.start();
