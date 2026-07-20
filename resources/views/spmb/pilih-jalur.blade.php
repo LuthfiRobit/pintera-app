@@ -11,7 +11,7 @@
         </span>
         <div>
             <h1 class="text-xl font-bold">{{ $lembaga->nama }}</h1>
-            <div class="mt-1.5 flex flex-wrap gap-4 text-[12.5px] text-portal-100">
+            <div class="mt-1.5 flex flex-wrap gap-4 text-[12.5px] text-white/70">
                 <span>{{ $lembaga->kecamatan }}, {{ $lembaga->kabupaten_kota }}</span>
                 @if ($lembaga->akreditasi)
                     <span>Akreditasi {{ $lembaga->akreditasi }}</span>
@@ -26,7 +26,7 @@
                 <span class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11.5px] font-bold">
                     <x-icon name="check_circle" class="h-2.5 w-2.5" /> {{ $gelombang->nama }} Dibuka
                 </span>
-                <p class="text-[11.5px] text-portal-100">Tutup {{ $gelombang->tanggal_tutup->translatedFormat('d F Y') }}</p>
+                <p class="text-[11.5px] text-white/70">Tutup {{ $gelombang->tanggal_tutup->translatedFormat('d F Y') }}</p>
             @else
                 <span class="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11.5px] font-bold">
                     <x-icon name="hourglass_empty" class="h-2.5 w-2.5" /> Ditutup
@@ -88,9 +88,13 @@
                     <div class="rounded-xl bg-gray-50 p-3.5 text-center">
                         <p class="mb-1 text-[10.5px] uppercase tracking-wide text-gray-400">Biaya Pendaftaran</p>
                         @if ($nominal === null)
-                            <p class="text-[13px] font-bold text-warning-700">Menunggu Konfirmasi Admin</p>
+                            <p class="flex items-center justify-center gap-1.5 text-[13px] font-bold text-warning-700">
+                                <x-icon name="warning" class="h-3.5 w-3.5" /> Menunggu Konfirmasi Admin
+                            </p>
                         @elseif ((float) $nominal->nominal === 0.0)
-                            <p class="text-[20px] font-bold text-success-700">Gratis</p>
+                            <p class="flex items-center justify-center gap-1.5 text-[20px] font-bold text-success-700">
+                                <x-icon name="check_circle" class="h-4 w-4" /> Gratis
+                            </p>
                         @else
                             <p class="text-[20px] font-bold tabular-nums text-portal-500">Rp{{ number_format($nominal->nominal, 0, ',', '.') }}</p>
                         @endif

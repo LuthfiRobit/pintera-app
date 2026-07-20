@@ -66,10 +66,7 @@ class PortalController extends BaseController
     public function daftarJalur(Request $request, string $lembagaSlug, JalurPpdb $jalur): RedirectResponse
     {
         $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
-
-        $gelombang = static::cariGelombangAktif($lembaga);
-        abort_if(! $gelombang, 404);
+        $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
 
         $request->session()->put('spmb_pilihan.lembaga_id', $lembaga->id);
         $request->session()->put('spmb_pilihan.jalur_id', $jalur->id);
