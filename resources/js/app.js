@@ -19,6 +19,7 @@ import { dokumenSyaratList } from './dokumen-syarat-list';
 import { formulirFieldList } from './formulir-field-list';
 import { seleksiList } from './seleksi-list';
 import { jenisTesTable } from './jenis-tes-table';
+import { jenisTagihanTable } from './jenis-tagihan-table';
 
 window.Alpine = Alpine;
 
@@ -43,5 +44,6 @@ Alpine.data('dokumenSyaratList', dokumenSyaratList);
 Alpine.data('formulirFieldList', formulirFieldList);
 Alpine.data('seleksiList', seleksiList);
 Alpine.data('jenisTesTable', jenisTesTable);
+Alpine.data('jenisTagihanTable', jenisTagihanTable);
 
 Alpine.start();
