@@ -76,7 +76,7 @@ class JenisTesMasterController extends BaseController
         $jenisTes->update($data);
 
         if ($request->wantsJson()) {
-            return response()->json(['data' => $jenisTes->fresh()]);
+            return response()->json(['data' => $jenisTes->fresh()->loadCount('seleksi')]);
         }
 
         return redirect()->route('admin.jenis-tes.index')->with('status', 'Jenis tes berhasil diperbarui.');

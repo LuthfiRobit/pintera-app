@@ -175,6 +175,33 @@ it('responds with json after updating a jenis tes', function () {
     $response->assertOk()->assertJson(['data' => ['nama' => 'Tes Tulis Akademik']]);
 });
 
+it('includes the seleksi usage count in the json response after updating a jenis tes', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+    $this->actingAs($user);
+
+    $tahunAjaran = \App\Models\TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
+    ]);
+    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = \App\Models\GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
+    ]);
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+    \App\Models\SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
+    ]);
+
+    $response = $this->putJson(route('admin.jenis-tes.update', $jenisTes), [
+        'nama' => 'Tes Tulis Akademik',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('data.seleksi_count'))->toBe(1);
+});
+
 it('includes the exact number of blocking seleksi rows in the destroy error message', function () {
     [$lembaga, $user] = buatAdminPpdb();
     $this->actingAs($user);
