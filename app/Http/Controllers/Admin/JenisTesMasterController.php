@@ -20,40 +20,44 @@ class JenisTesMasterController extends BaseController
     {
         $this->authorize('jenis-tes.view');
 
-        return view('admin.jenis-tes.index', ['jenisTesList' => JenisTesMaster::orderBy('nama')->get()]);
+        return view('admin.jenis-tes.index', [
+            'jenisTesList' => JenisTesMaster::withCount('seleksi')->orderBy('nama')->get(),
+        ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorize('jenis-tes.create');
 
         $isYayasanScope = $request->user()->widestScopeLevel() === 'yayasan';
-
         if ($isYayasanScope) {
             $lembagaId = session('active_lembaga_id');
-
             if ($lembagaId === null) {
-                return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tes.'])->withInput();
+                $message = 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tes.';
+
+                if ($request->wantsJson()) {
+                    return response()->json(['message' => $message, 'errors' => ['lembaga_id' => [$message]]], 422);
+                }
+
+                return back()->withErrors(['lembaga_id' => $message])->withInput();
             }
         } else {
             $lembagaId = $request->user()->lembaga_id;
         }
 
         $data = $request->validate([
-            'nama' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('jenis_tes_master', 'nama')->where(fn ($query) => $query->where('lembaga_id', $lembagaId)),
-            ],
+            'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_tes_master', 'nama')->where(fn ($query) => $query->where('lembaga_id', $lembagaId))],
             'deskripsi' => ['nullable', 'string', 'max:1000'],
         ]);
-
         if ($isYayasanScope) {
             $data['lembaga_id'] = $lembagaId;
         }
 
-        JenisTesMaster::create($data);
+        $jenisTes = JenisTesMaster::create($data);
+
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $jenisTes->fresh()], 201);
+        }
 
         return redirect()->route('admin.jenis-tes.index')->with('status', 'Jenis tes berhasil ditambahkan.');
     }
@@ -78,16 +82,26 @@ class JenisTesMasterController extends BaseController
         return redirect()->route('admin.jenis-tes.index')->with('status', 'Jenis tes berhasil diperbarui.');
     }
 
-    public function destroy(JenisTesMaster $jenisTes): RedirectResponse
+    public function destroy(Request $request, JenisTesMaster $jenisTes): RedirectResponse|JsonResponse
     {
         $this->authorize('jenis-tes.delete');
 
-        if (SeleksiPpdb::where('jenis_tes_master_id', $jenisTes->id)->exists()) {
-            return redirect()->route('admin.jenis-tes.index')
-                ->withErrors(['jenis_tes' => 'Jenis tes ini masih dipakai di satu atau lebih jadwal seleksi, tidak bisa dihapus.']);
+        $jumlahSeleksi = SeleksiPpdb::where('jenis_tes_master_id', $jenisTes->id)->count();
+        if ($jumlahSeleksi > 0) {
+            $message = "Tidak bisa dihapus, jenis tes ini masih dipakai di {$jumlahSeleksi} jadwal seleksi.";
+
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $message], 422);
+            }
+
+            return redirect()->route('admin.jenis-tes.index')->withErrors(['jenis_tes' => $message]);
         }
 
         $jenisTes->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Jenis tes berhasil dihapus.']);
+        }
 
         return redirect()->route('admin.jenis-tes.index')->with('status', 'Jenis tes berhasil dihapus.');
     }

@@ -174,3 +174,90 @@ it('responds with json after updating a jenis tes', function () {
 
     $response->assertOk()->assertJson(['data' => ['nama' => 'Tes Tulis Akademik']]);
 });
+
+it('includes the exact number of blocking seleksi rows in the destroy error message', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+    $this->actingAs($user);
+
+    $tahunAjaran = \App\Models\TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
+    ]);
+    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = \App\Models\GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
+    ]);
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+    \App\Models\SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
+    ]);
+
+    $response = $this->delete(route('admin.jenis-tes.destroy', $jenisTes));
+
+    $response->assertSessionHasErrors([
+        'jenis_tes' => 'Tidak bisa dihapus, jenis tes ini masih dipakai di 1 jadwal seleksi.',
+    ]);
+});
+
+it('responds with json when a jenis tes delete is blocked by a seleksi row', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+    $this->actingAs($user);
+
+    $tahunAjaran = \App\Models\TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
+    ]);
+    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = \App\Models\GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
+    ]);
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+    \App\Models\SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
+    ]);
+
+    $response = $this->deleteJson(route('admin.jenis-tes.destroy', $jenisTes));
+
+    $response->assertStatus(422)->assertJson(['message' => 'Tidak bisa dihapus, jenis tes ini masih dipakai di 1 jadwal seleksi.']);
+});
+
+it('responds with json on a successful jenis tes create and delete', function () {
+    [, $user] = buatAdminPpdb();
+
+    $createResponse = $this->actingAs($user)->postJson(route('admin.jenis-tes.store'), ['nama' => 'Tes Baru']);
+    $createResponse->assertCreated()->assertJson(['data' => ['nama' => 'Tes Baru']]);
+
+    $jenisTes = JenisTesMaster::where('nama', 'Tes Baru')->firstOrFail();
+    $deleteResponse = $this->actingAs($user)->deleteJson(route('admin.jenis-tes.destroy', $jenisTes));
+    $deleteResponse->assertOk()->assertJson(['message' => 'Jenis tes berhasil dihapus.']);
+});
+
+it('includes the seleksi usage count for each jenis tes on the index page', function () {
+    [$lembaga, $user] = buatAdminPpdb();
+    $this->actingAs($user);
+
+    $tahunAjaran = \App\Models\TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
+    ]);
+    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = \App\Models\GelombangPpdb::create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
+        'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
+    ]);
+    $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
+    \App\Models\SeleksiPpdb::create([
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
+    ]);
+
+    $response = $this->get(route('admin.jenis-tes.index'));
+
+    $response->assertViewHas('jenisTesList', function ($jenisTesList) use ($jenisTes) {
+        return (int) $jenisTesList->firstWhere('id', $jenisTes->id)->seleksi_count === 1;
+    });
+});
