@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class JenisTagihanController extends BaseController
@@ -22,42 +23,55 @@ class JenisTagihanController extends BaseController
         $this->authorize('jenis-tagihan.view');
 
         return view('admin.jenis-tagihan.index', [
-            'jenisTagihanList' => JenisTagihan::orderBy('nama')->get(),
+            'jenisTagihanList' => JenisTagihan::withCount(['nominalJalur', 'tagihanItem'])->orderBy('nama')->get(),
         ]);
     }
 
-    public function create(Request $request): View|RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorize('jenis-tagihan.create');
 
-        if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
-            return redirect()->route('admin.jenis-tagihan.index')
-                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tagihan.']);
-        }
+        $isYayasanScope = $request->user()->widestScopeLevel() === 'yayasan';
+        if ($isYayasanScope) {
+            $lembagaId = session('active_lembaga_id');
+            if ($lembagaId === null) {
+                $message = 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tagihan.';
 
-        return view('admin.jenis-tagihan.create');
-    }
+                if ($request->wantsJson()) {
+                    return response()->json(['message' => $message, 'errors' => ['lembaga_id' => [$message]]], 422);
+                }
 
-    public function store(Request $request): RedirectResponse
-    {
-        $this->authorize('jenis-tagihan.create');
-
-        if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
-            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tagihan.'])->withInput();
+                return back()->withErrors(['lembaga_id' => $message])->withInput();
+            }
+        } else {
+            $lembagaId = $request->user()->lembaga_id;
         }
 
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_tagihan', 'nama')
+                ->where(fn ($query) => $query->where('lembaga_id', $lembagaId))],
             'kategori' => ['required', 'in:pendaftaran,daftar_ulang,lainnya'],
             'bisa_dicicil' => ['nullable', 'boolean'],
             'maks_cicilan' => ['nullable', 'integer', 'min:2', 'required_if:bisa_dicicil,1'],
         ]);
         $data['bisa_dicicil'] = $request->boolean('bisa_dicicil');
+        if ($isYayasanScope) {
+            $data['lembaga_id'] = $lembagaId;
+        }
 
         $jenisTagihan = JenisTagihan::create($data);
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'data' => $jenisTagihan->fresh(),
+                'redirect' => $jenisTagihan->kategori !== 'lainnya'
+                    ? route('admin.jenis-tagihan.nominal', $jenisTagihan)
+                    : null,
+            ], 201);
+        }
+
         if ($jenisTagihan->kategori === 'lainnya') {
-            return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)
+            return redirect()->route('admin.jenis-tagihan.index')
                 ->with('status', 'Jenis tagihan berhasil ditambahkan. Kategori "Lainnya" belum punya mekanisme penentuan nominal — itu akan dibangun bersama modul yang memakainya nanti (misalnya SPP).');
         }
 
@@ -65,19 +79,14 @@ class JenisTagihanController extends BaseController
             ->with('status', 'Jenis tagihan berhasil ditambahkan. Atur nominal per jalur di bawah.');
     }
 
-    public function edit(JenisTagihan $jenisTagihan): View
-    {
-        $this->authorize('jenis-tagihan.edit');
-
-        return view('admin.jenis-tagihan.edit', ['jenisTagihan' => $jenisTagihan]);
-    }
-
-    public function update(Request $request, JenisTagihan $jenisTagihan): RedirectResponse
+    public function update(Request $request, JenisTagihan $jenisTagihan): RedirectResponse|JsonResponse
     {
         $this->authorize('jenis-tagihan.edit');
 
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255'],
+            'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_tagihan', 'nama')
+                ->where(fn ($query) => $query->where('lembaga_id', $jenisTagihan->lembaga_id))
+                ->ignore($jenisTagihan->id)],
             'kategori' => ['required', 'in:pendaftaran,daftar_ulang,lainnya'],
             'bisa_dicicil' => ['nullable', 'boolean'],
             'maks_cicilan' => ['nullable', 'integer', 'min:2', 'required_if:bisa_dicicil,1'],
@@ -86,7 +95,11 @@ class JenisTagihanController extends BaseController
 
         $jenisTagihan->update($data);
 
-        return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)->with('status', 'Jenis tagihan berhasil diperbarui.');
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $jenisTagihan->fresh()]);
+        }
+
+        return redirect()->route('admin.jenis-tagihan.index')->with('status', 'Jenis tagihan berhasil diperbarui.');
     }
 
     public function destroy(Request $request, JenisTagihan $jenisTagihan): RedirectResponse|JsonResponse
@@ -132,7 +145,7 @@ class JenisTagihanController extends BaseController
         $this->authorize('jenis-tagihan.edit');
 
         if ($jenisTagihan->kategori === 'lainnya') {
-            return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)
+            return redirect()->route('admin.jenis-tagihan.index')
                 ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang. Kategori "Lainnya" belum punya mekanisme penentuan nominal.']);
         }
 
@@ -153,7 +166,7 @@ class JenisTagihanController extends BaseController
         $this->authorize('jenis-tagihan.edit');
 
         if ($jenisTagihan->kategori === 'lainnya') {
-            return redirect()->route('admin.jenis-tagihan.edit', $jenisTagihan)
+            return redirect()->route('admin.jenis-tagihan.index')
                 ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang.']);
         }
 

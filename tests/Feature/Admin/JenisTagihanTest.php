@@ -95,8 +95,7 @@ it('does not send kategori lainnya through the jalur-based nominal flow after cr
         'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false,
     ]);
 
-    $jenisTagihan = JenisTagihan::where('nama', 'SPP Bulanan')->firstOrFail();
-    $response->assertRedirect(route('admin.jenis-tagihan.edit', $jenisTagihan));
+    $response->assertRedirect(route('admin.jenis-tagihan.index'));
 });
 
 it('redirects away from the nominal page for a kategori lainnya jenis tagihan instead of showing a jalur list', function () {
@@ -107,7 +106,7 @@ it('redirects away from the nominal page for a kategori lainnya jenis tagihan in
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.nominal', $jenisTagihan));
 
-    $response->assertRedirect(route('admin.jenis-tagihan.edit', $jenisTagihan));
+    $response->assertRedirect(route('admin.jenis-tagihan.index'));
     $response->assertSessionHasErrors('kategori');
 });
 
@@ -121,7 +120,7 @@ it('rejects a direct post to simpan nominal for a kategori lainnya jenis tagihan
         'nominal' => [$jalur->id => 100000],
     ]);
 
-    $response->assertRedirect(route('admin.jenis-tagihan.edit', $jenisTagihan));
+    $response->assertRedirect(route('admin.jenis-tagihan.index'));
     $response->assertSessionHasErrors('kategori');
     expect(NominalTagihanJalur::where('jenis_tagihan_id', $jenisTagihan->id)->exists())->toBeFalse();
 });
@@ -215,4 +214,77 @@ it('responds with json on a successful jenis tagihan delete', function () {
     $response = $this->actingAs($user)->deleteJson(route('admin.jenis-tagihan.destroy', $jenisTagihan));
 
     $response->assertOk()->assertJson(['message' => 'Jenis tagihan berhasil dihapus.']);
+});
+
+it('rejects creating a jenis tagihan with a name already used in the same lembaga', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+
+    $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
+        'nama' => 'Biaya Pendaftaran', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => false,
+    ]);
+
+    $response->assertSessionHasErrors('nama');
+    expect(JenisTagihan::where('lembaga_id', $lembaga->id)->count())->toBe(1);
+});
+
+it('rejects updating a jenis tagihan to a name already used by another jenis tagihan in the same lembaga, but allows keeping its own name', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+    $target = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Daftar Ulang', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => false]);
+
+    $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $target), [
+        'nama' => 'Biaya Pendaftaran', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => false,
+    ])->assertSessionHasErrors('nama');
+
+    $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $target), [
+        'nama' => 'Daftar Ulang', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => false,
+    ])->assertSessionDoesntHaveErrors('nama');
+
+    expect($target->fresh()->nama)->toBe('Daftar Ulang');
+});
+
+it('responds with json and a nominal redirect url after creating a pendaftaran jenis tagihan', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->postJson(route('admin.jenis-tagihan.store'), [
+        'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false,
+    ]);
+
+    $jenisTagihan = JenisTagihan::where('nama', 'Biaya Pendaftaran')->firstOrFail();
+    $response->assertCreated()->assertJson([
+        'data' => ['nama' => 'Biaya Pendaftaran'],
+        'redirect' => route('admin.jenis-tagihan.nominal', $jenisTagihan),
+    ]);
+});
+
+it('responds with json and a null redirect after creating a kategori lainnya jenis tagihan', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->postJson(route('admin.jenis-tagihan.store'), [
+        'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false,
+    ]);
+
+    $response->assertCreated()->assertJson(['redirect' => null]);
+});
+
+it('responds with json after updating a jenis tagihan', function () {
+    [$lembaga] = buatLembagaDenganJalurUntukTagihan();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+
+    $response = $this->actingAs($user)->putJson(route('admin.jenis-tagihan.update', $jenisTagihan), [
+        'nama' => 'Biaya Pendaftaran Baru', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false,
+    ]);
+
+    $response->assertOk()->assertJson(['data' => ['nama' => 'Biaya Pendaftaran Baru']]);
 });
