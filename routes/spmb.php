@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('spmb')->name('spmb.')->group(function () {
     Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
     Route::get('{lembagaSlug}', [PortalController::class, 'index'])->name('index');
+    Route::post('{lembagaSlug}/jalur/{jalur}/daftar', [PortalController::class, 'daftarJalur'])->name('jalur.daftar');
     Route::get('{lembagaSlug}/{jalur}/mulai', [VerifikasiEmailController::class, 'create'])->name('mulai');
     Route::post('{lembagaSlug}/{jalur}/mulai', [VerifikasiEmailController::class, 'store'])
         ->middleware('throttle:6,1')->name('mulai.store');
