@@ -15,6 +15,8 @@ use Illuminate\View\View;
 
 class VerifikasiOtpController extends BaseController
 {
+    private const RESEND_COOLDOWN_SECONDS = 60;
+
     public function create(): View
     {
         $email = session('portal_register_email_pending');
@@ -24,7 +26,7 @@ class VerifikasiOtpController extends BaseController
             $otpTerakhir = VerifikasiEmailOtp::where('email', $email)->whereNull('verified_at')->latest('id')->first();
 
             if ($otpTerakhir) {
-                $detikTersisa = max(0, 60 - now()->diffInSeconds($otpTerakhir->created_at));
+                $detikTersisa = max(0, self::RESEND_COOLDOWN_SECONDS - $otpTerakhir->created_at->diffInSeconds(now()));
             }
         }
 

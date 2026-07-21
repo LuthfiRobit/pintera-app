@@ -36,3 +36,20 @@ it('shows a countdown-driven resend affordance on the otp page', function () {
     $response->assertSee('ahmad@example.test');
     $response->assertSee('kirim-ulang', false);
 });
+
+it('computes a countdown that decreases as time passes, not increases', function () {
+    AkunPendaftar::factory()->unverified()->create(['email' => 'ahmad@example.test']);
+    app(\App\Services\OtpService::class)->kirim('ahmad@example.test');
+
+    $otp = VerifikasiEmailOtp::where('email', 'ahmad@example.test')->latest('id')->first();
+    $otp->created_at = now()->subSeconds(20);
+    $otp->save();
+
+    $response = $this->withSession(['portal_register_email_pending' => 'ahmad@example.test'])
+        ->get(route('portal.verifikasi-otp'));
+
+    $response->assertOk();
+    $response->assertViewHas('detikTersisa', function ($detikTersisa) {
+        return $detikTersisa > 0 && $detikTersisa <= 40;
+    });
+});
