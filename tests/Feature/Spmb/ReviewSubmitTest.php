@@ -212,3 +212,33 @@ it('404s on submit when the gelombang has closed since the wizard was started (r
 
     expect(Pendaftaran::count())->toBe(0);
 });
+
+it('shows the success page with the kode pendaftaran for the akun that owns it', function () {
+    Mail::fake();
+    Storage::fake('public');
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
+    $this->post(route('portal.wizard.submit'));
+    $pendaftaran = Pendaftaran::first();
+
+    $this->get(route('portal.wizard.berhasil', ['pendaftaran' => $pendaftaran]))
+        ->assertOk()
+        ->assertSee($pendaftaran->kode_pendaftaran);
+});
+
+it('404s the success page when a different akun tries to view it', function () {
+    Mail::fake();
+    Storage::fake('public');
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
+    $this->post(route('portal.wizard.submit'));
+    $pendaftaran = Pendaftaran::first();
+
+    $akunLain = AkunPendaftar::factory()->create();
+
+    $this->actingAs($akunLain, 'portal')
+        ->get(route('portal.wizard.berhasil', ['pendaftaran' => $pendaftaran]))
+        ->assertNotFound();
+});

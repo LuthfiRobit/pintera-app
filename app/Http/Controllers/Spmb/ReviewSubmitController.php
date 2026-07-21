@@ -24,7 +24,6 @@ use App\Services\PendaftaranWizardSession;
 use App\Services\TagihanGenerator;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -216,14 +215,10 @@ class ReviewSubmitController extends BaseController
         throw new RuntimeException('Gagal membuat pendaftaran setelah '.self::MAKS_PERCOBAAN_KODE.' percobaan kode.');
     }
 
-    public function berhasil(Request $request, string $lembagaSlug, string $kodePendaftaran): View
+    public function berhasil(Pendaftaran $pendaftaran): View
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $pendaftaran = Pendaftaran::where('lembaga_id', $lembaga->id)
-            ->where('kode_pendaftaran', $kodePendaftaran)
-            ->where('email_pendaftaran', $request->query('email'))
-            ->firstOrFail();
+        abort_unless($pendaftaran->akun_pendaftar_id === Auth::guard('portal')->user()->id, 404);
 
-        return view('spmb.berhasil', ['lembaga' => $lembaga, 'pendaftaran' => $pendaftaran]);
+        return view('spmb.berhasil', ['pendaftaran' => $pendaftaran]);
     }
 }
