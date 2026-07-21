@@ -18,6 +18,7 @@ class AkunPendaftarFactory extends Factory
         return [
             'nama' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'no_hp_wa' => fake()->numerify('08##########'),
             'email_verified_at' => now(),
             'password' => 'password',
             'remember_token' => Str::random(10),

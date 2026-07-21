@@ -16,8 +16,8 @@ it('registers a new unverified akun and sends an otp email', function () {
     $response = $this->post(route('portal.register'), [
         'nama' => 'Ahmad Fauzan',
         'email' => 'ahmad@example.test',
-        'password' => 'password123',
-        'password_confirmation' => 'password123',
+        'password' => 'Password123',
+        'password_confirmation' => 'Password123',
     ]);
 
     $response->assertRedirect(route('portal.verifikasi-otp'));
@@ -33,11 +33,22 @@ it('rejects registration with a duplicate email', function () {
     $response = $this->post(route('portal.register'), [
         'nama' => 'Duplikat',
         'email' => 'sudah@example.test',
+        'password' => 'Password123',
+        'password_confirmation' => 'Password123',
+    ]);
+
+    $response->assertSessionHasErrors('email');
+});
+
+it('rejects a password without mixed case even if it is long enough', function () {
+    $response = $this->post(route('portal.register'), [
+        'nama' => 'Lemah',
+        'email' => 'lemah@example.test',
         'password' => 'password123',
         'password_confirmation' => 'password123',
     ]);
 
-    $response->assertSessionHasErrors('email');
+    $response->assertSessionHasErrors('password');
 });
 
 it('verifies the correct otp, logs the akun in, and auto-links an existing pendaftaran with the same email', function () {

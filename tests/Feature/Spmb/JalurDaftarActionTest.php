@@ -1,19 +1,14 @@
 <?php
 // tests/Feature/Spmb/JalurDaftarActionTest.php
 
-it('stores the chosen lembaga and jalur in session and redirects back with a coming-soon message when spmb.register does not exist yet', function () {
+it('stores the chosen lembaga and jalur in session and redirects to spmb.register now that the route exists', function () {
     [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
 
     $response = $this->post(route('spmb.jalur.daftar', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]));
 
-    $response->assertRedirect(route('spmb.index', ['lembagaSlug' => $lembaga->slug]));
+    $response->assertRedirect(route('spmb.register'));
     $response->assertSessionHas('spmb_pilihan.lembaga_id', $lembaga->id);
     $response->assertSessionHas('spmb_pilihan.jalur_id', $jalur->id);
-    $response->assertSessionHas('status');
-
-    $this->get($response->headers->get('Location'))
-        ->assertOk()
-        ->assertSee('Fitur pendaftaran akan segera hadir.');
 });
 
 it('404s if the jalur does not belong to the lembaga in the URL', function () {

@@ -23,7 +23,7 @@ class RegisteredAkunController extends BaseController
         $data = Validator::make($request->all(), [
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:akun_pendaftar,email'],
-            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->numbers()],
         ])->validate();
 
         AkunPendaftar::create([

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Portal\Auth\RegisteredAkunController;
 use App\Http\Controllers\Spmb\CekStatusController;
 use App\Http\Controllers\Spmb\DataDiriController;
 use App\Http\Controllers\Spmb\FormulirTambahanController;
@@ -12,6 +13,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('spmb')->name('spmb.')->group(function () {
     Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
+
+    Route::middleware('guest:portal')->group(function () {
+        Route::get('register', [RegisteredAkunController::class, 'create'])->name('register');
+        Route::post('register', [RegisteredAkunController::class, 'store'])->middleware('throttle:6,1');
+    });
     Route::get('{lembagaSlug}', [PortalController::class, 'index'])->name('index');
     Route::post('{lembagaSlug}/jalur/{jalur}/daftar', [PortalController::class, 'daftarJalur'])->name('jalur.daftar');
     Route::get('{lembagaSlug}/{jalur}/mulai', [VerifikasiEmailController::class, 'create'])->name('mulai');

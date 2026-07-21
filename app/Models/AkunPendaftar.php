@@ -18,6 +18,7 @@ class AkunPendaftar extends Authenticatable
     protected $fillable = [
         'nama',
         'email',
+        'no_hp_wa',
         'password',
         'email_verified_at',
     ];

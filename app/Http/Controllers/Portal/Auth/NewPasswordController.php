@@ -26,7 +26,7 @@ class NewPasswordController extends BaseController
         $request->validate([
             'token' => ['required'],
             'email' => ['required', 'email'],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()],
         ]);
 
         $status = Password::broker('akun_pendaftar')->reset(
