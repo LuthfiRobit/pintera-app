@@ -73,11 +73,6 @@ function buatLembagaDenganGelombangBuka(): array
     return [$lembaga, $tahunAjaran, $jalur, $gelombang];
 }
 
-function siapkanEmailTerverifikasi($lembaga, $jalur, string $email): void
-{
-    (new \App\Services\PendaftaranWizardSession())->put($lembaga, $jalur, ['email_pendaftaran' => $email]);
-}
-
 function loginAkunDenganPilihanSpmb(Lembaga $lembaga, JalurPpdb $jalur): \App\Models\AkunPendaftar
 {
     $akun = \App\Models\AkunPendaftar::factory()->create();
