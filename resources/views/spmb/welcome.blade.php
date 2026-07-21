@@ -1,12 +1,12 @@
 <x-layouts.portal-public title="Selamat Datang" active="beranda" :yayasan="$yayasan">
-    <header class="border-b border-gray-200 bg-gradient-to-br from-gray-50 via-white to-portal-50/40">
-        <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:px-10 lg:py-16">
+    <header class="border-b border-gray-200 bg-[radial-gradient(circle_at_85%_20%,#EAF0F7_0%,transparent_55%)]">
+        <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:px-10 lg:py-16">
             <div>
                 <span class="mb-5 inline-flex items-center gap-2 rounded-full bg-portal-50 px-3.5 py-1.5 text-[11.5px] font-bold uppercase tracking-wide text-portal-500">
                     <span class="h-1.5 w-1.5 rounded-full bg-success-500"></span>
                     Penerimaan Siswa Baru {{ now()->year }}/{{ now()->year + 1 }}
                 </span>
-                <h1 class="text-balance text-3xl font-bold leading-tight text-gray-900 sm:text-4xl">
+                <h1 class="text-balance text-[clamp(26px,3.4vw,36px)] font-bold leading-[1.15] text-gray-900">
                     Satu Akun untuk <span class="text-portal-500">Semua Pendaftaran</span> di {{ $yayasan?->nama ?? 'Yayasan' }}
                 </h1>
                 <p class="mt-4 max-w-md text-[14.5px] leading-relaxed text-gray-500">
@@ -18,7 +18,7 @@
                 </div>
             </div>
 
-            <div class="rounded-[20px] bg-gradient-to-br from-portal-600 to-portal-500 p-7 text-white shadow-elevated">
+            <div class="rounded-[20px] bg-[linear-gradient(160deg,#16324F_0%,#1E3A5F_65%)] p-7 text-white shadow-panel">
                 <p class="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-white/70">Ringkasan Penerimaan</p>
                 <p class="mb-5 text-lg font-bold">Tahun Ajaran {{ now()->year }}/{{ now()->year + 1 }}</p>
                 <div class="mb-5 grid grid-cols-3 gap-2.5">
@@ -36,8 +36,9 @@
                     </div>
                 </div>
                 @if ($gelombangTerdekat)
-                    <div class="mb-5 rounded-xl border border-white/15 bg-white/10 p-3.5 text-[11.5px] leading-relaxed text-white/70">
-                        <span class="font-bold text-white">{{ $gelombangTerdekat->lembaga->nama }}</span> — {{ $gelombangTerdekat->nama }} tutup {{ $gelombangTerdekat->tanggal_tutup->translatedFormat('d F Y') }}
+                    <div class="mb-[18px] flex items-start gap-2.5 rounded-[11px] bg-white/[.07] p-3.5 text-[12.5px] leading-[1.55] text-white/[.87]">
+                        <x-icon name="info" class="mt-px h-3.5 w-3.5 shrink-0 text-white/60" />
+                        <span><span class="font-bold text-white">{{ $gelombangTerdekat->lembaga->nama }}</span> membuka {{ $gelombangTerdekat->nama }} hingga {{ $gelombangTerdekat->tanggal_tutup->translatedFormat('d F Y') }}.</span>
                     </div>
                 @endif
                 <a href="#lembaga" class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-white px-4 py-3.5 text-[13.5px] font-bold text-portal-500">
@@ -51,7 +52,7 @@
     <section id="lembaga" x-data="{ jenjang: 'semua' }" class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-10">
         <div class="mx-auto mb-8 max-w-xl text-center">
             <p class="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-portal-500">Lembaga Pendidikan</p>
-            <h2 class="text-2xl font-bold text-gray-900">Pilih Lembaga Tujuanmu</h2>
+            <h2 class="text-balance text-[clamp(21px,2.6vw,26px)] font-bold text-gray-900">Pilih Lembaga Tujuanmu</h2>
             <p class="mt-2 text-[13.5px] text-gray-500">Setiap lembaga punya jalur, biaya, dan jadwal seleksi masing-masing.</p>
         </div>
 
@@ -61,7 +62,7 @@
                 @click="jenjang = 'semua'"
                 :class="jenjang === 'semua' ? 'bg-portal-500 text-white' : 'border border-gray-200 bg-white text-gray-500'"
                 class="rounded-full px-4 py-2 text-[12.5px] font-semibold transition"
-            >Semua</button>
+            >Semua Jenjang</button>
             @foreach ($jenjangList as $jenjangItem)
                 <button
                     type="button"
@@ -78,7 +79,7 @@
                 <a
                     x-show="jenjang === 'semua' || jenjang === '{{ $lembaga->bentuk_pendidikan }}'"
                     href="{{ route('spmb.index', ['lembagaSlug' => $lembaga->slug]) }}"
-                    class="flex flex-col gap-3.5 rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition hover:-translate-y-0.5 hover:shadow-elevated {{ $item['gelombang'] ? '' : 'opacity-70' }}"
+                    class="flex flex-col gap-3.5 rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition hover:-translate-y-[3px] hover:border-[#C9D6E4] hover:shadow-elevated {{ $item['gelombang'] ? '' : 'opacity-70' }}"
                 >
                     <div class="flex items-start justify-between gap-2.5">
                         <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-portal-50 text-[13px] font-extrabold text-portal-500">
@@ -95,8 +96,11 @@
                         @endif
                     </div>
                     <div>
-                        <p class="text-[16px] font-bold text-gray-900">{{ $lembaga->nama }}</p>
-                        <p class="text-[12px] text-gray-400">{{ $lembaga->kecamatan }}, {{ $lembaga->kabupaten_kota }}</p>
+                        <p class="mb-1 text-[16.5px] font-bold text-gray-900">{{ $lembaga->nama }}</p>
+                        <p class="flex items-center gap-1.5 text-[12px] text-gray-400">
+                            <x-icon name="location_on" class="h-3 w-3 shrink-0" />
+                            {{ $lembaga->kecamatan }}, {{ $lembaga->kabupaten_kota }}
+                        </p>
                     </div>
                     <div class="flex gap-4 border-y border-dashed border-gray-200 py-3">
                         <div class="flex-1">
@@ -125,7 +129,7 @@
     <section id="alur" class="bg-gray-100 px-4 py-12 sm:px-6 lg:px-10">
         <div class="mx-auto mb-8 max-w-xl text-center">
             <p class="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-portal-500">Cara Kerja</p>
-            <h2 class="text-2xl font-bold text-gray-900">Alur Pendaftaran</h2>
+            <h2 class="text-balance text-[clamp(21px,2.6vw,26px)] font-bold text-gray-900">Alur Pendaftaran</h2>
             <p class="mt-2 text-[13.5px] text-gray-500">Empat langkah dari daftar akun sampai menunggu hasil seleksi.</p>
         </div>
         <div class="mx-auto grid max-w-7xl gap-4 sm:grid-cols-2 lg:grid-cols-4">

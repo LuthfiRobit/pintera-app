@@ -77,6 +77,7 @@ export default {
             boxShadow: {
                 card: '0px 1px 3px 0px rgba(16, 24, 40, 0.10)',
                 elevated: '0 12px 28px rgba(16, 24, 40, 0.16)',
+                panel: '0 24px 48px rgba(16, 30, 50, 0.24)',
             },
         },
     },

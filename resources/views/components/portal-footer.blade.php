@@ -1,7 +1,7 @@
 @props(['yayasan' => null])
 
 <footer class="bg-portal-600 px-4 pb-6 pt-11 text-gray-200 sm:px-6 lg:px-10">
-    <div class="mx-auto grid max-w-7xl gap-9 border-b border-white/10 pb-7 sm:grid-cols-3">
+    <div class="mx-auto grid max-w-7xl gap-10 border-b border-white/10 pb-7 sm:grid-cols-[1.6fr_1fr_1fr]">
         <div class="sm:col-span-1">
             <div class="mb-3 flex items-center gap-2.5">
                 <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-white">
