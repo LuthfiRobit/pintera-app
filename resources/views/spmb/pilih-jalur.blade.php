@@ -5,19 +5,28 @@
         <span class="font-semibold text-portal-500">{{ $lembaga->nama }}</span>
     </div>
 
-    <div class="mx-auto mt-5 grid max-w-7xl gap-5 rounded-[20px] bg-gradient-to-br from-portal-600 to-portal-500 p-6 text-white sm:grid-cols-[auto,1fr,auto] sm:items-center sm:p-7 mx-4 sm:mx-6 lg:mx-10">
-        <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-[15px] font-extrabold">
+    <div class="mx-auto mt-5 grid max-w-7xl gap-5 rounded-[18px] bg-[linear-gradient(160deg,#16324F_0%,#1E3A5F_70%)] p-6 text-white sm:grid-cols-[auto,1fr,auto] sm:items-center sm:p-7 mx-4 sm:mx-6 lg:mx-10">
+        <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[.12] text-[16px] font-extrabold">
             {{ $lembaga->bentuk_pendidikan }}
         </span>
         <div>
-            <h1 class="text-xl font-bold">{{ $lembaga->nama }}</h1>
+            <h1 class="text-[21px] font-bold">{{ $lembaga->nama }}</h1>
             <div class="mt-1.5 flex flex-wrap gap-4 text-[12.5px] text-white/70">
-                <span>{{ $lembaga->kecamatan }}, {{ $lembaga->kabupaten_kota }}</span>
+                <span class="flex items-center gap-1.5">
+                    <x-icon name="location_on" class="h-3.5 w-3.5 shrink-0" />
+                    {{ $lembaga->kecamatan }}, {{ $lembaga->kabupaten_kota }}
+                </span>
                 @if ($lembaga->akreditasi)
-                    <span>Akreditasi {{ $lembaga->akreditasi }}</span>
+                    <span class="flex items-center gap-1.5">
+                        <x-icon name="school" class="h-3.5 w-3.5 shrink-0" />
+                        Akreditasi {{ $lembaga->akreditasi }}
+                    </span>
                 @endif
                 @if ($tahunAjaranAktif)
-                    <span>Tahun Ajaran {{ $tahunAjaranAktif->nama }}</span>
+                    <span class="flex items-center gap-1.5">
+                        <x-icon name="schedule" class="h-3.5 w-3.5 shrink-0" />
+                        Tahun Ajaran {{ $tahunAjaranAktif->nama }}
+                    </span>
                 @endif
             </div>
         </div>
@@ -39,22 +48,22 @@
         <a href="{{ route('spmb.status.form', ['lembagaSlug' => $lembaga->slug]) }}" class="text-gray-500 underline">Cek status pendaftaran di lembaga ini</a>
     </p>
 
-    <div class="mx-4 mt-5 flex gap-2.5 rounded-2xl bg-portal-50 p-3.5 text-[12px] leading-relaxed text-portal-500 sm:mx-6 lg:mx-10">
-        <x-icon name="info" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>Jalur yang kamu pilih di sini otomatis tersimpan sampai pendaftaranmu berhasil dikirim.</span>
+    <div class="mx-4 mt-6 flex gap-3 rounded-[14px] bg-portal-50 p-4 text-[12.5px] leading-[1.6] text-portal-500 sm:mx-6 lg:mx-10">
+        <x-icon name="info" class="mt-0.5 h-[15px] w-[15px] shrink-0" />
+        <span>Pilih salah satu jalur di bawah untuk mulai mendaftar. Kamu akan diminta membuat akun terlebih dulu — jalur yang kamu pilih di sini otomatis tersimpan sampai pendaftaran pertamamu berhasil dikirim.</span>
     </div>
 
     <section class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-10">
         <div class="mx-auto mb-8 max-w-xl text-center">
             <p class="mb-2.5 text-[11.5px] font-bold uppercase tracking-wide text-portal-500">Jalur Pendaftaran</p>
-            <h2 class="text-2xl font-bold text-gray-900">Pilih Jalur yang Sesuai</h2>
+            <h2 class="text-balance text-[clamp(21px,2.6vw,26px)] font-bold text-gray-900">Pilih Jalur yang Sesuai</h2>
             <p class="mt-2 text-[13.5px] text-gray-500">Setiap jalur punya syarat tes dan biaya pendaftaran yang berbeda.</p>
         </div>
 
         <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             @forelse ($jalurList as $item)
                 @php $jalur = $item['jalur']; @endphp
-                <div class="relative flex flex-col gap-4 rounded-[18px] border p-6 {{ $item['featured'] ? 'border-portal-500 shadow-elevated' : 'border-gray-200 shadow-card' }}">
+                <div class="relative flex flex-col gap-4 rounded-[18px] border p-6 transition hover:-translate-y-[3px] hover:shadow-elevated {{ $item['featured'] ? 'border-portal-500 shadow-elevated' : 'border-gray-200 shadow-card hover:border-[#C9D6E4]' }}">
                     @if ($item['featured'])
                         <span class="absolute -top-2.5 left-6 rounded-full bg-portal-500 px-3 py-1 text-[10.5px] font-bold uppercase tracking-wide text-white">Paling Umum</span>
                     @endif
@@ -67,12 +76,16 @@
                     </div>
 
                     <div class="flex items-center justify-between border-t border-dashed border-gray-200 pt-2.5 text-[12.5px]">
-                        <span class="text-gray-400">Kuota</span>
+                        <span class="flex items-center gap-1.5 text-gray-400">
+                            <x-icon name="group" class="h-3.5 w-3.5 shrink-0" /> Kuota
+                        </span>
                         <span class="font-bold text-gray-900">{{ $item['kuota'] !== null ? $item['kuota'].' siswa' : 'Belum ada gelombang buka' }}</span>
                     </div>
 
                     <div class="flex items-center justify-between border-t border-dashed border-gray-200 pt-2.5 text-[12.5px]">
-                        <span class="text-gray-400">Tahap Seleksi</span>
+                        <span class="flex items-center gap-1.5 text-gray-400">
+                            <x-icon name="fact_check" class="h-3.5 w-3.5 shrink-0" /> Tahap Seleksi
+                        </span>
                         @if ($item['tesList']->isNotEmpty())
                             <span class="flex flex-wrap justify-end gap-1.5">
                                 @foreach ($item['tesList'] as $seleksi)
@@ -103,7 +116,7 @@
                     @if ($gelombang)
                         <form method="POST" action="{{ route('spmb.jalur.daftar', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]) }}">
                             @csrf
-                            <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-portal-500 px-4 py-3 text-[13px] font-bold text-white">
+                            <button type="submit" class="flex w-full items-center justify-center gap-2 rounded-[10px] bg-portal-500 px-4 py-3 text-[13px] font-bold text-white transition hover:bg-portal-600">
                                 Daftar Jalur Ini
                                 <x-icon name="arrow_forward" class="h-3.5 w-3.5" />
                             </button>
