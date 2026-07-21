@@ -29,6 +29,8 @@ Route::prefix('portal')->name('portal.')->group(function () {
     Route::get('verifikasi-otp', [VerifikasiOtpController::class, 'create'])->name('verifikasi-otp');
     Route::post('verifikasi-otp', [VerifikasiOtpController::class, 'store'])
         ->middleware('throttle:6,1')->name('verifikasi-otp.store');
+    Route::post('verifikasi-otp/kirim-ulang', [VerifikasiOtpController::class, 'kirimUlang'])
+        ->middleware('throttle:3,1')->name('verifikasi-otp.kirim-ulang');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->middleware('auth:portal')->name('logout');

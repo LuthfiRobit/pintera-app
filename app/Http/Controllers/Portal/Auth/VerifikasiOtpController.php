@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal\Auth;
 
 use App\Models\AkunPendaftar;
 use App\Models\Pendaftaran;
+use App\Models\VerifikasiEmailOtp;
 use App\Services\OtpService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,21 @@ class VerifikasiOtpController extends BaseController
 {
     public function create(): View
     {
-        return view('portal.auth.verifikasi-otp');
+        $email = session('portal_register_email_pending');
+
+        $detikTersisa = 0;
+        if ($email) {
+            $otpTerakhir = VerifikasiEmailOtp::where('email', $email)->whereNull('verified_at')->latest('id')->first();
+
+            if ($otpTerakhir) {
+                $detikTersisa = max(0, 60 - now()->diffInSeconds($otpTerakhir->created_at));
+            }
+        }
+
+        return view('portal.auth.verifikasi-otp', [
+            'email' => $email,
+            'detikTersisa' => $detikTersisa,
+        ]);
     }
 
     public function store(Request $request, OtpService $otpService): RedirectResponse
@@ -42,5 +57,16 @@ class VerifikasiOtpController extends BaseController
         session()->forget('portal_register_email_pending');
 
         return redirect()->route('portal.dashboard');
+    }
+
+    public function kirimUlang(OtpService $otpService): RedirectResponse
+    {
+        $email = session('portal_register_email_pending');
+
+        if ($email) {
+            $otpService->kirim($email);
+        }
+
+        return redirect()->route('portal.verifikasi-otp')->with('status', 'Kode verifikasi baru sudah dikirim.');
     }
 }
