@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\Portal\Auth\RegisteredAkunController;
 use App\Http\Controllers\Spmb\CekStatusController;
-use App\Http\Controllers\Spmb\DataDiriController;
 use App\Http\Controllers\Spmb\FormulirTambahanController;
 use App\Http\Controllers\Spmb\PortalController;
 use App\Http\Controllers\Spmb\ReviewSubmitController;
@@ -26,9 +25,6 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
         ->middleware('throttle:6,1')->name('mulai.store');
     Route::get('{lembagaSlug}/{jalur}/verifikasi-otp', [VerifikasiEmailController::class, 'edit'])->name('verifikasi-otp');
     Route::post('{lembagaSlug}/{jalur}/verifikasi-otp', [VerifikasiEmailController::class, 'update'])->name('verifikasi-otp.store');
-    Route::get('{lembagaSlug}/{jalur}/data-diri', [DataDiriController::class, 'create'])->name('data-diri');
-    Route::post('{lembagaSlug}/{jalur}/data-diri/cek-nik', [DataDiriController::class, 'cekNik'])->name('data-diri.cek-nik');
-    Route::post('{lembagaSlug}/{jalur}/data-diri', [DataDiriController::class, 'store'])->name('data-diri.store');
     Route::get('{lembagaSlug}/{jalur}/formulir-tambahan', [FormulirTambahanController::class, 'create'])->name('formulir-tambahan');
     Route::post('{lembagaSlug}/{jalur}/formulir-tambahan', [FormulirTambahanController::class, 'store'])->name('formulir-tambahan.store');
     Route::get('{lembagaSlug}/{jalur}/dokumen', [UploadDokumenController::class, 'create'])->name('dokumen');

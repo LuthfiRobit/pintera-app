@@ -2,35 +2,34 @@
 
 namespace App\Http\Controllers\Spmb;
 
-use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
+use App\Http\Controllers\Spmb\Concerns\ResolvesWizardContext;
 use App\Models\CalonMurid;
-use App\Models\JalurPpdb;
 use App\Models\Pendaftaran;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class DataDiriController extends BaseController
 {
-    use ResolvesSpmbTenant;
+    use ResolvesWizardContext;
 
-    private const PESAN_NIK_DIBLOKIR = 'NIK ini sudah pernah terdaftar. Gunakan email yang sama dengan pendaftaran sebelumnya, atau hubungi admin sekolah untuk bantuan.';
+    private const PESAN_NIK_DIBLOKIR = 'NIK ini sudah pernah terdaftar oleh akun lain. Hubungi admin sekolah untuk bantuan.';
 
-    public function create(string $lembagaSlug, JalurPpdb $jalur): View
+    public function create(): View
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
+        $nominal = $this->resolveNominalPendaftaran($lembaga, $jalur);
 
-        return view('spmb.data-diri', ['lembaga' => $lembaga, 'jalur' => $jalur]);
+        return view('spmb.data-diri', ['lembaga' => $lembaga, 'jalur' => $jalur, 'nominal' => $nominal]);
     }
 
-    public function cekNik(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): JsonResponse
+    public function cekNik(Request $request): JsonResponse
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        $this->resolveWizardContext();
 
         $data = $request->validate(['nik' => ['required', 'digits:16']]);
 
@@ -40,9 +39,7 @@ class DataDiriController extends BaseController
             return response()->json(['ditemukan' => false]);
         }
 
-        $emailSesi = $wizardSession->get($lembaga, $jalur)['email_pendaftaran'] ?? null;
-
-        if (! $this->emailCocokDenganCalonMurid($calonMurid, $emailSesi)) {
+        if (! $this->calonMuridBolehDiaksesOlehAkunIni($calonMurid)) {
             return response()->json([
                 'ditemukan' => true,
                 'diblokir' => true,
@@ -70,10 +67,9 @@ class DataDiriController extends BaseController
         ]);
     }
 
-    public function store(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): RedirectResponse
+    public function store(Request $request, PendaftaranWizardSession $wizardSession): RedirectResponse
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
 
         $data = $request->validate([
             'nik' => ['required', 'digits:16'],
@@ -108,12 +104,8 @@ class DataDiriController extends BaseController
 
         $calonMuridLama = CalonMurid::findByNik($data['nik']);
 
-        if ($calonMuridLama) {
-            $emailSesi = $wizardSession->get($lembaga, $jalur)['email_pendaftaran'] ?? null;
-
-            if (! $this->emailCocokDenganCalonMurid($calonMuridLama, $emailSesi)) {
-                return back()->withErrors(['nik' => self::PESAN_NIK_DIBLOKIR])->withInput();
-            }
+        if ($calonMuridLama && ! $this->calonMuridBolehDiaksesOlehAkunIni($calonMuridLama)) {
+            return back()->withErrors(['nik' => self::PESAN_NIK_DIBLOKIR])->withInput();
         }
 
         $wizardSession->put($lembaga, $jalur, [
@@ -129,13 +121,19 @@ class DataDiriController extends BaseController
             'data_khusus' => $data['data_khusus'] ?? null,
         ]);
 
-        return redirect()->route('spmb.formulir-tambahan', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]);
+        return redirect()->route('portal.wizard.formulir-tambahan');
     }
 
-    private function emailCocokDenganCalonMurid(CalonMurid $calonMurid, ?string $emailSesi): bool
+    private function calonMuridBolehDiaksesOlehAkunIni(CalonMurid $calonMurid): bool
     {
+        $adaPendaftaranSebelumnya = Pendaftaran::where('calon_murid_id', $calonMurid->id)->exists();
+
+        if (! $adaPendaftaranSebelumnya) {
+            return true;
+        }
+
         return Pendaftaran::where('calon_murid_id', $calonMurid->id)
-            ->where('email_pendaftaran', $emailSesi)
+            ->where('akun_pendaftar_id', Auth::guard('portal')->user()->id)
             ->exists();
     }
 }

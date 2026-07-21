@@ -9,6 +9,10 @@ use App\Http\Controllers\Portal\Auth\VerifikasiOtpController;
 use App\Http\Controllers\Portal\BuktiPendaftaranController;
 use App\Http\Controllers\Portal\DashboardController;
 use App\Http\Controllers\Portal\TagihanController;
+use App\Http\Controllers\Spmb\DataDiriController;
+use App\Http\Controllers\Spmb\FormulirTambahanController;
+use App\Http\Controllers\Spmb\ReviewSubmitController;
+use App\Http\Controllers\Spmb\UploadDokumenController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('portal')->name('portal.')->group(function () {
@@ -44,5 +48,18 @@ Route::prefix('portal')->name('portal.')->group(function () {
         Route::post('tagihan/{tagihan}/skema-cicilan', [TagihanController::class, 'buatSkemaCicilan'])->name('tagihan.skema-cicilan');
         Route::post('tagihan/{tagihan}/bayar-lunas', [TagihanController::class, 'bayarLunas'])->name('tagihan.bayar-lunas');
         Route::post('cicilan/{cicilan}/bayar', [TagihanController::class, 'bayarCicilan'])->name('tagihan.bayar-cicilan');
+
+        Route::prefix('wizard')->name('wizard.')->group(function () {
+            Route::get('data-diri', [DataDiriController::class, 'create'])->name('data-diri');
+            Route::post('data-diri/cek-nik', [DataDiriController::class, 'cekNik'])->name('data-diri.cek-nik');
+            Route::post('data-diri', [DataDiriController::class, 'store'])->name('data-diri.store');
+            Route::get('formulir-tambahan', [FormulirTambahanController::class, 'create'])->name('formulir-tambahan');
+            Route::post('formulir-tambahan', [FormulirTambahanController::class, 'store'])->name('formulir-tambahan.store');
+            Route::get('dokumen', [UploadDokumenController::class, 'create'])->name('dokumen');
+            Route::post('dokumen', [UploadDokumenController::class, 'store'])->name('dokumen.store');
+            Route::get('review', [ReviewSubmitController::class, 'show'])->name('review');
+            Route::post('submit', [ReviewSubmitController::class, 'submit'])->middleware('throttle:10,1')->name('submit');
+            Route::get('berhasil/{pendaftaran}', [ReviewSubmitController::class, 'berhasil'])->name('berhasil');
+        });
     });
 });

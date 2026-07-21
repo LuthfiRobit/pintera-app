@@ -78,6 +78,15 @@ function siapkanEmailTerverifikasi($lembaga, $jalur, string $email): void
     (new \App\Services\PendaftaranWizardSession())->put($lembaga, $jalur, ['email_pendaftaran' => $email]);
 }
 
+function loginAkunDenganPilihanSpmb(Lembaga $lembaga, JalurPpdb $jalur): \App\Models\AkunPendaftar
+{
+    $akun = \App\Models\AkunPendaftar::factory()->create();
+    session(['spmb_pilihan.lembaga_id' => $lembaga->id, 'spmb_pilihan.jalur_id' => $jalur->id]);
+    test()->actingAs($akun, 'portal');
+
+    return $akun;
+}
+
 function buatPendaftaranUntukAdmin(?Lembaga $lembaga = null, string $namaCalon = 'Ahmad Fauzan', string $status = 'menunggu_verifikasi'): array
 {
     $yayasan = Yayasan::factory()->create();

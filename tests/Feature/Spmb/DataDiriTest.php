@@ -1,21 +1,30 @@
 <?php
+// tests/Feature/Spmb/DataDiriTest.php
 
+use App\Models\AkunPendaftar;
 use App\Models\CalonMurid;
 use App\Models\Pendaftaran;
 use App\Services\PendaftaranWizardSession;
 
-it('shows the data diri form for a new nik', function () {
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali@example.test');
+it('shows the data diri form for a logged-in akun with a jalur in session', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
-    $this->get("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri")->assertOk();
+    $this->get(route('portal.wizard.data-diri'))->assertOk();
+});
+
+it('redirects to the dashboard when there is no jalur selected in session', function () {
+    $akun = AkunPendaftar::factory()->create();
+
+    $this->actingAs($akun, 'portal')->get(route('portal.wizard.data-diri'))
+        ->assertRedirect(route('portal.dashboard'));
 });
 
 it('stores data diri in the wizard session and advances to formulir tambahan', function () {
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali@example.test');
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri", [
+    $this->post(route('portal.wizard.data-diri.store'), [
         'nik' => '3201234567890123',
         'nama_lengkap' => 'Ahmad Fauzan',
         'jenis_kelamin' => 'L',
@@ -31,68 +40,77 @@ it('stores data diri in the wizard session and advances to formulir tambahan', f
             ['jenis' => 'ayah', 'nama' => 'Budi Santoso'],
             ['jenis' => 'ibu', 'nama' => 'Siti Aminah'],
         ],
-    ])->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/formulir-tambahan");
+    ])->assertRedirect(route('portal.wizard.formulir-tambahan'));
 
     $session = (new PendaftaranWizardSession())->get($lembaga, $jalur);
     expect($session['data_pribadi']['nama_lengkap'])->toBe('Ahmad Fauzan');
     expect($session['keluarga'])->toHaveCount(2);
 });
 
-it('pre-fills data diri from an existing calon murid when nik and email both match a prior pendaftaran', function () {
-    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
-    $calonMurid = CalonMurid::factory()->create([
-        'yayasan_id' => $lembaga->yayasan_id,
-        'nik' => '3201234567890999',
-        'nama_lengkap' => 'Nama Lama',
+it('pre-fills data diri from an existing calon murid with no prior pendaftaran at all', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    CalonMurid::factory()->create([
+        'yayasan_id' => $lembaga->yayasan_id, 'nik' => '3201234567890999', 'nama_lengkap' => 'Nama Lama',
     ]);
-    Pendaftaran::factory()->create([
-        'calon_murid_id' => $calonMurid->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
-        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
-        'email_pendaftaran' => 'wali-lama@example.test',
-    ]);
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali-lama@example.test');
 
-    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri/cek-nik", ['nik' => '3201234567890999']);
+    $response = $this->postJson(route('portal.wizard.data-diri.cek-nik'), ['nik' => '3201234567890999']);
 
     $response->assertOk();
     $response->assertSee('Nama Lama');
 });
 
-it('blocks the flow when nik matches but email does not match any prior pendaftaran for that calon murid', function () {
+it('pre-fills data diri when nik matches a calon murid whose prior pendaftaran belongs to the same akun', function () {
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
     $calonMurid = CalonMurid::factory()->create([
-        'yayasan_id' => $lembaga->yayasan_id,
-        'nik' => '3201234567890999',
-        'nama_lengkap' => 'Nama Lama',
+        'yayasan_id' => $lembaga->yayasan_id, 'nik' => '3201234567890999', 'nama_lengkap' => 'Nama Lama',
     ]);
     Pendaftaran::factory()->create([
         'calon_murid_id' => $calonMurid->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
-        'email_pendaftaran' => 'wali-asli@example.test',
+        'akun_pendaftar_id' => $akun->id, 'email_pendaftaran' => $akun->email,
     ]);
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali-beda@example.test');
 
-    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri/cek-nik", ['nik' => '3201234567890999']);
+    $response = $this->postJson(route('portal.wizard.data-diri.cek-nik'), ['nik' => '3201234567890999']);
+
+    $response->assertOk();
+    $response->assertSee('Nama Lama');
+});
+
+it('blocks the flow when nik matches a calon murid whose prior pendaftaran belongs to a different akun', function () {
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    $akunLain = AkunPendaftar::factory()->create();
+    $calonMurid = CalonMurid::factory()->create([
+        'yayasan_id' => $lembaga->yayasan_id, 'nik' => '3201234567890999', 'nama_lengkap' => 'Nama Lama',
+    ]);
+    Pendaftaran::factory()->create([
+        'calon_murid_id' => $calonMurid->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
+        'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
+        'akun_pendaftar_id' => $akunLain->id, 'email_pendaftaran' => $akunLain->email,
+    ]);
+
+    $response = $this->postJson(route('portal.wizard.data-diri.cek-nik'), ['nik' => '3201234567890999']);
 
     $response->assertStatus(422);
     $response->assertDontSee('Nama Lama');
 });
 
-it('blocks store() from writing to the session when nik matches but email does not match any prior pendaftaran', function () {
+it('blocks store() from writing to the session when nik matches a calon murid owned by a different akun', function () {
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    $akunLain = AkunPendaftar::factory()->create();
     $calonMurid = CalonMurid::factory()->create([
-        'yayasan_id' => $lembaga->yayasan_id,
-        'nik' => '3201234567890999',
-        'nama_lengkap' => 'Nama Lama',
+        'yayasan_id' => $lembaga->yayasan_id, 'nik' => '3201234567890999', 'nama_lengkap' => 'Nama Lama',
     ]);
     Pendaftaran::factory()->create([
         'calon_murid_id' => $calonMurid->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
-        'email_pendaftaran' => 'wali-asli@example.test',
+        'akun_pendaftar_id' => $akunLain->id, 'email_pendaftaran' => $akunLain->email,
     ]);
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali-beda@example.test');
 
-    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri", [
+    $response = $this->post(route('portal.wizard.data-diri.store'), [
         'nik' => '3201234567890999',
         'nama_lengkap' => 'Percobaan Curi Data',
         'jenis_kelamin' => 'L',
