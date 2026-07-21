@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Spmb;
 
-use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
+use App\Http\Controllers\Spmb\Concerns\ResolvesWizardContext;
 use App\Mail\PendaftaranBerhasilMail;
 use App\Models\AkunPendaftar;
 use App\Models\AlamatCalonMurid;
@@ -10,6 +10,8 @@ use App\Models\CalonMurid;
 use App\Models\DataKhususCalonMurid;
 use App\Models\DataPeriodikCalonMurid;
 use App\Models\DokumenPendaftaran;
+use App\Models\DokumenSyaratPpdb;
+use App\Models\FormulirField;
 use App\Models\GelombangPpdb;
 use App\Models\JalurPpdb;
 use App\Models\JawabanFormulirPendaftaran;
@@ -24,6 +26,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -32,40 +35,46 @@ use RuntimeException;
 
 class ReviewSubmitController extends BaseController
 {
-    use ResolvesSpmbTenant;
+    use ResolvesWizardContext;
 
     private const MAKS_PERCOBAAN_KODE = 5;
 
-    public function show(string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): View|RedirectResponse
+    public function show(PendaftaranWizardSession $wizardSession): View|RedirectResponse
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
         $session = $wizardSession->get($lembaga, $jalur);
 
-        if ($redirect = $this->redirectJikaSesiBelumLengkap($lembaga, $jalur, $session)) {
+        if ($redirect = $this->redirectJikaSesiBelumLengkap($session)) {
             return $redirect;
         }
 
-        return view('spmb.review', ['lembaga' => $lembaga, 'jalur' => $jalur, 'session' => $session]);
+        $formulirFieldList = FormulirField::where('jalur_ppdb_id', $jalur->id)->orderBy('urutan')->get();
+        $dokumenSyaratList = DokumenSyaratPpdb::where('jalur_ppdb_id', $jalur->id)->orderBy('urutan')->get();
+        $nominal = $this->resolveNominalPendaftaran($lembaga, $jalur);
+
+        return view('spmb.review', [
+            'lembaga' => $lembaga, 'jalur' => $jalur, 'session' => $session,
+            'formulirFieldList' => $formulirFieldList, 'dokumenSyaratList' => $dokumenSyaratList, 'nominal' => $nominal,
+        ]);
     }
 
     public function submit(
-        string $lembagaSlug,
-        JalurPpdb $jalur,
         PendaftaranWizardSession $wizardSession,
         KodePendaftaranGenerator $kodeGenerator,
         TagihanGenerator $tagihanGenerator
     ): RedirectResponse {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
         $session = $wizardSession->get($lembaga, $jalur);
 
-        if ($redirect = $this->redirectJikaSesiBelumLengkap($lembaga, $jalur, $session)) {
+        if ($redirect = $this->redirectJikaSesiBelumLengkap($session)) {
             return $redirect;
         }
 
+        /** @var AkunPendaftar $akun */
+        $akun = Auth::guard('portal')->user();
+
         try {
-            $pendaftaran = DB::transaction(function () use ($lembaga, $jalur, $session, $kodeGenerator) {
+            $pendaftaran = DB::transaction(function () use ($lembaga, $jalur, $session, $kodeGenerator, $akun) {
                 $gelombang = $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
                 $tahunAjaran = $gelombang->tahunAjaran;
 
@@ -89,7 +98,7 @@ class ReviewSubmitController extends BaseController
                 }
 
                 $pendaftaran = $this->buatPendaftaranDenganRetryKode(
-                    $calonMurid, $lembaga, $tahunAjaran, $jalur, $gelombang, $session, $kodeGenerator
+                    $calonMurid, $lembaga, $tahunAjaran, $jalur, $gelombang, $kodeGenerator, $akun
                 );
 
                 foreach ($session['jawaban_formulir'] ?? [] as $fieldId => $nilai) {
@@ -113,19 +122,11 @@ class ReviewSubmitController extends BaseController
             });
         } catch (QueryException $exception) {
             if (str_contains($exception->getMessage(), 'pendaftaran_calon_murid_id_gelombang_ppdb_id_unique')) {
-                return redirect()->route('spmb.review', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id])
+                return redirect()->route('portal.wizard.review')
                     ->withErrors(['submit' => 'Anda sudah terdaftar untuk gelombang ini. Silakan cek status pendaftaran Anda.']);
             }
 
             throw $exception;
-        }
-
-        $akun = AkunPendaftar::where('email', $pendaftaran->email_pendaftaran)
-            ->whereNotNull('email_verified_at')
-            ->first();
-
-        if ($akun) {
-            $pendaftaran->update(['akun_pendaftar_id' => $akun->id]);
         }
 
         $this->pindahkanDokumenKeLokasiFinal($pendaftaran);
@@ -136,20 +137,11 @@ class ReviewSubmitController extends BaseController
 
         $wizardSession->clear($lembaga, $jalur);
 
-        return redirect()->route('spmb.berhasil', [
-            'lembagaSlug' => $lembaga->slug,
-            'kodePendaftaran' => $pendaftaran->kode_pendaftaran,
-            'email' => $pendaftaran->email_pendaftaran,
-        ]);
+        return redirect()->route('portal.wizard.berhasil', ['pendaftaran' => $pendaftaran]);
     }
 
-    private function redirectJikaSesiBelumLengkap(Lembaga $lembaga, JalurPpdb $jalur, array $session): ?RedirectResponse
+    private function redirectJikaSesiBelumLengkap(array $session): ?RedirectResponse
     {
-        if (empty($session['email_pendaftaran'])) {
-            return redirect()->route('spmb.mulai', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id])
-                ->withErrors(['sesi' => 'Sesi Anda telah berakhir. Silakan mulai dari awal.']);
-        }
-
         foreach (['nik', 'data_pribadi', 'alamat', 'keluarga'] as $kunci) {
             if (empty($session[$kunci])) {
                 return redirect()->route('portal.wizard.data-diri')
@@ -194,8 +186,8 @@ class ReviewSubmitController extends BaseController
         TahunAjaran $tahunAjaran,
         JalurPpdb $jalur,
         GelombangPpdb $gelombang,
-        array $session,
-        KodePendaftaranGenerator $kodeGenerator
+        KodePendaftaranGenerator $kodeGenerator,
+        AkunPendaftar $akun
     ): Pendaftaran {
         for ($percobaan = 0; $percobaan < self::MAKS_PERCOBAAN_KODE; $percobaan++) {
             $kode = $kodeGenerator->generate($lembaga->id);
@@ -208,7 +200,8 @@ class ReviewSubmitController extends BaseController
                     'jalur_ppdb_id' => $jalur->id,
                     'gelombang_ppdb_id' => $gelombang->id,
                     'kode_pendaftaran' => $kode,
-                    'email_pendaftaran' => $session['email_pendaftaran'],
+                    'akun_pendaftar_id' => $akun->id,
+                    'email_pendaftaran' => $akun->email,
                     'submitted_at' => now(),
                 ]);
             } catch (QueryException $exception) {

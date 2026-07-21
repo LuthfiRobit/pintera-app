@@ -1,16 +1,17 @@
 <?php
+// tests/Feature/Spmb/ReviewSubmitTest.php
 
+use App\Models\AkunPendaftar;
 use App\Models\CalonMurid;
 use App\Models\Pendaftaran;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
-function isiWizardLengkap($lembaga, $jalur, string $email): void
+function isiWizardLengkap($lembaga, $jalur): void
 {
     $wizardSession = new PendaftaranWizardSession();
     $wizardSession->put($lembaga, $jalur, [
-        'email_pendaftaran' => $email,
         'nik' => '3201234567890123',
         'data_pribadi' => [
             'nama_lengkap' => 'Ahmad Fauzan', 'jenis_kelamin' => 'L', 'tempat_lahir' => 'Bandung',
@@ -27,29 +28,30 @@ function isiWizardLengkap($lembaga, $jalur, string $email): void
 }
 
 it('shows a review summary of everything entered so far', function () {
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
 
-    $this->get("/spmb/{$lembaga->slug}/{$jalur->id}/review")
+    $this->get(route('portal.wizard.review'))
         ->assertOk()
         ->assertSee('Ahmad Fauzan');
 });
 
-it('submits the full pendaftaran atomically and clears the wizard session', function () {
+it('submits the full pendaftaran atomically, links it directly to the logged-in akun, and clears the wizard session', function () {
     Mail::fake();
     Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
 
-    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $response = $this->post(route('portal.wizard.submit'));
 
     $pendaftaran = Pendaftaran::first();
-    $response->assertRedirect(route('spmb.berhasil', [
-        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $pendaftaran->kode_pendaftaran, 'email' => $pendaftaran->email_pendaftaran,
-    ]));
+    $response->assertRedirect(route('portal.wizard.berhasil', ['pendaftaran' => $pendaftaran]));
 
     expect($pendaftaran->status)->toBe('menunggu_verifikasi');
-    expect($pendaftaran->email_pendaftaran)->toBe('wali@example.test');
+    expect($pendaftaran->akun_pendaftar_id)->toBe($akun->id);
+    expect($pendaftaran->email_pendaftaran)->toBe($akun->email);
     expect($pendaftaran->calonMurid->nama_lengkap)->toBe('Ahmad Fauzan');
     expect($pendaftaran->calonMurid->alamat->kabupaten_kota)->toBe('Bandung');
     expect($pendaftaran->calonMurid->keluarga)->toHaveCount(1);
@@ -61,11 +63,12 @@ it('submits the full pendaftaran atomically and clears the wizard session', func
 it('reuses the existing calon murid record when the nik already exists for this yayasan', function () {
     Mail::fake();
     Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
     $existing = CalonMurid::factory()->create(['yayasan_id' => $lembaga->yayasan_id, 'nik' => '3201234567890123']);
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+    isiWizardLengkap($lembaga, $jalur);
 
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $this->post(route('portal.wizard.submit'));
 
     expect(CalonMurid::count())->toBe(1);
     expect(Pendaftaran::first()->calon_murid_id)->toBe($existing->id);
@@ -74,13 +77,14 @@ it('reuses the existing calon murid record when the nik already exists for this 
 it('sends a confirmation email containing the kode pendaftaran', function () {
     Mail::fake();
     Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
 
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $this->post(route('portal.wizard.submit'));
 
-    Mail::assertSent(App\Mail\PendaftaranBerhasilMail::class, function ($mail) {
-        return $mail->hasTo('wali@example.test');
+    Mail::assertSent(App\Mail\PendaftaranBerhasilMail::class, function ($mail) use ($akun) {
+        return $mail->hasTo($akun->email);
     });
 });
 
@@ -88,7 +92,8 @@ it('retries with a fresh kode when the generated kode collides with a race-condi
     Mail::fake();
     Storage::fake('public');
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
 
     $kodeGenerator = Mockery::mock(App\Services\KodePendaftaranGenerator::class);
     $kodeGenerator->shouldReceive('generate')->once()->andReturn('REG-2026-00001');
@@ -102,12 +107,11 @@ it('retries with a fresh kode when the generated kode collides with a race-condi
         'kode_pendaftaran' => 'REG-2026-00001', 'email_pendaftaran' => 'lain@example.test',
     ]);
 
-    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $response = $this->post(route('portal.wizard.submit'));
 
-    $response->assertRedirect(route('spmb.berhasil', [
-        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => 'REG-2026-00002', 'email' => 'wali@example.test',
-    ]));
-    expect(Pendaftaran::where('kode_pendaftaran', 'REG-2026-00002')->exists())->toBeTrue();
+    $pendaftaran = Pendaftaran::where('kode_pendaftaran', 'REG-2026-00002')->first();
+    expect($pendaftaran)->not->toBeNull();
+    $response->assertRedirect(route('portal.wizard.berhasil', ['pendaftaran' => $pendaftaran]));
 });
 
 afterEach(function () {
@@ -117,11 +121,11 @@ afterEach(function () {
 it('rolls back the whole submission and never moves the file when a document row fails to insert', function () {
     Mail::fake();
     Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
     $wizardSession = new PendaftaranWizardSession();
     $wizardSession->put($lembaga, $jalur, [
-        'email_pendaftaran' => 'wali@example.test',
         'nik' => '3201234567890123',
         'data_pribadi' => [
             'nama_lengkap' => 'Ahmad Fauzan', 'jenis_kelamin' => 'L', 'tempat_lahir' => 'Bandung',
@@ -151,74 +155,60 @@ it('rolls back the whole submission and never moves the file when a document row
         ],
     ]);
 
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $this->post(route('portal.wizard.submit'));
 
     expect(Pendaftaran::count())->toBe(0);
     Storage::disk('public')->assertExists($tmpPath);
     expect(Storage::disk('public')->allFiles('pendaftaran'))->toBeEmpty();
 });
 
-it('shows the success page with the kode pendaftaran', function () {
-    Mail::fake();
-    Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
-    $kode = Pendaftaran::first()->kode_pendaftaran;
-
-    $this->get(route('spmb.berhasil', [
-        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $kode, 'email' => 'wali@example.test',
-    ]))->assertOk()->assertSee($kode);
-});
-
-it('404s the success page when the email does not match', function () {
-    Mail::fake();
-    Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
-    $kode = Pendaftaran::first()->kode_pendaftaran;
-
-    $this->get(route('spmb.berhasil', [
-        'lembagaSlug' => $lembaga->slug, 'kodePendaftaran' => $kode, 'email' => 'salah@example.test',
-    ]))->assertNotFound();
-});
-
 it('redirects to review with a friendly message instead of a 500 when the calon murid already registered for this gelombang', function () {
     Mail::fake();
     Storage::fake('public');
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
     $calonMuridLama = CalonMurid::factory()->create(['yayasan_id' => $lembaga->yayasan_id, 'nik' => '3201234567890123']);
     Pendaftaran::factory()->create([
         'calon_murid_id' => $calonMuridLama->id, 'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
-        'kode_pendaftaran' => 'REG-2026-00001', 'email_pendaftaran' => 'wali@example.test',
+        'kode_pendaftaran' => 'REG-2026-00001', 'akun_pendaftar_id' => $akun->id, 'email_pendaftaran' => $akun->email,
     ]);
-    isiWizardLengkap($lembaga, $jalur, 'wali@example.test');
+    isiWizardLengkap($lembaga, $jalur);
 
-    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $response = $this->post(route('portal.wizard.submit'));
 
-    $response->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/review");
+    $response->assertRedirect(route('portal.wizard.review'));
     $response->assertSessionHasErrors('submit');
     expect(Pendaftaran::count())->toBe(1);
 });
 
 it('redirects to data-diri instead of crashing when submit is hit with an incomplete session', function () {
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
-    (new PendaftaranWizardSession())->put($lembaga, $jalur, ['email_pendaftaran' => 'wali@example.test']);
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
-    $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
+    $response = $this->post(route('portal.wizard.submit'));
 
-    $response->assertRedirect('/portal/wizard/data-diri');
+    $response->assertRedirect(route('portal.wizard.data-diri'));
     $response->assertSessionHasErrors('sesi');
     expect(Pendaftaran::count())->toBe(0);
 });
 
-it('redirects to mulai instead of crashing when review is visited with no verified email in session', function () {
+it('redirects to the dashboard when review is visited with no jalur selected in session', function () {
+    $akun = AkunPendaftar::factory()->create();
+
+    $this->actingAs($akun, 'portal')->get(route('portal.wizard.review'))
+        ->assertRedirect(route('portal.dashboard'));
+});
+
+it('404s on submit when the gelombang has closed since the wizard was started (regression, not a new fix)', function () {
     [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
+    \App\Models\GelombangPpdb::where('lembaga_id', $lembaga->id)->update([
+        'tanggal_buka' => now()->subMonth(), 'tanggal_tutup' => now()->subDay(),
+    ]);
 
-    $response = $this->get("/spmb/{$lembaga->slug}/{$jalur->id}/review");
+    $this->post(route('portal.wizard.submit'))->assertNotFound();
 
-    $response->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/mulai");
-    $response->assertSessionHasErrors('sesi');
+    expect(Pendaftaran::count())->toBe(0);
 });

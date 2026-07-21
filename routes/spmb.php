@@ -23,9 +23,6 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
         ->middleware('throttle:6,1')->name('mulai.store');
     Route::get('{lembagaSlug}/{jalur}/verifikasi-otp', [VerifikasiEmailController::class, 'edit'])->name('verifikasi-otp');
     Route::post('{lembagaSlug}/{jalur}/verifikasi-otp', [VerifikasiEmailController::class, 'update'])->name('verifikasi-otp.store');
-    Route::get('{lembagaSlug}/{jalur}/review', [ReviewSubmitController::class, 'show'])->name('review');
-    Route::post('{lembagaSlug}/{jalur}/submit', [ReviewSubmitController::class, 'submit'])
-        ->middleware('throttle:10,1')->name('submit');
     Route::get('{lembagaSlug}/berhasil/{kodePendaftaran}', [ReviewSubmitController::class, 'berhasil'])
         ->middleware('throttle:10,1')->name('berhasil');
 
