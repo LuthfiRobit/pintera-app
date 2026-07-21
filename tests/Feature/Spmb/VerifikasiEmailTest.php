@@ -31,7 +31,7 @@ it('verifies a correct otp and stores email_pendaftaran in the wizard session', 
     $kode = VerifikasiEmailOtp::where('email', 'wali@example.test')->first()->kode_otp;
 
     $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/verifikasi-otp", ['kode_otp' => $kode])
-        ->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri");
+        ->assertRedirect('/portal/wizard/data-diri');
 
     $session = (new PendaftaranWizardSession)->get($lembaga, $jalur);
     expect($session['email_pendaftaran'])->toBe('wali@example.test');

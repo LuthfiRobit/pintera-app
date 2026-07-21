@@ -209,7 +209,7 @@ it('redirects to data-diri instead of crashing when submit is hit with an incomp
 
     $response = $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/submit");
 
-    $response->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/data-diri");
+    $response->assertRedirect('/portal/wizard/data-diri');
     $response->assertSessionHasErrors('sesi');
     expect(Pendaftaran::count())->toBe(0);
 });

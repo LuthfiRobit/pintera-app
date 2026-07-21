@@ -69,6 +69,6 @@ class VerifikasiEmailController extends BaseController
 
         $wizardSession->put($lembaga, $jalur, ['email_pendaftaran' => $email]);
 
-        return redirect()->route('spmb.data-diri', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]);
+        return redirect()->route('portal.wizard.data-diri');
     }
 }

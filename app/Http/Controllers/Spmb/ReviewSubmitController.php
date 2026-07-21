@@ -152,7 +152,7 @@ class ReviewSubmitController extends BaseController
 
         foreach (['nik', 'data_pribadi', 'alamat', 'keluarga'] as $kunci) {
             if (empty($session[$kunci])) {
-                return redirect()->route('spmb.data-diri', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id])
+                return redirect()->route('portal.wizard.data-diri')
                     ->withErrors(['sesi' => 'Data belum lengkap. Silakan lengkapi data diri terlebih dahulu.']);
             }
         }
