@@ -17,6 +17,7 @@ Route::prefix('spmb')->name('spmb.')->group(function () {
     Route::middleware('guest:portal')->group(function () {
         Route::get('register', [RegisteredAkunController::class, 'create'])->name('register');
         Route::post('register', [RegisteredAkunController::class, 'store'])->middleware('throttle:6,1');
+        Route::post('register/ganti-jalur/{jalur}', [RegisteredAkunController::class, 'gantiJalur'])->name('register.ganti-jalur');
     });
     Route::get('{lembagaSlug}', [PortalController::class, 'index'])->name('index');
     Route::post('{lembagaSlug}/jalur/{jalur}/daftar', [PortalController::class, 'daftarJalur'])->name('jalur.daftar');
