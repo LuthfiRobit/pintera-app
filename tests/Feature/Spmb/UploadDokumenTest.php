@@ -1,31 +1,32 @@
 <?php
 
+use App\Models\AkunPendaftar;
 use App\Models\DokumenSyaratPpdb;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 it('shows the dokumen syarat list for the selected jalur', function () {
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
     DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali@example.test');
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
-    $this->get("/spmb/{$lembaga->slug}/{$jalur->id}/dokumen")
+    $this->get(route('portal.wizard.dokumen'))
         ->assertOk()
         ->assertSee('Akta Kelahiran');
 });
 
 it('uploads a valid file and stores its temp path in the wizard session', function () {
     Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
     $syarat = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali@example.test');
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
     $file = UploadedFile::fake()->create('akta.pdf', 500, 'application/pdf');
 
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/dokumen", [
+    $this->post(route('portal.wizard.dokumen.store'), [
         'dokumen' => [$syarat->id => $file],
-    ])->assertRedirect("/spmb/{$lembaga->slug}/{$jalur->id}/review");
+    ])->assertRedirect(route('portal.wizard.review'));
 
     $session = (new PendaftaranWizardSession())->get($lembaga, $jalur);
     expect($session['dokumen'][$syarat->id]['nama_file_asli'])->toBe('akta.pdf');
@@ -34,13 +35,20 @@ it('uploads a valid file and stores its temp path in the wizard session', functi
 
 it('rejects a file that is too large or the wrong type', function () {
     Storage::fake('public');
-    [$lembaga, $tahunAjaran, $jalur] = buatLembagaDenganGelombangBuka();
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
     $syarat = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
-    siapkanEmailTerverifikasi($lembaga, $jalur, 'wali@example.test');
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
     $tooBig = UploadedFile::fake()->create('akta.pdf', 3000, 'application/pdf');
 
-    $this->post("/spmb/{$lembaga->slug}/{$jalur->id}/dokumen", [
+    $this->post(route('portal.wizard.dokumen.store'), [
         'dokumen' => [$syarat->id => $tooBig],
     ])->assertSessionHasErrors("dokumen.{$syarat->id}");
+});
+
+it('redirects to the dashboard when there is no jalur selected in session', function () {
+    $akun = AkunPendaftar::factory()->create();
+
+    $this->actingAs($akun, 'portal')->get(route('portal.wizard.dokumen'))
+        ->assertRedirect(route('portal.dashboard'));
 });

@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Spmb;
 
-use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
+use App\Http\Controllers\Spmb\Concerns\ResolvesWizardContext;
 use App\Models\DokumenSyaratPpdb;
-use App\Models\JalurPpdb;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,21 +12,20 @@ use Illuminate\View\View;
 
 class UploadDokumenController extends BaseController
 {
-    use ResolvesSpmbTenant;
+    use ResolvesWizardContext;
 
-    public function create(string $lembagaSlug, JalurPpdb $jalur): View
+    public function create(): View
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
         $syaratList = DokumenSyaratPpdb::where('jalur_ppdb_id', $jalur->id)->orderBy('urutan')->get();
+        $nominal = $this->resolveNominalPendaftaran($lembaga, $jalur);
 
-        return view('spmb.upload-dokumen', ['lembaga' => $lembaga, 'jalur' => $jalur, 'syaratList' => $syaratList]);
+        return view('spmb.upload-dokumen', ['lembaga' => $lembaga, 'jalur' => $jalur, 'syaratList' => $syaratList, 'nominal' => $nominal]);
     }
 
-    public function store(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): RedirectResponse
+    public function store(Request $request, PendaftaranWizardSession $wizardSession): RedirectResponse
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
 
         $syaratList = DokumenSyaratPpdb::where('jalur_ppdb_id', $jalur->id)->get();
         $rules = [];
@@ -61,6 +59,6 @@ class UploadDokumenController extends BaseController
 
         $wizardSession->put($lembaga, $jalur, ['dokumen' => $disimpan]);
 
-        return redirect()->route('spmb.review', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]);
+        return redirect()->route('portal.wizard.review');
     }
 }
