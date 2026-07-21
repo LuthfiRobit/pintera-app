@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Spmb;
 
-use App\Http\Controllers\Spmb\Concerns\ResolvesSpmbTenant;
+use App\Http\Controllers\Spmb\Concerns\ResolvesWizardContext;
 use App\Models\FormulirField;
-use App\Models\JalurPpdb;
 use App\Services\PendaftaranWizardSession;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,21 +12,20 @@ use Illuminate\View\View;
 
 class FormulirTambahanController extends BaseController
 {
-    use ResolvesSpmbTenant;
+    use ResolvesWizardContext;
 
-    public function create(string $lembagaSlug, JalurPpdb $jalur): View
+    public function create(): View
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
         $fieldList = FormulirField::where('jalur_ppdb_id', $jalur->id)->orderBy('urutan')->get();
+        $nominal = $this->resolveNominalPendaftaran($lembaga, $jalur);
 
-        return view('spmb.formulir-tambahan', ['lembaga' => $lembaga, 'jalur' => $jalur, 'fieldList' => $fieldList]);
+        return view('spmb.formulir-tambahan', ['lembaga' => $lembaga, 'jalur' => $jalur, 'fieldList' => $fieldList, 'nominal' => $nominal]);
     }
 
-    public function store(Request $request, string $lembagaSlug, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): RedirectResponse
+    public function store(Request $request, PendaftaranWizardSession $wizardSession): RedirectResponse
     {
-        $lembaga = $this->resolveLembaga($lembagaSlug);
-        $this->assertJalurBelongsToLembaga($lembaga, $jalur);
+        [$lembaga, $jalur] = $this->resolveWizardContext();
 
         $fieldList = FormulirField::where('jalur_ppdb_id', $jalur->id)->get();
         $rules = [];
@@ -38,6 +36,6 @@ class FormulirTambahanController extends BaseController
 
         $wizardSession->put($lembaga, $jalur, ['jawaban_formulir' => $data['jawaban'] ?? []]);
 
-        return redirect()->route('spmb.dokumen', ['lembagaSlug' => $lembaga->slug, 'jalur' => $jalur->id]);
+        return redirect()->route('portal.wizard.dokumen');
     }
 }
