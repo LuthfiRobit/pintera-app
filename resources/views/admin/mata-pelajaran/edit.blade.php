@@ -1,35 +1,24 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-display text-2xl font-semibold text-ink">Ubah Mata Pelajaran</h2>
-    </x-slot>
+    <div class="mx-auto max-w-3xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Edit Mata Pelajaran: {{ $mataPelajaran->nama }}</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.mata-pelajaran.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Mata Pelajaran</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Edit</b>
+            </p>
+        </div>
 
-    <div class="mx-auto max-w-2xl">
-        <x-panel>
-            <form method="POST" action="{{ route('admin.mata-pelajaran.update', $mataPelajaran) }}" class="space-y-4 p-6">
-                @csrf
-                @method('PUT')
+        <form method="POST" action="{{ route('admin.mata-pelajaran.update', $mataPelajaran) }}">
+            @csrf
+            @method('PUT')
 
-                <div>
-                    <label class="text-sm font-medium text-ink">Nama</label>
-                    <input type="text" name="nama" value="{{ old('nama', $mataPelajaran->nama) }}" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    @error('nama')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
+            @include('admin.mata-pelajaran._form', ['mataPelajaran' => $mataPelajaran])
 
-                <div>
-                    <label class="text-sm font-medium text-ink">Tipe</label>
-                    <select name="tipe" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                        <option value="mapel" @selected(old('tipe', $mataPelajaran->tipe->value) === 'mapel')>Mata Pelajaran</option>
-                        <option value="aspek_perkembangan" @selected(old('tipe', $mataPelajaran->tipe->value) === 'aspek_perkembangan')>Aspek Perkembangan (PAUD)</option>
-                    </select>
-                    @error('tipe')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <button type="submit" class="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Simpan Perubahan</button>
-            </form>
-        </x-panel>
+            <div class="mt-4 flex items-center gap-3">
+                <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
+                <a href="{{ route('admin.mata-pelajaran.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Batal</a>
+            </div>
+        </form>
     </div>
 </x-app-layout>

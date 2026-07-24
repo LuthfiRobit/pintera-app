@@ -1,57 +1,24 @@
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-display text-2xl font-semibold text-ink">Ubah Kelas</h2>
-    </x-slot>
+    <div class="mx-auto max-w-3xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Edit Kelas: {{ $kelas->nama }}</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.kelas.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Kelas</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Edit</b>
+            </p>
+        </div>
 
-    <div class="mx-auto max-w-2xl">
-        <x-panel>
-            <form method="POST" action="{{ route('admin.kelas.update', $kelas) }}" class="space-y-4 p-6">
-                @csrf
-                @method('PUT')
+        <form method="POST" action="{{ route('admin.kelas.update', $kelas) }}">
+            @csrf
+            @method('PUT')
 
-                <div>
-                    <label class="text-sm font-medium text-ink">Tahun Ajaran</label>
-                    <select name="tahun_ajaran_id" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                        @foreach ($tahunAjaranList as $tahunAjaran)
-                            <option value="{{ $tahunAjaran->id }}" @selected(old('tahun_ajaran_id', $kelas->tahun_ajaran_id) == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
-                        @endforeach
-                    </select>
-                    @error('tahun_ajaran_id')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
+            @include('admin.kelas._form', ['kelas' => $kelas, 'tahunAjaranList' => $tahunAjaranList, 'guruList' => $guruList])
 
-                <div>
-                    <label class="text-sm font-medium text-ink">Nama Kelas</label>
-                    <input type="text" name="nama" value="{{ old('nama', $kelas->nama) }}" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    @error('nama')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium text-ink">Tingkat (opsional)</label>
-                    <input type="text" name="tingkat" value="{{ old('tingkat', $kelas->tingkat) }}" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    @error('tingkat')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium text-ink">Wali Kelas (opsional)</label>
-                    <select name="wali_kelas_guru_id" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                        <option value="">— Belum ditentukan —</option>
-                        @foreach ($guruList as $guru)
-                            <option value="{{ $guru->id }}" @selected(old('wali_kelas_guru_id', $kelas->wali_kelas_guru_id) == $guru->id)>{{ $guru->nama }}</option>
-                        @endforeach
-                    </select>
-                    @error('wali_kelas_guru_id')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <button type="submit" class="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Simpan Perubahan</button>
-            </form>
-        </x-panel>
+            <div class="mt-4 flex items-center gap-3">
+                <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
+                <a href="{{ route('admin.kelas.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Batal</a>
+            </div>
+        </form>
     </div>
 </x-app-layout>
