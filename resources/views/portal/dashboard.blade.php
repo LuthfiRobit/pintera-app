@@ -1,8 +1,7 @@
 {{-- resources/views/portal/dashboard.blade.php --}}
 <x-layouts.portal-dashboard title="Dashboard">
-    <p class="text-[11px] font-bold uppercase tracking-wide text-portal-500">Portal Calon Siswa</p>
-    <h1 class="mt-1 text-2xl font-bold text-gray-900">Halo, {{ Str::of(auth('portal')->user()->nama)->before(' ') }}</h1>
-    <p class="mt-1 text-[13px] text-gray-500">Pantau status pendaftaranmu di sini.</p>
+    <h1 class="text-[21px] font-bold text-gray-900">Halo, {{ Str::of(auth('portal')->user()->nama)->before(' ') }} 👋</h1>
+    <p class="mt-1 text-[13px] text-gray-500">Berikut ringkasan pendaftaranmu di Pintera.</p>
 
     @if ($pendaftaranList->isEmpty())
         <div class="mt-8 rounded-2xl border border-dashed border-gray-200 p-10 text-center">
@@ -17,15 +16,15 @@
             </a>
         </div>
     @else
-        <div class="mt-6 flex items-center justify-between">
-            <h2 class="text-[11px] font-bold uppercase tracking-wide text-gray-400">Riwayat Pendaftaran</h2>
+        <div class="mt-2 flex items-center justify-between">
+            <h2 class="text-[15px] font-bold text-gray-900">Riwayat Pendaftaran</h2>
             <a href="{{ route('spmb.welcome') }}" class="inline-flex items-center gap-2 rounded-[10px] bg-portal-500 px-4 py-2 text-[12.5px] font-bold text-white transition hover:bg-portal-600">
                 <x-icon name="add" class="h-3.5 w-3.5" />
                 Daftar Lagi
             </a>
         </div>
 
-        <div class="mt-3 space-y-3">
+        <div class="mt-3.5 space-y-2.5">
             @foreach ($pendaftaranList as $pendaftaran)
                 @php
                     $badge = match ($pendaftaran->status) {
@@ -37,23 +36,22 @@
                     };
                     [$tone, $icon, $label] = $badge;
                 @endphp
-                <div class="rounded-xl border border-gray-200 p-5">
-                    <div class="flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                            <p class="font-semibold text-gray-900">{{ $pendaftaran->calonMurid->nama_lengkap }}</p>
-                            <p class="mt-0.5 text-[13px] text-gray-500">{{ $pendaftaran->lembaga->nama }} &middot; {{ $pendaftaran->jalurPpdb->nama }} &middot; {{ $pendaftaran->gelombangPpdb->nama }}</p>
-                            <p class="mt-0.5 font-mono text-[12px] text-gray-400">{{ $pendaftaran->kode_pendaftaran }}</p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="inline-flex items-center gap-1.5 rounded-full bg-{{ $tone }}-50 px-2.5 py-1 text-[11.5px] font-bold text-{{ $tone }}-{{ $tone === 'portal' ? '500' : '700' }}">
-                                <x-icon name="{{ $icon }}" class="h-2.5 w-2.5" />
-                                {{ $label }}
-                            </span>
-                            <a href="{{ route('portal.pendaftaran.bukti', $pendaftaran) }}" target="_blank" class="text-[12.5px] font-bold text-portal-500 hover:underline">
-                                Unduh Bukti (PDF)
-                            </a>
-                        </div>
+                <div class="flex flex-wrap items-center gap-3.5 rounded-[14px] border border-gray-200 bg-white px-[18px] py-3.5">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-portal-50 text-[12px] font-extrabold text-portal-500">
+                        {{ $pendaftaran->lembaga->bentuk_pendidikan }}
+                    </span>
+                    <div class="min-w-[160px] flex-1">
+                        <p class="text-[13.5px] font-bold text-gray-900">{{ $pendaftaran->calonMurid->nama_lengkap }}</p>
+                        <p class="mt-0.5 text-[11.5px] text-gray-400">{{ $pendaftaran->lembaga->nama }} &middot; {{ $pendaftaran->jalurPpdb->nama }} &middot; {{ $pendaftaran->gelombangPpdb->nama }}</p>
+                        <p class="mt-0.5 font-mono text-[11.5px] text-gray-400">{{ $pendaftaran->kode_pendaftaran }}</p>
                     </div>
+                    <span class="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-{{ $tone }}-50 px-2.5 py-1 text-[11.5px] font-bold text-{{ $tone }}-{{ $tone === 'portal' ? '500' : '700' }}">
+                        <x-icon name="{{ $icon }}" class="h-2.5 w-2.5" />
+                        {{ $label }}
+                    </span>
+                    <a href="{{ route('portal.pendaftaran.bukti', $pendaftaran) }}" target="_blank" class="shrink-0 text-[12.5px] font-bold text-portal-500 hover:underline">
+                        Unduh Bukti (PDF)
+                    </a>
                 </div>
             @endforeach
         </div>

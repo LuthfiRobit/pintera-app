@@ -87,7 +87,7 @@ it('does not redirect to the wizard when the session points to a lembaga or jalu
         ->assertOk();
 });
 
-it('redirects to the wizard when the account has a pendaftaran but the session points to a different, not-yet-registered jalur', function () {
+it('redirects to the wizard when the account has a decided pendaftaran but the session points to a different, not-yet-registered jalur', function () {
     [$lembaga, $tahunAjaran, $jalurA, $gelombang] = buatLembagaDenganGelombangBuka();
     $jalurB = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Prestasi']);
     $akun = AkunPendaftar::factory()->create();
@@ -100,6 +100,7 @@ it('redirects to the wizard when the account has a pendaftaran but the session p
         'gelombang_ppdb_id' => $gelombang->id,
         'akun_pendaftar_id' => $akun->id,
         'email_pendaftaran' => $akun->email,
+        'status' => 'diterima',
     ]);
     session(['spmb_pilihan.lembaga_id' => $lembaga->id, 'spmb_pilihan.jalur_id' => $jalurB->id]);
 
@@ -107,7 +108,7 @@ it('redirects to the wizard when the account has a pendaftaran but the session p
         ->assertRedirect(route('portal.wizard.data-diri'));
 });
 
-it('does not redirect when the session choice exactly matches a jalur the account already registered', function () {
+it('clears the session and shows a status message instead of redirecting when the choice exactly matches a jalur the account already registered', function () {
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
     $akun = AkunPendaftar::factory()->create();
     $calonMurid = CalonMurid::factory()->create(['yayasan_id' => $lembaga->yayasan_id]);
@@ -119,11 +120,41 @@ it('does not redirect when the session choice exactly matches a jalur the accoun
         'gelombang_ppdb_id' => $gelombang->id,
         'akun_pendaftar_id' => $akun->id,
         'email_pendaftaran' => $akun->email,
+        'status' => 'diterima',
     ]);
     session(['spmb_pilihan.lembaga_id' => $lembaga->id, 'spmb_pilihan.jalur_id' => $jalur->id]);
 
-    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
-        ->assertOk();
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('sudah terdaftar');
+    expect(session('spmb_pilihan.lembaga_id'))->toBeNull();
+    expect(session('spmb_pilihan.jalur_id'))->toBeNull();
+});
+
+it('clears the session and blocks a new jalur choice while an existing pendaftaran is still awaiting a decision', function () {
+    [$lembaga, $tahunAjaran, $jalurA, $gelombang] = buatLembagaDenganGelombangBuka();
+    $jalurB = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Prestasi']);
+    $akun = AkunPendaftar::factory()->create();
+    $calonMurid = CalonMurid::factory()->create(['yayasan_id' => $lembaga->yayasan_id]);
+    Pendaftaran::factory()->create([
+        'calon_murid_id' => $calonMurid->id,
+        'lembaga_id' => $lembaga->id,
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'jalur_ppdb_id' => $jalurA->id,
+        'gelombang_ppdb_id' => $gelombang->id,
+        'akun_pendaftar_id' => $akun->id,
+        'email_pendaftaran' => $akun->email,
+        'status' => 'menunggu_verifikasi',
+    ]);
+    session(['spmb_pilihan.lembaga_id' => $lembaga->id, 'spmb_pilihan.jalur_id' => $jalurB->id]);
+
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('menunggu keputusan');
+    expect(session('spmb_pilihan.lembaga_id'))->toBeNull();
+    expect(session('spmb_pilihan.jalur_id'))->toBeNull();
 });
 
 it('redirects a guest to login when accessing the dashboard', function () {

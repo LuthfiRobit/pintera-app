@@ -28,8 +28,16 @@ class DashboardController extends BaseController
             ? JalurPpdb::find(session('spmb_pilihan.jalur_id'))
             : null;
 
-        if ($lembaga && $jalur && ! $this->sudahDidaftarkan($pendaftaranList, $lembaga, $jalur)) {
-            return redirect()->route('portal.wizard.data-diri');
+        if ($lembaga && $jalur) {
+            if ($this->sudahDidaftarkan($pendaftaranList, $lembaga, $jalur)) {
+                session()->forget('spmb_pilihan');
+                session()->flash('status', 'Kamu sudah terdaftar pada jalur ini. Lihat riwayat pendaftaranmu di bawah.');
+            } elseif ($this->punyaPendaftaranMenungguKeputusan($pendaftaranList)) {
+                session()->forget('spmb_pilihan');
+                session()->flash('status', 'Kamu masih memiliki pendaftaran yang menunggu keputusan. Selesaikan itu dulu sebelum mendaftar jalur baru.');
+            } else {
+                return redirect()->route('portal.wizard.data-diri');
+            }
         }
 
         return view('portal.dashboard', ['pendaftaranList' => $pendaftaranList]);
@@ -40,5 +48,10 @@ class DashboardController extends BaseController
         return $pendaftaranList->contains(
             fn (Pendaftaran $p) => $p->lembaga_id === $lembaga->id && $p->jalur_ppdb_id === $jalur->id
         );
+    }
+
+    private function punyaPendaftaranMenungguKeputusan($pendaftaranList): bool
+    {
+        return $pendaftaranList->contains(fn (Pendaftaran $p) => $p->status === 'menunggu_verifikasi');
     }
 }
