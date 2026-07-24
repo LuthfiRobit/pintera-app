@@ -14,6 +14,7 @@
                 Auth::user()->can('mata-pelajaran.view') ? ['route' => 'admin.mata-pelajaran.index', 'pattern' => 'admin.mata-pelajaran.*', 'label' => 'Mata Pelajaran', 'icon' => 'menu_book'] : null,
                 Auth::user()->can('kelas.view') ? ['route' => 'admin.kelas.index', 'pattern' => 'admin.kelas.*', 'label' => 'Kelas', 'icon' => 'meeting_room'] : null,
                 Auth::user()->can('siswa.view') ? ['route' => 'admin.siswa.index', 'pattern' => 'admin.siswa.*', 'label' => 'Siswa', 'icon' => 'groups'] : null,
+                Auth::user()->can('siswa.spmb-daftar') ? ['route' => 'admin.siswa.spmb-daftar.index', 'pattern' => 'admin.siswa.spmb-daftar.*', 'label' => 'Daftarkan dari SPMB', 'icon' => 'how_to_reg'] : null,
                 Auth::user()->can('tahun-ajaran.view') ? ['route' => 'admin.tahun-ajaran.index', 'pattern' => 'admin.tahun-ajaran.*', 'label' => 'Tahun Ajaran', 'icon' => 'calendar_month'] : null,
             ]),
         ],
