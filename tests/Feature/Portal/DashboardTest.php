@@ -11,7 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-function buatPendaftaranUntukAkun(AkunPendaftar $akun, string $nama = 'Ahmad Fauzan'): Pendaftaran
+function buatPendaftaranUntukAkun(AkunPendaftar $akun, string $nama = 'Ahmad Fauzan', ?string $status = null): Pendaftaran
 {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -22,6 +22,7 @@ function buatPendaftaranUntukAkun(AkunPendaftar $akun, string $nama = 'Ahmad Fau
         'lembaga_id' => $lembaga->id,
         'akun_pendaftar_id' => $akun->id,
         'email_pendaftaran' => $akun->email,
+        'status' => $status ?? 'menunggu_verifikasi',
     ]);
 }
 
@@ -128,4 +129,51 @@ it('does not redirect when the session choice exactly matches a jalur the accoun
 it('redirects a guest to login when accessing the dashboard', function () {
     $this->get(route('portal.dashboard'))
         ->assertRedirect(route('login'));
+});
+
+it('shows the correct label for every pendaftaran status', function () {
+    $akun = AkunPendaftar::factory()->create();
+    buatPendaftaranUntukAkun($akun, 'Calon Menunggu', 'menunggu_verifikasi');
+    buatPendaftaranUntukAkun($akun, 'Calon Diterima', 'diterima');
+    buatPendaftaranUntukAkun($akun, 'Calon Ditolak', 'ditolak');
+    buatPendaftaranUntukAkun($akun, 'Calon Daftar Ulang', 'daftar_ulang');
+    buatPendaftaranUntukAkun($akun, 'Calon Aktif', 'aktif');
+
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Menunggu Verifikasi');
+    $response->assertSee('Diterima');
+    $response->assertSee('Ditolak');
+    $response->assertSee('Daftar Ulang');
+    $response->assertSee('Aktif');
+});
+
+it('shows a Daftar Lagi button linking to the welcome page when the account has a pendaftaran', function () {
+    $akun = AkunPendaftar::factory()->create();
+    buatPendaftaranUntukAkun($akun);
+
+    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee('Daftar Lagi')
+        ->assertSee(route('spmb.welcome'), false);
+});
+
+it('shows an empty-state CTA linking to the welcome page when the account has no pendaftaran', function () {
+    $akun = AkunPendaftar::factory()->create();
+
+    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee('Pilih Lembaga & Jalur')
+        ->assertSee(route('spmb.welcome'), false);
+});
+
+it('renders the authenticated navbar on the dashboard', function () {
+    $akun = AkunPendaftar::factory()->create();
+
+    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee('Dashboard')
+        ->assertSee('Riwayat')
+        ->assertSee('Bantuan');
 });
