@@ -2,12 +2,16 @@ import './bootstrap';
 
 import Alpine from 'alpinejs';
 import anchor from '@alpinejs/anchor';
+import flatpickr from 'flatpickr';
+import { Indonesian } from 'flatpickr/dist/l10n/id.js';
 import { registerToastStore } from './toast-store';
 import { registerConfirmDialogStore } from './confirm-dialog-store';
 import { registerKelengkapanStore } from './kelengkapan-store';
+import { registerFilePreviewStore } from './file-preview';
 import { rolesTable } from './roles-table';
 import { roleForm } from './role-form';
 import { dataDiriForm } from './data-diri-form';
+import { formulirTambahanForm } from './formulir-tambahan-form';
 import { otpInput } from './otp-input';
 import { pendaftaranTable } from './pendaftaran-table';
 import { pendaftaranDetail } from './pendaftaran-detail';
@@ -23,15 +27,19 @@ import { jenisTagihanTable } from './jenis-tagihan-table';
 import { passwordStrength } from './password-strength';
 
 window.Alpine = Alpine;
+window.flatpickr = flatpickr;
+flatpickr.localize(Indonesian);
 
 Alpine.plugin(anchor);
 
 registerToastStore(Alpine);
 registerConfirmDialogStore(Alpine);
 registerKelengkapanStore(Alpine);
+registerFilePreviewStore(Alpine);
 Alpine.data('rolesTable', rolesTable);
 Alpine.data('roleForm', roleForm);
 Alpine.data('dataDiriForm', dataDiriForm);
+Alpine.data('formulirTambahanForm', formulirTambahanForm);
 Alpine.data('otpInput', otpInput);
 Alpine.data('pendaftaranTable', pendaftaranTable);
 Alpine.data('pendaftaranDetail', pendaftaranDetail);

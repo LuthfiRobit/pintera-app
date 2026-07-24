@@ -13,7 +13,7 @@
 @endphp
 
 <div class="mx-auto mt-5 max-w-7xl px-4 sm:px-6 lg:px-10">
-    <div class="flex items-center gap-3 overflow-x-auto rounded-2xl border border-gray-200 bg-white px-4 py-4 justify-[safe_center] max-[560px]:justify-start sm:px-6">
+    <div class="flex items-center justify-center gap-3 overflow-x-auto rounded-2xl border border-gray-200 bg-white px-4 py-4 max-[560px]:justify-start sm:px-6">
         @foreach ($stages as $key => $label)
             @php
                 $index = array_search($key, $keys, true);

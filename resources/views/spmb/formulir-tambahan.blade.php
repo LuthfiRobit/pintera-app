@@ -1,6 +1,6 @@
 {{-- resources/views/spmb/formulir-tambahan.blade.php --}}
 <x-layouts.portal-wizard title="Formulir Tambahan" current="formulir-tambahan" :lembaga="$lembaga" :jalur="$jalur" :nominal="$nominal">
-    <div class="rounded-2xl border border-gray-200 bg-white p-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-6" x-data="formulirTambahanForm()">
         <div class="flex items-center gap-2.5">
             <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-portal-50 text-portal-500">
                 <x-icon name="quiz" class="h-4 w-4" />
@@ -9,31 +9,14 @@
         </div>
         <div class="my-4 h-px bg-gray-200"></div>
 
-        <form method="POST" action="{{ route('portal.wizard.formulir-tambahan.store') }}" class="space-y-4">
+        <form method="POST" action="{{ route('portal.wizard.formulir-tambahan.store') }}" enctype="multipart/form-data" class="space-y-4">
             @csrf
 
-            @forelse ($fieldList as $field)
-                <div>
-                    <label class="mb-[7px] block text-[12.5px] font-semibold text-gray-900">{{ $field->label }}{{ $field->is_required ? ' *' : '' }}</label>
-                    @if ($field->field_type === 'textarea')
-                        <textarea name="jawaban[{{ $field->id }}]" rows="3" @required($field->is_required)
-                            class="w-full rounded-[10px] border border-gray-200 px-3.5 py-[11px] text-[13.5px] text-gray-900 focus:border-portal-500 focus:outline-none focus:ring-2 focus:ring-portal-500/20">{{ old('jawaban.' . $field->id) }}</textarea>
-                    @elseif ($field->field_type === 'select')
-                        <select name="jawaban[{{ $field->id }}]" @required($field->is_required)
-                            class="w-full rounded-[10px] border border-gray-200 px-3.5 py-[11px] text-[13.5px] text-gray-900 focus:border-portal-500 focus:outline-none focus:ring-2 focus:ring-portal-500/20">
-                            <option value="">Pilih</option>
-                            @foreach ($field->options ?? [] as $opsi)
-                                <option value="{{ $opsi }}">{{ $opsi }}</option>
-                            @endforeach
-                        </select>
-                    @else
-                        <input
-                            type="{{ $field->field_type === 'number' ? 'number' : ($field->field_type === 'date' ? 'date' : 'text') }}"
-                            name="jawaban[{{ $field->id }}]"
-                            @required($field->is_required)
-                            class="w-full rounded-[10px] border border-gray-200 px-3.5 py-[11px] text-[13.5px] text-gray-900 focus:border-portal-500 focus:outline-none focus:ring-2 focus:ring-portal-500/20">
-                    @endif
-                    @error('jawaban.' . $field->id) <p class="mt-1.5 text-[11px] text-error-700">{{ $message }}</p> @enderror
+            @forelse ($fieldRows as $baris)
+                <div class="grid gap-3 max-[480px]:grid-cols-1 {{ count($baris) === 2 ? 'grid-cols-2' : 'grid-cols-1' }}">
+                    @foreach ($baris as $field)
+                        @include('spmb.partials.formulir-tambahan-field', ['field' => $field])
+                    @endforeach
                 </div>
             @empty
                 <p class="text-[13px] text-gray-500">Tidak ada formulir tambahan untuk jalur ini.</p>

@@ -20,6 +20,10 @@
     },
     "dependencies": {
         "@alpinejs/anchor": "^3.15.12",
-        "chart.js": "^4.5.1"
+        "chart.js": "^4.5.1",
+        "flatpickr": "^4.6.13",
+        "page-flip": "^2.0.7",
+        "pdfjs-dist": "^6.1.200",
+        "tom-select": "^2.6.2"
     }
 }

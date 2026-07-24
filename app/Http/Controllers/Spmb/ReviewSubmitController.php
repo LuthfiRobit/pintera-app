@@ -101,6 +101,22 @@ class ReviewSubmitController extends BaseController
                 );
 
                 foreach ($session['jawaban_formulir'] ?? [] as $fieldId => $nilai) {
+                    // A 'file'-type field's answer is the enriched array FormulirTambahanController
+                    // wrote to session (file_path/nama_file_asli/mime_type/ukuran_bytes) — everything
+                    // else is a plain scalar string, same as before.
+                    if (is_array($nilai)) {
+                        JawabanFormulirPendaftaran::create([
+                            'pendaftaran_id' => $pendaftaran->id,
+                            'formulir_field_id' => $fieldId,
+                            'nilai' => $nilai['file_path'],
+                            'nama_file_asli' => $nilai['nama_file_asli'],
+                            'mime_type' => $nilai['mime_type'],
+                            'ukuran_bytes' => $nilai['ukuran_bytes'],
+                        ]);
+
+                        continue;
+                    }
+
                     JawabanFormulirPendaftaran::create([
                         'pendaftaran_id' => $pendaftaran->id, 'formulir_field_id' => $fieldId, 'nilai' => $nilai,
                     ]);
@@ -129,6 +145,7 @@ class ReviewSubmitController extends BaseController
         }
 
         $this->pindahkanDokumenKeLokasiFinal($pendaftaran);
+        $this->pindahkanJawabanFileKeLokasiFinal($pendaftaran);
 
         $tagihanGenerator->generate($pendaftaran, 'pendaftaran');
 
@@ -168,6 +185,25 @@ class ReviewSubmitController extends BaseController
             $tujuan = 'pendaftaran/'.$pendaftaran->id.'/'.basename($dokumen->file_path);
             Storage::disk('public')->move($dokumen->file_path, $tujuan);
             $dokumen->update(['file_path' => $tujuan]);
+        }
+    }
+
+    /**
+     * Sibling of pindahkanDokumenKeLokasiFinal() for the other place a file can land
+     * in a submission — a 'file'-type dynamic formulir field's answer. Same rollback-
+     * safety reasoning: runs after the transaction commits, keyed off nama_file_asli
+     * being set (the marker that this jawaban is a file answer, not a plain scalar).
+     */
+    private function pindahkanJawabanFileKeLokasiFinal(Pendaftaran $pendaftaran): void
+    {
+        foreach ($pendaftaran->jawabanFormulir as $jawaban) {
+            if (! $jawaban->nama_file_asli || ! Storage::disk('public')->exists($jawaban->nilai)) {
+                continue;
+            }
+
+            $tujuan = 'pendaftaran/'.$pendaftaran->id.'/'.basename($jawaban->nilai);
+            Storage::disk('public')->move($jawaban->nilai, $tujuan);
+            $jawaban->update(['nilai' => $tujuan]);
         }
     }
 

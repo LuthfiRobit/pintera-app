@@ -33,9 +33,14 @@ class FormulirFieldSeeder extends Seeder
             'Reguler' => [
                 ['label' => 'Sekolah Asal', 'field_type' => 'text', 'is_required' => true, 'options' => null],
                 ['label' => 'Nilai Rata-rata Rapor', 'field_type' => 'number', 'is_required' => true, 'options' => null],
+                ['label' => 'Tanggal Kelulusan Sekolah Asal', 'field_type' => 'date', 'is_required' => true, 'options' => null],
+                ['label' => 'Provinsi Asal Sekolah', 'field_type' => 'select', 'is_required' => true, 'options' => $this->provinsiOptions()],
+                ['label' => 'Alamat Lengkap Sekolah Asal', 'field_type' => 'textarea', 'is_required' => false, 'options' => null],
+                ['label' => 'Scan Rapor Terakhir', 'field_type' => 'file', 'is_required' => true, 'options' => null],
             ],
             'Prestasi' => [
                 ['label' => 'Jenis Prestasi', 'field_type' => 'select', 'is_required' => true, 'options' => ['Akademik', 'Non-Akademik', 'Keagamaan']],
+                ['label' => 'Tanggal Perolehan Prestasi', 'field_type' => 'date', 'is_required' => true, 'options' => null],
                 ['label' => 'Uraian Prestasi', 'field_type' => 'textarea', 'is_required' => true, 'options' => null],
                 ['label' => 'Sertifikat Pendukung', 'field_type' => 'file', 'is_required' => true, 'options' => null],
             ],
@@ -58,6 +63,27 @@ class FormulirFieldSeeder extends Seeder
                 ['label' => 'Uraian Prestasi', 'field_type' => 'textarea', 'is_required' => true, 'options' => null],
             ],
             'Afirmasi' => [],
+        ];
+    }
+
+    /**
+     * 38 provinces — deliberately long (>10) so the Reguler jalur's select field
+     * demonstrates the searchable Tom Select path, not just the plain native <select>
+     * path already covered by Prestasi's short option lists.
+     *
+     * @return array<int, string>
+     */
+    private function provinsiOptions(): array
+    {
+        return [
+            'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Kepulauan Riau', 'Jambi',
+            'Sumatera Selatan', 'Bangka Belitung', 'Bengkulu', 'Lampung', 'DKI Jakarta',
+            'Jawa Barat', 'Jawa Tengah', 'DI Yogyakarta', 'Jawa Timur', 'Banten', 'Bali',
+            'Nusa Tenggara Barat', 'Nusa Tenggara Timur', 'Kalimantan Barat', 'Kalimantan Tengah',
+            'Kalimantan Selatan', 'Kalimantan Timur', 'Kalimantan Utara', 'Sulawesi Utara',
+            'Sulawesi Tengah', 'Sulawesi Selatan', 'Sulawesi Tenggara', 'Gorontalo', 'Sulawesi Barat',
+            'Maluku', 'Maluku Utara', 'Papua', 'Papua Barat', 'Papua Selatan', 'Papua Tengah',
+            'Papua Pegunungan', 'Papua Barat Daya',
         ];
     }
 

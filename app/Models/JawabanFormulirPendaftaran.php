@@ -13,6 +13,9 @@ class JawabanFormulirPendaftaran extends Model
         'pendaftaran_id',
         'formulir_field_id',
         'nilai',
+        'nama_file_asli',
+        'mime_type',
+        'ukuran_bytes',
     ];
 
     public function pendaftaran(): BelongsTo

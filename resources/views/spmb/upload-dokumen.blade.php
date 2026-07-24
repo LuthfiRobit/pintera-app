@@ -13,25 +13,9 @@
             @csrf
 
             @forelse ($syaratList as $syarat)
-                <div
-                    x-data="{ namaFile: null }"
-                    class="rounded-xl border-2 border-dashed p-4 transition"
-                    :class="namaFile ? 'border-portal-500/40 bg-portal-50' : 'border-gray-200'"
-                >
+                <div>
                     <label class="mb-[7px] block text-[12.5px] font-semibold text-gray-900">{{ $syarat->nama_dokumen }}{{ $syarat->wajib ? ' *' : ' (opsional)' }}</label>
-                    <p class="mb-2 text-[11px] text-gray-400">PDF/JPG/PNG, maks 2MB</p>
-                    <input
-                        type="file"
-                        name="dokumen[{{ $syarat->id }}]"
-                        x-ref="input"
-                        @change="namaFile = $event.target.files[0]?.name ?? null"
-                        class="block w-full text-[12.5px] text-gray-500"
-                        @required($syarat->wajib)
-                    />
-                    <p class="mt-2 flex items-center gap-2 text-[12px]" x-show="namaFile" x-cloak>
-                        <span class="font-semibold text-gray-900" x-text="namaFile"></span>
-                        <button type="button" class="font-semibold text-error-700" @click="$refs.input.value = ''; namaFile = null">Hapus</button>
-                    </p>
+                    <x-portal-file-dropzone name="dokumen[{{ $syarat->id }}]" :required="$syarat->wajib" />
                     @error('dokumen.' . $syarat->id) <p class="mt-1.5 text-[11px] text-error-700">{{ $message }}</p> @enderror
                 </div>
             @empty

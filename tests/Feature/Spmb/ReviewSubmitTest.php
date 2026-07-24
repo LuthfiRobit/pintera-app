@@ -60,6 +60,62 @@ it('submits the full pendaftaran atomically, links it directly to the logged-in 
     expect($session)->toBe([]);
 });
 
+it('shows the uploaded filename (not the raw array) for a file-type formulir field on the review page', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    $field = App\Models\FormulirField::create(['jalur_ppdb_id' => $jalur->id, 'label' => 'Sertifikat', 'field_type' => 'file', 'is_required' => true]);
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
+    (new PendaftaranWizardSession())->put($lembaga, $jalur, [
+        'jawaban_formulir' => [
+            $field->id => [
+                'file_path' => 'pendaftaran-tmp/xyz/sertifikat.pdf',
+                'nama_file_asli' => 'sertifikat.pdf',
+                'mime_type' => 'application/pdf',
+                'ukuran_bytes' => 1024,
+            ],
+        ],
+    ]);
+
+    $this->get(route('portal.wizard.review'))
+        ->assertOk()
+        ->assertSee('sertifikat.pdf');
+});
+
+it('stores a file-type formulir answer with its metadata and moves the file to final storage on submit', function () {
+    Mail::fake();
+    Storage::fake('public');
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    $field = App\Models\FormulirField::create(['jalur_ppdb_id' => $jalur->id, 'label' => 'Sertifikat', 'field_type' => 'file', 'is_required' => true]);
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    isiWizardLengkap($lembaga, $jalur);
+
+    $tmpPath = 'pendaftaran-tmp/'.session()->getId().'/sertifikat.pdf';
+    Storage::disk('public')->put($tmpPath, 'isi sertifikat palsu');
+    (new PendaftaranWizardSession())->put($lembaga, $jalur, [
+        'jawaban_formulir' => [
+            $field->id => [
+                'file_path' => $tmpPath,
+                'nama_file_asli' => 'sertifikat.pdf',
+                'mime_type' => 'application/pdf',
+                'ukuran_bytes' => 20,
+            ],
+        ],
+    ]);
+
+    $this->post(route('portal.wizard.submit'));
+
+    $pendaftaran = Pendaftaran::first();
+    $jawaban = App\Models\JawabanFormulirPendaftaran::where('pendaftaran_id', $pendaftaran->id)
+        ->where('formulir_field_id', $field->id)->firstOrFail();
+
+    expect($jawaban->nama_file_asli)->toBe('sertifikat.pdf');
+    expect($jawaban->mime_type)->toBe('application/pdf');
+    expect($jawaban->ukuran_bytes)->toBe(20);
+    expect($jawaban->nilai)->toBe('pendaftaran/'.$pendaftaran->id.'/sertifikat.pdf');
+    Storage::disk('public')->assertExists($jawaban->nilai);
+    Storage::disk('public')->assertMissing($tmpPath);
+});
+
 it('reuses the existing calon murid record when the nik already exists for this yayasan', function () {
     Mail::fake();
     Storage::fake('public');

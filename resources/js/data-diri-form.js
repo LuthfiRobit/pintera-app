@@ -1,8 +1,13 @@
+import flatpickr from 'flatpickr';
+import TomSelect from 'tom-select';
+
 export function dataDiriForm(config) {
     return {
         cekNikUrl: config.cekNikUrl,
         checking: false,
         pesanBlokir: null,
+        tanggalLahirPicker: null,
+        pekerjaanSelects: {},
         form: {
             nama_lengkap: config.old.nama_lengkap ?? '',
             nisn: config.old.nisn ?? '',
@@ -22,13 +27,48 @@ export function dataDiriForm(config) {
             provinsi: config.old.provinsi ?? '',
             kode_pos: config.old.kode_pos ?? '',
         },
-        keluarga: (config.old.keluarga && config.old.keluarga.length) ? config.old.keluarga : [
-            { jenis: 'ayah', nama: '', pekerjaan: '' },
-            { jenis: 'ibu', nama: '', pekerjaan: '' },
-        ],
+        keluarga: {
+            ayah: { nama: config.old.nama_ayah ?? '', pekerjaan: config.old.pekerjaan_ayah ?? '' },
+            ibu: { nama: config.old.nama_ibu ?? '', pekerjaan: config.old.pekerjaan_ibu ?? '' },
+            wali: { nama: config.old.nama_wali ?? '', pekerjaan: config.old.pekerjaan_wali ?? '' },
+        },
 
-        tambahWali() {
-            this.keluarga.push({ jenis: 'wali', nama: '', pekerjaan: '' });
+        initTanggalLahir(el) {
+            this.tanggalLahirPicker = flatpickr(el, {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'j F Y',
+                altInputClass: el.className,
+                maxDate: 'today',
+                onChange: (selectedDates, dateStr) => {
+                    this.form.tanggal_lahir = dateStr;
+                },
+            });
+            if (this.form.tanggal_lahir) {
+                this.tanggalLahirPicker.setDate(this.form.tanggal_lahir, true);
+            }
+        },
+
+        initPekerjaanSelect(el, jenis) {
+            this.pekerjaanSelects[jenis] = new TomSelect(el, {
+                maxItems: 1,
+                create: false,
+                placeholder: 'Cari pekerjaan...',
+                onChange: (value) => {
+                    this.keluarga[jenis].pekerjaan = value;
+                },
+            });
+        },
+
+        tambahkanKeAnggotaKeluarga(jenis, anggota) {
+            if (!this.keluarga[jenis]) {
+                return;
+            }
+            this.keluarga[jenis].nama = anggota.nama ?? '';
+            this.keluarga[jenis].pekerjaan = anggota.pekerjaan ?? '';
+            // setValue() is a no-op if the incoming value isn't one of the select's
+            // options — e.g. a pekerjaan recorded before this curated list existed.
+            this.pekerjaanSelects[jenis]?.setValue(anggota.pekerjaan ?? '', true);
         },
 
         async cekNik(nik) {
@@ -60,7 +100,12 @@ export function dataDiriForm(config) {
                         Object.assign(this.form, json.alamat);
                     }
                     if (json.keluarga && json.keluarga.length) {
-                        this.keluarga = json.keluarga;
+                        for (const anggota of json.keluarga) {
+                            this.tambahkanKeAnggotaKeluarga(anggota.jenis, anggota);
+                        }
+                    }
+                    if (this.form.tanggal_lahir && this.tanggalLahirPicker) {
+                        this.tanggalLahirPicker.setDate(this.form.tanggal_lahir, true);
                     }
                 }
             } catch (error) {

@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class DataDiriController extends BaseController
@@ -19,12 +20,27 @@ class DataDiriController extends BaseController
 
     private const PESAN_NIK_DIBLOKIR = 'NIK ini sudah pernah terdaftar oleh akun lain. Hubungi admin sekolah untuk bantuan.';
 
+    private const AGAMA_OPTIONS = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'];
+
+    private const GOLONGAN_DARAH_OPTIONS = ['A', 'B', 'AB', 'O'];
+
+    private const PEKERJAAN_OPTIONS = [
+        'PNS/ASN', 'TNI', 'POLRI', 'Guru/Dosen', 'Karyawan Swasta', 'Wiraswasta/Pedagang',
+        'Petani/Peternak', 'Nelayan', 'Buruh', 'Tenaga Kesehatan', 'Pengacara/Notaris',
+        'Sopir/Pengemudi', 'Pensiunan', 'Ibu Rumah Tangga', 'Tidak Bekerja', 'Lainnya',
+    ];
+
     public function create(): View
     {
         [$lembaga, $jalur] = $this->resolveWizardContext();
         $nominal = $this->resolveNominalPendaftaran($lembaga, $jalur);
 
-        return view('spmb.data-diri', ['lembaga' => $lembaga, 'jalur' => $jalur, 'nominal' => $nominal]);
+        return view('spmb.data-diri', [
+            'lembaga' => $lembaga, 'jalur' => $jalur, 'nominal' => $nominal,
+            'agamaOptions' => self::AGAMA_OPTIONS,
+            'golonganDarahOptions' => self::GOLONGAN_DARAH_OPTIONS,
+            'pekerjaanOptions' => self::PEKERJAAN_OPTIONS,
+        ]);
     }
 
     public function cekNik(Request $request): JsonResponse
@@ -74,30 +90,29 @@ class DataDiriController extends BaseController
         $data = $request->validate([
             'nik' => ['required', 'digits:16'],
             'nama_lengkap' => ['required', 'string', 'max:255'],
-            'nisn' => ['nullable', 'string', 'max:20'],
+            'nisn' => ['nullable', 'digits:10'],
             'no_kk' => ['nullable', 'digits:16'],
             'jenis_kelamin' => ['required', 'in:L,P'],
             'tempat_lahir' => ['required', 'string', 'max:255'],
-            'tanggal_lahir' => ['required', 'date'],
-            'agama' => ['required', 'string', 'max:50'],
-            'golongan_darah' => ['nullable', 'string', 'max:5'],
-            'no_telepon' => ['nullable', 'string', 'max:20'],
+            'tanggal_lahir' => ['required', 'date', 'before_or_equal:today'],
+            'agama' => ['required', 'string', Rule::in(self::AGAMA_OPTIONS)],
+            'golongan_darah' => ['nullable', Rule::in(self::GOLONGAN_DARAH_OPTIONS)],
+            'no_telepon' => ['nullable', 'regex:/^[0-9+\-\s]{8,20}$/'],
             'alamat_jalan' => ['required', 'string', 'max:255'],
-            'rt' => ['nullable', 'string', 'max:5'],
-            'rw' => ['nullable', 'string', 'max:5'],
+            'rt' => ['nullable', 'digits_between:1,3'],
+            'rw' => ['nullable', 'digits_between:1,3'],
             'dusun' => ['nullable', 'string', 'max:255'],
             'desa_kelurahan' => ['required', 'string', 'max:255'],
             'kecamatan' => ['required', 'string', 'max:255'],
             'kabupaten_kota' => ['required', 'string', 'max:255'],
             'provinsi' => ['required', 'string', 'max:255'],
-            'kode_pos' => ['nullable', 'string', 'max:10'],
-            'keluarga' => ['required', 'array', 'min:1'],
-            'keluarga.*.jenis' => ['required', 'in:ayah,ibu,wali'],
-            'keluarga.*.nama' => ['required', 'string', 'max:255'],
-            'keluarga.*.tahun_lahir' => ['nullable', 'integer'],
-            'keluarga.*.pendidikan_terakhir' => ['nullable', 'string', 'max:255'],
-            'keluarga.*.pekerjaan' => ['nullable', 'string', 'max:255'],
-            'keluarga.*.penghasilan' => ['nullable', 'string', 'max:255'],
+            'kode_pos' => ['nullable', 'digits:5'],
+            'nama_ayah' => ['required', 'string', 'max:255'],
+            'pekerjaan_ayah' => ['nullable', Rule::in(self::PEKERJAAN_OPTIONS)],
+            'nama_ibu' => ['required', 'string', 'max:255'],
+            'pekerjaan_ibu' => ['nullable', Rule::in(self::PEKERJAAN_OPTIONS)],
+            'nama_wali' => ['nullable', 'string', 'max:255'],
+            'pekerjaan_wali' => ['nullable', Rule::in(self::PEKERJAAN_OPTIONS)],
             'data_periodik' => ['nullable', 'array'],
             'data_khusus' => ['nullable', 'array'],
         ]);
@@ -116,12 +131,33 @@ class DataDiriController extends BaseController
             'alamat' => collect($data)->only([
                 'alamat_jalan', 'rt', 'rw', 'dusun', 'desa_kelurahan', 'kecamatan', 'kabupaten_kota', 'provinsi', 'kode_pos',
             ])->all(),
-            'keluarga' => $data['keluarga'],
+            'keluarga' => $this->bangunDaftarKeluarga($data),
             'data_periodik' => $data['data_periodik'] ?? null,
             'data_khusus' => $data['data_khusus'] ?? null,
         ]);
 
         return redirect()->route('portal.wizard.formulir-tambahan');
+    }
+
+    /**
+     * The form no longer lets the user pick a "jenis" for each family member — Ayah and
+     * Ibu are fixed, required slots and Wali is a single optional slot (not a repeater) —
+     * but downstream (session shape, ReviewSubmitController's KeluargaCalonMurid writes,
+     * the review summary view) all still expect the old array-of-{jenis,nama,pekerjaan}
+     * shape, so it's rebuilt here rather than changed everywhere else.
+     */
+    private function bangunDaftarKeluarga(array $data): array
+    {
+        $keluarga = [
+            ['jenis' => 'ayah', 'nama' => $data['nama_ayah'], 'pekerjaan' => $data['pekerjaan_ayah'] ?? null],
+            ['jenis' => 'ibu', 'nama' => $data['nama_ibu'], 'pekerjaan' => $data['pekerjaan_ibu'] ?? null],
+        ];
+
+        if (! empty($data['nama_wali'])) {
+            $keluarga[] = ['jenis' => 'wali', 'nama' => $data['nama_wali'], 'pekerjaan' => $data['pekerjaan_wali'] ?? null];
+        }
+
+        return $keluarga;
     }
 
     private function calonMuridBolehDiaksesOlehAkunIni(CalonMurid $calonMurid): bool

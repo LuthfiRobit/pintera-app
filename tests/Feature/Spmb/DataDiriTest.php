@@ -36,15 +36,117 @@ it('stores data diri in the wizard session and advances to formulir tambahan', f
         'kecamatan' => 'Cibeunying',
         'kabupaten_kota' => 'Bandung',
         'provinsi' => 'Jawa Barat',
-        'keluarga' => [
-            ['jenis' => 'ayah', 'nama' => 'Budi Santoso'],
-            ['jenis' => 'ibu', 'nama' => 'Siti Aminah'],
-        ],
+        'nama_ayah' => 'Budi Santoso',
+        'nama_ibu' => 'Siti Aminah',
     ])->assertRedirect(route('portal.wizard.formulir-tambahan'));
 
     $session = (new PendaftaranWizardSession())->get($lembaga, $jalur);
     expect($session['data_pribadi']['nama_lengkap'])->toBe('Ahmad Fauzan');
     expect($session['keluarga'])->toHaveCount(2);
+    expect($session['keluarga'][0])->toBe(['jenis' => 'ayah', 'nama' => 'Budi Santoso', 'pekerjaan' => null]);
+    expect($session['keluarga'][1])->toBe(['jenis' => 'ibu', 'nama' => 'Siti Aminah', 'pekerjaan' => null]);
+});
+
+function payloadDataDiriValid(array $override = []): array
+{
+    return array_merge([
+        'nik' => '3201234567890123',
+        'nama_lengkap' => 'Ahmad Fauzan',
+        'jenis_kelamin' => 'L',
+        'tempat_lahir' => 'Bandung',
+        'tanggal_lahir' => '2015-03-10',
+        'agama' => 'Islam',
+        'alamat_jalan' => 'Jl. Merdeka 10',
+        'desa_kelurahan' => 'Sukamaju',
+        'kecamatan' => 'Cibeunying',
+        'kabupaten_kota' => 'Bandung',
+        'provinsi' => 'Jawa Barat',
+        'nama_ayah' => 'Budi Santoso',
+        'nama_ibu' => 'Siti Aminah',
+    ], $override);
+}
+
+it('rejects a nisn that is not exactly 10 digits', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), payloadDataDiriValid(['nisn' => '12345']))
+        ->assertSessionHasErrors('nisn');
+});
+
+it('rejects a kode pos that is not exactly 5 digits', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), payloadDataDiriValid(['kode_pos' => '123']))
+        ->assertSessionHasErrors('kode_pos');
+});
+
+it('rejects a non-numeric rt or rw', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), payloadDataDiriValid(['rt' => 'abc']))
+        ->assertSessionHasErrors('rt');
+});
+
+it('rejects a golongan darah outside A, B, AB, O', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), payloadDataDiriValid(['golongan_darah' => 'Z']))
+        ->assertSessionHasErrors('golongan_darah');
+});
+
+it('rejects a tanggal lahir in the future', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), payloadDataDiriValid(['tanggal_lahir' => now()->addYear()->toDateString()]))
+        ->assertSessionHasErrors('tanggal_lahir');
+});
+
+it('rejects a pekerjaan value outside the curated list', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), payloadDataDiriValid(['pekerjaan_ayah' => 'Astronot']))
+        ->assertSessionHasErrors('pekerjaan_ayah');
+});
+
+it('rejects a no telepon containing letters', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), payloadDataDiriValid(['no_telepon' => 'bukan-nomor-telepon']))
+        ->assertSessionHasErrors('no_telepon');
+});
+
+it('includes wali in the stored keluarga list only when nama_wali is filled in', function () {
+    [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
+    loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->post(route('portal.wizard.data-diri.store'), [
+        'nik' => '3201234567890124',
+        'nama_lengkap' => 'Citra Lestari',
+        'jenis_kelamin' => 'P',
+        'tempat_lahir' => 'Bandung',
+        'tanggal_lahir' => '2015-03-10',
+        'agama' => 'Islam',
+        'alamat_jalan' => 'Jl. Merdeka 10',
+        'desa_kelurahan' => 'Sukamaju',
+        'kecamatan' => 'Cibeunying',
+        'kabupaten_kota' => 'Bandung',
+        'provinsi' => 'Jawa Barat',
+        'nama_ayah' => 'Budi Santoso',
+        'nama_ibu' => 'Siti Aminah',
+        'nama_wali' => 'Rina Wijaya',
+        'pekerjaan_wali' => 'Guru/Dosen',
+    ])->assertRedirect(route('portal.wizard.formulir-tambahan'));
+
+    $session = (new PendaftaranWizardSession())->get($lembaga, $jalur);
+    expect($session['keluarga'])->toHaveCount(3);
+    expect($session['keluarga'][2])->toBe(['jenis' => 'wali', 'nama' => 'Rina Wijaya', 'pekerjaan' => 'Guru/Dosen']);
 });
 
 it('pre-fills data diri from an existing calon murid with no prior pendaftaran at all', function () {
@@ -122,7 +224,8 @@ it('blocks store() from writing to the session when nik matches a calon murid ow
         'kecamatan' => 'Cibeunying',
         'kabupaten_kota' => 'Bandung',
         'provinsi' => 'Jawa Barat',
-        'keluarga' => [['jenis' => 'ayah', 'nama' => 'Percobaan']],
+        'nama_ayah' => 'Percobaan',
+        'nama_ibu' => 'Percobaan',
     ]);
 
     $response->assertSessionHasErrors('nik');
