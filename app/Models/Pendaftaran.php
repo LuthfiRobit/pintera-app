@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -88,6 +90,22 @@ class Pendaftaran extends Model
     public function tagihan(): HasMany
     {
         return $this->hasMany(Tagihan::class);
+    }
+
+    public function siswa(): HasOne
+    {
+        return $this->hasOne(Siswa::class, 'pendaftaran_asal_id');
+    }
+
+    public function scopeSiapDidaftarkanSebagaiSiswa(Builder $query): Builder
+    {
+        $idAktif = $query->where('status', 'diterima')
+            ->whereDoesntHave('siswa')
+            ->get()
+            ->filter(fn (Pendaftaran $pendaftaran) => $pendaftaran->isAktif)
+            ->pluck('id');
+
+        return Pendaftaran::whereIn('id', $idAktif);
     }
 
     public function ditetapkanOleh(): BelongsTo
