@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\JalurPpdbController;
 use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\LembagaController;
+use App\Http\Controllers\Admin\MataPelajaranController;
 use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\RoleController;
@@ -28,6 +29,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::resource('lembaga', LembagaController::class)->except(['show', 'destroy']);
     Route::resource('guru', GuruController::class)->except(['show', 'destroy']);
+    Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
 
     Route::get('tahun-ajaran', [TahunAjaranController::class, 'index'])->name('tahun-ajaran.index');
     Route::get('tahun-ajaran/create', [TahunAjaranController::class, 'create'])->name('tahun-ajaran.create');
