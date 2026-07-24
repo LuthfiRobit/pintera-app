@@ -9,7 +9,7 @@
             <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-portal-50 text-portal-300">
                 <x-icon name="school" class="h-8 w-8" />
             </span>
-            <h2 class="mt-4 text-[15px] font-bold text-gray-900">Kamu belum memilih lembaga & jalur</h2>
+            <h2 class="mt-4 text-[15px] font-bold text-gray-900">Kamu belum memilih lembaga &amp; jalur</h2>
             <p class="mx-auto mt-1.5 max-w-sm text-[13px] text-gray-500">Pilih lembaga dan jalur pendaftaran untuk mulai mengisi formulir.</p>
             <a href="{{ route('spmb.welcome') }}" class="mt-5 inline-flex items-center gap-2 rounded-[10px] bg-portal-500 px-5 py-2.5 text-[13.5px] font-bold text-white transition hover:bg-portal-600">
                 Pilih Lembaga &amp; Jalur
