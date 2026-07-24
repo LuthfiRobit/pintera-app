@@ -71,23 +71,29 @@ it('404s when trying to download a pendaftaran belonging to a different akun', f
         ->assertNotFound();
 });
 
-it('redirects to the wizard when there is no pendaftaran and the session has a valid lembaga+jalur choice', function () {
+it('shows a wizard progress card at 0% instead of redirecting when there is no pendaftaran and the session has a fresh lembaga+jalur choice', function () {
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
     $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
-    $this->get(route('portal.dashboard'))
-        ->assertRedirect(route('portal.wizard.data-diri'));
+    $response = $this->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Lengkapi Data Pendaftaran');
+    $response->assertSee('0%');
+    $response->assertSee(route('portal.wizard.data-diri'), false);
 });
 
-it('does not redirect to the wizard when the session points to a lembaga or jalur that no longer exists', function () {
+it('does not show a progress card when the session points to a lembaga or jalur that no longer exists', function () {
     $akun = AkunPendaftar::factory()->create();
     session(['spmb_pilihan.lembaga_id' => 999999, 'spmb_pilihan.jalur_id' => 999999]);
 
-    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
-        ->assertOk();
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertDontSee('Lengkapi Data Pendaftaran');
 });
 
-it('redirects to the wizard when the account has a decided pendaftaran but the session points to a different, not-yet-registered jalur', function () {
+it('shows a progress card when the account has a decided pendaftaran but the session points to a different, not-yet-registered jalur', function () {
     [$lembaga, $tahunAjaran, $jalurA, $gelombang] = buatLembagaDenganGelombangBuka();
     $jalurB = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Prestasi']);
     $akun = AkunPendaftar::factory()->create();
@@ -104,8 +110,63 @@ it('redirects to the wizard when the account has a decided pendaftaran but the s
     ]);
     session(['spmb_pilihan.lembaga_id' => $lembaga->id, 'spmb_pilihan.jalur_id' => $jalurB->id]);
 
-    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
-        ->assertRedirect(route('portal.wizard.data-diri'));
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Lengkapi Data Pendaftaran');
+    $response->assertSee('Jalur Prestasi');
+});
+
+it('advances the progress percentage and continue link as wizard session steps are completed', function () {
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    session(["spmb_wizard.{$lembaga->id}.{$jalur->id}" => [
+        'data_pribadi' => ['nama_lengkap' => 'Ahmad'],
+        'jawaban_formulir' => [],
+    ]]);
+
+    $response = $this->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('50%');
+    $response->assertSee(route('portal.wizard.dokumen'), false);
+});
+
+it('shows the dokumen-terupload count against the jalur\'s required syarat', function () {
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    foreach (['Kartu Keluarga', 'Akta Kelahiran', 'Ijazah'] as $urutan => $namaDokumen) {
+        \App\Models\DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'lembaga_id' => $lembaga->id, 'nama_dokumen' => $namaDokumen, 'wajib' => true, 'urutan' => $urutan]);
+    }
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
+    session(["spmb_wizard.{$lembaga->id}.{$jalur->id}" => [
+        'dokumen' => [1 => ['file_path' => 'x'], 2 => ['file_path' => 'y']],
+    ]]);
+
+    $this->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee('2 / 3');
+});
+
+it('shows the batas gelombang date on the progress card', function () {
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $this->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee($gelombang->tanggal_tutup->translatedFormat('d M Y'));
+});
+
+it('shows the biaya pendaftaran nominal without a payment-status claim on the progress card', function () {
+    [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
+    $jenisTagihan = \App\Models\JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran']);
+    \App\Models\NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
+    $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
+
+    $response = $this->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Rp150.000');
+    $response->assertDontSee('Belum Dibayar');
 });
 
 it('clears the session and shows a status message instead of redirecting when the choice exactly matches a jalur the account already registered', function () {
