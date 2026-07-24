@@ -735,108 +735,169 @@ Add `use App\Http\Controllers\Admin\KalenderAkademikController;` at the top.
 
 - [ ] **Step 5: Create the views**
 
+**Design note:** these views use this codebase's "TailAdmin-style" token set (see `resources/views/admin/lembaga/*.blade.php` as the canonical reference) — NOT the older `text-ink`/`bg-paper`/`text-brass`/`<x-panel>` tokens used by `admin/guru`/`admin/tahun-ajaran`. Breadcrumb `<h1>`+`<p>` header (no `<x-slot name="header">`), `rounded-2xl border border-gray-200 bg-white shadow-card` cards, `<x-table-actions>`/`<x-dropdown-link>` for the leftmost sticky "Aksi" column, `<x-badge tone="brass|green|red|amber|blue|slate">`, `<x-link-button>`/`<x-primary-button>`/`<x-input-label>`/`<x-text-input>`/`<x-input-error>`, and a shared `_form.blade.php` partial included by both `create.blade.php` and `edit.blade.php` (matching `admin/lembaga/_form.blade.php`'s pattern of a `$val()` closure keyed off an optional `$entri` variable).
+
 Create `resources/views/admin/kalender-akademik/index.blade.php`:
 
 ```blade
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Akademik</p>
-                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Kalender Akademik</h2>
-            </div>
-            <x-link-button href="{{ route('admin.kalender-akademik.create') }}">
-                <span class="text-base leading-none">+</span> Tambah Entri
-            </x-link-button>
-        </div>
-    </x-slot>
-
-    <div class="mx-auto max-w-4xl space-y-6">
+    <div class="mx-auto max-w-5xl space-y-4">
         @if (session('status'))
-            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif
 
-        <x-panel>
-            <ul class="divide-y divide-ink/10">
-                @forelse ($entriList as $entri)
-                    <li class="flex items-center justify-between px-6 py-4">
-                        <div>
-                            <p class="text-sm font-medium text-ink">{{ $entri->tanggal->translatedFormat('d F Y') }} — {{ $entri->nama }}</p>
-                            <p class="text-xs text-ink/60">
-                                <x-badge tone="{{ $entri->tipe->value === 'libur' ? 'red' : 'green' }}">{{ $entri->tipe->label() }}</x-badge>
-                                @if ($entri->lembaga_id === null)
-                                    &middot; Nasional
-                                @else
-                                    &middot; Khusus Lembaga Ini
-                                @endif
-                            </p>
-                        </div>
-                        <a href="{{ route('admin.kalender-akademik.edit', $entri) }}" class="text-sm font-medium text-ink hover:text-brass">Ubah</a>
-                    </li>
-                @empty
-                    <li class="px-6 py-8 text-center text-sm text-ink/60">Belum ada entri kalender.</li>
-                @endforelse
-            </ul>
-        </x-panel>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Kalender Akademik</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Kalender Akademik</b>
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
+                <p class="font-display text-sm font-bold text-gray-900">Daftar Entri Kalender</p>
+                <x-link-button href="{{ route('admin.kalender-akademik.create') }}">
+                    <span class="text-base leading-none">+</span> Tambah Entri
+                </x-link-button>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                            <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
+                            <th class="px-5 py-3">Tanggal</th>
+                            <th class="px-5 py-3">Nama</th>
+                            <th class="px-5 py-3">Tipe</th>
+                            <th class="px-5 py-3">Cakupan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach ($entriList as $entri)
+                            <tr class="transition hover:bg-gray-50">
+                                <td class="sticky left-0 z-10 bg-white px-5 py-3">
+                                    <x-table-actions>
+                                        <x-dropdown-link :href="route('admin.kalender-akademik.edit', $entri)">
+                                            <span class="inline-flex items-center gap-2.5">
+                                                <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                                Edit Entri
+                                            </span>
+                                        </x-dropdown-link>
+                                    </x-table-actions>
+                                </td>
+                                <td class="px-5 py-3.5 text-gray-600">{{ $entri->tanggal->translatedFormat('d F Y') }}</td>
+                                <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $entri->nama }}</td>
+                                <td class="px-5 py-3.5">
+                                    <x-badge :tone="$entri->tipe->value === 'libur' ? 'red' : 'green'">{{ $entri->tipe->label() }}</x-badge>
+                                </td>
+                                <td class="px-5 py-3.5">
+                                    <x-badge :tone="$entri->lembaga_id === null ? 'blue' : 'slate'">{{ $entri->lembaga_id === null ? 'Nasional' : 'Khusus Lembaga Ini' }}</x-badge>
+                                </td>
+                            </tr>
+                        @endforeach
+
+                        @if ($entriList->isEmpty())
+                            <tr>
+                                <td colspan="5" class="px-5 py-10 text-center text-gray-500">Belum ada entri kalender.</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </x-app-layout>
+```
+
+Create `resources/views/admin/kalender-akademik/_form.blade.php`:
+
+```blade
+@php
+    $entri = $entri ?? null;
+    $val = fn (string $field, $default = '') => old($field, $entri?->$field instanceof \BackedEnum ? $entri->$field->value : ($entri?->$field ?? $default));
+    $selectClass = 'w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500';
+@endphp
+
+<div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+    <p class="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
+        <x-icon name="calendar_month" class="h-[15px] w-[15px] text-gray-400" />
+        Detail Entri
+    </p>
+
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        @if ($entri)
+            <div class="sm:col-span-2">
+                <p class="text-sm text-gray-500">
+                    Tanggal: <span class="font-semibold text-gray-700">{{ $entri->tanggal->translatedFormat('d F Y') }}</span>
+                    &middot; Cakupan: <span class="font-semibold text-gray-700">{{ $entri->lembaga_id === null ? 'Nasional' : 'Khusus Lembaga Ini' }}</span>
+                    — tanggal &amp; cakupan tidak dapat diubah setelah dibuat.
+                </p>
+            </div>
+        @else
+            <div>
+                <x-input-label value="Tanggal" />
+                <x-text-input type="date" name="tanggal" value="{{ $val('tanggal') }}" class="mt-1.5" />
+                <x-input-error :messages="$errors->get('tanggal')" class="mt-1.5" />
+            </div>
+        @endif
+
+        <div>
+            <x-input-label value="Nama" />
+            <x-text-input type="text" name="nama" value="{{ $val('nama') }}" placeholder="Libur Semester Ganjil" class="mt-1.5" />
+            <x-input-error :messages="$errors->get('nama')" class="mt-1.5" />
+        </div>
+
+        <div>
+            <x-input-label value="Tipe" />
+            <select name="tipe" class="mt-1.5 {{ $selectClass }}">
+                <option value="libur" @selected($val('tipe') === 'libur')>Libur</option>
+                <option value="kerja" @selected($val('tipe') === 'kerja')>Tetap Masuk (Override)</option>
+            </select>
+            <x-input-error :messages="$errors->get('tipe')" class="mt-1.5" />
+        </div>
+
+        @if (! $entri && ($bolehNasional ?? false))
+            <div class="flex items-center pt-1">
+                <label class="flex items-center gap-2 text-sm text-gray-700">
+                    <input type="checkbox" name="berlaku_nasional" value="1" class="rounded border-gray-300 text-brand-500 focus:ring-brand-500">
+                    Berlaku untuk semua lembaga (nasional)
+                </label>
+            </div>
+        @endif
+
+        <div class="sm:col-span-2">
+            <x-input-label value="Keterangan (opsional)" />
+            <textarea name="keterangan" rows="2" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">{{ $val('keterangan') }}</textarea>
+            <x-input-error :messages="$errors->get('keterangan')" class="mt-1.5" />
+        </div>
+    </div>
+</div>
 ```
 
 Create `resources/views/admin/kalender-akademik/create.blade.php`:
 
 ```blade
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-display text-2xl font-semibold text-ink">Tambah Entri Kalender</h2>
-    </x-slot>
+    <div class="mx-auto max-w-3xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Tambah Entri Kalender</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.kalender-akademik.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Kalender Akademik</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Tambah</b>
+            </p>
+        </div>
 
-    <div class="mx-auto max-w-2xl">
-        <x-panel>
-            <form method="POST" action="{{ route('admin.kalender-akademik.store') }}" class="space-y-4 p-6">
-                @csrf
+        <form method="POST" action="{{ route('admin.kalender-akademik.store') }}">
+            @csrf
 
-                <div>
-                    <label class="text-sm font-medium text-ink">Tanggal</label>
-                    <input type="date" name="tanggal" value="{{ old('tanggal') }}" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    @error('tanggal')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
+            @include('admin.kalender-akademik._form', ['bolehNasional' => $bolehNasional])
 
-                <div>
-                    <label class="text-sm font-medium text-ink">Nama</label>
-                    <input type="text" name="nama" value="{{ old('nama') }}" placeholder="Libur Semester Ganjil" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    @error('nama')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium text-ink">Tipe</label>
-                    <select name="tipe" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                        <option value="libur">Libur</option>
-                        <option value="kerja">Tetap Masuk (Override)</option>
-                    </select>
-                    @error('tipe')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                @if ($bolehNasional)
-                    <div class="flex items-center gap-2">
-                        <input type="checkbox" name="berlaku_nasional" value="1" id="berlaku_nasional">
-                        <label for="berlaku_nasional" class="text-sm text-ink">Berlaku untuk semua lembaga (nasional)</label>
-                    </div>
-                @endif
-
-                <div>
-                    <label class="text-sm font-medium text-ink">Keterangan (opsional)</label>
-                    <textarea name="keterangan" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">{{ old('keterangan') }}</textarea>
-                </div>
-
-                <button type="submit" class="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Simpan</button>
-            </form>
-        </x-panel>
+            <div class="mt-4 flex items-center gap-3">
+                <x-primary-button type="submit">Simpan Entri</x-primary-button>
+                <a href="{{ route('admin.kalender-akademik.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Batal</a>
+            </div>
+        </form>
     </div>
 </x-app-layout>
 ```
@@ -845,45 +906,27 @@ Create `resources/views/admin/kalender-akademik/edit.blade.php`:
 
 ```blade
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-display text-2xl font-semibold text-ink">Ubah Entri Kalender</h2>
-    </x-slot>
+    <div class="mx-auto max-w-3xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Edit Entri: {{ $entri->nama }}</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.kalender-akademik.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Kalender Akademik</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Edit</b>
+            </p>
+        </div>
 
-    <div class="mx-auto max-w-2xl">
-        <x-panel>
-            <form method="POST" action="{{ route('admin.kalender-akademik.update', $entri) }}" class="space-y-4 p-6">
-                @csrf
-                @method('PUT')
+        <form method="POST" action="{{ route('admin.kalender-akademik.update', $entri) }}">
+            @csrf
+            @method('PUT')
 
-                <p class="text-sm text-ink/60">Tanggal: {{ $entri->tanggal->translatedFormat('d F Y') }} ({{ $entri->lembaga_id === null ? 'Nasional' : 'Khusus Lembaga Ini' }}) — tanggal & cakupan tidak dapat diubah setelah dibuat.</p>
+            @include('admin.kalender-akademik._form', ['entri' => $entri])
 
-                <div>
-                    <label class="text-sm font-medium text-ink">Nama</label>
-                    <input type="text" name="nama" value="{{ old('nama', $entri->nama) }}" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    @error('nama')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium text-ink">Tipe</label>
-                    <select name="tipe" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                        <option value="libur" @selected(old('tipe', $entri->tipe->value) === 'libur')>Libur</option>
-                        <option value="kerja" @selected(old('tipe', $entri->tipe->value) === 'kerja')>Tetap Masuk (Override)</option>
-                    </select>
-                    @error('tipe')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="text-sm font-medium text-ink">Keterangan (opsional)</label>
-                    <textarea name="keterangan" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">{{ old('keterangan', $entri->keterangan) }}</textarea>
-                </div>
-
-                <button type="submit" class="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Simpan Perubahan</button>
-            </form>
-        </x-panel>
+            <div class="mt-4 flex items-center gap-3">
+                <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
+                <a href="{{ route('admin.kalender-akademik.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Batal</a>
+            </div>
+        </form>
     </div>
 </x-app-layout>
 ```
@@ -917,6 +960,8 @@ Expected: PASS (5 tests)
 git add app/Http/Controllers/Admin/KalenderAkademikController.php resources/views/admin/kalender-akademik routes/admin.php resources/views/layouts/sidebar.blade.php tests/Feature/Admin/KalenderAkademikCrudTest.php
 git commit -m "feat: add Kalender Akademik admin CRUD"
 ```
+
+Note: `resources/views/admin/kalender-akademik/_form.blade.php` is included by the `git add resources/views/admin/kalender-akademik` directory add above — no separate line needed.
 
 ---
 
