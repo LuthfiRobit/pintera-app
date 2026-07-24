@@ -54,6 +54,13 @@ class DashboardController extends BaseController
             }
         }
 
+        if (! $progress) {
+            $menunggu = $pendaftaranList->firstWhere('status', 'menunggu_verifikasi');
+            if ($menunggu) {
+                $progress = $this->bangunRingkasanMenungguVerifikasi($menunggu);
+            }
+        }
+
         return view('portal.dashboard', [
             'pendaftaranList' => $pendaftaranList,
             'progress' => $progress,
@@ -73,11 +80,12 @@ class DashboardController extends BaseController
     }
 
     /**
-     * Builds the wizard progress-card data from the SESSION only — nothing here queries
-     * `Pendaftaran`, because a `Pendaftaran` row does not exist yet at this point (it's
-     * only created on final wizard submit). Step completion is read from the same
-     * `spmb_wizard.{lembagaId}.{jalurId}` session keys each wizard step writes via
-     * `PendaftaranWizardSession::put()` (`data_pribadi`, `jawaban_formulir`, `dokumen`).
+     * Builds the hero card for a wizard IN PROGRESS: no `Pendaftaran` row exists yet
+     * (only created on final wizard submit), so every field here is read from the
+     * SESSION only — `spmb_wizard.{lembagaId}.{jalurId}`, written by each wizard step's
+     * own `PendaftaranWizardSession::put()` call (`data_pribadi`, `jawaban_formulir`,
+     * `dokumen`). No `Tagihan` exists yet either, so the biaya stat shows the nominal
+     * amount only, without a payment-status claim.
      */
     private function bangunKemajuanWizard(Lembaga $lembaga, JalurPpdb $jalur, PendaftaranWizardSession $wizardSession): array
     {
@@ -85,7 +93,7 @@ class DashboardController extends BaseController
 
         $langkah = [];
         $selesai = 0;
-        $lanjutkanKe = self::LANGKAH_WIZARD[0]['route'];
+        $aksiUrl = route(self::LANGKAH_WIZARD[0]['route']);
         $sudahTemukanBerikutnya = false;
 
         foreach (self::LANGKAH_WIZARD as $l) {
@@ -93,7 +101,7 @@ class DashboardController extends BaseController
             if ($done) {
                 $selesai++;
             } elseif (! $sudahTemukanBerikutnya) {
-                $lanjutkanKe = $l['route'];
+                $aksiUrl = route($l['route']);
                 $sudahTemukanBerikutnya = true;
             }
             $langkah[] = ['label' => $l['label'], 'done' => $done];
@@ -111,13 +119,60 @@ class DashboardController extends BaseController
         return [
             'lembaga' => $lembaga,
             'jalur' => $jalur,
+            'judul' => 'Lengkapi Data Pendaftaran',
             'persen' => (int) round($selesai / count(self::LANGKAH_WIZARD) * 100),
             'langkah' => $langkah,
-            'lanjutkan_ke' => $lanjutkanKe,
-            'total_syarat_dokumen' => DokumenSyaratPpdb::where('jalur_ppdb_id', $jalur->id)->count(),
-            'dokumen_terupload' => count($data['dokumen'] ?? []),
+            'aksi_label' => 'Lanjutkan Pengisian',
+            'aksi_url' => $aksiUrl,
+            'dokumen_label' => 'Dokumen Terupload',
+            'dokumen_terisi' => count($data['dokumen'] ?? []),
+            'dokumen_total' => DokumenSyaratPpdb::where('jalur_ppdb_id', $jalur->id)->count(),
             'gelombang' => $gelombang,
-            'nominal' => $this->resolveNominalPendaftaran($lembaga, $jalur)?->nominal,
+            'biaya_nominal' => $this->resolveNominalPendaftaran($lembaga, $jalur)?->nominal,
+            'biaya_keterangan' => 'Ditagihkan setelah selesai',
+            'biaya_warn' => false,
+        ];
+    }
+
+    /**
+     * Builds the same hero card shape for a Pendaftaran that has already been SUBMITTED
+     * and is awaiting a decision (`status = menunggu_verifikasi`). Unlike the in-progress
+     * card, this one CAN show real per-document verification status and real payment
+     * status, since a `Pendaftaran`, its `DokumenPendaftaran` rows, and its `Tagihan`
+     * already exist in the database at this point.
+     */
+    private function bangunRingkasanMenungguVerifikasi(Pendaftaran $pendaftaran): array
+    {
+        $langkah = collect(self::LANGKAH_WIZARD)
+            ->map(fn ($l) => ['label' => $l['label'], 'done' => true, 'active' => false])
+            ->all();
+
+        $totalDokumen = $pendaftaran->dokumen()->count();
+        $terverifikasi = $pendaftaran->dokumen()->where('status_verifikasi', 'diterima')->count();
+
+        $tagihan = $pendaftaran->tagihan()->where('kategori', 'pendaftaran')->first();
+        [$biayaKeterangan, $biayaWarn] = match ($tagihan?->status) {
+            'lunas' => ['Lunas', false],
+            'dicicil' => ['Dicicil', false],
+            'belum_bayar' => ['Belum Dibayar', true],
+            default => ['Belum Ditagihkan', false],
+        };
+
+        return [
+            'lembaga' => $pendaftaran->lembaga,
+            'jalur' => $pendaftaran->jalurPpdb,
+            'judul' => 'Menunggu Verifikasi',
+            'persen' => 100,
+            'langkah' => $langkah,
+            'aksi_label' => 'Unduh Bukti Pendaftaran',
+            'aksi_url' => route('portal.pendaftaran.bukti', $pendaftaran),
+            'dokumen_label' => 'Dokumen Terverifikasi',
+            'dokumen_terisi' => $terverifikasi,
+            'dokumen_total' => $totalDokumen,
+            'gelombang' => $pendaftaran->gelombangPpdb,
+            'biaya_nominal' => $tagihan?->total_tagihan,
+            'biaya_keterangan' => $biayaKeterangan,
+            'biaya_warn' => $biayaWarn,
         ];
     }
 }

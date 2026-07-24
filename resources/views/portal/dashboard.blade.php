@@ -22,7 +22,7 @@
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p class="text-[11px] font-bold uppercase tracking-wide text-white/60">{{ $progress['lembaga']->nama }} &middot; Jalur {{ $progress['jalur']->nama }}</p>
-                            <h2 class="mt-1 text-[18px] font-bold">Lengkapi Data Pendaftaran</h2>
+                            <h2 class="mt-1 text-[18px] font-bold">{{ $progress['judul'] }}</h2>
                         </div>
                         <div class="text-right">
                             <p class="text-[26px] font-bold leading-none [font-variant-numeric:tabular-nums]">{{ $progress['persen'] }}%</p>
@@ -42,8 +42,8 @@
                         @endforeach
                     </div>
 
-                    <a href="{{ route($progress['lanjutkan_ke']) }}" class="mt-5 flex items-center justify-center gap-2 rounded-[10px] bg-white px-4 py-3 text-[13.5px] font-bold text-portal-500 transition hover:bg-gray-100">
-                        Lanjutkan Pengisian
+                    <a href="{{ $progress['aksi_url'] }}" class="mt-5 flex items-center justify-center gap-2 rounded-[10px] bg-white px-4 py-3 text-[13.5px] font-bold text-portal-500 transition hover:bg-gray-100">
+                        {{ $progress['aksi_label'] }}
                         <x-icon name="arrow_forward" class="h-3.5 w-3.5" />
                     </a>
                 </div>
@@ -53,20 +53,17 @@
                         <span class="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-portal-50 text-portal-500">
                             <x-icon name="description" class="h-4 w-4" />
                         </span>
-                        <p class="mt-2.5 text-[15px] font-bold text-gray-900">{{ $progress['dokumen_terupload'] }} / {{ $progress['total_syarat_dokumen'] }}</p>
-                        <p class="text-[11px] text-gray-400">Dokumen Terupload</p>
+                        <p class="mt-2.5 text-[15px] font-bold text-gray-900">{{ $progress['dokumen_terisi'] }} / {{ $progress['dokumen_total'] }}</p>
+                        <p class="text-[11px] text-gray-400">{{ $progress['dokumen_label'] }}</p>
                     </div>
                     <div class="rounded-[14px] border border-gray-200 bg-white p-4">
-                        <span class="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-portal-50 text-portal-500">
+                        <span class="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] {{ $progress['biaya_warn'] ? 'bg-warning-50 text-warning-700' : 'bg-portal-50 text-portal-500' }}">
                             <x-icon name="payments" class="h-4 w-4" />
                         </span>
-                        @if ($progress['nominal'] !== null)
-                            <p class="mt-2.5 text-[15px] font-bold text-gray-900">Rp{{ number_format($progress['nominal'], 0, ',', '.') }}</p>
-                            <p class="text-[11px] text-gray-400">Ditagihkan setelah selesai</p>
-                        @else
-                            <p class="mt-2.5 text-[15px] font-bold text-gray-900">&mdash;</p>
-                            <p class="text-[11px] text-gray-400">Biaya Pendaftaran</p>
-                        @endif
+                        <p class="mt-2.5 text-[15px] font-bold {{ $progress['biaya_warn'] ? 'text-warning-700' : 'text-gray-900' }}">{{ $progress['biaya_keterangan'] }}</p>
+                        <p class="text-[11px] text-gray-400">
+                            {{ $progress['biaya_nominal'] !== null ? 'Biaya Pendaftaran Rp'.number_format($progress['biaya_nominal'], 0, ',', '.') : 'Biaya Pendaftaran' }}
+                        </p>
                     </div>
                     <div class="rounded-[14px] border border-gray-200 bg-white p-4">
                         <span class="flex h-[34px] w-[34px] items-center justify-center rounded-[9px] bg-portal-50 text-portal-500">

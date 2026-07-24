@@ -269,3 +269,50 @@ it('renders the authenticated navbar on the dashboard', function () {
         ->assertSee('Riwayat')
         ->assertSee('Bantuan');
 });
+
+it('shows a status card for a pendaftaran already submitted and awaiting a decision, even with no session choice', function () {
+    $akun = AkunPendaftar::factory()->create();
+    $pendaftaran = buatPendaftaranUntukAkun($akun);
+
+    $response = $this->actingAs($akun, 'portal')->get(route('portal.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Menunggu Verifikasi');
+    $response->assertSee('Unduh Bukti Pendaftaran');
+    $response->assertSee(route('portal.pendaftaran.bukti', $pendaftaran), false);
+});
+
+it('shows the real dokumen-verified count on the submitted status card', function () {
+    $akun = AkunPendaftar::factory()->create();
+    $pendaftaran = buatPendaftaranUntukAkun($akun);
+    $syarat = \App\Models\DokumenSyaratPpdb::create(['jalur_ppdb_id' => $pendaftaran->jalur_ppdb_id, 'lembaga_id' => $pendaftaran->lembaga_id, 'nama_dokumen' => 'Kartu Keluarga', 'wajib' => true, 'urutan' => 0]);
+    \App\Models\DokumenPendaftaran::create(['pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syarat->id, 'file_path' => 'x', 'nama_file_asli' => 'kk.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 1024, 'status_verifikasi' => 'diterima']);
+    $syaratLain = \App\Models\DokumenSyaratPpdb::create(['jalur_ppdb_id' => $pendaftaran->jalur_ppdb_id, 'lembaga_id' => $pendaftaran->lembaga_id, 'nama_dokumen' => 'Akta Kelahiran', 'wajib' => true, 'urutan' => 1]);
+    \App\Models\DokumenPendaftaran::create(['pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syaratLain->id, 'file_path' => 'y', 'nama_file_asli' => 'akta.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 1024, 'status_verifikasi' => 'belum_diverifikasi']);
+
+    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee('1 / 2')
+        ->assertSee('Dokumen Terverifikasi');
+});
+
+it('shows the real payment status on the submitted status card', function () {
+    $akun = AkunPendaftar::factory()->create();
+    $pendaftaran = buatPendaftaranUntukAkun($akun);
+    \App\Models\Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar', 'jatuh_tempo' => now()->addWeek()]);
+
+    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee('Belum Dibayar')
+        ->assertSee('Rp150.000');
+});
+
+it('still shows the submitted pendaftaran in the riwayat list alongside its own status card', function () {
+    $akun = AkunPendaftar::factory()->create();
+    buatPendaftaranUntukAkun($akun, 'Ahmad Fauzan');
+
+    $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
+        ->assertOk()
+        ->assertSee('Riwayat Pendaftaran')
+        ->assertSee('Ahmad Fauzan');
+});
