@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Kelas;
+use App\Models\Siswa;
 use Illuminate\Support\Collection;
 
 class SiswaImportRow
@@ -37,6 +38,14 @@ class SiswaImportRow
             return ['data' => $data, 'error' => 'Jenis kelamin harus L atau P.'];
         }
 
+        if (Siswa::where('lembaga_id', $lembagaId)->where('nis', $nis)->exists()) {
+            return ['data' => $data, 'error' => 'NIS sudah dipakai siswa lain di lembaga ini.'];
+        }
+
+        if ($data['nisn'] !== null && Siswa::where('nisn', $data['nisn'])->exists()) {
+            return ['data' => $data, 'error' => 'NISN sudah dipakai siswa lain.'];
+        }
+
         $kelas = Kelas::where('lembaga_id', $lembagaId)->where('nama', $namaKelas)->first();
 
         if (! $kelas) {
@@ -57,10 +66,36 @@ class SiswaImportRow
         $valid = [];
         $invalid = [];
 
+        // Track NIS/NISN already claimed by an earlier row in this same
+        // upload so within-file duplicates are caught here too — parse()
+        // only sees one row at a time and can't detect this on its own.
+        // Only the first occurrence of a given NIS/NISN is kept as valid;
+        // every later row that repeats it is flagged invalid, since
+        // committing duplicates within the batch would still collide.
+        $seenNis = [];
+        $seenNisn = [];
+
         foreach ($rows as $row) {
             $result = self::parse($row->toArray(), $lembagaId);
 
             if ($result['error'] === null) {
+                $nis = $result['data']['nis'];
+                $nisn = $result['data']['nisn'];
+
+                if (isset($seenNis[$nis])) {
+                    $result['error'] = 'NIS ini duplikat dengan baris lain di file yang sama.';
+                } elseif ($nisn !== null && isset($seenNisn[$nisn])) {
+                    $result['error'] = 'NISN ini duplikat dengan baris lain di file yang sama.';
+                }
+            }
+
+            if ($result['error'] === null) {
+                $seenNis[$result['data']['nis']] = true;
+
+                if ($result['data']['nisn'] !== null) {
+                    $seenNisn[$result['data']['nisn']] = true;
+                }
+
                 $valid[] = $result['data'];
             } else {
                 $invalid[] = [...$result['data'], 'error' => $result['error']];

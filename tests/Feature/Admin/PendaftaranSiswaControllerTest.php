@@ -134,3 +134,34 @@ it('does not create a siswa for a pendaftaran that was not checked', function ()
     expect(Siswa::where('pendaftaran_asal_id', $pendaftaranChecked->id)->exists())->toBeTrue();
     expect(Siswa::where('pendaftaran_asal_id', $pendaftaranUnchecked->id)->exists())->toBeFalse();
 });
+
+it('rolls back the whole batch and creates zero siswa when one NIS in the batch collides mid-loop', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $manager = actingAsSpmbDaftarManager($lembaga);
+
+    $pendaftaranA = buatPendaftaranAktif($lembaga, $tahunAjaran);
+    $pendaftaranB = buatPendaftaranAktif($lembaga, $tahunAjaran);
+
+    // The second row's hand-typed NIS collides with an existing student,
+    // so Siswa::create() throws mid-loop. Without the DB::transaction()
+    // wrapper this leaves $pendaftaranA already committed; with it, the
+    // whole batch rolls back and neither siswa is created.
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nis' => '2026302']);
+
+    $this->withoutExceptionHandling();
+
+    expect(fn () => $this->actingAs($manager)->post(route('admin.siswa.spmb-daftar.store'), [
+        'kelas_id' => $kelas->id,
+        'pendaftaran_ids' => [$pendaftaranA->id, $pendaftaranB->id],
+        'nis' => [
+            $pendaftaranA->id => '2026301',
+            $pendaftaranB->id => '2026302',
+        ],
+    ]))->toThrow(\Illuminate\Database\QueryException::class);
+
+    expect(Siswa::where('pendaftaran_asal_id', $pendaftaranA->id)->exists())->toBeFalse();
+    expect(Siswa::where('pendaftaran_asal_id', $pendaftaranB->id)->exists())->toBeFalse();
+});

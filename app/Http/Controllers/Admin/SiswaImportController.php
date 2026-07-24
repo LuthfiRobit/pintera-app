@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -54,20 +55,22 @@ class SiswaImportController extends BaseController
         $validRows = session('siswa_import_valid_rows', []);
         $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
 
-        foreach ($validRows as $row) {
-            Siswa::create([
-                'lembaga_id' => $lembagaId,
-                'kelas_id' => $row['kelas_id'],
-                'sumber_data' => SumberDataSiswa::Import->value,
-                'nis' => $row['nis'],
-                'nisn' => $row['nisn'],
-                'nama_lengkap' => $row['nama_lengkap'],
-                'jenis_kelamin' => $row['jenis_kelamin'],
-                'tempat_lahir' => $row['tempat_lahir'],
-                'tanggal_lahir' => $row['tanggal_lahir'],
-                'agama' => $row['agama'],
-            ]);
-        }
+        DB::transaction(function () use ($validRows, $lembagaId) {
+            foreach ($validRows as $row) {
+                Siswa::create([
+                    'lembaga_id' => $lembagaId,
+                    'kelas_id' => $row['kelas_id'],
+                    'sumber_data' => SumberDataSiswa::Import->value,
+                    'nis' => $row['nis'],
+                    'nisn' => $row['nisn'],
+                    'nama_lengkap' => $row['nama_lengkap'],
+                    'jenis_kelamin' => $row['jenis_kelamin'],
+                    'tempat_lahir' => $row['tempat_lahir'],
+                    'tanggal_lahir' => $row['tanggal_lahir'],
+                    'agama' => $row['agama'],
+                ]);
+            }
+        });
 
         session()->forget('siswa_import_valid_rows');
 

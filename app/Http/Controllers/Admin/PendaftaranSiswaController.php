@@ -10,6 +10,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PendaftaranSiswaController extends BaseController
@@ -46,24 +47,26 @@ class PendaftaranSiswaController extends BaseController
             ->with('calonMurid')
             ->get();
 
-        foreach ($pendaftaranTerpilih as $pendaftaran) {
-            $calonMurid = $pendaftaran->calonMurid;
+        DB::transaction(function () use ($pendaftaranTerpilih, $data) {
+            foreach ($pendaftaranTerpilih as $pendaftaran) {
+                $calonMurid = $pendaftaran->calonMurid;
 
-            Siswa::create([
-                'lembaga_id' => $pendaftaran->lembaga_id,
-                'kelas_id' => $data['kelas_id'],
-                'calon_murid_id' => $calonMurid->id,
-                'pendaftaran_asal_id' => $pendaftaran->id,
-                'sumber_data' => SumberDataSiswa::Spmb->value,
-                'nis' => $data['nis'][$pendaftaran->id] ?? $this->nisBerikutnya(),
-                'nisn' => $calonMurid->nisn,
-                'nama_lengkap' => $calonMurid->nama_lengkap,
-                'jenis_kelamin' => $calonMurid->jenis_kelamin,
-                'tempat_lahir' => $calonMurid->tempat_lahir,
-                'tanggal_lahir' => $calonMurid->tanggal_lahir,
-                'agama' => $calonMurid->agama,
-            ]);
-        }
+                Siswa::create([
+                    'lembaga_id' => $pendaftaran->lembaga_id,
+                    'kelas_id' => $data['kelas_id'],
+                    'calon_murid_id' => $calonMurid->id,
+                    'pendaftaran_asal_id' => $pendaftaran->id,
+                    'sumber_data' => SumberDataSiswa::Spmb->value,
+                    'nis' => $data['nis'][$pendaftaran->id] ?? $this->nisBerikutnya(),
+                    'nisn' => $calonMurid->nisn,
+                    'nama_lengkap' => $calonMurid->nama_lengkap,
+                    'jenis_kelamin' => $calonMurid->jenis_kelamin,
+                    'tempat_lahir' => $calonMurid->tempat_lahir,
+                    'tanggal_lahir' => $calonMurid->tanggal_lahir,
+                    'agama' => $calonMurid->agama,
+                ]);
+            }
+        });
 
         return redirect()->route('admin.siswa.index')->with('status', count($pendaftaranTerpilih).' siswa berhasil didaftarkan.');
     }

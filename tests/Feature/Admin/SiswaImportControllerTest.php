@@ -89,3 +89,97 @@ it('commits only the valid rows held in session when confirmed', function () {
     expect($siswa->sumber_data)->toBe(SumberDataSiswa::Import);
     expect($siswa->kelas_id)->toBe($kelas->id);
 });
+
+it('flags a row whose NIS already exists in the database as invalid in the preview', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $manager = actingAsSiswaImportManager($lembaga);
+
+    Siswa::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelas->id,
+        'nis' => '3001',
+        'nisn' => '0099999999',
+    ]);
+
+    $file = buatFileImportSiswa([
+        ['nis', 'nisn', 'nama_lengkap', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'kelas'],
+        ['3001', '0011111111', 'Siswa NIS Bentrok', 'L', 'Bandung', '2014-01-01', 'Islam', '6A'],
+    ]);
+
+    $response = $this->actingAs($manager)->post(route('admin.siswa.import.preview'), ['file' => $file]);
+
+    $response->assertOk();
+    $response->assertViewHas('validRows', fn ($rows) => count($rows) === 0);
+    $response->assertViewHas('invalidRows', function ($rows) {
+        return count($rows) === 1
+            && $rows[0]['nama_lengkap'] === 'Siswa NIS Bentrok'
+            && str_contains($rows[0]['error'], 'NIS sudah dipakai');
+    });
+
+    expect(Siswa::where('nis', '3001')->count())->toBe(1);
+});
+
+it('does not classify both rows valid when two rows in the same file share a NIS', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $manager = actingAsSiswaImportManager($lembaga);
+
+    $file = buatFileImportSiswa([
+        ['nis', 'nisn', 'nama_lengkap', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'kelas'],
+        ['3005', '0055555551', 'Siswa Duplikat Pertama', 'L', 'Bandung', '2014-01-01', 'Islam', '6A'],
+        ['3005', '0055555552', 'Siswa Duplikat Kedua', 'P', 'Bandung', '2014-02-02', 'Islam', '6A'],
+    ]);
+
+    $response = $this->actingAs($manager)->post(route('admin.siswa.import.preview'), ['file' => $file]);
+
+    $response->assertOk();
+    // Only the first occurrence of the duplicated NIS is kept valid; the
+    // later row repeating it is flagged invalid instead — committing both
+    // would still collide on (lembaga_id, nis).
+    $response->assertViewHas('validRows', function ($rows) {
+        return count($rows) === 1 && $rows[0]['nama_lengkap'] === 'Siswa Duplikat Pertama';
+    });
+    $response->assertViewHas('invalidRows', function ($rows) {
+        return count($rows) === 1
+            && $rows[0]['nama_lengkap'] === 'Siswa Duplikat Kedua'
+            && str_contains($rows[0]['error'], 'duplikat');
+    });
+});
+
+it('rolls back the whole batch and creates zero siswa when a row in the valid session set collides mid-loop', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $manager = actingAsSiswaImportManager($lembaga);
+
+    // Bypass parseAll()'s in-file duplicate detection entirely by writing
+    // two rows with the same NIS straight into the session, simulating a
+    // batch that "somehow" slipped past validation. This isolates the
+    // confirm() transaction-rollback behaviour from the preview validation
+    // logic covered by the tests above.
+    session(['siswa_import_valid_rows' => [
+        [
+            'nis' => '3009', 'nisn' => '0099999901', 'nama_lengkap' => 'Siswa Rollback Satu',
+            'jenis_kelamin' => 'L', 'tempat_lahir' => 'Bandung', 'tanggal_lahir' => '2014-01-01',
+            'agama' => 'Islam', 'kelas_nama' => '6A', 'kelas_id' => $kelas->id,
+        ],
+        [
+            'nis' => '3009', 'nisn' => '0099999902', 'nama_lengkap' => 'Siswa Rollback Dua',
+            'jenis_kelamin' => 'P', 'tempat_lahir' => 'Bandung', 'tanggal_lahir' => '2014-02-02',
+            'agama' => 'Islam', 'kelas_nama' => '6A', 'kelas_id' => $kelas->id,
+        ],
+    ]]);
+
+    $this->withoutExceptionHandling();
+
+    expect(fn () => $this->actingAs($manager)->post(route('admin.siswa.import.confirm')))
+        ->toThrow(\Illuminate\Database\QueryException::class);
+
+    expect(Siswa::where('lembaga_id', $lembaga->id)->count())->toBe(0);
+});
