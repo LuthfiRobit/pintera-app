@@ -179,7 +179,7 @@ function buatPendaftaranAktif(Lembaga $lembaga, TahunAjaran $tahunAjaran): Penda
     $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler '.uniqid()]);
     $gelombang = GelombangPpdb::create([
         'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id,
-        'nama' => 'Gelombang '.uniqid(), 'tanggal_mulai' => now()->subDays(10), 'tanggal_selesai' => now()->addDays(10),
+        'nama' => 'Gelombang '.uniqid(), 'tanggal_buka' => now()->subDays(10), 'tanggal_tutup' => now()->addDays(10), 'kuota' => 30,
     ]);
     $calonMurid = CalonMurid::factory()->create(['yayasan_id' => $lembaga->yayasan_id, 'nama_lengkap' => 'Calon Siswa '.uniqid()]);
     $akun = AkunPendaftar::factory()->create();
@@ -192,6 +192,8 @@ function buatPendaftaranAktif(Lembaga $lembaga, TahunAjaran $tahunAjaran): Penda
         'gelombang_ppdb_id' => $gelombang->id,
         'akun_pendaftar_id' => $akun->id,
         'email_pendaftaran' => $akun->email,
+        'kode_pendaftaran' => 'PDFTR-'.uniqid(),
+        'submitted_at' => now(),
         'status' => 'diterima',
     ]);
 }
