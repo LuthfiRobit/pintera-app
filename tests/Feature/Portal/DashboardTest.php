@@ -127,5 +127,5 @@ it('does not redirect when the session choice exactly matches a jalur the accoun
 
 it('redirects a guest to login when accessing the dashboard', function () {
     $this->get(route('portal.dashboard'))
-        ->assertRedirect(route('portal.login'));
+        ->assertRedirect(route('login'));
 });
