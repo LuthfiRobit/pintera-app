@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Artisan;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,6 +14,16 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PermissionSeeder::class,
+        ]);
+
+        // Auto-discovers permissions referenced via $this->authorize('module.action') in
+        // app/Http/Controllers (e.g. the academic-module permissions for Siswa, Kelas, Mata
+        // Pelajaran) that PermissionSeeder deliberately doesn't hand-list. Must run before
+        // RoleSeeder so yayasan_super_admin's Permission::pluck('name')->all() grant includes
+        // them.
+        Artisan::call('permissions:sync');
+
+        $this->call([
             RoleSeeder::class,
             YayasanSeeder::class,
             JabatanTambahanMasterSeeder::class,
