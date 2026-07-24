@@ -9,6 +9,20 @@
             </p>
         </div>
 
+        <div class="rounded-2xl border border-brand-100 bg-brand-50 p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <p class="text-sm font-semibold text-gray-900">Gunakan template resmi</p>
+                    <p class="mt-0.5 text-sm text-gray-600">
+                        Unduh template Excel ini dan isi datanya — kolom, urutan, dan format tanggal sudah sesuai supaya file Anda tidak ditolak saat diperiksa.
+                    </p>
+                </div>
+                <x-link-button variant="ghost" href="{{ route('admin.siswa.import.template') }}" class="shrink-0 bg-white">
+                    <x-icon name="description" class="h-4 w-4" /> Download Template Excel
+                </x-link-button>
+            </div>
+        </div>
+
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
             <p class="text-sm text-gray-600">
                 Kolom yang wajib ada pada baris pertama file: <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">nis</code>,

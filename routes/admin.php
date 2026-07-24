@@ -39,6 +39,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'index'])->name('siswa.spmb-daftar.index');
     Route::post('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'store'])->name('siswa.spmb-daftar.store');
     Route::get('siswa-import', [SiswaImportController::class, 'index'])->name('siswa.import.index');
+    Route::get('siswa-import/template', [SiswaImportController::class, 'template'])->name('siswa.import.template');
     Route::post('siswa-import/preview', [SiswaImportController::class, 'preview'])->name('siswa.import.preview');
     Route::post('siswa-import/confirm', [SiswaImportController::class, 'confirm'])->name('siswa.import.confirm');
 

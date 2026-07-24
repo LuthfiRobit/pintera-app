@@ -50,6 +50,26 @@ it('denies access without siswa.import permission', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.siswa.import.index'))->assertForbidden();
 });
 
+it('denies template download without siswa.import permission', function () {
+    $this->actingAs(User::factory()->create())->get(route('admin.siswa.import.template'))->assertForbidden();
+});
+
+it('downloads a template with the exact header columns SiswaImportRow expects', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaImportManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.import.template'));
+
+    $response->assertOk();
+    $response->assertHeader('content-disposition', 'attachment; filename=template-import-siswa.xlsx');
+
+    $rows = \Maatwebsite\Excel\Facades\Excel::toArray(null, $response->getFile()->getPathname())[0];
+
+    expect($rows[0])->toBe(['nis', 'nisn', 'nama_lengkap', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'kelas']);
+    expect($rows)->toHaveCount(2);
+});
+
 it('splits uploaded rows into valid and invalid in the preview, matching kelas by name', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

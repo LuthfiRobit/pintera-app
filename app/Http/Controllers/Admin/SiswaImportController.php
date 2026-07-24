@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\SumberDataSiswa;
+use App\Exports\SiswaImportTemplateExport;
 use App\Imports\SiswaImportRow;
 use App\Models\Siswa;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -13,6 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SiswaImportController extends BaseController
 {
@@ -23,6 +25,13 @@ class SiswaImportController extends BaseController
         $this->authorize('siswa.import');
 
         return view('admin.siswa.import');
+    }
+
+    public function template(): BinaryFileResponse
+    {
+        $this->authorize('siswa.import');
+
+        return Excel::download(new SiswaImportTemplateExport, 'template-import-siswa.xlsx');
     }
 
     public function preview(Request $request): View
