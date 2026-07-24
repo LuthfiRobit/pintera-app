@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
+use App\Http\Controllers\Admin\SiswaController;
 use App\Http\Controllers\Admin\SkPpdbController;
 use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TagihanController;
@@ -32,6 +33,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('guru', GuruController::class)->except(['show', 'destroy']);
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
+    Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
 
     Route::get('tahun-ajaran', [TahunAjaranController::class, 'index'])->name('tahun-ajaran.index');
     Route::get('tahun-ajaran/create', [TahunAjaranController::class, 'create'])->name('tahun-ajaran.create');
