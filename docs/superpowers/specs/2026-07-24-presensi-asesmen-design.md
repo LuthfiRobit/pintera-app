@@ -241,7 +241,7 @@ Siswa baru dari SPMB (Section 1.1) masuk terpisah di luar wizard ini, ditempatka
 
 ## 6. Asesmen Siswa (Kurikulum Merdeka)
 
-Fokus tahap ini: **Asesmen Sumatif saja** (Kurikulum Merdeka), dengan penamaan model **generik** supaya K13/KTSP bisa menyusul tanpa migrasi besar (lihat Section 10). Asesmen Diagnostik dan Formatif ditunda — lihat Section 10.
+Skema `asesmen` dirancang **generik menampung semua jenis asesmen** (diagnostik, formatif, sumatif dengan sub-tipenya) sejak awal lewat enum `jenis` yang lengkap — supaya saat Diagnostik/Formatif digarap nanti (lihat Section 10), tinggal dipakai tanpa migrasi skema baru. **Namun v1 hanya membangun logika & UI untuk 3 nilai sumatif**; opsi diagnostik/formatif ada di enum tapi belum punya form input/alur kerja di v1.
 
 ```
 komponen_penilaian                    (generik — representasi Tujuan Pembelajaran/TP;
@@ -251,10 +251,11 @@ komponen_penilaian                    (generik — representasi Tujuan Pembelaja
 ├── deskripsi ("Siswa mampu menjelaskan siklus air")
 └── kktp (teks kriteria ketuntasan — bisa kualitatif)
 
-asesmen                               (1 event penilaian sumatif)
+asesmen                               (1 event penilaian: ulangan, proyek, observasi)
 ├── kelas_id, mata_pelajaran_id, guru_id, semester_id
 ├── nama
-├── jenis (Enum: sumatif_lingkup_materi, sumatif_akhir_semester, sumatif_akhir_jenjang)
+├── jenis (Enum: diagnostik_kognitif, diagnostik_non_kognitif, formatif,
+│          sumatif_lingkup_materi, sumatif_akhir_semester, sumatif_akhir_jenjang)
 └── tanggal
 
 asesmen_komponen_penilaian            (pivot many-to-many — 1 asesmen bisa ukur beberapa TP)
@@ -266,10 +267,12 @@ nilai_siswa                           (hasil per siswa per asesmen per komponen)
 └── catatan (nullable)
 ```
 
-**3 sub-tipe `jenis` (semua sumatif):**
+**3 sub-tipe sumatif yang dibangun penuh di v1** (form input, rekap, rapor):
 - **`sumatif_lingkup_materi`** — setelah satu bab/topik pembelajaran selesai (ulangan harian, per-TP).
 - **`sumatif_akhir_semester`** — akhir semester ganjil/genap, dasar nilai rapor. Scoped ke `semester_id` yang sudah ada di tabel `asesmen`.
 - **`sumatif_akhir_jenjang`** — akhir kelas/tahun ajaran, terkait pertimbangan kelulusan/kenaikan ke jenjang berikutnya. **Keputusan lulus/tidak tetap manual** oleh admin/dewan guru di wizard Kenaikan Kelas (Section 5) — hasil asesmen ini ditampilkan sebagai **rujukan/rekap** saat wizard berjalan, bukan pemicu otomatis, karena kelulusan di lapangan sering mempertimbangkan hal kualitatif (sikap, kehadiran) di luar angka semata.
+
+**3 nilai enum yang sudah disiapkan skemanya tapi belum dibangun logikanya di v1** (`diagnostik_kognitif`, `diagnostik_non_kognitif`, `formatif`) — lihat Section 10. Catatan: `asesmen.mata_pelajaran_id` di v1 tetap wajib diisi (tidak nullable); begitu Diagnostik Non-Kognitif digarap, kolom ini kemungkinan perlu diubah jadi nullable karena asesmen non-kognitif sering tidak terikat mapel tertentu.
 
 Adaptasi per jenjang:
 - **PAUD**: `mata_pelajaran_id` = salah satu dari 6 aspek STPPA, `nilai_angka` dikosongkan, cukup `predikat` + `catatan` naratif.
@@ -277,7 +280,7 @@ Adaptasi per jenjang:
 
 **Rapor** (query, bukan tabel baru): kumpulkan `nilai_siswa` milik siswa X di semester Y dengan `asesmen.jenis IN (sumatif_lingkup_materi, sumatif_akhir_semester)`, dikelompokkan per mapel, digabung dengan deskripsi capaian per TP.
 
-**Sengaja di luar scope tahap ini**: Asesmen Diagnostik (kognitif & non-kognitif), Asesmen Formatif, dan Projek Penguatan Profil Pelajar Pancasila (P5) — lihat Section 10.
+**Sengaja di luar scope tahap ini** (enum sudah tersedia, logika/UI belum): Asesmen Diagnostik (kognitif & non-kognitif), Asesmen Formatif, dan Projek Penguatan Profil Pelajar Pancasila (P5) — lihat Section 10.
 
 ---
 
@@ -337,8 +340,8 @@ Permission baru untuk modul ini otomatis terdaftar begitu ditulis di controller 
 
 Ditunda secara sengaja supaya versi dasar bisa segera dipakai lembaga nyata:
 
-- **Asesmen Diagnostik** (kognitif & non-kognitif) — asesmen kesiapan siswa sebelum pembelajaran dimulai. Diagnostik Non-Kognitif khususnya butuh perlakuan struktural berbeda (tidak terikat mata pelajaran — soal gaya belajar, kondisi psikologis/keluarga — sementara `asesmen.mata_pelajaran_id` di desain ini tetap wajib diisi karena scope v1 murni Sumatif).
-- **Asesmen Formatif** — pemantauan berkala selama proses pembelajaran (kuis singkat, diskusi, refleksi) untuk umpan balik, bukan nilai akhir.
+- **Asesmen Diagnostik** (kognitif & non-kognitif) — asesmen kesiapan siswa sebelum pembelajaran dimulai. Nilai enum `diagnostik_kognitif`/`diagnostik_non_kognitif` sudah tersedia di skema `asesmen.jenis` (Section 6), tapi belum ada form input/alur kerja di v1. Diagnostik Non-Kognitif khususnya butuh perlakuan struktural tambahan saat digarap (tidak terikat mata pelajaran — soal gaya belajar, kondisi psikologis/keluarga — sementara `asesmen.mata_pelajaran_id` di v1 masih wajib diisi).
+- **Asesmen Formatif** — pemantauan berkala selama proses pembelajaran (kuis singkat, diskusi, refleksi) untuk umpan balik, bukan nilai akhir. Nilai enum `formatif` sudah tersedia di skema, form/alur kerja menyusul.
 - **Projek Penguatan Profil Pelajar Pancasila (P5)** — struktur penilaian per Dimensi P5, lintas mapel/kolaboratif, berbeda dari asesmen mapel reguler.
 - **Dukungan penuh K13/KTSP** — `komponen_penilaian` sudah dinamai generik supaya siap menampung KD, tapi alur/agregasi nilai KD belum dirancang detail.
 - **Portal Siswa & Wali Murid** (read-only lihat presensi/nilai) — butuh guard/auth baru yang belum ada (`User` untuk staf, `AkunPendaftar` khusus PPDB — belum ada guard untuk Murid/Wali Murid). PRD `PRD_Sistem_Administrasi_Yayasan.md` sudah mengantisipasi role ini ("Portal siswa (fase akademik menyusul)") sebagai fase terpisah.
