@@ -939,7 +939,7 @@ In `resources/views/layouts/sidebar.blade.php`, add a new `'III. Akademik'` grou
 [
     'label' => 'III. Akademik',
     'items' => array_filter([
-        Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.kalender-akademik.index', 'pattern' => 'admin.kalender-akademik.*', 'label' => 'Kalender Akademik', 'icon' => 'event'] : null,
+        Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.kalender-akademik.index', 'pattern' => 'admin.kalender-akademik.*', 'label' => 'Kalender Akademik', 'icon' => 'schedule'] : null,
     ]),
 ],
 ```
