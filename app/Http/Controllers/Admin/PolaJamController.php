@@ -95,6 +95,10 @@ class PolaJamController extends BaseController
     {
         $this->authorize('kelas.edit');
 
+        if ($kelas->lembaga_id !== $polaJam->lembaga_id) {
+            return back()->withErrors(['kelas_id' => 'Kelas dan pola jam harus berasal dari lembaga yang sama.']);
+        }
+
         $kelas->update(['pola_jam_id' => $polaJam->id]);
 
         return redirect()->route('admin.pola-jam.index')->with('status', "Pola jam berhasil ditautkan ke kelas {$kelas->nama}.");

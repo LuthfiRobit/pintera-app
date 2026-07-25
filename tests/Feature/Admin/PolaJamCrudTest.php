@@ -224,3 +224,28 @@ it('rejects assigning a pola jam to another lembaga\'s kelas with 404', function
 
     expect($kelasLain->fresh()->pola_jam_id)->toBeNull();
 });
+
+it('rejects assigning a pola jam to a different lembaga\'s kelas for a yayasan-scoped user with no active lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+
+    foreach (['pola-jam.view', 'kelas.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_assign_mix_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.view', 'kelas.edit']);
+    $manager = User::factory()->create(['lembaga_id' => null]);
+    $manager->assignRole($role);
+    // No active_lembaga_id in session — this yayasan-scoped user can see both lembaga A and B,
+    // so the tenant scope alone would let this cross-lembaga assignment through.
+
+    $polaA = PolaJam::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $kelasB = Kelas::factory()->create(['lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $tahunAjaranB->id]);
+
+    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', ['polaJam' => $polaA, 'kelas' => $kelasB]))
+        ->assertSessionHasErrors();
+
+    expect($kelasB->fresh()->pola_jam_id)->toBeNull();
+});
