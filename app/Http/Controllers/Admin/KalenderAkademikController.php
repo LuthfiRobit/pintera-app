@@ -53,6 +53,10 @@ class KalenderAkademikController extends BaseController
             $this->authorize('kalender-akademik.kelola-nasional');
         }
 
+        if (! $nasional && $request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat entri kalender.'])->withInput();
+        }
+
         $lembagaId = $nasional ? null : ($request->user()->lembaga_id ?? session('active_lembaga_id'));
 
         $duplikat = KalenderAkademik::where('tanggal', $data['tanggal'])

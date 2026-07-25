@@ -90,3 +90,51 @@ it('rejects a second entry on the same date for the same scope', function () {
         'berlaku_nasional' => '0',
     ])->assertSessionHasErrors('tanggal');
 });
+
+it('rejects a store from a yayasan-scoped manager with no active lembaga selected, without silently creating a national-looking row', function () {
+    foreach (['kalender-akademik.view', 'kalender-akademik.kelola'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $yayasanRole = Role::firstOrCreate(['name' => 'admin_kalender_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $yayasanRole->givePermissionTo(['kalender-akademik.view', 'kalender-akademik.kelola']);
+
+    $manager = User::factory()->create(['lembaga_id' => null]);
+    $manager->assignRole($yayasanRole);
+
+    $this->actingAs($manager)->post(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-09-01',
+        'nama' => 'Coba Tanpa Lembaga Aktif',
+        'tipe' => TipeKalenderAkademik::Libur->value,
+        'berlaku_nasional' => '0',
+    ])->assertSessionHasErrors('lembaga_id');
+
+    expect(KalenderAkademik::where('nama', 'Coba Tanpa Lembaga Aktif')->exists())->toBeFalse();
+});
+
+it('denies updating an existing national entry from a manager without kelola-nasional permission', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    $entri = KalenderAkademik::create(['lembaga_id' => null, 'tanggal' => '2026-08-17', 'nama' => 'Hari Kemerdekaan RI', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entri), [
+        'nama' => 'Nama Diubah Tanpa Izin',
+        'tipe' => TipeKalenderAkademik::Libur->value,
+    ])->assertForbidden();
+
+    expect($entri->fresh()->nama)->toBe('Hari Kemerdekaan RI');
+});
+
+it('allows updating an existing national entry from a manager with kelola-nasional permission', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: true);
+    $entri = KalenderAkademik::create(['lembaga_id' => null, 'tanggal' => '2026-08-17', 'nama' => 'Hari Kemerdekaan RI', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entri), [
+        'nama' => 'Hari Kemerdekaan Republik Indonesia',
+        'tipe' => TipeKalenderAkademik::Libur->value,
+    ])->assertRedirect(route('admin.kalender-akademik.index'));
+
+    expect($entri->fresh()->nama)->toBe('Hari Kemerdekaan Republik Indonesia');
+});
