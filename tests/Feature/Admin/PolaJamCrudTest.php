@@ -56,3 +56,25 @@ it('adds a jam pelajaran slot to an existing pola jam', function () {
 
     expect(JamPelajaran::where('pola_jam_id', $pola->id)->where('label', 'Upacara')->exists())->toBeTrue();
 });
+
+it('rejects adding a jam pelajaran slot to another lembaga\'s pola jam', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $manager = actingAsPolaJamManager($lembagaA);
+
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $polaB = PolaJam::factory()->create(['lembaga_id' => $lembagaB->id]);
+
+    $this->actingAs($manager)->post(route('admin.jam-pelajaran.store'), [
+        'pola_jam_id' => $polaB->id,
+        'hari' => 'senin',
+        'urutan' => 1,
+        'label' => 'Upacara',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:35',
+        'is_pelajaran' => '0',
+    ])->assertNotFound();
+
+    expect(JamPelajaran::where('pola_jam_id', $polaB->id)->where('label', 'Upacara')->exists())->toBeFalse();
+});

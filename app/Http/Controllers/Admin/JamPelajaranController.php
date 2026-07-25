@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\JamPelajaran;
+use App\Models\PolaJam;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class JamPelajaranController extends BaseController
         $this->authorize('jam-pelajaran.create');
 
         $data = $request->validate([
-            'pola_jam_id' => ['required', 'exists:pola_jam,id'],
+            'pola_jam_id' => ['required', 'integer'],
             'hari' => ['required', 'in:senin,selasa,rabu,kamis,jumat,sabtu,minggu'],
             'urutan' => ['required', 'integer', 'min:1'],
             'label' => ['required', 'string', 'max:255'],
@@ -25,6 +26,11 @@ class JamPelajaranController extends BaseController
             'jam_selesai' => ['required', 'date_format:H:i', 'after:jam_mulai'],
             'is_pelajaran' => ['required', 'boolean'],
         ]);
+
+        $polaJam = PolaJam::find($data['pola_jam_id']);
+        if (! $polaJam) {
+            abort(404);
+        }
 
         JamPelajaran::create($data);
 

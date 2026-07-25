@@ -59,12 +59,41 @@ class JadwalPelajaranController extends BaseController
         $this->authorize('jadwal-pelajaran.kelola');
 
         $data = $request->validate([
-            'kelas_id' => ['required', 'exists:kelas,id'],
-            'jam_pelajaran_id' => ['required', 'exists:jam_pelajaran,id'],
-            'mata_pelajaran_id' => ['nullable', 'exists:mata_pelajaran,id'],
-            'guru_id' => ['required', 'exists:guru,id'],
-            'semester_id' => ['required', 'exists:semester,id'],
+            'kelas_id' => ['required', 'integer'],
+            'jam_pelajaran_id' => ['required', 'integer'],
+            'mata_pelajaran_id' => ['nullable', 'integer'],
+            'guru_id' => ['required', 'integer'],
+            'semester_id' => ['required', 'integer'],
         ]);
+
+        $kelas = Kelas::find($data['kelas_id']);
+        if (! $kelas) {
+            abort(404);
+        }
+
+        $guru = Guru::find($data['guru_id']);
+        if (! $guru) {
+            abort(404);
+        }
+
+        $semester = Semester::find($data['semester_id']);
+        if (! $semester) {
+            abort(404);
+        }
+
+        if (! empty($data['mata_pelajaran_id'])) {
+            $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
+            if (! $mataPelajaran) {
+                abort(404);
+            }
+        }
+
+        $jamPelajaran = JamPelajaran::where('id', $data['jam_pelajaran_id'])
+            ->where('pola_jam_id', $kelas->pola_jam_id)
+            ->first();
+        if (! $jamPelajaran) {
+            abort(404);
+        }
 
         JadwalPelajaran::create($data);
 
