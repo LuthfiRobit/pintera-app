@@ -18,6 +18,7 @@
         </div>
 
         @foreach ($polaJamList as $pola)
+            @php $hariAktifPola = \App\Enums\Hari::aktifDari($pola->lembaga->hari_libur_mingguan ?? []); @endphp
             <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
                 <div class="border-b border-gray-200 px-5 py-4">
                     <p class="font-display text-sm font-bold text-gray-900">{{ $pola->nama }}</p>
@@ -50,7 +51,7 @@
                     @csrf
                     <input type="hidden" name="pola_jam_id" value="{{ $pola->id }}">
                     <select name="hari" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                        @foreach (\App\Enums\Hari::cases() as $hari)
+                        @foreach ($hariAktifPola as $hari)
                             <option value="{{ $hari->value }}">{{ $hari->label() }}</option>
                         @endforeach
                     </select>
