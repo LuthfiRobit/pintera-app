@@ -8,6 +8,7 @@ use App\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
+use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,12 +23,19 @@ class JadwalPelajaranController extends BaseController
     {
         $this->authorize('jadwal-pelajaran.kelola');
 
+        $tahunAjaranId = $request->query('tahun_ajaran_id');
+        if (! $tahunAjaranId) {
+            $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
+        }
+
         $kelasId = $request->query('kelas_id');
         $semesterId = $request->query('semester_id');
 
         return view('admin.jadwal-pelajaran.index', [
-            'kelasList' => Kelas::orderBy('nama')->get(),
-            'semesterList' => Semester::orderByDesc('id')->get(),
+            'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
+            'tahunAjaranId' => $tahunAjaranId,
+            'kelasList' => $tahunAjaranId ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->orderBy('nama')->get() : collect(),
+            'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
             'jadwalList' => $kelasId && $semesterId
                 ? JadwalPelajaran::with(['jamPelajaran', 'mataPelajaran', 'guru'])
                     ->where('kelas_id', $kelasId)->where('semester_id', $semesterId)->get()
@@ -88,11 +96,39 @@ class JadwalPelajaranController extends BaseController
             }
         }
 
+        if ($guru->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['guru_id' => 'Guru harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
+        if ($semester->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['semester_id' => 'Semester harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
+        if (isset($mataPelajaran) && $mataPelajaran->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['mata_pelajaran_id' => 'Mata pelajaran harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
         $jamPelajaran = JamPelajaran::where('id', $data['jam_pelajaran_id'])
             ->where('pola_jam_id', $kelas->pola_jam_id)
             ->first();
         if (! $jamPelajaran) {
             abort(404);
+        }
+
+        $duplikat = JadwalPelajaran::where('kelas_id', $data['kelas_id'])
+            ->where('jam_pelajaran_id', $data['jam_pelajaran_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->exists();
+        if ($duplikat) {
+            return back()->withErrors(['jam_pelajaran_id' => 'Kelas ini sudah punya jadwal pada slot ini di semester yang sama.'])->withInput();
+        }
+
+        $guruBentrok = JadwalPelajaran::where('guru_id', $data['guru_id'])
+            ->where('jam_pelajaran_id', $data['jam_pelajaran_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->exists();
+        if ($guruBentrok) {
+            return back()->withErrors(['guru_id' => 'Guru ini sudah mengajar kelas lain pada jam dan semester yang sama.'])->withInput();
         }
 
         JadwalPelajaran::create($data);

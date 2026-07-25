@@ -25,4 +25,9 @@ class PolaJam extends Model
     {
         return $this->hasMany(JamPelajaran::class);
     }
+
+    public function kelas(): HasMany
+    {
+        return $this->hasMany(Kelas::class);
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Kelas;
 use App\Models\PolaJam;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,8 @@ class PolaJamController extends BaseController
         $this->authorize('pola-jam.view');
 
         return view('admin.pola-jam.index', [
-            'polaJamList' => PolaJam::with('jamPelajaran')->orderBy('nama')->get(),
+            'polaJamList' => PolaJam::with(['jamPelajaran', 'lembaga'])->orderBy('nama')->get(),
+            'kelasList' => Kelas::orderBy('nama')->get(),
         ]);
     }
 
@@ -50,5 +52,55 @@ class PolaJamController extends BaseController
         PolaJam::create($data);
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dibuat.');
+    }
+
+    public function edit(PolaJam $polaJam): View
+    {
+        $this->authorize('pola-jam.edit');
+
+        return view('admin.pola-jam.edit', ['polaJam' => $polaJam]);
+    }
+
+    public function update(Request $request, PolaJam $polaJam): RedirectResponse
+    {
+        $this->authorize('pola-jam.edit');
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+        ]);
+
+        $polaJam->update($data);
+
+        return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil diperbarui.');
+    }
+
+    public function destroy(PolaJam $polaJam): RedirectResponse
+    {
+        $this->authorize('pola-jam.delete');
+
+        if ($polaJam->kelas()->exists()) {
+            return back()->withErrors(['pola_jam' => 'Pola jam ini masih dipakai oleh satu atau lebih kelas — lepaskan dulu sebelum menghapus.']);
+        }
+
+        if ($polaJam->jamPelajaran()->whereHas('jadwalPelajaran')->exists()) {
+            return back()->withErrors(['pola_jam' => 'Pola jam ini memiliki jam pelajaran yang sudah dipakai di Jadwal Pelajaran — hapus jadwalnya dulu sebelum menghapus pola jam ini.']);
+        }
+
+        $polaJam->delete();
+
+        return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dihapus.');
+    }
+
+    public function assignKelas(PolaJam $polaJam, Kelas $kelas): RedirectResponse
+    {
+        $this->authorize('kelas.edit');
+
+        if ($kelas->lembaga_id !== $polaJam->lembaga_id) {
+            return back()->withErrors(['kelas_id' => 'Kelas dan pola jam harus berasal dari lembaga yang sama.']);
+        }
+
+        $kelas->update(['pola_jam_id' => $polaJam->id]);
+
+        return redirect()->route('admin.pola-jam.index')->with('status', "Pola jam berhasil ditautkan ke kelas {$kelas->nama}.");
     }
 }

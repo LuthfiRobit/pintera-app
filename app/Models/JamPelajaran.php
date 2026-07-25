@@ -6,6 +6,7 @@ use App\Enums\Hari;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JamPelajaran extends Model
 {
@@ -26,6 +27,11 @@ class JamPelajaran extends Model
     public function polaJam(): BelongsTo
     {
         return $this->belongsTo(PolaJam::class);
+    }
+
+    public function jadwalPelajaran(): HasMany
+    {
+        return $this->hasMany(JadwalPelajaran::class);
     }
 
     public function scopeIsPelajaran($query)

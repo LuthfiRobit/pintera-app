@@ -24,4 +24,22 @@ enum Hari: string
             self::Minggu => 'Minggu',
         };
     }
+
+    public static function aktifDari(array $hariLiburMingguan): array
+    {
+        $petaKeAngka = [
+            self::Senin->value => 1,
+            self::Selasa->value => 2,
+            self::Rabu->value => 3,
+            self::Kamis->value => 4,
+            self::Jumat->value => 5,
+            self::Sabtu->value => 6,
+            self::Minggu->value => 0,
+        ];
+
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $hari) => ! in_array($petaKeAngka[$hari->value], $hariLiburMingguan, true)
+        ));
+    }
 }
