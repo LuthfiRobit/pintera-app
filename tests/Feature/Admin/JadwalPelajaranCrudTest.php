@@ -120,6 +120,36 @@ it('rejects a guru_id belonging to another lembaga even when kelas_id is own', f
     expect(JadwalPelajaran::where('kelas_id', $kelasA->id)->exists())->toBeFalse();
 });
 
+it('only lists semester and kelas belonging to the selected tahun ajaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $taBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $taLama->id]);
+    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taBaru->id]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taLama->id]);
+    $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taBaru->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', ['tahun_ajaran_id' => $taBaru->id]));
+
+    $response->assertViewHas('semesterList', fn ($list) => $list->contains('id', $semesterBaru->id) && ! $list->contains('id', $semesterLama->id));
+    $response->assertViewHas('kelasList', fn ($list) => $list->contains('id', $kelasBaru->id) && ! $list->contains('id', $kelasLama->id));
+});
+
+it('defaults to the active tahun ajaran when none is selected', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $kelasAktif = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index'));
+
+    $response->assertViewHas('tahunAjaranId', $taAktif->id);
+    $response->assertViewHas('kelasList', fn ($list) => $list->contains('id', $kelasAktif->id));
+});
+
 it('rejects a jam_pelajaran_id belonging to a different pola jam than the kelas uses', function () {
     $yayasanA = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);

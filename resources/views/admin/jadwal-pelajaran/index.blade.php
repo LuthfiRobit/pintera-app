@@ -14,6 +14,15 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
             <form method="GET" action="{{ route('admin.jadwal-pelajaran.index') }}" class="flex flex-wrap items-end gap-2">
                 <div>
+                    <x-input-label value="Tahun Ajaran" />
+                    <select name="tahun_ajaran_id" onchange="this.form.submit()" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">— Pilih Tahun Ajaran —</option>
+                        @foreach ($tahunAjaranList as $tahunAjaran)
+                            <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
                     <x-input-label value="Kelas" />
                     <select name="kelas_id" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Kelas —</option>
