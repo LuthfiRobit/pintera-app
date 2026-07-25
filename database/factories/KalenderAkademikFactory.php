@@ -15,9 +15,15 @@ class KalenderAkademikFactory extends Factory
         return [
             'lembaga_id' => null,
             'tanggal' => $this->faker->dateTimeBetween('now', '+1 year')->format('Y-m-d'),
+            'tanggal_selesai' => null,
             'nama' => $this->faker->sentence(3),
             'tipe' => TipeKalenderAkademik::Libur->value,
             'keterangan' => null,
         ];
+    }
+
+    public function rentang(string $mulai, string $selesai): static
+    {
+        return $this->state(fn () => ['tanggal' => $mulai, 'tanggal_selesai' => $selesai]);
     }
 }

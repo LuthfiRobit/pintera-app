@@ -13,12 +13,13 @@ class KalenderAkademik extends Model
 
     protected $table = 'kalender_akademik';
 
-    protected $fillable = ['lembaga_id', 'tanggal', 'nama', 'tipe', 'keterangan'];
+    protected $fillable = ['lembaga_id', 'tanggal', 'tanggal_selesai', 'nama', 'tipe', 'keterangan'];
 
     protected function casts(): array
     {
         return [
             'tanggal' => 'date',
+            'tanggal_selesai' => 'date',
             'tipe' => TipeKalenderAkademik::class,
         ];
     }
