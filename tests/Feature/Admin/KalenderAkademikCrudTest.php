@@ -138,3 +138,45 @@ it('allows updating an existing national entry from a manager with kelola-nasion
 
     expect($entri->fresh()->nama)->toBe('Hari Kemerdekaan Republik Indonesia');
 });
+
+it('rejects viewing the edit form for another lembaga\'s entry with a 404, not a 403', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembagaA, bolehNasional: false);
+    $entriLembagaB = KalenderAkademik::create(['lembaga_id' => $lembagaB->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Lembaga B', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->get(route('admin.kalender-akademik.edit', $entriLembagaB))->assertNotFound();
+});
+
+it('rejects updating another lembaga\'s entry with a 404 and leaves the row unchanged', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembagaA, bolehNasional: false);
+    $entriLembagaB = KalenderAkademik::create(['lembaga_id' => $lembagaB->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Lembaga B', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entriLembagaB), [
+        'nama' => 'Diubah Paksa Lintas Tenant',
+        'tipe' => TipeKalenderAkademik::Kerja->value,
+    ])->assertNotFound();
+
+    expect($entriLembagaB->fresh()->nama)->toBe('Entri Lembaga B');
+    expect($entriLembagaB->fresh()->tipe)->toBe(TipeKalenderAkademik::Libur);
+});
+
+it('allows a lembaga-scoped manager to view and update their own lembaga\'s entry', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    $entri = KalenderAkademik::create(['lembaga_id' => $lembaga->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Lembaga Sendiri', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->get(route('admin.kalender-akademik.edit', $entri))->assertOk();
+
+    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entri), [
+        'nama' => 'Entri Lembaga Sendiri Diubah',
+        'tipe' => TipeKalenderAkademik::Kerja->value,
+    ])->assertRedirect(route('admin.kalender-akademik.index'));
+
+    expect($entri->fresh()->nama)->toBe('Entri Lembaga Sendiri Diubah');
+});

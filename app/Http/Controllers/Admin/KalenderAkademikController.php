@@ -78,9 +78,19 @@ class KalenderAkademikController extends BaseController
         return redirect()->route('admin.kalender-akademik.index')->with('status', 'Entri kalender berhasil disimpan.');
     }
 
-    public function edit(KalenderAkademik $kalenderAkademik): View
+    public function edit(Request $request, KalenderAkademik $kalenderAkademik): View
     {
         $this->authorize('kalender-akademik.kelola');
+
+        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+
+        if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
+            abort(404);
+        }
+
+        if ($kalenderAkademik->lembaga_id === null) {
+            $this->authorize('kalender-akademik.kelola-nasional');
+        }
 
         return view('admin.kalender-akademik.edit', ['entri' => $kalenderAkademik]);
     }
@@ -88,6 +98,12 @@ class KalenderAkademikController extends BaseController
     public function update(Request $request, KalenderAkademik $kalenderAkademik): RedirectResponse
     {
         $this->authorize('kalender-akademik.kelola');
+
+        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+
+        if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
+            abort(404);
+        }
 
         if ($kalenderAkademik->lembaga_id === null) {
             $this->authorize('kalender-akademik.kelola-nasional');
