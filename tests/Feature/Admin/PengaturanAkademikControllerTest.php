@@ -166,3 +166,17 @@ it('does not let a yayasan-scoped user without an active lembaga save hari_libur
         ->assertStatus(422)
         ->assertJsonValidationErrors('lembaga_id');
 });
+
+it('redirects a yayasan-scoped user without an active lembaga away from the pengaturan akademik page', function () {
+    Permission::firstOrCreate(['name' => 'kalender-akademik.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['kalender-akademik.view']);
+
+    $manager = User::factory()->create(['lembaga_id' => null]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)
+        ->get(route('admin.pengaturan.akademik.index'))
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHasErrors('lembaga_id');
+});

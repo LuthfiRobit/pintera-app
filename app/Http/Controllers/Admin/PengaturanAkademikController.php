@@ -6,6 +6,7 @@ use App\Models\KalenderAkademik;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
@@ -14,9 +15,14 @@ class PengaturanAkademikController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $this->authorize('kalender-akademik.view');
+
+        if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
+            return redirect()->route('dashboard')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga untuk mengakses Pengaturan Akademik.']);
+        }
 
         $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
         $lembaga = Lembaga::findOrFail($lembagaId);
