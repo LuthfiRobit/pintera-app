@@ -156,3 +156,28 @@ it('refuses to delete a pola jam whose jam pelajaran has a jadwal pelajaran', fu
 
     expect(PolaJam::find($pola->id))->not->toBeNull();
 });
+
+it('refuses to delete a pola jam whose jam pelajaran has a jadwal pelajaran, even when no kelas is assigned to it', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    // Deliberately no pola_jam_id here, so guard 1 (kelas()->exists()) is false
+    // and only guard 2 (jamPelajaran()->whereHas('jadwalPelajaran')) can reject the destroy.
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::factory()->create([
+        'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id,
+    ]);
+
+    expect($kelas->fresh()->pola_jam_id)->not->toBe($pola->id);
+    expect($pola->kelas()->exists())->toBeFalse();
+
+    $this->actingAs($manager)->delete(route('admin.pola-jam.destroy', $pola))
+        ->assertSessionHasErrors();
+
+    expect(PolaJam::find($pola->id))->not->toBeNull();
+});
