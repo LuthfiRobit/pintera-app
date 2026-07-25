@@ -53,15 +53,6 @@ class Lembaga extends Model
             if (empty($lembaga->slug)) {
                 $lembaga->slug = Str::slug($lembaga->nama);
             }
-            if ($lembaga->hari_libur_mingguan === null) {
-                $lembaga->hari_libur_mingguan = [0];
-            }
-        });
-
-        static::retrieved(function (Lembaga $lembaga) {
-            if ($lembaga->hari_libur_mingguan === null) {
-                $lembaga->hari_libur_mingguan = [0];
-            }
         });
     }
 
