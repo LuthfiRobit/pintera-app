@@ -41,8 +41,10 @@
                 x-cloak
                 x-data="{
                     hariAktif: @js(collect(range(0, 6))->reject(fn ($d) => in_array($d, $lembaga->hari_libur_mingguan ?? [], true))->values()->all()),
+                    bolehKelola: @js($bolehKelolaHariAktif),
                     submitting: false,
                     toggle(day) {
+                        if (!this.bolehKelola) return;
                         this.hariAktif = this.hariAktif.includes(day)
                             ? this.hariAktif.filter((d) => d !== day)
                             : [...this.hariAktif, day];
@@ -76,15 +78,22 @@
             >
                 <p class="font-display text-sm font-bold text-gray-900">Hari Aktif Sekolah</p>
                 <p class="mt-1 text-sm text-gray-500">Pilih hari-hari yang menjadi hari aktif (masuk) sekolah pada lembaga ini.</p>
+                @unless ($bolehKelolaHariAktif)
+                    <p class="mt-1 text-sm text-gray-400">Anda tidak memiliki izin untuk mengubah pengaturan ini.</p>
+                @endunless
 
                 <div class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                     @foreach ([1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 0 => 'Minggu'] as $hari => $label)
-                        <label class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700">
+                        <label
+                            class="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700"
+                            :class="{ 'opacity-60 cursor-not-allowed': !bolehKelola }"
+                        >
                             <input
                                 type="checkbox"
                                 :checked="hariAktif.includes({{ $hari }})"
                                 @change="toggle({{ $hari }})"
-                                class="rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                :disabled="!bolehKelola"
+                                class="rounded border-gray-300 text-brand-500 focus:ring-brand-500 disabled:cursor-not-allowed"
                             >
                             {{ $label }}
                         </label>

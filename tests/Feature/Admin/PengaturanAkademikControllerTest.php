@@ -131,6 +131,28 @@ it('renders the pengaturan akademik page for an authorized user', function () {
         ->assertViewIs('admin.pengaturan.akademik');
 });
 
+it('exposes bolehKelolaHariAktif as false for a user without pengaturan-akademik.kelola', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPengaturanAkademikManager($lembaga, ['kalender-akademik.view']);
+
+    $this->actingAs($manager)
+        ->get(route('admin.pengaturan.akademik.index'))
+        ->assertOk()
+        ->assertViewHas('bolehKelolaHariAktif', false);
+});
+
+it('exposes bolehKelolaHariAktif as true for a user with pengaturan-akademik.kelola', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPengaturanAkademikManager($lembaga, ['kalender-akademik.view', 'pengaturan-akademik.kelola']);
+
+    $this->actingAs($manager)
+        ->get(route('admin.pengaturan.akademik.index'))
+        ->assertOk()
+        ->assertViewHas('bolehKelolaHariAktif', true);
+});
+
 it('denies saving hari_libur_mingguan without pengaturan-akademik.kelola', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

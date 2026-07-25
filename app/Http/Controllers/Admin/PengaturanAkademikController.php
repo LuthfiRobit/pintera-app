@@ -33,6 +33,7 @@ class PengaturanAkademikController extends BaseController
                 ->orderBy('tanggal')
                 ->get(),
             'bolehNasional' => $request->user()->can('kalender-akademik.kelola-nasional'),
+            'bolehKelolaHariAktif' => $request->user()->can('pengaturan-akademik.kelola'),
         ]);
     }
 
