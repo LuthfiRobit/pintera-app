@@ -440,8 +440,7 @@ git commit -m "feat: add JamPelajaran migration, model, factory"
 - Create: `database/migrations/2026_07_25_110200_add_pola_jam_id_to_kelas_table.php`
 - Modify: `app/Models/Kelas.php`
 - Modify: `app/Http/Controllers/Admin/KelasController.php`
-- Modify: `resources/views/admin/kelas/create.blade.php`
-- Modify: `resources/views/admin/kelas/edit.blade.php`
+- Modify: `resources/views/admin/kelas/_form.blade.php`
 - Test: `tests/Feature/Admin/KelasPolaJamTest.php`
 
 **Interfaces:**
@@ -545,26 +544,24 @@ Open `app/Http/Controllers/Admin/KelasController.php`. In `create()`, add `'pola
 'pola_jam_id' => ['nullable', 'exists:pola_jam,id'],
 ```
 
-- [ ] **Step 6: Update the create/edit views**
+- [ ] **Step 6: Update the shared kelas form partial**
 
-In `resources/views/admin/kelas/create.blade.php`, add this block right after the "Tingkat" field:
+**Design note:** `resources/views/admin/kelas/create.blade.php` and `edit.blade.php` both include a single shared partial, `resources/views/admin/kelas/_form.blade.php` (from the post-Tahap-2 design system correction — read that file before editing). It exposes a `$val(string $field, $default = '')` closure (`old($field, $kelas?->$field ?? $default)`) and a `$selectClass` string, and its fields live in a `grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3` — you only need to touch this ONE file, not `create.blade.php`/`edit.blade.php` directly, and `$val()` already handles the create-vs-edit distinction for you (no separate `@selected(old('pola_jam_id', $kelas->pola_jam_id) ...)` needed).
+
+In `resources/views/admin/kelas/_form.blade.php`, add this block inside the existing grid, right after the "Tingkat (opsional)" field's closing `</div>`:
 
 ```blade
 <div>
-    <label class="text-sm font-medium text-ink">Pola Jam (opsional)</label>
-    <select name="pola_jam_id" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+    <x-input-label value="Pola Jam (opsional)" />
+    <select name="pola_jam_id" class="mt-1.5 {{ $selectClass }}">
         <option value="">— Belum ditentukan —</option>
         @foreach ($polaJamList as $pola)
-            <option value="{{ $pola->id }}" @selected(old('pola_jam_id') == $pola->id)>{{ $pola->nama }}</option>
+            <option value="{{ $pola->id }}" @selected($val('pola_jam_id') == $pola->id)>{{ $pola->nama }}</option>
         @endforeach
     </select>
-    @error('pola_jam_id')
-        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-    @enderror
+    <x-input-error :messages="$errors->get('pola_jam_id')" class="mt-1.5" />
 </div>
 ```
-
-In `resources/views/admin/kelas/edit.blade.php`, add the same block but with `@selected(old('pola_jam_id', $kelas->pola_jam_id) == $pola->id)`.
 
 - [ ] **Step 7: Run test to verify it passes**
 
@@ -579,7 +576,7 @@ Expected: PASS (still 4 tests — `pola_jam_id` is optional so existing payloads
 - [ ] **Step 8: Commit**
 
 ```bash
-git add database/migrations/2026_07_25_110200_add_pola_jam_id_to_kelas_table.php app/Models/Kelas.php app/Http/Controllers/Admin/KelasController.php resources/views/admin/kelas/create.blade.php resources/views/admin/kelas/edit.blade.php tests/Feature/Admin/KelasPolaJamTest.php
+git add database/migrations/2026_07_25_110200_add_pola_jam_id_to_kelas_table.php app/Models/Kelas.php app/Http/Controllers/Admin/KelasController.php resources/views/admin/kelas/_form.blade.php tests/Feature/Admin/KelasPolaJamTest.php
 git commit -m "feat: add pola_jam_id to Kelas (deferred from Tahap 1)"
 ```
 
@@ -816,7 +813,9 @@ git commit -m "feat: add JadwalPelajaran migration, model, factory"
 
 **Interfaces:**
 - Consumes: `App\Models\PolaJam`, `App\Models\JamPelajaran` (Task 2/3), `App\Enums\Hari` (Task 1).
-- Produces: Routes `admin.pola-jam.index/create/store`, `admin.jam-pelajaran.store`, permissions `pola-jam.view`, `pola-jam.create`, `jam-pelajaran.create`. UI mirrors the existing nested `TahunAjaran`+`Semester` pattern (`resources/views/admin/tahun-ajaran/index.blade.php`): one page lists all `PolaJam`, each with its `JamPelajaran` rows and an inline add-row form.
+- Produces: Routes `admin.pola-jam.index/create/store`, `admin.jam-pelajaran.store`, permissions `pola-jam.view`, `pola-jam.create`, `jam-pelajaran.create`. One page lists all `PolaJam`, each with its `JamPelajaran` rows and an inline add-row form.
+
+**Design note:** use this codebase's current "TailAdmin-style" token set (see `resources/views/admin/mata-pelajaran/index.blade.php` and `resources/views/admin/kelas/index.blade.php` as the canonical reference) — NOT `admin/tahun-ajaran`'s older `text-ink`/`bg-paper`/`text-brass`/`<x-panel>`/`<x-slot name="header">` tokens (that page predates the post-Tahap-2 design system correction and is out of scope to fix here). Breadcrumb `<h1>`+`<p>` header, `rounded-2xl border border-gray-200 bg-white shadow-card` cards, `<x-link-button>`/`<x-primary-button>`/`<x-input-label>`/`<x-text-input>`/`<x-input-error>`, `<x-badge tone="brass|green|red|amber|blue|slate">` for the "Non-pelajaran" marker.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1006,37 +1005,38 @@ Create `resources/views/admin/pola-jam/index.blade.php`:
 
 ```blade
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
-            <div>
-                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Akademik</p>
-                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Pola Jam &amp; Jam Pelajaran</h2>
-            </div>
+    <div class="mx-auto max-w-5xl space-y-4">
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
+        @endif
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Pola Jam &amp; Jam Pelajaran</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Pola Jam</b>
+            </p>
+        </div>
+
+        <div class="flex justify-end">
             <x-link-button href="{{ route('admin.pola-jam.create') }}">
                 <span class="text-base leading-none">+</span> Tambah Pola Jam
             </x-link-button>
         </div>
-    </x-slot>
-
-    <div class="mx-auto max-w-6xl space-y-6">
-        @if (session('status'))
-            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
-        @endif
 
         @foreach ($polaJamList as $pola)
-            <x-panel>
-                <div class="border-b border-ink/10 px-6 py-4">
-                    <h3 class="font-display text-lg font-semibold text-ink">{{ $pola->nama }}</h3>
+            <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
+                <div class="border-b border-gray-200 px-5 py-4">
+                    <p class="font-display text-sm font-bold text-gray-900">{{ $pola->nama }}</p>
                 </div>
 
                 @foreach (\App\Enums\Hari::cases() as $hari)
                     @php $slotHariIni = $pola->jamPelajaran->where('hari', $hari)->sortBy('urutan'); @endphp
                     @if ($slotHariIni->isNotEmpty())
-                        <div class="border-b border-ink/10 px-6 py-3">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-ink/60">{{ $hari->label() }}</p>
-                            <ul class="mt-1 space-y-1">
+                        <div class="border-b border-gray-100 px-5 py-3">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">{{ $hari->label() }}</p>
+                            <ul class="mt-1.5 space-y-1">
                                 @foreach ($slotHariIni as $slot)
-                                    <li class="text-sm text-ink">
+                                    <li class="flex items-center gap-2 text-sm text-gray-700">
                                         {{ $slot->jam_mulai }}–{{ $slot->jam_selesai }} &middot; {{ $slot->label }}
                                         @unless ($slot->is_pelajaran)
                                             <x-badge tone="slate">Non-pelajaran</x-badge>
@@ -1048,25 +1048,25 @@ Create `resources/views/admin/pola-jam/index.blade.php`:
                     @endif
                 @endforeach
 
-                <form method="POST" action="{{ route('admin.jam-pelajaran.store') }}" class="flex flex-wrap items-end gap-2 bg-paper/50 px-6 py-4">
+                <form method="POST" action="{{ route('admin.jam-pelajaran.store') }}" class="flex flex-wrap items-end gap-2 bg-gray-50 px-5 py-4">
                     @csrf
                     <input type="hidden" name="pola_jam_id" value="{{ $pola->id }}">
-                    <select name="hari" class="rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                    <select name="hari" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         @foreach (\App\Enums\Hari::cases() as $hari)
                             <option value="{{ $hari->value }}">{{ $hari->label() }}</option>
                         @endforeach
                     </select>
-                    <input type="number" name="urutan" placeholder="Urutan" min="1" class="w-24 rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    <input type="text" name="label" placeholder="Label (Jam ke-1, Istirahat, ...)" class="w-48 rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    <input type="time" name="jam_mulai" class="rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    <input type="time" name="jam_selesai" class="rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    <select name="is_pelajaran" class="rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                    <input type="number" name="urutan" placeholder="Urutan" min="1" class="w-24 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <input type="text" name="label" placeholder="Label (Jam ke-1, Istirahat, ...)" class="w-48 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <input type="time" name="jam_mulai" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <input type="time" name="jam_selesai" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <select name="is_pelajaran" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="1">Jam Belajar</option>
                         <option value="0">Non-belajar (istirahat/upacara/sholat)</option>
                     </select>
-                    <button type="submit" class="rounded-xl bg-ink px-3 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Tambah Slot</button>
+                    <x-primary-button type="submit">Tambah Slot</x-primary-button>
                 </form>
-            </x-panel>
+            </div>
         @endforeach
     </div>
 </x-app-layout>
@@ -1076,26 +1076,28 @@ Create `resources/views/admin/pola-jam/create.blade.php`:
 
 ```blade
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-display text-2xl font-semibold text-ink">Tambah Pola Jam</h2>
-    </x-slot>
+    <div class="mx-auto max-w-2xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Tambah Pola Jam</h1>
+            <p class="text-sm text-gray-500">
+                <a href="{{ route('admin.pola-jam.index') }}" class="text-gray-500 hover:text-gray-700">Pola Jam</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Tambah</b>
+            </p>
+        </div>
 
-    <div class="mx-auto max-w-2xl">
-        <x-panel>
-            <form method="POST" action="{{ route('admin.pola-jam.store') }}" class="space-y-4 p-6">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <form method="POST" action="{{ route('admin.pola-jam.store') }}" class="space-y-4">
                 @csrf
 
                 <div>
-                    <label class="text-sm font-medium text-ink">Nama Pola</label>
-                    <input type="text" name="nama" value="{{ old('nama') }}" placeholder="Kelas Rendah 1-3" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
-                    @error('nama')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
+                    <x-input-label value="Nama Pola" />
+                    <x-text-input type="text" name="nama" value="{{ old('nama') }}" placeholder="Kelas Rendah 1-3" class="mt-1.5" />
+                    <x-input-error :messages="$errors->get('nama')" class="mt-1.5" />
                 </div>
 
-                <button type="submit" class="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Simpan</button>
+                <x-primary-button type="submit">Simpan</x-primary-button>
             </form>
-        </x-panel>
+        </div>
     </div>
 </x-app-layout>
 ```
@@ -1140,6 +1142,8 @@ git commit -m "feat: add Pola Jam and Jam Pelajaran admin CRUD (nested)"
 **Interfaces:**
 - Consumes: `App\Models\JadwalPelajaran` (Task 5), `App\Models\Kelas`, `App\Models\JamPelajaran`, `App\Models\MataPelajaran`, `App\Models\Guru`, `App\Models\Semester`.
 - Produces: Routes `admin.jadwal-pelajaran.index/create/store`, permission `jadwal-pelajaran.kelola`. Tahap 5 (sesi_pembelajaran generator) reads `JadwalPelajaran` rows created through this UI, keyed by `(kelas_id, semester_id)`.
+
+**Design note:** same TailAdmin token set as Task 6 (see `resources/views/admin/mata-pelajaran/index.blade.php` as the canonical reference) — breadcrumb `<h1>`+`<p>` header, `rounded-2xl border border-gray-200 bg-white shadow-card` cards, `<x-primary-button>`/`<x-input-label>`/`<x-input-error>`.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -1326,20 +1330,23 @@ Create `resources/views/admin/jadwal-pelajaran/index.blade.php`:
 
 ```blade
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-display text-2xl font-semibold text-ink">Jadwal Pelajaran</h2>
-    </x-slot>
-
-    <div class="mx-auto max-w-4xl space-y-6">
+    <div class="mx-auto max-w-4xl space-y-4">
         @if (session('status'))
-            <div class="rounded-xl bg-signal-green/10 p-4 text-sm text-signal-green">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif
 
-        <x-panel>
-            <form method="GET" action="{{ route('admin.jadwal-pelajaran.index') }}" class="flex flex-wrap items-end gap-2 p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Jadwal Pelajaran</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Jadwal Pelajaran</b>
+            </p>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <form method="GET" action="{{ route('admin.jadwal-pelajaran.index') }}" class="flex flex-wrap items-end gap-2">
                 <div>
-                    <label class="text-sm font-medium text-ink">Kelas</label>
-                    <select name="kelas_id" class="mt-1 rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                    <x-input-label value="Kelas" />
+                    <select name="kelas_id" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Kelas —</option>
                         @foreach ($kelasList as $kelas)
                             <option value="{{ $kelas->id }}" @selected($kelasId == $kelas->id)>{{ $kelas->nama }}</option>
@@ -1347,35 +1354,37 @@ Create `resources/views/admin/jadwal-pelajaran/index.blade.php`:
                     </select>
                 </div>
                 <div>
-                    <label class="text-sm font-medium text-ink">Semester</label>
-                    <select name="semester_id" class="mt-1 rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                    <x-input-label value="Semester" />
+                    <select name="semester_id" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Semester —</option>
                         @foreach ($semesterList as $semester)
                             <option value="{{ $semester->id }}" @selected($semesterId == $semester->id)>{{ $semester->nama }}</option>
                         @endforeach
                     </select>
                 </div>
-                <button type="submit" class="rounded-xl bg-ink px-3 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Tampilkan</button>
+                <x-primary-button type="submit">Tampilkan</x-primary-button>
                 @if ($kelasId && $semesterId)
-                    <a href="{{ route('admin.jadwal-pelajaran.create', ['kelas_id' => $kelasId, 'semester_id' => $semesterId]) }}" class="rounded-xl border border-ink/15 px-3 py-2 text-sm font-medium text-ink transition hover:border-brass">+ Tambah Slot</a>
+                    <x-link-button variant="ghost" href="{{ route('admin.jadwal-pelajaran.create', ['kelas_id' => $kelasId, 'semester_id' => $semesterId]) }}">
+                        <span class="text-base leading-none">+</span> Tambah Slot
+                    </x-link-button>
                 @endif
             </form>
-        </x-panel>
+        </div>
 
         @if ($kelasId && $semesterId)
-            <x-panel>
-                <ul class="divide-y divide-ink/10">
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+                <ul class="divide-y divide-gray-100">
                     @forelse ($jadwalList as $jadwal)
-                        <li class="px-6 py-3 text-sm text-ink">
+                        <li class="px-5 py-3 text-sm text-gray-700">
                             {{ $jadwal->jamPelajaran->hari->label() }}, {{ $jadwal->jamPelajaran->jam_mulai }}–{{ $jadwal->jamPelajaran->jam_selesai }}
                             &middot; {{ $jadwal->mataPelajaran?->nama ?? '(tanpa mapel)' }}
                             &middot; {{ $jadwal->guru->nama }}
                         </li>
                     @empty
-                        <li class="px-6 py-8 text-center text-sm text-ink/60">Belum ada jadwal untuk kelas &amp; semester ini.</li>
+                        <li class="px-5 py-8 text-center text-sm text-gray-500">Belum ada jadwal untuk kelas &amp; semester ini.</li>
                     @endforelse
                 </ul>
-            </x-panel>
+            </div>
         @endif
     </div>
 </x-app-layout>
@@ -1385,59 +1394,57 @@ Create `resources/views/admin/jadwal-pelajaran/create.blade.php`:
 
 ```blade
 <x-app-layout>
-    <x-slot name="header">
-        <h2 class="font-display text-2xl font-semibold text-ink">Tambah Jadwal — {{ $kelas->nama }}</h2>
-    </x-slot>
+    <div class="mx-auto max-w-2xl space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Tambah Jadwal — {{ $kelas->nama }}</h1>
+            <p class="text-sm text-gray-500">
+                <a href="{{ route('admin.jadwal-pelajaran.index') }}" class="text-gray-500 hover:text-gray-700">Jadwal Pelajaran</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Tambah</b>
+            </p>
+        </div>
 
-    <div class="mx-auto max-w-2xl">
-        <x-panel>
-            <form method="POST" action="{{ route('admin.jadwal-pelajaran.store') }}" class="space-y-4 p-6">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <form method="POST" action="{{ route('admin.jadwal-pelajaran.store') }}" class="space-y-4">
                 @csrf
                 <input type="hidden" name="kelas_id" value="{{ $kelas->id }}">
                 <input type="hidden" name="semester_id" value="{{ $semesterId }}">
 
                 <div>
-                    <label class="text-sm font-medium text-ink">Jam Pelajaran</label>
-                    <select name="jam_pelajaran_id" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                    <x-input-label value="Jam Pelajaran" />
+                    <select name="jam_pelajaran_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         @forelse ($jamPelajaranList as $jam)
                             <option value="{{ $jam->id }}">{{ $jam->hari->label() }}, {{ $jam->jam_mulai }}–{{ $jam->jam_selesai }} ({{ $jam->label }})</option>
                         @empty
                             <option value="">Kelas ini belum punya Pola Jam — atur dulu di halaman Pola Jam</option>
                         @endforelse
                     </select>
-                    @error('jam_pelajaran_id')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
+                    <x-input-error :messages="$errors->get('jam_pelajaran_id')" class="mt-1.5" />
                 </div>
 
                 <div>
-                    <label class="text-sm font-medium text-ink">Mata Pelajaran (opsional utk PAUD)</label>
-                    <select name="mata_pelajaran_id" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                    <x-input-label value="Mata Pelajaran (opsional utk PAUD)" />
+                    <select name="mata_pelajaran_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Tidak ada —</option>
                         @foreach ($mataPelajaranList as $mapel)
                             <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
                         @endforeach
                     </select>
-                    @error('mata_pelajaran_id')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
+                    <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1.5" />
                 </div>
 
                 <div>
-                    <label class="text-sm font-medium text-ink">Guru</label>
-                    <select name="guru_id" class="mt-1 w-full rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass">
+                    <x-input-label value="Guru" />
+                    <select name="guru_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         @foreach ($guruList as $guru)
                             <option value="{{ $guru->id }}">{{ $guru->nama }}</option>
                         @endforeach
                     </select>
-                    @error('guru_id')
-                        <p class="mt-1 text-sm text-signal-red">{{ $message }}</p>
-                    @enderror
+                    <x-input-error :messages="$errors->get('guru_id')" class="mt-1.5" />
                 </div>
 
-                <button type="submit" class="rounded-xl bg-ink px-4 py-2 text-sm font-medium text-paper transition hover:bg-ink/90">Simpan</button>
+                <x-primary-button type="submit">Simpan</x-primary-button>
             </form>
-        </x-panel>
+        </div>
     </div>
 </x-app-layout>
 ```
@@ -1447,7 +1454,7 @@ Create `resources/views/admin/jadwal-pelajaran/create.blade.php`:
 In `resources/views/layouts/sidebar.blade.php`, inside the `'III. Akademik'` group, add after `pola-jam.view`:
 
 ```php
-Auth::user()->can('jadwal-pelajaran.kelola') ? ['route' => 'admin.jadwal-pelajaran.index', 'pattern' => 'admin.jadwal-pelajaran.*', 'label' => 'Jadwal Pelajaran', 'icon' => 'calendar_view_week'] : null,
+Auth::user()->can('jadwal-pelajaran.kelola') ? ['route' => 'admin.jadwal-pelajaran.index', 'pattern' => 'admin.jadwal-pelajaran.*', 'label' => 'Jadwal Pelajaran', 'icon' => 'fact_check'] : null,
 ```
 
 - [ ] **Step 7: Sync permissions**
@@ -1474,3 +1481,4 @@ git commit -m "feat: add Jadwal Pelajaran admin CRUD"
 - **Spec coverage**: Implements spec Section 3 in full — `pola_jam`, `jam_pelajaran` (per-day slots within a pola), the deferred `kelas.pola_jam_id`, and `jadwal_pelajaran`.
 - **Type consistency check**: `JadwalPelajaran`'s `$fillable` (`kelas_id`, `jam_pelajaran_id`, `mata_pelajaran_id`, `guru_id`, `semester_id`) is the exact contract Tahap 5 (sesi_pembelajaran) and Tahap 6 (asesmen) will consume when they read `jadwal_pelajaran_id`/reference these columns.
 - **Dependency note for Tahap 5**: the sesi-generation logic will need `$kelas->polaJam->jamPelajaran()->where('hari', $tanggal->dayOfWeekIso...)` style lookups combined with `JadwalPelajaran::where('kelas_id', ...)->where('jam_pelajaran_id', ...)->where('semester_id', ...)` to find which guru/mapel teaches a given slot on a given date — both pieces now exist for that plan to consume.
+- **Pre-flight correction (2026-07-25, applied before any task was dispatched)**: this plan was originally drafted before the post-Tahap-2 design system correction and Tahap 3's admin CRUD precedent existed, so its Blade snippets still used the old `text-ink`/`bg-paper`/`text-brass`/`<x-panel>`/`<x-slot name="header">` token set and an invalid `x-icon` name (`calendar_view_week`, not in the component's whitelist — would have rendered blank). Fixed in place: Task 4's kelas form edit was retargeted from `create.blade.php`+`edit.blade.php` to the actual shared `_form.blade.php` partial those two files now include (a structure that didn't exist when this plan was first written); Task 6 and 7's views were rewritten to the current TailAdmin token set (breadcrumb header, `rounded-2xl` cards, `<x-input-label>`/`<x-text-input>`/`<x-input-error>`/`<x-primary-button>`/`<x-link-button>`); the sidebar icon for Jadwal Pelajaran was changed to `fact_check`. No functional/interaction changes were made — same routes, same controller logic, same form fields.
