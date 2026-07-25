@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TipeKalenderAkademik;
 use App\Models\KalenderAkademik;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
@@ -72,4 +73,62 @@ it('lembaga-specific entry does not leak to a different lembaga', function () {
 
     expect($result['libur'])->toBeTrue();
     expect($result['alasan'])->toBe('Tahun Baru Masehi');
+});
+
+it('resolves a date in the middle of a multi-day lembaga range as libur', function () {
+    $lembaga = Lembaga::factory()->create();
+    KalenderAkademik::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => '2026-09-01',
+        'nama' => 'Libur Maulid',
+        'tipe' => TipeKalenderAkademik::Libur,
+    ]);
+
+    $hasil = app(KalenderAkademikResolver::class)->resolve($lembaga, Carbon::parse('2026-08-27'));
+
+    expect($hasil)->toBe(['libur' => true, 'alasan' => 'Libur Maulid']);
+});
+
+it('resolves the last day of a range (inclusive boundary) as still libur', function () {
+    $lembaga = Lembaga::factory()->create();
+    KalenderAkademik::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => '2026-09-01',
+        'tipe' => TipeKalenderAkademik::Libur,
+    ]);
+
+    $hasil = app(KalenderAkademikResolver::class)->resolve($lembaga, Carbon::parse('2026-09-01'));
+
+    expect($hasil['libur'])->toBeTrue();
+});
+
+it('resolves the day after a range ends as a normal effective day', function () {
+    $lembaga = Lembaga::factory()->create(['hari_libur_mingguan' => [0]]);
+    KalenderAkademik::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => '2026-09-01',
+        'tipe' => TipeKalenderAkademik::Libur,
+    ]);
+
+    $hasil = app(KalenderAkademikResolver::class)->resolve($lembaga, Carbon::parse('2026-09-02'));
+
+    expect($hasil)->toBe(['libur' => false, 'alasan' => 'Hari efektif belajar']);
+});
+
+it('does not match a single-day entry against a later, unrelated date', function () {
+    $lembaga = Lembaga::factory()->create(['hari_libur_mingguan' => [0]]);
+    KalenderAkademik::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tanggal' => '2026-08-01',
+        'tanggal_selesai' => null,
+        'nama' => 'Libur Sehari',
+        'tipe' => TipeKalenderAkademik::Libur,
+    ]);
+
+    $hasil = app(KalenderAkademikResolver::class)->resolve($lembaga, Carbon::parse('2026-08-15'));
+
+    expect($hasil)->toBe(['libur' => false, 'alasan' => 'Hari efektif belajar']);
 });
