@@ -37,7 +37,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
-    Route::resource('kalender-akademik', KalenderAkademikController::class)->except(['show', 'destroy']);
+    Route::post('kalender-akademik', [KalenderAkademikController::class, 'store'])->name('kalender-akademik.store');
+    Route::put('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'update'])->name('kalender-akademik.update');
+    Route::delete('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'destroy'])->name('kalender-akademik.destroy');
     Route::get('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'index'])->name('siswa.spmb-daftar.index');
     Route::post('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'store'])->name('siswa.spmb-daftar.store');
     Route::get('siswa-import', [SiswaImportController::class, 'index'])->name('siswa.import.index');
