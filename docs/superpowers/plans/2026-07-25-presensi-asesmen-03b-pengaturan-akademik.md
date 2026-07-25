@@ -11,6 +11,8 @@
 **Explicitly out of scope (per user decision 2026-07-25):**
 - Yayasan-level default for `hari_libur_mingguan` — stays per-lembaga only, no inheritance tier. If this is wanted later, it is a separate plan.
 - "Berulang Tiap Tahun" (annual recurrence without a fixed year) for `kalender_akademik` entries — dropped entirely, not built even as a disabled UI element.
+- Merging `admin/tahun-ajaran` into this page — confirmed with user: Tahun Ajaran stays its own standalone menu/page. The tab strip in Task 5 only links out to it.
+- **Non-libur event categories** (ASTS, ASAS, MPLS, "Awal Masuk Semester", "Tanggal Rapor" — seen in the real printed kalender akademik reference image that motivated this plan) — confirmed with user: Libur/Kerja binary `tipe` is enough for now. **Noted for future development**: a later plan would add a `kategori`/`tag` field (with an associated color for a legend) to `kalender_akademik` so non-holiday school events can be recorded alongside holidays, plus a printable full-year grid report. Do not build any part of this in Tahap 3b — this note exists only so a future session doesn't have to rediscover the requirement from scratch.
 
 ## Global Constraints
 
