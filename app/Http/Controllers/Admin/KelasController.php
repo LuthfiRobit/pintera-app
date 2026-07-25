@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\PolaJam;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +32,7 @@ class KelasController extends BaseController
         return view('admin.kelas.create', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
             'guruList' => Guru::orderBy('nama')->get(),
+            'polaJamList' => PolaJam::orderBy('nama')->get(),
         ]);
     }
 
@@ -43,6 +45,7 @@ class KelasController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
             'tingkat' => ['nullable', 'string', 'max:20'],
             'wali_kelas_guru_id' => ['nullable', 'exists:guru,id'],
+            'pola_jam_id' => ['nullable', 'exists:pola_jam,id'],
         ]);
 
         if ($request->user()->widestScopeLevel() === 'yayasan') {
@@ -68,6 +71,7 @@ class KelasController extends BaseController
             'kelas' => $kelas,
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
             'guruList' => Guru::orderBy('nama')->get(),
+            'polaJamList' => PolaJam::orderBy('nama')->get(),
         ]);
     }
 
@@ -80,6 +84,7 @@ class KelasController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
             'tingkat' => ['nullable', 'string', 'max:20'],
             'wali_kelas_guru_id' => ['nullable', 'exists:guru,id'],
+            'pola_jam_id' => ['nullable', 'exists:pola_jam,id'],
         ]);
 
         $kelas->update($data);

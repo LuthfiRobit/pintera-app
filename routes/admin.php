@@ -4,7 +4,9 @@ use App\Http\Controllers\Admin\DokumenSyaratController;
 use App\Http\Controllers\Admin\FormulirFieldController;
 use App\Http\Controllers\Admin\GelombangPpdbController;
 use App\Http\Controllers\Admin\GuruController;
+use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JalurPpdbController;
+use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\PendaftaranSiswaController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
+use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
@@ -108,4 +111,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
     Route::get('pembayaran/data', [PembayaranController::class, 'data'])->name('pembayaran.data');
     Route::post('pembayaran/{pembayaran}/verifikasi', [PembayaranController::class, 'verifikasi'])->name('pembayaran.verifikasi');
+
+    Route::get('pola-jam', [PolaJamController::class, 'index'])->name('pola-jam.index');
+    Route::get('pola-jam/create', [PolaJamController::class, 'create'])->name('pola-jam.create');
+    Route::post('pola-jam', [PolaJamController::class, 'store'])->name('pola-jam.store');
+    Route::post('jam-pelajaran', [JamPelajaranController::class, 'store'])->name('jam-pelajaran.store');
+
+    Route::get('jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran.index');
+    Route::get('jadwal-pelajaran/create', [JadwalPelajaranController::class, 'create'])->name('jadwal-pelajaran.create');
+    Route::post('jadwal-pelajaran', [JadwalPelajaranController::class, 'store'])->name('jadwal-pelajaran.store');
 });
