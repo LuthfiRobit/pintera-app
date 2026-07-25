@@ -51,6 +51,16 @@
                                         @unless ($slot->is_pelajaran)
                                             <x-badge tone="slate">Non-pelajaran</x-badge>
                                         @endunless
+                                        @can('jam-pelajaran.edit')
+                                            <a href="{{ route('admin.jam-pelajaran.edit', $slot) }}" class="text-xs font-semibold text-gray-500 hover:text-gray-700">Edit</a>
+                                        @endcan
+                                        @can('jam-pelajaran.delete')
+                                            <form method="POST" action="{{ route('admin.jam-pelajaran.destroy', $slot) }}" onsubmit="return confirm('Hapus jam pelajaran ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-xs font-semibold text-error-600 hover:text-error-700">Hapus</button>
+                                            </form>
+                                        @endcan
                                     </li>
                                 @endforeach
                             </ul>
