@@ -115,6 +115,22 @@ class JadwalPelajaranController extends BaseController
             abort(404);
         }
 
+        $duplikat = JadwalPelajaran::where('kelas_id', $data['kelas_id'])
+            ->where('jam_pelajaran_id', $data['jam_pelajaran_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->exists();
+        if ($duplikat) {
+            return back()->withErrors(['jam_pelajaran_id' => 'Kelas ini sudah punya jadwal pada slot ini di semester yang sama.'])->withInput();
+        }
+
+        $guruBentrok = JadwalPelajaran::where('guru_id', $data['guru_id'])
+            ->where('jam_pelajaran_id', $data['jam_pelajaran_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->exists();
+        if ($guruBentrok) {
+            return back()->withErrors(['guru_id' => 'Guru ini sudah mengajar kelas lain pada jam dan semester yang sama.'])->withInput();
+        }
+
         JadwalPelajaran::create($data);
 
         return redirect()->route('admin.jadwal-pelajaran.index', [

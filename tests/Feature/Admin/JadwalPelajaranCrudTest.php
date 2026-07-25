@@ -200,3 +200,42 @@ it('rejects a jam_pelajaran_id belonging to a different pola jam than the kelas 
 
     expect(JadwalPelajaran::where('kelas_id', $kelasA->id)->exists())->toBeFalse();
 });
+
+it('shows a friendly error instead of a raw SQL error on a duplicate kelas/jam/semester entry', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::factory()->create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+
+    $this->actingAs($manager)->post(route('admin.jadwal-pelajaran.store'), [
+        'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id,
+    ])->assertSessionHasErrors()->assertStatus(302); // never a 500
+
+    expect(JadwalPelajaran::where('kelas_id', $kelas->id)->count())->toBe(1);
+});
+
+it('rejects double-booking a guru into two classes at the same jam and semester', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
+    $kelasSatu = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $kelasDua = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::factory()->create(['kelas_id' => $kelasSatu->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+
+    $this->actingAs($manager)->post(route('admin.jadwal-pelajaran.store'), [
+        'kelas_id' => $kelasDua->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id,
+    ])->assertSessionHasErrors('guru_id');
+
+    expect(JadwalPelajaran::where('kelas_id', $kelasDua->id)->exists())->toBeFalse();
+});
