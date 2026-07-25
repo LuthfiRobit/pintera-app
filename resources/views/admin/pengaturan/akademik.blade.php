@@ -14,21 +14,31 @@
             </p>
         </div>
 
-        <div class="flex items-center gap-1 border-b border-gray-200">
-            <a
-                href="{{ route('admin.tahun-ajaran.index') }}"
-                class="rounded-t-lg px-4 py-2.5 text-sm font-semibold text-gray-500 transition hover:text-gray-700"
+        <div x-data="{ tab: 'hari-aktif' }">
+            <div class="flex items-center gap-1 border-b border-gray-200">
+            <button
+                type="button"
+                @click="tab = 'hari-aktif'"
+                :class="tab === 'hari-aktif' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500 hover:text-gray-700'"
+                class="rounded-t-lg px-4 py-2.5 text-sm font-semibold transition"
             >
-                Tahun Ajaran
-            </a>
-            <span class="rounded-t-lg border-b-2 border-brand-500 px-4 py-2.5 text-sm font-semibold text-brand-600">
-                Akademik
-            </span>
+                Hari Aktif Sekolah
+            </button>
+            <button
+                type="button"
+                @click="tab = 'hari-libur'"
+                :class="tab === 'hari-libur' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500 hover:text-gray-700'"
+                class="rounded-t-lg px-4 py-2.5 text-sm font-semibold transition"
+            >
+                Hari Libur Akademik
+            </button>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="mt-4 space-y-4">
             {{-- Hari Aktif Sekolah --}}
             <div
+                x-show="tab === 'hari-aktif'"
+                x-cloak
                 x-data="{
                     hariAktif: @js(collect(range(0, 6))->reject(fn ($d) => in_array($d, $lembaga->hari_libur_mingguan ?? [], true))->values()->all()),
                     submitting: false,
@@ -90,6 +100,8 @@
 
             {{-- Hari Libur Akademik --}}
             <div
+                x-show="tab === 'hari-libur'"
+                x-cloak
                 x-data="kalenderAkademikTable({
                     initialItems: @js($entriList),
                     storeUrl: @js(route('admin.kalender-akademik.store')),
@@ -213,6 +225,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </x-app-layout>
