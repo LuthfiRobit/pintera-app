@@ -91,16 +91,31 @@ class PolaJamController extends BaseController
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dihapus.');
     }
 
-    public function assignKelas(PolaJam $polaJam, Kelas $kelas): RedirectResponse
+    public function assignKelas(Request $request, PolaJam $polaJam): RedirectResponse
     {
         $this->authorize('kelas.edit');
 
-        if ($kelas->lembaga_id !== $polaJam->lembaga_id) {
-            return back()->withErrors(['kelas_id' => 'Kelas dan pola jam harus berasal dari lembaga yang sama.']);
+        $data = $request->validate([
+            'kelas_ids' => ['nullable', 'array'],
+            'kelas_ids.*' => ['integer'],
+        ]);
+        $kelasIds = $data['kelas_ids'] ?? [];
+
+        $kelasTerpilih = Kelas::whereIn('id', $kelasIds)->get();
+
+        if ($kelasTerpilih->count() !== count($kelasIds)) {
+            return back()->withErrors(['kelas_ids' => 'Salah satu kelas yang dipilih tidak ditemukan.']);
         }
 
-        $kelas->update(['pola_jam_id' => $polaJam->id]);
+        foreach ($kelasTerpilih as $kelas) {
+            if ($kelas->lembaga_id !== $polaJam->lembaga_id) {
+                return back()->withErrors(['kelas_ids' => 'Kelas dan pola jam harus berasal dari lembaga yang sama.']);
+            }
+        }
 
-        return redirect()->route('admin.pola-jam.index')->with('status', "Pola jam berhasil ditautkan ke kelas {$kelas->nama}.");
+        Kelas::where('pola_jam_id', $polaJam->id)->whereNotIn('id', $kelasIds)->update(['pola_jam_id' => null]);
+        Kelas::whereIn('id', $kelasIds)->update(['pola_jam_id' => $polaJam->id]);
+
+        return redirect()->route('admin.pola-jam.index')->with('status', 'Tautan kelas untuk pola jam ini berhasil disimpan.');
     }
 }

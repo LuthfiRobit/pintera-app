@@ -92,17 +92,29 @@
                 </form>
 
                 @can('kelas.edit')
-                    <form method="POST" action="{{ route('admin.pola-jam.assign-kelas', ['polaJam' => $pola, 'kelas' => '__KELAS__']) }}" class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-5 py-3" onsubmit="this.action = this.action.replace('__KELAS__', this.kelas_id.value); return this.kelas_id.value !== '';">
+                    <form method="POST" action="{{ route('admin.pola-jam.assign-kelas', $pola) }}" class="border-t border-gray-100 px-5 py-3">
                         @csrf
                         @method('PUT')
-                        <span class="text-sm text-gray-600">Tautkan ke kelas:</span>
-                        <select name="kelas_id" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">— Pilih Kelas —</option>
+                        <p class="mb-2 text-sm text-gray-600">Tautkan ke kelas:</p>
+                        <div class="flex flex-wrap gap-3">
                             @foreach ($kelasList as $kelasOpsi)
-                                <option value="{{ $kelasOpsi->id }}" @selected($kelasOpsi->pola_jam_id === $pola->id)>{{ $kelasOpsi->nama }}{{ $kelasOpsi->pola_jam_id && $kelasOpsi->pola_jam_id !== $pola->id ? ' (sudah pakai pola lain)' : '' }}</option>
+                                @php $dipakaiPolaLain = $kelasOpsi->pola_jam_id && $kelasOpsi->pola_jam_id !== $pola->id; @endphp
+                                <label class="flex items-center gap-1.5 text-sm {{ $dipakaiPolaLain ? 'text-gray-400' : 'text-gray-700' }}">
+                                    <input
+                                        type="checkbox"
+                                        name="kelas_ids[]"
+                                        value="{{ $kelasOpsi->id }}"
+                                        @checked($kelasOpsi->pola_jam_id === $pola->id)
+                                        @disabled($dipakaiPolaLain)
+                                        class="rounded border-gray-300 text-brand-500 focus:ring-brand-500 disabled:cursor-not-allowed"
+                                    >
+                                    {{ $kelasOpsi->nama }}{{ $dipakaiPolaLain ? ' (pakai pola lain)' : '' }}
+                                </label>
                             @endforeach
-                        </select>
-                        <x-primary-button type="submit">Tautkan</x-primary-button>
+                        </div>
+                        <div class="mt-3">
+                            <x-primary-button type="submit">Simpan Tautan Kelas</x-primary-button>
+                        </div>
                     </form>
                 @endcan
             </div>

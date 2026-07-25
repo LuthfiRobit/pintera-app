@@ -182,7 +182,7 @@ it('refuses to delete a pola jam whose jam pelajaran has a jadwal pelajaran, eve
     expect(PolaJam::find($pola->id))->not->toBeNull();
 });
 
-it('assigns a pola jam to a kelas from the pola jam screen', function () {
+it('assigns a pola jam to multiple kelas at once from the pola jam screen', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -195,15 +195,42 @@ it('assigns a pola jam to a kelas from the pola jam screen', function () {
     $manager->assignRole($role);
 
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
-    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelasSatu = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelasDua = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
 
-    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', ['polaJam' => $pola, 'kelas' => $kelas]))
-        ->assertRedirect(route('admin.pola-jam.index'));
+    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', $pola), [
+        'kelas_ids' => [$kelasSatu->id, $kelasDua->id],
+    ])->assertRedirect(route('admin.pola-jam.index'));
 
-    expect($kelas->fresh()->pola_jam_id)->toBe($pola->id);
+    expect($kelasSatu->fresh()->pola_jam_id)->toBe($pola->id);
+    expect($kelasDua->fresh()->pola_jam_id)->toBe($pola->id);
 });
 
-it('rejects assigning a pola jam to another lembaga\'s kelas with 404', function () {
+it('unlinks a kelas that was previously assigned but is unchecked on the next submit', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    foreach (['pola-jam.view', 'kelas.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'admin_pola_jam_assign_unlink', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['pola-jam.view', 'kelas.edit']);
+    $manager->assignRole($role);
+
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasTetap = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $kelasDilepas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+
+    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', $pola), [
+        'kelas_ids' => [$kelasTetap->id],
+    ])->assertRedirect(route('admin.pola-jam.index'));
+
+    expect($kelasTetap->fresh()->pola_jam_id)->toBe($pola->id);
+    expect($kelasDilepas->fresh()->pola_jam_id)->toBeNull();
+});
+
+it('rejects assigning a pola jam to another lembaga\'s kelas with a validation error', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -219,8 +246,9 @@ it('rejects assigning a pola jam to another lembaga\'s kelas with 404', function
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
     $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
 
-    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', ['polaJam' => $pola, 'kelas' => $kelasLain]))
-        ->assertNotFound();
+    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', $pola), [
+        'kelas_ids' => [$kelasLain->id],
+    ])->assertSessionHasErrors();
 
     expect($kelasLain->fresh()->pola_jam_id)->toBeNull();
 });
@@ -244,8 +272,9 @@ it('rejects assigning a pola jam to a different lembaga\'s kelas for a yayasan-s
     $polaA = PolaJam::factory()->create(['lembaga_id' => $lembagaA->id]);
     $kelasB = Kelas::factory()->create(['lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $tahunAjaranB->id]);
 
-    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', ['polaJam' => $polaA, 'kelas' => $kelasB]))
-        ->assertSessionHasErrors();
+    $this->actingAs($manager)->put(route('admin.pola-jam.assign-kelas', $polaA), [
+        'kelas_ids' => [$kelasB->id],
+    ])->assertSessionHasErrors();
 
     expect($kelasB->fresh()->pola_jam_id)->toBeNull();
 });
