@@ -20,7 +20,7 @@
         [
             'label' => 'III. Akademik',
             'items' => array_filter([
-                Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.kalender-akademik.index', 'pattern' => 'admin.kalender-akademik.*', 'label' => 'Kalender Akademik', 'icon' => 'schedule'] : null,
+                Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.pengaturan.akademik.index', 'pattern' => 'admin.pengaturan.akademik.*', 'label' => 'Pengaturan Akademik', 'icon' => 'schedule'] : null,
             ]),
         ],
         [

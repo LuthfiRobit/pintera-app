@@ -120,6 +120,17 @@ it('shows the acting lembaga-scoped user\'s own hari_libur_mingguan and kalender
     expect($ids)->not->toContain($entriLembagaLain->id);
 });
 
+it('renders the pengaturan akademik page for an authorized user', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPengaturanAkademikManager($lembaga, ['kalender-akademik.view']);
+
+    $this->actingAs($manager)
+        ->get(route('admin.pengaturan.akademik.index'))
+        ->assertOk()
+        ->assertViewIs('admin.pengaturan.akademik');
+});
+
 it('denies saving hari_libur_mingguan without pengaturan-akademik.kelola', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
