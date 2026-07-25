@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DokumenSyaratController;
 use App\Http\Controllers\Admin\FormulirFieldController;
 use App\Http\Controllers\Admin\GelombangPpdbController;
 use App\Http\Controllers\Admin\GuruController;
+use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JalurPpdbController;
 use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\JenisTagihanController;
@@ -115,4 +116,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('pola-jam/create', [PolaJamController::class, 'create'])->name('pola-jam.create');
     Route::post('pola-jam', [PolaJamController::class, 'store'])->name('pola-jam.store');
     Route::post('jam-pelajaran', [JamPelajaranController::class, 'store'])->name('jam-pelajaran.store');
+
+    Route::get('jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran.index');
+    Route::get('jadwal-pelajaran/create', [JadwalPelajaranController::class, 'create'])->name('jadwal-pelajaran.create');
+    Route::post('jadwal-pelajaran', [JadwalPelajaranController::class, 'store'])->name('jadwal-pelajaran.store');
 });
