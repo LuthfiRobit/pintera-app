@@ -150,6 +150,35 @@ it('defaults to the active tahun ajaran when none is selected', function () {
     $response->assertViewHas('kelasList', fn ($list) => $list->contains('id', $kelasAktif->id));
 });
 
+it('rejects a jadwal that mixes entities from different lembaga even for a yayasan-scoped user', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+    $kelasA = Kelas::factory()->create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $tahunAjaranA->id]);
+    $polaA = PolaJam::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $jamA = JamPelajaran::factory()->create(['pola_jam_id' => $polaA->id, 'is_pelajaran' => true]);
+    $kelasA->update(['pola_jam_id' => $polaA->id]);
+    $guruB = Guru::factory()->create(['lembaga_id' => $lembagaB->id]); // different lembaga than everything else
+
+    Permission::firstOrCreate(['name' => 'jadwal-pelajaran.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_jadwal_mix_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['jadwal-pelajaran.kelola']);
+    $manager = User::factory()->create(['lembaga_id' => null]);
+    $manager->assignRole($role);
+    // No active_lembaga_id in session — this yayasan-scoped user can see both lembaga A and B.
+
+    $this->actingAs($manager)->post(route('admin.jadwal-pelajaran.store'), [
+        'kelas_id' => $kelasA->id,
+        'jam_pelajaran_id' => $jamA->id,
+        'guru_id' => $guruB->id, // mismatched lembaga
+        'semester_id' => $semesterA->id,
+    ])->assertSessionHasErrors();
+
+    expect(JadwalPelajaran::where('kelas_id', $kelasA->id)->exists())->toBeFalse();
+});
+
 it('rejects a jam_pelajaran_id belonging to a different pola jam than the kelas uses', function () {
     $yayasanA = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);

@@ -96,6 +96,18 @@ class JadwalPelajaranController extends BaseController
             }
         }
 
+        if ($guru->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['guru_id' => 'Guru harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
+        if ($semester->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['semester_id' => 'Semester harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
+        if (isset($mataPelajaran) && $mataPelajaran->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['mata_pelajaran_id' => 'Mata pelajaran harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
         $jamPelajaran = JamPelajaran::where('id', $data['jam_pelajaran_id'])
             ->where('pola_jam_id', $kelas->pola_jam_id)
             ->first();
