@@ -18,7 +18,13 @@
             ]),
         ],
         [
-            'label' => 'III. SPMB',
+            'label' => 'III. Akademik',
+            'items' => array_filter([
+                Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.kalender-akademik.index', 'pattern' => 'admin.kalender-akademik.*', 'label' => 'Kalender Akademik', 'icon' => 'schedule'] : null,
+            ]),
+        ],
+        [
+            'label' => 'IV. SPMB',
             'items' => array_filter([
                 Auth::user()->can('gelombang-ppdb.view') ? ['route' => 'admin.gelombang-ppdb.index', 'pattern' => 'admin.gelombang-ppdb.*', 'label' => 'Gelombang PPDB', 'icon' => 'waves'] : null,
                 Auth::user()->can('jalur-ppdb.view') ? ['route' => 'admin.jalur-ppdb.index', 'pattern' => 'admin.jalur-ppdb.*', 'label' => 'Jalur PPDB', 'icon' => 'signpost'] : null,
@@ -27,7 +33,7 @@
             ]),
         ],
         [
-            'label' => 'IV. Keuangan',
+            'label' => 'V. Keuangan',
             'items' => array_filter([
                 Auth::user()->can('jenis-tagihan.view') ? ['route' => 'admin.jenis-tagihan.index', 'pattern' => 'admin.jenis-tagihan.*', 'label' => 'Jenis Tagihan', 'icon' => 'payments'] : null,
                 Auth::user()->can('tagihan.view') && Route::has('admin.tagihan.index') ? ['route' => 'admin.tagihan.index', 'pattern' => 'admin.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt_long'] : null,
@@ -35,7 +41,7 @@
             ]),
         ],
         [
-            'label' => 'V. Akses & Peran',
+            'label' => 'VI. Akses & Peran',
             'items' => array_filter([
                 Auth::user()->can('users.view') ? ['route' => 'admin.users.index', 'pattern' => 'admin.users.*', 'label' => 'Pengguna', 'icon' => 'group'] : null,
                 Auth::user()->can('roles.view') ? ['route' => 'admin.roles.index', 'pattern' => 'admin.roles.*', 'label' => 'Peran', 'icon' => 'shield_person'] : null,
