@@ -26,7 +26,7 @@ class Lembaga extends Model
         'telepon', 'fax', 'email', 'website',
         'nama_bank', 'cabang_kcp_unit', 'rekening_atas_nama', 'nomor_rekening',
         'mbs', 'nama_wajib_pajak', 'npwp', 'memungut_iuran', 'nominal_iuran', 'periode_iuran',
-        'status_aktif',
+        'status_aktif', 'hari_libur_mingguan',
     ];
 
     protected function casts(): array
@@ -43,6 +43,7 @@ class Lembaga extends Model
             'status_aktif' => 'boolean',
             'nomor_rekening' => 'encrypted',
             'npwp' => 'encrypted',
+            'hari_libur_mingguan' => 'array',
         ];
     }
 
@@ -51,6 +52,15 @@ class Lembaga extends Model
         static::creating(function (Lembaga $lembaga) {
             if (empty($lembaga->slug)) {
                 $lembaga->slug = Str::slug($lembaga->nama);
+            }
+            if ($lembaga->hari_libur_mingguan === null) {
+                $lembaga->hari_libur_mingguan = [0];
+            }
+        });
+
+        static::retrieved(function (Lembaga $lembaga) {
+            if ($lembaga->hari_libur_mingguan === null) {
+                $lembaga->hari_libur_mingguan = [0];
             }
         });
     }
