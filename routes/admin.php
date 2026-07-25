@@ -115,6 +115,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('pola-jam', [PolaJamController::class, 'index'])->name('pola-jam.index');
     Route::get('pola-jam/create', [PolaJamController::class, 'create'])->name('pola-jam.create');
     Route::post('pola-jam', [PolaJamController::class, 'store'])->name('pola-jam.store');
+    Route::get('pola-jam/{polaJam}/edit', [PolaJamController::class, 'edit'])->name('pola-jam.edit');
+    Route::put('pola-jam/{polaJam}', [PolaJamController::class, 'update'])->name('pola-jam.update');
+    Route::delete('pola-jam/{polaJam}', [PolaJamController::class, 'destroy'])->name('pola-jam.destroy');
     Route::post('jam-pelajaran', [JamPelajaranController::class, 'store'])->name('jam-pelajaran.store');
 
     Route::get('jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran.index');

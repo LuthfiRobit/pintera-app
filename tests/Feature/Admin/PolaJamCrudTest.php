@@ -1,20 +1,25 @@
 <?php
 
+use App\Models\Guru;
+use App\Models\JadwalPelajaran;
 use App\Models\JamPelajaran;
+use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\PolaJam;
 use App\Models\Role;
+use App\Models\Semester;
+use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
 function actingAsPolaJamManager(Lembaga $lembaga): User
 {
-    foreach (['pola-jam.view', 'pola-jam.create', 'jam-pelajaran.create'] as $permission) {
+    foreach (['pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete', 'jam-pelajaran.create'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
     $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo(['pola-jam.view', 'pola-jam.create', 'jam-pelajaran.create']);
+    $role->givePermissionTo(['pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete', 'jam-pelajaran.create']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
@@ -77,4 +82,77 @@ it('rejects adding a jam pelajaran slot to another lembaga\'s pola jam', functio
     ])->assertNotFound();
 
     expect(JamPelajaran::where('pola_jam_id', $polaB->id)->where('label', 'Upacara')->exists())->toBeFalse();
+});
+
+it('renames a pola jam via update', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga); // extend helper's permissions to include pola-jam.edit, or add a dedicated helper
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Lama']);
+
+    $this->actingAs($manager)->put(route('admin.pola-jam.update', $pola), [
+        'nama' => 'Baru',
+    ])->assertRedirect(route('admin.pola-jam.index'));
+
+    expect($pola->fresh()->nama)->toBe('Baru');
+});
+
+it('rejects editing another lembaga\'s pola jam with 404', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $polaLain = PolaJam::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $this->actingAs($manager)->put(route('admin.pola-jam.update', $polaLain), [
+        'nama' => 'Diubah Paksa',
+    ])->assertNotFound();
+
+    expect($polaLain->fresh()->nama)->not->toBe('Diubah Paksa');
+});
+
+it('deletes a pola jam that has no kelas assigned and no jam pelajaran with a jadwal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->delete(route('admin.pola-jam.destroy', $pola))
+        ->assertRedirect(route('admin.pola-jam.index'));
+
+    expect(PolaJam::find($pola->id))->toBeNull();
+});
+
+it('refuses to delete a pola jam that is assigned to a kelas', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+
+    $this->actingAs($manager)->delete(route('admin.pola-jam.destroy', $pola))
+        ->assertSessionHasErrors();
+
+    expect(PolaJam::find($pola->id))->not->toBeNull();
+});
+
+it('refuses to delete a pola jam whose jam pelajaran has a jadwal pelajaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::factory()->create([
+        'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id,
+    ]);
+
+    $this->actingAs($manager)->delete(route('admin.pola-jam.destroy', $pola))
+        ->assertSessionHasErrors();
+
+    expect(PolaJam::find($pola->id))->not->toBeNull();
 });

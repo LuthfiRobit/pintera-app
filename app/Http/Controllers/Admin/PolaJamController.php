@@ -51,4 +51,41 @@ class PolaJamController extends BaseController
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dibuat.');
     }
+
+    public function edit(PolaJam $polaJam): View
+    {
+        $this->authorize('pola-jam.edit');
+
+        return view('admin.pola-jam.edit', ['polaJam' => $polaJam]);
+    }
+
+    public function update(Request $request, PolaJam $polaJam): RedirectResponse
+    {
+        $this->authorize('pola-jam.edit');
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+        ]);
+
+        $polaJam->update($data);
+
+        return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil diperbarui.');
+    }
+
+    public function destroy(PolaJam $polaJam): RedirectResponse
+    {
+        $this->authorize('pola-jam.delete');
+
+        if ($polaJam->kelas()->exists()) {
+            return back()->withErrors(['pola_jam' => 'Pola jam ini masih dipakai oleh satu atau lebih kelas — lepaskan dulu sebelum menghapus.']);
+        }
+
+        if ($polaJam->jamPelajaran()->whereHas('jadwalPelajaran')->exists()) {
+            return back()->withErrors(['pola_jam' => 'Pola jam ini memiliki jam pelajaran yang sudah dipakai di Jadwal Pelajaran — hapus jadwalnya dulu sebelum menghapus pola jam ini.']);
+        }
+
+        $polaJam->delete();
+
+        return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dihapus.');
+    }
 }

@@ -3,6 +3,9 @@
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700">{{ $errors->first() }}</div>
+        @endif
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="font-display text-lg font-bold text-gray-900">Pola Jam &amp; Jam Pelajaran</h1>
@@ -20,8 +23,20 @@
         @foreach ($polaJamList as $pola)
             @php $hariAktifPola = \App\Enums\Hari::aktifDari($pola->lembaga->hari_libur_mingguan ?? []); @endphp
             <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-                <div class="border-b border-gray-200 px-5 py-4">
+                <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                     <p class="font-display text-sm font-bold text-gray-900">{{ $pola->nama }}</p>
+                    <div class="flex items-center gap-3">
+                        @can('pola-jam.edit')
+                            <a href="{{ route('admin.pola-jam.edit', $pola) }}" class="text-sm font-semibold text-gray-500 hover:text-gray-700">Edit</a>
+                        @endcan
+                        @can('pola-jam.delete')
+                            <form method="POST" action="{{ route('admin.pola-jam.destroy', $pola) }}" onsubmit="return confirm('Hapus pola jam ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-sm font-semibold text-error-600 hover:text-error-700">Hapus</button>
+                            </form>
+                        @endcan
+                    </div>
                 </div>
 
                 @foreach (\App\Enums\Hari::cases() as $hari)
