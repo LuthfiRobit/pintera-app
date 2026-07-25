@@ -34,6 +34,17 @@
         </div>
 
         <div>
+            <x-input-label value="Pola Jam (opsional)" />
+            <select name="pola_jam_id" class="mt-1.5 {{ $selectClass }}">
+                <option value="">— Belum ditentukan —</option>
+                @foreach ($polaJamList as $pola)
+                    <option value="{{ $pola->id }}" @selected($val('pola_jam_id') == $pola->id)>{{ $pola->nama }}</option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('pola_jam_id')" class="mt-1.5" />
+        </div>
+
+        <div>
             <x-input-label value="Wali Kelas (opsional)" />
             <select name="wali_kelas_guru_id" class="mt-1.5 {{ $selectClass }}">
                 <option value="">— Belum ditentukan —</option>
