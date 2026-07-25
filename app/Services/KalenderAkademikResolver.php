@@ -15,7 +15,7 @@ class KalenderAkademikResolver
     public function resolve(Lembaga $lembaga, CarbonInterface $tanggal): array
     {
         $entriLembaga = KalenderAkademik::untukLembaga($lembaga->id)
-            ->whereDate('tanggal', $tanggal->toDateString())
+            ->where(fn ($q) => $this->cocokRentang($q, $tanggal))
             ->first();
 
         if ($entriLembaga) {
@@ -26,7 +26,7 @@ class KalenderAkademikResolver
         }
 
         $entriNasional = KalenderAkademik::nasional()
-            ->whereDate('tanggal', $tanggal->toDateString())
+            ->where(fn ($q) => $this->cocokRentang($q, $tanggal))
             ->first();
 
         if ($entriNasional) {
@@ -41,5 +41,21 @@ class KalenderAkademikResolver
         }
 
         return ['libur' => false, 'alasan' => 'Hari efektif belajar'];
+    }
+
+    /**
+     * Matches a $tanggal that falls within an entry's [tanggal, tanggal_selesai]
+     * range, inclusive. When tanggal_selesai is null the entry is a single day,
+     * so the effective end date falls back to tanggal itself.
+     */
+    private function cocokRentang($query, CarbonInterface $tanggal)
+    {
+        $tgl = $tanggal->toDateString();
+
+        return $query
+            ->whereDate('tanggal', '<=', $tgl)
+            ->where(fn ($q) => $q->whereDate('tanggal_selesai', '>=', $tgl)
+                ->orWhere(fn ($q2) => $q2->whereNull('tanggal_selesai')->whereDate('tanggal', '>=', $tgl))
+            );
     }
 }

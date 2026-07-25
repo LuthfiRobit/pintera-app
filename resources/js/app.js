@@ -24,6 +24,7 @@ import { formulirFieldList } from './formulir-field-list';
 import { seleksiList } from './seleksi-list';
 import { jenisTesTable } from './jenis-tes-table';
 import { jenisTagihanTable } from './jenis-tagihan-table';
+import { kalenderAkademikTable } from './pengaturan-akademik';
 import { passwordStrength } from './password-strength';
 
 window.Alpine = Alpine;
@@ -54,6 +55,7 @@ Alpine.data('formulirFieldList', formulirFieldList);
 Alpine.data('seleksiList', seleksiList);
 Alpine.data('jenisTesTable', jenisTesTable);
 Alpine.data('jenisTagihanTable', jenisTagihanTable);
+Alpine.data('kalenderAkademikTable', kalenderAkademikTable);
 Alpine.data('passwordStrength', passwordStrength);
 
 Alpine.start();

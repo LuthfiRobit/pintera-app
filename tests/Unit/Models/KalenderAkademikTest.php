@@ -34,3 +34,15 @@ it('can belong to a specific lembaga as an override', function () {
 
     expect($entry->fresh()->lembaga->id)->toBe($lembaga->id);
 });
+
+it('allows tanggal_selesai to be null (single-day entry, backward compatible)', function () {
+    $entri = KalenderAkademik::factory()->create(['tanggal' => '2026-08-17', 'tanggal_selesai' => null]);
+
+    expect($entri->fresh()->tanggal_selesai)->toBeNull();
+});
+
+it('casts tanggal_selesai to a date when a range is stored', function () {
+    $entri = KalenderAkademik::factory()->create(['tanggal' => '2026-08-23', 'tanggal_selesai' => '2026-09-01']);
+
+    expect($entri->fresh()->tanggal_selesai->toDateString())->toBe('2026-09-01');
+});

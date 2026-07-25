@@ -26,21 +26,19 @@ function actingAsKalenderManager(Lembaga $lembaga, bool $bolehNasional = false):
     return $manager;
 }
 
-it('denies access without kalender-akademik.view permission', function () {
-    $this->actingAs(User::factory()->create())->get(route('admin.kalender-akademik.index'))->assertForbidden();
-});
-
 it('creates a lembaga-scoped calendar entry without needing kelola-nasional', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
 
-    $this->actingAs($manager)->post(route('admin.kalender-akademik.store'), [
+    $response = $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
         'tanggal' => '2026-09-01',
         'nama' => 'Libur Yayasan',
         'tipe' => TipeKalenderAkademik::Libur->value,
         'berlaku_nasional' => '0',
-    ])->assertRedirect(route('admin.kalender-akademik.index'));
+    ]);
+
+    $response->assertCreated();
 
     $entry = KalenderAkademik::where('nama', 'Libur Yayasan')->firstOrFail();
     expect($entry->lembaga_id)->toBe($lembaga->id);
@@ -51,7 +49,7 @@ it('rejects a national entry from a manager without kelola-nasional permission',
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
 
-    $this->actingAs($manager)->post(route('admin.kalender-akademik.store'), [
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
         'tanggal' => '2026-09-01',
         'nama' => 'Coba Nasional',
         'tipe' => TipeKalenderAkademik::Libur->value,
@@ -66,29 +64,15 @@ it('allows a national entry from a manager with kelola-nasional permission', fun
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKalenderManager($lembaga, bolehNasional: true);
 
-    $this->actingAs($manager)->post(route('admin.kalender-akademik.store'), [
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
         'tanggal' => '2026-08-17',
         'nama' => 'Hari Kemerdekaan RI',
         'tipe' => TipeKalenderAkademik::Libur->value,
         'berlaku_nasional' => '1',
-    ])->assertRedirect(route('admin.kalender-akademik.index'));
+    ])->assertCreated();
 
     $entry = KalenderAkademik::where('nama', 'Hari Kemerdekaan RI')->firstOrFail();
     expect($entry->lembaga_id)->toBeNull();
-});
-
-it('rejects a second entry on the same date for the same scope', function () {
-    $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
-    KalenderAkademik::create(['lembaga_id' => $lembaga->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Pertama', 'tipe' => 'libur']);
-
-    $this->actingAs($manager)->post(route('admin.kalender-akademik.store'), [
-        'tanggal' => '2026-09-01',
-        'nama' => 'Entri Kedua',
-        'tipe' => TipeKalenderAkademik::Kerja->value,
-        'berlaku_nasional' => '0',
-    ])->assertSessionHasErrors('tanggal');
 });
 
 it('rejects a store from a yayasan-scoped manager with no active lembaga selected, without silently creating a national-looking row', function () {
@@ -101,12 +85,12 @@ it('rejects a store from a yayasan-scoped manager with no active lembaga selecte
     $manager = User::factory()->create(['lembaga_id' => null]);
     $manager->assignRole($yayasanRole);
 
-    $this->actingAs($manager)->post(route('admin.kalender-akademik.store'), [
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
         'tanggal' => '2026-09-01',
         'nama' => 'Coba Tanpa Lembaga Aktif',
         'tipe' => TipeKalenderAkademik::Libur->value,
         'berlaku_nasional' => '0',
-    ])->assertSessionHasErrors('lembaga_id');
+    ])->assertStatus(422)->assertJsonValidationErrors('lembaga_id');
 
     expect(KalenderAkademik::where('nama', 'Coba Tanpa Lembaga Aktif')->exists())->toBeFalse();
 });
@@ -117,7 +101,7 @@ it('denies updating an existing national entry from a manager without kelola-nas
     $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
     $entri = KalenderAkademik::create(['lembaga_id' => null, 'tanggal' => '2026-08-17', 'nama' => 'Hari Kemerdekaan RI', 'tipe' => 'libur']);
 
-    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entri), [
+    $this->actingAs($manager)->putJson(route('admin.kalender-akademik.update', $entri), [
         'nama' => 'Nama Diubah Tanpa Izin',
         'tipe' => TipeKalenderAkademik::Libur->value,
     ])->assertForbidden();
@@ -131,22 +115,12 @@ it('allows updating an existing national entry from a manager with kelola-nasion
     $manager = actingAsKalenderManager($lembaga, bolehNasional: true);
     $entri = KalenderAkademik::create(['lembaga_id' => null, 'tanggal' => '2026-08-17', 'nama' => 'Hari Kemerdekaan RI', 'tipe' => 'libur']);
 
-    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entri), [
+    $this->actingAs($manager)->putJson(route('admin.kalender-akademik.update', $entri), [
         'nama' => 'Hari Kemerdekaan Republik Indonesia',
         'tipe' => TipeKalenderAkademik::Libur->value,
-    ])->assertRedirect(route('admin.kalender-akademik.index'));
+    ])->assertOk();
 
     expect($entri->fresh()->nama)->toBe('Hari Kemerdekaan Republik Indonesia');
-});
-
-it('rejects viewing the edit form for another lembaga\'s entry with a 404, not a 403', function () {
-    $yayasan = Yayasan::factory()->create();
-    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $manager = actingAsKalenderManager($lembagaA, bolehNasional: false);
-    $entriLembagaB = KalenderAkademik::create(['lembaga_id' => $lembagaB->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Lembaga B', 'tipe' => 'libur']);
-
-    $this->actingAs($manager)->get(route('admin.kalender-akademik.edit', $entriLembagaB))->assertNotFound();
 });
 
 it('rejects updating another lembaga\'s entry with a 404 and leaves the row unchanged', function () {
@@ -156,7 +130,7 @@ it('rejects updating another lembaga\'s entry with a 404 and leaves the row unch
     $manager = actingAsKalenderManager($lembagaA, bolehNasional: false);
     $entriLembagaB = KalenderAkademik::create(['lembaga_id' => $lembagaB->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Lembaga B', 'tipe' => 'libur']);
 
-    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entriLembagaB), [
+    $this->actingAs($manager)->putJson(route('admin.kalender-akademik.update', $entriLembagaB), [
         'nama' => 'Diubah Paksa Lintas Tenant',
         'tipe' => TipeKalenderAkademik::Kerja->value,
     ])->assertNotFound();
@@ -165,18 +139,188 @@ it('rejects updating another lembaga\'s entry with a 404 and leaves the row unch
     expect($entriLembagaB->fresh()->tipe)->toBe(TipeKalenderAkademik::Libur);
 });
 
-it('allows a lembaga-scoped manager to view and update their own lembaga\'s entry', function () {
+it('allows a lembaga-scoped manager to update their own lembaga\'s entry', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
     $entri = KalenderAkademik::create(['lembaga_id' => $lembaga->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Lembaga Sendiri', 'tipe' => 'libur']);
 
-    $this->actingAs($manager)->get(route('admin.kalender-akademik.edit', $entri))->assertOk();
-
-    $this->actingAs($manager)->put(route('admin.kalender-akademik.update', $entri), [
+    $this->actingAs($manager)->putJson(route('admin.kalender-akademik.update', $entri), [
         'nama' => 'Entri Lembaga Sendiri Diubah',
         'tipe' => TipeKalenderAkademik::Kerja->value,
-    ])->assertRedirect(route('admin.kalender-akademik.index'));
+    ])->assertOk();
 
     expect($entri->fresh()->nama)->toBe('Entri Lembaga Sendiri Diubah');
+});
+
+it('creates a range entry and stores tanggal_selesai', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+
+    $response = $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => '2026-09-01',
+        'nama' => 'Libur Maulid',
+        'tipe' => 'libur',
+    ]);
+
+    $response->assertCreated();
+    $this->assertDatabaseHas('kalender_akademik', ['nama' => 'Libur Maulid', 'tanggal_selesai' => '2026-09-01']);
+});
+
+it('defaults tanggal_selesai to tanggal when omitted (single-day entry)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+
+    $response = $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-09-10',
+        'nama' => 'Entri Satu Hari',
+        'tipe' => 'libur',
+    ]);
+
+    $response->assertCreated();
+    $this->assertDatabaseHas('kalender_akademik', ['nama' => 'Entri Satu Hari', 'tanggal' => '2026-09-10', 'tanggal_selesai' => '2026-09-10']);
+});
+
+it('rejects a tanggal_selesai before tanggal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-09-01',
+        'tanggal_selesai' => '2026-08-23',
+        'nama' => 'Rentang Terbalik',
+        'tipe' => 'libur',
+    ])->assertStatus(422)->assertJsonValidationErrors('tanggal_selesai');
+
+    expect(KalenderAkademik::where('nama', 'Rentang Terbalik')->exists())->toBeFalse();
+});
+
+it('rejects a new range that overlaps an existing entry in the same scope', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    KalenderAkademik::create([
+        'lembaga_id' => $lembaga->id,
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => '2026-09-01',
+        'nama' => 'Entri Pertama',
+        'tipe' => 'libur',
+    ]);
+
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-08-30',
+        'tanggal_selesai' => '2026-09-05',
+        'nama' => 'Entri Kedua',
+        'tipe' => 'libur',
+    ])->assertStatus(422)->assertJsonValidationErrors('tanggal');
+
+    expect(KalenderAkademik::where('nama', 'Entri Kedua')->exists())->toBeFalse();
+});
+
+it('allows an overlapping range in a DIFFERENT scope (own-lembaga vs national)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    KalenderAkademik::create([
+        'lembaga_id' => null,
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => '2026-09-01',
+        'nama' => 'Entri Nasional',
+        'tipe' => 'libur',
+    ]);
+
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => '2026-09-01',
+        'nama' => 'Entri Lembaga Sama Tanggal',
+        'tipe' => 'libur',
+        'berlaku_nasional' => '0',
+    ])->assertCreated();
+
+    expect(KalenderAkademik::where('nama', 'Entri Lembaga Sama Tanggal')->exists())->toBeTrue();
+});
+
+it('detects overlap between two single-day entries on the exact same date', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    KalenderAkademik::create([
+        'lembaga_id' => $lembaga->id,
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => null,
+        'nama' => 'Entri Satu Hari Sudah Ada',
+        'tipe' => 'libur',
+    ]);
+
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-08-23',
+        'nama' => 'Entri Satu Hari Baru',
+        'tipe' => 'libur',
+    ])->assertStatus(422)->assertJsonValidationErrors('tanggal');
+
+    expect(KalenderAkademik::where('nama', 'Entri Satu Hari Baru')->exists())->toBeFalse();
+});
+
+it('does not falsely detect overlap between two clearly non-overlapping single-day entries', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    KalenderAkademik::create([
+        'lembaga_id' => $lembaga->id,
+        'tanggal' => '2026-08-23',
+        'tanggal_selesai' => null,
+        'nama' => 'Entri Satu Hari Sudah Ada',
+        'tipe' => 'libur',
+    ]);
+
+    // A day strictly after the existing single-day entry. With a naive
+    // "tanggal_selesai IS NULL => treat as always overlapping" clause this
+    // would be falsely flagged, since the null tanggal_selesai must fall
+    // back to the entry's own `tanggal` as its effective end date, not be
+    // treated as an open-ended/unbounded range.
+    $this->actingAs($manager)->postJson(route('admin.kalender-akademik.store'), [
+        'tanggal' => '2026-08-24',
+        'nama' => 'Entri Satu Hari Berbeda',
+        'tipe' => 'libur',
+    ])->assertCreated();
+
+    expect(KalenderAkademik::where('nama', 'Entri Satu Hari Berbeda')->exists())->toBeTrue();
+});
+
+it('deletes an entry the acting lembaga-scoped user owns', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    $entri = KalenderAkademik::create(['lembaga_id' => $lembaga->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Dihapus', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->deleteJson(route('admin.kalender-akademik.destroy', $entri))->assertOk();
+
+    expect(KalenderAkademik::find($entri->id))->toBeNull();
+});
+
+it('rejects deleting another lembaga\'s non-national entry with 404', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembagaA, bolehNasional: false);
+    $entriLembagaB = KalenderAkademik::create(['lembaga_id' => $lembagaB->id, 'tanggal' => '2026-09-01', 'nama' => 'Entri Lembaga B', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->deleteJson(route('admin.kalender-akademik.destroy', $entriLembagaB))->assertNotFound();
+
+    expect(KalenderAkademik::find($entriLembagaB->id))->not->toBeNull();
+});
+
+it('rejects deleting a national entry without kalender-akademik.kelola-nasional', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKalenderManager($lembaga, bolehNasional: false);
+    $entriNasional = KalenderAkademik::create(['lembaga_id' => null, 'tanggal' => '2026-08-17', 'nama' => 'Hari Kemerdekaan RI', 'tipe' => 'libur']);
+
+    $this->actingAs($manager)->deleteJson(route('admin.kalender-akademik.destroy', $entriNasional))->assertForbidden();
+
+    expect(KalenderAkademik::find($entriNasional->id))->not->toBeNull();
 });

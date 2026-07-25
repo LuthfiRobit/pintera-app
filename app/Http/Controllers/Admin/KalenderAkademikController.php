@@ -4,43 +4,22 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\KalenderAkademik;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\View\View;
 
 class KalenderAkademikController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
-    {
-        $this->authorize('kalender-akademik.view');
-
-        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
-
-        return view('admin.kalender-akademik.index', [
-            'entriList' => KalenderAkademik::where(function ($query) use ($lembagaId) {
-                $query->whereNull('lembaga_id')->orWhere('lembaga_id', $lembagaId);
-            })->orderBy('tanggal')->get(),
-        ]);
-    }
-
-    public function create(): View
-    {
-        $this->authorize('kalender-akademik.kelola');
-
-        return view('admin.kalender-akademik.create', [
-            'bolehNasional' => $this->authorizeNasional(),
-        ]);
-    }
-
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorize('kalender-akademik.kelola');
 
         $data = $request->validate([
             'tanggal' => ['required', 'date'],
+            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal'],
             'nama' => ['required', 'string', 'max:255'],
             'tipe' => ['required', 'in:libur,kerja'],
             'keterangan' => ['nullable', 'string'],
@@ -54,53 +33,37 @@ class KalenderAkademikController extends BaseController
         }
 
         if (! $nasional && $request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
-            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat entri kalender.'])->withInput();
+            return $this->errorResponse($request, 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah entri kalender.', 'lembaga_id');
         }
 
         $lembagaId = $nasional ? null : ($request->user()->lembaga_id ?? session('active_lembaga_id'));
+        $tanggalSelesai = $data['tanggal_selesai'] ?? $data['tanggal'];
 
-        $duplikat = KalenderAkademik::where('tanggal', $data['tanggal'])
-            ->where(fn ($q) => $lembagaId === null ? $q->whereNull('lembaga_id') : $q->where('lembaga_id', $lembagaId))
-            ->exists();
-
-        if ($duplikat) {
-            return back()->withErrors(['tanggal' => 'Sudah ada entri kalender untuk tanggal dan cakupan ini.'])->withInput();
+        if ($this->tumpangTindih($lembagaId, $data['tanggal'], $tanggalSelesai)) {
+            return $this->errorResponse($request, 'Rentang tanggal ini tumpang tindih dengan entri lain pada cakupan yang sama.', 'tanggal');
         }
 
-        KalenderAkademik::create([
+        $entri = KalenderAkademik::create([
             'lembaga_id' => $lembagaId,
             'tanggal' => $data['tanggal'],
+            'tanggal_selesai' => $tanggalSelesai,
             'nama' => $data['nama'],
             'tipe' => $data['tipe'],
             'keterangan' => $data['keterangan'] ?? null,
         ]);
 
-        return redirect()->route('admin.kalender-akademik.index')->with('status', 'Entri kalender berhasil disimpan.');
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $entri->fresh()], 201);
+        }
+
+        return redirect()->route('admin.pengaturan.akademik.index')->with('status', 'Entri kalender berhasil disimpan.');
     }
 
-    public function edit(Request $request, KalenderAkademik $kalenderAkademik): View
+    public function update(Request $request, KalenderAkademik $kalenderAkademik): RedirectResponse|JsonResponse
     {
         $this->authorize('kalender-akademik.kelola');
 
         $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
-
-        if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
-            abort(404);
-        }
-
-        if ($kalenderAkademik->lembaga_id === null) {
-            $this->authorize('kalender-akademik.kelola-nasional');
-        }
-
-        return view('admin.kalender-akademik.edit', ['entri' => $kalenderAkademik]);
-    }
-
-    public function update(Request $request, KalenderAkademik $kalenderAkademik): RedirectResponse
-    {
-        $this->authorize('kalender-akademik.kelola');
-
-        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
-
         if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
             abort(404);
         }
@@ -117,11 +80,63 @@ class KalenderAkademikController extends BaseController
 
         $kalenderAkademik->update($data);
 
-        return redirect()->route('admin.kalender-akademik.index')->with('status', 'Entri kalender berhasil diperbarui.');
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $kalenderAkademik->fresh()]);
+        }
+
+        return redirect()->route('admin.pengaturan.akademik.index')->with('status', 'Entri kalender berhasil diperbarui.');
     }
 
-    private function authorizeNasional(): bool
+    public function destroy(Request $request, KalenderAkademik $kalenderAkademik): RedirectResponse|JsonResponse
     {
-        return auth()->user()?->can('kalender-akademik.kelola-nasional') ?? false;
+        $this->authorize('kalender-akademik.kelola');
+
+        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+        if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
+            abort(404);
+        }
+
+        if ($kalenderAkademik->lembaga_id === null) {
+            $this->authorize('kalender-akademik.kelola-nasional');
+        }
+
+        $kalenderAkademik->delete();
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Entri kalender berhasil dihapus.']);
+        }
+
+        return redirect()->route('admin.pengaturan.akademik.index')->with('status', 'Entri kalender berhasil dihapus.');
+    }
+
+    /**
+     * Detects whether [$mulai, $selesai] overlaps an existing entry in the
+     * same scope (same lembaga_id, or both national when $lembagaId is
+     * null). Mirrors KalenderAkademikResolver::cocokRentang's handling of a
+     * null tanggal_selesai: such a row is a single-day entry whose
+     * *effective* end date is its own `tanggal`, not an open-ended/unbounded
+     * range. Treating "tanggal_selesai IS NULL" as unconditionally
+     * overlapping (i.e. ORing it in without also checking the existing
+     * row's `tanggal` against $mulai) produces false positives for any new
+     * range that starts after such a single-day entry.
+     */
+    private function tumpangTindih(?int $lembagaId, string $mulai, string $selesai, ?int $kecualiId = null): bool
+    {
+        return KalenderAkademik::where(fn ($q) => $lembagaId === null ? $q->whereNull('lembaga_id') : $q->where('lembaga_id', $lembagaId))
+            ->when($kecualiId, fn ($q) => $q->where('id', '!=', $kecualiId))
+            ->where('tanggal', '<=', $selesai)
+            ->where(fn ($q) => $q->where('tanggal_selesai', '>=', $mulai)
+                ->orWhere(fn ($q2) => $q2->whereNull('tanggal_selesai')->where('tanggal', '>=', $mulai))
+            )
+            ->exists();
+    }
+
+    private function errorResponse(Request $request, string $message, string $field): RedirectResponse|JsonResponse
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message, 'errors' => [$field => [$message]]], 422);
+        }
+
+        return back()->withErrors([$field => $message])->withInput();
     }
 }
