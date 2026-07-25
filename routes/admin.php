@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\JalurPpdbController;
 use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
+use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\MataPelajaranController;
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
+    Route::resource('kalender-akademik', KalenderAkademikController::class)->except(['show', 'destroy']);
     Route::get('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'index'])->name('siswa.spmb-daftar.index');
     Route::post('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'store'])->name('siswa.spmb-daftar.store');
     Route::get('siswa-import', [SiswaImportController::class, 'index'])->name('siswa.import.index');
