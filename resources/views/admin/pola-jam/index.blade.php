@@ -80,6 +80,21 @@
                     </select>
                     <x-primary-button type="submit">Tambah Slot</x-primary-button>
                 </form>
+
+                @can('kelas.edit')
+                    <form method="POST" action="{{ route('admin.pola-jam.assign-kelas', ['polaJam' => $pola, 'kelas' => '__KELAS__']) }}" class="flex flex-wrap items-center gap-2 border-t border-gray-100 px-5 py-3" onsubmit="this.action = this.action.replace('__KELAS__', this.kelas_id.value); return this.kelas_id.value !== '';">
+                        @csrf
+                        @method('PUT')
+                        <span class="text-sm text-gray-600">Tautkan ke kelas:</span>
+                        <select name="kelas_id" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">— Pilih Kelas —</option>
+                            @foreach ($kelasList as $kelasOpsi)
+                                <option value="{{ $kelasOpsi->id }}" @selected($kelasOpsi->pola_jam_id === $pola->id)>{{ $kelasOpsi->nama }}{{ $kelasOpsi->pola_jam_id && $kelasOpsi->pola_jam_id !== $pola->id ? ' (sudah pakai pola lain)' : '' }}</option>
+                            @endforeach
+                        </select>
+                        <x-primary-button type="submit">Tautkan</x-primary-button>
+                    </form>
+                @endcan
             </div>
         @endforeach
 

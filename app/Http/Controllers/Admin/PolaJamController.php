@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Kelas;
 use App\Models\PolaJam;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -19,6 +20,7 @@ class PolaJamController extends BaseController
 
         return view('admin.pola-jam.index', [
             'polaJamList' => PolaJam::with(['jamPelajaran', 'lembaga'])->orderBy('nama')->get(),
+            'kelasList' => Kelas::orderBy('nama')->get(),
         ]);
     }
 
@@ -87,5 +89,14 @@ class PolaJamController extends BaseController
         $polaJam->delete();
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dihapus.');
+    }
+
+    public function assignKelas(PolaJam $polaJam, Kelas $kelas): RedirectResponse
+    {
+        $this->authorize('kelas.edit');
+
+        $kelas->update(['pola_jam_id' => $polaJam->id]);
+
+        return redirect()->route('admin.pola-jam.index')->with('status', "Pola jam berhasil ditautkan ke kelas {$kelas->nama}.");
     }
 }
