@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\TipeMataPelajaran;
 use App\Models\MataPelajaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -13,12 +14,26 @@ class MataPelajaranController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('mata-pelajaran.view');
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
+
+        $query = MataPelajaran::orderBy('nama');
+
+        if ($search = $request->input('search')) {
+            $query->where('nama', 'like', '%' . $search . '%');
+        }
+
+        if ($tipe = $request->input('tipe')) {
+            $query->where('tipe', $tipe);
+        }
+
         return view('admin.mata-pelajaran.index', [
-            'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
+            'mataPelajaranList' => $query->paginate($perPage)->withQueryString(),
+            'tipeList'          => TipeMataPelajaran::cases(),
+            'perPage'           => $perPage,
         ]);
     }
 
