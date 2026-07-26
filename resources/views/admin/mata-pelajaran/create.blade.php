@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-3xl space-y-4">
+    <div class="mx-auto max-w-5xl space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="font-display text-lg font-bold text-gray-900">Tambah Mata Pelajaran</h1>
             <p class="text-sm text-gray-500">

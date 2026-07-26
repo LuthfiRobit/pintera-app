@@ -25,19 +25,19 @@
 
             <div>
                 <x-input-label value="NIS" />
-                <x-text-input type="text" name="nis" value="{{ $val('nis') }}" class="mt-1.5 font-mono" />
+                <x-text-input type="text" name="nis" value="{{ $val('nis') }}" placeholder="Contoh: 2026001" class="mt-1.5 font-mono" />
                 <x-input-error :messages="$errors->get('nis')" class="mt-1.5" />
             </div>
 
             <div>
                 <x-input-label value="NISN" />
-                <x-text-input type="text" name="nisn" value="{{ $val('nisn') }}" class="mt-1.5 font-mono" />
+                <x-text-input type="text" name="nisn" value="{{ $val('nisn') }}" placeholder="10 digit NISN nasional" class="mt-1.5 font-mono" />
                 <x-input-error :messages="$errors->get('nisn')" class="mt-1.5" />
             </div>
 
             <div class="sm:col-span-2 lg:col-span-3">
                 <x-input-label value="Nama Lengkap" />
-                <x-text-input type="text" name="nama_lengkap" value="{{ $val('nama_lengkap') }}" class="mt-1.5" />
+                <x-text-input type="text" name="nama_lengkap" value="{{ $val('nama_lengkap') }}" placeholder="Nama lengkap sesuai akta kelahiran" class="mt-1.5" />
                 <x-input-error :messages="$errors->get('nama_lengkap')" class="mt-1.5" />
             </div>
 
@@ -58,7 +58,7 @@
 
             <div>
                 <x-input-label value="Tempat Lahir" />
-                <x-text-input type="text" name="tempat_lahir" value="{{ $val('tempat_lahir') }}" class="mt-1.5" />
+                <x-text-input type="text" name="tempat_lahir" value="{{ $val('tempat_lahir') }}" placeholder="Contoh: Bandung" class="mt-1.5" />
                 <x-input-error :messages="$errors->get('tempat_lahir')" class="mt-1.5" />
             </div>
 
