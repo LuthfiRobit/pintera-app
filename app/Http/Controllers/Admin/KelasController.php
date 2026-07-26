@@ -16,12 +16,26 @@ class KelasController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('kelas.view');
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
+
+        $query = Kelas::with(['tahunAjaran', 'waliKelas'])->orderBy('nama');
+
+        if ($search = $request->input('search')) {
+            $query->where('nama', 'like', '%' . $search . '%');
+        }
+
+        if ($tahunAjaranId = $request->input('tahun_ajaran_id')) {
+            $query->where('tahun_ajaran_id', $tahunAjaranId);
+        }
+
         return view('admin.kelas.index', [
-            'kelasList' => Kelas::with(['tahunAjaran', 'waliKelas'])->orderBy('nama')->get(),
+            'kelasList'       => $query->paginate($perPage)->withQueryString(),
+            'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
+            'perPage'         => $perPage,
         ]);
     }
 
