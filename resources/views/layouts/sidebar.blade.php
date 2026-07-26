@@ -49,6 +49,12 @@
                 Auth::user()->can('roles.view') ? ['route' => 'admin.roles.index', 'pattern' => 'admin.roles.*', 'label' => 'Peran', 'icon' => 'shield_person'] : null,
             ]),
         ],
+        [
+            'label' => 'VII. Ruang Guru',
+            'items' => array_filter([
+                Auth::user()->can('presensi.isi') ? ['route' => 'guru.sesi.index', 'pattern' => 'guru.sesi.*', 'label' => 'Jurnal & Presensi', 'icon' => 'edit_note'] : null,
+            ]),
+        ],
     ];
 @endphp
 
