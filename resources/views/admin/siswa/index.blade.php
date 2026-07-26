@@ -11,10 +11,13 @@
             </p>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            {{-- Header --}}
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
-                <p class="font-display text-sm font-bold text-gray-900">Daftar Siswa</p>
+        {{-- Filter Card --}}
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                    Filter Data
+                </p>
                 <div class="flex flex-wrap items-center gap-2">
                     @can('siswa.spmb-daftar')
                         <x-link-button variant="ghost" href="{{ route('admin.siswa.spmb-daftar.index') }}">
@@ -32,90 +35,68 @@
                 </div>
             </div>
 
-            {{-- Filter Bar --}}
-            <div
-                class="border-b border-gray-100 bg-gray-50/60 px-5 py-3"
-                x-data="{
-                    search: '{{ request('search') }}',
-                    kelasId: '{{ request('kelas_id') }}',
-                    status: '{{ request('status') }}',
-                    perPage: '{{ $perPage }}',
-                    searchTimer: null,
-
-                    submitSearch() {
-                        clearTimeout(this.searchTimer);
-                        this.searchTimer = setTimeout(() => this.$refs.filterForm.submit(), 500);
-                    },
-                    submitNow() {
-                        clearTimeout(this.searchTimer);
-                        this.$refs.filterForm.submit();
-                    }
-                }"
-            >
-                <form method="GET" action="{{ route('admin.siswa.index') }}" x-ref="filterForm" class="flex flex-wrap items-center gap-2">
-                    {{-- Search input --}}
-                    <div class="relative min-w-48 flex-1">
-                        <span class="absolute inset-y-0 left-2.5 flex items-center text-gray-400">
-                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-                            </svg>
-                        </span>
+            <form method="GET" action="{{ route('admin.siswa.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {{-- Search --}}
+                <div class="lg:col-span-2">
+                    <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
+                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
                         <input
-                            type="text"
-                            name="search"
-                            x-model="search"
-                            @input="submitSearch()"
-                            placeholder="Cari nama atau NIS…"
-                            class="w-full rounded-lg border-gray-200 py-1.5 pl-8 pr-3 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                            type="text" name="search" id="search"
+                            value="{{ request('search') }}"
+                            placeholder="Nama atau NIS"
+                            @input.debounce.500ms="$el.form.submit()"
+                            class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
                         >
                     </div>
+                </div>
 
-                    {{-- Filter Kelas --}}
-                    <select
-                        name="kelas_id"
-                        x-model="kelasId"
-                        @change="submitNow()"
-                        class="rounded-lg border-gray-200 py-1.5 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                    >
+                {{-- Filter Kelas --}}
+                <div>
+                    <label for="kelas_id" class="mb-1.5 block text-xs font-semibold text-gray-500">Kelas</label>
+                    <select name="kelas_id" id="kelas_id" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Semua Kelas</option>
                         @foreach ($kelasList as $kelas)
                             <option value="{{ $kelas->id }}" @selected(request('kelas_id') == $kelas->id)>{{ $kelas->nama }}</option>
                         @endforeach
                     </select>
+                </div>
 
-                    {{-- Filter Status --}}
-                    <select
-                        name="status"
-                        x-model="status"
-                        @change="submitNow()"
-                        class="rounded-lg border-gray-200 py-1.5 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                    >
+                {{-- Filter Status --}}
+                <div>
+                    <label for="status" class="mb-1.5 block text-xs font-semibold text-gray-500">Status</label>
+                    <select name="status" id="status" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Semua Status</option>
                         @foreach ($statusList as $s)
                             <option value="{{ $s->value }}" @selected(request('status') === $s->value)>{{ $s->label() }}</option>
                         @endforeach
                     </select>
+                </div>
 
-                    {{-- Per page --}}
-                    <select
-                        name="per_page"
-                        x-model="perPage"
-                        @change="submitNow()"
-                        class="rounded-lg border-gray-200 py-1.5 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"
-                    >
-                        <option value="10">10 / hal</option>
-                        <option value="20" @selected($perPage == 20)>20 / hal</option>
-                        <option value="25">25 / hal</option>
-                        <option value="50">50 / hal</option>
-                    </select>
-
-                    {{-- Reset link --}}
+                {{-- Per Page + Reset --}}
+                <div class="flex items-end gap-2">
+                    <div class="flex-1">
+                        <label for="per_page" class="mb-1.5 block text-xs font-semibold text-gray-500">Per Halaman</label>
+                        <select name="per_page" id="per_page" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="10" @selected($perPage == 10)>10</option>
+                            <option value="20" @selected($perPage == 20)>20</option>
+                            <option value="25" @selected($perPage == 25)>25</option>
+                            <option value="50" @selected($perPage == 50)>50</option>
+                        </select>
+                    </div>
                     @if (request()->anyFilled(['search', 'kelas_id', 'status']))
-                        <a href="{{ route('admin.siswa.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">
+                        <a href="{{ route('admin.siswa.index') }}" class="flex h-[42px] items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">
                             Reset
                         </a>
                     @endif
-                </form>
+                </div>
+            </form>
+        </div>
+
+        {{-- Table Card --}}
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div class="border-b border-gray-200 px-5 py-4">
+                <p class="font-display text-sm font-bold text-gray-900">Daftar Siswa</p>
             </div>
 
             <div class="overflow-x-auto">
@@ -165,7 +146,7 @@
                             <tr>
                                 <td colspan="6" class="px-5 py-10 text-center text-gray-500">
                                     @if (request()->anyFilled(['search', 'kelas_id', 'status']))
-                                        Tidak ada siswa yang cocok dengan filter.
+                                        Tidak ada siswa yang cocok dengan filter ini.
                                     @else
                                         Belum ada siswa.
                                     @endif
@@ -176,21 +157,9 @@
                 </table>
             </div>
 
-            {{-- Pagination Footer --}}
-            @if ($siswaList->hasPages())
-                <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3">
-                    <p class="text-sm text-gray-500">
-                        Menampilkan {{ $siswaList->firstItem() }}–{{ $siswaList->lastItem() }} dari {{ $siswaList->total() }} siswa
-                    </p>
-                    {{ $siswaList->links() }}
-                </div>
-            @else
-                <div class="border-t border-gray-100 px-5 py-3">
-                    <p class="text-sm text-gray-500">
-                        Menampilkan {{ $siswaList->count() }} dari {{ $siswaList->total() }} siswa
-                    </p>
-                </div>
-            @endif
+            <div class="border-t border-gray-200 px-5 py-4">
+                {{ $siswaList->links('pagination.tailadmin') }}
+            </div>
         </div>
     </div>
 </x-app-layout>
