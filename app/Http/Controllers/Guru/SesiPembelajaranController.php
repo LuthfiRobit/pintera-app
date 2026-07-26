@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Guru;
 
-use App\Enums\StatusPresensi;
 use App\Models\Kelas;
 use App\Models\SesiPembelajaran;
 use App\Services\SesiPembelajaranGenerator;
