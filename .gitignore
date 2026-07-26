@@ -1,4 +1,5 @@
 .superpowers/
+.agents/
 
 *.log
 .DS_Store
