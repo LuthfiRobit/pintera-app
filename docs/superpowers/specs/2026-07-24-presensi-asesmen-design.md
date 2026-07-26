@@ -193,10 +193,10 @@ Alur admin: buat Pola Jam sekali → assign ke tiap Kelas → isi Jadwal Pelajar
 Jurnal mengajar guru (materi yang diajarkan, catatan) adalah **1 entri per sesi kelas**, bukan per siswa. Kalau disatukan ke tabel presensi, tiap baris presensi siswa akan menyimpan data materi yang sama berulang — redundan dan membebani query rekap kehadiran (yang harus tetap ringan/cepat). Solusinya: entitas perantara `sesi_pembelajaran`.
 
 ```
-sesi_pembelajaran                     (1 baris per kelas per hari/jam pelajaran)
-├── jadwal_pelajaran_id (nullable — kosong utk mode di luar jadwal formal, misal PKL)
+sesi_pembelajaran                     (1 baris per kelas per blok jam pelajaran — lihat 4.1a)
+├── jadwal_pelajaran_id (nullable — menunjuk slot PERTAMA dalam blok; kosong utk mode di luar jadwal formal, misal PKL)
 ├── kelas_id, guru_id, mata_pelajaran_id (nullable)
-├── tanggal, jam_mulai, jam_selesai
+├── tanggal, jam_mulai, jam_selesai      (jam_mulai = slot pertama, jam_selesai = slot terakhir dalam blok)
 ├── materi (jurnal mengajar guru)
 ├── status (Enum: terlaksana, diganti, kosong)
 └── timestamps
@@ -209,10 +209,18 @@ presensi                              (1 baris per siswa per sesi_pembelajaran)
 └── timestamps
 ```
 
+#### 4.1a Blok jam pelajaran berurutan digabung jadi satu sesi
+
+Praktik lapangan: satu guru sering mengajar mapel yang sama ke kelas yang sama di 2 (atau lebih) jam pelajaran berturut-turut (mis. Bahasa Indonesia jam ke-1 dan ke-2). Ini secara nyata **satu sesi mengajar**, bukan dua — guru menulis satu jurnal dan siswa punya satu status kehadiran untuk seluruh blok, bukan status terpisah per jam. Sistem tidak perlu mencatat kehadiran di granularitas per-jam untuk kasus ini (dikonfirmasi: sekolah tidak butuh membedakan "hadir di jam ke-1 tapi terlambat di jam ke-2" — itu dianggap satu peristiwa kehadiran untuk seluruh blok).
+
+**Aturan penggabungan**, diterapkan oleh service generator sesi saat membuat baris `sesi_pembelajaran` harian dari `jadwal_pelajaran`: untuk satu `kelas_id` pada satu hari, kelompokkan baris `jadwal_pelajaran` yang **berurutan** (`jam_pelajaran.urutan` berturutan, dalam pola jam yang sama) **dan** punya `mata_pelajaran_id` serta `guru_id` yang identik menjadi **satu blok** → satu `sesi_pembelajaran`. Begitu `mata_pelajaran_id` atau `guru_id` berbeda di slot berikutnya (termasuk kalau slotnya kosong/tidak diisi jadwal), blok berakhir dan slot berikutnya memulai blok (sesi) baru.
+
+Tidak perlu tabel pivot baru untuk merepresentasikan "sesi ini mencakup jadwal_pelajaran mana saja" — `sesi_pembelajaran.jadwal_pelajaran_id` cukup menunjuk slot pertama dalam blok untuk keperluan penelusuran (referensi ke jam/mapel/guru asal), sementara `jam_mulai`/`jam_selesai` yang sudah menjadi kolom sendiri di `sesi_pembelajaran` (bukan diturunkan ulang dari `jadwal_pelajaran` saat dibaca) sudah cukup merepresentasikan rentang waktu blok tersebut secara mandiri.
+
 ### 4.2 Mode presensi — satu model, bukan tabel terpisah
 
 - **Harian** (PAUD/SD): 1 `sesi_pembelajaran` per hari per kelas.
-- **Per jam pelajaran** (SMP/SMA/SMK Kurikulum Merdeka): 1 `sesi_pembelajaran` per jam pelajaran per kelas — tiap guru mapel isi presensi & jurnal sendiri.
+- **Per jam pelajaran** (SMP/SMA/SMK Kurikulum Merdeka): 1 `sesi_pembelajaran` per **blok** jam pelajaran berurutan dengan mapel+guru yang sama per kelas (lihat 4.1a) — tiap guru mapel isi presensi & jurnal sendiri per bloknya, bukan per jam pelajaran mentah.
 - **PKL** (SMK): `sesi_pembelajaran` dengan guru = pembimbing PKL, tanpa `jadwal_pelajaran_id` formal, dicatat harian di luar sekolah.
 
 Semua mode tetap menghasilkan baris di tabel `presensi` yang sama sempit/seragam — rekap kehadiran lintas mode tetap satu query, tidak perlu union beberapa tabel.
