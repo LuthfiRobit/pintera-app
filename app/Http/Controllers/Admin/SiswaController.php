@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StatusSiswa;
 use App\Enums\SumberDataSiswa;
 use App\Models\Kelas;
 use App\Models\Siswa;
+use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,12 +17,43 @@ class SiswaController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('siswa.view');
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
+
+        $query = Siswa::with('kelas')->orderBy('nama_lengkap');
+
+        // Search by name or NIS
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', '%' . $search . '%')
+                    ->orWhere('nis', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Filter by Kelas
+        if ($kelasId = $request->input('kelas_id')) {
+            $query->where('kelas_id', $kelasId);
+        }
+
+        // Filter by Status
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+
+        // Build kelas list from active tahun ajaran only
+        $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
+        $kelasList = $tahunAjaranAktif
+            ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
+            : collect();
+
         return view('admin.siswa.index', [
-            'siswaList' => Siswa::with('kelas')->orderBy('nama_lengkap')->get(),
+            'siswaList' => $query->paginate($perPage)->withQueryString(),
+            'kelasList' => $kelasList,
+            'statusList' => StatusSiswa::cases(),
+            'perPage' => $perPage,
         ]);
     }
 
