@@ -1,11 +1,19 @@
 <x-app-layout>
-    <div class="mx-auto max-w-5xl space-y-4">
+    <div class="mx-auto max-w-6xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
         @endif
 
+        {{-- Header & Breadcrumb --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="font-display text-lg font-bold text-gray-900">Kelas</h1>
+            <div>
+                <h1 class="font-display text-lg font-bold text-gray-900">Kelas</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola daftar kelas, penugasan wali kelas, dan ikatan tahun ajaran lembaga.</p>
+            </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Kelas</b>
             </p>
@@ -23,9 +31,9 @@
                 </x-link-button>
             </div>
 
-            <form method="GET" action="{{ route('admin.kelas.index') }}" class="flex flex-wrap items-end gap-3">
+            <form method="GET" action="{{ route('admin.kelas.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {{-- Search --}}
-                <div class="min-w-48 flex-1">
+                <div>
                     <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
                     <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                         <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
@@ -40,9 +48,9 @@
                 </div>
 
                 {{-- Filter Tahun Ajaran --}}
-                <div class="shrink-0">
+                <div>
                     <label for="tahun_ajaran_id" class="mb-1.5 block text-xs font-semibold text-gray-500">Tahun Ajaran</label>
-                    <select name="tahun_ajaran_id" id="tahun_ajaran_id" @change="$el.form.submit()" class="rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <select name="tahun_ajaran_id" id="tahun_ajaran_id" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Semua Tahun Ajaran</option>
                         @foreach ($tahunAjaranList as $ta)
                             <option value="{{ $ta->id }}" @selected(request('tahun_ajaran_id') == $ta->id)>
@@ -53,19 +61,19 @@
                 </div>
 
                 {{-- Reset --}}
-                @if (request()->anyFilled(['search', 'tahun_ajaran_id']))
-                    <div class="shrink-0">
-                        <a href="{{ route('admin.kelas.index') }}" class="flex h-[42px] items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">
-                            Reset
+                <div class="flex items-end">
+                    @if (request()->anyFilled(['search', 'tahun_ajaran_id']))
+                        <a href="{{ route('admin.kelas.index') }}" class="flex h-[42px] w-full items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">
+                            Reset Filter
                         </a>
-                    </div>
-                @endif
+                    @endif
+                </div>
             </form>
         </div>
 
         {{-- Table Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
                 <p class="font-display text-sm font-bold text-gray-900">Daftar Kelas</p>
                 <form method="GET" action="{{ route('admin.kelas.index') }}">
                     @foreach (request()->except('per_page', 'page') as $key => $value)
@@ -135,7 +143,7 @@
                                     @if (request()->anyFilled(['search', 'tahun_ajaran_id']))
                                         Tidak ada kelas yang cocok dengan filter ini.
                                     @else
-                                        Belum ada kelas.
+                                        Belum ada kelas yang didaftarkan.
                                     @endif
                                 </td>
                             </tr>
@@ -150,3 +158,4 @@
         </div>
     </div>
 </x-app-layout>
+

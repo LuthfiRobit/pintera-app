@@ -1,6 +1,6 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4 sm:px-6 lg:px-8 py-8">
-        {{-- Flash Messages --}}
+    <div class="mx-auto max-w-6xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
         @endif
@@ -8,24 +8,23 @@
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
         @endif
 
-        {{-- Header Tetap Seperti Sebelumnya --}}
+        {{-- Header & Breadcrumb --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="font-display text-lg font-bold text-gray-900">Pola Jam &amp; Jam Pelajaran</h1>
-            <p class="text-sm text-gray-500">
-                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Pola Jam</b>
-            </p>
+            <div>
+                <h1 class="font-display text-lg font-bold text-gray-900">Pola Jam &amp; Jam Pelajaran</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola jadwal waktu belajar harian dan tautkan dengan kelas yang relevan.</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <x-link-button href="{{ route('admin.pola-jam.create') }}" class="shrink-0 justify-center">
+                    <span class="text-base leading-none mr-1.5">+</span> Tambah Pola Jam
+                </x-link-button>
+                <p class="hidden sm:block text-sm text-gray-500">
+                    Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Pola Jam</b>
+                </p>
+            </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <p class="text-sm text-gray-600">
-                Kelola jadwal waktu belajar harian dan tautkan dengan kelas yang relevan.
-            </p>
-            <x-link-button href="{{ route('admin.pola-jam.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition">
-                <span class="text-base leading-none mr-1">+</span> Tambah Pola Jam
-            </x-link-button>
-        </div>
-
-        <div class="space-y-6 mt-6">
+        <div class="space-y-6 mt-2">
             @forelse ($polaJamList as $pola)
                 @php $hariAktifPola = \App\Enums\Hari::aktifDari($pola->lembaga->hari_libur_mingguan ?? []); @endphp
                 <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
