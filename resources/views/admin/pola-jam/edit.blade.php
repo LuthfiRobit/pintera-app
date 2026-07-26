@@ -1,26 +1,35 @@
 <x-app-layout>
-    <div class="mx-auto max-w-2xl space-y-4">
+    <div class="mx-auto max-w-5xl space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="font-display text-lg font-bold text-gray-900">Edit Pola Jam</h1>
+            <h1 class="font-display text-lg font-bold text-gray-900">Edit Pola Jam: {{ $polaJam->nama }}</h1>
             <p class="text-sm text-gray-500">
-                <a href="{{ route('admin.pola-jam.index') }}" class="text-gray-500 hover:text-gray-700">Pola Jam</a>
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.pola-jam.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Pola Jam</a>
                 <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Edit</b>
             </p>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-            <form method="POST" action="{{ route('admin.pola-jam.update', $polaJam) }}" class="space-y-4">
-                @csrf
-                @method('PUT')
+        <form method="POST" action="{{ route('admin.pola-jam.update', $polaJam) }}">
+            @csrf
+            @method('PUT')
 
-                <div>
-                    <x-input-label value="Nama Pola" />
-                    <x-text-input type="text" name="nama" value="{{ old('nama', $polaJam->nama) }}" placeholder="Kelas Rendah 1-3" class="mt-1.5" />
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <p class="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <x-icon name="schedule" class="h-[15px] w-[15px] text-gray-400" />
+                    Identitas Pola Jam
+                </p>
+
+                <div class="max-w-xl">
+                    <x-input-label value="Nama Pola Jam" />
+                    <x-text-input type="text" name="nama" value="{{ old('nama', $polaJam->nama) }}" placeholder="Contoh: Kelas Rendah 1-3" class="mt-1.5" />
                     <x-input-error :messages="$errors->get('nama')" class="mt-1.5" />
                 </div>
+            </div>
 
-                <x-primary-button type="submit">Simpan</x-primary-button>
-            </form>
-        </div>
+            <div class="mt-4 flex items-center gap-3">
+                <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
+                <a href="{{ route('admin.pola-jam.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-700">Batal</a>
+            </div>
+        </form>
     </div>
 </x-app-layout>
