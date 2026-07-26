@@ -2,12 +2,16 @@
 
 namespace Database\Seeders;
 
+use App\Enums\JenisAsesmen;
+use App\Models\Asesmen;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\JamPelajaran;
 use App\Models\Kelas;
+use App\Models\KomponenPenilaian;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
+use App\Models\NilaiSiswa;
 use App\Models\PolaJam;
 use App\Models\Presensi;
 use App\Models\Role;
@@ -55,10 +59,10 @@ class AcademicDummySeeder extends Seeder
             ]);
         }
 
-        // 2. Berikan permission presensi.isi ke role guru
+        // 2. Berikan permission presensi.isi & asesmen.kelola ke role guru
         $roleGuru = Role::where('name', 'guru')->first();
         if ($roleGuru) {
-            $roleGuru->givePermissionTo('presensi.isi');
+            $roleGuru->givePermissionTo(['presensi.isi', 'asesmen.kelola']);
         }
 
         // 3. Dapatkan Guru yang ter-seed dari GuruSeeder
@@ -353,6 +357,57 @@ class AcademicDummySeeder extends Seeder
                     );
                 }
             }
+        }
+
+        // 9. Seed Komponen Penilaian (Tujuan Pembelajaran) Kurikulum Merdeka
+        $tpMtk1 = KomponenPenilaian::firstOrCreate(
+            ['mata_pelajaran_id' => $mapelMatematika->id, 'semester_id' => $semester->id, 'kode' => 'TP.1.1'],
+            ['deskripsi' => 'Peserta didik dapat menyelesaikan operasi aritmetika pada bilangan bulat dan pecahan.', 'kktp' => 'Minimal 75% benar']
+        );
+        $tpMtk2 = KomponenPenilaian::firstOrCreate(
+            ['mata_pelajaran_id' => $mapelMatematika->id, 'semester_id' => $semester->id, 'kode' => 'TP.1.2'],
+            ['deskripsi' => 'Peserta didik mendeskripsikan dan mengekspresikan relasi serta fungsi dengan representasi grafik.', 'kktp' => 'Mampu menggambar grafik linier']
+        );
+
+        $tpIpa1 = KomponenPenilaian::firstOrCreate(
+            ['mata_pelajaran_id' => $mapelIPA->id, 'semester_id' => $semester->id, 'kode' => 'TP.IPA.1'],
+            ['deskripsi' => 'Peserta didik memahami besaran pokok dan besaran turunan dalam satuan internasional.', 'kktp' => 'Tepat menggunakan alat ukur']
+        );
+
+        // 10. Seed Asesmen dan Nilai Siswa VII-A
+        $asesmenMtk = Asesmen::firstOrCreate(
+            ['guru_id' => $guruBudi->id, 'kelas_id' => $kelasA->id, 'mata_pelajaran_id' => $mapelMatematika->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Bilangan & Aljabar'],
+            ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(5)->toDateString()]
+        );
+        $asesmenMtk->komponenPenilaian()->syncWithoutDetaching([$tpMtk1->id, $tpMtk2->id]);
+
+        $skorMtk = [88.5, 92.0, 78.0, 85.0, 95.0];
+        $catatanMtk = [
+            'Menunjukkan pemahaman yang sangat baik dalam operasi aritmetika dan aljabar.',
+            'Sangat unggul dalam analisis soal cerita dan pemecahan masalah bilangan.',
+            'Perlu penguatan pada pemahaman representasi grafik dan fungsi.',
+            'Cukup baik, konsisten dalam menyelesaikan latihan operasi bilangan bulat.',
+            'Sempurna dalam menguasai seluruh indikator Tujuan Pembelajaran 1 dan 2.',
+        ];
+        foreach ($siswaA as $i => $siswa) {
+            NilaiSiswa::updateOrCreate(
+                ['asesmen_id' => $asesmenMtk->id, 'siswa_id' => $siswa->id],
+                ['skor' => $skorMtk[$i] ?? 80, 'catatan' => $catatanMtk[$i] ?? 'Baik']
+            );
+        }
+
+        $asesmenIpa = Asesmen::firstOrCreate(
+            ['guru_id' => $guruSiti->id, 'kelas_id' => $kelasA->id, 'mata_pelajaran_id' => $mapelIPA->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Besaran & Pengukuran'],
+            ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(3)->toDateString()]
+        );
+        $asesmenIpa->komponenPenilaian()->syncWithoutDetaching([$tpIpa1->id]);
+
+        $skorIpa = [84.0, 89.0, 91.5, 82.0, 88.0];
+        foreach ($siswaA as $i => $siswa) {
+            NilaiSiswa::updateOrCreate(
+                ['asesmen_id' => $asesmenIpa->id, 'siswa_id' => $siswa->id],
+                ['skor' => $skorIpa[$i] ?? 85, 'catatan' => 'Mampu menggunakan jangka sorong dan mikrometer sekrup dengan ketelitian baik.']
+            );
         }
     }
 }

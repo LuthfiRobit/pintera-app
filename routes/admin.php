@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
+use App\Http\Controllers\Admin\KomponenPenilaianController;
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\MataPelajaranController;
 use App\Http\Controllers\Admin\PembayaranController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\PendaftaranSiswaController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Http\Controllers\Admin\PolaJamController;
+use App\Http\Controllers\Admin\RaporController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
@@ -127,10 +129,21 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran.index');
     Route::get('jadwal-pelajaran/create', [JadwalPelajaranController::class, 'create'])->name('jadwal-pelajaran.create');
     Route::post('jadwal-pelajaran', [JadwalPelajaranController::class, 'store'])->name('jadwal-pelajaran.store');
+
+    Route::get('komponen-penilaian', [KomponenPenilaianController::class, 'index'])->name('komponen-penilaian.index');
+    Route::get('komponen-penilaian/create', [KomponenPenilaianController::class, 'create'])->name('komponen-penilaian.create');
+    Route::post('komponen-penilaian', [KomponenPenilaianController::class, 'store'])->name('komponen-penilaian.store');
+    Route::get('rapor', [RaporController::class, 'index'])->name('rapor.index');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
     Route::get('sesi', [\App\Http\Controllers\Guru\SesiPembelajaranController::class, 'index'])->name('sesi.index');
     Route::get('sesi/{sesi}', [\App\Http\Controllers\Guru\SesiPembelajaranController::class, 'show'])->name('sesi.show');
     Route::put('sesi/{sesi}', [\App\Http\Controllers\Guru\SesiPembelajaranController::class, 'update'])->name('sesi.update');
+
+    Route::get('asesmen', [\App\Http\Controllers\Guru\AsesmenController::class, 'index'])->name('asesmen.index');
+    Route::get('asesmen/create', [\App\Http\Controllers\Guru\AsesmenController::class, 'create'])->name('asesmen.create');
+    Route::post('asesmen', [\App\Http\Controllers\Guru\AsesmenController::class, 'store'])->name('asesmen.store');
+    Route::get('asesmen/{asesmen}', [\App\Http\Controllers\Guru\AsesmenController::class, 'show'])->name('asesmen.show');
+    Route::put('asesmen/{asesmen}/nilai', [\App\Http\Controllers\Guru\AsesmenController::class, 'updateNilai'])->name('asesmen.update-nilai');
 });
