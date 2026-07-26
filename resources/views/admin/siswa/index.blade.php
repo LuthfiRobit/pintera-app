@@ -35,9 +35,9 @@
                 </div>
             </div>
 
-            <form method="GET" action="{{ route('admin.siswa.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {{-- Search --}}
-                <div class="lg:col-span-2">
+            <form method="GET" action="{{ route('admin.siswa.index') }}" class="flex flex-wrap items-end gap-3">
+                {{-- Search — grows to fill available space --}}
+                <div class="min-w-48 flex-1">
                     <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
                     <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                         <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
@@ -51,10 +51,10 @@
                     </div>
                 </div>
 
-                {{-- Filter Kelas --}}
-                <div>
+                {{-- Filter Kelas — shrinks to content --}}
+                <div class="shrink-0">
                     <label for="kelas_id" class="mb-1.5 block text-xs font-semibold text-gray-500">Kelas</label>
-                    <select name="kelas_id" id="kelas_id" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <select name="kelas_id" id="kelas_id" @change="$el.form.submit()" class="rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Semua Kelas</option>
                         @foreach ($kelasList as $kelas)
                             <option value="{{ $kelas->id }}" @selected(request('kelas_id') == $kelas->id)>{{ $kelas->nama }}</option>
@@ -62,10 +62,10 @@
                     </select>
                 </div>
 
-                {{-- Filter Status --}}
-                <div>
+                {{-- Filter Status — shrinks to content --}}
+                <div class="shrink-0">
                     <label for="status" class="mb-1.5 block text-xs font-semibold text-gray-500">Status</label>
-                    <select name="status" id="status" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <select name="status" id="status" @change="$el.form.submit()" class="rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                         <option value="">Semua Status</option>
                         @foreach ($statusList as $s)
                             <option value="{{ $s->value }}" @selected(request('status') === $s->value)>{{ $s->label() }}</option>
@@ -73,30 +73,41 @@
                     </select>
                 </div>
 
-                {{-- Per Page + Reset --}}
-                <div class="flex items-end gap-2">
-                    <div class="flex-1">
-                        <label for="per_page" class="mb-1.5 block text-xs font-semibold text-gray-500">Per Halaman</label>
-                        <select name="per_page" id="per_page" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="10" @selected($perPage == 10)>10</option>
-                            <option value="20" @selected($perPage == 20)>20</option>
-                            <option value="25" @selected($perPage == 25)>25</option>
-                            <option value="50" @selected($perPage == 50)>50</option>
-                        </select>
-                    </div>
-                    @if (request()->anyFilled(['search', 'kelas_id', 'status']))
+                {{-- Reset button — only shown when filters are active --}}
+                @if (request()->anyFilled(['search', 'kelas_id', 'status']))
+                    <div class="shrink-0">
                         <a href="{{ route('admin.siswa.index') }}" class="flex h-[42px] items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">
                             Reset
                         </a>
-                    @endif
-                </div>
+                    </div>
+                @endif
             </form>
         </div>
 
         {{-- Table Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div class="border-b border-gray-200 px-5 py-4">
+            {{-- Table header with per-page selector --}}
+            <div class="flex items-center justify-between border-b border-gray-200 px-5 py-4">
                 <p class="font-display text-sm font-bold text-gray-900">Daftar Siswa</p>
+                <form method="GET" action="{{ route('admin.siswa.index') }}" id="per-page-form">
+                    @foreach (request()->except('per_page', 'page') as $key => $value)
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endforeach
+                    <div class="flex items-center gap-2 text-sm text-gray-500">
+                        <label for="per_page" class="shrink-0">Tampilkan</label>
+                        <select
+                            name="per_page" id="per_page"
+                            @change="$el.form.submit()"
+                            class="rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500"
+                        >
+                            <option value="10" @selected($perPage == 10)>10</option>
+                            <option value="20" @selected($perPage == 20)>20</option>
+                            <option value="25" @selected($perPage == 25)>25</option>
+                            <option value="50" @selected($perPage == 50)>50</option>
+                        </select>
+                        <span class="shrink-0">per halaman</span>
+                    </div>
+                </form>
             </div>
 
             <div class="overflow-x-auto">
