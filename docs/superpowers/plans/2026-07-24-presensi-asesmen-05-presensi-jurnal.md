@@ -484,6 +484,8 @@ git commit -m "feat: add SesiPembelajaran and Presensi migrations, models, facto
 - Consumes: `App\Services\KalenderAkademikResolver` (Tahap 3), `App\Models\JadwalPelajaran`/`JamPelajaran` (Tahap 4), `App\Models\Kelas`, `App\Models\Siswa`.
 - Produces: `SesiPembelajaranGenerator::generateUntukTanggal(Kelas $kelas, CarbonInterface $tanggal, int $semesterId): Collection<SesiPembelajaran>`. Task 4's guru UI (or a future scheduled command, out of scope here) calls this to materialize sessions.
 
+**Design note — block-merging (per design spec Section 4.1a, added after the original spec was written):** real teaching practice assigns the same `mata_pelajaran_id` + `guru_id` to 2+ **consecutive** `jam_pelajaran` slots for a class (a "double period"). This must produce **one** `SesiPembelajaran` for the whole block, not one per slot — confirmed with the user that schools don't need per-jam attendance granularity within such a block. The generator must group same-day `JadwalPelajaran` rows into blocks (consecutive `jam_pelajaran.urutan`, identical `mata_pelajaran_id` and `guru_id`) before creating sessions — see Step 4's rewritten algorithm. This does **not** change the migration's `unique(['jadwal_pelajaran_id', 'tanggal'])` constraint from Task 2: `jadwal_pelajaran_id` on a merged `SesiPembelajaran` row points at the block's **first** slot, and because block-detection is deterministic (same `JadwalPelajaran` data in, same block boundaries out), that first slot's id remains a stable, valid idempotency key across repeated generator calls — no schema change needed.
+
 - [ ] **Step 1: Add the Carbon day-of-week mapping to `Hari`**
 
 Open `app/Enums/Hari.php` and add this method inside the enum (alongside the existing `label()` method):
@@ -582,6 +584,73 @@ it('is idempotent: calling it twice for the same date does not duplicate the ses
 
     expect(SesiPembelajaran::where('kelas_id', $kelas->id)->count())->toBe(1);
 });
+
+it('merges 2 consecutive jam pelajaran with the same mapel and guru into one sesi spanning the whole block', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan' => [0]]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jamSatu = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 1, 'is_pelajaran' => true, 'jam_mulai' => '07:35', 'jam_selesai' => '08:10']);
+    $jamDua = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 2, 'is_pelajaran' => true, 'jam_mulai' => '08:10', 'jam_selesai' => '09:00']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamSatu->id, 'mata_pelajaran_id' => $mapel->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamDua->id, 'mata_pelajaran_id' => $mapel->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    Siswa::factory()->count(2)->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $hasil = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+
+    expect($hasil)->toHaveCount(1);
+    expect($hasil->first()->jam_mulai)->toBe('07:35:00');
+    expect($hasil->first()->jam_selesai)->toBe('09:00:00');
+    expect($hasil->first()->presensi()->count())->toBe(2);
+});
+
+it('does not merge consecutive slots when the mata pelajaran differs', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan' => [0]]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jamSatu = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 1, 'is_pelajaran' => true]);
+    $jamDua = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 2, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $mapelSatu = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $mapelDua = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamSatu->id, 'mata_pelajaran_id' => $mapelSatu->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamDua->id, 'mata_pelajaran_id' => $mapelDua->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+
+    $hasil = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+
+    expect($hasil)->toHaveCount(2);
+});
+
+it('does not merge slots with the same mapel and guru if they are not adjacent (a different slot sits between them)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan' => [0]]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jamSatu = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 1, 'is_pelajaran' => true]);
+    $jamDua = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 2, 'is_pelajaran' => true]);
+    $jamTiga = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 3, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $mapelLain = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamSatu->id, 'mata_pelajaran_id' => $mapelA->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamDua->id, 'mata_pelajaran_id' => $mapelLain->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamTiga->id, 'mata_pelajaran_id' => $mapelA->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+
+    $hasil = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+
+    // 3 separate sesi: mapelA alone, mapelLain alone, mapelA alone again — urutan 1 and 3
+    // share mata_pelajaran_id/guru_id but are not consecutive, so they must NOT merge.
+    expect($hasil)->toHaveCount(3);
+});
 ```
 
 - [ ] **Step 3: Run test to verify it fails**
@@ -625,24 +694,69 @@ class SesiPembelajaranGenerator
             ->where('semester_id', $semesterId)
             ->whereHas('jamPelajaran', fn ($q) => $q->where('pola_jam_id', $kelas->pola_jam_id)->where('hari', $hari->value))
             ->with('jamPelajaran')
-            ->get();
+            ->get()
+            ->sortBy(fn (JadwalPelajaran $jadwal) => $jadwal->jamPelajaran->urutan)
+            ->values();
 
-        return $jadwalHariIni->map(fn (JadwalPelajaran $jadwal) => $this->buatSesi($kelas, $jadwal, $tanggal));
+        return $this->kelompokkanJadiBlok($jadwalHariIni)
+            ->map(fn (Collection $blok) => $this->buatSesi($kelas, $blok, $tanggal));
     }
 
-    private function buatSesi(Kelas $kelas, JadwalPelajaran $jadwal, CarbonInterface $tanggal): SesiPembelajaran
+    /**
+     * Groups same-day JadwalPelajaran rows (already sorted by jam_pelajaran.urutan) into
+     * blocks of consecutive slots sharing the same mata_pelajaran_id and guru_id — a
+     * "double period" taught by the same guru is one teaching session, not two.
+     *
+     * @param  Collection<int, JadwalPelajaran>  $jadwalHariIni
+     * @return Collection<int, Collection<int, JadwalPelajaran>>
+     */
+    private function kelompokkanJadiBlok(Collection $jadwalHariIni): Collection
     {
+        $semuaBlok = collect();
+        $blokSaatIni = collect();
+
+        foreach ($jadwalHariIni as $jadwal) {
+            if ($blokSaatIni->isNotEmpty()) {
+                $terakhir = $blokSaatIni->last();
+                $berurutan = $jadwal->jamPelajaran->urutan === $terakhir->jamPelajaran->urutan + 1;
+                $samaMapelDanGuru = $jadwal->mata_pelajaran_id === $terakhir->mata_pelajaran_id
+                    && $jadwal->guru_id === $terakhir->guru_id;
+
+                if (! ($berurutan && $samaMapelDanGuru)) {
+                    $semuaBlok->push($blokSaatIni);
+                    $blokSaatIni = collect();
+                }
+            }
+
+            $blokSaatIni->push($jadwal);
+        }
+
+        if ($blokSaatIni->isNotEmpty()) {
+            $semuaBlok->push($blokSaatIni);
+        }
+
+        return $semuaBlok;
+    }
+
+    /**
+     * @param  Collection<int, JadwalPelajaran>  $blok  one or more consecutive same-mapel/guru slots
+     */
+    private function buatSesi(Kelas $kelas, Collection $blok, CarbonInterface $tanggal): SesiPembelajaran
+    {
+        $jadwalPertama = $blok->first();
+        $jadwalTerakhir = $blok->last();
+
         $sesi = SesiPembelajaran::firstOrCreate(
             [
-                'jadwal_pelajaran_id' => $jadwal->id,
+                'jadwal_pelajaran_id' => $jadwalPertama->id,
                 'tanggal' => $tanggal->toDateString(),
             ],
             [
                 'kelas_id' => $kelas->id,
-                'guru_id' => $jadwal->guru_id,
-                'mata_pelajaran_id' => $jadwal->mata_pelajaran_id,
-                'jam_mulai' => $jadwal->jamPelajaran->jam_mulai,
-                'jam_selesai' => $jadwal->jamPelajaran->jam_selesai,
+                'guru_id' => $jadwalPertama->guru_id,
+                'mata_pelajaran_id' => $jadwalPertama->mata_pelajaran_id,
+                'jam_mulai' => $jadwalPertama->jamPelajaran->jam_mulai,
+                'jam_selesai' => $jadwalTerakhir->jamPelajaran->jam_selesai,
                 'status' => 'terlaksana',
             ]
         );
@@ -661,10 +775,12 @@ class SesiPembelajaranGenerator
 }
 ```
 
+Note: `jadwal_pelajaran_id`/`tanggal` remains a valid, deterministic idempotency key for `firstOrCreate` even after this change — `$jadwalPertama` is always the same specific `JadwalPelajaran` row for a given block on a given date, since block-detection only depends on data that doesn't change between calls (`JadwalPelajaran`/`JamPelajaran` rows for that day). Do not change the Task 2 migration's `unique(['jadwal_pelajaran_id', 'tanggal'])` constraint for this.
+
 - [ ] **Step 5: Run test to verify it passes**
 
 Run: `php artisan test tests/Unit/Services/SesiPembelajaranGeneratorTest.php`
-Expected: PASS (4 tests)
+Expected: PASS (7 tests)
 
 - [ ] **Step 6: Commit**
 
@@ -1027,3 +1143,4 @@ git commit -m "feat: add guru-facing jurnal and presensi screen, scoped to the o
 - **Spec coverage**: Implements spec Section 4 in full — `sesi_pembelajaran` as the journal-carrying parent, `presensi` as the lean per-student child, the harian/per-jam-pelajaran/PKL modes (PKL supported via `jadwal_pelajaran_id = null` ad-hoc sessions, though a dedicated PKL creation UI is not built in this tahap — only the model/generator support it), and the guru/wali-kelas data-scoping principle from Section 7.2.
 - **Type consistency check**: `SesiPembelajaranGenerator::generateUntukTanggal()`'s signature (`Kelas $kelas, CarbonInterface $tanggal, int $semesterId`) matches what Task 4's controller calls it with.
 - **Note for Tahap 6+**: Wali Kelas's "lihat rekap presensi lintas mapel untuk kelas yang diampu" (spec Section 7.1) is **not** built in this tahap — only guru-mapel-scoped access to their own sessions. A future tahap (or a follow-up task in this one, if prioritized later) would add a `Wali Kelas` recap view filtering by `kelas.wali_kelas_guru_id` instead of `sesi_pembelajaran.guru_id`.
+- **Block-merging impact on Task 4 (added after spec Section 4.1a)**: Task 4's controller and views need **no change** for block-merged sessions. `SesiPembelajaranController::index()`/`show()`/`update()` all operate on `SesiPembelajaran` rows generically (by `guru_id` and by the model's own id) — they never iterate `JadwalPelajaran` slots themselves, so a merged block simply appears as one row instead of two. The index view's `{{ $sesi->jam_mulai }}–{{ $sesi->jam_selesai }}` already renders whatever range the row spans, so a double-period block reads as e.g. "07:35–09:00" with no template change needed. Task 4's test fixture (`siapkanGuruDenganJadwalHariIni()`) only exercises a single-slot session — it doesn't need to cover the merge path, since that behavior is already fully verified by Task 3's 3 new block-merge tests at the generator level, and Task 4 consumes `SesiPembelajaran` rows, not raw slots.
