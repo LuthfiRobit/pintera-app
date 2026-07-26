@@ -25,6 +25,20 @@ enum Hari: string
         };
     }
 
+    public static function fromCarbonDayOfWeek(int $dayOfWeek): self
+    {
+        return match ($dayOfWeek) {
+            1 => self::Senin,
+            2 => self::Selasa,
+            3 => self::Rabu,
+            4 => self::Kamis,
+            5 => self::Jumat,
+            6 => self::Sabtu,
+            0 => self::Minggu,
+            default => throw new \ValueError("Invalid Carbon day of week: {$dayOfWeek}"),
+        };
+    }
+
     public static function aktifDari(array $hariLiburMingguan): array
     {
         $petaKeAngka = [
