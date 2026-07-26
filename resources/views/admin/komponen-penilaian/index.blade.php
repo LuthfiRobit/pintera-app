@@ -1,76 +1,62 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-                <nav class="flex text-xs text-gray-500 mb-1">
-                    <span class="hover:text-gray-700">Akademik</span>
-                    <span class="mx-2">/</span>
-                    <span class="text-gray-700 font-semibold">Komponen Penilaian (TP)</span>
-                </nav>
-                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-                    <x-icon name="checklist" class="h-7 w-7 text-brand-500" />
-                    Komponen Penilaian & Tujuan Pembelajaran (TP)
-                </h2>
-                <p class="text-sm text-gray-500 mt-0.5">
-                    Kelola Tujuan Pembelajaran (TP) dan Kriteria Ketercapaian (KKTP) Kurikulum Merdeka per Mata Pelajaran
-                </p>
-            </div>
-            <a 
-                href="{{ route('admin.komponen-penilaian.create') }}" 
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-brand-600 active:scale-[0.98]"
-            >
-                <x-icon name="add" class="h-4 w-4" />
-                Tambah TP Baru
-            </a>
-        </div>
-    </x-slot>
-
-    <div class="mx-auto max-w-6xl py-6 space-y-6" x-data="{ search: '', filterMapel: '', filterSemester: '' }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: '', filterMapel: '', filterSemester: '' }">
+        {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="flex items-center gap-3 rounded-xl border border-success-500/20 bg-success-50/50 p-4 text-sm font-medium text-success-700">
-                <x-icon name="check_circle" class="h-5 w-5 shrink-0 text-success-500" />
-                <span>{{ session('status') }}</span>
-            </div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
+        @endif
+
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Komponen Penilaian (TP)</h1>
+            <p class="text-sm text-gray-500">
+                Akademik <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Komponen Penilaian</b>
+            </p>
+        </div>
 
         <!-- Summary Stats Cards -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Tujuan Pembelajaran</span>
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                        <x-icon name="checklist" class="h-5 w-5" />
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Tujuan Pembelajaran</p>
+                        <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->count() }}</p>
+                    </div>
+                    <div class="rounded-xl bg-brand-50 p-3 text-brand-600">
+                        <x-icon name="checklist" class="h-6 w-6" />
                     </div>
                 </div>
-                <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $komponenList->count() }}</p>
-                <p class="mt-1 text-xs text-gray-400">Komponen penilaian terdaftar</p>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Mata Pelajaran Tercover</span>
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                        <x-icon name="menu_book" class="h-5 w-5" />
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Mapel Tercover</p>
+                        <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->pluck('mata_pelajaran_id')->unique()->count() }}</p>
+                    </div>
+                    <div class="rounded-xl bg-blue-50 p-3 text-blue-600">
+                        <x-icon name="menu_book" class="h-6 w-6" />
                     </div>
                 </div>
-                <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $komponenList->pluck('mata_pelajaran_id')->unique()->count() }}</p>
-                <p class="mt-1 text-xs text-gray-400">Mata pelajaran yang memiliki TP</p>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Dengan KKTP Spesifik</span>
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                        <x-icon name="fact_check" class="h-5 w-5" />
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Dengan KKTP Spesifik</p>
+                        <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->filter(fn($k) => !empty($k->kktp))->count() }}</p>
+                    </div>
+                    <div class="rounded-xl bg-amber-50 p-3 text-amber-600">
+                        <x-icon name="fact_check" class="h-6 w-6" />
                     </div>
                 </div>
-                <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $komponenList->filter(fn($k) => !empty($k->kktp))->count() }}</p>
-                <p class="mt-1 text-xs text-gray-400">Memiliki rincian Kriteria Ketuntasan</p>
             </div>
         </div>
 
         <!-- Filter and Search Bar -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
             <div class="flex flex-col gap-3 md:flex-row md:items-center">
                 <div class="relative flex-1">
                     <x-icon name="search" class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -78,17 +64,17 @@
                         type="text" 
                         x-model="search" 
                         placeholder="Cari kode TP atau deskripsi..." 
-                        class="w-full rounded-xl border-gray-200 pl-10 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                        class="w-full rounded-lg border-gray-200 pl-10 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2"
                     >
                 </div>
                 <div class="flex flex-wrap gap-2">
-                    <select x-model="filterMapel" class="rounded-xl border-gray-200 text-sm text-gray-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2.5">
+                    <select x-model="filterMapel" class="rounded-lg border-gray-200 text-sm text-gray-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2">
                         <option value="">Semua Mata Pelajaran</option>
                         @foreach ($komponenList->pluck('mataPelajaran.nama', 'mata_pelajaran_id')->unique() as $id => $nama)
                             <option value="{{ $nama }}">{{ $nama }}</option>
                         @endforeach
                     </select>
-                    <select x-model="filterSemester" class="rounded-xl border-gray-200 text-sm text-gray-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2.5">
+                    <select x-model="filterSemester" class="rounded-lg border-gray-200 text-sm text-gray-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2">
                         <option value="">Semua Semester</option>
                         @foreach ($komponenList->pluck('semester.nama', 'semester_id')->unique() as $id => $nama)
                             <option value="{{ $nama }}">{{ $nama }}</option>
@@ -99,13 +85,18 @@
         </div>
 
         <!-- Content List -->
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-gray-150 bg-gray-50/50 px-6 py-4">
-                <p class="text-sm font-semibold text-gray-700">Daftar Komponen & Tujuan Pembelajaran</p>
-                <x-badge tone="brand" class="text-xs font-semibold px-2.5 py-0.5">{{ $komponenList->count() }} Data</x-badge>
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div class="flex flex-wrap items-center justify-between border-b border-gray-100 bg-white px-6 py-4 gap-3">
+                <p class="font-display text-sm font-bold text-gray-900">Daftar Komponen &amp; Tujuan Pembelajaran</p>
+                <div class="flex items-center gap-2">
+                    <x-badge tone="brand" class="text-xs font-semibold px-2.5 py-0.5">{{ $komponenList->count() }} Data</x-badge>
+                    <x-link-button href="{{ route('admin.komponen-penilaian.create') }}">
+                        <span class="text-base leading-none mr-1.5">+</span> Tambah TP Baru
+                    </x-link-button>
+                </div>
             </div>
             
-            <div class="divide-y divide-gray-150">
+            <div class="divide-y divide-gray-100">
                 @forelse ($komponenList as $komponen)
                     <div 
                         x-show="(!search || '{{ strtolower(addslashes($komponen->kode . ' ' . $komponen->deskripsi . ' ' . $komponen->mataPelajaran->nama)) }}'.includes(search.toLowerCase())) && (!filterMapel || '{{ addslashes($komponen->mataPelajaran->nama) }}' === filterMapel) && (!filterSemester || '{{ addslashes($komponen->semester->nama) }}' === filterSemester)"
@@ -115,7 +106,7 @@
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <div class="flex items-center gap-2.5">
                                 @if ($komponen->kode)
-                                    <span class="inline-flex items-center rounded-lg border border-brand-500/30 bg-brand-50 px-2.5 py-1 text-xs font-extrabold text-brand-700">
+                                    <span class="inline-flex items-center rounded-md border border-brand-500/30 bg-brand-50 px-2.5 py-1 text-xs font-bold text-brand-700">
                                         {{ $komponen->kode }}
                                     </span>
                                 @endif
@@ -147,10 +138,9 @@
                             <p class="text-sm font-semibold text-gray-700">Belum Ada Tujuan Pembelajaran</p>
                             <p class="text-xs text-gray-400 max-w-sm mx-auto mt-0.5">Tambahkan Tujuan Pembelajaran (TP) untuk mempermudah guru merujuk indikator penilaian saat menginput nilai asesmen.</p>
                         </div>
-                        <a href="{{ route('admin.komponen-penilaian.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-600">
-                            <x-icon name="add" class="h-4 w-4" />
-                            Tambah TP Pertama
-                        </a>
+                        <x-link-button href="{{ route('admin.komponen-penilaian.create') }}" class="inline-flex justify-center">
+                            <span class="text-base leading-none mr-1.5">+</span> Tambah TP Pertama
+                        </x-link-button>
                     </div>
                 @endforelse
             </div>

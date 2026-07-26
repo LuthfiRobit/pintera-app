@@ -1,76 +1,62 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <nav class="flex text-xs text-gray-500 mb-1">
-                    <span class="hover:text-gray-700">Ruang Guru</span>
-                    <span class="mx-2">/</span>
-                    <span class="text-gray-700 font-semibold">Asesmen Pembelajaran</span>
-                </nav>
-                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-                    <x-icon name="assessment" class="h-7 w-7 text-brand-500" />
-                    Asesmen & Nilai Kurikulum Merdeka
-                </h2>
-                <p class="text-sm text-gray-500 mt-0.5">
-                    Kelola penilaian Sumatif Lingkup Materi dan Sumatif Akhir Semester untuk kelas yang Anda ampu
-                </p>
-            </div>
-            <a 
-                href="{{ route('guru.asesmen.create') }}" 
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-brand-600 active:scale-[0.98]"
-            >
-                <x-icon name="add" class="h-4 w-4" />
-                Buat Asesmen Baru
-            </a>
-        </div>
-    </x-slot>
-
-    <div class="mx-auto max-w-6xl py-6 space-y-6" x-data="{ search: '', filterJenis: '' }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: '', filterJenis: '' }">
+        {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="flex items-center gap-3 rounded-xl border border-success-500/20 bg-success-50/50 p-4 text-sm font-medium text-success-700">
-                <x-icon name="check_circle" class="h-5 w-5 shrink-0 text-success-500" />
-                <span>{{ session('status') }}</span>
-            </div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
         @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
+        @endif
+
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Asesmen Pembelajaran</h1>
+            <p class="text-sm text-gray-500">
+                Ruang Guru <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Asesmen &amp; Nilai</b>
+            </p>
+        </div>
 
         <!-- Summary Stat Cards -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Asesmen Selesai/Aktif</span>
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                        <x-icon name="assessment" class="h-5 w-5" />
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Asesmen Active</p>
+                        <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $asesmenList->count() }}</p>
+                    </div>
+                    <div class="rounded-xl bg-brand-50 p-3 text-brand-600">
+                        <x-icon name="assessment" class="h-6 w-6" />
                     </div>
                 </div>
-                <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $asesmenList->count() }}</p>
-                <p class="mt-1 text-xs text-gray-400">Kegiatan penilaian dibuat</p>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sumatif Lingkup Materi</span>
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                        <x-icon name="edit_note" class="h-5 w-5" />
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Sumatif Lingkup Materi</p>
+                        <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $asesmenList->filter(fn($a) => $a->jenis->value === 'sumatif_lingkup_materi')->count() }}</p>
+                    </div>
+                    <div class="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+                        <x-icon name="edit_note" class="h-6 w-6" />
                     </div>
                 </div>
-                <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $asesmenList->filter(fn($a) => $a->jenis->value === 'sumatif_lingkup_materi')->count() }}</p>
-                <p class="mt-1 text-xs text-gray-400">Ulangan harian / projek bab</p>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Sumatif Akhir / Semester</span>
-                    <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
-                        <x-icon name="fact_check" class="h-5 w-5" />
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Sumatif Akhir / Semester</p>
+                        <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $asesmenList->filter(fn($a) => in_array($a->jenis->value, ['sumatif_akhir_semester', 'sumatif_akhir_jenjang', 'pas', 'pts', 'pat']))->count() }}</p>
+                    </div>
+                    <div class="rounded-xl bg-purple-50 p-3 text-purple-600">
+                        <x-icon name="fact_check" class="h-6 w-6" />
                     </div>
                 </div>
-                <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $asesmenList->filter(fn($a) => in_array($a->jenis->value, ['sumatif_akhir_semester', 'sumatif_akhir_jenjang', 'pas', 'pts', 'pat']))->count() }}</p>
-                <p class="mt-1 text-xs text-gray-400">Ujian semester & akhir jenjang</p>
             </div>
         </div>
 
         <!-- Filter Bar -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <div class="relative flex-1">
                     <x-icon name="search" class="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -78,11 +64,11 @@
                         type="text" 
                         x-model="search" 
                         placeholder="Cari judul asesmen, kelas, atau mata pelajaran..." 
-                        class="w-full rounded-xl border-gray-200 pl-10 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                        class="w-full rounded-lg border-gray-200 pl-10 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2"
                     >
                 </div>
                 <div>
-                    <select x-model="filterJenis" class="w-full sm:w-auto rounded-xl border-gray-200 text-sm text-gray-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2.5">
+                    <select x-model="filterJenis" class="w-full sm:w-auto rounded-lg border-gray-200 text-sm text-gray-700 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2">
                         <option value="">Semua Jenis Asesmen</option>
                         <option value="sumatif_lingkup_materi">Sumatif Lingkup Materi</option>
                         <option value="sumatif_akhir_semester">Sumatif Akhir Semester (SAS)</option>
@@ -92,13 +78,18 @@
         </div>
 
         <!-- Asesmen Cards List -->
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div class="flex items-center justify-between border-b border-gray-150 bg-gray-50/50 px-6 py-4">
-                <p class="text-sm font-semibold text-gray-700">Daftar Asesmen Anda</p>
-                <x-badge tone="brand" class="text-xs font-semibold px-2.5 py-0.5">{{ $asesmenList->count() }} Kegiatan</x-badge>
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div class="flex flex-wrap items-center justify-between border-b border-gray-100 bg-white px-6 py-4 gap-3">
+                <p class="font-display text-sm font-bold text-gray-900">Daftar Asesmen Anda</p>
+                <div class="flex items-center gap-2">
+                    <x-badge tone="brand" class="text-xs font-semibold px-2.5 py-0.5">{{ $asesmenList->count() }} Kegiatan</x-badge>
+                    <x-link-button href="{{ route('guru.asesmen.create') }}">
+                        <span class="text-base leading-none mr-1.5">+</span> Buat Asesmen Baru
+                    </x-link-button>
+                </div>
             </div>
 
-            <div class="divide-y divide-gray-150">
+            <div class="divide-y divide-gray-100">
                 @forelse ($asesmenList as $asesmen)
                     <div 
                         x-show="(!search || '{{ strtolower(addslashes($asesmen->judul . ' ' . $asesmen->kelas->nama . ' ' . $asesmen->mataPelajaran->nama)) }}'.includes(search.toLowerCase())) && (!filterJenis || '{{ $asesmen->jenis->value }}' === filterJenis)"
@@ -107,7 +98,7 @@
                     >
                         <div class="space-y-2 max-w-3xl">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="inline-flex items-center rounded-lg border border-brand-500/30 bg-brand-50 px-2.5 py-1 text-xs font-extrabold text-brand-700">
+                                <span class="inline-flex items-center rounded-md border border-brand-500/30 bg-brand-50 px-2.5 py-1 text-xs font-extrabold text-brand-700">
                                     {{ $asesmen->jenis->label() }}
                                 </span>
                                 <x-badge tone="slate" class="text-xs font-medium">{{ $asesmen->semester->nama }}</x-badge>
@@ -118,7 +109,7 @@
                                 </span>
                             </div>
 
-                            <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand-600">
+                            <h3 class="text-lg font-bold text-gray-900">
                                 {{ $asesmen->judul }}
                             </h3>
 
@@ -137,10 +128,10 @@
                         <div class="shrink-0 pt-2 sm:pt-0">
                             <a 
                                 href="{{ route('guru.asesmen.show', $asesmen) }}" 
-                                class="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/50 px-4 py-2.5 text-sm font-semibold text-brand-700 shadow-sm transition hover:bg-brand-500 hover:text-white active:scale-[0.98]"
+                                class="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/50 px-4 py-2 text-sm font-semibold text-brand-700 shadow-sm transition hover:bg-brand-500 hover:text-white active:scale-[0.98]"
                             >
                                 <x-icon name="edit_note" class="h-4 w-4" />
-                                <span>Input Nilai & Catatan</span>
+                                <span>Input Nilai &amp; Catatan</span>
                                 <x-icon name="chevron_right" class="h-4 w-4 opacity-70" />
                             </a>
                         </div>
@@ -154,10 +145,9 @@
                             <p class="text-sm font-semibold text-gray-700">Belum Ada Asesmen</p>
                             <p class="text-xs text-gray-400 max-w-sm mx-auto mt-0.5">Buat asesmen baru untuk mulai memasukkan skor angka dan narasi ketercapaian siswa.</p>
                         </div>
-                        <a href="{{ route('guru.asesmen.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-600">
-                            <x-icon name="add" class="h-4 w-4" />
-                            Buat Asesmen Pertama
-                        </a>
+                        <x-link-button href="{{ route('guru.asesmen.create') }}" class="inline-flex justify-center">
+                            <span class="text-base leading-none mr-1.5">+</span> Buat Asesmen Pertama
+                        </x-link-button>
                     </div>
                 @endforelse
             </div>

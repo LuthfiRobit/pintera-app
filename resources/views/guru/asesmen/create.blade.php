@@ -1,137 +1,132 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('guru.asesmen.index') }}" class="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-900 shadow-sm">
-                <x-icon name="arrow_back" class="h-5 w-5" />
-            </a>
-            <div>
-                <nav class="flex text-xs text-gray-500 mb-1">
-                    <span class="hover:text-gray-700">Ruang Guru</span>
-                    <span class="mx-2">/</span>
-                    <a href="{{ route('guru.asesmen.index') }}" class="hover:text-gray-700">Asesmen</a>
-                    <span class="mx-2">/</span>
-                    <span class="text-gray-700 font-semibold">Buat Baru</span>
-                </nav>
-                <h2 class="text-2xl font-bold text-gray-900">
-                    Buat Kegiatan Asesmen Baru
-                </h2>
-            </div>
-        </div>
-    </x-slot>
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ selectedMapel: '{{ old('mata_pelajaran_id', '') }}' }">
+        {{-- Flash Messages & Toast Integrations --}}
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
+        @endif
 
-    <div class="mx-auto max-w-4xl py-6" x-data="{ selectedMapel: '{{ old('mata_pelajaran_id', '') }}' }">
-        <div class="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-            <form method="POST" action="{{ route('guru.asesmen.store') }}" class="space-y-6">
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Buat Asesmen Baru</h1>
+            <p class="text-sm text-gray-500">
+                Ruang Guru <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('guru.asesmen.index') }}" class="font-semibold text-gray-700 hover:text-brand-600 transition-colors">Asesmen &amp; Nilai</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Buat Baru</b>
+            </p>
+        </div>
+
+        {{-- Form Card --}}
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div class="border-b border-gray-100 bg-white px-6 py-4">
+                <p class="flex items-center gap-2 font-display text-sm font-bold text-gray-900">
+                    <x-icon name="assessment" class="h-4 w-4 text-brand-500" />
+                    Formulir Kegiatan Asesmen Pembelajaran
+                </p>
+                <p class="mt-0.5 text-xs text-gray-500">Pilih kelas, mata pelajaran, jenis asesmen, dan indikator TP terkait.</p>
+            </div>
+
+            <form method="POST" action="{{ route('guru.asesmen.store') }}" class="p-6 space-y-6">
                 @csrf
 
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Kelas <span class="text-error-500">*</span></label>
+                        <x-input-label value="Kelas *" />
                         <select 
                             name="kelas_id" 
                             required
-                            class="w-full rounded-xl border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
                             <option value="">— Pilih Kelas —</option>
                             @foreach ($kelasList as $kelas)
                                 <option value="{{ $kelas->id }}" @selected(old('kelas_id') == $kelas->id)>{{ $kelas->nama }} ({{ $kelas->tahunAjaran->nama ?? '' }})</option>
                             @endforeach
                         </select>
-                        @error('kelas_id')
-                            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-                        @enderror
+                        <x-input-error :messages="$errors->get('kelas_id')" class="mt-1" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Mata Pelajaran <span class="text-error-500">*</span></label>
+                        <x-input-label value="Mata Pelajaran *" />
                         <select 
                             name="mata_pelajaran_id" 
                             x-model="selectedMapel"
                             required
-                            class="w-full rounded-xl border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
                             <option value="">— Pilih Mata Pelajaran —</option>
                             @foreach ($mataPelajaranList as $mapel)
                                 <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
                             @endforeach
                         </select>
-                        @error('mata_pelajaran_id')
-                            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-                        @enderror
+                        <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1" />
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Semester <span class="text-error-500">*</span></label>
+                        <x-input-label value="Semester *" />
                         <select 
                             name="semester_id" 
                             required
-                            class="w-full rounded-xl border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
                             <option value="">— Pilih Semester —</option>
                             @foreach ($semesterList as $semester)
                                 <option value="{{ $semester->id }}" @selected(old('semester_id') == $semester->id || $semester->status_aktif)>{{ $semester->nama }} @if($semester->status_aktif) (Aktif) @endif</option>
                             @endforeach
                         </select>
-                        @error('semester_id')
-                            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-                        @enderror
+                        <x-input-error :messages="$errors->get('semester_id')" class="mt-1" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Jenis Asesmen <span class="text-error-500">*</span></label>
+                        <x-input-label value="Jenis Asesmen *" />
                         <select 
                             name="jenis" 
                             required
-                            class="w-full rounded-xl border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
                             <option value="">— Pilih Jenis Asesmen —</option>
                             @foreach ($jenisAsesmenList as $jenis)
                                 <option value="{{ $jenis->value }}" @selected(old('jenis') == $jenis->value)>{{ $jenis->label() }}</option>
                             @endforeach
                         </select>
-                        @error('jenis')
-                            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-                        @enderror
+                        <x-input-error :messages="$errors->get('jenis')" class="mt-1" />
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-6 sm:grid-cols-3">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div class="sm:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Judul Kegiatan Asesmen <span class="text-error-500">*</span></label>
+                        <x-input-label value="Judul Kegiatan Asesmen *" />
                         <input 
                             type="text" 
                             name="judul" 
                             value="{{ old('judul') }}" 
                             required
                             placeholder="Contoh: Ulangan Harian Bab 1 / Projek Pesta Karya / PAS Genap" 
-                            class="w-full rounded-xl border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
-                        @error('judul')
-                            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-                        @enderror
+                        <x-input-error :messages="$errors->get('judul')" class="mt-1" />
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Tanggal Pelaksanaan <span class="text-error-500">*</span></label>
+                        <x-input-label value="Tanggal Pelaksanaan *" />
                         <input 
                             type="date" 
                             name="tanggal" 
                             value="{{ old('tanggal', now()->toDateString()) }}" 
                             required
-                            class="w-full rounded-xl border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 py-2.5"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
-                        @error('tanggal')
-                            <p class="mt-1 text-xs text-error-500">{{ $message }}</p>
-                        @enderror
+                        <x-input-error :messages="$errors->get('tanggal')" class="mt-1" />
                     </div>
                 </div>
 
-                <div class="border-t border-gray-150 pt-6">
+                <div class="border-t border-gray-100 pt-6">
                     <div class="flex items-center justify-between mb-3">
                         <div>
-                            <label class="block text-sm font-bold text-gray-900">Hubungan Tujuan Pembelajaran (TP) / KKTP</label>
+                            <x-input-label value="Hubungan Tujuan Pembelajaran (TP) / KKTP" />
                             <p class="text-xs text-gray-500">Pilih indikator TP dari Kurikulum Merdeka yang diasesmen pada kegiatan ini (opsional).</p>
                         </div>
                     </div>
@@ -172,19 +167,13 @@
                     </div>
                 </div>
 
-                <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
-                    <a 
-                        href="{{ route('guru.asesmen.index') }}" 
-                        class="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 hover:text-gray-900"
-                    >
+                <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                    <x-primary-button type="submit">
+                        Buat Asesmen &amp; Lanjut Input Nilai
+                    </x-primary-button>
+                    <a href="{{ route('guru.asesmen.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
                         Batal
                     </a>
-                    <button 
-                        type="submit" 
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-brand-600 active:scale-[0.98]"
-                    >
-                        Buat Asesmen & Lanjut Input Nilai
-                    </button>
                 </div>
             </form>
         </div>

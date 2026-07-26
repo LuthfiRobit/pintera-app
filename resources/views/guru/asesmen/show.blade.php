@@ -1,49 +1,40 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <a href="{{ route('guru.asesmen.index') }}" class="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-900 shadow-sm">
-                <x-icon name="arrow_back" class="h-5 w-5" />
-            </a>
-            <div>
-                <nav class="flex text-xs text-gray-500 mb-1">
-                    <span class="hover:text-gray-700">Ruang Guru</span>
-                    <span class="mx-2">/</span>
-                    <a href="{{ route('guru.asesmen.index') }}" class="hover:text-gray-700">Asesmen</a>
-                    <span class="mx-2">/</span>
-                    <span class="text-gray-700 font-semibold">Input Nilai & Deskripsi</span>
-                </nav>
-                <h2 class="text-2xl font-bold text-gray-900">
-                    {{ $asesmen->judul }}
-                </h2>
-            </div>
-        </div>
-    </x-slot>
-
     @php
         $totalSiswa = $nilaiList->count();
         $filledCount = $nilaiList->filter(fn($n) => $n->skor !== null)->count();
         $progressPct = $totalSiswa > 0 ? round(($filledCount / $totalSiswa) * 100) : 0;
     @endphp
 
-    <div class="mx-auto max-w-6xl py-6 space-y-6">
+    <div class="mx-auto max-w-6xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="flex items-center gap-3 rounded-xl border border-success-500/20 bg-success-50/50 p-4 text-sm font-medium text-success-700">
-                <x-icon name="check_circle" class="h-5 w-5 shrink-0 text-success-500" />
-                <span>{{ session('status') }}</span>
-            </div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
         @endif
 
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Input Nilai &amp; Catatan Asesmen</h1>
+            <p class="text-sm text-gray-500">
+                Ruang Guru <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('guru.asesmen.index') }}" class="font-semibold text-gray-700 hover:text-brand-600 transition-colors">Asesmen &amp; Nilai</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Input Nilai</b>
+            </p>
+        </div>
+
         <!-- Header Information & Progress Card -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-6">
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-6">
             <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
                 <div>
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Jenis Asesmen</p>
-                    <span class="mt-1.5 inline-flex items-center rounded-lg border border-brand-500/30 bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700">
+                    <span class="mt-1.5 inline-flex items-center rounded-md border border-brand-500/30 bg-brand-50 px-3 py-1 text-sm font-bold text-brand-700">
                         {{ $asesmen->jenis->label() }}
                     </span>
                 </div>
                 <div>
-                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kelas & Mata Pelajaran</p>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kelas &amp; Mata Pelajaran</p>
                     <p class="mt-1 text-base font-bold text-gray-900">{{ $asesmen->kelas->nama }} — {{ $asesmen->mataPelajaran->nama }}</p>
                     <p class="text-xs text-gray-500">{{ $asesmen->semester->nama }}</p>
                 </div>
@@ -68,7 +59,7 @@
             </div>
 
             @if ($asesmen->komponenPenilaian->isNotEmpty())
-                <div class="border-t border-gray-150 pt-4">
+                <div class="border-t border-gray-100 pt-4">
                     <p class="text-xs font-bold text-gray-700 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
                         <x-icon name="checklist" class="h-4 w-4 text-brand-500" />
                         Tujuan Pembelajaran / Indikator Terkait:
@@ -93,23 +84,20 @@
         </div>
 
         <!-- Grading Table Shell -->
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
             <form method="POST" action="{{ route('guru.asesmen.update-nilai', $asesmen) }}">
                 @csrf
                 @method('PUT')
 
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-150 bg-gray-50/50 px-6 py-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 bg-white px-6 py-4">
                     <div>
-                        <h3 class="text-base font-bold text-gray-900">Lembar Input Nilai & Deskripsi Kualitatif</h3>
+                        <p class="font-display text-sm font-bold text-gray-900">Lembar Input Nilai &amp; Deskripsi Kualitatif</p>
                         <p class="text-xs text-gray-500">Masukkan skor angka (0 - 100) dan catatan deskriptif Kurikulum Merdeka.</p>
                     </div>
-                    <button 
-                        type="submit" 
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-brand-600 active:scale-[0.98]"
-                    >
-                        <x-icon name="check_circle" class="h-4 w-4" />
+                    <x-primary-button>
+                        <x-icon name="check_circle" class="h-4 w-4 mr-1.5" />
                         Simpan Perubahan Nilai
-                    </button>
+                    </x-primary-button>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -122,7 +110,7 @@
                                 <th class="px-6 py-3.5">Catatan Kualitatif / Deskripsi Ketercapaian</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-150">
+                        <tbody class="divide-y divide-gray-100">
                             @foreach ($nilaiList as $index => $nilai)
                                 <tr class="transition duration-150 hover:bg-brand-50/20">
                                     <td class="py-4 pl-6 pr-3 text-center font-semibold text-gray-500">
@@ -141,7 +129,7 @@
                                             name="nilai[{{ $nilai->siswa_id }}][skor]" 
                                             value="{{ old('nilai.'.$nilai->siswa_id.'.skor', $nilai->skor) }}"
                                             placeholder="0 - 100"
-                                            class="w-32 text-center font-extrabold text-base rounded-xl border-gray-300 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-300 placeholder:font-normal {{ $nilai->skor !== null ? 'bg-emerald-50/50 text-emerald-800 border-emerald-300' : 'text-gray-900' }}"
+                                            class="w-32 text-center font-extrabold text-base rounded-lg border-gray-300 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-300 placeholder:font-normal {{ $nilai->skor !== null ? 'bg-emerald-50/50 text-emerald-800 border-emerald-300' : 'text-gray-900' }}"
                                         >
                                     </td>
                                     <td class="px-6 py-4">
@@ -150,7 +138,7 @@
                                             name="nilai[{{ $nilai->siswa_id }}][catatan]" 
                                             value="{{ old('nilai.'.$nilai->siswa_id.'.catatan', $nilai->catatan) }}"
                                             placeholder="Contoh: Menunjukkan pemahaman mendalam pada materi ini..."
-                                            class="w-full rounded-xl border-gray-200 text-sm text-gray-900 shadow-sm py-2 px-3 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
+                                            class="w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm py-2 px-3 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
                                         >
                                     </td>
                                 </tr>
@@ -159,14 +147,11 @@
                     </table>
                 </div>
 
-                <div class="flex items-center justify-end border-t border-gray-150 bg-gray-50/50 px-6 py-4">
-                    <button 
-                        type="submit" 
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition duration-200 hover:bg-brand-600 active:scale-[0.98]"
-                    >
-                        <x-icon name="check_circle" class="h-5 w-5" />
-                        Simpan Seluruh Nilai & Deskripsi
-                    </button>
+                <div class="flex items-center justify-end border-t border-gray-100 bg-gray-50/50 px-6 py-4">
+                    <x-primary-button>
+                        <x-icon name="check_circle" class="h-5 w-5 mr-1.5" />
+                        Simpan Seluruh Nilai &amp; Deskripsi
+                    </x-primary-button>
                 </div>
             </form>
         </div>

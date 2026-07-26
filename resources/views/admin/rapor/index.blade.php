@@ -1,39 +1,27 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <div>
-                <nav class="flex text-xs text-gray-500 mb-1">
-                    <span class="hover:text-gray-700">Akademik</span>
-                    <span class="mx-2">/</span>
-                    <span class="text-gray-700 font-semibold">Rekap Rapor</span>
-                </nav>
-                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2.5">
-                    <x-icon name="assessment" class="h-7 w-7 text-brand-500" />
-                    Rekapitulasi Nilai Rapor Kurikulum Merdeka
-                </h2>
-                <p class="text-sm text-gray-500 mt-0.5">
-                    Pantau capaian rata-rata asesmen siswa di setiap mata pelajaran per kelas dan semester
-                </p>
-            </div>
-            @if ($selectedKelas && $selectedSemester && $siswaList->isNotEmpty())
-                <button 
-                    onclick="window.print()" 
-                    class="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]"
-                >
-                    <x-icon name="print" class="h-4 w-4 text-gray-500" />
-                    Cetak Rekap Nilai
-                </button>
-            @endif
-        </div>
-    </x-slot>
+    <div class="mx-auto max-w-7xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
+        @endif
 
-    <div class="mx-auto max-w-7xl py-6 space-y-6">
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Rekapitulasi Nilai Rapor</h1>
+            <p class="text-sm text-gray-500">
+                Akademik <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Rekap Rapor</b>
+            </p>
+        </div>
+
         <!-- Filter Controls Card -->
-        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
             <form method="GET" action="{{ route('admin.rapor.index') }}" class="flex flex-wrap items-end gap-4">
                 <div class="flex-1 min-w-[220px]">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Pilih Kelas</label>
-                    <select name="kelas_id" onchange="this.form.submit()" class="w-full rounded-xl border-gray-200 text-sm font-bold text-gray-900 shadow-sm transition focus:border-brand-500 focus:ring-brand-500 py-2.5">
+                    <x-input-label value="Pilih Kelas" />
+                    <select name="kelas_id" onchange="this.form.submit()" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-bold text-gray-900 shadow-sm transition focus:border-brand-500 focus:ring-brand-500">
                         @foreach ($kelasList as $kelas)
                             <option value="{{ $kelas->id }}" @selected($selectedKelas && $selectedKelas->id === $kelas->id)>{{ $kelas->nama }} ({{ $kelas->tahunAjaran->nama ?? '' }})</option>
                         @endforeach
@@ -41,8 +29,8 @@
                 </div>
 
                 <div class="flex-1 min-w-[220px]">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-1.5">Pilih Semester</label>
-                    <select name="semester_id" onchange="this.form.submit()" class="w-full rounded-xl border-gray-200 text-sm font-bold text-gray-900 shadow-sm transition focus:border-brand-500 focus:ring-brand-500 py-2.5">
+                    <x-input-label value="Pilih Semester" />
+                    <select name="semester_id" onchange="this.form.submit()" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-bold text-gray-900 shadow-sm transition focus:border-brand-500 focus:ring-brand-500">
                         @foreach ($semesterList as $semester)
                             <option value="{{ $semester->id }}" @selected($selectedSemester && $selectedSemester->id === $semester->id)>{{ $semester->nama }}</option>
                         @endforeach
@@ -60,55 +48,66 @@
 
             <!-- Class Stat Summary -->
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Peserta Didik</span>
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                            <x-icon name="group" class="h-5 w-5" />
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Peserta Didik</p>
+                            <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $siswaList->count() }} <span class="text-xs font-normal text-gray-400">Siswa</span></p>
+                        </div>
+                        <div class="rounded-xl bg-brand-50 p-3 text-brand-600">
+                            <x-icon name="group" class="h-6 w-6" />
                         </div>
                     </div>
-                    <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $siswaList->count() }} <span class="text-xs font-normal text-gray-400">Siswa</span></p>
-                    <p class="mt-1 text-xs text-gray-400">Terdaftar di {{ $selectedKelas->nama }}</p>
                 </div>
 
-                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rata-Rata Kelas</span>
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                            <x-icon name="analytics" class="h-5 w-5" />
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Rata-Rata Kelas</p>
+                            <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $classAvg ?? '—' }}</p>
+                        </div>
+                        <div class="rounded-xl bg-emerald-50 p-3 text-emerald-600">
+                            <x-icon name="analytics" class="h-6 w-6" />
                         </div>
                     </div>
-                    <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $classAvg ?? '—' }}</p>
-                    <p class="mt-1 text-xs text-gray-400">Dari seluruh mata pelajaran</p>
                 </div>
 
-                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Skor Tertinggi</span>
-                        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
-                            <x-icon name="workspace_premium" class="h-5 w-5" />
+                        <div>
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Skor Tertinggi</p>
+                            <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $highestScore ?? '—' }}</p>
+                        </div>
+                        <div class="rounded-xl bg-amber-50 p-3 text-amber-600">
+                            <x-icon name="workspace_premium" class="h-6 w-6" />
                         </div>
                     </div>
-                    <p class="mt-2 text-3xl font-extrabold text-gray-900">{{ $highestScore ?? '—' }}</p>
-                    <p class="mt-1 text-xs text-gray-400">Capaian tertinggi pada semester ini</p>
                 </div>
             </div>
 
             <!-- Matrix Table Card -->
-            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-150 bg-gray-50/50 px-6 py-4">
+            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+                <div class="flex flex-wrap items-center justify-between border-b border-gray-100 bg-white px-6 py-4 gap-3">
                     <div>
-                        <h3 class="text-base font-bold text-gray-900">Matriks Rata-Rata Nilai Asesmen Per Mapel</h3>
+                        <p class="font-display text-sm font-bold text-gray-900">Matriks Rata-Rata Nilai Asesmen Per Mapel</p>
                         <p class="text-xs text-gray-500">Nilai dihitung dari rata-rata seluruh asesmen sumatif yang dilaksanakan.</p>
                     </div>
-                    <!-- Legend -->
-                    <div class="flex items-center gap-3 text-xs font-medium">
-                        <span class="flex items-center gap-1.5">
-                            <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Tuntas (&ge; 75)
-                        </span>
-                        <span class="flex items-center gap-1.5">
-                            <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span> Perlu Bimbingan (&lt; 75)
-                        </span>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Legend -->
+                        <div class="flex items-center gap-3 text-xs font-medium">
+                            <span class="flex items-center gap-1.5">
+                                <span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Tuntas (&ge; 75)
+                            </span>
+                            <span class="flex items-center gap-1.5">
+                                <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span> Perlu Bimbingan (&lt; 75)
+                            </span>
+                        </div>
+                        @if ($selectedKelas && $selectedSemester && $siswaList->isNotEmpty())
+                            <x-secondary-button onclick="window.print()">
+                                <x-icon name="print" class="h-4 w-4 mr-1.5 text-gray-500" />
+                                Cetak Rekap Nilai
+                            </x-secondary-button>
+                        @endif
                     </div>
                 </div>
 
@@ -128,7 +127,7 @@
                                 <th class="px-6 py-3 text-center font-extrabold text-brand-700 w-32 bg-brand-50/50">Rata-Rata Umum</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-150">
+                        <tbody class="divide-y divide-gray-100">
                             @forelse ($siswaList as $index => $siswa)
                                 @php
                                     $studentScores = collect($rekapNilai[$siswa->id] ?? [])->filter(fn ($v) => $v !== null);
