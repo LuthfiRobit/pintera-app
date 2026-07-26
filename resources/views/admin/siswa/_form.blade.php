@@ -64,7 +64,12 @@
 
             <div>
                 <x-input-label value="Agama" />
-                <x-text-input type="text" name="agama" value="{{ $val('agama') }}" class="mt-1.5" />
+                <select name="agama" class="mt-1.5 {{ $selectClass }}">
+                    <option value="">— Pilih agama —</option>
+                    @foreach (['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'] as $agama)
+                        <option value="{{ $agama }}" @selected($val('agama') === $agama)>{{ $agama }}</option>
+                    @endforeach
+                </select>
                 <x-input-error :messages="$errors->get('agama')" class="mt-1.5" />
             </div>
         </div>
