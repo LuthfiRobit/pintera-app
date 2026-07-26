@@ -11,18 +11,7 @@
             Identitas Siswa
         </p>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-                <x-input-label value="Kelas (opsional)" />
-                <select name="kelas_id" class="mt-1.5 {{ $selectClass }}">
-                    <option value="">— Belum ditempatkan —</option>
-                    @foreach ($kelasList as $kelas)
-                        <option value="{{ $kelas->id }}" @selected($val('kelas_id') == $kelas->id)>{{ $kelas->nama }}</option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('kelas_id')" class="mt-1.5" />
-            </div>
-
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
                 <x-input-label value="NIS" />
                 <x-text-input type="text" name="nis" value="{{ $val('nis') }}" placeholder="Contoh: 2026001" class="mt-1.5 font-mono" />
@@ -35,7 +24,7 @@
                 <x-input-error :messages="$errors->get('nisn')" class="mt-1.5" />
             </div>
 
-            <div class="sm:col-span-2 lg:col-span-3">
+            <div class="sm:col-span-2">
                 <x-input-label value="Nama Lengkap" />
                 <x-text-input type="text" name="nama_lengkap" value="{{ $val('nama_lengkap') }}" placeholder="Nama lengkap sesuai akta kelahiran" class="mt-1.5" />
                 <x-input-error :messages="$errors->get('nama_lengkap')" class="mt-1.5" />
@@ -51,9 +40,14 @@
             </div>
 
             <div>
-                <x-input-label value="Tanggal Lahir" />
-                <x-text-input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($siswa?->tanggal_lahir)->format('Y-m-d')) }}" class="mt-1.5" />
-                <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-1.5" />
+                <x-input-label value="Agama" />
+                <select name="agama" class="mt-1.5 {{ $selectClass }}">
+                    <option value="">— Pilih agama —</option>
+                    @foreach (['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'] as $agama)
+                        <option value="{{ $agama }}" @selected($val('agama') === $agama)>{{ $agama }}</option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('agama')" class="mt-1.5" />
             </div>
 
             <div>
@@ -63,14 +57,20 @@
             </div>
 
             <div>
-                <x-input-label value="Agama" />
-                <select name="agama" class="mt-1.5 {{ $selectClass }}">
-                    <option value="">— Pilih agama —</option>
-                    @foreach (['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'] as $agama)
-                        <option value="{{ $agama }}" @selected($val('agama') === $agama)>{{ $agama }}</option>
+                <x-input-label value="Tanggal Lahir" />
+                <x-text-input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($siswa?->tanggal_lahir)->format('Y-m-d')) }}" class="mt-1.5" />
+                <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-1.5" />
+            </div>
+
+            <div class="sm:col-span-2">
+                <x-input-label value="Kelas (opsional)" />
+                <select name="kelas_id" class="mt-1.5 {{ $selectClass }}">
+                    <option value="">— Belum ditempatkan —</option>
+                    @foreach ($kelasList as $kelas)
+                        <option value="{{ $kelas->id }}" @selected($val('kelas_id') == $kelas->id)>{{ $kelas->nama }}</option>
                     @endforeach
                 </select>
-                <x-input-error :messages="$errors->get('agama')" class="mt-1.5" />
+                <x-input-error :messages="$errors->get('kelas_id')" class="mt-1.5" />
             </div>
         </div>
     </div>

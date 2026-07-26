@@ -10,8 +10,8 @@
         Identitas Kelas
     </p>
 
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div>
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
             <x-input-label value="Tahun Ajaran" />
             <select name="tahun_ajaran_id" class="mt-1.5 {{ $selectClass }}">
                 @foreach ($tahunAjaranList as $tahunAjaran)
