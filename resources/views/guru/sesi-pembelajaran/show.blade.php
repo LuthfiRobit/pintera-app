@@ -56,12 +56,12 @@
                             Presensi Kehadiran Siswa
                         </p>
 
-                        <div class="overflow-hidden rounded-xl border border-gray-200">
-                            <table class="w-full text-sm">
+                        <div class="overflow-x-auto rounded-xl border border-gray-200">
+                            <table class="w-full min-w-[600px] text-sm">
                                 <thead>
                                     <tr class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
                                         <th class="px-5 py-3">Nama Siswa</th>
-                                        <th class="px-5 py-3 w-48 text-right md:text-left">Status Kehadiran</th>
+                                        <th class="px-5 py-3">Status Kehadiran</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-150 bg-white">
@@ -69,7 +69,7 @@
                                         <tr x-data="{ status: '{{ $presensi->status->value }}' }" class="transition hover:bg-gray-50/50">
                                             <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $presensi->siswa->nama_lengkap }}</td>
                                             <td class="px-5 py-2.5">
-                                                <div class="flex flex-wrap gap-1.5">
+                                                <div class="flex flex-row flex-nowrap items-center gap-1.5">
                                                     @foreach (\App\Enums\StatusPresensi::cases() as $status)
                                                         @php
                                                             $theme = match ($status->value) {
@@ -100,7 +100,7 @@
                                                             };
                                                         @endphp
                                                         <label 
-                                                            class="flex cursor-pointer items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition duration-150 active:scale-[0.97]"
+                                                            class="flex cursor-pointer items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition duration-150 active:scale-[0.97] whitespace-nowrap"
                                                             :class="status === '{{ $status->value }}' ? '{{ $theme['active'] }}' : 'border-gray-200 text-gray-500 {{ $theme['hover'] }}'"
                                                         >
                                                             <input 
@@ -117,10 +117,10 @@
                                             </td>
                                         </tr>
                                     @endforeach
-
                                 </tbody>
                             </table>
                         </div>
+
                     </div>
                 </div>
 
