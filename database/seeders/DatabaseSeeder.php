@@ -60,6 +60,7 @@ class DatabaseSeeder extends Seeder
             PembayaranSeeder::class,
             AkunPendaftarSeeder::class,
             GelombangJalurSeeder::class,
+            AcademicDummySeeder::class,
         ]);
     }
 }
