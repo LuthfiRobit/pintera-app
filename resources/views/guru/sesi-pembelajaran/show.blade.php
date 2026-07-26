@@ -66,22 +66,58 @@
                                 </thead>
                                 <tbody class="divide-y divide-gray-150 bg-white">
                                     @foreach ($presensiList as $presensi)
-                                        <tr class="transition hover:bg-gray-50/50">
-                                            <td class="px-5 py-3 font-semibold text-gray-900">{{ $presensi->siswa->nama_lengkap }}</td>
-                                            <td class="px-5 py-2 text-right md:text-left">
-                                                <select
-                                                    name="presensi[{{ $presensi->siswa_id }}]"
-                                                    class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 w-36 py-1.5"
-                                                >
+                                        <tr x-data="{ status: '{{ $presensi->status->value }}' }" class="transition hover:bg-gray-50/50">
+                                            <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $presensi->siswa->nama_lengkap }}</td>
+                                            <td class="px-5 py-2.5">
+                                                <div class="flex flex-wrap gap-1.5">
                                                     @foreach (\App\Enums\StatusPresensi::cases() as $status)
-                                                        <option value="{{ $status->value }}" @selected($presensi->status === $status)>
+                                                        @php
+                                                            $theme = match ($status->value) {
+                                                                'hadir' => [
+                                                                    'active' => 'border-success-500 bg-success-50 text-success-700 ring-1 ring-success-500/20',
+                                                                    'hover' => 'hover:border-success-300 hover:bg-success-50/30'
+                                                                ],
+                                                                'izin' => [
+                                                                    'active' => 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-500/20',
+                                                                    'hover' => 'hover:border-blue-300 hover:bg-blue-50/30'
+                                                                ],
+                                                                'sakit' => [
+                                                                    'active' => 'border-warning-500 bg-warning-50 text-warning-700 ring-1 ring-warning-500/20',
+                                                                    'hover' => 'hover:border-warning-300 hover:bg-warning-50/30'
+                                                                ],
+                                                                'alpa' => [
+                                                                    'active' => 'border-error-500 bg-error-50 text-error-700 ring-1 ring-error-500/20',
+                                                                    'hover' => 'hover:border-error-300 hover:bg-error-50/30'
+                                                                ],
+                                                                'terlambat' => [
+                                                                    'active' => 'border-indigo-500 bg-indigo-50 text-indigo-700 ring-1 ring-indigo-500/20',
+                                                                    'hover' => 'hover:border-indigo-300 hover:bg-indigo-50/30'
+                                                                ],
+                                                                default => [
+                                                                    'active' => 'border-brand-500 bg-brand-50 text-brand-700',
+                                                                    'hover' => 'hover:bg-gray-50'
+                                                                ]
+                                                            };
+                                                        @endphp
+                                                        <label 
+                                                            class="flex cursor-pointer items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold transition duration-150 active:scale-[0.97]"
+                                                            :class="status === '{{ $status->value }}' ? '{{ $theme['active'] }}' : 'border-gray-200 text-gray-500 {{ $theme['hover'] }}'"
+                                                        >
+                                                            <input 
+                                                                type="radio" 
+                                                                name="presensi[{{ $presensi->siswa_id }}]" 
+                                                                value="{{ $status->value }}" 
+                                                                x-model="status" 
+                                                                class="sr-only"
+                                                            >
                                                             {{ $status->label() }}
-                                                        </option>
+                                                        </label>
                                                     @endforeach
-                                                </select>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
+
                                 </tbody>
                             </table>
                         </div>
