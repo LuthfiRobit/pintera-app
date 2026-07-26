@@ -82,7 +82,7 @@
                         <h2 class="font-display text-base font-bold text-gray-900">Daftar Jadwal Pelajaran</h2>
                         <p class="text-xs text-gray-500 mt-0.5">Jadwal kegiatan belajar mengajar mingguan untuk kelas dan semester yang terpilih.</p>
                     </div>
-                    <span class="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-inset ring-blue-600/20">
+                    <span class="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-600 ring-1 ring-inset ring-brand-500/20">
                         Total {{ $jadwalList->count() }} Sesi
                     </span>
                 </div>
@@ -115,7 +115,7 @@
                                                 <div class="flex flex-wrap items-center gap-3 md:gap-4">
                                                     {{-- Badge Waktu (Format tanpa detik: H:i) --}}
                                                     <div class="flex items-center gap-2 font-mono text-xs">
-                                                        <span class="rounded bg-brand-50 px-2.5 py-1 font-bold text-brand-950 ring-1 ring-inset ring-brand-500/20">
+                                                        <span class="rounded bg-brand-50 px-2.5 py-1 font-bold text-brand-600 ring-1 ring-inset ring-brand-500/20">
                                                             {{ substr($jadwal->jamPelajaran->jam_mulai, 0, 5) }}
                                                         </span>
                                                         <span class="text-gray-400 font-medium">&rarr;</span>

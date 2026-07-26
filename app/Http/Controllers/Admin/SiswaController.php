@@ -43,8 +43,11 @@ class SiswaController extends BaseController
             $query->where('status', $status);
         }
 
-        // Build kelas list from active tahun ajaran only
-        $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
+        // Build kelas list from the acting lembaga's active tahun ajaran only.
+        // Left empty for a yayasan-scoped user with no active lembaga selected —
+        // there is no single "the" active tahun ajaran to pick in that state.
+        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+        $tahunAjaranAktif = $lembagaId ? TahunAjaran::where('status_aktif', true)->first() : null;
         $kelasList = $tahunAjaranAktif
             ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
             : collect();

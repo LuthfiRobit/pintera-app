@@ -82,6 +82,44 @@ it('only lists siswa belonging to the acting manager\'s own lembaga', function (
     $response->assertDontSee('Siswa Lembaga B');
 });
 
+it('builds the kelas filter list from the acting lembaga-scoped user\'s own active tahun ajaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $tahunAjaranAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranLama->id]);
+    $kelasAktif = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranAktif->id]);
+    $manager = actingAsSiswaManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
+
+    $response->assertViewHas('kelasList', function ($list) use ($kelasAktif, $kelasLama) {
+        return $list->contains('id', $kelasAktif->id) && ! $list->contains('id', $kelasLama->id);
+    });
+});
+
+it('leaves the kelas filter list empty for a yayasan-scoped user with no active lembaga selected', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id, 'status_aktif' => true]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id, 'status_aktif' => true]);
+    Kelas::factory()->create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $tahunAjaranA->id]);
+    Kelas::factory()->create(['lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $tahunAjaranB->id]);
+
+    Permission::firstOrCreate(['name' => 'siswa.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_siswa_index_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['siswa.view']);
+    $manager = User::factory()->create(['lembaga_id' => null]);
+    $manager->assignRole($role);
+    // No active_lembaga_id in session — before the fix, this would have picked
+    // an arbitrary lembaga's active tahun ajaran to build the kelas list from.
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
+
+    $response->assertViewHas('kelasList', fn ($list) => $list->isEmpty());
+});
+
 it('updates a siswa', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

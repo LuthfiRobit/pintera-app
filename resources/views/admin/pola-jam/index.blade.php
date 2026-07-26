@@ -33,7 +33,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 bg-white px-6 py-4">
                         <div class="flex items-center gap-3">
                             <h2 class="font-display text-lg font-bold text-gray-900">{{ $pola->nama }}</h2>
-                            <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-600 ring-1 ring-inset ring-blue-500/20">{{ $pola->jamPelajaran->count() }} slot</span>
+                            <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600 ring-1 ring-inset ring-brand-500/20">{{ $pola->jamPelajaran->count() }} slot</span>
                         </div>
 
                         <div class="flex items-center gap-4">
@@ -44,7 +44,7 @@
                                 <form method="POST" action="{{ route('admin.pola-jam.destroy', $pola) }}" x-data @submit.prevent="confirmDialog('Hapus Pola Jam?', @js('Apakah Anda yakin ingin menghapus pola jam \"' . $pola->nama . '\"? Seluruh data yang terkait bisa terpengaruh.'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-sm font-semibold text-red-600 hover:text-red-700 transition">Hapus</button>
+                                    <button type="submit" class="text-sm font-semibold text-error-600 hover:text-error-700 transition">Hapus</button>
                                 </form>
                             @endcan
                         </div>
@@ -68,7 +68,7 @@
                                                     value="{{ $kelasOpsi->id }}"
                                                     @checked($kelasOpsi->pola_jam_id === $pola->id)
                                                     @disabled($dipakaiPolaLain)
-                                                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:cursor-not-allowed disabled:bg-gray-200"
+                                                    class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500 disabled:cursor-not-allowed disabled:bg-gray-200"
                                                 >
                                                 <span>{{ $kelasOpsi->nama }}{{ $dipakaiPolaLain ? ' (pola lain)' : '' }}</span>
                                             </label>
@@ -76,9 +76,9 @@
                                     </div>
                                 </div>
                                 <div class="shrink-0 mt-2 lg:mt-0">
-                                    <button type="submit" class="w-full lg:w-auto rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                    <x-secondary-button type="submit" class="w-full justify-center lg:w-auto">
                                         Simpan Tautan
-                                    </button>
+                                    </x-secondary-button>
                                 </div>
                             </form>
                         </div>
@@ -94,7 +94,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-start">
                                 <div class="lg:col-span-2">
                                     <x-input-label value="Hari" class="mb-1 text-sm text-gray-700" />
-                                    <select name="hari" class="block w-full rounded-lg border-gray-200 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <select name="hari" class="block w-full rounded-lg border-gray-200 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                         @foreach ($hariAktifPola as $hari)
                                             <option value="{{ $hari->value }}">{{ $hari->label() }}</option>
                                         @endforeach
@@ -126,15 +126,15 @@
                             <div class="flex flex-col sm:flex-row items-end gap-4 pt-1">
                                 <div class="w-full sm:w-48 lg:w-[16.666667%]">
                                     <x-input-label value="Jenis Sesi" class="mb-1 text-sm text-gray-700" />
-                                    <select name="is_pelajaran" class="block w-full rounded-lg border-gray-200 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                    <select name="is_pelajaran" class="block w-full rounded-lg border-gray-200 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                         <option value="1">Jam Belajar</option>
                                         <option value="0">Non-pelajaran</option>
                                     </select>
                                 </div>
                                 <div class="w-full sm:w-auto">
-                                    <button type="submit" class="w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                                    <x-secondary-button type="submit" class="w-full justify-center sm:w-auto">
                                         Tambah Slot
-                                    </button>
+                                    </x-secondary-button>
                                 </div>
                             </div>
                         </form>
@@ -162,7 +162,7 @@
                                                     
                                                     <div class="flex flex-wrap items-center gap-4">
                                                         <div class="flex items-center gap-2 font-mono text-xs">
-                                                            <span class="rounded bg-blue-50 px-2 py-1 font-bold text-blue-900 ring-1 ring-inset ring-blue-500/20">{{ $slot->jam_mulai }}</span>
+                                                            <span class="rounded bg-brand-50 px-2 py-1 font-bold text-brand-600 ring-1 ring-inset ring-brand-500/20">{{ $slot->jam_mulai }}</span>
                                                             <span class="text-gray-400 font-medium">&rarr;</span>
                                                             <span class="rounded bg-gray-50 px-2 py-1 font-semibold text-gray-700 ring-1 ring-inset ring-gray-300/50">{{ $slot->jam_selesai }}</span>
                                                         </div>
@@ -172,7 +172,7 @@
                                                         <div class="flex items-center gap-3">
                                                             <span class="text-sm font-bold text-gray-800">{{ $slot->label }}</span>
                                                             @if ($slot->is_pelajaran)
-                                                                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/20">Belajar</span>
+                                                                <span class="inline-flex items-center rounded-full bg-success-50 px-2.5 py-0.5 text-[11px] font-semibold text-success-700 ring-1 ring-inset ring-success-600/20">Belajar</span>
                                                             @else
                                                                 <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-medium text-gray-600 ring-1 ring-inset ring-gray-400/20">Non-pelajaran</span>
                                                             @endif
@@ -187,7 +187,7 @@
                                                             <form method="POST" action="{{ route('admin.jam-pelajaran.destroy', $slot) }}" x-data @submit.prevent="confirmDialog('Hapus Jam Pelajaran?', @js('Apakah Anda yakin ingin menghapus slot \"' . $slot->label . '\"?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <button type="submit" class="text-xs font-semibold text-red-500 hover:text-red-700 transition-colors">Hapus</button>
+                                                                <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
                                                             </form>
                                                         @endcan
                                                     </div>
