@@ -44,3 +44,33 @@ it('never lists a kelas from another lembaga even via a raw jadwal_pelajaran row
     $response->assertOk();
     $response->assertDontSee($kelasLain->nama);
 });
+
+it('never lists a kelas from another lembaga when guru is wali_kelas_guru_id of that foreign kelas', function () {
+    Permission::firstOrCreate(['name' => 'presensi.isi', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'guru_lintas_test2', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $role->givePermissionTo(['presensi.isi']);
+
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+
+    $guruUser = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $guruUser->assignRole($role);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembagaSaya->id, 'user_id' => $guruUser->id]);
+
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $polaLain = PolaJam::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    // Create a foreign kelas and set this guru as wali_kelas (triggering the orWhere branch)
+    $kelasLain = Kelas::factory()->create([
+        'lembaga_id' => $lembagaLain->id,
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'pola_jam_id' => $polaLain->id,
+    ]);
+    // Bypass the tenant scope when setting wali_kelas_guru_id on the foreign kelas
+    Kelas::withoutGlobalScopes()->where('id', $kelasLain->id)->update(['wali_kelas_guru_id' => $guru->id]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.sesi.index'));
+
+    $response->assertOk();
+    $response->assertDontSee($kelasLain->nama);
+});
