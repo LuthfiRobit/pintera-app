@@ -28,12 +28,23 @@ return new class extends Migration
         }
 
         Schema::table('nilai_siswa', function (Blueprint $table) {
+            // On the legacy shape, `asesmen_id`'s foreign key was created in the same
+            // Schema::create() call as the (asesmen_id, siswa_id) unique index, so MySQL
+            // reused that composite unique as the FK's sole supporting index instead of
+            // creating a redundant single-column one. Dropping the unique below would
+            // therefore fail with "Cannot drop index ... needed in a foreign key constraint"
+            // unless a dedicated single-column index for asesmen_id exists first.
+            $table->index('asesmen_id');
             $table->dropUnique(['asesmen_id', 'siswa_id']);
             $table->foreignId('komponen_penilaian_id')->after('siswa_id')->constrained('komponen_penilaian')->cascadeOnDelete();
             $table->unsignedTinyInteger('nilai_angka')->nullable()->after('komponen_penilaian_id');
             $table->string('predikat')->nullable()->after('nilai_angka');
             $table->dropColumn('skor');
             $table->unique(['asesmen_id', 'siswa_id', 'komponen_penilaian_id'], 'nilai_siswa_unik');
+            // The new composite unique above also covers asesmen_id as its leftmost column,
+            // so it now supports the FK on its own -- drop the temporary helper index added
+            // above to leave the exact same index set a fresh install would have.
+            $table->dropIndex(['asesmen_id']);
         });
     }
 

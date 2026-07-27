@@ -5,6 +5,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -19,7 +20,7 @@ it('seeds 6 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(79);
+    expect($superAdmin->permissions()->count())->toBe(80);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -69,6 +70,18 @@ it('is idempotent when run twice', function () {
     (new RoleSeeder())->run();
 
     expect(Role::count())->toBe(6);
+});
+
+it('grants kalender-akademik.kelola-nasional to yayasan_super_admin via bulk permission sync, but not to admin_akademik', function () {
+    (new RoleSeeder())->run();
+
+    expect(Permission::where('name', 'kalender-akademik.kelola-nasional')->exists())->toBeTrue();
+
+    $superAdmin = Role::where('name', 'yayasan_super_admin')->firstOrFail();
+    expect($superAdmin->hasPermissionTo('kalender-akademik.kelola-nasional'))->toBeTrue();
+
+    $adminAkademik = Role::where('name', 'admin_akademik')->firstOrFail();
+    expect($adminAkademik->hasPermissionTo('kalender-akademik.kelola-nasional'))->toBeFalse();
 });
 
 it('grants kenaikan-kelas.kelola to kepala_sekolah after permissions sync and role seeding', function () {

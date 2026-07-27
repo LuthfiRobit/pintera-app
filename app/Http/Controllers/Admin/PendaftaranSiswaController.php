@@ -36,24 +36,29 @@ class PendaftaranSiswaController extends BaseController
         $this->authorize('siswa.spmb-daftar');
 
         $data = $request->validate([
-            'kelas_id' => ['required', 'exists:kelas,id'],
+            'kelas_id' => ['required', 'integer'],
             'pendaftaran_ids' => ['required', 'array', 'min:1'],
             'pendaftaran_ids.*' => ['exists:pendaftaran,id'],
             'nis' => ['required', 'array'],
         ]);
+
+        $kelas = Kelas::find($data['kelas_id']);
+        abort_if($kelas === null, 404);
 
         $pendaftaranTerpilih = Pendaftaran::siapDidaftarkanSebagaiSiswa()
             ->whereIn('id', $data['pendaftaran_ids'])
             ->with('calonMurid')
             ->get();
 
-        DB::transaction(function () use ($pendaftaranTerpilih, $data) {
+        DB::transaction(function () use ($pendaftaranTerpilih, $data, $kelas) {
             foreach ($pendaftaranTerpilih as $pendaftaran) {
+                abort_if($pendaftaran->lembaga_id !== $kelas->lembaga_id, 404);
+
                 $calonMurid = $pendaftaran->calonMurid;
 
                 Siswa::create([
                     'lembaga_id' => $pendaftaran->lembaga_id,
-                    'kelas_id' => $data['kelas_id'],
+                    'kelas_id' => $kelas->id,
                     'calon_murid_id' => $calonMurid->id,
                     'pendaftaran_asal_id' => $pendaftaran->id,
                     'sumber_data' => SumberDataSiswa::Spmb->value,

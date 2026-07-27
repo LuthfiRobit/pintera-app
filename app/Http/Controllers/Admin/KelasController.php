@@ -55,12 +55,28 @@ class KelasController extends BaseController
         $this->authorize('kelas.create');
 
         $data = $request->validate([
-            'tahun_ajaran_id' => ['required', 'exists:tahun_ajaran,id'],
+            'tahun_ajaran_id' => ['required', 'integer'],
             'nama' => ['required', 'string', 'max:255'],
             'tingkat' => ['nullable', 'string', 'max:20'],
-            'wali_kelas_guru_id' => ['nullable', 'exists:guru,id'],
-            'pola_jam_id' => ['nullable', 'exists:pola_jam,id'],
+            'wali_kelas_guru_id' => ['nullable', 'integer'],
+            'pola_jam_id' => ['nullable', 'integer'],
         ]);
+
+        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
+        abort_if($tahunAjaran === null, 404);
+        $data['tahun_ajaran_id'] = $tahunAjaran->id;
+
+        if (! empty($data['wali_kelas_guru_id'])) {
+            $guru = Guru::find($data['wali_kelas_guru_id']);
+            abort_if($guru === null || $guru->lembaga_id !== $tahunAjaran->lembaga_id, 404);
+            $data['wali_kelas_guru_id'] = $guru->id;
+        }
+
+        if (! empty($data['pola_jam_id'])) {
+            $polaJam = PolaJam::find($data['pola_jam_id']);
+            abort_if($polaJam === null || $polaJam->lembaga_id !== $tahunAjaran->lembaga_id, 404);
+            $data['pola_jam_id'] = $polaJam->id;
+        }
 
         if ($request->user()->widestScopeLevel() === 'yayasan') {
             $lembagaId = session('active_lembaga_id');
@@ -94,12 +110,28 @@ class KelasController extends BaseController
         $this->authorize('kelas.edit');
 
         $data = $request->validate([
-            'tahun_ajaran_id' => ['required', 'exists:tahun_ajaran,id'],
+            'tahun_ajaran_id' => ['required', 'integer'],
             'nama' => ['required', 'string', 'max:255'],
             'tingkat' => ['nullable', 'string', 'max:20'],
-            'wali_kelas_guru_id' => ['nullable', 'exists:guru,id'],
-            'pola_jam_id' => ['nullable', 'exists:pola_jam,id'],
+            'wali_kelas_guru_id' => ['nullable', 'integer'],
+            'pola_jam_id' => ['nullable', 'integer'],
         ]);
+
+        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
+        abort_if($tahunAjaran === null || $tahunAjaran->lembaga_id !== $kelas->lembaga_id, 404);
+        $data['tahun_ajaran_id'] = $tahunAjaran->id;
+
+        if (! empty($data['wali_kelas_guru_id'])) {
+            $guru = Guru::find($data['wali_kelas_guru_id']);
+            abort_if($guru === null || $guru->lembaga_id !== $kelas->lembaga_id, 404);
+            $data['wali_kelas_guru_id'] = $guru->id;
+        }
+
+        if (! empty($data['pola_jam_id'])) {
+            $polaJam = PolaJam::find($data['pola_jam_id']);
+            abort_if($polaJam === null || $polaJam->lembaga_id !== $kelas->lembaga_id, 404);
+            $data['pola_jam_id'] = $polaJam->id;
+        }
 
         $kelas->update($data);
 

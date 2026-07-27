@@ -114,8 +114,8 @@ class SiswaController extends BaseController
 
     private function validateSiswa(Request $request, ?Siswa $current = null): array
     {
-        return $request->validate([
-            'kelas_id' => ['nullable', 'exists:kelas,id'],
+        $data = $request->validate([
+            'kelas_id' => ['nullable', 'integer'],
             'nis' => [
                 'required', 'string', 'max:30',
                 function ($attribute, $value, $fail) use ($current) {
@@ -136,5 +136,14 @@ class SiswaController extends BaseController
             'tanggal_lahir' => ['nullable', 'date'],
             'agama' => ['nullable', 'string', 'max:50'],
         ]);
+
+        if (! empty($data['kelas_id'])) {
+            $lembagaId = $current?->lembaga_id ?? auth()->user()->lembaga_id ?? session('active_lembaga_id');
+            $kelas = Kelas::find($data['kelas_id']);
+            abort_if($kelas === null || $kelas->lembaga_id !== $lembagaId, 404);
+            $data['kelas_id'] = $kelas->id;
+        }
+
+        return $data;
     }
 }

@@ -64,6 +64,28 @@ it('rejects a duplicate NIS within the same lembaga', function () {
     ])->assertSessionHasErrors('nis');
 });
 
+it('rejects creating a siswa with a kelas belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $kelasLain = Kelas::withoutGlobalScopes()->create([
+        'lembaga_id' => $lembagaLain->id,
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'nama' => 'Kelas Lembaga Lain',
+    ]);
+    $manager = actingAsSiswaManager($lembagaSaya);
+
+    $this->actingAs($manager)->post(route('admin.siswa.store'), [
+        'kelas_id' => $kelasLain->id,
+        'nis' => '2026999',
+        'nama_lengkap' => 'Siswa Campur Lembaga',
+        'jenis_kelamin' => 'L',
+    ])->assertNotFound();
+
+    expect(Siswa::where('nama_lengkap', 'Siswa Campur Lembaga')->exists())->toBeFalse();
+});
+
 it('only lists siswa belonging to the acting manager\'s own lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

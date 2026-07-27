@@ -135,6 +135,30 @@ it('does not create a siswa for a pendaftaran that was not checked', function ()
     expect(Siswa::where('pendaftaran_asal_id', $pendaftaranUnchecked->id)->exists())->toBeFalse();
 });
 
+it('rejects registering a pendaftaran into a kelas belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranSaya = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $kelasLain = Kelas::withoutGlobalScopes()->create([
+        'lembaga_id' => $lembagaLain->id,
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'nama' => 'Kelas Lembaga Lain',
+    ]);
+    $manager = actingAsSpmbDaftarManager($lembagaSaya);
+
+    $pendaftaran = buatPendaftaranAktif($lembagaSaya, $tahunAjaranSaya);
+
+    $this->actingAs($manager)->post(route('admin.siswa.spmb-daftar.store'), [
+        'kelas_id' => $kelasLain->id,
+        'pendaftaran_ids' => [$pendaftaran->id],
+        'nis' => [$pendaftaran->id => '2026401'],
+    ])->assertNotFound();
+
+    expect(Siswa::where('pendaftaran_asal_id', $pendaftaran->id)->exists())->toBeFalse();
+});
+
 it('rolls back the whole batch and creates zero siswa when one NIS in the batch collides mid-loop', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

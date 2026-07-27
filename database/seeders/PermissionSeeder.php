@@ -50,7 +50,7 @@ class PermissionSeeder extends Seeder
             'pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete',
             'jam-pelajaran.create', 'jam-pelajaran.edit', 'jam-pelajaran.delete',
             'jadwal-pelajaran.kelola',
-            'kalender-akademik.view', 'kalender-akademik.kelola',
+            'kalender-akademik.view', 'kalender-akademik.kelola', 'kalender-akademik.kelola-nasional',
             'pengaturan-akademik.kelola',
         ];
 
