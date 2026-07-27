@@ -47,7 +47,7 @@ it('allows guru to view their asesmen list and create form', function () {
     $this->actingAs($user)->get(route('guru.asesmen.create'))->assertOk();
 });
 
-it('allows guru to create an asesmen and grade students', function () {
+it('allows guru to create an asesmen and grade students per komponen', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
@@ -59,7 +59,6 @@ it('allows guru to create an asesmen and grade students', function () {
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $user = actingAsGuruAsesmen($guru);
 
-    // Jadwal assignment
     JadwalPelajaran::create([
         'kelas_id' => $kelas->id,
         'jam_pelajaran_id' => $jam->id,
@@ -90,16 +89,33 @@ it('allows guru to create an asesmen and grade students', function () {
     expect($asesmen)->not->toBeNull();
     $response->assertRedirect(route('guru.asesmen.show', $asesmen));
 
-    // Input grades
     $this->actingAs($user)->put(route('guru.asesmen.update-nilai', $asesmen), [
         'nilai' => [
-            $siswa1->id => ['skor' => '85.5', 'catatan' => 'Baik sekali'],
-            $siswa2->id => ['skor' => '90', 'catatan' => 'Sempurna'],
+            $siswa1->id => [$komponen->id => ['nilai_angka' => '85', 'catatan' => 'Baik sekali']],
+            $siswa2->id => [$komponen->id => ['nilai_angka' => '90', 'catatan' => 'Sempurna']],
         ],
     ])->assertRedirect(route('guru.asesmen.show', $asesmen));
 
-    expect(NilaiSiswa::where('asesmen_id', $asesmen->id)->where('siswa_id', $siswa1->id)->value('skor'))->toEqual(85.5);
-    expect(NilaiSiswa::where('asesmen_id', $asesmen->id)->where('siswa_id', $siswa2->id)->value('skor'))->toEqual(90.0);
+    expect(NilaiSiswa::where('asesmen_id', $asesmen->id)->where('siswa_id', $siswa1->id)->where('komponen_penilaian_id', $komponen->id)->value('nilai_angka'))->toBe(85);
+    expect(NilaiSiswa::where('asesmen_id', $asesmen->id)->where('siswa_id', $siswa2->id)->where('komponen_penilaian_id', $komponen->id)->value('nilai_angka'))->toBe(90);
+});
+
+it('ignores a nilai submitted for a komponen not attached to the asesmen', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user = actingAsGuruAsesmen($guru);
+    $asesmen = Asesmen::factory()->create(['guru_id' => $guru->id]);
+    $komponenAsing = KomponenPenilaian::factory()->create();
+    $siswa = Siswa::factory()->create();
+
+    $this->actingAs($user)->put(route('guru.asesmen.update-nilai', $asesmen), [
+        'nilai' => [
+            $siswa->id => [$komponenAsing->id => ['nilai_angka' => '99']],
+        ],
+    ])->assertRedirect(route('guru.asesmen.show', $asesmen));
+
+    expect(NilaiSiswa::where('komponen_penilaian_id', $komponenAsing->id)->exists())->toBeFalse();
 });
 
 it('prevents guru from accessing asesmen belonging to another guru', function () {

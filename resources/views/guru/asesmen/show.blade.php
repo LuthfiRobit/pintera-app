@@ -1,8 +1,8 @@
 <x-app-layout>
     @php
-        $totalSiswa = $nilaiList->count();
-        $filledCount = $nilaiList->filter(fn($n) => $n->skor !== null)->count();
-        $progressPct = $totalSiswa > 0 ? round(($filledCount / $totalSiswa) * 100) : 0;
+        $totalCells = $siswaList->count() * max($komponenList->count(), 1);
+        $filledCount = $nilaiMatrix->filter(fn ($n) => $n->nilai_angka !== null)->count();
+        $progressPct = $totalCells > 0 ? round(($filledCount / $totalCells) * 100) : 0;
     @endphp
 
     <div class="mx-auto max-w-6xl space-y-4">
@@ -48,7 +48,7 @@
                 <div>
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Progres Input Nilai</p>
                     <div class="mt-1 flex items-baseline justify-between">
-                        <p class="text-2xl font-black text-brand-600">{{ $filledCount }} <span class="text-xs font-normal text-gray-500">/ {{ $totalSiswa }} Siswa</span></p>
+                        <p class="text-2xl font-black text-brand-600">{{ $filledCount }} <span class="text-xs font-normal text-gray-500">/ {{ $totalCells }} Nilai</span></p>
                         <span class="text-xs font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">{{ $progressPct }}%</span>
                     </div>
                     <!-- Progress Bar -->
@@ -91,8 +91,8 @@
 
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 bg-white px-6 py-4">
                     <div>
-                        <p class="font-display text-sm font-bold text-gray-900">Lembar Input Nilai &amp; Deskripsi Kualitatif</p>
-                        <p class="text-xs text-gray-500">Masukkan skor angka (0 - 100) dan catatan deskriptif Kurikulum Merdeka.</p>
+                        <p class="font-display text-sm font-bold text-gray-900">Lembar Input Nilai per Tujuan Pembelajaran</p>
+                        <p class="text-xs text-gray-500">Masukkan skor angka (0 - 100) dan catatan deskriptif untuk setiap TP.</p>
                     </div>
                     <x-primary-button>
                         <x-icon name="check_circle" class="h-4 w-4 mr-1.5" />
@@ -105,42 +105,44 @@
                         <thead>
                             <tr class="border-b border-gray-200 bg-gray-100 text-xs uppercase font-bold tracking-wider text-gray-600">
                                 <th class="py-3.5 pl-6 pr-3 w-12 text-center">No</th>
-                                <th class="px-4 py-3.5 w-64">Nama Peserta Didik</th>
-                                <th class="px-4 py-3.5 w-44 text-center">Skor Angka (0-100)</th>
-                                <th class="px-6 py-3.5">Catatan Kualitatif / Deskripsi Ketercapaian</th>
+                                <th class="px-4 py-3.5 w-56">Nama Peserta Didik</th>
+                                @foreach ($komponenList as $komponen)
+                                    <th class="px-4 py-3.5 min-w-[220px]">{{ $komponen->kode ?: $komponen->deskripsi }}</th>
+                                @endforeach
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
-                            @foreach ($nilaiList as $index => $nilai)
+                            @foreach ($siswaList as $index => $siswa)
                                 <tr class="transition duration-150 hover:bg-brand-50/20">
                                     <td class="py-4 pl-6 pr-3 text-center font-semibold text-gray-500">
                                         {{ $index + 1 }}
                                     </td>
                                     <td class="px-4 py-4">
-                                        <div class="font-bold text-gray-900 text-base">{{ $nilai->siswa->nama_lengkap }}</div>
-                                        <div class="text-xs font-medium text-gray-400">{{ $nilai->siswa->nis ?: ($nilai->siswa->nisn ?: 'Tanpa NIS') }}</div>
+                                        <div class="font-bold text-gray-900 text-base">{{ $siswa->nama_lengkap }}</div>
+                                        <div class="text-xs font-medium text-gray-400">{{ $siswa->nis ?: ($siswa->nisn ?: 'Tanpa NIS') }}</div>
                                     </td>
-                                    <td class="px-4 py-4 text-center">
-                                        <input 
-                                            type="number" 
-                                            step="0.1" 
-                                            min="0" 
-                                            max="100" 
-                                            name="nilai[{{ $nilai->siswa_id }}][skor]" 
-                                            value="{{ old('nilai.'.$nilai->siswa_id.'.skor', $nilai->skor) }}"
-                                            placeholder="0 - 100"
-                                            class="w-32 text-center font-extrabold text-base rounded-lg border-gray-300 py-2 shadow-sm focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-300 placeholder:font-normal {{ $nilai->skor !== null ? 'bg-emerald-50/50 text-emerald-800 border-emerald-300' : 'text-gray-900' }}"
-                                        >
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <input 
-                                            type="text" 
-                                            name="nilai[{{ $nilai->siswa_id }}][catatan]" 
-                                            value="{{ old('nilai.'.$nilai->siswa_id.'.catatan', $nilai->catatan) }}"
-                                            placeholder="Contoh: Menunjukkan pemahaman mendalam pada materi ini..."
-                                            class="w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm py-2 px-3 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
-                                        >
-                                    </td>
+                                    @foreach ($komponenList as $komponen)
+                                        @php $nilai = $nilaiMatrix->get($siswa->id.'-'.$komponen->id); @endphp
+                                        <td class="px-4 py-4 space-y-1.5">
+                                            <input
+                                                type="number"
+                                                step="1"
+                                                min="0"
+                                                max="100"
+                                                name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][nilai_angka]"
+                                                value="{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.nilai_angka', $nilai?->nilai_angka) }}"
+                                                placeholder="0 - 100"
+                                                class="w-24 text-center font-extrabold text-base rounded-lg border-gray-300 py-1.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-300 placeholder:font-normal {{ $nilai?->nilai_angka !== null ? 'bg-emerald-50/50 text-emerald-800 border-emerald-300' : 'text-gray-900' }}"
+                                            >
+                                            <input
+                                                type="text"
+                                                name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][catatan]"
+                                                value="{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.catatan', $nilai?->catatan) }}"
+                                                placeholder="Catatan..."
+                                                class="w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm py-1.5 px-2.5 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
+                                            >
+                                        </td>
+                                    @endforeach
                                 </tr>
                             @endforeach
                         </tbody>

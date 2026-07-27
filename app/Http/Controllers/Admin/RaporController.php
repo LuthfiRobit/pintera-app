@@ -49,8 +49,8 @@ class RaporController extends BaseController
                     $mapelAsesmenIds = $asesmenList->where('mata_pelajaran_id', $mapel->id)->pluck('id');
                     $scores = $allNilai->whereIn('asesmen_id', $mapelAsesmenIds)
                         ->where('siswa_id', $siswa->id)
-                        ->whereNotNull('skor')
-                        ->pluck('skor');
+                        ->whereNotNull('nilai_angka')
+                        ->pluck('nilai_angka');
 
                     $avg = $scores->count() > 0 ? round($scores->avg(), 1) : null;
                     $rekapNilai[$siswa->id][$mapel->id] = $avg;

@@ -127,9 +127,11 @@
                     <div class="flex items-center justify-between mb-3">
                         <div>
                             <x-input-label value="Hubungan Tujuan Pembelajaran (TP) / KKTP" />
-                            <p class="text-xs text-gray-500">Pilih indikator TP dari Kurikulum Merdeka yang diasesmen pada kegiatan ini (opsional).</p>
+                            <p class="text-xs text-gray-500">Pilih minimal satu indikator TP dari Kurikulum Merdeka yang diasesmen pada kegiatan ini. Nilai siswa dicatat per-TP.</p>
                         </div>
                     </div>
+
+                    <x-input-error :messages="$errors->get('komponen_id')" class="mt-1" />
 
                     <div class="space-y-2 max-h-72 overflow-y-auto pr-2 rounded-xl border border-gray-200 p-4 bg-gray-50/50">
                         @forelse ($komponenList as $komponen)

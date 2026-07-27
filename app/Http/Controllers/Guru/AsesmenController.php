@@ -105,13 +105,16 @@ class AsesmenController extends BaseController
                 $asesmen->komponenPenilaian()->attach($komponenIds);
             }
 
-            // Populate initial empty NilaiSiswa rows for all enrolled students
+            // Populate initial empty NilaiSiswa rows for all enrolled students, per komponen
             $siswaList = $asesmen->kelas->siswa()->get();
             foreach ($siswaList as $siswa) {
-                NilaiSiswa::firstOrCreate([
-                    'asesmen_id' => $asesmen->id,
-                    'siswa_id' => $siswa->id,
-                ]);
+                foreach ($komponenIds as $komponenId) {
+                    NilaiSiswa::firstOrCreate([
+                        'asesmen_id' => $asesmen->id,
+                        'siswa_id' => $siswa->id,
+                        'komponen_penilaian_id' => $komponenId,
+                    ]);
+                }
             }
 
             return $asesmen;
@@ -125,20 +128,29 @@ class AsesmenController extends BaseController
         $this->authorize('asesmen.kelola');
         $this->authorizeMilikGuru($asesmen);
 
-        // Ensure any newly added students to the class have a NilaiSiswa row
-        foreach ($asesmen->kelas->siswa as $siswa) {
-            NilaiSiswa::firstOrCreate([
-                'asesmen_id' => $asesmen->id,
-                'siswa_id' => $siswa->id,
-            ]);
+        $komponenList = $asesmen->komponenPenilaian;
+        $siswaList = $asesmen->kelas->siswa()->orderBy('nama_lengkap')->get();
+
+        // Ensure any newly added student/komponen combination has a NilaiSiswa row
+        foreach ($siswaList as $siswa) {
+            foreach ($komponenList as $komponen) {
+                NilaiSiswa::firstOrCreate([
+                    'asesmen_id' => $asesmen->id,
+                    'siswa_id' => $siswa->id,
+                    'komponen_penilaian_id' => $komponen->id,
+                ]);
+            }
         }
 
+        $nilaiMatrix = NilaiSiswa::where('asesmen_id', $asesmen->id)
+            ->get()
+            ->keyBy(fn ($n) => $n->siswa_id.'-'.$n->komponen_penilaian_id);
+
         return view('guru.asesmen.show', [
-            'asesmen' => $asesmen->load(['kelas', 'mataPelajaran', 'semester', 'komponenPenilaian']),
-            'nilaiList' => NilaiSiswa::where('asesmen_id', $asesmen->id)
-                ->with('siswa')
-                ->get()
-                ->sortBy(fn ($item) => $item->siswa->nama_lengkap),
+            'asesmen' => $asesmen->load(['kelas', 'mataPelajaran', 'semester']),
+            'komponenList' => $komponenList,
+            'siswaList' => $siswaList,
+            'nilaiMatrix' => $nilaiMatrix,
         ]);
     }
 
@@ -147,21 +159,29 @@ class AsesmenController extends BaseController
         $this->authorize('asesmen.kelola');
         $this->authorizeMilikGuru($asesmen);
 
+        $komponenIds = $asesmen->komponenPenilaian()->pluck('komponen_penilaian.id');
+
         $data = $request->validate([
             'nilai' => ['required', 'array'],
-            'nilai.*.skor' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'nilai.*.catatan' => ['nullable', 'string'],
+            'nilai.*.*.nilai_angka' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'nilai.*.*.catatan' => ['nullable', 'string'],
         ]);
 
-        DB::transaction(function () use ($asesmen, $data) {
-            foreach ($data['nilai'] as $siswaId => $values) {
-                NilaiSiswa::updateOrCreate(
-                    ['asesmen_id' => $asesmen->id, 'siswa_id' => $siswaId],
-                    [
-                        'skor' => isset($values['skor']) && $values['skor'] !== '' ? (float) $values['skor'] : null,
-                        'catatan' => $values['catatan'] ?? null,
-                    ]
-                );
+        DB::transaction(function () use ($asesmen, $data, $komponenIds) {
+            foreach ($data['nilai'] as $siswaId => $perKomponen) {
+                foreach ($perKomponen as $komponenId => $values) {
+                    if (!$komponenIds->contains((int) $komponenId)) {
+                        continue;
+                    }
+
+                    NilaiSiswa::updateOrCreate(
+                        ['asesmen_id' => $asesmen->id, 'siswa_id' => $siswaId, 'komponen_penilaian_id' => $komponenId],
+                        [
+                            'nilai_angka' => isset($values['nilai_angka']) && $values['nilai_angka'] !== '' ? (int) $values['nilai_angka'] : null,
+                            'catatan' => $values['catatan'] ?? null,
+                        ]
+                    );
+                }
             }
         });
 
