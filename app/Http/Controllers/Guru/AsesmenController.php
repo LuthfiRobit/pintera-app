@@ -68,17 +68,29 @@ class AsesmenController extends BaseController
         abort_if(!$guru, 403, 'Profil guru tidak ditemukan.');
 
         $data = $request->validate([
-            'kelas_id' => ['required', 'exists:kelas,id'],
-            'mata_pelajaran_id' => ['required', 'exists:mata_pelajaran,id'],
-            'semester_id' => ['required', 'exists:semester,id'],
-            'jenis' => ['required', 'string'],
+            'kelas_id' => ['required', 'integer'],
+            'mata_pelajaran_id' => ['required', 'integer'],
+            'semester_id' => ['required', 'integer'],
+            'jenis' => ['required', 'in:sumatif_lingkup_materi,sumatif_akhir_semester,sumatif_akhir_jenjang'],
             'judul' => ['required', 'string', 'max:255'],
             'tanggal' => ['required', 'date'],
             'komponen_id' => ['nullable', 'array'],
-            'komponen_id.*' => ['exists:komponen_penilaian,id'],
+            'komponen_id.*' => ['integer'],
         ]);
 
-        $asesmen = DB::transaction(function () use ($guru, $data) {
+        $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
+            ->where('kelas_id', $data['kelas_id'])
+            ->where('mata_pelajaran_id', $data['mata_pelajaran_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->exists();
+
+        abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi kelas dan mata pelajaran ini.');
+
+        $komponenIds = !empty($data['komponen_id'])
+            ? KomponenPenilaian::whereIn('id', $data['komponen_id'])->where('mata_pelajaran_id', $data['mata_pelajaran_id'])->pluck('id')
+            : collect();
+
+        $asesmen = DB::transaction(function () use ($guru, $data, $komponenIds) {
             $asesmen = Asesmen::create([
                 'guru_id' => $guru->id,
                 'kelas_id' => $data['kelas_id'],
@@ -89,8 +101,8 @@ class AsesmenController extends BaseController
                 'tanggal' => $data['tanggal'],
             ]);
 
-            if (!empty($data['komponen_id'])) {
-                $asesmen->komponenPenilaian()->attach($data['komponen_id']);
+            if ($komponenIds->isNotEmpty()) {
+                $asesmen->komponenPenilaian()->attach($komponenIds);
             }
 
             // Populate initial empty NilaiSiswa rows for all enrolled students

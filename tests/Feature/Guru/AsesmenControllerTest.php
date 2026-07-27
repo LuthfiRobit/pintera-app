@@ -111,3 +111,59 @@ it('prevents guru from accessing asesmen belonging to another guru', function ()
 
     $this->actingAs($userOther)->get(route('guru.asesmen.show', $asesmen))->assertForbidden();
 });
+
+it('rejects creating an asesmen for a kelas/mapel/semester combination the guru does not teach', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $tahunAjaranSaya = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $semesterSaya = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranSaya->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $user = actingAsGuruAsesmen($guru);
+
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
+    $mapelLain = MataPelajaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $this->actingAs($user)->post(route('guru.asesmen.store'), [
+        'kelas_id' => $kelasLain->id,
+        'mata_pelajaran_id' => $mapelLain->id,
+        'semester_id' => $semesterSaya->id,
+        'jenis' => JenisAsesmen::SumatifLingkupMateri->value,
+        'judul' => 'Coba Asesmen Kelas Lain',
+        'tanggal' => now()->toDateString(),
+    ])->assertForbidden();
+
+    expect(Asesmen::where('judul', 'Coba Asesmen Kelas Lain')->exists())->toBeFalse();
+});
+
+it('rejects a jenis outside the v1-supported sumatif options', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user = actingAsGuruAsesmen($guru);
+
+    JadwalPelajaran::create([
+        'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'mata_pelajaran_id' => $mapel->id,
+        'guru_id' => $guru->id, 'semester_id' => $semester->id,
+    ]);
+
+    $this->actingAs($user)->post(route('guru.asesmen.store'), [
+        'kelas_id' => $kelas->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'jenis' => JenisAsesmen::Formatif->value,
+        'judul' => 'Coba Jenis Formatif',
+        'tanggal' => now()->toDateString(),
+    ])->assertSessionHasErrors('jenis');
+
+    expect(Asesmen::where('judul', 'Coba Jenis Formatif')->exists())->toBeFalse();
+});
