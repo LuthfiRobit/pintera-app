@@ -4,6 +4,7 @@ use App\Enums\JenisAsesmen;
 use App\Models\Asesmen;
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\KomponenPenilaian;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
 use App\Models\NilaiSiswa;
@@ -49,10 +50,14 @@ it('displays the rapor recap page for selected class and semester', function () 
         'jenis' => JenisAsesmen::SumatifLingkupMateri,
     ]);
 
+    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+
     NilaiSiswa::create([
         'asesmen_id' => $asesmen->id,
         'siswa_id' => $siswa->id,
-        'skor' => 88.0,
+        'komponen_penilaian_id' => $komponen->id,
+        'nilai_angka' => 88,
     ]);
 
     $viewer = actingAsRaporViewer($lembaga);

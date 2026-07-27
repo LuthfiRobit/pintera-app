@@ -391,8 +391,8 @@ class AcademicDummySeeder extends Seeder
         ];
         foreach ($siswaA as $i => $siswa) {
             NilaiSiswa::updateOrCreate(
-                ['asesmen_id' => $asesmenMtk->id, 'siswa_id' => $siswa->id],
-                ['skor' => $skorMtk[$i] ?? 80, 'catatan' => $catatanMtk[$i] ?? 'Baik']
+                ['asesmen_id' => $asesmenMtk->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tpMtk1->id],
+                ['nilai_angka' => (int) round($skorMtk[$i] ?? 80), 'catatan' => $catatanMtk[$i] ?? 'Baik']
             );
         }
 
@@ -405,8 +405,8 @@ class AcademicDummySeeder extends Seeder
         $skorIpa = [84.0, 89.0, 91.5, 82.0, 88.0];
         foreach ($siswaA as $i => $siswa) {
             NilaiSiswa::updateOrCreate(
-                ['asesmen_id' => $asesmenIpa->id, 'siswa_id' => $siswa->id],
-                ['skor' => $skorIpa[$i] ?? 85, 'catatan' => 'Mampu menggunakan jangka sorong dan mikrometer sekrup dengan ketelitian baik.']
+                ['asesmen_id' => $asesmenIpa->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tpIpa1->id],
+                ['nilai_angka' => (int) round($skorIpa[$i] ?? 85), 'catatan' => 'Mampu menggunakan jangka sorong dan mikrometer sekrup dengan ketelitian baik.']
             );
         }
     }
