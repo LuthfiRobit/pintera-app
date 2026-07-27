@@ -29,13 +29,14 @@ it('seeds the initial permissions', function () {
         'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
         'cicilan.kelola',
         'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola', 'rapor.view',
+        'kenaikan-kelas.kelola',
     ];
 
     foreach ($expected as $name) {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(56);
+    expect(Permission::count())->toBe(57);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -44,7 +45,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(56);
+    expect($superAdmin->permissions()->count())->toBe(57);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -82,12 +83,13 @@ it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, inclu
         'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
         'tagihan.view',
         'komponen-penilaian.kelola', 'rapor.view',
+        'kenaikan-kelas.kelola',
     ];
 
     foreach ($expected as $name) {
         expect($kepalaSekolah->hasPermissionTo($name))->toBeTrue();
     }
-    expect($kepalaSekolah->permissions()->count())->toBe(8);
+    expect($kepalaSekolah->permissions()->count())->toBe(9);
 });
 
 it('gives admin_keuangan the jenis-tagihan and tagihan permissions by default', function () {
@@ -113,7 +115,7 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
 
     expect(Role::count())->toBe(5);
-    expect(Permission::count())->toBe(56);
+    expect(Permission::count())->toBe(57);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {

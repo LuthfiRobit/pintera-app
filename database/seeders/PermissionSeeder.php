@@ -43,6 +43,7 @@ class PermissionSeeder extends Seeder
             'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
             'cicilan.kelola',
             'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola', 'rapor.view',
+            'kenaikan-kelas.kelola',
         ];
 
         foreach ($permissions as $name) {

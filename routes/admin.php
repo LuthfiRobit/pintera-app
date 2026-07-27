@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
+use App\Http\Controllers\Admin\KenaikanKelasController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\MataPelajaranController;
@@ -134,6 +135,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('komponen-penilaian/create', [KomponenPenilaianController::class, 'create'])->name('komponen-penilaian.create');
     Route::post('komponen-penilaian', [KomponenPenilaianController::class, 'store'])->name('komponen-penilaian.store');
     Route::get('rapor', [RaporController::class, 'index'])->name('rapor.index');
+
+    Route::get('kenaikan-kelas', [KenaikanKelasController::class, 'index'])->name('kenaikan-kelas.index');
+    Route::post('kenaikan-kelas', [KenaikanKelasController::class, 'store'])->name('kenaikan-kelas.store');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {

@@ -57,6 +57,7 @@ class RoleSeeder extends Seeder
                     'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
                     'tagihan.view',
                     'komponen-penilaian.kelola', 'rapor.view',
+                    'kenaikan-kelas.kelola',
                 ]);
             }
 
