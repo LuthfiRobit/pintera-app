@@ -66,6 +66,22 @@ it('offers only guru belonging to the current lembaga as wali kelas options', fu
     });
 });
 
+it('rejects creating a kelas with a tahun_ajaran belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $manager = actingAsKelasManager($lembagaSaya);
+
+    $this->actingAs($manager)->post(route('admin.kelas.store'), [
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'nama' => 'Kelas Campur Lembaga',
+        'tingkat' => '6',
+    ])->assertNotFound();
+
+    expect(Kelas::where('nama', 'Kelas Campur Lembaga')->exists())->toBeFalse();
+});
+
 it('updates a kelas including assigning a wali kelas', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

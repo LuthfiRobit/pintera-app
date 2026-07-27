@@ -142,3 +142,52 @@ it('does not merge slots with the same mapel and guru if they are not adjacent (
     // share mata_pelajaran_id/guru_id but are not consecutive, so they must NOT merge.
     expect($hasil)->toHaveCount(3);
 });
+
+it('is idempotent for a merged block: calling it twice does not duplicate the sesi or its presensi', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan' => [0]]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jamSatu = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 1, 'is_pelajaran' => true, 'jam_mulai' => '07:35', 'jam_selesai' => '08:10']);
+    $jamDua = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'urutan' => 2, 'is_pelajaran' => true, 'jam_mulai' => '08:10', 'jam_selesai' => '09:00']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamSatu->id, 'mata_pelajaran_id' => $mapel->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    JadwalPelajaran::create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamDua->id, 'mata_pelajaran_id' => $mapel->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    Siswa::factory()->count(2)->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $pertama = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+    $kedua = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+
+    expect(SesiPembelajaran::where('kelas_id', $kelas->id)->count())->toBe(1);
+    expect($kedua->first()->id)->toBe($pertama->first()->id);
+    expect($kedua->first()->presensi()->count())->toBe(2);
+});
+
+it('does not overwrite a manually-edited presensi status when the generator runs a second time', function () {
+    ['kelas' => $kelas, 'semester' => $semester] = siapkanKelasDenganJadwal();
+
+    $hasil = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+    $sesi = $hasil->first();
+    $presensiPertama = $sesi->presensi()->first();
+    $presensiPertama->update(['status' => 'izin', 'keterangan' => 'Sakit demam']);
+
+    (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+
+    $presensiPertama->refresh();
+    expect($presensiPertama->status->value)->toBe('izin');
+    expect($presensiPertama->keterangan)->toBe('Sakit demam');
+    expect($sesi->presensi()->count())->toBe(3);
+});
+
+it('excludes non-aktif siswa from auto-generated presensi', function () {
+    ['kelas' => $kelas, 'semester' => $semester] = siapkanKelasDenganJadwal();
+    $siswaLulus = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'lulus']);
+
+    $hasil = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+
+    expect($hasil->first()->presensi()->count())->toBe(3); // only the 3 aktif siswa from siapkanKelasDenganJadwal()
+    expect($hasil->first()->presensi()->where('siswa_id', $siswaLulus->id)->exists())->toBeFalse();
+});

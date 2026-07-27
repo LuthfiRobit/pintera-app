@@ -15,6 +15,7 @@ class RoleSeeder extends Seeder
             'kepala_sekolah' => ['scope_level' => 'lembaga', 'is_protected' => false],
             'admin_administrasi' => ['scope_level' => 'lembaga', 'is_protected' => false],
             'admin_keuangan' => ['scope_level' => 'lembaga', 'is_protected' => false],
+            'admin_akademik' => ['scope_level' => 'lembaga', 'is_protected' => false],
             'guru' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
         ];
 
@@ -64,6 +65,22 @@ class RoleSeeder extends Seeder
             if ($name === 'guru') {
                 $role->givePermissionTo([
                     'presensi.isi', 'asesmen.kelola',
+                ]);
+            }
+
+            if ($name === 'admin_akademik') {
+                $role->givePermissionTo([
+                    'kelas.view', 'kelas.create', 'kelas.edit',
+                    'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
+                    'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
+                    'pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete',
+                    'jam-pelajaran.create', 'jam-pelajaran.edit', 'jam-pelajaran.delete',
+                    'jadwal-pelajaran.kelola',
+                    'kalender-akademik.view', 'kalender-akademik.kelola',
+                    'pengaturan-akademik.kelola',
+                    'komponen-penilaian.kelola',
+                    'rapor.view',
+                    'kenaikan-kelas.kelola',
                 ]);
             }
         }
