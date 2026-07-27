@@ -108,7 +108,7 @@ it('ignores a nilai submitted for a komponen not attached to the asesmen', funct
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
     $asesmen = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id]);
     $komponenAsing = KomponenPenilaian::factory()->create();
-    $siswa = Siswa::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
 
     $this->actingAs($user)->put(route('guru.asesmen.update-nilai', $asesmen), [
         'nilai' => [
