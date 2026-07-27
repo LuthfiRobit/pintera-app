@@ -44,3 +44,47 @@ it('creates a komponen penilaian', function () {
 
     expect(KomponenPenilaian::where('kode', 'TP 3.1')->exists())->toBeTrue();
 });
+
+it('does not list another lembaga\'s komponen penilaian', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $tahunAjaranSaya = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $semesterSaya = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranSaya->id]);
+    $mapelSaya = MataPelajaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelSaya->id, 'semester_id' => $semesterSaya->id, 'kode' => 'TP-SAYA']);
+
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+    $mapelLain = MataPelajaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelLain->id, 'semester_id' => $semesterLain->id, 'kode' => 'TP-LAIN']);
+
+    $manager = actingAsKomponenManager($lembagaSaya);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'));
+
+    $response->assertOk();
+    $response->assertSee('TP-SAYA');
+    $response->assertDontSee('TP-LAIN');
+});
+
+it('rejects creating a komponen penilaian mixing a mata pelajaran and semester from different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $mapelSaya = MataPelajaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+
+    $manager = actingAsKomponenManager($lembagaSaya);
+
+    $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'mata_pelajaran_id' => $mapelSaya->id,
+        'semester_id' => $semesterLain->id,
+        'deskripsi' => 'Campur lembaga',
+    ])->assertNotFound();
+
+    expect(KomponenPenilaian::where('deskripsi', 'Campur lembaga')->exists())->toBeFalse();
+});
