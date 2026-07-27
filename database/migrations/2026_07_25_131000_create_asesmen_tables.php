@@ -30,11 +30,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('asesmen_id')->constrained('asesmen')->cascadeOnDelete();
             $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete();
-            $table->decimal('skor', 5, 2)->nullable(); // 0 - 100 with decimals
+            $table->foreignId('komponen_penilaian_id')->constrained('komponen_penilaian')->cascadeOnDelete();
+            $table->unsignedTinyInteger('nilai_angka')->nullable(); // 0 - 100
+            $table->string('predikat')->nullable(); // narrative-style grading (e.g. PAUD aspek perkembangan)
             $table->text('catatan')->nullable(); // deskripsi kualitatif
             $table->timestamps();
 
-            $table->unique(['asesmen_id', 'siswa_id']);
+            $table->unique(['asesmen_id', 'siswa_id', 'komponen_penilaian_id'], 'nilai_siswa_unik');
         });
     }
 
