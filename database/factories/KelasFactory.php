@@ -16,7 +16,7 @@ class KelasFactory extends Factory
         return [
             'lembaga_id' => Lembaga::factory(),
             'tahun_ajaran_id' => TahunAjaran::factory(),
-            'nama' => $this->faker->unique()->numerify('#A'),
+            'nama' => $this->faker->unique()->numerify('##A'),
             'tingkat' => (string) $this->faker->numberBetween(1, 6),
             'wali_kelas_guru_id' => null,
         ];

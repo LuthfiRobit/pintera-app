@@ -74,8 +74,11 @@ class AsesmenController extends BaseController
             'jenis' => ['required', 'in:sumatif_lingkup_materi,sumatif_akhir_semester,sumatif_akhir_jenjang'],
             'judul' => ['required', 'string', 'max:255'],
             'tanggal' => ['required', 'date'],
-            'komponen_id' => ['nullable', 'array'],
+            'komponen_id' => ['required', 'array', 'min:1'],
             'komponen_id.*' => ['integer'],
+        ], [
+            'komponen_id.required' => 'Pilih minimal satu Tujuan Pembelajaran.',
+            'komponen_id.min' => 'Pilih minimal satu Tujuan Pembelajaran.',
         ]);
 
         $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
@@ -131,15 +134,30 @@ class AsesmenController extends BaseController
         $komponenList = $asesmen->komponenPenilaian;
         $siswaList = $asesmen->kelas->siswa()->orderBy('nama_lengkap')->get();
 
-        // Ensure any newly added student/komponen combination has a NilaiSiswa row
+        $existingNilai = NilaiSiswa::where('asesmen_id', $asesmen->id)->get();
+        $existingKeys = $existingNilai->map(fn ($n) => $n->siswa_id.'-'.$n->komponen_penilaian_id)->flip();
+
+        // Ensure any newly added student/komponen combination has a NilaiSiswa row,
+        // via a single bulk insert instead of one firstOrCreate() per (siswa, komponen) pair.
+        $now = now();
+        $missingRows = [];
         foreach ($siswaList as $siswa) {
             foreach ($komponenList as $komponen) {
-                NilaiSiswa::firstOrCreate([
-                    'asesmen_id' => $asesmen->id,
-                    'siswa_id' => $siswa->id,
-                    'komponen_penilaian_id' => $komponen->id,
-                ]);
+                $key = $siswa->id.'-'.$komponen->id;
+                if (!$existingKeys->has($key)) {
+                    $missingRows[] = [
+                        'asesmen_id' => $asesmen->id,
+                        'siswa_id' => $siswa->id,
+                        'komponen_penilaian_id' => $komponen->id,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
             }
+        }
+
+        if (!empty($missingRows)) {
+            NilaiSiswa::insertOrIgnore($missingRows);
         }
 
         $nilaiMatrix = NilaiSiswa::where('asesmen_id', $asesmen->id)
@@ -160,6 +178,7 @@ class AsesmenController extends BaseController
         $this->authorizeMilikGuru($asesmen);
 
         $komponenIds = $asesmen->komponenPenilaian()->pluck('komponen_penilaian.id');
+        $siswaIds = $asesmen->kelas->siswa()->pluck('id');
 
         $data = $request->validate([
             'nilai' => ['required', 'array'],
@@ -167,8 +186,12 @@ class AsesmenController extends BaseController
             'nilai.*.*.catatan' => ['nullable', 'string'],
         ]);
 
-        DB::transaction(function () use ($asesmen, $data, $komponenIds) {
+        DB::transaction(function () use ($asesmen, $data, $komponenIds, $siswaIds) {
             foreach ($data['nilai'] as $siswaId => $perKomponen) {
+                if (!$siswaIds->contains((int) $siswaId)) {
+                    continue;
+                }
+
                 foreach ($perKomponen as $komponenId => $values) {
                     if (!$komponenIds->contains((int) $komponenId)) {
                         continue;
