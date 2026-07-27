@@ -18,7 +18,7 @@ it('seeds 5 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(52);
+    expect($superAdmin->permissions()->count())->toBe(56);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -34,12 +34,14 @@ it('gives admin_administrasi the correct 20 SPMB-related permissions', function 
     expect($adminAdministrasi->hasPermissionTo('jalur-ppdb.create'))->toBeTrue();
 });
 
-it('gives kepala_sekolah the correct 6 permissions', function () {
+it('gives kepala_sekolah the correct 8 permissions', function () {
     (new RoleSeeder())->run();
 
     $kepalaSekolah = Role::where('name', 'kepala_sekolah')->first();
-    expect($kepalaSekolah->permissions()->count())->toBe(6);
+    expect($kepalaSekolah->permissions()->count())->toBe(8);
     expect($kepalaSekolah->hasPermissionTo('spmb-pendaftaran.tetapkan-keputusan'))->toBeTrue();
+    expect($kepalaSekolah->hasPermissionTo('komponen-penilaian.kelola'))->toBeTrue();
+    expect($kepalaSekolah->hasPermissionTo('rapor.view'))->toBeTrue();
 });
 
 it('gives admin_keuangan the correct 11 permissions', function () {
@@ -48,6 +50,15 @@ it('gives admin_keuangan the correct 11 permissions', function () {
     $adminKeuangan = Role::where('name', 'admin_keuangan')->first();
     expect($adminKeuangan->permissions()->count())->toBe(11);
     expect($adminKeuangan->hasPermissionTo('cicilan.kelola'))->toBeTrue();
+});
+
+it('gives guru the presensi and asesmen permissions', function () {
+    (new RoleSeeder())->run();
+
+    $guru = Role::where('name', 'guru')->first();
+    expect($guru->permissions()->count())->toBe(2);
+    expect($guru->hasPermissionTo('presensi.isi'))->toBeTrue();
+    expect($guru->hasPermissionTo('asesmen.kelola'))->toBeTrue();
 });
 
 it('is idempotent when run twice', function () {
