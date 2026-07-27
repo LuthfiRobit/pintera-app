@@ -4,6 +4,7 @@ use App\Models\Role;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -18,7 +19,7 @@ it('seeds 5 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(56);
+    expect($superAdmin->permissions()->count())->toBe(57);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -34,14 +35,15 @@ it('gives admin_administrasi the correct 20 SPMB-related permissions', function 
     expect($adminAdministrasi->hasPermissionTo('jalur-ppdb.create'))->toBeTrue();
 });
 
-it('gives kepala_sekolah the correct 8 permissions', function () {
+it('gives kepala_sekolah the correct 9 permissions', function () {
     (new RoleSeeder())->run();
 
     $kepalaSekolah = Role::where('name', 'kepala_sekolah')->first();
-    expect($kepalaSekolah->permissions()->count())->toBe(8);
+    expect($kepalaSekolah->permissions()->count())->toBe(9);
     expect($kepalaSekolah->hasPermissionTo('spmb-pendaftaran.tetapkan-keputusan'))->toBeTrue();
     expect($kepalaSekolah->hasPermissionTo('komponen-penilaian.kelola'))->toBeTrue();
     expect($kepalaSekolah->hasPermissionTo('rapor.view'))->toBeTrue();
+    expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
 });
 
 it('gives admin_keuangan the correct 11 permissions', function () {
@@ -66,4 +68,13 @@ it('is idempotent when run twice', function () {
     (new RoleSeeder())->run();
 
     expect(Role::count())->toBe(5);
+});
+
+it('grants kenaikan-kelas.kelola to kepala_sekolah after permissions sync and role seeding', function () {
+    Artisan::call('permissions:sync');
+    (new RoleSeeder())->run();
+
+    $kepalaSekolah = Role::where('name', 'kepala_sekolah')->firstOrFail();
+
+    expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
 });
