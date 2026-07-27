@@ -15,13 +15,18 @@ class NilaiSiswa extends Model
     protected $fillable = [
         'asesmen_id',
         'siswa_id',
-        'skor',
+        'komponen_penilaian_id',
+        'nilai_angka',
+        'predikat',
         'catatan',
     ];
 
-    protected $casts = [
-        'skor' => 'float',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'nilai_angka' => 'integer',
+        ];
+    }
 
     public function asesmen(): BelongsTo
     {
@@ -31,5 +36,10 @@ class NilaiSiswa extends Model
     public function siswa(): BelongsTo
     {
         return $this->belongsTo(Siswa::class);
+    }
+
+    public function komponenPenilaian(): BelongsTo
+    {
+        return $this->belongsTo(KomponenPenilaian::class);
     }
 }

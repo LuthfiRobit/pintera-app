@@ -56,6 +56,13 @@ class RoleSeeder extends Seeder
                     'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
                     'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
                     'tagihan.view',
+                    'komponen-penilaian.kelola', 'rapor.view',
+                ]);
+            }
+
+            if ($name === 'guru') {
+                $role->givePermissionTo([
+                    'presensi.isi', 'asesmen.kelola',
                 ]);
             }
         }

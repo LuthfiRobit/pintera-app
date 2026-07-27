@@ -68,17 +68,32 @@ class AsesmenController extends BaseController
         abort_if(!$guru, 403, 'Profil guru tidak ditemukan.');
 
         $data = $request->validate([
-            'kelas_id' => ['required', 'exists:kelas,id'],
-            'mata_pelajaran_id' => ['required', 'exists:mata_pelajaran,id'],
-            'semester_id' => ['required', 'exists:semester,id'],
-            'jenis' => ['required', 'string'],
+            'kelas_id' => ['required', 'integer'],
+            'mata_pelajaran_id' => ['required', 'integer'],
+            'semester_id' => ['required', 'integer'],
+            'jenis' => ['required', 'in:sumatif_lingkup_materi,sumatif_akhir_semester,sumatif_akhir_jenjang'],
             'judul' => ['required', 'string', 'max:255'],
             'tanggal' => ['required', 'date'],
-            'komponen_id' => ['nullable', 'array'],
-            'komponen_id.*' => ['exists:komponen_penilaian,id'],
+            'komponen_id' => ['required', 'array', 'min:1'],
+            'komponen_id.*' => ['integer'],
+        ], [
+            'komponen_id.required' => 'Pilih minimal satu Tujuan Pembelajaran.',
+            'komponen_id.min' => 'Pilih minimal satu Tujuan Pembelajaran.',
         ]);
 
-        $asesmen = DB::transaction(function () use ($guru, $data) {
+        $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
+            ->where('kelas_id', $data['kelas_id'])
+            ->where('mata_pelajaran_id', $data['mata_pelajaran_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->exists();
+
+        abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi kelas dan mata pelajaran ini.');
+
+        $komponenIds = !empty($data['komponen_id'])
+            ? KomponenPenilaian::whereIn('id', $data['komponen_id'])->where('mata_pelajaran_id', $data['mata_pelajaran_id'])->pluck('id')
+            : collect();
+
+        $asesmen = DB::transaction(function () use ($guru, $data, $komponenIds) {
             $asesmen = Asesmen::create([
                 'guru_id' => $guru->id,
                 'kelas_id' => $data['kelas_id'],
@@ -89,17 +104,20 @@ class AsesmenController extends BaseController
                 'tanggal' => $data['tanggal'],
             ]);
 
-            if (!empty($data['komponen_id'])) {
-                $asesmen->komponenPenilaian()->attach($data['komponen_id']);
+            if ($komponenIds->isNotEmpty()) {
+                $asesmen->komponenPenilaian()->attach($komponenIds);
             }
 
-            // Populate initial empty NilaiSiswa rows for all enrolled students
+            // Populate initial empty NilaiSiswa rows for all enrolled students, per komponen
             $siswaList = $asesmen->kelas->siswa()->get();
             foreach ($siswaList as $siswa) {
-                NilaiSiswa::firstOrCreate([
-                    'asesmen_id' => $asesmen->id,
-                    'siswa_id' => $siswa->id,
-                ]);
+                foreach ($komponenIds as $komponenId) {
+                    NilaiSiswa::firstOrCreate([
+                        'asesmen_id' => $asesmen->id,
+                        'siswa_id' => $siswa->id,
+                        'komponen_penilaian_id' => $komponenId,
+                    ]);
+                }
             }
 
             return $asesmen;
@@ -113,20 +131,44 @@ class AsesmenController extends BaseController
         $this->authorize('asesmen.kelola');
         $this->authorizeMilikGuru($asesmen);
 
-        // Ensure any newly added students to the class have a NilaiSiswa row
-        foreach ($asesmen->kelas->siswa as $siswa) {
-            NilaiSiswa::firstOrCreate([
-                'asesmen_id' => $asesmen->id,
-                'siswa_id' => $siswa->id,
-            ]);
+        $komponenList = $asesmen->komponenPenilaian;
+        $siswaList = $asesmen->kelas->siswa()->orderBy('nama_lengkap')->get();
+
+        $existingNilai = NilaiSiswa::where('asesmen_id', $asesmen->id)->get();
+        $existingKeys = $existingNilai->map(fn ($n) => $n->siswa_id.'-'.$n->komponen_penilaian_id)->flip();
+
+        // Ensure any newly added student/komponen combination has a NilaiSiswa row,
+        // via a single bulk insert instead of one firstOrCreate() per (siswa, komponen) pair.
+        $now = now();
+        $missingRows = [];
+        foreach ($siswaList as $siswa) {
+            foreach ($komponenList as $komponen) {
+                $key = $siswa->id.'-'.$komponen->id;
+                if (!$existingKeys->has($key)) {
+                    $missingRows[] = [
+                        'asesmen_id' => $asesmen->id,
+                        'siswa_id' => $siswa->id,
+                        'komponen_penilaian_id' => $komponen->id,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+            }
         }
 
+        if (!empty($missingRows)) {
+            NilaiSiswa::insertOrIgnore($missingRows);
+        }
+
+        $nilaiMatrix = NilaiSiswa::where('asesmen_id', $asesmen->id)
+            ->get()
+            ->keyBy(fn ($n) => $n->siswa_id.'-'.$n->komponen_penilaian_id);
+
         return view('guru.asesmen.show', [
-            'asesmen' => $asesmen->load(['kelas', 'mataPelajaran', 'semester', 'komponenPenilaian']),
-            'nilaiList' => NilaiSiswa::where('asesmen_id', $asesmen->id)
-                ->with('siswa')
-                ->get()
-                ->sortBy(fn ($item) => $item->siswa->nama_lengkap),
+            'asesmen' => $asesmen->load(['kelas', 'mataPelajaran', 'semester']),
+            'komponenList' => $komponenList,
+            'siswaList' => $siswaList,
+            'nilaiMatrix' => $nilaiMatrix,
         ]);
     }
 
@@ -135,21 +177,34 @@ class AsesmenController extends BaseController
         $this->authorize('asesmen.kelola');
         $this->authorizeMilikGuru($asesmen);
 
+        $komponenIds = $asesmen->komponenPenilaian()->pluck('komponen_penilaian.id');
+        $siswaIds = $asesmen->kelas->siswa()->pluck('id');
+
         $data = $request->validate([
             'nilai' => ['required', 'array'],
-            'nilai.*.skor' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'nilai.*.catatan' => ['nullable', 'string'],
+            'nilai.*.*.nilai_angka' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'nilai.*.*.catatan' => ['nullable', 'string'],
         ]);
 
-        DB::transaction(function () use ($asesmen, $data) {
-            foreach ($data['nilai'] as $siswaId => $values) {
-                NilaiSiswa::updateOrCreate(
-                    ['asesmen_id' => $asesmen->id, 'siswa_id' => $siswaId],
-                    [
-                        'skor' => isset($values['skor']) && $values['skor'] !== '' ? (float) $values['skor'] : null,
-                        'catatan' => $values['catatan'] ?? null,
-                    ]
-                );
+        DB::transaction(function () use ($asesmen, $data, $komponenIds, $siswaIds) {
+            foreach ($data['nilai'] as $siswaId => $perKomponen) {
+                if (!$siswaIds->contains((int) $siswaId)) {
+                    continue;
+                }
+
+                foreach ($perKomponen as $komponenId => $values) {
+                    if (!$komponenIds->contains((int) $komponenId)) {
+                        continue;
+                    }
+
+                    NilaiSiswa::updateOrCreate(
+                        ['asesmen_id' => $asesmen->id, 'siswa_id' => $siswaId, 'komponen_penilaian_id' => $komponenId],
+                        [
+                            'nilai_angka' => isset($values['nilai_angka']) && $values['nilai_angka'] !== '' ? (int) $values['nilai_angka'] : null,
+                            'catatan' => $values['catatan'] ?? null,
+                        ]
+                    );
+                }
             }
         });
 

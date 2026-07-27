@@ -23,9 +23,10 @@ class SesiPembelajaranController extends BaseController
         $hariIni = now();
 
         if ($guru) {
-            $kelasList = Kelas::whereHas('jadwalPelajaran', fn ($q) => $q->where('guru_id', $guru->id))
-                ->orWhere('wali_kelas_guru_id', $guru->id)
-                ->get();
+            $kelasList = Kelas::where(function ($query) use ($guru) {
+                $query->whereHas('jadwalPelajaran', fn ($q) => $q->where('guru_id', $guru->id))
+                    ->orWhere('wali_kelas_guru_id', $guru->id);
+            })->get();
 
             foreach ($kelasList as $kelas) {
                 $semesterId = optional($kelas->tahunAjaran->semester()->where('status_aktif', true)->first())->id;

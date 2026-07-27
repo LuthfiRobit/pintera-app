@@ -20,7 +20,7 @@ class KomponenPenilaianController extends BaseController
         $this->authorize('komponen-penilaian.kelola');
 
         return view('admin.komponen-penilaian.index', [
-            'komponenList' => KomponenPenilaian::with(['mataPelajaran', 'semester'])->orderByDesc('id')->get(),
+            'komponenList' => KomponenPenilaian::whereHas('mataPelajaran')->with(['mataPelajaran', 'semester'])->orderByDesc('id')->get(),
         ]);
     }
 
@@ -39,12 +39,18 @@ class KomponenPenilaianController extends BaseController
         $this->authorize('komponen-penilaian.kelola');
 
         $data = $request->validate([
-            'mata_pelajaran_id' => ['required', 'exists:mata_pelajaran,id'],
-            'semester_id' => ['required', 'exists:semester,id'],
+            'mata_pelajaran_id' => ['required', 'integer'],
+            'semester_id' => ['required', 'integer'],
             'kode' => ['nullable', 'string', 'max:50'],
             'deskripsi' => ['required', 'string'],
             'kktp' => ['nullable', 'string'],
         ]);
+
+        $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
+        $semester = Semester::find($data['semester_id']);
+
+        abort_if($mataPelajaran === null || $semester === null, 404);
+        abort_if($mataPelajaran->lembaga_id !== $semester->lembaga_id, 404);
 
         KomponenPenilaian::create($data);
 
