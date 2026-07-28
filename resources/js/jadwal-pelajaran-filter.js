@@ -74,8 +74,6 @@ export function jadwalPelajaranFilter(config) {
         },
 
         async muatUlangDaftar() {
-            this.perbaruiUrl();
-
             try {
                 const url = new URL(this.indexUrlBase, window.location.origin);
                 if (this.tahunAjaranId) url.searchParams.set('tahun_ajaran_id', this.tahunAjaranId);
@@ -94,7 +92,9 @@ export function jadwalPelajaranFilter(config) {
                     return;
                 }
 
-                this.$refs.daftarJadwal.innerHTML = await response.text();
+                const html = await response.text();
+                this.perbaruiUrl();
+                this.$refs.daftarJadwal.innerHTML = html;
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal memuat daftar jadwal.');
             }
