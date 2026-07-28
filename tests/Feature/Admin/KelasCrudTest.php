@@ -172,6 +172,25 @@ it('rejects updating a kelas with a wali_kelas_guru_id belonging to a different 
     expect($kelas->fresh()->wali_kelas_guru_id)->toBeNull();
 });
 
+it('rejects updating a kelas with a pola_jam_id belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $manager = actingAsKelasManager($lembagaSaya);
+    $kelas = Kelas::create(['lembaga_id' => $lembagaSaya->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $polaLain = PolaJam::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $this->actingAs($manager)->put(route('admin.kelas.update', $kelas), [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => '6A',
+        'tingkat' => '6',
+        'pola_jam_id' => $polaLain->id,
+    ])->assertNotFound();
+
+    expect($kelas->fresh()->pola_jam_id)->toBeNull();
+});
+
 it('updates a kelas including assigning a wali kelas', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
