@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Hari;
 use App\Models\JamPelajaran;
 use App\Models\PolaJam;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -20,7 +21,8 @@ class JamPelajaranController extends BaseController
 
         $data = $request->validate([
             'pola_jam_id' => ['required', 'integer'],
-            'hari' => ['required', 'in:senin,selasa,rabu,kamis,jumat,sabtu,minggu'],
+            'hari' => ['required', 'array', 'min:1'],
+            'hari.*' => ['in:senin,selasa,rabu,kamis,jumat,sabtu,minggu'],
             'urutan' => ['required', 'integer', 'min:1'],
             'label' => ['required', 'string', 'max:255'],
             'jam_mulai' => ['required', 'date_format:H:i'],
@@ -33,13 +35,31 @@ class JamPelajaranController extends BaseController
             abort(404);
         }
 
-        if ($this->tabrakanSlot($data['pola_jam_id'], $data['hari'], $data['urutan'])) {
-            return back()->withErrors(['urutan' => 'Urutan ini sudah dipakai pada hari yang sama di pola jam ini.'])->withInput();
+        $berhasil = [];
+        $dilewati = [];
+
+        foreach ($data['hari'] as $hari) {
+            if ($this->tabrakanSlot($data['pola_jam_id'], $hari, $data['urutan'])) {
+                $dilewati[] = $hari;
+                continue;
+            }
+
+            JamPelajaran::create([...$data, 'hari' => $hari]);
+            $berhasil[] = $hari;
         }
 
-        JamPelajaran::create($data);
+        if (empty($berhasil)) {
+            return back()->withErrors([
+                'hari' => 'Semua hari yang dipilih (' . $this->formatDaftarHari($data['hari']) . ') sudah punya slot di urutan ini — tidak ada yang ditambahkan.',
+            ])->withInput();
+        }
 
-        return redirect()->route('admin.pola-jam.index')->with('status', 'Jam pelajaran berhasil ditambahkan.');
+        $status = 'Slot berhasil ditambahkan untuk ' . $this->formatDaftarHari($berhasil) . '.';
+        if (! empty($dilewati)) {
+            $status .= ' ' . $this->formatDaftarHari($dilewati) . ' dilewati karena urutan ini sudah dipakai.';
+        }
+
+        return redirect()->route('admin.pola-jam.index')->with('status', $status);
     }
 
     public function edit(JamPelajaran $jamPelajaran): View
@@ -106,5 +126,18 @@ class JamPelajaranController extends BaseController
             ->where('urutan', $urutan)
             ->when($kecualiId, fn ($q) => $q->where('id', '!=', $kecualiId))
             ->exists();
+    }
+
+    private function formatDaftarHari(array $nilaiHari): string
+    {
+        $label = collect($nilaiHari)->map(fn ($h) => Hari::from($h)->label())->all();
+
+        if (count($label) === 1) {
+            return $label[0];
+        }
+
+        $terakhir = array_pop($label);
+
+        return implode(', ', $label) . ' dan ' . $terakhir;
     }
 }

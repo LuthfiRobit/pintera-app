@@ -51,7 +51,7 @@ it('adds a jam pelajaran slot to an existing pola jam', function () {
 
     $this->actingAs($manager)->post(route('admin.jam-pelajaran.store'), [
         'pola_jam_id' => $pola->id,
-        'hari' => 'senin',
+        'hari' => ['senin'],
         'urutan' => 1,
         'label' => 'Upacara',
         'jam_mulai' => '07:00',
@@ -73,7 +73,7 @@ it('rejects adding a jam pelajaran slot to another lembaga\'s pola jam', functio
 
     $this->actingAs($manager)->post(route('admin.jam-pelajaran.store'), [
         'pola_jam_id' => $polaB->id,
-        'hari' => 'senin',
+        'hari' => ['senin'],
         'urutan' => 1,
         'label' => 'Upacara',
         'jam_mulai' => '07:00',
@@ -82,6 +82,96 @@ it('rejects adding a jam pelajaran slot to another lembaga\'s pola jam', functio
     ])->assertNotFound();
 
     expect(JamPelajaran::where('pola_jam_id', $polaB->id)->where('label', 'Upacara')->exists())->toBeFalse();
+});
+
+it('adds a jam pelajaran slot to multiple hari at once from one submit', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.jam-pelajaran.store'), [
+        'pola_jam_id' => $pola->id,
+        'hari' => ['senin', 'rabu'],
+        'urutan' => 1,
+        'label' => 'Jam ke-1',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:40',
+        'is_pelajaran' => '1',
+    ]);
+
+    $response->assertRedirect(route('admin.pola-jam.index'));
+    $response->assertSessionHas('status', 'Slot berhasil ditambahkan untuk Senin dan Rabu.');
+
+    expect(JamPelajaran::where('pola_jam_id', $pola->id)->where('hari', 'senin')->where('label', 'Jam ke-1')->exists())->toBeTrue();
+    expect(JamPelajaran::where('pola_jam_id', $pola->id)->where('hari', 'rabu')->where('label', 'Jam ke-1')->exists())->toBeTrue();
+    expect(JamPelajaran::where('pola_jam_id', $pola->id)->count())->toBe(2);
+});
+
+it('skips a hari that already has a slot at the same urutan and reports it in the status message', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'selasa', 'urutan' => 1]);
+
+    $response = $this->actingAs($manager)->post(route('admin.jam-pelajaran.store'), [
+        'pola_jam_id' => $pola->id,
+        'hari' => ['senin', 'selasa'],
+        'urutan' => 1,
+        'label' => 'Jam ke-1',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:40',
+        'is_pelajaran' => '1',
+    ]);
+
+    $response->assertRedirect(route('admin.pola-jam.index'));
+    $response->assertSessionHas('status', 'Slot berhasil ditambahkan untuk Senin. Selasa dilewati karena urutan ini sudah dipakai.');
+
+    expect(JamPelajaran::where('pola_jam_id', $pola->id)->where('hari', 'senin')->where('label', 'Jam ke-1')->exists())->toBeTrue();
+    expect(JamPelajaran::where('pola_jam_id', $pola->id)->where('hari', 'selasa')->count())->toBe(1);
+});
+
+it('rejects the whole batch with an error when every checked hari already has a slot at that urutan', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'senin', 'urutan' => 1]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'selasa', 'urutan' => 1]);
+
+    $response = $this->actingAs($manager)->post(route('admin.jam-pelajaran.store'), [
+        'pola_jam_id' => $pola->id,
+        'hari' => ['senin', 'selasa'],
+        'urutan' => 1,
+        'label' => 'Jam ke-1 Duplikat',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:40',
+        'is_pelajaran' => '1',
+    ]);
+
+    $response->assertSessionHasErrors('hari');
+    expect(JamPelajaran::where('label', 'Jam ke-1 Duplikat')->exists())->toBeFalse();
+    expect(JamPelajaran::where('pola_jam_id', $pola->id)->count())->toBe(2);
+});
+
+it('rejects submitting the slot form with no hari checked', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->post(route('admin.jam-pelajaran.store'), [
+        'pola_jam_id' => $pola->id,
+        'hari' => [],
+        'urutan' => 1,
+        'label' => 'Jam ke-1',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:40',
+        'is_pelajaran' => '1',
+    ])->assertSessionHasErrors('hari');
+
+    expect(JamPelajaran::where('pola_jam_id', $pola->id)->exists())->toBeFalse();
 });
 
 it('renames a pola jam via update', function () {
