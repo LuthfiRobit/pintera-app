@@ -90,33 +90,42 @@
                             @csrf
                             <input type="hidden" name="pola_jam_id" value="{{ $pola->id }}">
                             
-                            {{-- Baris 1: Hari, Urutan, Jam Mulai, Jam Selesai, Label --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-start">
-                                <div class="lg:col-span-2">
-                                    <x-input-label value="Hari" class="mb-1 text-sm text-gray-700" />
-                                    <select name="hari" class="block w-full rounded-lg border-gray-200 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                        @foreach ($hariAktifPola as $hari)
-                                            <option value="{{ $hari->value }}">{{ $hari->label() }}</option>
-                                        @endforeach
-                                    </select>
+                            {{-- Baris 1: Hari (checkbox, bisa pilih beberapa sekaligus) --}}
+                            <div>
+                                <x-input-label value="Hari" class="mb-2 text-sm text-gray-700" />
+                                <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                                    @foreach ($hariAktifPola as $hari)
+                                        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                name="hari[]"
+                                                value="{{ $hari->value }}"
+                                                class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                            >
+                                            <span>{{ $hari->label() }}</span>
+                                        </label>
+                                    @endforeach
                                 </div>
+                            </div>
 
-                                <div class="lg:col-span-2">
+                            {{-- Baris 2: Urutan, Jam Mulai, Jam Selesai, Label --}}
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-start">
+                                <div class="lg:col-span-3">
                                     <x-input-label value="Urutan" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="number" name="urutan" placeholder="Ke-" min="1" class="block w-full py-2 text-sm shadow-sm" />
                                 </div>
 
-                                <div class="lg:col-span-2">
+                                <div class="lg:col-span-3">
                                     <x-input-label value="Jam Mulai" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="time" name="jam_mulai" class="block w-full py-2 font-mono text-sm shadow-sm" />
                                 </div>
 
-                                <div class="lg:col-span-2">
+                                <div class="lg:col-span-3">
                                     <x-input-label value="Jam Selesai" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="time" name="jam_selesai" class="block w-full py-2 font-mono text-sm shadow-sm" />
                                 </div>
 
-                                <div class="lg:col-span-4">
+                                <div class="lg:col-span-3">
                                     <x-input-label value="Label Slot" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="text" name="label" placeholder="mis. Jam ke-1 / Istirahat" class="block w-full py-2 text-sm shadow-sm" />
                                 </div>
