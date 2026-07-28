@@ -86,54 +86,60 @@
 
                     {{-- 3. Form Tambah Slot Jam Pelajaran (Urutan Kedua) --}}
                     <div class="border-b border-gray-100 bg-white px-6 py-5">
-                        <form method="POST" action="{{ route('admin.jam-pelajaran.store') }}" class="space-y-4">
+                        <p class="mb-4 text-xs font-bold uppercase tracking-wider text-gray-500">Tambah Slot Jam Pelajaran</p>
+
+                        <form method="POST" action="{{ route('admin.jam-pelajaran.store') }}" class="space-y-5" x-data="{ hariTerpilih: [] }">
                             @csrf
                             <input type="hidden" name="pola_jam_id" value="{{ $pola->id }}">
-                            
-                            {{-- Baris 1: Hari (checkbox, bisa pilih beberapa sekaligus) --}}
+
+                            {{-- Baris 1: Hari (chip toggle, bisa pilih beberapa sekaligus) --}}
                             <div>
                                 <x-input-label value="Hari" class="mb-2 text-sm text-gray-700" />
-                                <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+                                <div class="flex flex-wrap gap-2">
                                     @foreach ($hariAktifPola as $hari)
-                                        <label class="flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 cursor-pointer">
+                                        <label
+                                            class="flex cursor-pointer items-center justify-center rounded-lg border px-4 py-2 text-sm font-semibold transition duration-150 active:scale-[0.97]"
+                                            :class="hariTerpilih.includes('{{ $hari->value }}') ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-500/20' : 'border-gray-200 text-gray-500 hover:border-brand-300 hover:bg-brand-50/30'"
+                                        >
                                             <input
                                                 type="checkbox"
                                                 name="hari[]"
                                                 value="{{ $hari->value }}"
-                                                class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                                                x-model="hariTerpilih"
+                                                class="sr-only"
                                             >
-                                            <span>{{ $hari->label() }}</span>
+                                            {{ $hari->label() }}
                                         </label>
                                     @endforeach
                                 </div>
                             </div>
 
-                            {{-- Baris 2: Urutan, Jam Mulai, Jam Selesai, Label --}}
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-start">
-                                <div class="lg:col-span-3">
+                            {{-- Baris 2: Urutan, Jam Mulai, Jam Selesai — dikelompokkan sebagai "kapan" --}}
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                <div>
                                     <x-input-label value="Urutan" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="number" name="urutan" placeholder="Ke-" min="1" class="block w-full py-2 text-sm shadow-sm" />
                                 </div>
 
-                                <div class="lg:col-span-3">
+                                <div>
                                     <x-input-label value="Jam Mulai" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="time" name="jam_mulai" class="block w-full py-2 font-mono text-sm shadow-sm" />
                                 </div>
 
-                                <div class="lg:col-span-3">
+                                <div>
                                     <x-input-label value="Jam Selesai" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="time" name="jam_selesai" class="block w-full py-2 font-mono text-sm shadow-sm" />
                                 </div>
+                            </div>
 
-                                <div class="lg:col-span-3">
+                            {{-- Baris 3: Label, Jenis Sesi & Tombol Tambah — dikelompokkan sebagai "apa" --}}
+                            <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+                                <div class="flex-1">
                                     <x-input-label value="Label Slot" class="mb-1 text-sm text-gray-700" />
                                     <x-text-input type="text" name="label" placeholder="mis. Jam ke-1 / Istirahat" class="block w-full py-2 text-sm shadow-sm" />
                                 </div>
-                            </div>
 
-                            {{-- Baris 2: Jenis Sesi & Tombol Tambah --}}
-                            <div class="flex flex-col sm:flex-row items-end gap-4 pt-1">
-                                <div class="w-full sm:w-48 lg:w-[16.666667%]">
+                                <div class="w-full sm:w-48">
                                     <x-input-label value="Jenis Sesi" class="mb-1 text-sm text-gray-700" />
                                     <select name="is_pelajaran" class="block w-full rounded-lg border-gray-200 py-2 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                         <option value="1">Jam Belajar</option>
