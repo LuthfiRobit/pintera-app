@@ -82,6 +82,30 @@ it('creates a semester under a tahun ajaran', function () {
     expect(Semester::where('tahun_ajaran_id', $tahunAjaran->id)->where('nama', 'Ganjil')->exists())->toBeTrue();
 });
 
+it('rejects creating a semester under a tahun_ajaran belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsTahunAjaranManager($lembagaSaya);
+    $this->actingAs($manager);
+
+    $tahunAjaranLain = TahunAjaran::create([
+        'lembaga_id' => $lembagaLain->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30',
+    ]);
+
+    $this->post(route('admin.semester.store'), [
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'nama' => 'Ganjil',
+        'urutan' => 1,
+        'kode_dapodik' => '20261',
+        'tanggal_mulai' => '2026-07-01',
+        'tanggal_selesai' => '2027-01-15',
+    ])->assertNotFound();
+
+    expect(Semester::where('tahun_ajaran_id', $tahunAjaranLain->id)->exists())->toBeFalse();
+});
+
 it('shows a friendly error instead of a 500 when activating a semester whose tahun ajaran is inactive', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

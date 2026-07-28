@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Semester;
+use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,13 +19,17 @@ class SemesterController extends BaseController
         $this->authorize('semester.create');
 
         $data = $request->validate([
-            'tahun_ajaran_id' => ['required', 'exists:tahun_ajaran,id'],
+            'tahun_ajaran_id' => ['required', 'integer'],
             'nama' => ['required', 'in:Ganjil,Genap'],
             'urutan' => ['required', 'integer', 'in:1,2'],
             'kode_dapodik' => ['nullable', 'string', 'max:5'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
         ]);
+
+        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
+        abort_if($tahunAjaran === null, 404);
+        $data['tahun_ajaran_id'] = $tahunAjaran->id;
 
         Semester::create($data);
 
