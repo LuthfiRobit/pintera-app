@@ -3,6 +3,7 @@
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
+use App\Models\PolaJam;
 use App\Models\Role;
 use App\Models\TahunAjaran;
 use App\Models\User;
@@ -80,6 +81,114 @@ it('rejects creating a kelas with a tahun_ajaran belonging to a different lembag
     ])->assertNotFound();
 
     expect(Kelas::where('nama', 'Kelas Campur Lembaga')->exists())->toBeFalse();
+});
+
+it('rejects creating a kelas with a wali_kelas_guru_id belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $guruLain = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembagaLain->id])->id,
+        'lembaga_id' => $lembagaLain->id,
+        'nik' => '3201234567892222',
+        'nama' => 'Guru Lain Lembaga',
+        'jenis_kelamin' => 'L',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ]);
+    $manager = actingAsKelasManager($lembagaSaya);
+
+    $this->actingAs($manager)->post(route('admin.kelas.store'), [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Kelas Wali Campur',
+        'tingkat' => '6',
+        'wali_kelas_guru_id' => $guruLain->id,
+    ])->assertNotFound();
+
+    expect(Kelas::where('nama', 'Kelas Wali Campur')->exists())->toBeFalse();
+});
+
+it('rejects creating a kelas with a pola_jam_id belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $polaLain = PolaJam::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $manager = actingAsKelasManager($lembagaSaya);
+
+    $this->actingAs($manager)->post(route('admin.kelas.store'), [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => 'Kelas Pola Campur',
+        'tingkat' => '6',
+        'pola_jam_id' => $polaLain->id,
+    ])->assertNotFound();
+
+    expect(Kelas::where('nama', 'Kelas Pola Campur')->exists())->toBeFalse();
+});
+
+it('rejects updating a kelas to a tahun_ajaran belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranSaya = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $manager = actingAsKelasManager($lembagaSaya);
+    $kelas = Kelas::create(['lembaga_id' => $lembagaSaya->id, 'tahun_ajaran_id' => $tahunAjaranSaya->id, 'nama' => '6A']);
+
+    $this->actingAs($manager)->put(route('admin.kelas.update', $kelas), [
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'nama' => '6A',
+        'tingkat' => '6',
+    ])->assertNotFound();
+
+    expect($kelas->fresh()->tahun_ajaran_id)->toBe($tahunAjaranSaya->id);
+});
+
+it('rejects updating a kelas with a wali_kelas_guru_id belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $manager = actingAsKelasManager($lembagaSaya);
+    $kelas = Kelas::create(['lembaga_id' => $lembagaSaya->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $guruLain = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembagaLain->id])->id,
+        'lembaga_id' => $lembagaLain->id,
+        'nik' => '3201234567893333',
+        'nama' => 'Guru Lain Lembaga Dua',
+        'jenis_kelamin' => 'L',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ]);
+
+    $this->actingAs($manager)->put(route('admin.kelas.update', $kelas), [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => '6A',
+        'tingkat' => '6',
+        'wali_kelas_guru_id' => $guruLain->id,
+    ])->assertNotFound();
+
+    expect($kelas->fresh()->wali_kelas_guru_id)->toBeNull();
+});
+
+it('rejects updating a kelas with a pola_jam_id belonging to a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
+    $manager = actingAsKelasManager($lembagaSaya);
+    $kelas = Kelas::create(['lembaga_id' => $lembagaSaya->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $polaLain = PolaJam::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $this->actingAs($manager)->put(route('admin.kelas.update', $kelas), [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'nama' => '6A',
+        'tingkat' => '6',
+        'pola_jam_id' => $polaLain->id,
+    ])->assertNotFound();
+
+    expect($kelas->fresh()->pola_jam_id)->toBeNull();
 });
 
 it('updates a kelas including assigning a wali kelas', function () {
