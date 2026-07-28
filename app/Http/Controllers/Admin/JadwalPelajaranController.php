@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\Hari;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\JamPelajaran;
@@ -10,6 +11,7 @@ use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -19,7 +21,7 @@ class JadwalPelajaranController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): View|string
     {
         $this->authorize('jadwal-pelajaran.kelola');
 
@@ -31,17 +33,51 @@ class JadwalPelajaranController extends BaseController
         $kelasId = $request->query('kelas_id');
         $semesterId = $request->query('semester_id');
 
+        $kelas = $kelasId ? Kelas::with('lembaga')->find($kelasId) : null;
+        $hariAktif = $kelas
+            ? Hari::aktifDari($kelas->lembaga->hari_libur_mingguan ?? [])
+            : Hari::cases();
+
+        $jadwalList = $kelasId && $semesterId
+            ? JadwalPelajaran::with(['jamPelajaran', 'mataPelajaran', 'guru'])
+                ->where('kelas_id', $kelasId)->where('semester_id', $semesterId)->get()
+            : collect();
+
+        if ($request->ajax()) {
+            return view('admin.jadwal-pelajaran._daftar', [
+                'jadwalList' => $jadwalList,
+                'hariAktif' => $hariAktif,
+                'kelasId' => $kelasId,
+                'semesterId' => $semesterId,
+            ])->render();
+        }
+
         return view('admin.jadwal-pelajaran.index', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'kelasList' => $tahunAjaranId ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->orderBy('nama')->get() : collect(),
             'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
-            'jadwalList' => $kelasId && $semesterId
-                ? JadwalPelajaran::with(['jamPelajaran', 'mataPelajaran', 'guru'])
-                    ->where('kelas_id', $kelasId)->where('semester_id', $semesterId)->get()
-                : collect(),
+            'jadwalList' => $jadwalList,
+            'hariAktif' => $hariAktif,
             'kelasId' => $kelasId,
             'semesterId' => $semesterId,
+        ]);
+    }
+
+    public function opsi(Request $request): JsonResponse
+    {
+        $this->authorize('jadwal-pelajaran.kelola');
+
+        $data = $request->validate([
+            'tahun_ajaran_id' => ['required', 'integer'],
+        ]);
+
+        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
+        abort_if($tahunAjaran === null, 404);
+
+        return response()->json([
+            'kelasList' => Kelas::where('tahun_ajaran_id', $tahunAjaran->id)->orderBy('nama')->get(['id', 'nama']),
+            'semesterList' => Semester::where('tahun_ajaran_id', $tahunAjaran->id)->orderByDesc('id')->get(['id', 'nama']),
         ]);
     }
 
