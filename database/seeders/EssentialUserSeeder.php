@@ -34,6 +34,7 @@ class EssentialUserSeeder extends Seeder
             'kepsek@sistem.test' => ['name' => 'Kepala Sekolah (Contoh)', 'role' => 'kepala_sekolah'],
             'adm@sistem.test' => ['name' => 'Admin Administrasi (Contoh)', 'role' => 'admin_administrasi'],
             'keuangan@sistem.test' => ['name' => 'Admin Keuangan (Contoh)', 'role' => 'admin_keuangan'],
+            'akademik@sistem.test' => ['name' => 'Admin Akademik (Contoh)', 'role' => 'admin_akademik'],
             'guru@sistem.test' => ['name' => 'Guru (Contoh)', 'role' => 'guru'],
         ];
 
