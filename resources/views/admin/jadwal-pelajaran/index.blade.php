@@ -20,58 +20,60 @@
         </div>
 
         {{-- 1. Card Filter: Parameter Jadwal --}}
-        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
+        <div
+            class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-5"
+            x-data="jadwalPelajaranFilter({
+                tahunAjaranId: @js($tahunAjaranId),
+                kelasId: @js($kelasId),
+                semesterId: @js($semesterId),
+                opsiUrl: @js(route('admin.jadwal-pelajaran.opsi')),
+                indexUrlBase: @js(route('admin.jadwal-pelajaran.index')),
+                createUrlBase: @js(route('admin.jadwal-pelajaran.create')),
+            })"
+        >
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
                 <div>
                     <h2 class="font-display text-base font-bold text-gray-900">Filter Jadwal Pelajaran</h2>
-                    <p class="text-xs text-gray-500 mt-0.5">Pilih parameter tahun ajaran, kelas, dan semester untuk menampilkan data.</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Pilih parameter tahun ajaran, semester, dan kelas untuk menampilkan data.</p>
                 </div>
-                @if ($kelasId && $semesterId)
-                    <x-link-button href="{{ route('admin.jadwal-pelajaran.create', ['kelas_id' => $kelasId, 'semester_id' => $semesterId]) }}" class="shrink-0 justify-center">
+                <template x-if="kelasId && semesterId">
+                    <x-link-button href="#" x-bind:href="tambahSlotUrl()" class="shrink-0 justify-center">
                         <span class="text-base leading-none mr-1.5">+</span> Tambah Slot Jadwal
                     </x-link-button>
-                @endif
+                </template>
             </div>
 
-            <form method="GET" action="{{ route('admin.jadwal-pelajaran.index') }}">
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4 items-end">
-                    <div>
-                        <x-input-label value="Tahun Ajaran" />
-                        <select name="tahun_ajaran_id" onchange="this.form.submit()" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">— Pilih Tahun Ajaran —</option>
-                            @foreach ($tahunAjaranList as $tahunAjaran)
-                                <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <x-input-label value="Kelas" />
-                        <select name="kelas_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">— Pilih Kelas —</option>
-                            @foreach ($kelasList as $kelas)
-                                <option value="{{ $kelas->id }}" @selected($kelasId == $kelas->id)>{{ $kelas->nama }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <x-input-label value="Semester" />
-                        <select name="semester_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">— Pilih Semester —</option>
-                            @foreach ($semesterList as $semester)
-                                <option value="{{ $semester->id }}" @selected($semesterId == $semester->id)>{{ $semester->nama }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="pt-2 sm:pt-0">
-                        <x-primary-button type="submit" class="w-full justify-center h-10 shadow-sm transition duration-150">
-                            Tampilkan
-                        </x-primary-button>
-                    </div>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                    <x-input-label value="Tahun Ajaran" />
+                    <select x-ref="tahunAjaranSelect" x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm">
+                        <option value="">— Pilih Tahun Ajaran —</option>
+                        @foreach ($tahunAjaranList as $tahunAjaran)
+                            <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
+                        @endforeach
+                    </select>
                 </div>
-            </form>
+
+                <div>
+                    <x-input-label value="Semester" />
+                    <select x-ref="semesterSelect" x-model="semesterId" @change="muatUlangDaftar()" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">— Pilih Semester —</option>
+                        @foreach ($semesterList as $semester)
+                            <option value="{{ $semester->id }}" @selected($semesterId == $semester->id)>{{ $semester->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <x-input-label value="Kelas" />
+                    <select x-ref="kelasSelect" x-init="initKelasSelect($refs.kelasSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm">
+                        <option value="">— Pilih Kelas —</option>
+                        @foreach ($kelasList as $kelas)
+                            <option value="{{ $kelas->id }}" @selected($kelasId == $kelas->id)>{{ $kelas->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
 
         {{-- 2. Daftar Jadwal Pelajaran per Hari --}}

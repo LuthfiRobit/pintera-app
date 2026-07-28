@@ -313,3 +313,43 @@ it('rejects a tahun_ajaran_id belonging to another lembaga on the opsi endpoint'
     $this->actingAs($manager)->getJson(route('admin.jadwal-pelajaran.opsi', ['tahun_ajaran_id' => $tahunAjaranB->id]))
         ->assertNotFound();
 });
+
+it('renders the filter fields in tahun ajaran, semester, kelas order with no submit button', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index'));
+    $html = $response->getContent();
+
+    $posisiTahunAjaran = strpos($html, 'name="tahun_ajaran_id"') ?: strpos($html, 'x-ref="tahunAjaranSelect"');
+    $posisiSemester = strpos($html, 'x-ref="semesterSelect"');
+    $posisiKelas = strpos($html, 'x-ref="kelasSelect"');
+
+    expect($posisiTahunAjaran)->not->toBeFalse();
+    expect($posisiSemester)->not->toBeFalse();
+    expect($posisiKelas)->not->toBeFalse();
+    expect($posisiTahunAjaran)->toBeLessThan($posisiSemester);
+    expect($posisiSemester)->toBeLessThan($posisiKelas);
+
+    $response->assertDontSee('Tampilkan');
+});
+
+it('wires the filter card with jadwalPelajaranFilter and the correct initial values', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertSee('jadwalPelajaranFilter(', false);
+    $response->assertSee((string) $tahunAjaran->id, false);
+    $response->assertSee((string) $kelas->id, false);
+    $response->assertSee((string) $semester->id, false);
+});
