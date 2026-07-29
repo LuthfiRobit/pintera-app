@@ -106,6 +106,34 @@ it('creates the non-colliding slots and reports the skipped one when one of seve
     expect(JadwalPelajaran::where('kelas_id', $kelas->id)->count())->toBe(2);
 });
 
+it('creates the non-colliding slots and reports the skipped one when one of several selected slots has a guru conflict', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasSatu = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $kelasDua = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jamSatu = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'urutan' => 1, 'is_pelajaran' => true, 'hari' => 'senin', 'label' => 'Jam ke-1']);
+    $jamDua = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'urutan' => 2, 'is_pelajaran' => true, 'hari' => 'senin', 'label' => 'Jam ke-2']);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    JadwalPelajaran::factory()->create(['kelas_id' => $kelasSatu->id, 'jam_pelajaran_id' => $jamSatu->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+    $manager = actingAsJadwalManager($lembaga);
+
+    $response = $this->actingAs($manager)->post(route('admin.jadwal-pelajaran.store'), [
+        'kelas_id' => $kelasDua->id,
+        'jam_pelajaran_id' => [$jamSatu->id, $jamDua->id],
+        'guru_id' => $guru->id,
+        'semester_id' => $semester->id,
+    ]);
+
+    $response->assertRedirect(route('admin.jadwal-pelajaran.index', ['kelas_id' => $kelasDua->id, 'semester_id' => $semester->id]));
+    $response->assertSessionHas('status', fn ($status) => str_contains($status, 'Senin Jam ke-2') && str_contains($status, 'Dilewati'));
+
+    expect(JadwalPelajaran::where('kelas_id', $kelasDua->id)->where('jam_pelajaran_id', $jamDua->id)->exists())->toBeTrue();
+    expect(JadwalPelajaran::where('kelas_id', $kelasDua->id)->count())->toBe(1);
+});
+
 it('rejects the whole batch when every selected slot already has a jadwal for this kelas and semester', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -319,6 +347,27 @@ it('rejects a jam_pelajaran_id belonging to a different pola jam than the kelas 
     ])->assertNotFound();
 
     expect(JadwalPelajaran::where('kelas_id', $kelasA->id)->exists())->toBeFalse();
+});
+
+it('rejects a jam_pelajaran_id that is not an is_pelajaran slot even if it belongs to the right pola jam', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jamIstirahat = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => false, 'label' => 'Istirahat']);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsJadwalManager($lembaga);
+
+    $this->actingAs($manager)->post(route('admin.jadwal-pelajaran.store'), [
+        'kelas_id' => $kelas->id,
+        'jam_pelajaran_id' => [$jamIstirahat->id],
+        'guru_id' => $guru->id,
+        'semester_id' => $semester->id,
+    ])->assertNotFound();
+
+    expect(JadwalPelajaran::where('kelas_id', $kelas->id)->exists())->toBeFalse();
 });
 
 it('shows a friendly error instead of a raw SQL error on a duplicate kelas/jam/semester entry', function () {

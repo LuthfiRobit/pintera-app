@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class JadwalPelajaranController extends BaseController
@@ -166,6 +167,7 @@ class JadwalPelajaranController extends BaseController
         $jamPelajaranIds = array_unique($data['jam_pelajaran_id']);
         $jamPelajaranList = JamPelajaran::whereIn('id', $jamPelajaranIds)
             ->where('pola_jam_id', $kelas->pola_jam_id)
+            ->isPelajaran()
             ->get();
         if ($jamPelajaranList->count() !== count($jamPelajaranIds)) {
             abort(404);
@@ -174,34 +176,36 @@ class JadwalPelajaranController extends BaseController
         $berhasil = [];
         $dilewati = [];
 
-        foreach ($jamPelajaranList as $jamPelajaran) {
-            $duplikat = JadwalPelajaran::where('kelas_id', $kelas->id)
-                ->where('jam_pelajaran_id', $jamPelajaran->id)
-                ->where('semester_id', $semester->id)
-                ->exists();
-            if ($duplikat) {
-                $dilewati[] = $this->formatSlot($jamPelajaran) . ' (kelas ini sudah punya jadwal di slot ini)';
-                continue;
-            }
+        DB::transaction(function () use ($jamPelajaranList, $kelas, $guru, $semester, $data, &$berhasil, &$dilewati) {
+            foreach ($jamPelajaranList as $jamPelajaran) {
+                $duplikat = JadwalPelajaran::where('kelas_id', $kelas->id)
+                    ->where('jam_pelajaran_id', $jamPelajaran->id)
+                    ->where('semester_id', $semester->id)
+                    ->exists();
+                if ($duplikat) {
+                    $dilewati[] = $this->formatSlot($jamPelajaran) . ' (kelas ini sudah punya jadwal di slot ini)';
+                    continue;
+                }
 
-            $guruBentrok = JadwalPelajaran::where('guru_id', $guru->id)
-                ->where('jam_pelajaran_id', $jamPelajaran->id)
-                ->where('semester_id', $semester->id)
-                ->exists();
-            if ($guruBentrok) {
-                $dilewati[] = $this->formatSlot($jamPelajaran) . ' (guru sudah mengajar kelas lain di slot ini)';
-                continue;
-            }
+                $guruBentrok = JadwalPelajaran::where('guru_id', $guru->id)
+                    ->where('jam_pelajaran_id', $jamPelajaran->id)
+                    ->where('semester_id', $semester->id)
+                    ->exists();
+                if ($guruBentrok) {
+                    $dilewati[] = $this->formatSlot($jamPelajaran) . ' (guru sudah mengajar kelas lain di slot ini)';
+                    continue;
+                }
 
-            JadwalPelajaran::create([
-                'kelas_id' => $kelas->id,
-                'jam_pelajaran_id' => $jamPelajaran->id,
-                'mata_pelajaran_id' => $data['mata_pelajaran_id'] ?? null,
-                'guru_id' => $guru->id,
-                'semester_id' => $semester->id,
-            ]);
-            $berhasil[] = $this->formatSlot($jamPelajaran);
-        }
+                JadwalPelajaran::create([
+                    'kelas_id' => $kelas->id,
+                    'jam_pelajaran_id' => $jamPelajaran->id,
+                    'mata_pelajaran_id' => $data['mata_pelajaran_id'] ?? null,
+                    'guru_id' => $guru->id,
+                    'semester_id' => $semester->id,
+                ]);
+                $berhasil[] = $this->formatSlot($jamPelajaran);
+            }
+        });
 
         if (empty($berhasil)) {
             return back()->withErrors([
