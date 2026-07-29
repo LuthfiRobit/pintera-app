@@ -470,3 +470,59 @@ it('shows tahun ajaran alongside each semester option on the edit form to avoid 
     $response->assertSee('Ganjil — 2025/2026');
     $response->assertSee('Ganjil — 2026/2027');
 });
+
+it('defaults to the active tahun ajaran on the create page when none is selected', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'));
+
+    $response->assertViewHas('tahunAjaranId', $taAktif->id);
+});
+
+it('only offers semester options belonging to the selected tahun ajaran on the create page', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $taBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $taLama->id]);
+    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taBaru->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.create', ['tahun_ajaran_id' => $taBaru->id]));
+
+    $response->assertViewHas('semesterList', fn ($list) => $list->contains('id', $semesterBaru->id) && ! $list->contains('id', $semesterLama->id));
+});
+
+it('shows the tahun ajaran select wired with Tom Select on the create page', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'));
+
+    $response->assertSee('komponenPenilaianCreateForm(', false);
+    $response->assertSee('name="tahun_ajaran_id"', false);
+});
+
+it('preserves the selected tahun ajaran and semester after a validation failure on store', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->from(route('admin.komponen-penilaian.create'))->post(route('admin.komponen-penilaian.store'), [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'semester_id' => $semester->id,
+        'mata_pelajaran_id' => $mapel->id,
+    ])->assertSessionHasErrors('deskripsi');
+
+    $followUp = $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'));
+
+    $followUp->assertSee('value="' . $tahunAjaran->id . '" selected', false);
+    $followUp->assertSee('value="' . $semester->id . '" selected', false);
+});
