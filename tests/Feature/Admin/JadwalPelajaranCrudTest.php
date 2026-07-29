@@ -875,3 +875,48 @@ it('denies access to edit, update, and destroy without jadwal-pelajaran.kelola p
     ])->assertForbidden();
     $this->actingAs($outsider)->delete(route('admin.jadwal-pelajaran.destroy', $jadwal))->assertForbidden();
 });
+
+it('renders the edit form with the current jam, mata pelajaran, and guru pre-selected', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true, 'hari' => 'senin']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jadwal = JadwalPelajaran::factory()->create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'mata_pelajaran_id' => $mapel->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.edit', $jadwal));
+
+    $response->assertOk();
+    $response->assertSee('value="' . $jam->id . '" selected', false);
+    $response->assertSee('value="' . $mapel->id . '" selected', false);
+    $response->assertSee('value="' . $guru->id . '" selected', false);
+});
+
+it('shows a warning and forces re-selection when the jadwal\'s slot is no longer part of the kelas\'s current pola jam', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $polaLama = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $polaBaru = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $polaLama->id]);
+    $jamLama = JamPelajaran::factory()->create(['pola_jam_id' => $polaLama->id, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jadwal = JadwalPelajaran::factory()->create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jamLama->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
+
+    // Kelas moved to a different pola jam after the jadwal was created — jamLama is no longer part of kelas's pola jam.
+    $kelas->update(['pola_jam_id' => $polaBaru->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $polaBaru->id, 'is_pelajaran' => true]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.edit', $jadwal));
+
+    $response->assertOk();
+    $response->assertDontSee('value="' . $jamLama->id . '" selected', false);
+    $response->assertSee('Silakan pilih slot yang baru', false);
+});

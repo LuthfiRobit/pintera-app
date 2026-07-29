@@ -23,6 +23,13 @@
             <p><span class="text-brand-400">Kelas</span> <span class="ml-1.5 font-semibold text-brand-700">{{ $kelas->nama }}</span></p>
         </div>
 
+        @unless ($jamPelajaranPerHari->isEmpty() || $slotMasihValid)
+            <div class="flex items-start gap-3 rounded-2xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
+                <x-icon name="warning" class="mt-0.5 h-5 w-5 shrink-0 text-warning-500" />
+                <p>Slot jam pelajaran yang tercatat di jadwal ini sudah tidak tersedia di Pola Jam kelas saat ini (kemungkinan Pola Jam kelas sudah diganti). Silakan pilih slot yang baru sebelum menyimpan.</p>
+            </div>
+        @endunless
+
         @if ($jamPelajaranPerHari->isEmpty())
             <div class="flex items-start gap-3 rounded-2xl border border-warning-200 bg-warning-50 p-5 text-sm text-warning-700">
                 <x-icon name="warning" class="mt-0.5 h-5 w-5 shrink-0 text-warning-500" />
@@ -48,9 +55,13 @@
                         <select
                             name="jam_pelajaran_id"
                             x-ref="jamPelajaranSelect"
-                            x-init="initJamPelajaranSelect($refs.jamPelajaranSelect)"
+                            x-init="initJamPelajaranSelect($refs.jamPelajaranSelect, 'Pilih slot jam pelajaran...')"
                             class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                            required
                         >
+                            @unless ($slotMasihValid)
+                                <option value="" selected disabled>— Slot lama sudah tidak berlaku, pilih ulang —</option>
+                            @endunless
                             @foreach ($jamPelajaranPerHari as $grup)
                                 <optgroup label="{{ $grup['hari']->label() }}">
                                     @foreach ($grup['items'] as $jam)

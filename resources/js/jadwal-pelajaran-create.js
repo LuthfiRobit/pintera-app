@@ -2,10 +2,10 @@ import TomSelect from 'tom-select';
 
 export function jadwalPelajaranCreateForm() {
     return {
-        initJamPelajaranSelect(el) {
+        initJamPelajaranSelect(el, placeholder = 'Pilih satu atau beberapa slot jam pelajaran...') {
             new TomSelect(el, {
                 create: false,
-                placeholder: 'Pilih satu atau beberapa slot jam pelajaran...',
+                placeholder,
             });
         },
 

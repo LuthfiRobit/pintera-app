@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -90,22 +91,7 @@ class JadwalPelajaranController extends BaseController
         $semesterId = $request->query('semester_id');
         $semester = $semesterId ? Semester::find($semesterId) : null;
 
-        $hariAktif = Hari::aktifDari($kelas->lembaga->hari_libur_mingguan ?? []);
-
-        $jamPelajaranPerHari = collect();
-        if ($kelas->pola_jam_id) {
-            $mentah = JamPelajaran::where('pola_jam_id', $kelas->pola_jam_id)
-                ->isPelajaran()
-                ->orderBy('urutan')
-                ->get()
-                ->groupBy(fn ($jam) => $jam->hari->value);
-
-            foreach ($hariAktif as $hari) {
-                if ($mentah->has($hari->value)) {
-                    $jamPelajaranPerHari->push(['hari' => $hari, 'items' => $mentah->get($hari->value)]);
-                }
-            }
-        }
+        $jamPelajaranPerHari = $this->jamPelajaranPerHari($kelas);
 
         return view('admin.jadwal-pelajaran.create', [
             'kelas' => $kelas,
@@ -235,22 +221,9 @@ class JadwalPelajaranController extends BaseController
 
         $semester = Semester::find($jadwalPelajaran->semester_id);
 
-        $hariAktif = Hari::aktifDari($kelas->lembaga->hari_libur_mingguan ?? []);
+        $jamPelajaranPerHari = $this->jamPelajaranPerHari($kelas);
 
-        $jamPelajaranPerHari = collect();
-        if ($kelas->pola_jam_id) {
-            $mentah = JamPelajaran::where('pola_jam_id', $kelas->pola_jam_id)
-                ->isPelajaran()
-                ->orderBy('urutan')
-                ->get()
-                ->groupBy(fn ($jam) => $jam->hari->value);
-
-            foreach ($hariAktif as $hari) {
-                if ($mentah->has($hari->value)) {
-                    $jamPelajaranPerHari->push(['hari' => $hari, 'items' => $mentah->get($hari->value)]);
-                }
-            }
-        }
+        $slotMasihValid = $jamPelajaranPerHari->flatMap(fn ($grup) => $grup['items']->pluck('id'))->contains($jadwalPelajaran->jam_pelajaran_id);
 
         return view('admin.jadwal-pelajaran.edit', [
             'jadwalPelajaran' => $jadwalPelajaran,
@@ -259,6 +232,7 @@ class JadwalPelajaranController extends BaseController
             'jamPelajaranPerHari' => $jamPelajaranPerHari,
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
             'guruList' => Guru::orderBy('nama')->get(),
+            'slotMasihValid' => $slotMasihValid,
         ]);
     }
 
@@ -357,5 +331,27 @@ class JadwalPelajaranController extends BaseController
     private function formatSlot(JamPelajaran $jamPelajaran): string
     {
         return $jamPelajaran->hari->label() . ' ' . $jamPelajaran->label;
+    }
+
+    private function jamPelajaranPerHari(Kelas $kelas): Collection
+    {
+        $jamPelajaranPerHari = collect();
+
+        if ($kelas->pola_jam_id) {
+            $hariAktif = Hari::aktifDari($kelas->lembaga->hari_libur_mingguan ?? []);
+            $mentah = JamPelajaran::where('pola_jam_id', $kelas->pola_jam_id)
+                ->isPelajaran()
+                ->orderBy('urutan')
+                ->get()
+                ->groupBy(fn ($jam) => $jam->hari->value);
+
+            foreach ($hariAktif as $hari) {
+                if ($mentah->has($hari->value)) {
+                    $jamPelajaranPerHari->push(['hari' => $hari, 'items' => $mentah->get($hari->value)]);
+                }
+            }
+        }
+
+        return $jamPelajaranPerHari;
     }
 }
