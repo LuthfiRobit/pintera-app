@@ -37,23 +37,23 @@
                             x-model="search"
                             @input.debounce.400ms="muatUlangDaftar()"
                             placeholder="Cari kode TP atau deskripsi..."
-                            class="w-full rounded-lg border-gray-200 pl-10 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2"
+                            class="w-full rounded-lg border-gray-200 pl-10 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 py-2"
                         >
                     </div>
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                        <select x-ref="tahunAjaranSelect" x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)" class="rounded-lg border-gray-200 text-sm text-gray-700 shadow-sm py-2">
+                        <select x-ref="tahunAjaranSelect" x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)" class="rounded-lg border-gray-200 text-sm text-gray-700 py-2">
                             <option value="">Semua Tahun Ajaran</option>
                             @foreach ($tahunAjaranList as $tahunAjaran)
                                 <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
                             @endforeach
                         </select>
-                        <select x-ref="semesterSelect" x-init="initSemesterSelect($refs.semesterSelect)" class="rounded-lg border-gray-200 text-sm text-gray-700 shadow-sm py-2">
+                        <select x-ref="semesterSelect" x-init="initSemesterSelect($refs.semesterSelect)" class="rounded-lg border-gray-200 text-sm text-gray-700 py-2">
                             <option value="">Semua Semester</option>
                             @foreach ($semesterList as $semester)
                                 <option value="{{ $semester->id }}" @selected($semesterId == $semester->id)>{{ $semester->nama }}</option>
                             @endforeach
                         </select>
-                        <select x-ref="mataPelajaranSelect" x-init="initMataPelajaranSelect($refs.mataPelajaranSelect)" class="rounded-lg border-gray-200 text-sm text-gray-700 shadow-sm py-2">
+                        <select x-ref="mataPelajaranSelect" x-init="initMataPelajaranSelect($refs.mataPelajaranSelect)" class="rounded-lg border-gray-200 text-sm text-gray-700 py-2">
                             <option value="">Semua Mata Pelajaran</option>
                             @foreach ($mataPelajaranList as $mapel)
                                 <option value="{{ $mapel->id }}" @selected($mataPelajaranId == $mapel->id)>{{ $mapel->nama }}</option>

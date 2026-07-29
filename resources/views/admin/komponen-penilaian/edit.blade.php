@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-3xl space-y-4">
+    <div class="mx-auto max-w-6xl space-y-4">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
