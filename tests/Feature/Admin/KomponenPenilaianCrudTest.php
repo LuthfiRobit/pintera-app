@@ -88,3 +88,140 @@ it('rejects creating a komponen penilaian mixing a mata pelajaran and semester f
 
     expect(KomponenPenilaian::where('deskripsi', 'Campur lembaga')->exists())->toBeFalse();
 });
+
+it('only offers semester options belonging to the selected tahun ajaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026']);
+    $taBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $taLama->id]);
+    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taBaru->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index', ['tahun_ajaran_id' => $taBaru->id]));
+
+    $response->assertViewHas('semesterList', fn ($list) => $list->contains('id', $semesterBaru->id) && ! $list->contains('id', $semesterLama->id));
+});
+
+it('defaults to the active tahun ajaran when none is selected', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'));
+
+    $response->assertViewHas('tahunAjaranId', $taAktif->id);
+});
+
+it('filters the komponen list by tahun ajaran, semester, and mata pelajaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semesterCocok = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap']);
+    $mapelCocok = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $mapelLain = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelCocok->id, 'semester_id' => $semesterCocok->id, 'kode' => 'TP-COCOK']);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelLain->id, 'semester_id' => $semesterCocok->id, 'kode' => 'TP-MAPEL-LAIN']);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelCocok->id, 'semester_id' => $semesterLain->id, 'kode' => 'TP-SEMESTER-LAIN']);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'semester_id' => $semesterCocok->id,
+        'mata_pelajaran_id' => $mapelCocok->id,
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertSee('TP-COCOK');
+    $response->assertDontSee('TP-MAPEL-LAIN');
+    $response->assertDontSee('TP-SEMESTER-LAIN');
+});
+
+it('filters the komponen list by search text on kode or deskripsi', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'kode' => 'TP 3.1', 'deskripsi' => 'Siklus air']);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'kode' => 'TP 4.2', 'deskripsi' => 'Fotosintesis']);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index', ['search' => 'siklus']));
+
+    $response->assertOk();
+    $response->assertSee('Siklus air');
+    $response->assertDontSee('Fotosintesis');
+});
+
+it('shows semester and tahun ajaran together on each row to avoid ambiguity', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'));
+
+    $response->assertSee('Ganjil — 2026/2027');
+});
+
+it('returns only the fragment for an ajax request, not the full page', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertSee('Daftar Komponen &amp; Tujuan Pembelajaran', false);
+    $response->assertDontSee('komponenPenilaianFilter(', false);
+});
+
+it('returns semester options scoped to the given tahun ajaran via the opsi endpoint', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+
+    $response = $this->actingAs($manager)->getJson(route('admin.komponen-penilaian.opsi', ['tahun_ajaran_id' => $tahunAjaran->id]));
+
+    $response->assertOk();
+    $response->assertJsonFragment(['id' => $semester->id, 'nama' => 'Ganjil']);
+});
+
+it('rejects a tahun_ajaran_id belonging to another lembaga on the opsi endpoint', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $manager = actingAsKomponenManager($lembagaA);
+
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+
+    $this->actingAs($manager)->getJson(route('admin.komponen-penilaian.opsi', ['tahun_ajaran_id' => $tahunAjaranB->id]))
+        ->assertNotFound();
+});
+
+it('wires the filter card with komponenPenilaianFilter and the correct initial values', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id, 'semester_id' => $semester->id, 'mata_pelajaran_id' => $mapel->id,
+    ]));
+
+    $response->assertSee('komponenPenilaianFilter(', false);
+    $response->assertSee((string) $tahunAjaran->id, false);
+    $response->assertSee((string) $semester->id, false);
+    $response->assertSee((string) $mapel->id, false);
+});

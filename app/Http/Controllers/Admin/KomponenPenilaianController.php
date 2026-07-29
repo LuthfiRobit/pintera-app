@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Models\KomponenPenilaian;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
+use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -15,12 +17,54 @@ class KomponenPenilaianController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(): View
+    public function index(Request $request): View|string
     {
         $this->authorize('komponen-penilaian.kelola');
 
+        $tahunAjaranId = $request->query('tahun_ajaran_id');
+        if ($tahunAjaranId === null) {
+            $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
+        }
+        $semesterId = $request->query('semester_id');
+        $mataPelajaranId = $request->query('mata_pelajaran_id');
+        $search = $request->query('search');
+
+        $komponenList = KomponenPenilaian::whereHas('mataPelajaran')
+            ->with(['mataPelajaran', 'semester.tahunAjaran'])
+            ->when($tahunAjaranId, fn ($q) => $q->whereHas('semester', fn ($q2) => $q2->where('tahun_ajaran_id', $tahunAjaranId)))
+            ->when($semesterId, fn ($q) => $q->where('semester_id', $semesterId))
+            ->when($mataPelajaranId, fn ($q) => $q->where('mata_pelajaran_id', $mataPelajaranId))
+            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('kode', 'like', "%{$search}%")->orWhere('deskripsi', 'like', "%{$search}%")))
+            ->orderByDesc('id')
+            ->get();
+
+        if ($request->ajax()) {
+            return view('admin.komponen-penilaian._daftar', ['komponenList' => $komponenList])->render();
+        }
+
         return view('admin.komponen-penilaian.index', [
-            'komponenList' => KomponenPenilaian::whereHas('mataPelajaran')->with(['mataPelajaran', 'semester'])->orderByDesc('id')->get(),
+            'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
+            'tahunAjaranId' => $tahunAjaranId,
+            'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
+            'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
+            'semesterId' => $semesterId,
+            'mataPelajaranId' => $mataPelajaranId,
+            'search' => $search,
+            'komponenList' => $komponenList,
+        ]);
+    }
+
+    public function opsi(Request $request): JsonResponse
+    {
+        $this->authorize('komponen-penilaian.kelola');
+
+        $data = $request->validate(['tahun_ajaran_id' => ['required', 'integer']]);
+
+        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
+        abort_if($tahunAjaran === null, 404);
+
+        return response()->json([
+            'semesterList' => Semester::where('tahun_ajaran_id', $tahunAjaran->id)->orderByDesc('id')->get(['id', 'nama']),
         ]);
     }
 
