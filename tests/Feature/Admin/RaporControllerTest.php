@@ -74,8 +74,8 @@ it('defaults to the active tahun ajaran, first kelas, and latest semester when n
     $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $kelasA = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id, 'nama' => '7A']);
     $kelasB = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id, 'nama' => '7B']);
-    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $taAktif->id]);
-    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taAktif->id]);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $taAktif->id, 'nama' => 'Ganjil']);
+    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taAktif->id, 'nama' => 'Genap']);
 
     $viewer = actingAsRaporViewer($lembaga);
 
@@ -89,12 +89,12 @@ it('defaults to the active tahun ajaran, first kelas, and latest semester when n
 it('only offers kelas and semester options belonging to the selected tahun ajaran', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $taBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2020/2021']);
+    $taBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2021/2022']);
     $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taLama->id]);
     $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taBaru->id]);
-    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $taLama->id]);
-    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taBaru->id]);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $taLama->id, 'nama' => 'Ganjil']);
+    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taBaru->id, 'nama' => 'Genap']);
 
     $viewer = actingAsRaporViewer($lembaga);
 
@@ -107,11 +107,11 @@ it('only offers kelas and semester options belonging to the selected tahun ajara
 it('ignores a kelas_id or semester_id that does not belong to the selected tahun ajaran and falls back to defaults', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $taBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2020/2021']);
+    $taBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2021/2022']);
     $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taLama->id]);
     $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taBaru->id]);
-    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taBaru->id]);
+    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $taBaru->id, 'nama' => 'Genap']);
 
     $viewer = actingAsRaporViewer($lembaga);
 
@@ -242,5 +242,5 @@ it('shows the cetak rekap nilai link pointing at the cetak route when there are 
 
     $response = $this->actingAs($viewer)->get(route('admin.rapor.index', ['tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
 
-    $response->assertSee(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]), false);
+    $response->assertSee(e(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id])), false);
 });
