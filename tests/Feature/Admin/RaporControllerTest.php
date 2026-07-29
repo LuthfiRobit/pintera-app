@@ -230,6 +230,19 @@ it('rejects a semester_id belonging to another lembaga on the cetak endpoint', f
         ->assertNotFound();
 });
 
+it('rejects a kelas_id and semester_id from different tahun ajaran on the cetak endpoint', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $viewer = actingAsRaporViewer($lembaga);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2020/2021']);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2021/2022']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranA->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+
+    $this->actingAs($viewer)->get(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]))
+        ->assertNotFound();
+});
+
 it('shows the cetak rekap nilai link pointing at the cetak route when there are students', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class RaporController extends BaseController
@@ -24,12 +25,13 @@ class RaporController extends BaseController
     {
         $this->authorize('rapor.view');
 
-        $tahunAjaranId = $request->query('tahun_ajaran_id');
-        if (! $tahunAjaranId && $request->query('kelas_id')) {
+        $tahunAjaranId = is_scalar($request->query('tahun_ajaran_id')) ? $request->query('tahun_ajaran_id') : null;
+        $kelasIdParam = is_scalar($request->query('kelas_id')) ? $request->query('kelas_id') : null;
+        if (! $tahunAjaranId && $kelasIdParam) {
             // Deep link with kelas_id but no tahun_ajaran_id (e.g. a bookmarked/shared URL):
             // derive it from the kelas itself instead of falling back to the active tahun
             // ajaran, which may not be the one the kelas actually belongs to.
-            $tahunAjaranId = Kelas::find($request->query('kelas_id'))?->tahun_ajaran_id;
+            $tahunAjaranId = Kelas::find($kelasIdParam)?->tahun_ajaran_id;
         }
         if (! $tahunAjaranId) {
             $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
@@ -38,11 +40,11 @@ class RaporController extends BaseController
         $kelasList = $tahunAjaranId ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->orderBy('nama')->get() : collect();
         $semesterList = $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect();
 
-        $kelasId = $request->query('kelas_id');
+        $kelasId = $kelasIdParam;
         if (! $kelasId || ! $kelasList->contains('id', (int) $kelasId)) {
             $kelasId = $kelasList->first()?->id;
         }
-        $semesterId = $request->query('semester_id');
+        $semesterId = is_scalar($request->query('semester_id')) ? $request->query('semester_id') : null;
         if (! $semesterId || ! $semesterList->contains('id', (int) $semesterId)) {
             $semesterId = $semesterList->first()?->id;
         }
@@ -97,6 +99,7 @@ class RaporController extends BaseController
         abort_if($selectedKelas === null, 404);
         $selectedSemester = Semester::find($data['semester_id']);
         abort_if($selectedSemester === null, 404);
+        abort_if($selectedSemester->tahun_ajaran_id !== $selectedKelas->tahun_ajaran_id, 404);
 
         $rekap = $this->hitungRekap($selectedKelas, $selectedSemester);
 
@@ -105,7 +108,7 @@ class RaporController extends BaseController
             'selectedSemester' => $selectedSemester,
         ], $rekap));
 
-        return $pdf->stream('rekap-rapor-'.$selectedKelas->nama.'.pdf');
+        return $pdf->stream('rekap-rapor-'.Str::slug($selectedKelas->nama).'.pdf');
     }
 
     private function hitungRekap(?Kelas $kelas, ?Semester $semester): array

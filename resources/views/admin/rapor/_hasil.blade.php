@@ -56,7 +56,7 @@
                             <span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span> Perlu Bimbingan (&lt; {{ config('akademik.ambang_tuntas') }})
                         </span>
                     </div>
-                    @if ($siswaList->isNotEmpty() && Route::has('admin.rapor.cetak'))
+                    @if ($siswaList->isNotEmpty())
                         <x-link-button variant="ghost" href="{{ route('admin.rapor.cetak', ['kelas_id' => $selectedKelas->id, 'semester_id' => $selectedSemester->id]) }}" target="_blank">
                             <x-icon name="print" class="h-4 w-4 mr-1.5 text-gray-500" />
                             Cetak Rekap Nilai
