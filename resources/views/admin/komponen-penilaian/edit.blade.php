@@ -75,7 +75,7 @@
                             >
                                 <option value="">— Pilih Semester —</option>
                                 @foreach ($semesterList as $semester)
-                                    <option value="{{ $semester->id }}" @selected(old('semester_id', $komponenPenilaian->semester_id) == $semester->id)>{{ $semester->nama }}</option>
+                                    <option value="{{ $semester->id }}" @selected(old('semester_id', $komponenPenilaian->semester_id) == $semester->id)>{{ $semester->nama }} — {{ $semester->tahunAjaran->nama }}</option>
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('semester_id')" class="mt-1" />

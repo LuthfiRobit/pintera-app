@@ -433,3 +433,40 @@ it('denies access to edit, update, and destroy without komponen-penilaian.kelola
     $this->actingAs($outsider)->put(route('admin.komponen-penilaian.update', $komponen), ['deskripsi' => 'x'])->assertForbidden();
     $this->actingAs($outsider)->delete(route('admin.komponen-penilaian.destroy', $komponen))->assertForbidden();
 });
+
+it('shows komponen from every tahun ajaran when tahun_ajaran_id is explicitly empty', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $taLain = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $semesterAktif = Semester::factory()->create(['tahun_ajaran_id' => $taAktif->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $taLain->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semesterAktif->id, 'kode' => 'TP-AKTIF']);
+    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semesterLain->id, 'kode' => 'TP-LAIN-TAHUN']);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.index', ['tahun_ajaran_id' => '']));
+
+    $response->assertOk();
+    $response->assertSee('TP-AKTIF');
+    $response->assertSee('TP-LAIN-TAHUN');
+});
+
+it('shows tahun ajaran alongside each semester option on the edit form to avoid ambiguity', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026']);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id, 'nama' => 'Ganjil']);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id, 'nama' => 'Ganjil']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semesterA->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.edit', $komponen));
+
+    $response->assertOk();
+    $response->assertSee('Ganjil — 2025/2026');
+    $response->assertSee('Ganjil — 2026/2027');
+});

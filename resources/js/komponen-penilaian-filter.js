@@ -87,7 +87,7 @@ export function komponenPenilaianFilter(config) {
         async muatUlangDaftar() {
             try {
                 const url = new URL(this.indexUrlBase, window.location.origin);
-                if (this.tahunAjaranId) url.searchParams.set('tahun_ajaran_id', this.tahunAjaranId);
+                url.searchParams.set('tahun_ajaran_id', this.tahunAjaranId ?? '');
                 if (this.semesterId) url.searchParams.set('semester_id', this.semesterId);
                 if (this.mataPelajaranId) url.searchParams.set('mata_pelajaran_id', this.mataPelajaranId);
                 if (this.search) url.searchParams.set('search', this.search);
@@ -115,7 +115,7 @@ export function komponenPenilaianFilter(config) {
         perbaruiUrl() {
             const url = new URL(window.location.href);
             const params = url.searchParams;
-            this.tahunAjaranId ? params.set('tahun_ajaran_id', this.tahunAjaranId) : params.delete('tahun_ajaran_id');
+            params.set('tahun_ajaran_id', this.tahunAjaranId ?? '');
             this.semesterId ? params.set('semester_id', this.semesterId) : params.delete('semester_id');
             this.mataPelajaranId ? params.set('mata_pelajaran_id', this.mataPelajaranId) : params.delete('mata_pelajaran_id');
             this.search ? params.set('search', this.search) : params.delete('search');

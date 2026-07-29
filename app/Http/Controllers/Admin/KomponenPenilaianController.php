@@ -22,7 +22,7 @@ class KomponenPenilaianController extends BaseController
         $this->authorize('komponen-penilaian.kelola');
 
         $tahunAjaranId = $request->query('tahun_ajaran_id');
-        if ($tahunAjaranId === null) {
+        if ($tahunAjaranId === null && ! $request->query->has('tahun_ajaran_id')) {
             $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
         }
         $semesterId = $request->query('semester_id');
@@ -116,7 +116,7 @@ class KomponenPenilaianController extends BaseController
             'komponenPenilaian' => $komponenPenilaian->load(['mataPelajaran', 'semester.tahunAjaran']),
             'dipakai' => $dipakai,
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
-            'semesterList' => Semester::orderByDesc('id')->get(),
+            'semesterList' => Semester::with('tahunAjaran')->orderByDesc('id')->get(),
         ]);
     }
 
