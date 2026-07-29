@@ -28,30 +28,33 @@
                 <p class="mt-0.5 text-xs text-gray-500">Isi rincian kode, deskripsi TP, dan kriteria ketuntasan.</p>
             </div>
 
-            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6">
+            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="komponenPenilaianCreateForm({ tahunAjaranId: @js($tahunAjaranId), opsiUrl: @js(route('admin.komponen-penilaian.opsi')) })">
                 @csrf
 
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
-                        <x-input-label value="Mata Pelajaran *" />
-                        <select 
-                            name="mata_pelajaran_id" 
+                        <x-input-label value="Tahun Ajaran *" />
+                        <select
+                            name="tahun_ajaran_id"
                             required
+                            x-ref="tahunAjaranSelect"
+                            x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)"
                             class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
-                            <option value="">— Pilih Mata Pelajaran —</option>
-                            @foreach ($mataPelajaranList as $mapel)
-                                <option value="{{ $mapel->id }}" @selected(old('mata_pelajaran_id') == $mapel->id)>{{ $mapel->nama }}</option>
+                            <option value="">— Pilih Tahun Ajaran —</option>
+                            @foreach ($tahunAjaranList as $tahunAjaran)
+                                <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
                             @endforeach
                         </select>
-                        <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1" />
                     </div>
 
                     <div>
                         <x-input-label value="Semester *" />
-                        <select 
-                            name="semester_id" 
+                        <select
+                            name="semester_id"
                             required
+                            x-ref="semesterSelect"
+                            x-init="initSemesterSelect($refs.semesterSelect)"
                             class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
                             <option value="">— Pilih Semester —</option>
@@ -60,6 +63,23 @@
                             @endforeach
                         </select>
                         <x-input-error :messages="$errors->get('semester_id')" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <x-input-label value="Mata Pelajaran *" />
+                        <select
+                            name="mata_pelajaran_id"
+                            required
+                            x-ref="mataPelajaranSelect"
+                            x-init="initMataPelajaranSelect($refs.mataPelajaranSelect)"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                        >
+                            <option value="">— Pilih Mata Pelajaran —</option>
+                            @foreach ($mataPelajaranList as $mapel)
+                                <option value="{{ $mapel->id }}" @selected(old('mata_pelajaran_id') == $mapel->id)>{{ $mapel->nama }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1" />
                     </div>
                 </div>
 

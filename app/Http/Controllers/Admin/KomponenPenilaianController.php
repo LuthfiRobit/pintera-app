@@ -68,13 +68,20 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorize('komponen-penilaian.kelola');
 
+        $tahunAjaranId = old('tahun_ajaran_id', $request->query('tahun_ajaran_id'));
+        if (! $tahunAjaranId) {
+            $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
+        }
+
         return view('admin.komponen-penilaian.create', [
+            'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
+            'tahunAjaranId' => $tahunAjaranId,
+            'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
-            'semesterList' => Semester::orderByDesc('id')->get(),
         ]);
     }
 
