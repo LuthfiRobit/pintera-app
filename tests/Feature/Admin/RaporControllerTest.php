@@ -181,3 +181,66 @@ it('uses the configured ambang tuntas threshold in the legend', function () {
     $response->assertSee('Tuntas (&ge; 80)', false);
     $response->assertSee('Perlu Bimbingan (&lt; 80)', false);
 });
+
+it('streams a pdf for the selected kelas and semester via the cetak endpoint', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Budi Santoso']);
+
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toContain('application/pdf');
+});
+
+it('rejects a kelas_id belonging to another lembaga on the cetak endpoint', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $viewer = actingAsRaporViewer($lembagaA);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $kelasB = Kelas::factory()->create(['lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $tahunAjaranB->id]);
+
+    $this->actingAs($viewer)->get(route('admin.rapor.cetak', ['kelas_id' => $kelasB->id, 'semester_id' => $semesterA->id]))
+        ->assertNotFound();
+});
+
+it('rejects a semester_id belonging to another lembaga on the cetak endpoint', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $viewer = actingAsRaporViewer($lembagaA);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $kelasA = Kelas::factory()->create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $tahunAjaranA->id]);
+
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+
+    $this->actingAs($viewer)->get(route('admin.rapor.cetak', ['kelas_id' => $kelasA->id, 'semester_id' => $semesterB->id]))
+        ->assertNotFound();
+});
+
+it('shows the cetak rekap nilai link pointing at the cetak route when there are students', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.index', ['tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertSee(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]), false);
+});

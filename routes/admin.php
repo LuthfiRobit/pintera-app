@@ -144,6 +144,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::delete('komponen-penilaian/{komponenPenilaian}', [KomponenPenilaianController::class, 'destroy'])->name('komponen-penilaian.destroy');
     Route::get('rapor', [RaporController::class, 'index'])->name('rapor.index');
     Route::get('rapor/opsi', [RaporController::class, 'opsi'])->name('rapor.opsi');
+    Route::get('rapor/cetak', [RaporController::class, 'cetak'])->name('rapor.cetak');
 
     Route::get('kenaikan-kelas', [KenaikanKelasController::class, 'index'])->name('kenaikan-kelas.index');
     Route::post('kenaikan-kelas', [KenaikanKelasController::class, 'store'])->name('kenaikan-kelas.store');

@@ -57,7 +57,7 @@
                         </span>
                     </div>
                     @if ($siswaList->isNotEmpty() && Route::has('admin.rapor.cetak'))
-                        <x-link-button variant="ghost" href="{{ route('admin.rapor.cetak', ['kelas_id' => $selectedKelas->id, 'semester_id' => $selectedSemester->id]) }}" target="_blank">
+                        <x-link-button variant="ghost" href="{!! route('admin.rapor.cetak', ['kelas_id' => $selectedKelas->id, 'semester_id' => $selectedSemester->id]) !!}" target="_blank">
                             <x-icon name="print" class="h-4 w-4 mr-1.5 text-gray-500" />
                             Cetak Rekap Nilai
                         </x-link-button>

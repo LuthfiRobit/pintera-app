@@ -8,9 +8,11 @@ use App\Models\NilaiSiswa;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
 
@@ -80,6 +82,30 @@ class RaporController extends BaseController
             'kelasList' => Kelas::where('tahun_ajaran_id', $tahunAjaran->id)->orderBy('nama')->get(['id', 'nama']),
             'semesterList' => Semester::where('tahun_ajaran_id', $tahunAjaran->id)->orderByDesc('id')->get(['id', 'nama']),
         ]);
+    }
+
+    public function cetak(Request $request): Response
+    {
+        $this->authorize('rapor.view');
+
+        $data = $request->validate([
+            'kelas_id' => ['required', 'integer'],
+            'semester_id' => ['required', 'integer'],
+        ]);
+
+        $selectedKelas = Kelas::find($data['kelas_id']);
+        abort_if($selectedKelas === null, 404);
+        $selectedSemester = Semester::find($data['semester_id']);
+        abort_if($selectedSemester === null, 404);
+
+        $rekap = $this->hitungRekap($selectedKelas, $selectedSemester);
+
+        $pdf = Pdf::loadView('pdf.rekap-rapor', array_merge([
+            'selectedKelas' => $selectedKelas,
+            'selectedSemester' => $selectedSemester,
+        ], $rekap));
+
+        return $pdf->stream('rekap-rapor-'.$selectedKelas->nama.'.pdf');
     }
 
     private function hitungRekap(?Kelas $kelas, ?Semester $semester): array
