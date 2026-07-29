@@ -224,6 +224,136 @@ class JadwalPelajaranController extends BaseController
         ])->with('status', $status);
     }
 
+    public function edit(JadwalPelajaran $jadwalPelajaran): View
+    {
+        $this->authorize('jadwal-pelajaran.kelola');
+
+        $kelas = Kelas::with(['lembaga', 'tahunAjaran'])->find($jadwalPelajaran->kelas_id);
+        if (! $kelas) {
+            abort(404);
+        }
+
+        $semester = Semester::find($jadwalPelajaran->semester_id);
+
+        $hariAktif = Hari::aktifDari($kelas->lembaga->hari_libur_mingguan ?? []);
+
+        $jamPelajaranPerHari = collect();
+        if ($kelas->pola_jam_id) {
+            $mentah = JamPelajaran::where('pola_jam_id', $kelas->pola_jam_id)
+                ->isPelajaran()
+                ->orderBy('urutan')
+                ->get()
+                ->groupBy(fn ($jam) => $jam->hari->value);
+
+            foreach ($hariAktif as $hari) {
+                if ($mentah->has($hari->value)) {
+                    $jamPelajaranPerHari->push(['hari' => $hari, 'items' => $mentah->get($hari->value)]);
+                }
+            }
+        }
+
+        return view('admin.jadwal-pelajaran.edit', [
+            'jadwalPelajaran' => $jadwalPelajaran,
+            'kelas' => $kelas,
+            'semester' => $semester,
+            'jamPelajaranPerHari' => $jamPelajaranPerHari,
+            'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
+            'guruList' => Guru::orderBy('nama')->get(),
+        ]);
+    }
+
+    public function update(Request $request, JadwalPelajaran $jadwalPelajaran): RedirectResponse
+    {
+        $this->authorize('jadwal-pelajaran.kelola');
+
+        $kelas = Kelas::find($jadwalPelajaran->kelas_id);
+        if (! $kelas) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'jam_pelajaran_id' => ['required', 'integer'],
+            'mata_pelajaran_id' => ['nullable', 'integer'],
+            'guru_id' => ['required', 'integer'],
+        ]);
+
+        $guru = Guru::find($data['guru_id']);
+        if (! $guru) {
+            abort(404);
+        }
+
+        if (! empty($data['mata_pelajaran_id'])) {
+            $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
+            if (! $mataPelajaran) {
+                abort(404);
+            }
+        }
+
+        if ($guru->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['guru_id' => 'Guru harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
+        if (isset($mataPelajaran) && $mataPelajaran->lembaga_id !== $kelas->lembaga_id) {
+            return back()->withErrors(['mata_pelajaran_id' => 'Mata pelajaran harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+        }
+
+        $jamPelajaran = JamPelajaran::where('id', $data['jam_pelajaran_id'])
+            ->where('pola_jam_id', $kelas->pola_jam_id)
+            ->isPelajaran()
+            ->first();
+        if (! $jamPelajaran) {
+            abort(404);
+        }
+
+        $duplikat = JadwalPelajaran::where('kelas_id', $jadwalPelajaran->kelas_id)
+            ->where('jam_pelajaran_id', $data['jam_pelajaran_id'])
+            ->where('semester_id', $jadwalPelajaran->semester_id)
+            ->where('id', '!=', $jadwalPelajaran->id)
+            ->exists();
+        if ($duplikat) {
+            return back()->withErrors(['jam_pelajaran_id' => 'Kelas ini sudah punya jadwal pada slot ini di semester yang sama.'])->withInput();
+        }
+
+        $guruBentrok = JadwalPelajaran::where('guru_id', $data['guru_id'])
+            ->where('jam_pelajaran_id', $data['jam_pelajaran_id'])
+            ->where('semester_id', $jadwalPelajaran->semester_id)
+            ->where('id', '!=', $jadwalPelajaran->id)
+            ->exists();
+        if ($guruBentrok) {
+            return back()->withErrors(['guru_id' => 'Guru ini sudah mengajar kelas lain pada jam dan semester yang sama.'])->withInput();
+        }
+
+        $jadwalPelajaran->update([
+            'jam_pelajaran_id' => $data['jam_pelajaran_id'],
+            'mata_pelajaran_id' => $data['mata_pelajaran_id'] ?? null,
+            'guru_id' => $data['guru_id'],
+        ]);
+
+        return redirect()->route('admin.jadwal-pelajaran.index', [
+            'kelas_id' => $jadwalPelajaran->kelas_id,
+            'semester_id' => $jadwalPelajaran->semester_id,
+        ])->with('status', 'Jadwal pelajaran berhasil diperbarui.');
+    }
+
+    public function destroy(JadwalPelajaran $jadwalPelajaran): RedirectResponse
+    {
+        $this->authorize('jadwal-pelajaran.kelola');
+
+        $kelas = Kelas::find($jadwalPelajaran->kelas_id);
+        if (! $kelas) {
+            abort(404);
+        }
+
+        $kelasId = $jadwalPelajaran->kelas_id;
+        $semesterId = $jadwalPelajaran->semester_id;
+        $jadwalPelajaran->delete();
+
+        return redirect()->route('admin.jadwal-pelajaran.index', [
+            'kelas_id' => $kelasId,
+            'semester_id' => $semesterId,
+        ])->with('status', 'Jadwal pelajaran berhasil dihapus.');
+    }
+
     private function formatSlot(JamPelajaran $jamPelajaran): string
     {
         return $jamPelajaran->hari->label() . ' ' . $jamPelajaran->label;
