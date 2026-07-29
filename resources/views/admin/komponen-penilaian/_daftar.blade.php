@@ -60,7 +60,17 @@
                             @endif
                             <span class="font-bold text-gray-900 text-base">{{ $komponen->mataPelajaran->nama }}</span>
                         </div>
-                        <x-badge tone="slate" class="text-xs font-medium">{{ $komponen->semester->nama }} — {{ $komponen->semester->tahunAjaran->nama }}</x-badge>
+                        <div class="flex items-center gap-3">
+                            <x-badge tone="slate" class="text-xs font-medium">{{ $komponen->semester->nama }} — {{ $komponen->semester->tahunAjaran->nama }}</x-badge>
+                            @can('komponen-penilaian.kelola')
+                                <a href="{{ route('admin.komponen-penilaian.edit', $komponen) }}" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">Edit</a>
+                                <form method="POST" action="{{ route('admin.komponen-penilaian.destroy', $komponen) }}" x-data @submit.prevent="confirmDialog('Hapus Komponen Penilaian?', @js('Apakah Anda yakin ingin menghapus TP ' . ($komponen->kode ?: $komponen->deskripsi) . '?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
+                                </form>
+                            @endcan
+                        </div>
                     </div>
 
                     <p class="text-sm text-gray-800 leading-relaxed font-medium">

@@ -100,4 +100,82 @@ class KomponenPenilaianController extends BaseController
 
         return redirect()->route('admin.komponen-penilaian.index')->with('status', 'Komponen penilaian (TP) berhasil disimpan.');
     }
+
+    public function edit(KomponenPenilaian $komponenPenilaian): View
+    {
+        $this->authorize('komponen-penilaian.kelola');
+
+        $mataPelajaran = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
+        if (! $mataPelajaran) {
+            abort(404);
+        }
+
+        $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
+
+        return view('admin.komponen-penilaian.edit', [
+            'komponenPenilaian' => $komponenPenilaian->load(['mataPelajaran', 'semester.tahunAjaran']),
+            'dipakai' => $dipakai,
+            'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
+            'semesterList' => Semester::orderByDesc('id')->get(),
+        ]);
+    }
+
+    public function update(Request $request, KomponenPenilaian $komponenPenilaian): RedirectResponse
+    {
+        $this->authorize('komponen-penilaian.kelola');
+
+        $mataPelajaranSaatIni = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
+        if (! $mataPelajaranSaatIni) {
+            abort(404);
+        }
+
+        $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
+
+        $rules = [
+            'kode' => ['nullable', 'string', 'max:50'],
+            'deskripsi' => ['required', 'string'],
+            'kktp' => ['nullable', 'string'],
+        ];
+        if (! $dipakai) {
+            $rules['mata_pelajaran_id'] = ['required', 'integer'];
+            $rules['semester_id'] = ['required', 'integer'];
+        }
+
+        $data = $request->validate($rules);
+
+        if (! $dipakai) {
+            $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
+            $semester = Semester::find($data['semester_id']);
+            abort_if($mataPelajaran === null || $semester === null, 404);
+            abort_if($mataPelajaran->lembaga_id !== $semester->lembaga_id, 404);
+
+            $komponenPenilaian->mata_pelajaran_id = $data['mata_pelajaran_id'];
+            $komponenPenilaian->semester_id = $data['semester_id'];
+        }
+
+        $komponenPenilaian->kode = $data['kode'] ?? null;
+        $komponenPenilaian->deskripsi = $data['deskripsi'];
+        $komponenPenilaian->kktp = $data['kktp'] ?? null;
+        $komponenPenilaian->save();
+
+        return redirect()->route('admin.komponen-penilaian.index')->with('status', 'Komponen penilaian (TP) berhasil diperbarui.');
+    }
+
+    public function destroy(KomponenPenilaian $komponenPenilaian): RedirectResponse
+    {
+        $this->authorize('komponen-penilaian.kelola');
+
+        $mataPelajaran = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
+        if (! $mataPelajaran) {
+            abort(404);
+        }
+
+        if ($komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists()) {
+            return back()->withErrors(['komponen_penilaian' => 'Komponen ini sudah dipakai pada asesmen atau nilai siswa — tidak bisa dihapus.']);
+        }
+
+        $komponenPenilaian->delete();
+
+        return redirect()->route('admin.komponen-penilaian.index')->with('status', 'Komponen penilaian (TP) berhasil dihapus.');
+    }
 }
