@@ -644,11 +644,11 @@ it('does not allow changing kelas or semester through the update payload', funct
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsJadwalManager($lembaga);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
     $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
-    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap']);
     $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $jadwal = JadwalPelajaran::factory()->create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
@@ -682,7 +682,7 @@ it('rejects updating guru_id to a guru from another lembaga', function () {
     $this->actingAs($manager)->put(route('admin.jadwal-pelajaran.update', $jadwal), [
         'jam_pelajaran_id' => $jam->id,
         'guru_id' => $guruLain->id,
-    ])->assertSessionHasErrors('guru_id');
+    ])->assertNotFound();
 
     expect($jadwal->fresh()->guru_id)->toBe($guru->id);
 });
@@ -717,8 +717,8 @@ it('rejects updating jam_pelajaran_id to a slot that is not is_pelajaran', funct
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
-    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
-    $jamIstirahat = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => false]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'urutan' => 1, 'is_pelajaran' => true]);
+    $jamIstirahat = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'urutan' => 2, 'is_pelajaran' => false]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $jadwal = JadwalPelajaran::factory()->create(['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'guru_id' => $guru->id, 'semester_id' => $semester->id]);
 
