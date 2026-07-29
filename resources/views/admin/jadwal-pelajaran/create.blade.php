@@ -17,10 +17,10 @@
             </p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-xl bg-gray-50 px-4 py-3 text-sm">
-            <p><span class="text-gray-400">Tahun Ajaran</span> <span class="ml-1.5 font-semibold text-gray-800">{{ $kelas->tahunAjaran->nama }}</span></p>
-            <p><span class="text-gray-400">Semester</span> <span class="ml-1.5 font-semibold text-gray-800">{{ $semester->nama ?? '—' }}</span></p>
-            <p><span class="text-gray-400">Kelas</span> <span class="ml-1.5 font-semibold text-gray-800">{{ $kelas->nama }}</span></p>
+        <div class="flex flex-wrap items-center gap-x-6 gap-y-1 rounded-xl bg-brand-50 px-4 py-3 text-sm">
+            <p><span class="text-brand-400">Tahun Ajaran</span> <span class="ml-1.5 font-semibold text-brand-700">{{ $kelas->tahunAjaran->nama }}</span></p>
+            <p><span class="text-brand-400">Semester</span> <span class="ml-1.5 font-semibold text-brand-700">{{ $semester->nama ?? '—' }}</span></p>
+            <p><span class="text-brand-400">Kelas</span> <span class="ml-1.5 font-semibold text-brand-700">{{ $kelas->nama }}</span></p>
         </div>
 
         @if ($jamPelajaranPerHari->isEmpty())
@@ -46,7 +46,6 @@
 
                     <div>
                         <x-input-label value="Jam Pelajaran" />
-                        <p class="mt-0.5 text-xs text-gray-400">Bisa pilih lebih dari satu slot sekaligus, mis. untuk mata pelajaran yang menempati 2 jam berturut-turut.</p>
                         <select
                             name="jam_pelajaran_id[]"
                             multiple
@@ -62,13 +61,13 @@
                                 </optgroup>
                             @endforeach
                         </select>
+                        <p class="mt-1.5 text-xs text-gray-400">Bisa pilih lebih dari satu slot sekaligus, mis. untuk mata pelajaran yang menempati 2 jam berturut-turut.</p>
                         <x-input-error :messages="$errors->get('jam_pelajaran_id')" class="mt-1.5" />
                     </div>
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
                             <x-input-label value="Mata Pelajaran" />
-                            <p class="mt-0.5 text-xs text-gray-400">Opsional untuk kelas PAUD.</p>
                             <select
                                 name="mata_pelajaran_id"
                                 x-ref="mataPelajaranSelect"
@@ -80,6 +79,7 @@
                                     <option value="{{ $mapel->id }}" @selected(old('mata_pelajaran_id') == $mapel->id)>{{ $mapel->nama }}</option>
                                 @endforeach
                             </select>
+                            <p class="mt-1.5 text-xs text-gray-400">Opsional untuk kelas PAUD.</p>
                             <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1.5" />
                         </div>
 
