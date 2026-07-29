@@ -67,6 +67,17 @@
                                                 </span>
                                             </div>
                                         </div>
+
+                                        @can('jadwal-pelajaran.kelola')
+                                            <div class="flex items-center gap-4">
+                                                <a href="{{ route('admin.jadwal-pelajaran.edit', $jadwal) }}" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">Edit</a>
+                                                <form method="POST" action="{{ route('admin.jadwal-pelajaran.destroy', $jadwal) }}" x-data @submit.prevent="confirmDialog('Hapus Jadwal?', @js('Apakah Anda yakin ingin menghapus jadwal ' . ($jadwal->mataPelajaran?->nama ?? 'ini') . ' oleh ' . $jadwal->guru->nama . '?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
+                                                </form>
+                                            </div>
+                                        @endcan
                                     </li>
                                 @endforeach
                             </ul>
