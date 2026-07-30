@@ -38,6 +38,8 @@ const TARGETS = {
     { account: 'akademik', path: '/admin/pola-jam', file: '02-01-daftar-pola-jam.png' },
     { account: 'akademik', path: '/admin/pola-jam/create', file: '02-02-form-pola-jam.png' },
     { account: 'akademik', path: '/admin/jadwal-pelajaran', file: '02-03-daftar-jadwal.png' },
+    // kelas_id=1 -> VII-A, semester_id=3 -> Ganjil 2026/2027, both lembaga_id=1 (SMP Permata),
+    // matching the akademik@sistem.test account used throughout this chapter.
     { account: 'akademik', path: '/admin/jadwal-pelajaran/create?kelas_id=1&semester_id=3', file: '02-04-form-jadwal.png' },
   ],
   '03': [],
