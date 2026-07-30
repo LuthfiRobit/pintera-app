@@ -14,7 +14,11 @@ const BASE_URL = process.env.MANUAL_BOOK_BASE_URL || 'http://localhost';
 const ACCOUNTS = {
   yayasan: { email: 'superadmin@sistem.test', password: 'password' },
   akademik: { email: 'akademik@sistem.test', password: 'password' },
-  guru: { email: 'guru@sistem.test', password: 'password' },
+  // NOTE: guru@sistem.test ("Guru (Contoh)") has no linked Guru profile row (Guru.user_id
+  // never points to it) in the seeded data, so /guru/sesi is permanently empty for it
+  // regardless of day. Using the real seeded teacher (Budi Santoso, wali kelas VII-A,
+  // Guru id 1) instead so this chapter's screenshots show real presensi/jurnal data.
+  guru: { email: 'budi.santoso@permata.sch.id', password: 'password' },
 };
 
 /** @type {Record<string, Array<{account: keyof typeof ACCOUNTS, path: string, file: string, before?: (page: import('playwright').Page) => Promise<void>, fullPage?: boolean}>>} */
@@ -42,7 +46,19 @@ const TARGETS = {
     // matching the akademik@sistem.test account used throughout this chapter.
     { account: 'akademik', path: '/admin/jadwal-pelajaran/create?kelas_id=1&semester_id=3', file: '02-04-form-jadwal.png' },
   ],
-  '03': [],
+  '03': [
+    { account: 'guru', path: '/guru/sesi', file: '03-01-daftar-sesi.png' },
+    {
+      account: 'guru',
+      path: '/guru/sesi',
+      file: '03-02-detail-sesi.png',
+      before: async (page) => {
+        const firstRow = page.locator('a[href*="/guru/sesi/"]').first();
+        await firstRow.click();
+        await page.waitForLoadState('networkidle');
+      },
+    },
+  ],
   '04': [],
   '05': [],
   '06': [],
