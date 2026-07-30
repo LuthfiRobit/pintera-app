@@ -34,7 +34,12 @@ const TARGETS = {
     { account: 'akademik', path: '/admin/siswa', file: '01-06-daftar-siswa.png' },
     { account: 'akademik', path: '/admin/pengaturan/akademik', file: '01-07-pengaturan-akademik.png' },
   ],
-  '02': [],
+  '02': [
+    { account: 'akademik', path: '/admin/pola-jam', file: '02-01-daftar-pola-jam.png' },
+    { account: 'akademik', path: '/admin/pola-jam/create', file: '02-02-form-pola-jam.png' },
+    { account: 'akademik', path: '/admin/jadwal-pelajaran', file: '02-03-daftar-jadwal.png' },
+    { account: 'akademik', path: '/admin/jadwal-pelajaran/create?kelas_id=1&semester_id=3', file: '02-04-form-jadwal.png' },
+  ],
   '03': [],
   '04': [],
   '05': [],
