@@ -64,7 +64,7 @@ class RoleSeeder extends Seeder
 
             if ($name === 'guru') {
                 $role->givePermissionTo([
-                    'presensi.isi', 'asesmen.kelola',
+                    'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola-sendiri',
                 ]);
             }
 

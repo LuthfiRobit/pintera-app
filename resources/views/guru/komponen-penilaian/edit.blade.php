@@ -1,0 +1,99 @@
+<x-app-layout>
+    <div class="mx-auto max-w-6xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
+        @endif
+
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <h1 class="font-display text-lg font-bold text-gray-900">Edit Komponen Penilaian (TP)</h1>
+            <p class="text-sm text-gray-500">
+                Ruang Guru <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('guru.komponen-penilaian.index') }}" class="font-semibold text-gray-700 hover:text-brand-600 transition-colors">Komponen Penilaian</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Edit</b>
+            </p>
+        </div>
+
+        @if ($dipakai)
+            <div class="flex items-start gap-3 rounded-2xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
+                <x-icon name="warning" class="mt-0.5 h-5 w-5 shrink-0 text-warning-500" />
+                <p>Komponen ini sudah dipakai pada asesmen atau nilai siswa — data nilai yang sudah tercatat tetap konsisten walau deskripsi/KKTP diubah.</p>
+            </div>
+        @endif
+
+        {{-- Form Card --}}
+        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div class="border-b border-gray-100 bg-white px-6 py-4">
+                <p class="flex items-center gap-2 font-display text-sm font-bold text-gray-900">
+                    <x-icon name="checklist" class="h-4 w-4 text-brand-500" />
+                    Formulir Tujuan Pembelajaran &amp; KKTP
+                </p>
+                <p class="mt-0.5 text-xs text-gray-500">Ubah rincian kode, deskripsi TP, dan kriteria ketuntasan.</p>
+            </div>
+
+            <form method="POST" action="{{ route('guru.komponen-penilaian.update', $komponenPenilaian) }}" class="p-6 space-y-6">
+                @csrf
+                @method('PUT')
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <x-input-label value="Mata Pelajaran" />
+                        <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->mataPelajaran->nama }}</p>
+                    </div>
+
+                    <div>
+                        <x-input-label value="Semester" />
+                        <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->semester->nama }} — {{ $komponenPenilaian->semester->tahunAjaran->nama }}</p>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 -mt-3">Mata Pelajaran dan Semester tidak bisa diubah di sini — hapus lalu buat TP baru kalau butuh Mata Pelajaran/Semester yang berbeda.</p>
+
+                <div>
+                    <x-input-label value="Kode Tujuan Pembelajaran (Opsional)" />
+                    <input
+                        type="text"
+                        name="kode"
+                        value="{{ old('kode', $komponenPenilaian->kode) }}"
+                        placeholder="Contoh: TP 3.1 atau TP 4.2"
+                        class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                    >
+                    <x-input-error :messages="$errors->get('kode')" class="mt-1" />
+                </div>
+
+                <div>
+                    <x-input-label value="Deskripsi Tujuan Pembelajaran *" />
+                    <textarea
+                        name="deskripsi"
+                        rows="3"
+                        required
+                        class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 p-3"
+                    >{{ old('deskripsi', $komponenPenilaian->deskripsi) }}</textarea>
+                    <x-input-error :messages="$errors->get('deskripsi')" class="mt-1" />
+                </div>
+
+                <div>
+                    <x-input-label value="KKTP / Kriteria Ketercapaian (Opsional)" />
+                    <textarea
+                        name="kktp"
+                        rows="3"
+                        class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 p-3"
+                    >{{ old('kktp', $komponenPenilaian->kktp) }}</textarea>
+                    <x-input-error :messages="$errors->get('kktp')" class="mt-1" />
+                </div>
+
+                <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
+                    <x-primary-button type="submit">
+                        Simpan Perubahan
+                    </x-primary-button>
+                    <a href="{{ route('guru.komponen-penilaian.index') }}" class="text-sm text-gray-500 hover:text-gray-700">
+                        Batal
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</x-app-layout>

@@ -62,8 +62,10 @@ const TARGETS = {
   '04': [
     { account: 'akademik', path: '/admin/komponen-penilaian', file: '04-01-daftar-komponen.png' },
     { account: 'akademik', path: '/admin/komponen-penilaian/create', file: '04-02-form-komponen.png' },
-    { account: 'guru', path: '/guru/asesmen', file: '04-03-daftar-asesmen.png' },
-    { account: 'guru', path: '/guru/asesmen/create', file: '04-04-form-asesmen.png' },
+    { account: 'guru', path: '/guru/komponen-penilaian', file: '04-03-guru-daftar-komponen.png' },
+    { account: 'guru', path: '/guru/komponen-penilaian/create', file: '04-04-guru-form-komponen.png' },
+    { account: 'guru', path: '/guru/asesmen', file: '04-05-daftar-asesmen.png' },
+    { account: 'guru', path: '/guru/asesmen/create', file: '04-06-form-asesmen.png' },
   ],
   '05': [
     { account: 'akademik', path: '/admin/rapor', file: '05-01-filter-rekap-rapor.png' },

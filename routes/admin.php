@@ -160,4 +160,11 @@ Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(fu
     Route::post('asesmen', [\App\Http\Controllers\Guru\AsesmenController::class, 'store'])->name('asesmen.store');
     Route::get('asesmen/{asesmen}', [\App\Http\Controllers\Guru\AsesmenController::class, 'show'])->name('asesmen.show');
     Route::put('asesmen/{asesmen}/nilai', [\App\Http\Controllers\Guru\AsesmenController::class, 'updateNilai'])->name('asesmen.update-nilai');
+
+    Route::get('komponen-penilaian', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'index'])->name('komponen-penilaian.index');
+    Route::get('komponen-penilaian/create', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'create'])->name('komponen-penilaian.create');
+    Route::post('komponen-penilaian', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'store'])->name('komponen-penilaian.store');
+    Route::get('komponen-penilaian/{komponenPenilaian}/edit', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'edit'])->name('komponen-penilaian.edit');
+    Route::put('komponen-penilaian/{komponenPenilaian}', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'update'])->name('komponen-penilaian.update');
+    Route::delete('komponen-penilaian/{komponenPenilaian}', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'destroy'])->name('komponen-penilaian.destroy');
 });

@@ -42,7 +42,7 @@ class PermissionSeeder extends Seeder
             'tagihan.view', 'tagihan.buat-susulan',
             'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
             'cicilan.kelola',
-            'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola', 'rapor.view',
+            'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola', 'komponen-penilaian.kelola-sendiri', 'rapor.view',
             'kenaikan-kelas.kelola',
             'kelas.view', 'kelas.create', 'kelas.edit',
             'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',

@@ -20,7 +20,7 @@ it('seeds 6 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(80);
+    expect($superAdmin->permissions()->count())->toBe(81);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -56,13 +56,14 @@ it('gives admin_keuangan the correct 11 permissions', function () {
     expect($adminKeuangan->hasPermissionTo('cicilan.kelola'))->toBeTrue();
 });
 
-it('gives guru the presensi and asesmen permissions', function () {
+it('gives guru the presensi, asesmen, and komponen-penilaian-sendiri permissions', function () {
     (new RoleSeeder())->run();
 
     $guru = Role::where('name', 'guru')->first();
-    expect($guru->permissions()->count())->toBe(2);
+    expect($guru->permissions()->count())->toBe(3);
     expect($guru->hasPermissionTo('presensi.isi'))->toBeTrue();
     expect($guru->hasPermissionTo('asesmen.kelola'))->toBeTrue();
+    expect($guru->hasPermissionTo('komponen-penilaian.kelola-sendiri'))->toBeTrue();
 });
 
 it('is idempotent when run twice', function () {
