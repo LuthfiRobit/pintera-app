@@ -19,7 +19,12 @@ const ACCOUNTS = {
 
 /** @type {Record<string, Array<{account: keyof typeof ACCOUNTS, path: string, file: string, before?: (page: import('playwright').Page) => Promise<void>, fullPage?: boolean}>>} */
 const TARGETS = {
-  '00': [],
+  '00': [
+    { account: 'yayasan', path: '/admin/lembaga', file: '00-01-daftar-lembaga.png' },
+    { account: 'yayasan', path: '/admin/lembaga/create', file: '00-02-form-lembaga.png' },
+    { account: 'yayasan', path: '/admin/users', file: '00-03-daftar-user.png' },
+    { account: 'yayasan', path: '/admin/users/create', file: '00-04-form-user-role.png' },
+  ],
   '01': [],
   '02': [],
   '03': [],
