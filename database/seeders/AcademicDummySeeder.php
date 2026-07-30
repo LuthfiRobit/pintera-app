@@ -149,6 +149,23 @@ class AcademicDummySeeder extends Seeder
             $kelasB->update(['pola_jam_id' => $polaJam->id, 'wali_kelas_guru_id' => $guruSiti->id]);
         }
 
+        // 6b. Seed Tahun Ajaran berikutnya + Kelas tujuan VIII-A/VIII-B, supaya Kenaikan
+        // Kelas (manual book Bab 6) punya target promosi yang nyata dan reproducible dari
+        // migrate:fresh --seed, bukan dibuat ad hoc lewat tinker.
+        $tahunAjaranBerikutnya = TahunAjaran::firstOrCreate(
+            ['lembaga_id' => $smp->id, 'nama' => '2027/2028'],
+            ['tanggal_mulai' => '2027-07-01', 'tanggal_selesai' => '2028-06-30', 'status_aktif' => false]
+        );
+
+        $kelasTujuanA = Kelas::firstOrCreate(
+            ['lembaga_id' => $smp->id, 'tahun_ajaran_id' => $tahunAjaranBerikutnya->id, 'nama' => 'VIII-A'],
+            ['tingkat' => 8]
+        );
+        $kelasTujuanB = Kelas::firstOrCreate(
+            ['lembaga_id' => $smp->id, 'tahun_ajaran_id' => $tahunAjaranBerikutnya->id, 'nama' => 'VIII-B'],
+            ['tingkat' => 8]
+        );
+
         // 7. Seed Siswa VII-A & VII-B
         $siswaDataA = [
             ['nis' => '2627001', 'nisn' => '0098765431', 'nama' => 'Aditya Pratama', 'jk' => 'L'],
