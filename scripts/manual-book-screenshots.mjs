@@ -65,7 +65,24 @@ const TARGETS = {
     { account: 'guru', path: '/guru/asesmen', file: '04-03-daftar-asesmen.png' },
     { account: 'guru', path: '/guru/asesmen/create', file: '04-04-form-asesmen.png' },
   ],
-  '05': [],
+  '05': [
+    { account: 'akademik', path: '/admin/rapor', file: '05-01-filter-rekap-rapor.png' },
+    // The filter selects (x-ref="tahunAjaranSelect" etc., no name attribute) are upgraded
+    // to Tom Select widgets on page load and drive an AJAX fragment reload — rather than
+    // fight that JS widget with selectOption()/clicks, we rely on the fact that
+    // RaporController@index already accepts tahun_ajaran_id/kelas_id/semester_id as GET
+    // query params and full-page-renders the same result view for them (see
+    // app/Http/Controllers/Admin/RaporController.php lines 28-71). tahun_ajaran_id=2 ->
+    // "2026/2027" (status_aktif, lembaga_id=1), kelas_id=1 -> VII-A, semester_id=3 ->
+    // "Ganjil" — the same tenant/kelas/semester combo Bab 4's Asesmen+Nilai data was
+    // created against, so this reproduces exactly what a real user's cascading selection
+    // would land on, with real non-empty data, without depending on Tom Select internals.
+    {
+      account: 'akademik',
+      path: '/admin/rapor?tahun_ajaran_id=2&kelas_id=1&semester_id=3',
+      file: '05-02-hasil-rekap-rapor.png',
+    },
+  ],
   '06': [],
   lampiran: [],
 };
