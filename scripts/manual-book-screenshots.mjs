@@ -59,7 +59,12 @@ const TARGETS = {
       },
     },
   ],
-  '04': [],
+  '04': [
+    { account: 'akademik', path: '/admin/komponen-penilaian', file: '04-01-daftar-komponen.png' },
+    { account: 'akademik', path: '/admin/komponen-penilaian/create', file: '04-02-form-komponen.png' },
+    { account: 'guru', path: '/guru/asesmen', file: '04-03-daftar-asesmen.png' },
+    { account: 'guru', path: '/guru/asesmen/create', file: '04-04-form-asesmen.png' },
+  ],
   '05': [],
   '06': [],
   lampiran: [],
