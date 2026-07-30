@@ -117,3 +117,22 @@ Tidak ada automated test untuk dokumentasi ini. Verifikasi dilakukan manual:
   langkah yang hilang atau urutan yang salah.
 - Script screenshot dijalankan sungguhan (bukan dry-run) — screenshot yang dihasilkan
   dicek visual sebelum disisipkan ke markdown.
+
+## Maintenance — Update Setelah Fitur Berubah
+
+Struktur satu-file-per-bab dan script screenshot yang config-driven sengaja dibuat supaya
+manual book ini tidak jadi dokumen sekali-tulis-lalu-basi begitu ada perubahan fitur:
+
+- **Perubahan tampilan saja** (styling, layout, label) pada suatu halaman: cukup jalankan
+  ulang script untuk bab yang bersangkutan
+  (`node scripts/manual-book-screenshots.mjs --bab=<nomor>`) — screenshot lama otomatis
+  ketimpa dengan nama file yang sama, teks langkah-langkah biasanya tidak perlu diubah.
+- **Perubahan alur/langkah kerja** (field baru, langkah dihapus/ditambah, validasi baru,
+  dst): revisi teks bab yang relevan secara manual, lalu re-run screenshot untuk bab itu.
+  Karena tiap bab memetakan 1:1 ke satu modul/role (mis. Bab 3-4 = domain guru), lingkup
+  revisi biasanya terbatas ke 1-2 file, bukan seluruh dokumen.
+- **Fitur benar-benar baru** (mis. modul baru di luar 7 bab yang ada): tambah file bab baru
+  mengikuti template & penomoran yang sama, tambahkan targetnya ke config script.
+- Config target screenshot (role, URL, aksi UI sebelum capture) disimpan sebagai kode di
+  `scripts/manual-book-screenshots.mjs`, bukan hanya dijalankan sekali lalu dilupakan —
+  jadi urutan/nama target tetap terlacak di git untuk sesi berikutnya yang perlu meng-update.
