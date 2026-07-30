@@ -83,7 +83,9 @@ const TARGETS = {
       file: '05-02-hasil-rekap-rapor.png',
     },
   ],
-  '06': [],
+  '06': [
+    { account: 'akademik', path: '/admin/kenaikan-kelas', file: '06-01-kenaikan-kelas.png' },
+  ],
   lampiran: [],
 };
 
