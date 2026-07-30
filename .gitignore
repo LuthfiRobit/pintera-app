@@ -21,6 +21,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/scripts/manual-book-artifact/dist
 /vendor
 Homestead.json
 Homestead.yaml
