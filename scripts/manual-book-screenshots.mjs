@@ -84,7 +84,10 @@ const TARGETS = {
     },
   ],
   '06': [
-    { account: 'akademik', path: '/admin/kenaikan-kelas', file: '06-01-kenaikan-kelas.png' },
+    { account: 'akademik', path: '/admin/kenaikan-kelas', file: '06-01-kenaikan-kelas-pilih-tahun.png' },
+    // tahun_ajaran_id=2 -> 2026/2027 (source, lembaga_id=1), tahun_ajaran_tujuan_id=5 -> 2027/2028
+    // (target, seeded by AcademicDummySeeder alongside Kelas VIII-A/VIII-B for exactly this screenshot).
+    { account: 'akademik', path: '/admin/kenaikan-kelas?tahun_ajaran_id=2&tahun_ajaran_tujuan_id=5', file: '06-02-kenaikan-kelas-pemetaan.png' },
   ],
   lampiran: [
     // As a yayasan-scoped account, /admin/pengaturan/akademik requires an active Lembaga

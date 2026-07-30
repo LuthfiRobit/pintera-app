@@ -23,7 +23,7 @@ Admin Akademik, dan Kepala Sekolah (lihat-saja) untuk meninjau hasil.
 
    ![Hasil Rekap Rapor](images/05-02-hasil-rekap-rapor.png)
 
-3. Klik **Export PDF** untuk mengunduh rekap dalam bentuk siap cetak.
+3. Klik **Cetak Rekap Nilai** untuk mengunduh rekap dalam bentuk siap cetak (PDF).
 
 ## Kesalahan umum
 
