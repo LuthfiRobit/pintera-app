@@ -41,6 +41,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::resource('lembaga', LembagaController::class)->except(['show', 'destroy']);
     Route::resource('guru', GuruController::class)->except(['show', 'destroy']);
+    Route::patch('guru/{guru}/status', [GuruController::class, 'updateStatus'])->name('guru.update-status');
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);

@@ -5,6 +5,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 
 function actingAsGuruManager(Lembaga $lembaga): User
@@ -21,48 +22,82 @@ function actingAsGuruManager(Lembaga $lembaga): User
     return $manager;
 }
 
+function guruFormPayload(array $overrides = []): array
+{
+    return array_merge([
+        'nik' => '3201234567891234',
+        'nip' => '198501012010011001',
+        'nama' => 'Guru Baru',
+        'email' => 'guru.baru@permata.sch.id',
+        'jenis_kelamin' => 'P',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ], $overrides);
+}
+
 it('denies access to a user without guru.view permission', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.guru.index'))->assertForbidden();
 });
 
-it('only offers users with the guru role and no existing profile when creating', function () {
+it('creates both a User account and a Guru profile in one submit, with NIP as the hashed password', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsGuruManager($lembaga);
-
     Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $eligible = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $eligible->assignRole('guru');
 
-    $notGuru = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload())
+        ->assertRedirect(route('admin.guru.index'));
 
-    $response = $this->actingAs($manager)->get(route('admin.guru.create'));
+    $guru = Guru::where('nama', 'Guru Baru')->first();
+    expect($guru)->not->toBeNull();
+    expect($guru->lembaga_id)->toBe($lembaga->id);
+    expect($guru->status_aktif)->toBe('aktif');
 
-    $response->assertOk();
-    $response->assertViewHas('eligibleUsers', function ($users) use ($eligible, $notGuru) {
-        return $users->contains('id', $eligible->id) && ! $users->contains('id', $notGuru->id);
-    });
+    $user = $guru->user;
+    expect($user)->not->toBeNull();
+    expect($user->email)->toBe('guru.baru@permata.sch.id');
+    expect($user->lembaga_id)->toBe($lembaga->id);
+    expect(Hash::check('198501012010011001', $user->password))->toBeTrue();
+    expect($user->hasRole('guru'))->toBeTrue();
 });
 
-it('creates a guru profile for an eligible user', function () {
+it('rejects creating a guru without a NIP', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsGuruManager($lembaga);
 
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload(['nip' => '']))
+        ->assertSessionHasErrors('nip');
+
+    expect(Guru::where('nama', 'Guru Baru')->exists())->toBeFalse();
+});
+
+it('rejects creating a guru with an email already used by another account', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+    User::factory()->create(['email' => 'guru.baru@permata.sch.id']);
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload())
+        ->assertSessionHasErrors('email');
+
+    expect(Guru::where('nama', 'Guru Baru')->exists())->toBeFalse();
+});
+
+it('shows a friendly validation error instead of a 500 when creating a guru with a duplicate NIK', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
     Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $eligible = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $eligible->assignRole('guru');
 
-    $this->actingAs($manager)->post(route('admin.guru.store'), [
-        'user_id' => $eligible->id,
-        'nik' => '3201234567891234',
-        'nama' => 'Guru Baru',
-        'jenis_kelamin' => 'P',
-        'jenis_ptk' => 'guru_kelas',
-        'status_kepegawaian' => 'GTY',
-    ])->assertRedirect(route('admin.guru.index'));
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload())->assertRedirect();
 
-    expect(Guru::where('user_id', $eligible->id)->exists())->toBeTrue();
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload([
+        'nama' => 'Guru Kedua',
+        'email' => 'guru.kedua@permata.sch.id',
+    ]))->assertSessionHasErrors('nik');
+
+    expect(Guru::where('nama', 'Guru Kedua')->exists())->toBeFalse();
 });
 
 it('only lists guru belonging to the acting lembaga-scoped manager\'s own lembaga', function () {
@@ -97,62 +132,136 @@ it('only lists guru belonging to the acting lembaga-scoped manager\'s own lembag
     $response->assertDontSee('Guru Lembaga B');
 });
 
-it('shows a friendly validation error instead of a 500 when creating a guru with a duplicate NIK', function () {
+it('filters the index by search, jenis_ptk, and status_aktif', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsGuruManager($lembaga);
 
-    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $firstUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $firstUser->assignRole('guru');
-
     Guru::create([
-        'user_id' => $firstUser->id,
-        'lembaga_id' => $lembaga->id,
-        'nik' => '3201234567899999',
-        'nama' => 'Guru Pertama',
-        'jenis_kelamin' => 'L',
-        'jenis_ptk' => 'guru_kelas',
-        'status_kepegawaian' => 'GTY',
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => '3201234567897777', 'nama' => 'Budi Santoso',
+        'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_mapel', 'status_kepegawaian' => 'PNS', 'status_aktif' => 'aktif',
+    ]);
+    Guru::create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => '3201234567898888', 'nama' => 'Siti Rahmawati',
+        'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY', 'status_aktif' => 'non_aktif',
     ]);
 
-    $secondUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $secondUser->assignRole('guru');
+    $bySearch = $this->actingAs($manager)->get(route('admin.guru.index', ['search' => 'Budi']));
+    $bySearch->assertSee('Budi Santoso')->assertDontSee('Siti Rahmawati');
 
-    $this->actingAs($manager)->post(route('admin.guru.store'), [
-        'user_id' => $secondUser->id,
-        'nik' => '3201234567899999',
-        'nama' => 'Guru Kedua',
-        'jenis_kelamin' => 'P',
-        'jenis_ptk' => 'guru_kelas',
-        'status_kepegawaian' => 'GTY',
-    ])->assertSessionHasErrors('nik');
+    $byJenisPtk = $this->actingAs($manager)->get(route('admin.guru.index', ['jenis_ptk' => 'guru_kelas']));
+    $byJenisPtk->assertSee('Siti Rahmawati')->assertDontSee('Budi Santoso');
 
-    expect(Guru::where('user_id', $secondUser->id)->exists())->toBeFalse();
+    $byStatus = $this->actingAs($manager)->get(route('admin.guru.index', ['status_aktif' => 'non_aktif']));
+    $byStatus->assertSee('Siti Rahmawati')->assertDontSee('Budi Santoso');
 });
 
-it('allows updating a guru while keeping their own unchanged NIK', function () {
+it('updates guru profile fields without changing the linked User password', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id, 'email' => 'lama@permata.sch.id']);
+    $originalHash = $user->password;
+    $guru = Guru::create([
+        'user_id' => $user->id, 'lembaga_id' => $lembaga->id, 'nik' => '3201234567898899',
+        'nip' => '198001011990011001', 'nama' => 'Guru Uji Update', 'email' => 'lama@permata.sch.id',
+        'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+    ]);
+
+    $this->actingAs($manager)->put(route('admin.guru.update', $guru), guruFormPayload([
+        'nama' => 'Guru Uji Update Baru',
+        'email' => 'baru@permata.sch.id',
+        'nip' => '999999999999999999',
+    ]))->assertRedirect(route('admin.guru.index'));
+
+    expect($guru->fresh()->nama)->toBe('Guru Uji Update Baru');
+    expect($guru->fresh()->nip)->toBe('999999999999999999');
+    expect($user->fresh()->email)->toBe('baru@permata.sch.id');
+    expect($user->fresh()->password)->toBe($originalHash);
+});
+
+it('changes status_aktif via the dedicated status action, rejecting values outside the 4-state enum', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsGuruManager($lembaga);
 
     $guru = Guru::create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
-        'lembaga_id' => $lembaga->id,
-        'nik' => '3201234567898888',
-        'nama' => 'Guru Uji Update',
-        'jenis_kelamin' => 'L',
-        'jenis_ptk' => 'guru_kelas',
-        'status_kepegawaian' => 'GTY',
+        'lembaga_id' => $lembaga->id, 'nik' => '3201234567899900', 'nama' => 'Guru Status',
+        'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
     ]);
 
-    $this->actingAs($manager)->put(route('admin.guru.update', $guru), [
-        'nik' => '3201234567898888',
-        'nama' => 'Guru Uji Update Baru',
-        'jenis_kelamin' => 'L',
-        'jenis_ptk' => 'guru_kelas',
-        'status_kepegawaian' => 'GTY',
-    ])->assertRedirect(route('admin.guru.index'));
+    $this->actingAs($manager)->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'mutasi'])
+        ->assertRedirect(route('admin.guru.index'));
+    expect($guru->fresh()->status_aktif)->toBe('mutasi');
 
-    expect($guru->fresh()->nama)->toBe('Guru Uji Update Baru');
+    $this->actingAs($manager)->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'not_a_real_status'])
+        ->assertSessionHasErrors('status_aktif');
+});
+
+it('deactivates the linked User account when status changes away from aktif, and reactivates it on aktif', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id, 'is_active' => true]);
+    $guru = Guru::create([
+        'user_id' => $user->id, 'lembaga_id' => $lembaga->id, 'nik' => '3201234567899911',
+        'nama' => 'Guru Pensiun', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
+    ]);
+
+    $this->actingAs($manager)->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'pensiun']);
+    expect($user->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($manager)->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'aktif']);
+    expect($user->fresh()->is_active)->toBeTrue();
+});
+
+it('rejects creating or updating a guru with a NUPTK already used by another guru, without a 500', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload(['nuptk' => '1234567890123456']))
+        ->assertRedirect();
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload([
+        'nama' => 'Guru Kedua', 'email' => 'guru.kedua@permata.sch.id', 'nuptk' => '1234567890123456',
+    ]))->assertSessionHasErrors('nuptk');
+
+    expect(Guru::where('nama', 'Guru Kedua')->exists())->toBeFalse();
+});
+
+it('allows creating a guru with a blank NUPTK even when other guru already have a blank NUPTK', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload())->assertRedirect();
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload([
+        'nik' => '3201234567891299', 'nama' => 'Guru Kedua Tanpa Nuptk', 'email' => 'guru.kedua-nonuptk@permata.sch.id',
+    ]))->assertSessionDoesntHaveErrors('nuptk');
+
+    expect(Guru::where('nama', 'Guru Kedua Tanpa Nuptk')->exists())->toBeTrue();
+});
+
+it('denies status change without guru.edit permission', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => '3201234567899901', 'nama' => 'Guru Lain',
+        'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+    ]);
+
+    $this->actingAs(User::factory()->create(['lembaga_id' => $lembaga->id]))
+        ->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'non_aktif'])
+        ->assertForbidden();
 });
