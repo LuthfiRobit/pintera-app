@@ -2,9 +2,7 @@
 
 ## Untuk siapa
 
-Admin Akademik (`admin_akademik`), per Lembaga. Bagian **Tahun Ajaran & Semester**
-di bawah ini dikecualikan — itu dikelola oleh Yayasan (`yayasan_super_admin`), bukan
-Admin Akademik; disertakan di sini karena semua data lain di bab ini bergantung padanya.
+Admin Akademik (`admin_akademik`), per Lembaga.
 
 ## Prasyarat
 
@@ -13,15 +11,14 @@ Admin Akademik; disertakan di sini karena semua data lain di bab ini bergantung 
 
 ## Langkah-langkah
 
-### 1. Tahun Ajaran & Semester (oleh Yayasan)
+### 1. Tahun Ajaran & Semester
 
-Dikelola oleh akun Yayasan, bukan Admin Akademik — Admin Akademik tidak memiliki akses ke
-halaman ini dan hanya memakai hasilnya (mis. saat memilih Tahun Ajaran di form Kelas).
-Yayasan membuat Tahun Ajaran dulu (mis. "2026/2027"), lalu menambahkan Semester
-Ganjil/Genap di dalamnya. Hanya satu Tahun Ajaran dan satu Semester yang boleh berstatus
-aktif dalam satu waktu; mengaktifkan yang baru otomatis menonaktifkan yang lama.
+Kelola dari satu halaman yang sama — buat Tahun Ajaran dulu (mis. "2026/2027"), lalu
+tambahkan Semester Ganjil/Genap di dalamnya. Hanya satu Tahun Ajaran dan satu Semester
+yang boleh berstatus aktif dalam satu waktu; mengaktifkan yang baru otomatis
+menonaktifkan yang lama.
 
-![Halaman Tahun Ajaran & Semester (akun Yayasan)](images/01-01-tahun-ajaran-semester.png)
+![Halaman Tahun Ajaran & Semester](images/01-01-tahun-ajaran-semester.png)
 
 ### 2. Mata Pelajaran
 
@@ -34,8 +31,8 @@ otomatis tersedia untuk tahun ajaran berikutnya juga, tidak perlu dibuat ulang t
 ### 3. Kelas
 
 Sama seperti Mata Pelajaran, Kelas juga per-Lembaga, tetapi setiap Kelas terikat pada satu
-Tahun Ajaran tertentu (dipilih dari yang sudah dibuat Yayasan di Langkah 1) — bukan
-persisten lintas tahun ajaran seperti Mata Pelajaran. Saat membuat Kelas, tentukan tingkat,
+Tahun Ajaran tertentu (dipilih dari yang sudah dibuat di Langkah 1) — bukan persisten
+lintas tahun ajaran seperti Mata Pelajaran. Saat membuat Kelas, tentukan tingkat,
 wali kelas, dan Pola Jam yang dipakai (Pola Jam sendiri dibuat di
 [Bab 2 — Penjadwalan](02-penjadwalan.md) — kalau belum ada, field ini boleh dikosongkan
 dulu dan diisi belakangan).
@@ -62,9 +59,9 @@ Presensi, dan Kenaikan Kelas.
 
 ## Kesalahan umum
 
-- **Mengira Admin Akademik bisa membuat/mengaktifkan Tahun Ajaran sendiri.** Itu wewenang
-  Yayasan. Kalau Tahun Ajaran baru belum muncul di dropdown saat membuat Kelas, minta
-  Yayasan membuatkan dan mengaktifkannya dulu.
+- **Lupa mengaktifkan Tahun Ajaran/Semester yang baru dibuat.** Tahun Ajaran atau Semester
+  yang belum diaktifkan tidak akan muncul sebagai pilihan default di halaman lain (mis.
+  Kelas, Jadwal Pelajaran) — setelah membuat yang baru, klik **Aktifkan**.
 - **Membuat Mata Pelajaran baru tiap tahun ajaran.** Tidak perlu — Mata Pelajaran memang
   didesain persisten lintas tahun ajaran. Yang berganti tiap tahun ajaran adalah Kelas
   (karena terikat Tahun Ajaran) dan isi Jadwal Pelajarannya (lihat Bab 2).

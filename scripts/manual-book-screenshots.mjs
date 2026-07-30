@@ -26,7 +26,7 @@ const TARGETS = {
     { account: 'yayasan', path: '/admin/users/create', file: '00-04-form-user-role.png' },
   ],
   '01': [
-    { account: 'yayasan', path: '/admin/tahun-ajaran', file: '01-01-tahun-ajaran-semester.png' },
+    { account: 'akademik', path: '/admin/tahun-ajaran', file: '01-01-tahun-ajaran-semester.png' },
     { account: 'akademik', path: '/admin/mata-pelajaran', file: '01-02-daftar-mapel.png' },
     { account: 'akademik', path: '/admin/mata-pelajaran/create', file: '01-03-form-mapel.png' },
     { account: 'akademik', path: '/admin/kelas', file: '01-04-daftar-kelas.png' },
@@ -76,13 +76,21 @@ async function run() {
   const babsToRun = requestedBab ? [requestedBab] : Object.keys(TARGETS);
 
   const browser = await chromium.launch();
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  const page = await context.newPage();
 
+  let context = null;
+  let page = null;
   let currentAccount = null;
   for (const babKey of babsToRun) {
     for (const target of TARGETS[babKey] ?? []) {
       if (target.account !== currentAccount) {
+        // Fresh context per account switch: reusing one page across accounts hits Laravel's
+        // guest-only /login redirect once already authenticated, so login() would hang
+        // waiting for a form that never renders.
+        if (context) {
+          await context.close();
+        }
+        context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+        page = await context.newPage();
         await login(page, target.account);
         currentAccount = target.account;
       }
@@ -90,6 +98,9 @@ async function run() {
     }
   }
 
+  if (context) {
+    await context.close();
+  }
   await browser.close();
 }
 
