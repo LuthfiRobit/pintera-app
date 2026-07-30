@@ -134,7 +134,10 @@ class GuruController extends BaseController
             'status_aktif' => ['required', 'in:aktif,non_aktif,mutasi,pensiun'],
         ]);
 
-        $guru->update(['status_aktif' => $data['status_aktif']]);
+        DB::transaction(function () use ($data, $guru) {
+            $guru->update(['status_aktif' => $data['status_aktif']]);
+            $guru->user()->update(['is_active' => $data['status_aktif'] === 'aktif']);
+        });
 
         return redirect()->route('admin.guru.index')->with('status', 'Status guru berhasil diperbarui.');
     }
@@ -175,7 +178,18 @@ class GuruController extends BaseController
             'jenis_kelamin' => ['required', 'in:L,P'],
             'jenis_ptk' => ['required', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi'],
             'status_kepegawaian' => ['required', 'in:PNS,PPPK,GTY,PTY,Honorer'],
-            'nuptk' => ['nullable', 'string', 'max:30'],
+            'nuptk' => ['nullable', 'string', 'max:30', function ($attribute, $value, $fail) use ($guru) {
+                if (blank($value)) {
+                    return;
+                }
+                $query = Guru::withoutGlobalScopes()->where('nuptk', $value);
+                if ($guru) {
+                    $query->where('id', '!=', $guru->id);
+                }
+                if ($query->exists()) {
+                    $fail('NUPTK sudah terdaftar untuk guru lain.');
+                }
+            }],
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tanggal_lahir' => ['nullable', 'date'],
             'agama' => ['nullable', 'string', 'max:50'],

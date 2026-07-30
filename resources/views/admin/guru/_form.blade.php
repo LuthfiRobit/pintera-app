@@ -1,6 +1,17 @@
 @php
     $guru = $guru ?? null;
     $val = fn (string $field, $default = '') => old($field, $guru?->$field ?? $default);
+    $formatDate = function (string $field) use ($val) {
+        $raw = $val($field);
+        if (! $raw) {
+            return '';
+        }
+        try {
+            return \Illuminate\Support\Carbon::parse($raw)->format('Y-m-d');
+        } catch (\Exception) {
+            return '';
+        }
+    };
     $inputClass = 'mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500';
     $selectClass = 'mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500';
 @endphp
@@ -29,7 +40,11 @@
             <div>
                 <x-input-label value="NIP *" />
                 <input type="text" name="nip" value="{{ $val('nip') }}" class="{{ $inputClass }} font-mono">
-                <p class="mt-1 text-xs text-gray-400">NIP ini otomatis menjadi password login guru.</p>
+                @if ($guru === null)
+                    <p class="mt-1 text-xs text-gray-400">NIP ini otomatis menjadi password login guru.</p>
+                @else
+                    <p class="mt-1 text-xs text-gray-400">Mengubah NIP di sini tidak mengubah ulang password akun yang sudah ada.</p>
+                @endif
                 <x-input-error :messages="$errors->get('nip')" class="mt-1.5" />
             </div>
 
@@ -91,7 +106,7 @@
             </div>
             <div>
                 <x-input-label value="Tanggal Lahir" />
-                <input type="date" name="tanggal_lahir" value="{{ $val('tanggal_lahir') ? \Illuminate\Support\Carbon::parse($val('tanggal_lahir'))->format('Y-m-d') : '' }}" class="{{ $inputClass }}">
+                <input type="date" name="tanggal_lahir" value="{{ $formatDate('tanggal_lahir') }}" class="{{ $inputClass }}">
             </div>
             <div>
                 <x-input-label value="Agama" />
@@ -165,11 +180,11 @@
             </div>
             <div>
                 <x-input-label value="TMT Tugas" />
-                <input type="date" name="tmt_tugas" value="{{ $val('tmt_tugas') ? \Illuminate\Support\Carbon::parse($val('tmt_tugas'))->format('Y-m-d') : '' }}" class="{{ $inputClass }}">
+                <input type="date" name="tmt_tugas" value="{{ $formatDate('tmt_tugas') }}" class="{{ $inputClass }}">
             </div>
             <div>
                 <x-input-label value="TMT PNS" />
-                <input type="date" name="tmt_pns" value="{{ $val('tmt_pns') ? \Illuminate\Support\Carbon::parse($val('tmt_pns'))->format('Y-m-d') : '' }}" class="{{ $inputClass }}">
+                <input type="date" name="tmt_pns" value="{{ $formatDate('tmt_pns') }}" class="{{ $inputClass }}">
             </div>
         </div>
     </div>

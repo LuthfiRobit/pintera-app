@@ -202,6 +202,56 @@ it('changes status_aktif via the dedicated status action, rejecting values outsi
         ->assertSessionHasErrors('status_aktif');
 });
 
+it('deactivates the linked User account when status changes away from aktif, and reactivates it on aktif', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id, 'is_active' => true]);
+    $guru = Guru::create([
+        'user_id' => $user->id, 'lembaga_id' => $lembaga->id, 'nik' => '3201234567899911',
+        'nama' => 'Guru Pensiun', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
+    ]);
+
+    $this->actingAs($manager)->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'pensiun']);
+    expect($user->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($manager)->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'aktif']);
+    expect($user->fresh()->is_active)->toBeTrue();
+});
+
+it('rejects creating or updating a guru with a NUPTK already used by another guru, without a 500', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload(['nuptk' => '1234567890123456']))
+        ->assertRedirect();
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload([
+        'nama' => 'Guru Kedua', 'email' => 'guru.kedua@permata.sch.id', 'nuptk' => '1234567890123456',
+    ]))->assertSessionHasErrors('nuptk');
+
+    expect(Guru::where('nama', 'Guru Kedua')->exists())->toBeFalse();
+});
+
+it('allows creating a guru with a blank NUPTK even when other guru already have a blank NUPTK', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload())->assertRedirect();
+
+    $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload([
+        'nik' => '3201234567891299', 'nama' => 'Guru Kedua Tanpa Nuptk', 'email' => 'guru.kedua-nonuptk@permata.sch.id',
+    ]))->assertSessionDoesntHaveErrors('nuptk');
+
+    expect(Guru::where('nama', 'Guru Kedua Tanpa Nuptk')->exists())->toBeTrue();
+});
+
 it('denies status change without guru.edit permission', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
