@@ -14,10 +14,10 @@ class GuruJabatanTambahanSeeder extends Seeder
     public function run(): void
     {
         $data = [
-            'siti.rahmawati@alhikmah.sch.id' => ['jabatan' => 'Wali Kelas', 'tmt_tugas' => '2015-07-01'],
-            'andi.wijaya@alhikmah.sch.id' => ['jabatan' => 'Pembina Ekstrakurikuler', 'tmt_tugas' => '2019-07-01'],
-            'hendra.gunawan@alhikmah.sch.id' => ['jabatan' => 'Wakil Kepala Sekolah Kurikulum', 'tmt_tugas' => '2008-01-01'],
-            'taufik.hidayat@alhikmah.sch.id' => ['jabatan' => 'Koordinator BK', 'tmt_tugas' => '2016-07-01'],
+            'siti.rahmawati@permata.sch.id' => ['jabatan' => 'Wali Kelas', 'tmt_tugas' => '2015-07-01'],
+            'andi.wijaya@permata.sch.id' => ['jabatan' => 'Pembina Ekstrakurikuler', 'tmt_tugas' => '2019-07-01'],
+            'hendra.gunawan@permata.sch.id' => ['jabatan' => 'Wakil Kepala Sekolah Kurikulum', 'tmt_tugas' => '2008-01-01'],
+            'taufik.hidayat@permata.sch.id' => ['jabatan' => 'Koordinator BK', 'tmt_tugas' => '2016-07-01'],
         ];
 
         foreach ($data as $email => $info) {

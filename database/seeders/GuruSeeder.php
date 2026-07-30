@@ -17,21 +17,21 @@ class GuruSeeder extends Seeder
 
         $this->seedGuru($smp, [
             [
-                'email' => 'budi.santoso@alhikmah.sch.id', 'name' => 'Budi Santoso, S.Pd.',
+                'email' => 'budi.santoso@permata.sch.id', 'name' => 'Budi Santoso, S.Pd.',
                 'nik' => '3273011503850001', 'nuptk' => '1234567890123456', 'nip' => '198503152010011001',
                 'jenis_kelamin' => 'L', 'tempat_lahir' => 'Bandung', 'tanggal_lahir' => '1985-03-15',
                 'no_hp' => '081234567801', 'jenis_ptk' => 'guru_mapel', 'status_kepegawaian' => 'PNS',
                 'golongan_pangkat' => 'Penata Muda Tk.I / III-b', 'tmt_tugas' => '2010-01-01', 'tmt_pns' => '2010-01-01',
             ],
             [
-                'email' => 'siti.rahmawati@alhikmah.sch.id', 'name' => 'Siti Rahmawati, S.Pd.',
+                'email' => 'siti.rahmawati@permata.sch.id', 'name' => 'Siti Rahmawati, S.Pd.',
                 'nik' => '3273015207880002', 'nuptk' => null, 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Cimahi', 'tanggal_lahir' => '1988-07-12',
                 'no_hp' => '081234567802', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
                 'golongan_pangkat' => null, 'tmt_tugas' => '2015-07-01', 'tmt_pns' => null,
             ],
             [
-                'email' => 'andi.wijaya@alhikmah.sch.id', 'name' => 'Andi Wijaya, S.Pd.I.',
+                'email' => 'andi.wijaya@permata.sch.id', 'name' => 'Andi Wijaya, S.Pd.I.',
                 'nik' => '3273012009900003', 'nuptk' => null, 'nip' => null,
                 'jenis_kelamin' => 'L', 'tempat_lahir' => 'Garut', 'tanggal_lahir' => '1990-09-20',
                 'no_hp' => '081234567803', 'jenis_ptk' => 'guru_mapel', 'status_kepegawaian' => 'Honorer',
@@ -41,21 +41,21 @@ class GuruSeeder extends Seeder
 
         $this->seedGuru($sma, [
             [
-                'email' => 'hendra.gunawan@alhikmah.sch.id', 'name' => 'Hendra Gunawan, S.Pd.',
+                'email' => 'hendra.gunawan@permata.sch.id', 'name' => 'Hendra Gunawan, S.Pd.',
                 'nik' => '3273010108820004', 'nuptk' => '2234567890123456', 'nip' => '198201082008011002',
                 'jenis_kelamin' => 'L', 'tempat_lahir' => 'Bandung', 'tanggal_lahir' => '1982-01-08',
                 'no_hp' => '081234567804', 'jenis_ptk' => 'guru_mapel', 'status_kepegawaian' => 'PNS',
                 'golongan_pangkat' => 'Penata / III-c', 'tmt_tugas' => '2008-01-01', 'tmt_pns' => '2008-01-01',
             ],
             [
-                'email' => 'maya.anggraini@alhikmah.sch.id', 'name' => 'Maya Anggraini, S.Pd.',
+                'email' => 'maya.anggraini@permata.sch.id', 'name' => 'Maya Anggraini, S.Pd.',
                 'nik' => '3273014412910005', 'nuptk' => null, 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Sumedang', 'tanggal_lahir' => '1991-12-04',
                 'no_hp' => '081234567805', 'jenis_ptk' => 'guru_mapel', 'status_kepegawaian' => 'PPPK',
                 'golongan_pangkat' => 'IX', 'tmt_tugas' => '2021-03-01', 'tmt_pns' => null,
             ],
             [
-                'email' => 'taufik.hidayat@alhikmah.sch.id', 'name' => 'Taufik Hidayat, S.Pd.',
+                'email' => 'taufik.hidayat@permata.sch.id', 'name' => 'Taufik Hidayat, S.Pd.',
                 'nik' => '3273011511870006', 'nuptk' => null, 'nip' => null,
                 'jenis_kelamin' => 'L', 'tempat_lahir' => 'Bandung', 'tanggal_lahir' => '1987-11-15',
                 'no_hp' => '081234567806', 'jenis_ptk' => 'guru_mapel', 'status_kepegawaian' => 'GTY',

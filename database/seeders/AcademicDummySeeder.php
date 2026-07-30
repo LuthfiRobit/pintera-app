@@ -27,10 +27,10 @@ class AcademicDummySeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Dapatkan Lembaga SMP Al-Hikmah & Tahun Ajaran / Semester Aktif
+        // 1. Dapatkan Lembaga SMP Permata & Tahun Ajaran / Semester Aktif
         $smp = Lembaga::where('npsn', '20223344')->first();
         if (!$smp) {
-            $this->command->error("Lembaga SMP Al-Hikmah (NPSN 20223344) tidak ditemukan. Pastikan seeder utama sudah dijalankan.");
+            $this->command->error("Lembaga SMP Permata (NPSN 20223344) tidak ditemukan. Pastikan seeder utama sudah dijalankan.");
             return;
         }
 
@@ -66,9 +66,9 @@ class AcademicDummySeeder extends Seeder
         }
 
         // 3. Dapatkan Guru yang ter-seed dari GuruSeeder
-        $budiUser = User::where('email', 'budi.santoso@alhikmah.sch.id')->first();
-        $sitiUser = User::where('email', 'siti.rahmawati@alhikmah.sch.id')->first();
-        $andiUser = User::where('email', 'andi.wijaya@alhikmah.sch.id')->first();
+        $budiUser = User::where('email', 'budi.santoso@permata.sch.id')->first();
+        $sitiUser = User::where('email', 'siti.rahmawati@permata.sch.id')->first();
+        $andiUser = User::where('email', 'andi.wijaya@permata.sch.id')->first();
 
         $guruBudi = $budiUser ? Guru::where('user_id', $budiUser->id)->first() : null;
         $guruSiti = $sitiUser ? Guru::where('user_id', $sitiUser->id)->first() : null;

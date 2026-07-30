@@ -27,7 +27,7 @@ it('seeds a Guru profile for every guru-role user, with correct lembaga_id and j
     (new GuruSeeder())->run();
 
     $smp = Lembaga::where('npsn', '20223344')->first();
-    $user = User::where('email', 'budi.santoso@alhikmah.sch.id')->first();
+    $user = User::where('email', 'budi.santoso@permata.sch.id')->first();
     $guru = Guru::where('user_id', $user->id)->first();
 
     expect($guru)->not->toBeNull();
