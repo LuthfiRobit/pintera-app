@@ -16,7 +16,7 @@
             </p>
         </div>
 
-        {{-- Source Tahun Ajaran Picker --}}
+        {{-- Source & Target Tahun Ajaran Picker --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
             <form method="GET" action="{{ route('admin.kenaikan-kelas.index') }}" class="flex flex-wrap items-end gap-3">
                 <div class="flex-1 min-w-[220px]">
@@ -28,11 +28,26 @@
                         @endforeach
                     </select>
                 </div>
+                <div class="flex-1 min-w-[220px]">
+                    <x-input-label value="Tahun Ajaran Tujuan (kelas baru)" />
+                    <select name="tahun_ajaran_tujuan_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">— Pilih —</option>
+                        @foreach ($tahunAjaranList as $tahunAjaran)
+                            <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranTujuanId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <x-primary-button type="submit">Tampilkan</x-primary-button>
             </form>
         </div>
 
-        @if ($kelasLamaList->isNotEmpty())
+        @if ($kelasLamaList->isNotEmpty() && $tahunAjaranTujuanId === null)
+            <div class="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-700">
+                Pilih juga <b>Tahun Ajaran Tujuan</b> di atas untuk menampilkan pilihan kelas &amp; semester tujuan.
+            </div>
+        @endif
+
+        @if ($kelasLamaList->isNotEmpty() && $tahunAjaranTujuanId !== null)
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
                 <div class="border-b border-gray-100 bg-white px-6 py-4">
                     <p class="font-display text-sm font-bold text-gray-900">Pemetaan Kenaikan Kelas</p>
