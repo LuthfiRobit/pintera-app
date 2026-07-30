@@ -93,17 +93,22 @@ it('grants kenaikan-kelas.kelola to kepala_sekolah after permissions sync and ro
     expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
 });
 
-it('seeds admin_akademik with the correct 25 academic-management permissions', function () {
+it('seeds admin_akademik with the correct 30 academic-management permissions', function () {
     (new RoleSeeder())->run();
 
     $adminAkademik = Role::where('name', 'admin_akademik')->first();
     expect($adminAkademik)->not->toBeNull();
     expect($adminAkademik->scope_level)->toBe('lembaga');
     expect($adminAkademik->is_protected)->toBeFalse();
-    expect($adminAkademik->permissions()->count())->toBe(25);
+    expect($adminAkademik->permissions()->count())->toBe(30);
     expect($adminAkademik->hasPermissionTo('kelas.edit'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('siswa.import'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('jadwal-pelajaran.kelola'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('komponen-penilaian.kelola'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('tahun-ajaran.view'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('tahun-ajaran.create'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('tahun-ajaran.activate'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('semester.create'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('semester.activate'))->toBeTrue();
 });
