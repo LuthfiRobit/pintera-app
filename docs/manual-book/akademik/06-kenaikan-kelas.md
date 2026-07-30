@@ -44,8 +44,8 @@ selesai dan sudah diverifikasi.
   nilai semester lama tetap tersimpan (tidak terhapus), tapi siswa akan langsung terasosiasi
   ke kelas & tahun ajaran baru begitu diproses.
 - **Tahun Ajaran Tujuan belum dipilih.** Kalau hanya Tahun Ajaran Sumber yang dipilih,
-  kolom Kelas Tujuan dan Salin Jadwal ke Semester akan kosong — pilih juga Tahun Ajaran
-  Tujuan di langkah 1 sebelum memetakan kelas.
+  tabel Pemetaan Kenaikan Kelas belum ditampilkan — sistem menampilkan pesan pengingat
+  untuk memilih Tahun Ajaran Tujuan juga sebelum melanjutkan.
 - **Kelas Tujuan tidak muncul di daftar.** Itu tandanya belum ada Kelas yang dibuat untuk
   Tahun Ajaran Tujuan yang dipilih — buat dulu Kelas barunya (Bab 1) di tahun ajaran
   tersebut.
