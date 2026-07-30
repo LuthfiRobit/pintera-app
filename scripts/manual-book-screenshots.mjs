@@ -86,7 +86,15 @@ const TARGETS = {
   '06': [
     { account: 'akademik', path: '/admin/kenaikan-kelas', file: '06-01-kenaikan-kelas.png' },
   ],
-  lampiran: [],
+  lampiran: [
+    // As a yayasan-scoped account, /admin/pengaturan/akademik requires an active Lembaga
+    // selected in session first, or ResolveTenant redirects to the dashboard. Passing
+    // switch_lembaga=1 (SMP Permata, lembaga_id=1, the same lembaga used throughout every
+    // other chapter) as a query param sets session('active_lembaga_id') via the global
+    // ResolveTenant middleware before the page renders, so no separate switcher-UI
+    // click-through is needed.
+    { account: 'yayasan', path: '/admin/pengaturan/akademik?switch_lembaga=1', file: 'lampiran-01-pengaturan-akademik-nasional.png' },
+  ],
 };
 
 async function login(page, accountKey) {
