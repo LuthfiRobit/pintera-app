@@ -28,6 +28,12 @@ const TARGETS = {
     { account: 'yayasan', path: '/admin/lembaga/create', file: '00-02-form-lembaga.png' },
     { account: 'yayasan', path: '/admin/users', file: '00-03-daftar-user.png' },
     { account: 'yayasan', path: '/admin/users/create', file: '00-04-form-user-role.png' },
+    // Guru accounts are NOT created via /admin/users (that would leave a User with role
+    // "guru" but no linked Guru profile — a real bug this project hit before). They go
+    // through the dedicated Data Guru module instead, which creates the User + Guru profile
+    // together (NIP becomes the initial password).
+    { account: 'yayasan', path: '/admin/guru', file: '00-05-daftar-guru.png' },
+    { account: 'yayasan', path: '/admin/guru/create', file: '00-06-form-guru.png' },
   ],
   '01': [
     { account: 'akademik', path: '/admin/tahun-ajaran', file: '01-01-tahun-ajaran-semester.png' },
