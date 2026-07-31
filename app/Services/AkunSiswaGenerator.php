@@ -13,7 +13,7 @@ class AkunSiswaGenerator
         $user = User::create([
             'name' => $namaLengkap,
             'email' => null,
-            'username' => $lembaga->kode_lembaga.'-'.$nis,
+            'username' => $this->usernameUntuk($lembaga, $nis),
             'password' => Hash::make($nis),
             'lembaga_id' => $lembaga->id,
             'email_verified_at' => null,
@@ -24,5 +24,10 @@ class AkunSiswaGenerator
         $user->assignRole('siswa');
 
         return $user;
+    }
+
+    public function usernameUntuk(Lembaga $lembaga, string $nis): string
+    {
+        return $lembaga->kode_lembaga.'-'.$nis;
     }
 }

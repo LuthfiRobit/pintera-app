@@ -27,3 +27,10 @@ it('creates a User with username = kode_lembaga-nis, password = nis, and the sis
     expect(Hash::check('2026001', $user->password))->toBeTrue();
     expect($user->hasRole('siswa'))->toBeTrue();
 });
+
+it('exposes the username format as a standalone, reusable method', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPPRM']);
+
+    expect(app(AkunSiswaGenerator::class)->usernameUntuk($lembaga, '2026050'))->toBe('SMPPRM-2026050');
+});

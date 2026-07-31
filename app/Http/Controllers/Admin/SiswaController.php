@@ -122,7 +122,7 @@ class SiswaController extends BaseController
                     $updates['name'] = $data['nama_lengkap'];
                 }
                 if ($data['nis'] !== $siswa->nis) {
-                    $updates['username'] = $siswa->lembaga->kode_lembaga.'-'.$data['nis'];
+                    $updates['username'] = app(AkunSiswaGenerator::class)->usernameUntuk($siswa->lembaga, $data['nis']);
                 }
                 if ($updates !== []) {
                     $siswa->user()->update($updates);
