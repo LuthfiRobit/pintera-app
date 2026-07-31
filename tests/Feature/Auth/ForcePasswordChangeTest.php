@@ -57,3 +57,24 @@ it('still allows logout even while must_change_password is true', function () {
 
     $this->actingAs($user)->post(route('logout'))->assertRedirect('/');
 });
+
+it('rejects a new password that is identical to the current password', function () {
+    $lembaga = Lembaga::factory()->create();
+    $user = User::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'password' => Hash::make('2026001'),
+        'must_change_password' => true,
+    ]);
+
+    $this->actingAs($user)
+        ->from(route('password.force.edit'))
+        ->put(route('password.force.update'), [
+            'password' => '2026001',
+            'password_confirmation' => '2026001',
+        ])
+        ->assertSessionHasErrors('password')
+        ->assertRedirect(route('password.force.edit'));
+
+    expect($user->fresh()->must_change_password)->toBeTrue();
+    expect(Hash::check('2026001', $user->fresh()->password))->toBeTrue();
+});

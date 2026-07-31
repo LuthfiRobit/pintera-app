@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -107,7 +108,7 @@ class LembagaController extends BaseController
 
     private function validated(Request $request, ?Lembaga $lembaga = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'yayasan_id' => ['required', 'exists:yayasan,id'],
             'npsn' => ['required', 'string', 'max:20', Rule::unique('lembaga', 'npsn')->ignore($lembaga?->id)],
             'nss' => ['nullable', 'string', 'max:255'],
@@ -150,5 +151,9 @@ class LembagaController extends BaseController
             'nominal_iuran' => ['nullable', 'numeric', 'min:0'],
             'periode_iuran' => ['nullable', 'in:bulanan,tahunan'],
         ]);
+
+        $data['kode_lembaga'] = Str::upper($data['kode_lembaga']);
+
+        return $data;
     }
 }
