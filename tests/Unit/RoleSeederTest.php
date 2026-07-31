@@ -70,7 +70,7 @@ it('is idempotent when run twice', function () {
     (new RoleSeeder())->run();
     (new RoleSeeder())->run();
 
-    expect(Role::count())->toBe(6);
+    expect(Role::count())->toBe(7);
 });
 
 it('grants kalender-akademik.kelola-nasional to yayasan_super_admin via bulk permission sync, but not to admin_akademik', function () {

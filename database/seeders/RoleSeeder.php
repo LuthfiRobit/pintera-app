@@ -17,6 +17,7 @@ class RoleSeeder extends Seeder
             'admin_keuangan' => ['scope_level' => 'lembaga', 'is_protected' => false],
             'admin_akademik' => ['scope_level' => 'lembaga', 'is_protected' => false],
             'guru' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
+            'siswa' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
         ];
 
         foreach ($roles as $name => $attributes) {

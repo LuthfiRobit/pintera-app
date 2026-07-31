@@ -123,7 +123,7 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
     (new RolePermissionSeeder())->run();
 
-    expect(Role::count())->toBe(6);
+    expect(Role::count())->toBe(7);
     expect(Permission::count())->toBe(81);
 });
 
