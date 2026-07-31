@@ -8,6 +8,7 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 
 function actingAsSiswaManager(Lembaga $lembaga): User
@@ -34,6 +35,7 @@ it('creates a siswa manually with sumber_data forced to manual', function () {
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $manager = actingAsSiswaManager($lembaga);
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 
     $this->actingAs($manager)->post(route('admin.siswa.store'), [
         'kelas_id' => $kelas->id,
@@ -155,4 +157,67 @@ it('updates a siswa', function () {
     ])->assertRedirect(route('admin.siswa.index'));
 
     expect($siswa->fresh()->nama_lengkap)->toBe('Nama Diperbarui');
+});
+
+it('creates both a User account and a Siswa profile in one submit, with NIS as username and password', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPPRM']);
+    $manager = actingAsSiswaManager($lembaga);
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.siswa.store'), [
+        'nis' => '2026099',
+        'nama_lengkap' => 'Siswa Baru',
+        'jenis_kelamin' => 'L',
+    ])->assertRedirect(route('admin.siswa.index'));
+
+    $siswa = Siswa::where('nis', '2026099')->first();
+    expect($siswa)->not->toBeNull();
+    expect($siswa->user_id)->not->toBeNull();
+
+    $user = $siswa->user;
+    expect($user->username)->toBe('SMPPRM-2026099');
+    expect(Hash::check('2026099', $user->password))->toBeTrue();
+    expect($user->must_change_password)->toBeTrue();
+    expect($user->hasRole('siswa'))->toBeTrue();
+});
+
+it('updates the linked username when NIS changes', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPPRM']);
+    $manager = actingAsSiswaManager($lembaga);
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.siswa.store'), [
+        'nis' => '2026100', 'nama_lengkap' => 'Siswa Ganti Nis', 'jenis_kelamin' => 'P',
+    ]);
+    $siswa = Siswa::where('nis', '2026100')->first();
+
+    $this->actingAs($manager)->put(route('admin.siswa.update', $siswa), [
+        'nis' => '2026101', 'nama_lengkap' => 'Siswa Ganti Nis', 'jenis_kelamin' => 'P',
+    ])->assertRedirect(route('admin.siswa.index'));
+
+    expect($siswa->user->fresh()->username)->toBe('SMPPRM-2026101');
+});
+
+it('toggles the linked account is_active via the dedicated status action', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPPRM']);
+    $manager = actingAsSiswaManager($lembaga);
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.siswa.store'), [
+        'nis' => '2026102', 'nama_lengkap' => 'Siswa Keluar', 'jenis_kelamin' => 'L',
+    ]);
+    $siswa = Siswa::where('nis', '2026102')->first();
+    expect($siswa->user->is_active)->toBeTrue();
+
+    $this->actingAs($manager)->patch(route('admin.siswa.update-status', $siswa), ['status' => 'keluar'])
+        ->assertRedirect(route('admin.siswa.index'));
+
+    expect($siswa->fresh()->status->value)->toBe('keluar');
+    expect($siswa->user->fresh()->is_active)->toBeFalse();
+
+    $this->actingAs($manager)->patch(route('admin.siswa.update-status', $siswa), ['status' => 'aktif']);
+    expect($siswa->user->fresh()->is_active)->toBeTrue();
 });

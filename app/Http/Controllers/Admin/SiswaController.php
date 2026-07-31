@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\StatusSiswa;
 use App\Enums\SumberDataSiswa;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
+use App\Services\AkunSiswaGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class SiswaController extends BaseController
@@ -76,19 +79,24 @@ class SiswaController extends BaseController
         $data = $this->validateSiswa($request);
         $data['sumber_data'] = SumberDataSiswa::Manual->value;
 
-        if ($request->user()->widestScopeLevel() === 'yayasan') {
-            $lembagaId = session('active_lembaga_id');
+        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+            ? session('active_lembaga_id')
+            : $request->user()->lembaga_id;
 
-            if ($lembagaId === null) {
-                return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah siswa.'])->withInput();
-            }
-
-            $data['lembaga_id'] = $lembagaId;
+        if ($lembagaId === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah siswa.'])->withInput();
         }
 
-        Siswa::create($data);
+        $data['lembaga_id'] = $lembagaId;
 
-        return redirect()->route('admin.siswa.index')->with('status', 'Siswa berhasil disimpan.');
+        DB::transaction(function () use ($data, $lembagaId) {
+            $lembaga = Lembaga::withoutGlobalScopes()->findOrFail($lembagaId);
+            $user = app(AkunSiswaGenerator::class)->buat($data['nama_lengkap'], $data['nis'], $lembaga);
+
+            Siswa::create([...$data, 'user_id' => $user->id]);
+        });
+
+        return redirect()->route('admin.siswa.index')->with('status', 'Siswa & akun berhasil disimpan.');
     }
 
     public function edit(Siswa $siswa): View
@@ -107,9 +115,43 @@ class SiswaController extends BaseController
 
         $data = $this->validateSiswa($request, $siswa);
 
-        $siswa->update($data);
+        DB::transaction(function () use ($data, $siswa) {
+            if ($siswa->user_id) {
+                $updates = [];
+                if ($data['nama_lengkap'] !== $siswa->nama_lengkap) {
+                    $updates['name'] = $data['nama_lengkap'];
+                }
+                if ($data['nis'] !== $siswa->nis) {
+                    $updates['username'] = $siswa->lembaga->kode_lembaga.'-'.$data['nis'];
+                }
+                if ($updates !== []) {
+                    $siswa->user()->update($updates);
+                }
+            }
+
+            $siswa->update($data);
+        });
 
         return redirect()->route('admin.siswa.index')->with('status', 'Siswa berhasil diperbarui.');
+    }
+
+    public function updateStatus(Request $request, Siswa $siswa): RedirectResponse
+    {
+        $this->authorize('siswa.edit');
+
+        $data = $request->validate([
+            'status' => ['required', 'in:aktif,lulus,pindah,keluar'],
+        ]);
+
+        DB::transaction(function () use ($data, $siswa) {
+            $siswa->update(['status' => $data['status']]);
+
+            if ($siswa->user_id) {
+                $siswa->user()->update(['is_active' => $data['status'] === StatusSiswa::Aktif->value]);
+            }
+        });
+
+        return redirect()->route('admin.siswa.index')->with('status', 'Status siswa berhasil diperbarui.');
     }
 
     private function validateSiswa(Request $request, ?Siswa $current = null): array

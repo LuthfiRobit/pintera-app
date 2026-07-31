@@ -18,6 +18,26 @@
             </p>
         </div>
 
+        @if ($siswa->user)
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <x-icon name="lock" class="h-[15px] w-[15px] text-gray-400" />
+                    Info Akun Login
+                </p>
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500">Username</p>
+                        <p class="mt-1 font-mono text-sm text-gray-900">{{ $siswa->user->username }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold text-gray-500">Status Akun</p>
+                        <x-badge tone="{{ $siswa->user->is_active ? 'green' : 'amber' }}">{{ $siswa->user->is_active ? 'Aktif' : 'Non-aktif' }}</x-badge>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs text-gray-500">Password awal sama dengan NIS. Siswa wajib menggantinya saat login pertama.</p>
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('admin.siswa.update', $siswa) }}">
             @csrf
             @method('PUT')

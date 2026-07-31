@@ -141,6 +141,24 @@
                                                 Edit Siswa
                                             </span>
                                         </x-dropdown-link>
+                                        @foreach (\App\Enums\StatusSiswa::cases() as $statusOption)
+                                            @if ($statusOption !== $siswa->status)
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route('admin.siswa.update-status', $siswa) }}"
+                                                    x-data
+                                                    @submit.prevent="confirmDialog('Ubah Status Siswa?', @js('Ubah status \"' . $siswa->nama_lengkap . '\" menjadi \"' . $statusOption->label() . '\"?'), { confirmLabel: 'Ya, Ubah' }).then(confirmed => { if (confirmed) $el.submit() })"
+                                                >
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="{{ $statusOption->value }}">
+                                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                                        <x-icon name="autorenew" class="h-4 w-4 text-gray-500" />
+                                                        Jadikan {{ $statusOption->label() }}
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @endforeach
                                     </x-table-actions>
                                 </td>
                                 <td class="px-5 py-3.5 font-mono text-gray-500">{{ $siswa->nis }}</td>
