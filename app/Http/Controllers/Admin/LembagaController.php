@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Lembaga;
+use App\Models\Siswa;
 use App\Models\Yayasan;
+use App\Services\AkunSiswaGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -75,7 +78,23 @@ class LembagaController extends BaseController
         $data = $this->validated($request, $lembaga);
         $data = array_merge($data, $this->booleans($request, isCreate: false));
 
-        $lembaga->update($data);
+        $kodeLembagaBerubah = $data['kode_lembaga'] !== $lembaga->kode_lembaga;
+
+        DB::transaction(function () use ($lembaga, $data, $kodeLembagaBerubah) {
+            $lembaga->update($data);
+
+            if ($kodeLembagaBerubah) {
+                $generator = app(AkunSiswaGenerator::class);
+
+                Siswa::where('lembaga_id', $lembaga->id)
+                    ->whereNotNull('user_id')
+                    ->with('user')
+                    ->get()
+                    ->each(fn (Siswa $siswa) => $siswa->user->update([
+                        'username' => $generator->usernameUntuk($lembaga, $siswa->nis),
+                    ]));
+            }
+        });
 
         return redirect()->route('admin.lembaga.index')->with('status', 'Lembaga berhasil diperbarui.');
     }

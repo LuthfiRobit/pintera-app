@@ -2,6 +2,7 @@
 
 use App\Models\Lembaga;
 use App\Models\Role;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
@@ -316,4 +317,31 @@ it('requires a unique kode_lembaga on create but allows a lembaga to keep its ow
         'status_sekolah' => $existing->status_sekolah,
         'naungan' => $existing->naungan,
     ])->assertSessionDoesntHaveErrors('kode_lembaga');
+});
+
+it('cascades a kode_lembaga rename to every linked siswa username', function () {
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPLAMA']);
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id, 'username' => 'SMPLAMA-2026001']);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nis' => '2026001', 'user_id' => $siswaUser->id]);
+
+    $this->actingAs($manager)->put(route('admin.lembaga.update', $lembaga), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => $lembaga->npsn,
+        'kode_lembaga' => 'SMPBARU',
+        'nama' => $lembaga->nama,
+        'bentuk_pendidikan' => $lembaga->bentuk_pendidikan,
+        'status_sekolah' => $lembaga->status_sekolah,
+        'naungan' => $lembaga->naungan,
+    ])->assertRedirect(route('admin.lembaga.index'));
+
+    expect($siswaUser->fresh()->username)->toBe('SMPBARU-2026001');
 });
