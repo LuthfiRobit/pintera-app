@@ -142,9 +142,12 @@ it('ignores a nilai submitted for a siswa not enrolled in the asesmen kelas', fu
 });
 
 it('prevents guru from accessing asesmen belonging to another guru', function () {
-    $guruOwner = Guru::factory()->create();
-    $guruOther = Guru::factory()->create();
-    $asesmen = Asesmen::factory()->create(['guru_id' => $guruOwner->id]);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guruOwner = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guruOther = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'guru_id' => $guruOwner->id]);
 
     $userOther = actingAsGuruAsesmen($guruOther);
 

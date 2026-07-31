@@ -1,12 +1,14 @@
 <?php
 
 use App\Models\Asesmen;
+use App\Models\Kelas;
 use App\Models\KomponenPenilaian;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
 use App\Models\NilaiSiswa;
 use App\Models\Role;
 use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -279,8 +281,9 @@ it('locks mata pelajaran and semester when the komponen is already used in an as
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $mapelLain = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
-    $asesmen = Asesmen::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
     $asesmen->komponenPenilaian()->attach($komponen->id);
 
     $editResponse = $this->actingAs($manager)->get(route('admin.komponen-penilaian.edit', $komponen));
@@ -303,8 +306,9 @@ it('locks mata pelajaran and semester when the komponen is already used in a nil
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
     $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap']);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
-    NilaiSiswa::factory()->create(['komponen_penilaian_id' => $komponen->id]);
+    NilaiSiswa::factory()->create(['komponen_penilaian_id' => $komponen->id, 'siswa_id' => $siswa->id]);
 
     $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
         'semester_id' => $semesterLain->id,
@@ -377,8 +381,9 @@ it('blocks deleting a komponen penilaian already used in an asesmen', function (
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
-    $asesmen = Asesmen::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
     $asesmen->komponenPenilaian()->attach($komponen->id);
 
     $this->actingAs($manager)->delete(route('admin.komponen-penilaian.destroy', $komponen))
@@ -394,8 +399,9 @@ it('blocks deleting a komponen penilaian already used in a nilai siswa', functio
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
-    NilaiSiswa::factory()->create(['komponen_penilaian_id' => $komponen->id]);
+    NilaiSiswa::factory()->create(['komponen_penilaian_id' => $komponen->id, 'siswa_id' => $siswa->id]);
 
     $this->actingAs($manager)->delete(route('admin.komponen-penilaian.destroy', $komponen))
         ->assertSessionHasErrors('komponen_penilaian');
@@ -417,7 +423,7 @@ it('rejects deleting a komponen penilaian belonging to another lembaga', functio
 
     $this->actingAs($manager)->delete(route('admin.komponen-penilaian.destroy', $komponenB))->assertNotFound();
 
-    expect(KomponenPenilaian::find($komponenB->id))->not->toBeNull();
+    expect(KomponenPenilaian::withoutGlobalScopes()->find($komponenB->id))->not->toBeNull();
 });
 
 it('denies access to edit, update, and destroy without komponen-penilaian.kelola permission', function () {

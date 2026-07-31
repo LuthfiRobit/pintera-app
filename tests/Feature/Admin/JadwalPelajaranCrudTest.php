@@ -854,7 +854,7 @@ it('rejects deleting a jadwal entry belonging to another lembaga', function () {
 
     $this->actingAs($manager)->delete(route('admin.jadwal-pelajaran.destroy', $jadwalB))->assertNotFound();
 
-    expect(JadwalPelajaran::find($jadwalB->id))->not->toBeNull();
+    expect(JadwalPelajaran::withoutGlobalScopes()->find($jadwalB->id))->not->toBeNull();
 });
 
 it('denies access to edit, update, and destroy without jadwal-pelajaran.kelola permission', function () {

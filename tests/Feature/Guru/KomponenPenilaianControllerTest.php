@@ -11,6 +11,7 @@ use App\Models\NilaiSiswa;
 use App\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -162,7 +163,8 @@ it('blocks deleting a komponen penilaian already used by nilai siswa, same guard
     $user = actingAsGuruKomponenPenilaian($guru);
 
     $tp = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
-    NilaiSiswa::factory()->create(['komponen_penilaian_id' => $tp->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+    NilaiSiswa::factory()->create(['komponen_penilaian_id' => $tp->id, 'siswa_id' => $siswa->id]);
 
     $this->actingAs($user)->delete(route('guru.komponen-penilaian.destroy', $tp))->assertRedirect();
 
