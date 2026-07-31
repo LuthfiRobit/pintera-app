@@ -2,17 +2,34 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class JadwalPelajaran extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $table = 'jadwal_pelajaran';
 
-    protected $fillable = ['kelas_id', 'jam_pelajaran_id', 'mata_pelajaran_id', 'guru_id', 'semester_id'];
+    protected $fillable = ['kelas_id', 'jam_pelajaran_id', 'mata_pelajaran_id', 'guru_id', 'semester_id', 'lembaga_id'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $jadwalPelajaran) {
+            if (empty($jadwalPelajaran->lembaga_id)) {
+                $jadwalPelajaran->lembaga_id = Kelas::withoutGlobalScopes()
+                    ->findOrFail($jadwalPelajaran->kelas_id)
+                    ->lembaga_id;
+            }
+        });
+    }
+
+    public function lembaga(): BelongsTo
+    {
+        return $this->belongsTo(Lembaga::class);
+    }
 
     public function kelas(): BelongsTo
     {

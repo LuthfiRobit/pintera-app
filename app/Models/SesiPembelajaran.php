@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\StatusSesiPembelajaran;
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,12 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SesiPembelajaran extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $table = 'sesi_pembelajaran';
 
     protected $fillable = [
-        'jadwal_pelajaran_id', 'kelas_id', 'guru_id', 'mata_pelajaran_id',
+        'jadwal_pelajaran_id', 'kelas_id', 'guru_id', 'mata_pelajaran_id', 'lembaga_id',
         'tanggal', 'jam_mulai', 'jam_selesai', 'materi', 'status',
     ];
 
@@ -25,6 +26,22 @@ class SesiPembelajaran extends Model
             'tanggal' => 'date',
             'status' => StatusSesiPembelajaran::class,
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $sesiPembelajaran) {
+            if (empty($sesiPembelajaran->lembaga_id)) {
+                $sesiPembelajaran->lembaga_id = Kelas::withoutGlobalScopes()
+                    ->findOrFail($sesiPembelajaran->kelas_id)
+                    ->lembaga_id;
+            }
+        });
+    }
+
+    public function lembaga(): BelongsTo
+    {
+        return $this->belongsTo(Lembaga::class);
     }
 
     public function jadwalPelajaran(): BelongsTo

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\JenisAsesmen;
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Asesmen extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $table = 'asesmen';
 
@@ -20,6 +21,7 @@ class Asesmen extends Model
         'kelas_id',
         'mata_pelajaran_id',
         'semester_id',
+        'lembaga_id',
         'jenis',
         'judul',
         'tanggal',
@@ -29,6 +31,22 @@ class Asesmen extends Model
         'jenis' => JenisAsesmen::class,
         'tanggal' => 'date',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $asesmen) {
+            if (empty($asesmen->lembaga_id)) {
+                $asesmen->lembaga_id = Kelas::withoutGlobalScopes()
+                    ->findOrFail($asesmen->kelas_id)
+                    ->lembaga_id;
+            }
+        });
+    }
+
+    public function lembaga(): BelongsTo
+    {
+        return $this->belongsTo(Lembaga::class);
+    }
 
     public function guru(): BelongsTo
     {
