@@ -42,6 +42,7 @@ class PendaftaranSiswaController extends BaseController
             'pendaftaran_ids' => ['required', 'array', 'min:1'],
             'pendaftaran_ids.*' => ['exists:pendaftaran,id'],
             'nis' => ['required', 'array'],
+            'nis.*' => ['required', 'string', 'max:30'],
         ]);
 
         $kelas = Kelas::find($data['kelas_id']);
@@ -51,6 +52,27 @@ class PendaftaranSiswaController extends BaseController
             ->whereIn('id', $data['pendaftaran_ids'])
             ->with('calonMurid')
             ->get();
+
+        $nisTerpilih = collect($data['nis'])
+            ->only($pendaftaranTerpilih->pluck('id')->map(fn ($id) => (string) $id))
+            ->values();
+
+        $duplikatDalamBatch = collect(array_count_values($nisTerpilih->all()))
+            ->filter(fn ($jumlah) => $jumlah > 1)
+            ->keys();
+
+        if ($duplikatDalamBatch->isNotEmpty()) {
+            return back()->withErrors(['nis' => 'NIS tidak boleh sama untuk lebih dari satu siswa dalam satu batch: '.$duplikatDalamBatch->implode(', ')])->withInput();
+        }
+
+        $nisSudahDipakai = Siswa::withoutGlobalScopes()
+            ->where('lembaga_id', $kelas->lembaga_id)
+            ->whereIn('nis', $nisTerpilih)
+            ->pluck('nis');
+
+        if ($nisSudahDipakai->isNotEmpty()) {
+            return back()->withErrors(['nis' => 'NIS sudah dipakai siswa lain di lembaga ini: '.$nisSudahDipakai->implode(', ')])->withInput();
+        }
 
         DB::transaction(function () use ($pendaftaranTerpilih, $data, $kelas) {
             $lembaga = Lembaga::withoutGlobalScopes()->findOrFail($kelas->lembaga_id);

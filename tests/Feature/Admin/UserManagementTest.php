@@ -153,6 +153,28 @@ it('excludes siswa accounts from the staff Pengguna list', function () {
     $response->assertSee('staff.included@example.test');
 });
 
+it('404s on edit, update, and toggle-active for a siswa-role user, since siswa accounts are managed only from the Siswa module', function () {
+    $manager = actingAsUserManager();
+
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $siswaUser = User::factory()->create(['username' => 'siswa.guarded', 'email' => null]);
+    $siswaUser->assignRole('siswa');
+
+    $this->actingAs($manager)->get(route('admin.users.edit', $siswaUser))->assertNotFound();
+
+    $this->actingAs($manager)->put(route('admin.users.update', $siswaUser), [
+        'name' => 'Hacked Name',
+        'email' => 'hacked@example.test',
+        'role' => 'siswa',
+    ])->assertNotFound();
+
+    $this->actingAs($manager)->patch(route('admin.users.toggle-active', $siswaUser))->assertNotFound();
+
+    $fresh = $siswaUser->fresh();
+    expect($fresh->name)->not->toBe('Hacked Name');
+    expect($fresh->hasRole('siswa'))->toBeTrue();
+});
+
 it('refuses to let a lembaga-scoped manager assign a yayasan-scoped role to a new user', function () {
     foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);

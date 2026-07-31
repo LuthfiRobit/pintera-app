@@ -71,7 +71,7 @@ class DashboardController extends BaseController
                 'stats' => [
                     'lembaga' => Lembaga::count(),
                     'guru' => Guru::count(),
-                    'pengguna' => User::count(),
+                    'pengguna' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->count(),
                     'tahunAjaranAktif' => TahunAjaran::where('status_aktif', true)->count(),
                 ],
             ]);
@@ -85,7 +85,9 @@ class DashboardController extends BaseController
         $data = [
             'stats' => [
                 'guru' => Guru::where('lembaga_id', $lembagaId)->count(),
-                'pengguna' => User::where('lembaga_id', $lembagaId)->count(),
+                'pengguna' => User::where('lembaga_id', $lembagaId)
+                    ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
+                    ->count(),
                 'tahunAjaranAktif' => TahunAjaran::where('lembaga_id', $lembagaId)->where('status_aktif', true)->count(),
             ],
             'tahunAjaranAktif' => TahunAjaran::where('lembaga_id', $lembagaId)->where('status_aktif', true)->first(),

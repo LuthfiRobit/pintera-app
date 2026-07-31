@@ -345,3 +345,36 @@ it('cascades a kode_lembaga rename to every linked siswa username', function () 
 
     expect($siswaUser->fresh()->username)->toBe('SMPBARU-2026001');
 });
+
+it('cascades a kode_lembaga rename even when the acting yayasan admin has a different lembaga active in session', function () {
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPLAMA2']);
+    $lembagaLainAktifDiSesi = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id, 'username' => 'SMPLAMA2-2026001']);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nis' => '2026001', 'user_id' => $siswaUser->id]);
+
+    // The acting admin's active_lembaga_id session points at a THIRD lembaga, not the
+    // one being renamed. Without bypassing TenantScope this makes the cascade query
+    // silently return zero rows (a false negative), leaving the username stale.
+    $this->withSession(['active_lembaga_id' => $lembagaLainAktifDiSesi->id]);
+
+    $this->actingAs($manager)->put(route('admin.lembaga.update', $lembaga), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => $lembaga->npsn,
+        'kode_lembaga' => 'SMPBARU2',
+        'nama' => $lembaga->nama,
+        'bentuk_pendidikan' => $lembaga->bentuk_pendidikan,
+        'status_sekolah' => $lembaga->status_sekolah,
+        'naungan' => $lembaga->naungan,
+    ])->assertRedirect(route('admin.lembaga.index'));
+
+    expect($siswaUser->fresh()->username)->toBe('SMPBARU2-2026001');
+});

@@ -184,7 +184,7 @@ it('rejects registering a pendaftaran into a kelas belonging to a different lemb
     expect(Siswa::where('pendaftaran_asal_id', $pendaftaran->id)->exists())->toBeFalse();
 });
 
-it('rolls back the whole batch and creates zero siswa when one NIS in the batch collides mid-loop', function () {
+it('rejects the whole batch with a validation error and creates zero siswa when a submitted NIS already belongs to an existing siswa', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -194,22 +194,60 @@ it('rolls back the whole batch and creates zero siswa when one NIS in the batch 
     $pendaftaranA = buatPendaftaranAktif($lembaga, $tahunAjaran);
     $pendaftaranB = buatPendaftaranAktif($lembaga, $tahunAjaran);
 
-    // The second row's hand-typed NIS collides with an existing student,
-    // so Siswa::create() throws mid-loop. Without the DB::transaction()
-    // wrapper this leaves $pendaftaranA already committed; with it, the
-    // whole batch rolls back and neither siswa is created.
+    // The second row's hand-typed NIS collides with an existing student. This must be
+    // caught by validation BEFORE the transaction opens — not surface as an uncaught
+    // QueryException — so neither siswa in the batch gets created.
     Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nis' => '2026302']);
 
-    $this->withoutExceptionHandling();
-
-    expect(fn () => $this->actingAs($manager)->post(route('admin.siswa.spmb-daftar.store'), [
+    $this->actingAs($manager)->post(route('admin.siswa.spmb-daftar.store'), [
         'kelas_id' => $kelas->id,
         'pendaftaran_ids' => [$pendaftaranA->id, $pendaftaranB->id],
         'nis' => [
             $pendaftaranA->id => '2026301',
             $pendaftaranB->id => '2026302',
         ],
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
+    ])->assertSessionHasErrors('nis');
+
+    expect(Siswa::where('pendaftaran_asal_id', $pendaftaranA->id)->exists())->toBeFalse();
+    expect(Siswa::where('pendaftaran_asal_id', $pendaftaranB->id)->exists())->toBeFalse();
+});
+
+it('rejects a blank NIS instead of creating an account with an empty password', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $manager = actingAsSpmbDaftarManager($lembaga);
+
+    $pendaftaran = buatPendaftaranAktif($lembaga, $tahunAjaran);
+
+    $this->actingAs($manager)->post(route('admin.siswa.spmb-daftar.store'), [
+        'kelas_id' => $kelas->id,
+        'pendaftaran_ids' => [$pendaftaran->id],
+        'nis' => [$pendaftaran->id => ''],
+    ])->assertSessionHasErrors('nis.'.$pendaftaran->id);
+
+    expect(Siswa::where('pendaftaran_asal_id', $pendaftaran->id)->exists())->toBeFalse();
+});
+
+it('rejects two identical NIS values submitted for two different pendaftaran in the same batch', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $manager = actingAsSpmbDaftarManager($lembaga);
+
+    $pendaftaranA = buatPendaftaranAktif($lembaga, $tahunAjaran);
+    $pendaftaranB = buatPendaftaranAktif($lembaga, $tahunAjaran);
+
+    $this->actingAs($manager)->post(route('admin.siswa.spmb-daftar.store'), [
+        'kelas_id' => $kelas->id,
+        'pendaftaran_ids' => [$pendaftaranA->id, $pendaftaranB->id],
+        'nis' => [
+            $pendaftaranA->id => '2026901',
+            $pendaftaranB->id => '2026901',
+        ],
+    ])->assertSessionHasErrors('nis');
 
     expect(Siswa::where('pendaftaran_asal_id', $pendaftaranA->id)->exists())->toBeFalse();
     expect(Siswa::where('pendaftaran_asal_id', $pendaftaranB->id)->exists())->toBeFalse();

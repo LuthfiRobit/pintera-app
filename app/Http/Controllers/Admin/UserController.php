@@ -86,6 +86,7 @@ class UserController extends BaseController
     public function edit(Request $request, User $user): View
     {
         $this->authorize('users.edit');
+        abort_if($user->hasRole('siswa'), 404);
 
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
         $roles = Role::all()->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)->values();
@@ -99,6 +100,7 @@ class UserController extends BaseController
     public function update(Request $request, User $user): RedirectResponse
     {
         $this->authorize('users.edit');
+        abort_if($user->hasRole('siswa'), 404);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -121,6 +123,7 @@ class UserController extends BaseController
     public function toggleActive(User $user): RedirectResponse
     {
         $this->authorize('users.toggle-active');
+        abort_if($user->hasRole('siswa'), 404);
 
         $user->update(['is_active' => ! $user->is_active]);
 

@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class SiswaController extends BaseController
@@ -163,9 +164,15 @@ class SiswaController extends BaseController
             return back()->withErrors(['user' => 'Siswa ini belum punya akun login.']);
         }
 
-        $siswa->user()->update([
+        $siswa->user->update([
             'password' => Hash::make($siswa->nis),
             'must_change_password' => true,
+        ]);
+
+        Log::info('Admin reset siswa password', [
+            'admin_user_id' => auth()->id(),
+            'siswa_id' => $siswa->id,
+            'target_user_id' => $siswa->user->id,
         ]);
 
         return redirect()->route('admin.siswa.index')->with('status', 'Password siswa berhasil direset ke NIS. Siswa wajib mengganti password saat login berikutnya.');

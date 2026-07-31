@@ -86,9 +86,17 @@ class LembagaController extends BaseController
             if ($kodeLembagaBerubah) {
                 $generator = app(AkunSiswaGenerator::class);
 
-                Siswa::where('lembaga_id', $lembaga->id)
+                // withoutGlobalScopes() bypasses TenantScope on both Siswa and its user
+                // relation: authorization for editing $lembaga is already established
+                // above via authorizeOwnLembaga(), so a yayasan-scoped admin renaming a
+                // DIFFERENT lembaga's kode_lembaga than their own active_lembaga_id
+                // session must still have this cascade reach every linked siswa —
+                // otherwise TenantScope::apply() silently filters the query down to zero
+                // rows and the rename leaves every affected username stale/broken.
+                Siswa::withoutGlobalScopes()
+                    ->where('lembaga_id', $lembaga->id)
                     ->whereNotNull('user_id')
-                    ->with('user')
+                    ->with(['user' => fn ($q) => $q->withoutGlobalScopes()])
                     ->get()
                     ->each(fn (Siswa $siswa) => $siswa->user->update([
                         'username' => $generator->usernameUntuk($lembaga, $siswa->nis),
