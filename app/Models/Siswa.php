@@ -18,7 +18,7 @@ class Siswa extends Model
     protected $table = 'siswa';
 
     protected $fillable = [
-        'lembaga_id', 'kelas_id', 'calon_murid_id', 'pendaftaran_asal_id',
+        'lembaga_id', 'kelas_id', 'calon_murid_id', 'pendaftaran_asal_id', 'user_id',
         'sumber_data', 'nis', 'nisn', 'nama_lengkap', 'jenis_kelamin',
         'tempat_lahir', 'tanggal_lahir', 'agama', 'status',
     ];
@@ -50,6 +50,11 @@ class Siswa extends Model
     public function pendaftaranAsal(): BelongsTo
     {
         return $this->belongsTo(Pendaftaran::class, 'pendaftaran_asal_id');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function getActivitylogOptions(): LogOptions
