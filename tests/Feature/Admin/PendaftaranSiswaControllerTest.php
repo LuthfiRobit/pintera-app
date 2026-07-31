@@ -14,6 +14,7 @@ use App\Models\Tagihan;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 
 function buatPendaftaranAktif(Lembaga $lembaga, TahunAjaran $tahunAjaran): Pendaftaran
@@ -59,6 +60,7 @@ function actingAsSpmbDaftarManager(Lembaga $lembaga): User
     }
     $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['siswa.spmb-daftar']);
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
@@ -113,6 +115,29 @@ it('batch-creates siswa from checked pendaftaran with a shared target kelas', fu
     expect($siswaA->calon_murid_id)->toBe($pendaftaranA->calon_murid_id);
     expect($siswaA->nis)->toBe('2026101');
     expect($siswaB->nis)->toBe('2026102');
+});
+
+it('creates a login account for the siswa promoted from an accepted pendaftaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMA1']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $manager = actingAsSpmbDaftarManager($lembaga);
+
+    $pendaftaran = buatPendaftaranAktif($lembaga, $tahunAjaran);
+    $nisSubmitted = '2026501';
+
+    $this->actingAs($manager)->post(route('admin.siswa.spmb-daftar.store'), [
+        'kelas_id' => $kelas->id,
+        'pendaftaran_ids' => [$pendaftaran->id],
+        'nis' => [$pendaftaran->id => $nisSubmitted],
+    ])->assertRedirect(route('admin.siswa.index'));
+
+    $siswa = Siswa::where('pendaftaran_asal_id', $pendaftaran->id)->firstOrFail();
+
+    expect($siswa->user_id)->not->toBeNull();
+    expect($siswa->user->username)->toBe($lembaga->kode_lembaga.'-'.$nisSubmitted);
+    expect(Hash::check($nisSubmitted, $siswa->user->password))->toBeTrue();
 });
 
 it('does not create a siswa for a pendaftaran that was not checked', function () {
