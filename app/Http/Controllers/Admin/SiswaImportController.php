@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\SumberDataSiswa;
 use App\Exports\SiswaImportTemplateExport;
 use App\Imports\SiswaImportRow;
+use App\Models\Lembaga;
 use App\Models\Siswa;
+use App\Services\AkunSiswaGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,9 +67,14 @@ class SiswaImportController extends BaseController
         $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
 
         DB::transaction(function () use ($validRows, $lembagaId) {
+            $lembaga = Lembaga::withoutGlobalScopes()->findOrFail($lembagaId);
+
             foreach ($validRows as $row) {
+                $user = app(AkunSiswaGenerator::class)->buat($row['nama_lengkap'], $row['nis'], $lembaga);
+
                 Siswa::create([
                     'lembaga_id' => $lembagaId,
+                    'user_id' => $user->id,
                     'kelas_id' => $row['kelas_id'],
                     'sumber_data' => SumberDataSiswa::Import->value,
                     'nis' => $row['nis'],

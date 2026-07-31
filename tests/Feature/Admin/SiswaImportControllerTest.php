@@ -18,6 +18,7 @@ function actingAsSiswaImportManager(Lembaga $lembaga): User
     Permission::firstOrCreate(['name' => 'siswa.import', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['siswa.import']);
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
@@ -108,6 +109,27 @@ it('commits only the valid rows held in session when confirmed', function () {
     $siswa = Siswa::where('nis', '3003')->firstOrFail();
     expect($siswa->sumber_data)->toBe(SumberDataSiswa::Import);
     expect($siswa->kelas_id)->toBe($kelas->id);
+});
+
+it('creates a User account for every imported siswa', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPPRM']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $manager = actingAsSiswaImportManager($lembaga);
+
+    $file = buatFileImportSiswa([
+        ['nis', 'nisn', 'nama_lengkap', 'jenis_kelamin', 'tempat_lahir', 'tanggal_lahir', 'agama', 'kelas'],
+        ['3010', '0011111199', 'Siswa Import Akun', 'L', 'Bandung', '2014-01-01', 'Islam', '6A'],
+    ]);
+
+    $this->actingAs($manager)->post(route('admin.siswa.import.preview'), ['file' => $file]);
+    $this->actingAs($manager)->post(route('admin.siswa.import.confirm'))->assertRedirect(route('admin.siswa.index'));
+
+    $siswa = Siswa::where('nis', '3010')->firstOrFail();
+    expect($siswa->user_id)->not->toBeNull();
+    expect($siswa->user->username)->toBe($lembaga->kode_lembaga.'-'.$siswa->nis);
+    expect(\Illuminate\Support\Facades\Hash::check($siswa->nis, $siswa->user->password))->toBeTrue();
 });
 
 it('flags a row whose NIS already exists in the database as invalid in the preview', function () {
