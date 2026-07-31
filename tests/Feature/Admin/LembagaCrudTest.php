@@ -24,6 +24,7 @@ it('lets a yayasan-scoped user create a new lembaga', function () {
     $this->actingAs($manager)->post(route('admin.lembaga.store'), [
         'yayasan_id' => $yayasan->id,
         'npsn' => '20301234',
+        'kode_lembaga' => 'SMAPT3',
         'nama' => 'SMA Pintera Tiga',
         'bentuk_pendidikan' => 'SMA',
         'status_sekolah' => 'swasta',
@@ -133,6 +134,7 @@ it('lets a lembaga-scoped user edit their own lembaga', function () {
     $this->actingAs($manager)->put(route('admin.lembaga.update', $ownLembaga), [
         'yayasan_id' => $yayasan->id,
         'npsn' => $ownLembaga->npsn,
+        'kode_lembaga' => $ownLembaga->kode_lembaga,
         'nama' => 'Nama Baru',
         'bentuk_pendidikan' => $ownLembaga->bentuk_pendidikan,
         'status_sekolah' => $ownLembaga->status_sekolah,
@@ -156,6 +158,7 @@ it('defaults status_aktif to true on create when the checkbox key is absent from
     $this->actingAs($manager)->post(route('admin.lembaga.store'), [
         'yayasan_id' => $yayasan->id,
         'npsn' => '20301235',
+        'kode_lembaga' => 'SMAPT4',
         'nama' => 'SMA Pintera Empat',
         'bentuk_pendidikan' => 'SMA',
         'status_sekolah' => 'swasta',
@@ -186,6 +189,7 @@ it('turns status_aktif, mbs, and memungut_iuran off when their checkboxes are le
     $this->actingAs($manager)->put(route('admin.lembaga.update', $lembaga), [
         'yayasan_id' => $yayasan->id,
         'npsn' => $lembaga->npsn,
+        'kode_lembaga' => $lembaga->kode_lembaga,
         'nama' => $lembaga->nama,
         'bentuk_pendidikan' => $lembaga->bentuk_pendidikan,
         'status_sekolah' => $lembaga->status_sekolah,
@@ -214,6 +218,7 @@ it('rejects a duplicate npsn on create but allows a lembaga to keep its own npsn
     $this->actingAs($manager)->post(route('admin.lembaga.store'), [
         'yayasan_id' => $yayasan->id,
         'npsn' => '20301236',
+        'kode_lembaga' => 'SMAPT5',
         'nama' => 'SMA Pintera Lima',
         'bentuk_pendidikan' => 'SMA',
         'status_sekolah' => 'swasta',
@@ -223,6 +228,7 @@ it('rejects a duplicate npsn on create but allows a lembaga to keep its own npsn
     $this->actingAs($manager)->put(route('admin.lembaga.update', $existing), [
         'yayasan_id' => $yayasan->id,
         'npsn' => '20301236',
+        'kode_lembaga' => $existing->kode_lembaga,
         'nama' => 'Nama Diperbarui',
         'bentuk_pendidikan' => $existing->bentuk_pendidikan,
         'status_sekolah' => $existing->status_sekolah,
@@ -244,6 +250,7 @@ it('persists the extended profile fields (alamat, kontak, bank) on create', func
     $this->actingAs($manager)->post(route('admin.lembaga.store'), [
         'yayasan_id' => $yayasan->id,
         'npsn' => '20301237',
+        'kode_lembaga' => 'SMAPT6',
         'nama' => 'SMA Pintera Enam',
         'bentuk_pendidikan' => 'SMA',
         'status_sekolah' => 'swasta',
@@ -264,4 +271,49 @@ it('persists the extended profile fields (alamat, kontak, bank) on create', func
     expect($created->nama_bank)->toBe('Bank Jatim');
     expect((float) $created->nominal_iuran)->toBe(150000.0);
     expect($created->periode_iuran)->toBe('bulanan');
+});
+
+it('requires a unique kode_lembaga on create but allows a lembaga to keep its own on update', function () {
+    foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['lembaga.view', 'lembaga.create', 'lembaga.edit']);
+    $manager = User::factory()->create();
+    $manager->assignRole($role);
+
+    $yayasan = Yayasan::factory()->create();
+    $existing = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPPRM']);
+
+    // Missing kode_lembaga entirely.
+    $this->actingAs($manager)->post(route('admin.lembaga.store'), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => '20301238',
+        'nama' => 'SMA Pintera Tujuh',
+        'bentuk_pendidikan' => 'SMA',
+        'status_sekolah' => 'swasta',
+        'naungan' => 'kemendikdasmen',
+    ])->assertSessionHasErrors('kode_lembaga');
+
+    // Duplicate kode_lembaga.
+    $this->actingAs($manager)->post(route('admin.lembaga.store'), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => '20301239',
+        'kode_lembaga' => 'SMPPRM',
+        'nama' => 'SMA Pintera Delapan',
+        'bentuk_pendidikan' => 'SMA',
+        'status_sekolah' => 'swasta',
+        'naungan' => 'kemendikdasmen',
+    ])->assertSessionHasErrors('kode_lembaga');
+
+    // Updating a lembaga with its own existing kode_lembaga is allowed.
+    $this->actingAs($manager)->put(route('admin.lembaga.update', $existing), [
+        'yayasan_id' => $yayasan->id,
+        'npsn' => $existing->npsn,
+        'kode_lembaga' => 'SMPPRM',
+        'nama' => 'Nama Diperbarui',
+        'bentuk_pendidikan' => $existing->bentuk_pendidikan,
+        'status_sekolah' => $existing->status_sekolah,
+        'naungan' => $existing->naungan,
+    ])->assertSessionDoesntHaveErrors('kode_lembaga');
 });

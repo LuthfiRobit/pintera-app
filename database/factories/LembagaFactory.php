@@ -15,6 +15,7 @@ class LembagaFactory extends Factory
         return [
             'yayasan_id' => Yayasan::factory(),
             'npsn' => $this->faker->unique()->numerify('########'),
+            'kode_lembaga' => strtoupper($this->faker->unique()->lexify('??????')),
             'nama' => 'Sekolah '.$this->faker->city(),
             'bentuk_pendidikan' => $this->faker->randomElement(['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB']),
             'status_sekolah' => $this->faker->randomElement(['negeri', 'swasta']),

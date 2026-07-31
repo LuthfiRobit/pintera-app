@@ -41,6 +41,13 @@
                 <x-text-input type="text" name="nss" value="{{ $val('nss') }}" placeholder="Contoh: 201056301045" class="mt-1.5 font-mono" />
             </div>
 
+            <div>
+                <x-input-label value="Kode Lembaga" />
+                <x-text-input type="text" name="kode_lembaga" value="{{ $val('kode_lembaga') }}" placeholder="Contoh: SMPPRM" class="mt-1.5 font-mono uppercase" />
+                <p class="mt-1 text-xs text-gray-500">Dipakai sebagai awalan username akun siswa (mis. SMPPRM-2026001). Wajib unik.</p>
+                <x-input-error :messages="$errors->get('kode_lembaga')" class="mt-1.5" />
+            </div>
+
             <div class="sm:col-span-2 lg:col-span-3">
                 <x-input-label value="Nama Lembaga" />
                 <x-text-input type="text" name="nama" value="{{ $val('nama') }}" placeholder="Nama resmi sesuai SK Pendirian" class="mt-1.5" />

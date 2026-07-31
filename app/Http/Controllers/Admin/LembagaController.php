@@ -111,6 +111,7 @@ class LembagaController extends BaseController
             'yayasan_id' => ['required', 'exists:yayasan,id'],
             'npsn' => ['required', 'string', 'max:20', Rule::unique('lembaga', 'npsn')->ignore($lembaga?->id)],
             'nss' => ['nullable', 'string', 'max:255'],
+            'kode_lembaga' => ['required', 'string', 'max:20', 'alpha_dash', Rule::unique('lembaga', 'kode_lembaga')->ignore($lembaga?->id)],
             'nama' => ['required', 'string', 'max:255'],
             'bentuk_pendidikan' => ['required', 'in:KB,TPA,SPS,TK,SD,SMP,SMA,SMK,SLB'],
             'status_sekolah' => ['required', 'in:negeri,swasta'],

@@ -32,6 +32,7 @@ it('logs lembaga changes without leaking nomor_rekening or npwp', function () {
     $lembaga = Lembaga::create([
         'yayasan_id' => $yayasan->id,
         'npsn' => '11112222',
+        'kode_lembaga' => 'SDUJILOG',
         'nama' => 'SD Uji Log',
         'bentuk_pendidikan' => 'SD',
         'status_sekolah' => 'swasta',

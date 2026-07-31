@@ -17,7 +17,7 @@ class Lembaga extends Model
     protected $table = 'lembaga';
 
     protected $fillable = [
-        'yayasan_id', 'npsn', 'nss', 'nama', 'slug', 'bentuk_pendidikan', 'status_sekolah',
+        'yayasan_id', 'npsn', 'nss', 'nama', 'slug', 'kode_lembaga', 'bentuk_pendidikan', 'status_sekolah',
         'status_kepemilikan', 'naungan', 'sk_pendirian_nomor', 'sk_pendirian_tanggal',
         'sk_izin_operasional_nomor', 'sk_izin_operasional_tanggal', 'akreditasi',
         'sk_akreditasi_nomor', 'tanggal_sk_akreditasi', 'nama_kepala_sekolah', 'nama_bendahara_bosp',

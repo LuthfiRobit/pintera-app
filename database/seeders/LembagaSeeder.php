@@ -18,6 +18,7 @@ class LembagaSeeder extends Seeder
             [
                 'yayasan_id' => $yayasan->id,
                 'nss' => '202026001045',
+                'kode_lembaga' => 'SMPPRM',
                 'nama' => 'SMP Permata',
                 'bentuk_pendidikan' => 'SMP',
                 'status_sekolah' => 'swasta',
@@ -64,6 +65,7 @@ class LembagaSeeder extends Seeder
             [
                 'yayasan_id' => $yayasan->id,
                 'nss' => '302026001046',
+                'kode_lembaga' => 'SMAPRM',
                 'nama' => 'SMA Permata',
                 'bentuk_pendidikan' => 'SMA',
                 'status_sekolah' => 'swasta',

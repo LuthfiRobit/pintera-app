@@ -13,6 +13,7 @@ it('auto-generates a unique slug from nama', function () {
     $lembaga = Lembaga::create([
         'yayasan_id' => $yayasan->id,
         'npsn' => '12345678',
+        'kode_lembaga' => 'SDPTS1',
         'nama' => 'SD Pintera Satu',
         'bentuk_pendidikan' => 'SD',
         'status_sekolah' => 'swasta',
@@ -28,6 +29,7 @@ it('encrypts nomor_rekening and npwp at rest', function () {
     $lembaga = Lembaga::create([
         'yayasan_id' => $yayasan->id,
         'npsn' => '87654321',
+        'kode_lembaga' => 'SMPPTD2',
         'nama' => 'SMP Pintera Dua',
         'bentuk_pendidikan' => 'SMP',
         'status_sekolah' => 'swasta',

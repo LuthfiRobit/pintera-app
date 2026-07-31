@@ -25,6 +25,7 @@ it('defaults hari_libur_mingguan to [0] at the DB layer even for non-Eloquent in
         'npsn' => '12345678',
         'nama' => 'Sekolah Non-Eloquent',
         'slug' => 'sekolah-non-eloquent',
+        'kode_lembaga' => 'SKLNEQ-1',
         'bentuk_pendidikan' => 'SD',
         'status_sekolah' => 'negeri',
         'naungan' => 'kemendikdasmen',
