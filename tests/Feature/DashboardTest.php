@@ -13,6 +13,14 @@ it('shows the guru placeholder dashboard to a user with only the guru role', fun
     $this->actingAs($user)->get('/dashboard')->assertOk()->assertSee('Dashboard Guru');
 });
 
+it('shows the siswa placeholder dashboard to a user with only the siswa role', function () {
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $user = User::factory()->create();
+    $user->assignRole('siswa');
+
+    $this->actingAs($user)->get('/dashboard')->assertOk()->assertSee('Dashboard Siswa');
+});
+
 it('shows the yayasan dashboard with a lembaga switcher to a yayasan-scoped user', function () {
     Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $yayasan = Yayasan::factory()->create();

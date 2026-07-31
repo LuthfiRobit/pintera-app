@@ -27,6 +27,10 @@ class DashboardController extends BaseController
             ]);
         }
 
+        if ($user->hasRole('siswa')) {
+            return view('admin.dashboard.siswa');
+        }
+
         if ($user->widestScopeLevel() === 'yayasan') {
             $lembagaAktifId = session('active_lembaga_id');
 
