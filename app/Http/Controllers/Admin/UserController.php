@@ -20,7 +20,13 @@ class UserController extends BaseController
     {
         $this->authorize('users.view');
 
-        return view('admin.users.index', ['users' => User::with('roles', 'lembaga')->get()]);
+        $users = User::with('roles', 'lembaga')
+            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
+            ->orderBy('name')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('admin.users.index', ['users' => $users]);
     }
 
     public function create(Request $request): View

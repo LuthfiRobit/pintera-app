@@ -58,6 +58,9 @@
                     @endforeach
                 </tbody>
             </table>
+            <div class="border-t border-ink/10 px-5 py-4">
+                {{ $users->links('pagination.tailadmin') }}
+            </div>
         </x-panel>
     </div>
 </x-app-layout>
