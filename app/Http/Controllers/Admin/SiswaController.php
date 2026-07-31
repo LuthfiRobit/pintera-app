@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class SiswaController extends BaseController
@@ -152,6 +153,22 @@ class SiswaController extends BaseController
         });
 
         return redirect()->route('admin.siswa.index')->with('status', 'Status siswa berhasil diperbarui.');
+    }
+
+    public function resetPassword(Siswa $siswa): RedirectResponse
+    {
+        $this->authorize('siswa.edit');
+
+        if (! $siswa->user_id) {
+            return back()->withErrors(['user' => 'Siswa ini belum punya akun login.']);
+        }
+
+        $siswa->user()->update([
+            'password' => Hash::make($siswa->nis),
+            'must_change_password' => true,
+        ]);
+
+        return redirect()->route('admin.siswa.index')->with('status', 'Password siswa berhasil direset ke NIS. Siswa wajib mengganti password saat login berikutnya.');
     }
 
     private function validateSiswa(Request $request, ?Siswa $current = null): array

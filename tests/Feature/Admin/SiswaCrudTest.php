@@ -221,3 +221,35 @@ it('toggles the linked account is_active via the dedicated status action', funct
     $this->actingAs($manager)->patch(route('admin.siswa.update-status', $siswa), ['status' => 'aktif']);
     expect($siswa->user->fresh()->is_active)->toBeTrue();
 });
+
+it('resets a siswa password back to their NIS and re-flags must_change_password', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'kode_lembaga' => 'SMPPRM']);
+    $manager = actingAsSiswaManager($lembaga);
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.siswa.store'), [
+        'nis' => '2026200', 'nama_lengkap' => 'Siswa Lupa Password', 'jenis_kelamin' => 'L',
+    ]);
+    $siswa = Siswa::where('nis', '2026200')->first();
+
+    // Simulate the siswa having already changed their password and cleared the flag.
+    $siswa->user()->update(['password' => Hash::make('password-rahasia-siswa'), 'must_change_password' => false]);
+
+    $this->actingAs($manager)->patch(route('admin.siswa.reset-password', $siswa))
+        ->assertRedirect(route('admin.siswa.index'));
+
+    $freshUser = $siswa->user->fresh();
+    expect(Hash::check('2026200', $freshUser->password))->toBeTrue();
+    expect($freshUser->must_change_password)->toBeTrue();
+});
+
+it('rejects resetting the password of a siswa with no linked account', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]); // no user_id
+
+    $this->actingAs($manager)->patch(route('admin.siswa.reset-password', $siswa))
+        ->assertSessionHasErrors();
+});
