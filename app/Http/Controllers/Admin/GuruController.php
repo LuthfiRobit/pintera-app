@@ -85,6 +85,7 @@ class GuruController extends BaseController
                 'lembaga_id' => $lembagaId,
                 'email_verified_at' => now(),
                 'is_active' => true,
+                'must_change_password' => true,
             ]);
             $user->assignRole('guru');
 
