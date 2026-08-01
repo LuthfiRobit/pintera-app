@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,6 +17,7 @@ return new class extends Migration
             $table->string('nss')->nullable();
             $table->string('nama');
             $table->string('slug')->unique();
+            $table->string('kode_lembaga', 20)->nullable()->unique();
             $table->enum('bentuk_pendidikan', ['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB']);
             $table->enum('status_sekolah', ['negeri', 'swasta']);
             $table->string('status_kepemilikan')->nullable();
@@ -59,6 +61,8 @@ return new class extends Migration
             $table->decimal('nominal_iuran', 15, 2)->nullable();
             $table->enum('periode_iuran', ['bulanan', 'tahunan'])->nullable();
             $table->boolean('status_aktif')->default(true);
+            $table->json('hari_libur_mingguan')->default(DB::raw('(JSON_ARRAY(0))'));
+            $table->index(['status_aktif', 'yayasan_id']);
 
             $table->timestamps();
         });
