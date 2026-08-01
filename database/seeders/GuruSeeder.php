@@ -12,10 +12,60 @@ class GuruSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
+        $kbit = Lembaga::where('npsn', '20223311')->firstOrFail();
+        $tkit = Lembaga::where('npsn', '20223322')->firstOrFail();
         $sdit = Lembaga::where('npsn', '20223333')->firstOrFail();
+        $smpit = Lembaga::where('npsn', '20223344')->firstOrFail();
 
-        $this->seedGuru($smp, [
+        $this->seedGuru($kbit, [
+            [
+                'email' => 'guru.kbit1@permatakraksaan.sch.id', 'name' => 'Ustadzah Fatimah, S.Psi.',
+                'nik' => '3273011101850011', 'nuptk' => '3234567890123411', 'nip' => null,
+                'jenis_kelamin' => 'P', 'tempat_lahir' => 'Probolinggo', 'tanggal_lahir' => '1989-05-12',
+                'no_hp' => '081234567811', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+                'golongan_pangkat' => null, 'tmt_tugas' => '2018-07-01', 'tmt_pns' => null,
+            ],
+            [
+                'email' => 'guru.kbit2@permatakraksaan.sch.id', 'name' => 'Ustadzah Zahra, S.Pd.',
+                'nik' => '3273011202860012', 'nuptk' => '3234567890123412', 'nip' => null,
+                'jenis_kelamin' => 'P', 'tempat_lahir' => 'Probolinggo', 'tanggal_lahir' => '1990-08-15',
+                'no_hp' => '081234567812', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+                'golongan_pangkat' => null, 'tmt_tugas' => '2019-07-01', 'tmt_pns' => null,
+            ],
+            [
+                'email' => 'guru.kbit3@permatakraksaan.sch.id', 'name' => 'Ustadzah Rini, S.Pd.',
+                'nik' => '3273011303870013', 'nuptk' => null, 'nip' => null,
+                'jenis_kelamin' => 'P', 'tempat_lahir' => 'Surabaja', 'tanggal_lahir' => '1992-03-20',
+                'no_hp' => '081234567813', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'Honorer',
+                'golongan_pangkat' => null, 'tmt_tugas' => '2020-07-01', 'tmt_pns' => null,
+            ],
+        ]);
+
+        $this->seedGuru($tkit, [
+            [
+                'email' => 'guru.tkit1@permatakraksaan.sch.id', 'name' => 'Ustadzah Dewi, S.Pd.I.',
+                'nik' => '3273012101850021', 'nuptk' => '4234567890123421', 'nip' => null,
+                'jenis_kelamin' => 'P', 'tempat_lahir' => 'Malang', 'tanggal_lahir' => '1988-04-10',
+                'no_hp' => '081234567821', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+                'golongan_pangkat' => null, 'tmt_tugas' => '2017-07-01', 'tmt_pns' => null,
+            ],
+            [
+                'email' => 'guru.tkit2@permatakraksaan.sch.id', 'name' => 'Ustadzah Latifah, S.Pd.',
+                'nik' => '3273012202860022', 'nuptk' => '4234567890123422', 'nip' => null,
+                'jenis_kelamin' => 'P', 'tempat_lahir' => 'Pasuruan', 'tanggal_lahir' => '1991-09-11',
+                'no_hp' => '081234567822', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+                'golongan_pangkat' => null, 'tmt_tugas' => '2018-07-01', 'tmt_pns' => null,
+            ],
+            [
+                'email' => 'guru.tkit3@permatakraksaan.sch.id', 'name' => 'Ustadzah Amel, S.Psi.',
+                'nik' => '3273012303870023', 'nuptk' => null, 'nip' => null,
+                'jenis_kelamin' => 'P', 'tempat_lahir' => 'Jember', 'tanggal_lahir' => '1993-11-25',
+                'no_hp' => '081234567823', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'Honorer',
+                'golongan_pangkat' => null, 'tmt_tugas' => '2021-07-01', 'tmt_pns' => null,
+            ],
+        ]);
+
+        $this->seedGuru($smpit, [
             [
                 'email' => 'budi.santoso@permata.sch.id', 'name' => 'Budi Santoso, S.Pd.',
                 'nik' => '3273011503850001', 'nuptk' => '1234567890123456', 'nip' => '198503152010011001',
@@ -82,7 +132,7 @@ class GuruSeeder extends Seeder
                     'tanggal_lahir' => $data['tanggal_lahir'],
                     'agama' => 'Islam',
                     'kewarganegaraan' => 'WNI',
-                    'alamat_jalan' => 'Jl. Cihampelas No. '.random_int(10, 200),
+                    'alamat_jalan' => 'Jl. Cihampelas No. 125',
                     'rt' => '002',
                     'rw' => '005',
                     'desa_kelurahan' => 'Cipaganti',

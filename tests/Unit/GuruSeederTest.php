@@ -23,8 +23,13 @@ beforeEach(function () {
     (new UserSeeder())->run();
 });
 
-it('seeds a Guru profile for every guru-role user, with correct lembaga_id and jenis_ptk', function () {
+it('seeds Guru profiles across all K-9 institutions', function () {
     (new GuruSeeder())->run();
+
+    foreach (Lembaga::all() as $lembaga) {
+        $gurus = Guru::where('lembaga_id', $lembaga->id)->get();
+        expect($gurus->count())->toBeGreaterThanOrEqual(3);
+    }
 
     $smp = Lembaga::where('npsn', '20223344')->first();
     $user = User::where('email', 'budi.santoso@permata.sch.id')->first();
@@ -40,5 +45,5 @@ it('is idempotent when run twice', function () {
     (new GuruSeeder())->run();
     (new GuruSeeder())->run();
 
-    expect(Guru::count())->toBe(6);
+    expect(Guru::count())->toBe(12);
 });
