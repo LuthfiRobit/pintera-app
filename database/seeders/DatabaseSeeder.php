@@ -60,7 +60,17 @@ class DatabaseSeeder extends Seeder
             PembayaranSeeder::class,
             AkunPendaftarSeeder::class,
             GelombangJalurSeeder::class,
-            AcademicDummySeeder::class,
+            MataPelajaranSeeder::class,
+            PolaJamSeeder::class,
+            JamPelajaranSeeder::class,
+            KelasSeeder::class,
+            SiswaSeeder::class,
+            JadwalPelajaranSeeder::class,
+            SesiPembelajaranSeeder::class,
+            PresensiSeeder::class,
+            KomponenPenilaianSeeder::class,
+            AsesmenSeeder::class,
+            NilaiSiswaSeeder::class,
         ]);
     }
 }

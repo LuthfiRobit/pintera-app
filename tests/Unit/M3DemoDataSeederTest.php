@@ -11,13 +11,10 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('seeds a spread of pendaftaran states across smp and sma for manual M3 testing', function () {
+it('seeds a spread of pendaftaran states across K-9 institutions for manual M3 testing', function () {
     $this->seed(DatabaseSeeder::class);
 
-    $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-    $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
-
-    foreach ([$smp, $sma] as $lembaga) {
+    foreach (Lembaga::all() as $lembaga) {
         $pendaftaranLembaga = Pendaftaran::where('lembaga_id', $lembaga->id)->get();
         expect($pendaftaranLembaga->count())->toBeGreaterThanOrEqual(3);
 
