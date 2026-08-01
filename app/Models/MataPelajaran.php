@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\KelompokMataPelajaran;
+use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,12 +16,22 @@ class MataPelajaran extends Model
 
     protected $table = 'mata_pelajaran';
 
-    protected $fillable = ['lembaga_id', 'nama', 'tipe'];
+    protected $fillable = [
+        'lembaga_id',
+        'kode',
+        'nama',
+        'no_urut',
+        'tipe',
+        'kelompok',
+        'status',
+    ];
 
     protected function casts(): array
     {
         return [
             'tipe' => TipeMataPelajaran::class,
+            'kelompok' => KelompokMataPelajaran::class,
+            'status' => StatusMataPelajaran::class,
         ];
     }
 

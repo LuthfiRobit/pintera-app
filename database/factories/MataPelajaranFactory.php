@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\KelompokMataPelajaran;
+use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
@@ -15,8 +17,12 @@ class MataPelajaranFactory extends Factory
     {
         return [
             'lembaga_id' => Lembaga::factory(),
+            'kode' => strtoupper($this->faker->unique()->lexify('MP-????')),
             'nama' => $this->faker->randomElement(['Matematika', 'Bahasa Indonesia', 'IPA', 'IPS', 'Pendidikan Agama']),
+            'no_urut' => $this->faker->numberBetween(1, 10),
             'tipe' => TipeMataPelajaran::Mapel->value,
+            'kelompok' => KelompokMataPelajaran::Umum->value,
+            'status' => StatusMataPelajaran::Aktif->value,
         ];
     }
 }
