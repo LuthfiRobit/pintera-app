@@ -11,30 +11,20 @@ class TahunAjaranSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
-
-        $this->seedTahunAjaran($smp, '2026', '2027');
-        $this->seedTahunAjaran($sma, '2026', '2027');
+        foreach (Lembaga::all() as $lembaga) {
+            $this->seedTahunAjaran($lembaga, '2025', '2026', false);
+            $this->seedTahunAjaran($lembaga, '2026', '2027', true);
+        }
     }
 
-    private function seedTahunAjaran(Lembaga $lembaga, string $tahunAwal, string $tahunAkhir): void
+    private function seedTahunAjaran(Lembaga $lembaga, string $tahunAwal, string $tahunAkhir, bool $aktif): void
     {
-        TahunAjaran::firstOrCreate(
-            ['lembaga_id' => $lembaga->id, 'nama' => ($tahunAwal - 1).'/'.$tahunAwal],
-            [
-                'tanggal_mulai' => ($tahunAwal - 1).'-07-01',
-                'tanggal_selesai' => $tahunAwal.'-06-30',
-                'status_aktif' => false,
-            ]
-        );
-
         TahunAjaran::firstOrCreate(
             ['lembaga_id' => $lembaga->id, 'nama' => $tahunAwal.'/'.$tahunAkhir],
             [
                 'tanggal_mulai' => $tahunAwal.'-07-01',
                 'tanggal_selesai' => $tahunAkhir.'-06-30',
-                'status_aktif' => true,
+                'status_aktif' => $aktif,
             ]
         );
     }

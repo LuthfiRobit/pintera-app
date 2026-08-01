@@ -12,7 +12,7 @@ class SemesterSeeder extends Seeder
 {
     public function run(): void
     {
-        $lembagaList = Lembaga::whereIn('npsn', ['20223344', '20223355'])->get();
+        $lembagaList = Lembaga::all();
 
         foreach ($lembagaList as $lembaga) {
             foreach (TahunAjaran::where('lembaga_id', $lembaga->id)->get() as $tahunAjaran) {
