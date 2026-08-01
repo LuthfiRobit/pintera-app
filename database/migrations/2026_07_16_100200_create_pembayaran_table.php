@@ -19,6 +19,8 @@ return new class extends Migration
             $table->text('catatan_verifikasi')->nullable();
             $table->foreignId('diverifikasi_oleh_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('diverifikasi_pada')->nullable();
+            $table->index(['status', 'metode'], 'idx_pembayaran_status_metode');
+            $table->index(['tagihan_id', 'status'], 'idx_pembayaran_tagihan_status');
             $table->timestamps();
         });
     }

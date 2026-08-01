@@ -18,6 +18,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['pendaftaran_id', 'kategori']);
+            $table->index(['status', 'jatuh_tempo'], 'idx_tagihan_status_jtempo');
         });
     }
 

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('hasil_seleksi', function (Blueprint $table) {
             $table->id();
             $table->foreignId('pendaftaran_id')->constrained('pendaftaran')->cascadeOnDelete();
-            $table->foreignId('seleksi_ppdb_id')->constrained('seleksi_ppdb')->cascadeOnDelete();
+            $table->foreignId('seleksi_ppdb_id')->constrained('seleksi_ppdb')->restrictOnDelete();
             $table->decimal('nilai', 5, 2)->nullable();
             $table->text('catatan')->nullable();
             $table->foreignId('dinilai_oleh_user_id')->nullable()->constrained('users')->nullOnDelete();
