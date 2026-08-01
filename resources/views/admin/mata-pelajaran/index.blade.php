@@ -58,9 +58,31 @@
                     </select>
                 </div>
 
+                {{-- Filter Kelompok --}}
+                <div>
+                    <label for="kelompok" class="mb-1.5 block text-xs font-semibold text-gray-500">Kelompok</label>
+                    <select name="kelompok" id="kelompok" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">Semua Kelompok</option>
+                        @foreach (\App\Enums\KelompokMataPelajaran::cases() as $k)
+                            <option value="{{ $k->value }}" @selected(request('kelompok') === $k->value)>{{ $k->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Filter Status --}}
+                <div>
+                    <label for="status" class="mb-1.5 block text-xs font-semibold text-gray-500">Status</label>
+                    <select name="status" id="status" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">Semua Status</option>
+                        @foreach (\App\Enums\StatusMataPelajaran::cases() as $s)
+                            <option value="{{ $s->value }}" @selected(request('status') === $s->value)>{{ $s->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 {{-- Reset --}}
                 <div class="flex items-end">
-                    @if (request()->anyFilled(['search', 'tipe']))
+                    @if (request()->anyFilled(['search', 'tipe', 'kelompok', 'status']))
                         <a href="{{ route('admin.mata-pelajaran.index') }}" class="flex h-[42px] w-full items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">
                             Reset Filter
                         </a>
@@ -95,8 +117,12 @@
                     <thead>
                         <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                             <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
-                            <th class="px-5 py-3">Nama</th>
+                            <th class="px-5 py-3 text-center">No. Urut</th>
+                            <th class="px-5 py-3">Kode</th>
+                            <th class="px-5 py-3">Nama Mapel</th>
+                            <th class="px-5 py-3">Kelompok (Dapodik/EMIS)</th>
                             <th class="px-5 py-3">Tipe</th>
+                            <th class="px-5 py-3">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -112,10 +138,22 @@
                                         </x-dropdown-link>
                                     </x-table-actions>
                                 </td>
+                                <td class="px-5 py-3.5 text-center font-medium text-gray-700">{{ $mapel->no_urut }}</td>
+                                <td class="px-5 py-3.5">
+                                    <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-0.5 text-xs font-mono font-medium text-gray-700">{{ $mapel->kode }}</span>
+                                </td>
                                 <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $mapel->nama }}</td>
+                                <td class="px-5 py-3.5 text-gray-600">
+                                    {{ $mapel->kelompok ? $mapel->kelompok->label() : '-' }}
+                                </td>
                                 <td class="px-5 py-3.5">
                                     <x-badge :tone="$mapel->tipe === \App\Enums\TipeMataPelajaran::Mapel ? 'brass' : 'blue'">
                                         {{ $mapel->tipe->label() }}
+                                    </x-badge>
+                                </td>
+                                <td class="px-5 py-3.5">
+                                    <x-badge :tone="$mapel->status === \App\Enums\StatusMataPelajaran::Aktif ? 'green' : 'red'">
+                                        {{ $mapel->status->label() }}
                                     </x-badge>
                                 </td>
                             </tr>
@@ -123,8 +161,8 @@
 
                         @if ($mataPelajaranList->isEmpty())
                             <tr>
-                                <td colspan="3" class="px-5 py-10 text-center text-gray-500">
-                                    @if (request()->anyFilled(['search', 'tipe']))
+                                <td colspan="7" class="px-5 py-10 text-center text-gray-500">
+                                    @if (request()->anyFilled(['search', 'tipe', 'kelompok', 'status']))
                                         Tidak ada mata pelajaran yang cocok dengan filter ini.
                                     @else
                                         Belum ada mata pelajaran yang didaftarkan.

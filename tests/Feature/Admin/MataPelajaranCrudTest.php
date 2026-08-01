@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\KelompokMataPelajaran;
+use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
@@ -26,44 +28,85 @@ it('denies access to a user without mata-pelajaran.view permission', function ()
     $this->actingAs(User::factory()->create())->get(route('admin.mata-pelajaran.index'))->assertForbidden();
 });
 
-it('creates a mata pelajaran', function () {
+it('creates a mata pelajaran with full standardized educational fields', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsMataPelajaranManager($lembaga);
 
     $this->actingAs($manager)->post(route('admin.mata-pelajaran.store'), [
+        'kode' => 'MTK-01',
         'nama' => 'Matematika',
+        'no_urut' => 1,
         'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
     ])->assertRedirect(route('admin.mata-pelajaran.index'));
 
-    expect(MataPelajaran::where('nama', 'Matematika')->exists())->toBeTrue();
+    $mapel = MataPelajaran::where('kode', 'MTK-01')->first();
+    expect($mapel)->not->toBeNull();
+    expect($mapel->nama)->toBe('Matematika');
+    expect($mapel->kelompok)->toBe(KelompokMataPelajaran::Umum);
 });
 
-it('only lists mata pelajaran belonging to the acting manager\'s own lembaga', function () {
+it('only lists mata pelajaran belonging to the acting manager\'s own lembaga in index view', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsMataPelajaranManager($lembagaA);
 
-    MataPelajaran::create(['lembaga_id' => $lembagaA->id, 'nama' => 'Mapel Lembaga A', 'tipe' => TipeMataPelajaran::Mapel->value]);
-    MataPelajaran::withoutGlobalScopes()->create(['lembaga_id' => $lembagaB->id, 'nama' => 'Mapel Lembaga B', 'tipe' => TipeMataPelajaran::Mapel->value]);
+    MataPelajaran::create([
+        'lembaga_id' => $lembagaA->id,
+        'kode' => 'A-01',
+        'nama' => 'Mapel Lembaga A',
+        'no_urut' => 1,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
+    MataPelajaran::withoutGlobalScopes()->create([
+        'lembaga_id' => $lembagaB->id,
+        'kode' => 'B-01',
+        'nama' => 'Mapel Lembaga B',
+        'no_urut' => 1,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
 
     $response = $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'));
 
     $response->assertSee('Mapel Lembaga A');
+    $response->assertSee('A-01');
     $response->assertDontSee('Mapel Lembaga B');
 });
 
-it('updates a mata pelajaran', function () {
+it('updates a mata pelajaran including status and no_urut', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsMataPelajaranManager($lembaga);
-    $mapel = MataPelajaran::create(['lembaga_id' => $lembaga->id, 'nama' => 'IPA', 'tipe' => TipeMataPelajaran::Mapel->value]);
+    $mapel = MataPelajaran::create([
+        'lembaga_id' => $lembaga->id,
+        'kode' => 'IPA-01',
+        'nama' => 'IPA',
+        'no_urut' => 2,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
 
     $this->actingAs($manager)->put(route('admin.mata-pelajaran.update', $mapel), [
+        'kode' => 'IPA-01-REV',
         'nama' => 'Ilmu Pengetahuan Alam',
+        'no_urut' => 5,
         'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Pilihan->value,
+        'status' => StatusMataPelajaran::Nonaktif->value,
     ])->assertRedirect(route('admin.mata-pelajaran.index'));
 
-    expect($mapel->fresh()->nama)->toBe('Ilmu Pengetahuan Alam');
+    $fresh = $mapel->fresh();
+    expect($fresh->kode)->toBe('IPA-01-REV');
+    expect($fresh->nama)->toBe('Ilmu Pengetahuan Alam');
+    expect($fresh->no_urut)->toBe(5);
+    expect($fresh->kelompok)->toBe(KelompokMataPelajaran::Pilihan);
+    expect($fresh->status)->toBe(StatusMataPelajaran::Nonaktif);
 });
