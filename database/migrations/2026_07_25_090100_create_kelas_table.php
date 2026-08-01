@@ -14,10 +14,12 @@ return new class extends Migration
             $table->foreignId('tahun_ajaran_id')->constrained('tahun_ajaran')->cascadeOnDelete();
             $table->string('nama');
             $table->string('tingkat')->nullable();
+            $table->unsignedBigInteger('pola_jam_id')->nullable()->index();
             $table->foreignId('wali_kelas_guru_id')->nullable()->constrained('guru')->nullOnDelete();
             $table->timestamps();
 
             $table->unique(['tahun_ajaran_id', 'nama']);
+            $table->index(['lembaga_id', 'tahun_ajaran_id'], 'idx_kelas_lembaga_ta');
         });
     }
 

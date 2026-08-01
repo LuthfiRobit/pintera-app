@@ -12,6 +12,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->cascadeOnDelete();
             $table->date('tanggal');
+            $table->date('tanggal_selesai')->nullable();
             $table->string('nama');
             $table->enum('tipe', ['libur', 'kerja']);
             $table->text('keterangan')->nullable();

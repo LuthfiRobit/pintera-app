@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('siswa', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->nullable()->unique()->constrained('users')->nullOnDelete();
             $table->foreignId('lembaga_id')->constrained('lembaga')->cascadeOnDelete();
             $table->foreignId('kelas_id')->nullable()->constrained('kelas')->nullOnDelete();
             $table->foreignId('calon_murid_id')->nullable()->constrained('calon_murid')->nullOnDelete();
@@ -28,6 +29,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['lembaga_id', 'nis']);
+            $table->index(['lembaga_id', 'status'], 'idx_siswa_lembaga_status');
         });
     }
 

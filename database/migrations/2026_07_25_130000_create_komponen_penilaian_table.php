@@ -10,12 +10,15 @@ return new class extends Migration
     {
         Schema::create('komponen_penilaian', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->cascadeOnDelete();
             $table->foreignId('mata_pelajaran_id')->constrained('mata_pelajaran')->cascadeOnDelete();
             $table->foreignId('semester_id')->constrained('semester')->cascadeOnDelete();
             $table->string('kode')->nullable();
             $table->text('deskripsi');
             $table->text('kktp')->nullable();
             $table->timestamps();
+
+            $table->index(['lembaga_id', 'mata_pelajaran_id', 'semester_id'], 'idx_komp_lmbg_mapel_smt');
         });
     }
 

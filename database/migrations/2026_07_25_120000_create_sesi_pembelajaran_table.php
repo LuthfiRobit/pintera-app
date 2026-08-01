@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('sesi_pembelajaran', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->cascadeOnDelete();
             $table->foreignId('jadwal_pelajaran_id')->nullable()->constrained('jadwal_pelajaran')->cascadeOnDelete();
             $table->foreignId('kelas_id')->constrained('kelas')->cascadeOnDelete();
             $table->foreignId('guru_id')->constrained('guru')->cascadeOnDelete();
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['jadwal_pelajaran_id', 'tanggal']);
+            $table->index(['lembaga_id', 'tanggal', 'status'], 'idx_sesi_lembaga_tgl_sts');
         });
     }
 

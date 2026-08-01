@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('asesmen', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->cascadeOnDelete();
             $table->foreignId('guru_id')->constrained('guru')->cascadeOnDelete();
             $table->foreignId('kelas_id')->constrained('kelas')->cascadeOnDelete();
             $table->foreignId('mata_pelajaran_id')->constrained('mata_pelajaran')->cascadeOnDelete();
@@ -18,6 +19,8 @@ return new class extends Migration
             $table->string('judul');
             $table->date('tanggal');
             $table->timestamps();
+
+            $table->index(['lembaga_id', 'kelas_id', 'semester_id'], 'idx_asesmen_lmbg_kls_smt');
         });
 
         Schema::create('asesmen_komponen_penilaian', function (Blueprint $table) {
@@ -28,6 +31,7 @@ return new class extends Migration
 
         Schema::create('nilai_siswa', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('lembaga_id')->nullable()->constrained('lembaga')->cascadeOnDelete();
             $table->foreignId('asesmen_id')->constrained('asesmen')->cascadeOnDelete();
             $table->foreignId('siswa_id')->constrained('siswa')->cascadeOnDelete();
             $table->foreignId('komponen_penilaian_id')->constrained('komponen_penilaian')->cascadeOnDelete();
@@ -37,6 +41,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['asesmen_id', 'siswa_id', 'komponen_penilaian_id'], 'nilai_siswa_unik');
+            $table->index(['lembaga_id', 'asesmen_id', 'siswa_id'], 'idx_nilai_lmbg_ases_sisw');
         });
     }
 
