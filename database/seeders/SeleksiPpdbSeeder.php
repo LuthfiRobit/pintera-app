@@ -15,20 +15,47 @@ class SeleksiPpdbSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
+        foreach (Lembaga::all() as $lembaga) {
+            $seleksiConfig = match ($lembaga->bentuk_pendidikan) {
+                'KB', 'TK' => $this->seleksiPaud(),
+                'SD' => $this->seleksiSd(),
+                default => $this->seleksiSmp(),
+            };
 
-        foreach (TahunAjaran::where('lembaga_id', $smp->id)->get() as $tahunAjaran) {
-            $this->seedSeleksi($smp, $tahunAjaran, $this->seleksiSmp());
+            foreach (TahunAjaran::where('lembaga_id', $lembaga->id)->get() as $tahunAjaran) {
+                $this->seedSeleksi($lembaga, $tahunAjaran, $seleksiConfig);
+            }
         }
-
-        $smaBaru = TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->firstOrFail();
-        $this->seedSeleksi($sma, $smaBaru, $this->seleksiSma());
     }
 
-    /**
-     * @return array<string, array<int, array{gelombang: string, jenis_tes: string, jadwal: string, kriteria: string, bobot: int}>>
-     */
+    private function seleksiPaud(): array
+    {
+        return [
+            'Reguler' => [
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Anak', 'jadwal' => '2026-08-20 08:00:00', 'kriteria' => 'Perkembangan usia sesuai', 'bobot' => 60],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara Orang Tua', 'jadwal' => '2026-08-21 08:00:00', 'kriteria' => 'Komitmen pola asuh', 'bobot' => 40],
+            ],
+            'Prestasi' => [
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Anak', 'jadwal' => '2026-08-22 09:00:00', 'kriteria' => 'Verifikasi bakat khusus', 'bobot' => 100],
+            ],
+            'Afirmasi' => [],
+        ];
+    }
+
+    private function seleksiSd(): array
+    {
+        return [
+            'Reguler' => [
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Kesiapan Sekolah', 'jadwal' => '2026-08-20 08:00:00', 'kriteria' => 'Kematangan motorik & emosional', 'bobot' => 60],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara Orang Tua', 'jadwal' => '2026-08-21 08:00:00', 'kriteria' => 'Komitmen kemitraan orang tua', 'bobot' => 40],
+            ],
+            'Prestasi' => [
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Baca Al-Qur\'an', 'jadwal' => '2026-08-22 09:00:00', 'kriteria' => 'Kemampuan membaca / tahfizh', 'bobot' => 100],
+            ],
+            'Afirmasi' => [],
+        ];
+    }
+
     private function seleksiSmp(): array
     {
         return [
@@ -38,23 +65,6 @@ class SeleksiPpdbSeeder extends Seeder
             ],
             'Prestasi' => [
                 ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara', 'jadwal' => '2025-02-22 09:00:00', 'kriteria' => 'Verifikasi keaslian sertifikat & wawancara', 'bobot' => 100],
-            ],
-            'Afirmasi' => [],
-        ];
-    }
-
-    /**
-     * @return array<string, array<int, array{gelombang: string, jenis_tes: string, jadwal: string, kriteria: string, bobot: int}>>
-     */
-    private function seleksiSma(): array
-    {
-        return [
-            'Reguler' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Tulis', 'jadwal' => '2026-08-24 08:00:00', 'kriteria' => 'Nilai minimal 70', 'bobot' => 50],
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Potensi Akademik', 'jadwal' => '2026-08-25 08:00:00', 'kriteria' => 'Skor TPA minimal 60', 'bobot' => 50],
-            ],
-            'Prestasi' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Wawancara', 'jadwal' => '2026-08-26 09:00:00', 'kriteria' => 'Verifikasi keaslian sertifikat & wawancara', 'bobot' => 100],
             ],
             'Afirmasi' => [],
         ];

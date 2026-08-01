@@ -12,22 +12,17 @@ class JalurPpdbSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
-
-        $smpLama = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', false)->firstOrFail();
-        $smpBaru = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->firstOrFail();
-        $smaBaru = TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->firstOrFail();
-
-        $this->seedJalur($smp, $smpLama, $this->jalurSmp());
-        $this->seedJalur($smp, $smpBaru, $this->jalurSmp());
-        $this->seedJalur($sma, $smaBaru, $this->jalurSma());
+        foreach (Lembaga::all() as $lembaga) {
+            foreach (TahunAjaran::where('lembaga_id', $lembaga->id)->get() as $tahunAjaran) {
+                $this->seedJalur($lembaga, $tahunAjaran, $this->jalurUmum());
+            }
+        }
     }
 
     /**
      * @return array<int, array{nama: string, deskripsi: string, status_aktif: bool}>
      */
-    public function jalurSmp(): array
+    public function jalurUmum(): array
     {
         return [
             ['nama' => 'Reguler', 'deskripsi' => 'Jalur pendaftaran umum berdasarkan urutan pendaftaran dan kelengkapan berkas.', 'status_aktif' => true],
@@ -39,13 +34,9 @@ class JalurPpdbSeeder extends Seeder
     /**
      * @return array<int, array{nama: string, deskripsi: string, status_aktif: bool}>
      */
-    public function jalurSma(): array
+    public function jalurSmp(): array
     {
-        return [
-            ['nama' => 'Reguler', 'deskripsi' => 'Jalur pendaftaran umum berdasarkan nilai rapor dan hasil tes seleksi.', 'status_aktif' => true],
-            ['nama' => 'Prestasi', 'deskripsi' => 'Jalur khusus bagi calon murid dengan prestasi akademik, olahraga, atau seni tingkat kabupaten/kota ke atas.', 'status_aktif' => true],
-            ['nama' => 'Afirmasi', 'deskripsi' => 'Jalur bagi calon murid dari keluarga kurang mampu, bebas biaya pendaftaran.', 'status_aktif' => true],
-        ];
+        return $this->jalurUmum();
     }
 
     private function seedJalur(Lembaga $lembaga, TahunAjaran $tahunAjaran, array $jalurConfig): void

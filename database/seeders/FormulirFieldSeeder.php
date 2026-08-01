@@ -13,20 +13,51 @@ class FormulirFieldSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
+        foreach (Lembaga::all() as $lembaga) {
+            $formulirConfig = match ($lembaga->bentuk_pendidikan) {
+                'KB', 'TK' => $this->formulirPaud(),
+                'SD' => $this->formulirSd(),
+                default => $this->formulirSmp(),
+            };
 
-        foreach (TahunAjaran::where('lembaga_id', $smp->id)->get() as $tahunAjaran) {
-            $this->seedFormulir($smp, $tahunAjaran, $this->formulirSmp());
+            foreach (TahunAjaran::where('lembaga_id', $lembaga->id)->get() as $tahunAjaran) {
+                $this->seedFormulir($lembaga, $tahunAjaran, $formulirConfig);
+            }
         }
-
-        $smaBaru = TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->firstOrFail();
-        $this->seedFormulir($sma, $smaBaru, $this->formulirSma());
     }
 
-    /**
-     * @return array<string, array<int, array{label: string, field_type: string, is_required: bool, options: ?array}>>
-     */
+    private function formulirPaud(): array
+    {
+        return [
+            'Reguler' => [
+                ['label' => 'Nama Panggilan Anak', 'field_type' => 'text', 'is_required' => true, 'options' => null],
+                ['label' => 'Usia Saat Mendaftar (Tahun/Bulan)', 'field_type' => 'text', 'is_required' => true, 'options' => null],
+                ['label' => 'Riwayat Kesehatan / Alergi', 'field_type' => 'textarea', 'is_required' => false, 'options' => null],
+            ],
+            'Prestasi' => [
+                ['label' => 'Prestasi / Lomba', 'field_type' => 'text', 'is_required' => true, 'options' => null],
+            ],
+            'Afirmasi' => [],
+        ];
+    }
+
+    private function formulirSd(): array
+    {
+        return [
+            'Reguler' => [
+                ['label' => 'Asal TK / PAUD', 'field_type' => 'text', 'is_required' => true, 'options' => null],
+                ['label' => 'Usia Saat Mendaftar (Tahun)', 'field_type' => 'number', 'is_required' => true, 'options' => null],
+                ['label' => 'Provinsi Tempat Tinggal', 'field_type' => 'select', 'is_required' => true, 'options' => $this->provinsiOptions()],
+                ['label' => 'Catatan Khusus Perkembangan', 'field_type' => 'textarea', 'is_required' => false, 'options' => null],
+            ],
+            'Prestasi' => [
+                ['label' => 'Tingkat Prestasi', 'field_type' => 'select', 'is_required' => true, 'options' => ['Kecamatan', 'Kabupaten/Kota', 'Provinsi']],
+                ['label' => 'Uraian Prestasi', 'field_type' => 'textarea', 'is_required' => true, 'options' => null],
+            ],
+            'Afirmasi' => [],
+        ];
+    }
+
     private function formulirSmp(): array
     {
         return [
@@ -48,31 +79,6 @@ class FormulirFieldSeeder extends Seeder
         ];
     }
 
-    /**
-     * @return array<string, array<int, array{label: string, field_type: string, is_required: bool, options: ?array}>>
-     */
-    private function formulirSma(): array
-    {
-        return [
-            'Reguler' => [
-                ['label' => 'Sekolah Asal', 'field_type' => 'text', 'is_required' => true, 'options' => null],
-                ['label' => 'Pilihan Jurusan', 'field_type' => 'select', 'is_required' => true, 'options' => ['IPA', 'IPS']],
-            ],
-            'Prestasi' => [
-                ['label' => 'Tingkat Prestasi', 'field_type' => 'select', 'is_required' => true, 'options' => ['Kabupaten/Kota', 'Provinsi', 'Nasional', 'Internasional']],
-                ['label' => 'Uraian Prestasi', 'field_type' => 'textarea', 'is_required' => true, 'options' => null],
-            ],
-            'Afirmasi' => [],
-        ];
-    }
-
-    /**
-     * 38 provinces — deliberately long (>10) so the Reguler jalur's select field
-     * demonstrates the searchable Tom Select path, not just the plain native <select>
-     * path already covered by Prestasi's short option lists.
-     *
-     * @return array<int, string>
-     */
     private function provinsiOptions(): array
     {
         return [

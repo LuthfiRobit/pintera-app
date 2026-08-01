@@ -11,7 +11,7 @@ class CalonMuridSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (Lembaga::whereIn('npsn', ['20223344', '20223355'])->get() as $lembaga) {
+        foreach (Lembaga::all() as $lembaga) {
             $this->seedCalon($lembaga, 'Calon Menunggu Verifikasi', 'L');
             $this->seedCalon($lembaga, 'Calon Diterima', 'L');
             $this->seedCalon($lembaga, 'Calon Ditolak', 'L');
@@ -21,6 +21,12 @@ class CalonMuridSeeder extends Seeder
 
     private function seedCalon(Lembaga $lembaga, string $namaDasar, string $jenisKelamin): void
     {
+        $umur = match ($lembaga->bentuk_pendidikan) {
+            'KB', 'TK' => 4,
+            'SD' => 7,
+            default => 13,
+        };
+
         CalonMurid::firstOrCreate(
             ['nama_lengkap' => $namaDasar.' ('.$lembaga->nama.')'],
             [
@@ -28,7 +34,7 @@ class CalonMuridSeeder extends Seeder
                 'nik' => (string) random_int(3200000000000000, 3299999999999999),
                 'jenis_kelamin' => $jenisKelamin,
                 'tempat_lahir' => 'Bandung',
-                'tanggal_lahir' => now()->subYears(13)->toDateString(),
+                'tanggal_lahir' => now()->subYears($umur)->toDateString(),
                 'agama' => 'Islam',
             ]
         );

@@ -40,45 +40,46 @@ beforeEach(function () {
     (new CalonMuridSeeder())->run();
 });
 
-it('links each pendaftaran to the correct calon murid and lembaga, with decision fields set for diterima/ditolak', function () {
+it('links each pendaftaran to the correct calon murid and lembaga, with decision fields set for diterima/ditolak across all K-9 institutions', function () {
     (new PendaftaranSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $staf = User::where('lembaga_id', $smp->id)->first();
+    foreach (Lembaga::all() as $lembaga) {
+        $staf = User::where('lembaga_id', $lembaga->id)->first();
 
-    $diterima = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    expect($diterima)->not->toBeNull();
-    expect($diterima->calonMurid->nama_lengkap)->toBe('Calon Diterima ('.$smp->nama.')');
-    expect($diterima->status)->toBe('diterima');
-    expect($diterima->ditetapkan_oleh_user_id)->toBe($staf->id);
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        expect($diterima)->not->toBeNull();
+        expect($diterima->calonMurid->nama_lengkap)->toBe('Calon Diterima ('.$lembaga->nama.')');
+        expect($diterima->status)->toBe('diterima');
+        expect($diterima->ditetapkan_oleh_user_id)->toBe($staf->id);
 
-    $ditolak = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
-    expect($ditolak->status)->toBe('ditolak');
+        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
+        expect($ditolak->status)->toBe('ditolak');
 
-    $menunggu = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.menunggu@example.test')->first();
-    expect($menunggu->status)->toBe('menunggu_verifikasi');
+        $menunggu = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.menunggu@example.test')->first();
+        expect($menunggu->status)->toBe('menunggu_verifikasi');
 
-    $cicilanDemo = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
-    expect($cicilanDemo->status)->toBe('diterima');
-    expect($cicilanDemo->kode_pendaftaran)->toBe('REG-PEMBAYARAN-DEMO-'.$smp->id);
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        expect($cicilanDemo->status)->toBe('diterima');
+        expect($cicilanDemo->kode_pendaftaran)->toBe('REG-PEMBAYARAN-DEMO-'.$lembaga->id);
+    }
 });
 
-it('does not mix up the same scenario email between SMP and SMA', function () {
+it('does not mix up the same scenario email between different institutions', function () {
     (new PendaftaranSeeder())->run();
 
     $smp = Lembaga::where('npsn', '20223344')->first();
-    $sma = Lembaga::where('npsn', '20223355')->first();
+    $sdit = Lembaga::where('npsn', '20223333')->first();
 
     $pendaftaranSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $pendaftaranSma = Pendaftaran::where('lembaga_id', $sma->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $pendaftaranSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
 
-    expect($pendaftaranSmp->id)->not->toBe($pendaftaranSma->id);
-    expect($pendaftaranSmp->calon_murid_id)->not->toBe($pendaftaranSma->calon_murid_id);
+    expect($pendaftaranSmp->id)->not->toBe($pendaftaranSdit->id);
+    expect($pendaftaranSmp->calon_murid_id)->not->toBe($pendaftaranSdit->calon_murid_id);
 });
 
 it('is idempotent when run twice', function () {
     (new PendaftaranSeeder())->run();
     (new PendaftaranSeeder())->run();
 
-    expect(Pendaftaran::count())->toBe(8);
+    expect(Pendaftaran::count())->toBe(16);
 });

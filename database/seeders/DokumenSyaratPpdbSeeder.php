@@ -13,20 +13,59 @@ class DokumenSyaratPpdbSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
+        foreach (Lembaga::all() as $lembaga) {
+            $dokumenConfig = match ($lembaga->bentuk_pendidikan) {
+                'KB', 'TK' => $this->dokumenPaud(),
+                'SD' => $this->dokumenSd(),
+                default => $this->dokumenSmp(),
+            };
 
-        foreach (TahunAjaran::where('lembaga_id', $smp->id)->get() as $tahunAjaran) {
-            $this->seedDokumen($smp, $tahunAjaran, $this->dokumenSmp());
+            foreach (TahunAjaran::where('lembaga_id', $lembaga->id)->get() as $tahunAjaran) {
+                $this->seedDokumen($lembaga, $tahunAjaran, $dokumenConfig);
+            }
         }
-
-        $smaBaru = TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->firstOrFail();
-        $this->seedDokumen($sma, $smaBaru, $this->dokumenSma());
     }
 
-    /**
-     * @return array<string, array<int, array{nama_dokumen: string, wajib: bool}>>
-     */
+    private function dokumenPaud(): array
+    {
+        return [
+            'Reguler' => [
+                ['nama_dokumen' => 'Akta Kelahiran', 'wajib' => true],
+                ['nama_dokumen' => 'Kartu Keluarga', 'wajib' => true],
+                ['nama_dokumen' => 'Pas Foto 3x4', 'wajib' => true],
+                ['nama_dokumen' => 'Buku KIA / Kesehatan', 'wajib' => false],
+            ],
+            'Prestasi' => [
+                ['nama_dokumen' => 'Akta Kelahiran', 'wajib' => true],
+                ['nama_dokumen' => 'Piagam / Sertifikat Lomba', 'wajib' => true],
+            ],
+            'Afirmasi' => [
+                ['nama_dokumen' => 'Kartu Keluarga Sejahtera (KKS) / SKTM', 'wajib' => true],
+                ['nama_dokumen' => 'Akta Kelahiran', 'wajib' => true],
+            ],
+        ];
+    }
+
+    private function dokumenSd(): array
+    {
+        return [
+            'Reguler' => [
+                ['nama_dokumen' => 'Akta Kelahiran', 'wajib' => true],
+                ['nama_dokumen' => 'Kartu Keluarga', 'wajib' => true],
+                ['nama_dokumen' => 'Ijazah / SKL TK / PAUD', 'wajib' => false],
+                ['nama_dokumen' => 'Pas Foto 3x4', 'wajib' => true],
+            ],
+            'Prestasi' => [
+                ['nama_dokumen' => 'Akta Kelahiran', 'wajib' => true],
+                ['nama_dokumen' => 'Sertifikat/Piagam Prestasi', 'wajib' => true],
+            ],
+            'Afirmasi' => [
+                ['nama_dokumen' => 'Kartu Keluarga Sejahtera (KKS) / SKTM', 'wajib' => true],
+                ['nama_dokumen' => 'Akta Kelahiran', 'wajib' => true],
+            ],
+        ];
+    }
+
     private function dokumenSmp(): array
     {
         return [
@@ -44,29 +83,6 @@ class DokumenSyaratPpdbSeeder extends Seeder
             'Afirmasi' => [
                 ['nama_dokumen' => 'Kartu Keluarga Sejahtera (KKS) / SKTM', 'wajib' => true],
                 ['nama_dokumen' => 'Akta Kelahiran', 'wajib' => true],
-            ],
-        ];
-    }
-
-    /**
-     * @return array<string, array<int, array{nama_dokumen: string, wajib: bool}>>
-     */
-    private function dokumenSma(): array
-    {
-        return [
-            'Reguler' => [
-                ['nama_dokumen' => 'Ijazah / SKL SMP', 'wajib' => true],
-                ['nama_dokumen' => 'Kartu Keluarga', 'wajib' => true],
-                ['nama_dokumen' => 'Fotokopi Rapor Kelas VII-IX', 'wajib' => true],
-                ['nama_dokumen' => 'Pas Foto 3x4', 'wajib' => true],
-            ],
-            'Prestasi' => [
-                ['nama_dokumen' => 'Ijazah / SKL SMP', 'wajib' => true],
-                ['nama_dokumen' => 'Sertifikat/Piagam Prestasi', 'wajib' => true],
-            ],
-            'Afirmasi' => [
-                ['nama_dokumen' => 'Kartu Keluarga Sejahtera (KKS) / SKTM', 'wajib' => true],
-                ['nama_dokumen' => 'Ijazah / SKL SMP', 'wajib' => true],
             ],
         ];
     }

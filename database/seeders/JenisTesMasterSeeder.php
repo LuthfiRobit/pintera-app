@@ -11,11 +11,16 @@ class JenisTesMasterSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
-
-        $this->seedJenisTes($smp, ['Tes Tulis', 'Wawancara', 'Tes Baca Al-Qur\'an']);
-        $this->seedJenisTes($sma, ['Tes Tulis', 'Tes Wawancara', 'Tes Potensi Akademik']);
+        foreach (Lembaga::all() as $lembaga) {
+            if (in_array($lembaga->bentuk_pendidikan, ['KB', 'TK'])) {
+                $this->seedJenisTes($lembaga, ['Observasi Anak', 'Wawancara Orang Tua']);
+            } elseif ($lembaga->bentuk_pendidikan === 'SD') {
+                $this->seedJenisTes($lembaga, ['Observasi Kesiapan Sekolah', 'Wawancara Orang Tua', 'Tes Baca Al-Qur\'an']);
+            } else {
+                // SMP
+                $this->seedJenisTes($lembaga, ['Tes Tulis', 'Wawancara', 'Tes Baca Al-Qur\'an']);
+            }
+        }
     }
 
     private function seedJenisTes(Lembaga $lembaga, array $namaList): void

@@ -16,20 +16,20 @@ beforeEach(function () {
     (new LembagaSeeder())->run();
 });
 
-it('seeds 4 calon per lembaga with lembaga-qualified names', function () {
+it('seeds 4 calon per lembaga across all K-9 institutions with lembaga-qualified names', function () {
     (new CalonMuridSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-
-    expect(CalonMurid::where('nama_lengkap', 'Calon Menunggu Verifikasi ('.$smp->nama.')')->exists())->toBeTrue();
-    expect(CalonMurid::where('nama_lengkap', 'Calon Diterima ('.$smp->nama.')')->exists())->toBeTrue();
-    expect(CalonMurid::where('nama_lengkap', 'Calon Ditolak ('.$smp->nama.')')->exists())->toBeTrue();
-    expect(CalonMurid::where('nama_lengkap', 'Calon Cicilan Demo ('.$smp->nama.')')->exists())->toBeTrue();
+    foreach (Lembaga::all() as $lembaga) {
+        expect(CalonMurid::where('nama_lengkap', 'Calon Menunggu Verifikasi ('.$lembaga->nama.')')->exists())->toBeTrue();
+        expect(CalonMurid::where('nama_lengkap', 'Calon Diterima ('.$lembaga->nama.')')->exists())->toBeTrue();
+        expect(CalonMurid::where('nama_lengkap', 'Calon Ditolak ('.$lembaga->nama.')')->exists())->toBeTrue();
+        expect(CalonMurid::where('nama_lengkap', 'Calon Cicilan Demo ('.$lembaga->nama.')')->exists())->toBeTrue();
+    }
 });
 
 it('is idempotent when run twice', function () {
     (new CalonMuridSeeder())->run();
     (new CalonMuridSeeder())->run();
 
-    expect(CalonMurid::count())->toBe(8);
+    expect(CalonMurid::count())->toBe(16);
 });

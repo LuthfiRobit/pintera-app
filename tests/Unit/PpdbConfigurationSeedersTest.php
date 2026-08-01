@@ -41,28 +41,18 @@ function jalankanKonfigurasiPpdb(): void
     (new SeleksiPpdbSeeder())->run();
 }
 
-it('seeds SMP PPDB configuration in BOTH the inactive and active tahun ajaran', function () {
+it('seeds PPDB configuration in ALL institutions across active and inactive tahun ajaran', function () {
     jalankanKonfigurasiPpdb();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $lama = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', false)->first();
-    $baru = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->first();
-
-    expect(JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $lama->id)->where('nama', 'Reguler')->exists())->toBeTrue();
-    expect(JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $baru->id)->where('nama', 'Reguler')->exists())->toBeTrue();
+    foreach (Lembaga::all() as $lembaga) {
+        foreach (TahunAjaran::where('lembaga_id', $lembaga->id)->get() as $ta) {
+            expect(JalurPpdb::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $ta->id)->where('nama', 'Reguler')->exists())->toBeTrue();
+            expect(GelombangPpdb::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $ta->id)->exists())->toBeTrue();
+        }
+    }
 });
 
-it('seeds SMA PPDB configuration only in its active tahun ajaran', function () {
-    jalankanKonfigurasiPpdb();
-
-    $sma = Lembaga::where('npsn', '20223355')->first();
-    $baru = TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->first();
-
-    expect(JalurPpdb::where('lembaga_id', $sma->id)->where('tahun_ajaran_id', $baru->id)->where('nama', 'Reguler')->exists())->toBeTrue();
-    expect(GelombangPpdb::where('lembaga_id', $sma->id)->where('tahun_ajaran_id', $baru->id)->exists())->toBeTrue();
-});
-
-it('seeds 3 jalur (Reguler, Prestasi, Afirmasi) with their formulir/dokumen/seleksi for the SMP active tahun ajaran', function () {
+it('seeds 3 jalur (Reguler, Prestasi, Afirmasi) with their formulir/dokumen/seleksi for the active tahun ajaran', function () {
     jalankanKonfigurasiPpdb();
 
     $smp = Lembaga::where('npsn', '20223344')->first();

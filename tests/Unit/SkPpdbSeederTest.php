@@ -39,27 +39,23 @@ beforeEach(function () {
     (new PendaftaranSeeder())->run();
 });
 
-it('creates one SK per lembaga and attaches it to both the diterima and ditolak pendaftaran of that lembaga', function () {
+it('creates one SK per lembaga across all K-9 institutions and attaches it to both the diterima and ditolak pendaftaran of that lembaga', function () {
     (new SkPpdbSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $sma = Lembaga::where('npsn', '20223355')->first();
+    foreach (Lembaga::all() as $lembaga) {
+        $sk = SkPpdb::where('lembaga_id', $lembaga->id)->first();
+        expect($sk)->not->toBeNull();
 
-    $skSmp = SkPpdb::where('lembaga_id', $smp->id)->first();
-    expect($skSmp)->not->toBeNull();
-
-    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $ditolakSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
-    expect($diterimaSmp->sk_ppdb_id)->toBe($skSmp->id);
-    expect($ditolakSmp->sk_ppdb_id)->toBe($skSmp->id);
-
-    $skSma = SkPpdb::where('lembaga_id', $sma->id)->first();
-    expect($skSma->id)->not->toBe($skSmp->id);
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
+        expect($diterima->sk_ppdb_id)->toBe($sk->id);
+        expect($ditolak->sk_ppdb_id)->toBe($sk->id);
+    }
 });
 
 it('is idempotent when run twice', function () {
     (new SkPpdbSeeder())->run();
     (new SkPpdbSeeder())->run();
 
-    expect(SkPpdb::count())->toBe(2);
+    expect(SkPpdb::count())->toBe(4);
 });
