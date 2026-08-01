@@ -81,20 +81,44 @@ class AcademicDummySeeder extends Seeder
 
         // 4. Seed Mata Pelajaran
         $mapelMatematika = MataPelajaran::firstOrCreate(
-            ['lembaga_id' => $smp->id, 'nama' => 'Matematika'],
-            ['tipe' => 'mapel']
+            ['lembaga_id' => $smp->id, 'kode' => 'MTK-01'],
+            [
+                'nama' => 'Matematika',
+                'no_urut' => 1,
+                'tipe' => 'mapel',
+                'kelompok' => 'umum',
+                'status' => 'aktif',
+            ]
         );
         $mapelIPA = MataPelajaran::firstOrCreate(
-            ['lembaga_id' => $smp->id, 'nama' => 'Ilmu Pengetahuan Alam (IPA)'],
-            ['tipe' => 'mapel']
+            ['lembaga_id' => $smp->id, 'kode' => 'IPA-01'],
+            [
+                'nama' => 'Ilmu Pengetahuan Alam (IPA)',
+                'no_urut' => 2,
+                'tipe' => 'mapel',
+                'kelompok' => 'umum',
+                'status' => 'aktif',
+            ]
         );
         $mapelIndo = MataPelajaran::firstOrCreate(
-            ['lembaga_id' => $smp->id, 'nama' => 'Bahasa Indonesia'],
-            ['tipe' => 'mapel']
+            ['lembaga_id' => $smp->id, 'kode' => 'IND-01'],
+            [
+                'nama' => 'Bahasa Indonesia',
+                'no_urut' => 3,
+                'tipe' => 'mapel',
+                'kelompok' => 'umum',
+                'status' => 'aktif',
+            ]
         );
         $mapelAgama = MataPelajaran::firstOrCreate(
-            ['lembaga_id' => $smp->id, 'nama' => 'Pendidikan Agama Islam'],
-            ['tipe' => 'mapel']
+            ['lembaga_id' => $smp->id, 'kode' => 'PAI-01'],
+            [
+                'nama' => 'Pendidikan Agama Islam',
+                'no_urut' => 4,
+                'tipe' => 'mapel',
+                'kelompok' => 'umum',
+                'status' => 'aktif',
+            ]
         );
 
         // 5. Seed Pola Jam & Jam Pelajaran

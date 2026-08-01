@@ -57,3 +57,21 @@ it('belongs to a lembaga', function () {
 
     expect($mapel->lembaga->id)->toBe($lembaga->id);
 });
+
+it('allows creating subjects matching AcademicDummySeeder specs without unique constraint failure', function () {
+    $yayasan = Yayasan::factory()->create();
+    $smp = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $m1 = MataPelajaran::firstOrCreate(
+        ['lembaga_id' => $smp->id, 'kode' => 'MTK-01'],
+        ['nama' => 'Matematika', 'no_urut' => 1, 'tipe' => 'mapel', 'kelompok' => 'umum', 'status' => 'aktif']
+    );
+
+    $m2 = MataPelajaran::firstOrCreate(
+        ['lembaga_id' => $smp->id, 'kode' => 'IPA-01'],
+        ['nama' => 'Ilmu Pengetahuan Alam (IPA)', 'no_urut' => 2, 'tipe' => 'mapel', 'kelompok' => 'umum', 'status' => 'aktif']
+    );
+
+    expect($m1->fresh()->kode)->toBe('MTK-01');
+    expect($m2->fresh()->no_urut)->toBe(2);
+});
