@@ -7,6 +7,7 @@ use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class SiswaSeeder extends Seeder
@@ -25,6 +26,8 @@ class SiswaSeeder extends Seeder
             } else {
                 $this->seedGenericStudents($lembaga, $aktif);
             }
+
+            $this->seedSiswaAccount($lembaga);
         }
     }
 
@@ -117,6 +120,39 @@ class SiswaSeeder extends Seeder
 
                 $counter++;
             }
+        }
+    }
+
+    private function seedSiswaAccount(Lembaga $lembaga): void
+    {
+        $firstSiswa = Siswa::where('lembaga_id', $lembaga->id)->first();
+        if (! $firstSiswa) {
+            return;
+        }
+
+        $emailMap = [
+            '20223311' => 'siswa.kbit@permatakraksaan.sch.id',
+            '20223322' => 'siswa.tkit@permatakraksaan.sch.id',
+            '20223333' => 'siswa.sdit@permatakraksaan.sch.id',
+            '20223344' => 'siswa.smpit@permatakraksaan.sch.id',
+        ];
+
+        $email = $emailMap[$lembaga->npsn] ?? "siswa.{$lembaga->id}@permatakraksaan.sch.id";
+
+        $user = User::firstOrCreate(
+            ['email' => $email],
+            [
+                'name' => $firstSiswa->nama_lengkap,
+                'password' => 'password',
+                'lembaga_id' => $lembaga->id,
+                'email_verified_at' => now(),
+                'is_active' => true,
+            ]
+        );
+        $user->assignRole('siswa');
+
+        if ($firstSiswa->user_id !== $user->id) {
+            $firstSiswa->update(['user_id' => $user->id]);
         }
     }
 }

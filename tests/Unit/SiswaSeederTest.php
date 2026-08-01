@@ -44,6 +44,10 @@ it('seeds students into active classes across all K-9 institutions', function ()
         
         $siswaCount = Siswa::whereIn('kelas_id', $kelasIds)->count();
         expect($siswaCount)->toBeGreaterThan(0);
+
+        $siswaWithUser = Siswa::whereIn('kelas_id', $kelasIds)->whereNotNull('user_id')->first();
+        expect($siswaWithUser)->not->toBeNull();
+        expect($siswaWithUser->user->hasRole('siswa'))->toBeTrue();
     }
 
     $smp = Lembaga::where('npsn', '20223344')->first();
