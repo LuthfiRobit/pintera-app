@@ -18,6 +18,10 @@ return new class extends Migration
             $table->unsignedInteger('ukuran_bytes');
             $table->enum('status_verifikasi', ['belum_diverifikasi', 'diterima', 'ditolak'])
                 ->default('belum_diverifikasi');
+            $table->text('catatan_verifikasi')->nullable();
+            $table->foreignId('diverifikasi_oleh_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('diverifikasi_pada')->nullable();
+            $table->index(['pendaftaran_id', 'status_verifikasi']);
             $table->timestamps();
         });
     }

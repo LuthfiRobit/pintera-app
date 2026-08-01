@@ -13,6 +13,10 @@ return new class extends Migration
             $table->foreignId('pendaftaran_id')->constrained('pendaftaran')->cascadeOnDelete();
             $table->foreignId('formulir_field_id')->constrained('formulir_field');
             $table->text('nilai')->nullable();
+            $table->string('nama_file_asli')->nullable();
+            $table->string('mime_type')->nullable();
+            $table->unsignedBigInteger('ukuran_bytes')->nullable();
+            $table->index(['pendaftaran_id', 'formulir_field_id'], 'idx_jawaban_form_pendaftaran_field');
             $table->timestamps();
         });
     }

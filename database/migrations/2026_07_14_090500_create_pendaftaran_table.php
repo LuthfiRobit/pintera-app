@@ -19,11 +19,18 @@ return new class extends Migration
             $table->string('email_pendaftaran');
             $table->enum('status', ['menunggu_verifikasi', 'diterima', 'ditolak', 'daftar_ulang', 'aktif'])
                 ->default('menunggu_verifikasi');
+            $table->text('catatan_keputusan')->nullable();
+            $table->foreignId('ditetapkan_oleh_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('ditetapkan_pada')->nullable();
+            $table->unsignedBigInteger('sk_ppdb_id')->nullable()->index();
+            $table->unsignedBigInteger('akun_pendaftar_id')->nullable()->index();
             $table->timestamp('submitted_at');
             $table->timestamps();
 
             $table->unique(['calon_murid_id', 'gelombang_ppdb_id']);
             $table->unique(['lembaga_id', 'kode_pendaftaran']);
+            $table->index(['lembaga_id', 'status']);
+            $table->index(['gelombang_ppdb_id', 'jalur_ppdb_id']);
         });
     }
 
