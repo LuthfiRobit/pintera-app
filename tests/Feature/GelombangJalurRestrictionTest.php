@@ -324,12 +324,12 @@ it('seeds a restricted demo gelombang for SMP alongside unrestricted ones', func
 
     expect($gelombang1->jalur()->pluck('jalur_ppdb.nama')->sort()->values()->all())->toBe(['Prestasi', 'Reguler']);
 
-    $sma = \App\Models\Lembaga::where('npsn', '20223355')->firstOrFail();
-    $smaAktif = \App\Models\TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->firstOrFail();
-    $smaGelombang1 = GelombangPpdb::where('lembaga_id', $sma->id)
-        ->where('tahun_ajaran_id', $smaAktif->id)
+    $sd = \App\Models\Lembaga::where('npsn', '20223333')->firstOrFail();
+    $sdAktif = \App\Models\TahunAjaran::where('lembaga_id', $sd->id)->where('status_aktif', true)->firstOrFail();
+    $sdGelombang1 = GelombangPpdb::where('lembaga_id', $sd->id)
+        ->where('tahun_ajaran_id', $sdAktif->id)
         ->where('nama', 'Gelombang 1')
         ->firstOrFail();
 
-    expect($smaGelombang1->jalur()->exists())->toBeFalse();
+    expect($sdGelombang1->jalur()->exists())->toBeFalse();
 });
