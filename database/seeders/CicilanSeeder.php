@@ -21,7 +21,7 @@ class CicilanSeeder extends Seeder
      */
     public function run(): void
     {
-        foreach (Lembaga::whereIn('npsn', ['20223344', '20223355'])->get() as $lembaga) {
+        foreach (Lembaga::all() as $lembaga) {
             $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
 
             if (! $cicilanDemo) {

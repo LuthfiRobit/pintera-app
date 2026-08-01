@@ -25,23 +25,25 @@ beforeEach(function () {
     (new JenisTagihanSeeder())->run();
 });
 
-it('sets a real nominal for Reguler and exactly 0 for Afirmasi, and skips Prestasi entirely', function () {
+it('sets real nominals for Reguler and exactly 0 for Afirmasi, and skips Prestasi across all K-9 institutions', function () {
     (new NominalTagihanJalurSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $aktif = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->first();
-    $pendaftaran = JenisTagihan::where('lembaga_id', $smp->id)->where('nama', 'Biaya Pendaftaran')->first();
+    foreach (Lembaga::all() as $lembaga) {
+        $aktif = TahunAjaran::where('lembaga_id', $lembaga->id)->where('status_aktif', true)->first();
+        $pendaftaran = JenisTagihan::where('lembaga_id', $lembaga->id)->where('nama', 'Biaya Pendaftaran')->first();
 
-    $reguler = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Reguler')->first();
-    $nominalReguler = NominalTagihanJalur::where('jenis_tagihan_id', $pendaftaran->id)->where('jalur_ppdb_id', $reguler->id)->first();
-    expect((int) $nominalReguler->nominal)->toBe(150000);
+        $reguler = JalurPpdb::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Reguler')->first();
+        $nominalReguler = NominalTagihanJalur::where('jenis_tagihan_id', $pendaftaran->id)->where('jalur_ppdb_id', $reguler->id)->first();
+        expect($nominalReguler)->not->toBeNull();
+        expect((int) $nominalReguler->nominal)->toBeGreaterThan(0);
 
-    $afirmasi = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Afirmasi')->first();
-    $nominalAfirmasi = NominalTagihanJalur::where('jenis_tagihan_id', $pendaftaran->id)->where('jalur_ppdb_id', $afirmasi->id)->first();
-    expect((int) $nominalAfirmasi->nominal)->toBe(0);
+        $afirmasi = JalurPpdb::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Afirmasi')->first();
+        $nominalAfirmasi = NominalTagihanJalur::where('jenis_tagihan_id', $pendaftaran->id)->where('jalur_ppdb_id', $afirmasi->id)->first();
+        expect((int) $nominalAfirmasi->nominal)->toBe(0);
 
-    $prestasi = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Prestasi')->first();
-    expect(NominalTagihanJalur::where('jenis_tagihan_id', $pendaftaran->id)->where('jalur_ppdb_id', $prestasi->id)->exists())->toBeFalse();
+        $prestasi = JalurPpdb::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Prestasi')->first();
+        expect(NominalTagihanJalur::where('jenis_tagihan_id', $pendaftaran->id)->where('jalur_ppdb_id', $prestasi->id)->exists())->toBeFalse();
+    }
 });
 
 it('does not set nominal against the inactive tahun ajaran jalur for SMP', function () {

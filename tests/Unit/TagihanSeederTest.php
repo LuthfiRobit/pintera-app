@@ -47,11 +47,11 @@ beforeEach(function () {
     (new PendaftaranSeeder())->run();
 });
 
-it('sets total_tagihan to the real configured NominalTagihanJalur value for each lembaga, not a hardcoded amount', function () {
+it('sets total_tagihan to the real configured NominalTagihanJalur value for each lembaga across K-9 institutions', function () {
     (new TagihanSeeder())->run();
 
     $smp = Lembaga::where('npsn', '20223344')->first();
-    $sma = Lembaga::where('npsn', '20223355')->first();
+    $sdit = Lembaga::where('npsn', '20223333')->first();
 
     $aktifSmp = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->first();
     $jalurSmp = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktifSmp->id)->where('nama', 'Reguler')->first();
@@ -62,33 +62,34 @@ it('sets total_tagihan to the real configured NominalTagihanJalur value for each
     $tagihanDaftarUlangSmp = Tagihan::where('pendaftaran_id', $diterimaSmp->id)->where('kategori', 'daftar_ulang')->first();
     expect((int) $tagihanDaftarUlangSmp->total_tagihan)->toBe((int) $nominalSmp->nominal);
 
-    $aktifSma = TahunAjaran::where('lembaga_id', $sma->id)->where('status_aktif', true)->first();
-    $jalurSma = JalurPpdb::where('lembaga_id', $sma->id)->where('tahun_ajaran_id', $aktifSma->id)->where('nama', 'Reguler')->first();
-    $jenisDaftarUlangSma = JenisTagihan::where('lembaga_id', $sma->id)->where('nama', 'Uang Pangkal')->first();
-    $nominalSma = NominalTagihanJalur::where('jenis_tagihan_id', $jenisDaftarUlangSma->id)->where('jalur_ppdb_id', $jalurSma->id)->first();
+    $aktifSdit = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
+    $jalurSdit = JalurPpdb::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $aktifSdit->id)->where('nama', 'Reguler')->first();
+    $jenisDaftarUlangSdit = JenisTagihan::where('lembaga_id', $sdit->id)->where('nama', 'Uang Pangkal')->first();
+    $nominalSdit = NominalTagihanJalur::where('jenis_tagihan_id', $jenisDaftarUlangSdit->id)->where('jalur_ppdb_id', $jalurSdit->id)->first();
 
-    $diterimaSma = Pendaftaran::where('lembaga_id', $sma->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $tagihanDaftarUlangSma = Tagihan::where('pendaftaran_id', $diterimaSma->id)->where('kategori', 'daftar_ulang')->first();
-    expect((int) $tagihanDaftarUlangSma->total_tagihan)->toBe((int) $nominalSma->nominal);
+    $diterimaSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $tagihanDaftarUlangSdit = Tagihan::where('pendaftaran_id', $diterimaSdit->id)->where('kategori', 'daftar_ulang')->first();
+    expect((int) $tagihanDaftarUlangSdit->total_tagihan)->toBe((int) $nominalSdit->nominal);
 
-    expect((int) $tagihanDaftarUlangSmp->total_tagihan)->not->toBe((int) $tagihanDaftarUlangSma->total_tagihan);
+    expect((int) $tagihanDaftarUlangSmp->total_tagihan)->not->toBe((int) $tagihanDaftarUlangSdit->total_tagihan);
 });
 
-it('creates 2 tagihan for the diterima candidate and 1 for the cicilan-demo candidate, per lembaga', function () {
+it('creates 2 tagihan for the diterima candidate and 1 for the cicilan-demo candidate, per K-9 lembaga', function () {
     (new TagihanSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $diterima = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $cicilanDemo = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+    foreach (Lembaga::all() as $lembaga) {
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
 
-    expect(Tagihan::where('pendaftaran_id', $diterima->id)->count())->toBe(2);
-    expect(Tagihan::where('pendaftaran_id', $cicilanDemo->id)->count())->toBe(1);
-    expect(Tagihan::where('pendaftaran_id', $cicilanDemo->id)->first()->kategori)->toBe('daftar_ulang');
+        expect(Tagihan::where('pendaftaran_id', $diterima->id)->count())->toBe(2);
+        expect(Tagihan::where('pendaftaran_id', $cicilanDemo->id)->count())->toBe(1);
+        expect(Tagihan::where('pendaftaran_id', $cicilanDemo->id)->first()->kategori)->toBe('daftar_ulang');
+    }
 });
 
 it('is idempotent when run twice', function () {
     (new TagihanSeeder())->run();
     (new TagihanSeeder())->run();
 
-    expect(Tagihan::count())->toBe(6);
+    expect(Tagihan::count())->toBe(12);
 });

@@ -47,19 +47,20 @@ beforeEach(function () {
     (new TagihanSeeder())->run();
 });
 
-it('does not error when the skema cicilan already has its 3 termin rows from SkemaCicilanSeeder', function () {
+it('does not error when the skema cicilan already has its 3 termin rows from SkemaCicilanSeeder across all K-9 institutions', function () {
     (new SkemaCicilanSeeder())->run();
 
     (new CicilanSeeder())->run();
 
-    expect(Cicilan::count())->toBe(6);
+    expect(Cicilan::count())->toBe(12);
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $cicilanDemo = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
-    $tagihan = Tagihan::where('pendaftaran_id', $cicilanDemo->id)->where('kategori', 'daftar_ulang')->first();
-    $urutanList = $tagihan->skemaCicilan->cicilan()->orderBy('urutan')->pluck('urutan')->all();
+    foreach (Lembaga::all() as $lembaga) {
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        $tagihan = Tagihan::where('pendaftaran_id', $cicilanDemo->id)->where('kategori', 'daftar_ulang')->first();
+        $urutanList = $tagihan->skemaCicilan->cicilan()->orderBy('urutan')->pluck('urutan')->all();
 
-    expect($urutanList)->toBe([1, 2, 3]);
+        expect($urutanList)->toBe([1, 2, 3]);
+    }
 });
 
 it('throws if SkemaCicilanSeeder has not run yet (ordering invariant guard)', function () {

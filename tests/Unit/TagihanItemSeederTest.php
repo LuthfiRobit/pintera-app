@@ -46,16 +46,17 @@ beforeEach(function () {
     (new TagihanSeeder())->run();
 });
 
-it('creates exactly one item per tagihan, with jumlah matching total_tagihan', function () {
+it('creates exactly one item per tagihan across all K-9 institutions, with jumlah matching total_tagihan', function () {
     (new TagihanItemSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $diterima = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    foreach (Lembaga::all() as $lembaga) {
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
 
-    foreach (Tagihan::where('pendaftaran_id', $diterima->id)->get() as $tagihan) {
-        $items = TagihanItem::where('tagihan_id', $tagihan->id)->get();
-        expect($items)->toHaveCount(1);
-        expect((int) $items->first()->jumlah)->toBe((int) $tagihan->total_tagihan);
+        foreach (Tagihan::where('pendaftaran_id', $diterima->id)->get() as $tagihan) {
+            $items = TagihanItem::where('tagihan_id', $tagihan->id)->get();
+            expect($items)->toHaveCount(1);
+            expect((int) $items->first()->jumlah)->toBe((int) $tagihan->total_tagihan);
+        }
     }
 });
 
@@ -63,5 +64,5 @@ it('is idempotent when run twice', function () {
     (new TagihanItemSeeder())->run();
     (new TagihanItemSeeder())->run();
 
-    expect(TagihanItem::count())->toBe(6);
+    expect(TagihanItem::count())->toBe(12);
 });

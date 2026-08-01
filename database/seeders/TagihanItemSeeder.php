@@ -13,7 +13,7 @@ class TagihanItemSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (Lembaga::whereIn('npsn', ['20223344', '20223355'])->get() as $lembaga) {
+        foreach (Lembaga::all() as $lembaga) {
             $jenisPendaftaran = JenisTagihan::where('lembaga_id', $lembaga->id)->where('nama', 'Biaya Pendaftaran')->first();
             $jenisDaftarUlang = JenisTagihan::where('lembaga_id', $lembaga->id)->where('nama', 'Uang Pangkal')->first();
 

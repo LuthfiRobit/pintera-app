@@ -14,17 +14,26 @@ class NominalTagihanJalurSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
+        foreach (Lembaga::all() as $lembaga) {
+            $nominalPendaftaran = match ($lembaga->bentuk_pendidikan) {
+                'KB', 'TK' => 100000,
+                'SD' => 125000,
+                default => 150000,
+            };
 
-        // Prestasi sengaja TIDAK diberi nominal apapun (baik SMP maupun SMA) -- demonstrasi
-        // yang sudah mapan bahwa TagihanGenerator melewati kombinasi jenis-tagihan x jalur yang
-        // belum dikonfigurasi, tidak pernah membuat tagihan Rp0 palsu untuk itu.
-        $this->seedNominal($smp, ['Reguler' => 150000, 'Afirmasi' => 0], 'pendaftaran');
-        $this->seedNominal($smp, ['Reguler' => 3000000, 'Afirmasi' => 0], 'daftar_ulang');
+            $nominalDaftarUlang = match ($lembaga->bentuk_pendidikan) {
+                'KB' => 1500000,
+                'TK' => 1800000,
+                'SD' => 2500000,
+                default => 3000000,
+            };
 
-        $this->seedNominal($sma, ['Reguler' => 200000, 'Afirmasi' => 0], 'pendaftaran');
-        $this->seedNominal($sma, ['Reguler' => 4500000, 'Afirmasi' => 0], 'daftar_ulang');
+            // Prestasi sengaja TIDAK diberi nominal apapun -- demonstrasi yang sudah mapan
+            // bahwa TagihanGenerator melewati kombinasi jenis-tagihan x jalur yang belum
+            // dikonfigurasi, tidak pernah membuat tagihan Rp0 palsu untuk itu.
+            $this->seedNominal($lembaga, ['Reguler' => $nominalPendaftaran, 'Afirmasi' => 0], 'pendaftaran');
+            $this->seedNominal($lembaga, ['Reguler' => $nominalDaftarUlang, 'Afirmasi' => 0], 'daftar_ulang');
+        }
     }
 
     /**

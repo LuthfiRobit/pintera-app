@@ -11,7 +11,7 @@ class JenisTagihanSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (Lembaga::whereIn('npsn', ['20223344', '20223355'])->get() as $lembaga) {
+        foreach (Lembaga::all() as $lembaga) {
             JenisTagihan::firstOrCreate(
                 ['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran'],
                 ['bisa_dicicil' => false, 'maks_cicilan' => null]

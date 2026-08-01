@@ -46,22 +46,23 @@ beforeEach(function () {
     (new TagihanSeeder())->run();
 });
 
-it('creates a 3-termin skema cicilan per lembaga for the cicilan-demo tagihan', function () {
+it('creates a 3-termin skema cicilan per lembaga for the cicilan-demo tagihan across all K-9 institutions', function () {
     (new SkemaCicilanSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $cicilanDemo = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
-    $tagihan = Tagihan::where('pendaftaran_id', $cicilanDemo->id)->where('kategori', 'daftar_ulang')->first();
+    foreach (Lembaga::all() as $lembaga) {
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        $tagihan = Tagihan::where('pendaftaran_id', $cicilanDemo->id)->where('kategori', 'daftar_ulang')->first();
 
-    $skema = SkemaCicilan::where('tagihan_id', $tagihan->id)->first();
-    expect($skema)->not->toBeNull();
-    expect($skema->jumlah_termin)->toBe(3);
-    expect($tagihan->fresh()->status)->toBe('dicicil');
+        $skema = SkemaCicilan::where('tagihan_id', $tagihan->id)->first();
+        expect($skema)->not->toBeNull();
+        expect($skema->jumlah_termin)->toBe(3);
+        expect($tagihan->fresh()->status)->toBe('dicicil');
+    }
 });
 
 it('is idempotent when run twice', function () {
     (new SkemaCicilanSeeder())->run();
     (new SkemaCicilanSeeder())->run();
 
-    expect(SkemaCicilan::count())->toBe(2);
+    expect(SkemaCicilan::count())->toBe(4);
 });

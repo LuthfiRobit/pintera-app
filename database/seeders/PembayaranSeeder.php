@@ -13,7 +13,7 @@ class PembayaranSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (Lembaga::whereIn('npsn', ['20223344', '20223355'])->get() as $lembaga) {
+        foreach (Lembaga::all() as $lembaga) {
             $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
             $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
 
