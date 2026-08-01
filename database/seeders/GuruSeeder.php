@@ -13,7 +13,7 @@ class GuruSeeder extends Seeder
     public function run(): void
     {
         $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
+        $sdit = Lembaga::where('npsn', '20223333')->firstOrFail();
 
         $this->seedGuru($smp, [
             [
@@ -39,7 +39,7 @@ class GuruSeeder extends Seeder
             ],
         ]);
 
-        $this->seedGuru($sma, [
+        $this->seedGuru($sdit, [
             [
                 'email' => 'hendra.gunawan@permata.sch.id', 'name' => 'Hendra Gunawan, S.Pd.',
                 'nik' => '3273010108820004', 'nuptk' => '2234567890123456', 'nip' => '198201082008011002',
