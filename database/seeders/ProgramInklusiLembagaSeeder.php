@@ -10,7 +10,7 @@ class ProgramInklusiLembagaSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (Lembaga::whereIn('npsn', ['20223344', '20223355'])->get() as $lembaga) {
+        foreach (Lembaga::all() as $lembaga) {
             ProgramInklusiLembaga::firstOrCreate(
                 ['lembaga_id' => $lembaga->id, 'kebutuhan_khusus' => 'Tunadaksa'],
                 [
@@ -18,7 +18,7 @@ class ProgramInklusiLembagaSeeder extends Seeder
                     'tanggal_sk' => '2021-02-10',
                     'tmt' => '2021-07-01',
                     'tst' => null,
-                    'keterangan' => 'Menyediakan akses ramah kursi roda dan pendamping belajar.',
+                    'keterangan' => 'Menyediakan akses ramah inklusi dan pendampingan.',
                 ]
             );
         }

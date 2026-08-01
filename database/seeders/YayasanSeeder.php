@@ -10,17 +10,17 @@ class YayasanSeeder extends Seeder
     public function run(): void
     {
         Yayasan::firstOrCreate(
-            ['nama' => 'Yayasan Permata'],
+            ['nama' => 'Yayasan Permata Kraksaan'],
             [
                 'npwp_yayasan' => '01.234.567.8-901.000',
                 'akta_pendirian_nomor' => '12',
                 'akta_pendirian_tanggal' => '2005-03-15',
                 'sk_kemenkumham_nomor' => 'AHU-0001234.AH.01.04.Tahun 2005',
-                'alamat' => 'Jl. Pendidikan Raya No. 45, Kel. Sukaluyu, Kec. Cibeunying Kaler, Kota Bandung, Jawa Barat 40123',
-                'telepon' => '022-7301234',
-                'email' => 'info@permata.sch.id',
-                'website' => 'https://permata.sch.id',
-                'nama_ketua_pembina' => 'Dr. H. Ahmad Fauzi, M.Pd.',
+                'alamat' => 'Jl. Panglima Sudirman No. 88, Kraksaan, Kabupaten Probolinggo, Jawa Timur 67282',
+                'telepon' => '0335-771234',
+                'email' => 'info@permatakraksaan.sch.id',
+                'website' => 'https://permatakraksaan.sch.id',
+                'nama_ketua_pembina' => 'KH. Ahmad Fauzi, Lc., M.Pd.',
                 'nama_ketua_pengurus' => 'Hj. Siti Maryam, S.Ag.',
             ]
         );

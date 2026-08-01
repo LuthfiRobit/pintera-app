@@ -11,9 +11,7 @@ class LembagaDataPeriodikSeeder extends Seeder
 {
     public function run(): void
     {
-        $lembagaList = Lembaga::whereIn('npsn', ['20223344', '20223355'])->get();
-
-        foreach ($lembagaList as $lembaga) {
+        foreach (Lembaga::all() as $lembaga) {
             $aktif = TahunAjaran::where('lembaga_id', $lembaga->id)->where('status_aktif', true)->first();
 
             if (! $aktif) {

@@ -10,20 +10,26 @@ class EkstrakurikulerLembagaSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $sma = Lembaga::where('npsn', '20223355')->firstOrFail();
+        foreach (Lembaga::all() as $lembaga) {
+            $ekskulList = match ($lembaga->bentuk_pendidikan) {
+                'KB', 'TK' => [
+                    ['Seni', 'Menggambar & Mewarnai', 2],
+                    ['Olahraga', 'Bermain Bola Ceria', 2],
+                ],
+                'SD' => [
+                    ['Keagamaan', 'Tahfidz Cilik', 3],
+                    ['Kepramukaan', 'Pramuka', 2],
+                    ['Seni', 'Nasyid', 2],
+                ],
+                default => [
+                    ['Olahraga', 'Futsal', 4],
+                    ['Kepramukaan', 'Pramuka', 2],
+                    ['Keagamaan', 'Qiroah', 2],
+                ],
+            };
 
-        $this->seedEkskul($smp, [
-            ['Olahraga', 'Futsal', 4],
-            ['Kepramukaan', 'Pramuka', 2],
-            ['Keagamaan', 'Qiroah', 2],
-        ]);
-
-        $this->seedEkskul($sma, [
-            ['Olahraga', 'Basket', 4],
-            ['Kepramukaan', 'Paskibra', 3],
-            ['Seni', 'Teater', 2],
-        ]);
+            $this->seedEkskul($lembaga, $ekskulList);
+        }
     }
 
     private function seedEkskul(Lembaga $lembaga, array $ekskulList): void

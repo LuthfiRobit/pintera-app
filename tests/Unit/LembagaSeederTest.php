@@ -4,33 +4,33 @@
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 use Database\Seeders\LembagaSeeder;
+use Database\Seeders\YayasanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('seeds SMP and SMA with the expected identifying fields', function () {
-    Yayasan::factory()->create(['nama' => 'Yayasan Permata']);
-
+it('seeds yayasan permata kraksaan and 4 K-9 institutions without SMA', function () {
+    (new YayasanSeeder())->run();
     (new LembagaSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    expect($smp)->not->toBeNull();
-    expect($smp->nama)->toBe('SMP Permata');
-    expect($smp->bentuk_pendidikan)->toBe('SMP');
-    expect($smp->status_aktif)->toBeTrue();
+    $yayasan = Yayasan::where('nama', 'Yayasan Permata Kraksaan')->first();
+    expect($yayasan)->not->toBeNull();
+    expect($yayasan->alamat)->toContain('Kraksaan', 'Probolinggo', 'Jawa Timur');
 
-    $sma = Lembaga::where('npsn', '20223355')->first();
-    expect($sma)->not->toBeNull();
-    expect($sma->nama)->toBe('SMA Permata');
-    expect($sma->bentuk_pendidikan)->toBe('SMA');
+    expect(Lembaga::count())->toBe(4);
+    expect(Lembaga::where('npsn', '20223311')->value('nama'))->toBe('KBIT PERMATA KRAKSAAN');
+    expect(Lembaga::where('npsn', '20223322')->value('nama'))->toBe('TKIT PERMATA KRAKSAAN');
+    expect(Lembaga::where('npsn', '20223333')->value('nama'))->toBe('SDIT PERMATA KRAKSAAN');
+    expect(Lembaga::where('npsn', '20223344')->value('nama'))->toBe('SMPIT PERMATA KRAKSAAN');
+    expect(Lembaga::where('npsn', '20223355')->exists())->toBeFalse();
 });
 
 it('is idempotent when run twice', function () {
-    Yayasan::factory()->create();
+    (new YayasanSeeder())->run();
 
     (new LembagaSeeder())->run();
     (new LembagaSeeder())->run();
 
-    expect(Lembaga::count())->toBe(2);
+    expect(Lembaga::count())->toBe(4);
 });
