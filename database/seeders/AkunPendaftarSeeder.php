@@ -13,8 +13,10 @@ class AkunPendaftarSeeder extends Seeder
     public function run(): void
     {
         $emailPerNpsn = [
-            '20223344' => ['email' => 'pendaftar.smp@example.test', 'nama' => 'Wali SMP (Contoh)'],
-            '20223355' => ['email' => 'pendaftar.sma@example.test', 'nama' => 'Wali SMA (Contoh)'],
+            '20223311' => ['email' => 'pendaftar.kbit@example.test', 'nama' => 'Wali KBIT (Contoh)'],
+            '20223322' => ['email' => 'pendaftar.tkit@example.test', 'nama' => 'Wali TKIT (Contoh)'],
+            '20223333' => ['email' => 'pendaftar.sdit@example.test', 'nama' => 'Wali SDIT (Contoh)'],
+            '20223344' => ['email' => 'pendaftar.smpit@example.test', 'nama' => 'Wali SMPIT (Contoh)'],
         ];
 
         foreach (Lembaga::whereIn('npsn', array_keys($emailPerNpsn))->get() as $lembaga) {

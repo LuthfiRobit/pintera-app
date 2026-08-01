@@ -40,28 +40,33 @@ beforeEach(function () {
     (new PendaftaranSeeder())->run();
 });
 
-it('seeds one verified akun pendaftar per lembaga, attached to that lembaga diterima pendaftaran', function () {
+it('seeds one verified akun pendaftar per lembaga across all K-9 institutions, attached to that lembaga diterima pendaftaran', function () {
     (new AkunPendaftarSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $akunSmp = AkunPendaftar::where('email', 'pendaftar.smp@example.test')->first();
+    $emailPerNpsn = [
+        '20223311' => 'pendaftar.kbit@example.test',
+        '20223322' => 'pendaftar.tkit@example.test',
+        '20223333' => 'pendaftar.sdit@example.test',
+        '20223344' => 'pendaftar.smpit@example.test',
+    ];
 
-    expect($akunSmp)->not->toBeNull();
-    expect($akunSmp->email_verified_at)->not->toBeNull();
-    expect(Hash::check('password', $akunSmp->password))->toBeTrue();
+    foreach (Lembaga::all() as $lembaga) {
+        $email = $emailPerNpsn[$lembaga->npsn];
+        $akun = AkunPendaftar::where('email', $email)->first();
 
-    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    expect($diterimaSmp->fresh()->akun_pendaftar_id)->toBe($akunSmp->id);
-    expect($akunSmp->pendaftaran()->count())->toBe(1);
+        expect($akun)->not->toBeNull();
+        expect($akun->email_verified_at)->not->toBeNull();
+        expect(Hash::check('password', $akun->password))->toBeTrue();
 
-    $sma = Lembaga::where('npsn', '20223355')->first();
-    $akunSma = AkunPendaftar::where('email', 'pendaftar.sma@example.test')->first();
-    expect($akunSma->id)->not->toBe($akunSmp->id);
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        expect($diterima->fresh()->akun_pendaftar_id)->toBe($akun->id);
+        expect($akun->pendaftaran()->count())->toBe(1);
+    }
 });
 
 it('is idempotent when run twice', function () {
     (new AkunPendaftarSeeder())->run();
     (new AkunPendaftarSeeder())->run();
 
-    expect(AkunPendaftar::count())->toBe(2);
+    expect(AkunPendaftar::count())->toBe(4);
 });
