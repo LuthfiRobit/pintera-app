@@ -88,3 +88,17 @@ it('prevents deleting a master position that is currently assigned to a guru', f
 
     expect(JabatanTambahanMaster::where('id', $jabatan->id)->exists())->toBeTrue();
 });
+
+it('renders the reactive SPA portal view cleanly with expected Alpine data bindings and tab bar', function () {
+    JabatanTambahanMaster::create(['nama' => 'Wali Kelas', 'kelompok' => 'fungsional']);
+    JabatanTambahanMaster::create(['nama' => 'Wakasek Kurikulum', 'kelompok' => 'struktural']);
+
+    $response = $this->actingAs($this->admin)->get(route('admin.jabatan-tambahan-master.index'));
+
+    $response->assertStatus(200)
+             ->assertSee('Wali Kelas')
+             ->assertSee('Wakasek Kurikulum')
+             ->assertSee('Master Jabatan Tambahan')
+             ->assertSee('activeFilter')
+             ->assertSee('scrollbar-none');
+});
