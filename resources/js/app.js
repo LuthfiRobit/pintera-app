@@ -32,6 +32,8 @@ import { jenisTesTable } from './jenis-tes-table';
 import { jenisTagihanTable } from './jenis-tagihan-table';
 import { kalenderAkademikTable } from './pengaturan-akademik';
 import { passwordStrength } from './password-strength';
+import { mataPelajaranFilter } from './mata-pelajaran-filter';
+import { mataPelajaranForm } from './mata-pelajaran-form';
 
 window.Alpine = Alpine;
 window.flatpickr = flatpickr;
@@ -69,5 +71,7 @@ Alpine.data('jenisTesTable', jenisTesTable);
 Alpine.data('jenisTagihanTable', jenisTagihanTable);
 Alpine.data('kalenderAkademikTable', kalenderAkademikTable);
 Alpine.data('passwordStrength', passwordStrength);
+Alpine.data('mataPelajaranFilter', mataPelajaranFilter);
+Alpine.data('mataPelajaranForm', mataPelajaranForm);
 
 Alpine.start();
