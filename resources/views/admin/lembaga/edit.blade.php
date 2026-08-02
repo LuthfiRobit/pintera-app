@@ -107,7 +107,7 @@
             </div>
 
             {{-- Navigation Tabs Header --}}
-            <div class="mt-8 flex border-b border-gray-200 overflow-x-auto text-sm font-semibold text-gray-500 no-scrollbar">
+            <div class="mt-8 flex border-b border-gray-200 overflow-x-auto text-sm font-semibold text-gray-500 scrollbar-none">
                 <button type="button" @click="setTab('profil');" :class="activeTab === 'profil' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="flex items-center gap-2 border-b-2 py-3 px-4 transition whitespace-nowrap">
                     <x-icon name="apartment" class="h-4 w-4" />
                     <span>Profil &amp; Identitas</span>
