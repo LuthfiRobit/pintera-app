@@ -181,4 +181,8 @@
     @case('trending_up')
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
         @break
+
+    @case('badge')
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="12" cy="10" r="3"/><path d="M7 17v-0.5C7 14.5 9 14 12 14s5 .5 5 2.5V17"/></svg>
+        @break
 @endswitch
