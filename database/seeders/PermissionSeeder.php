@@ -26,6 +26,7 @@ class PermissionSeeder extends Seeder
             'users.view', 'users.create', 'users.edit', 'users.toggle-active',
             'lembaga.view', 'lembaga.create', 'lembaga.edit',
             'guru.view', 'guru.create', 'guru.edit',
+            'jabatan-tambahan-master.view', 'jabatan-tambahan-master.create', 'jabatan-tambahan-master.edit', 'jabatan-tambahan-master.delete',
             'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
             'semester.create', 'semester.activate',
             'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete',
