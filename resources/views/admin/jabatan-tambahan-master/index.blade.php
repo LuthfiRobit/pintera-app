@@ -19,69 +19,87 @@
             </p>
         </div>
 
-        {{-- Statistic Cards --}}
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition hover:shadow-elevated">
-                <div class="flex items-center justify-between">
-                    <p class="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-gray-500">Total Jabatan</p>
-                    <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
-                        <x-icon name="badge" class="h-[18px] w-[18px]" />
+        {{-- Compact Statistic Cards --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <x-icon name="badge" class="h-5 w-5" />
                     </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Jabatan</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="items.length"></p>
+                    </div>
                 </div>
-                <p class="mt-2 font-display text-3xl font-bold text-gray-900" x-text="items.length"></p>
-                <p class="mt-1 text-xs text-gray-500">Keseluruhan referensi terdaftar</p>
+                <span class="text-[11px] font-medium text-gray-400">Semua Data</span>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition hover:shadow-elevated">
-                <div class="flex items-center justify-between">
-                    <p class="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-600">Struktural</p>
-                    <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                        <x-icon name="apartment" class="h-[18px] w-[18px]" />
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <x-icon name="apartment" class="h-5 w-5" />
                     </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Struktural</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="countStruktural"></p>
+                    </div>
                 </div>
-                <p class="mt-2 font-display text-3xl font-bold text-gray-900" x-text="countStruktural"></p>
-                <p class="mt-1 text-xs text-gray-500">Kelompok kepemimpinan & manajerial</p>
+                <span class="text-[11px] font-medium text-gray-400">Kepemimpinan</span>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition hover:shadow-elevated">
-                <div class="flex items-center justify-between">
-                    <p class="font-display text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-600">Fungsional</p>
-                    <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                        <x-icon name="checklist" class="h-[18px] w-[18px]" />
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                        <x-icon name="checklist" class="h-5 w-5" />
                     </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Fungsional</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="countFungsional"></p>
+                    </div>
                 </div>
-                <p class="mt-2 font-display text-3xl font-bold text-gray-900" x-text="countFungsional"></p>
-                <p class="mt-1 text-xs text-gray-500">Kelompok pembina & koordinator</p>
+                <span class="text-[11px] font-medium text-gray-400">Pembina / Koor</span>
             </div>
         </div>
 
-        {{-- Table Card with Tabs & Search Toolbar --}}
+        {{-- Table Card with Tabs, Per Page & Search Toolbar --}}
         <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
-                <div class="flex items-center overflow-x-auto scrollbar-none gap-2 pb-1 sm:pb-0">
-                    <button @click="activeFilter = 'semua'" type="button" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
+            <div class="flex flex-col gap-3 border-b border-gray-200 px-5 py-3.5 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex items-center overflow-x-auto scrollbar-none gap-2 pb-1 lg:pb-0">
+                    <button @click="activeFilter = 'semua'; currentPage = 1" type="button" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
                         <span>Semua</span>
                         <span :class="activeFilter === 'semua' ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="items.length"></span>
                     </button>
-                    <button @click="activeFilter = 'struktural'" type="button" :class="activeFilter === 'struktural' ? 'bg-indigo-50 font-semibold text-indigo-700 border-indigo-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
+                    <button @click="activeFilter = 'struktural'; currentPage = 1" type="button" :class="activeFilter === 'struktural' ? 'bg-indigo-50 font-semibold text-indigo-700 border-indigo-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
                         <span>Struktural</span>
                         <span :class="activeFilter === 'struktural' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countStruktural"></span>
                     </button>
-                    <button @click="activeFilter = 'fungsional'" type="button" :class="activeFilter === 'fungsional' ? 'bg-amber-50 font-semibold text-amber-700 border-amber-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
+                    <button @click="activeFilter = 'fungsional'; currentPage = 1" type="button" :class="activeFilter === 'fungsional' ? 'bg-amber-50 font-semibold text-amber-700 border-amber-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
                         <span>Fungsional</span>
                         <span :class="activeFilter === 'fungsional' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countFungsional"></span>
                     </button>
                 </div>
 
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 w-full sm:w-64">
-                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
-                        <input x-model="searchQuery" type="text" placeholder="Cari nama jabatan..." class="w-full border-0 bg-transparent p-0 text-xs text-gray-900 placeholder:text-gray-400 focus:ring-0">
+                <div class="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <span class="shrink-0">Tampilkan</span>
+                        <select x-model.number="perPage" @change="currentPage = 1" class="rounded-lg border-gray-200 bg-gray-50 py-1 pl-2.5 pr-7 text-xs font-semibold text-gray-700 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="5">5</option>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                        <span class="shrink-0">per halaman</span>
                     </div>
+
+                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 w-full sm:w-52">
+                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                        <input x-model="searchQuery" @input="currentPage = 1" type="text" placeholder="Cari nama jabatan..." class="w-full border-0 bg-transparent p-0 text-xs text-gray-900 placeholder:text-gray-400 focus:ring-0">
+                    </div>
+
                     @can('jabatan-tambahan-master.create')
                     <x-tooltip text="Tambah referensi jabatan struktural atau fungsional baru">
-                        <button @click="openModal(false)" type="button" class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 whitespace-nowrap">
-                            <span class="text-base leading-none">+</span> Tambah Jabatan
+                        <button @click="openModal(false)" type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 whitespace-nowrap">
+                            <span class="text-sm leading-none">+</span> Tambah Jabatan
                         </button>
                     </x-tooltip>
                     @endcan
@@ -100,7 +118,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        <template x-if="filteredItems.length === 0">
+                        <template x-if="paginatedItems.length === 0">
                             <tr>
                                 <td colspan="4" class="px-5 py-12 text-center text-gray-400">
                                     <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
@@ -111,7 +129,7 @@
                                 </td>
                             </tr>
                         </template>
-                        <template x-for="(item, index) in filteredItems" :key="item.id">
+                        <template x-for="(item, index) in paginatedItems" :key="item.id">
                             <tr class="transition hover:bg-gray-50">
                                 <td class="sticky left-0 z-10 bg-white px-5 py-3">
                                     <x-table-actions>
@@ -140,6 +158,29 @@
                         </template>
                     </tbody>
                 </table>
+            </div>
+
+            {{-- Reactive Pagination Footer --}}
+            <div class="border-t border-gray-200 px-5 py-4" x-show="totalFiltered > 0" style="display: none;">
+                <nav role="navigation" aria-label="Pagination Navigation" class="flex flex-wrap items-center justify-between gap-3 text-xs text-gray-500">
+                    <span>
+                        Menampilkan <b class="font-semibold text-gray-700" x-text="startIndex"></b>&ndash;<b class="font-semibold text-gray-700" x-text="endIndex"></b> dari <b class="font-semibold text-gray-700" x-text="totalFiltered"></b> entri
+                    </span>
+
+                    <div class="flex items-center gap-1.5" x-show="totalPages > 1">
+                        <button @click="currentPage = Math.max(1, currentPage - 1)" type="button" :disabled="currentPage === 1" :class="currentPage === 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 transition hover:bg-gray-50'" class="flex h-8 w-8 items-center justify-center rounded-lg border bg-white">
+                            <x-icon name="expand_more" class="h-3.5 w-3.5 rotate-90" />
+                        </button>
+
+                        <template x-for="page in totalPages" :key="page">
+                            <button @click="currentPage = page" type="button" :class="currentPage === page ? 'bg-brand-500 font-semibold text-white border-transparent' : 'border-gray-200 text-gray-600 transition hover:bg-gray-50 bg-white'" class="flex h-8 w-8 items-center justify-center rounded-lg border text-xs" x-text="page"></button>
+                        </template>
+
+                        <button @click="currentPage = Math.min(totalPages, currentPage + 1)" type="button" :disabled="currentPage === totalPages" :class="currentPage === totalPages ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 transition hover:bg-gray-50'" class="flex h-8 w-8 items-center justify-center rounded-lg border bg-white">
+                            <x-icon name="expand_more" class="h-3.5 w-3.5 -rotate-90" />
+                        </button>
+                    </div>
+                </nav>
             </div>
         </div>
 
@@ -198,6 +239,8 @@
             items: @json($jabatanList ?? []),
             activeFilter: 'semua',
             searchQuery: '',
+            perPage: 10,
+            currentPage: 1,
             showModal: false,
             isEditing: false,
             loading: false,
@@ -226,6 +269,27 @@
                     res = res.filter(i => i.nama.toLowerCase().includes(q));
                 }
                 return res;
+            },
+
+            get totalFiltered() {
+                return this.filteredItems.length;
+            },
+
+            get totalPages() {
+                return Math.max(1, Math.ceil(this.totalFiltered / this.perPage));
+            },
+
+            get paginatedItems() {
+                const start = (this.currentPage - 1) * this.perPage;
+                return this.filteredItems.slice(start, start + Number(this.perPage));
+            },
+
+            get startIndex() {
+                return this.totalFiltered === 0 ? 0 : (this.currentPage - 1) * this.perPage + 1;
+            },
+
+            get endIndex() {
+                return Math.min(this.currentPage * this.perPage, this.totalFiltered);
             },
 
             showToast(message, type = 'success') {
@@ -318,6 +382,9 @@
 
                     if (response.ok) {
                         this.items = this.items.filter(i => i.id !== item.id);
+                        if (this.currentPage > this.totalPages) {
+                            this.currentPage = this.totalPages || 1;
+                        }
                         this.showToast(data.message || 'Berhasil dihapus permanen', 'success');
                     } else if (response.status === 422) {
                         this.showToast(data.message || 'Jabatan ini masih terikat dengan guru.', 'error');
