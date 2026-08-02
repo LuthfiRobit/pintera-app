@@ -72,14 +72,16 @@ it('creates a semester under a tahun ajaran', function () {
 
     $this->post(route('admin.semester.store'), [
         'tahun_ajaran_id' => $tahunAjaran->id,
-        'nama' => 'Ganjil',
-        'urutan' => 1,
-        'kode_dapodik' => '20261',
-        'tanggal_mulai' => '2026-07-01',
-        'tanggal_selesai' => '2027-01-15',
+        'ganjil_kode_dapodik' => '20261',
+        'ganjil_tanggal_mulai' => '2026-07-01',
+        'ganjil_tanggal_selesai' => '2026-12-31',
+        'genap_kode_dapodik' => '20262',
+        'genap_tanggal_mulai' => '2027-01-01',
+        'genap_tanggal_selesai' => '2027-06-30',
     ])->assertRedirect(route('admin.tahun-ajaran.index'));
 
     expect(Semester::where('tahun_ajaran_id', $tahunAjaran->id)->where('nama', 'Ganjil')->exists())->toBeTrue();
+    expect(Semester::where('tahun_ajaran_id', $tahunAjaran->id)->where('nama', 'Genap')->exists())->toBeTrue();
 });
 
 it('rejects creating a semester under a tahun_ajaran belonging to a different lembaga', function () {
@@ -96,11 +98,12 @@ it('rejects creating a semester under a tahun_ajaran belonging to a different le
 
     $this->post(route('admin.semester.store'), [
         'tahun_ajaran_id' => $tahunAjaranLain->id,
-        'nama' => 'Ganjil',
-        'urutan' => 1,
-        'kode_dapodik' => '20261',
-        'tanggal_mulai' => '2026-07-01',
-        'tanggal_selesai' => '2027-01-15',
+        'ganjil_kode_dapodik' => '20261',
+        'ganjil_tanggal_mulai' => '2026-07-01',
+        'ganjil_tanggal_selesai' => '2026-12-31',
+        'genap_kode_dapodik' => '20262',
+        'genap_tanggal_mulai' => '2027-01-01',
+        'genap_tanggal_selesai' => '2027-06-30',
     ])->assertNotFound();
 
     expect(Semester::where('tahun_ajaran_id', $tahunAjaranLain->id)->exists())->toBeFalse();

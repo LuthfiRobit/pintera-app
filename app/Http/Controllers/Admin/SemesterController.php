@@ -28,7 +28,7 @@ class SemesterController extends BaseController
             'genap_tanggal_selesai' => ['required', 'date', 'after:genap_tanggal_mulai'],
         ]);
 
-        $tahunAjaran = TahunAjaran::withoutGlobalScopes()->findOrFail($data['tahun_ajaran_id']);
+        $tahunAjaran = TahunAjaran::findOrFail($data['tahun_ajaran_id']);
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($data, $tahunAjaran) {
             Semester::updateOrCreate(
