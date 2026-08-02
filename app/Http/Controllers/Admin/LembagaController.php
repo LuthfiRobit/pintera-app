@@ -67,7 +67,13 @@ class LembagaController extends BaseController
         $this->authorize('lembaga.edit');
         $this->authorizeOwnLembaga($request, $lembaga);
 
-        return view('admin.lembaga.edit', ['lembaga' => $lembaga]);
+        $lembaga->load(['dataPeriodik.semester.tahunAjaran', 'ekstrakurikuler', 'layananKhusus', 'programInklusi', 'yayasan']);
+        $semesters = \App\Models\Semester::with('tahunAjaran')->where('lembaga_id', $lembaga->id)->orderByDesc('tahun_ajaran_id')->orderBy('urutan')->get();
+
+        return view('admin.lembaga.edit', [
+            'lembaga' => $lembaga,
+            'semesters' => $semesters,
+        ]);
     }
 
     public function update(Request $request, Lembaga $lembaga): RedirectResponse

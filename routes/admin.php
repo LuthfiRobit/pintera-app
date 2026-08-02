@@ -16,6 +16,10 @@ use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\KenaikanKelasController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
+use App\Http\Controllers\Admin\Lembaga\DataPeriodikController as LembagaDataPeriodikController;
+use App\Http\Controllers\Admin\Lembaga\EkstrakurikulerController as LembagaEkstrakurikulerController;
+use App\Http\Controllers\Admin\Lembaga\LayananKhususController as LembagaLayananKhususController;
+use App\Http\Controllers\Admin\Lembaga\ProgramInklusiController as LembagaProgramInklusiController;
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\MataPelajaranController;
 use App\Http\Controllers\Admin\PembayaranController;
@@ -43,6 +47,23 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('users', UserController::class)->except(['show', 'destroy']);
     Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::resource('lembaga', LembagaController::class)->except(['show', 'destroy']);
+    Route::prefix('lembaga/{lembaga}')->name('lembaga.')->group(function () {
+        Route::post('data-periodik', [LembagaDataPeriodikController::class, 'store'])->name('data-periodik.store');
+        Route::put('data-periodik/{dataPeriodik}', [LembagaDataPeriodikController::class, 'update'])->name('data-periodik.update');
+        Route::delete('data-periodik/{dataPeriodik}', [LembagaDataPeriodikController::class, 'destroy'])->name('data-periodik.destroy');
+
+        Route::post('ekstrakurikuler', [LembagaEkstrakurikulerController::class, 'store'])->name('ekstrakurikuler.store');
+        Route::put('ekstrakurikuler/{ekstrakurikuler}', [LembagaEkstrakurikulerController::class, 'update'])->name('ekstrakurikuler.update');
+        Route::delete('ekstrakurikuler/{ekstrakurikuler}', [LembagaEkstrakurikulerController::class, 'destroy'])->name('ekstrakurikuler.destroy');
+
+        Route::post('layanan-khusus', [LembagaLayananKhususController::class, 'store'])->name('layanan-khusus.store');
+        Route::put('layanan-khusus/{layananKhusus}', [LembagaLayananKhususController::class, 'update'])->name('layanan-khusus.update');
+        Route::delete('layanan-khusus/{layananKhusus}', [LembagaLayananKhususController::class, 'destroy'])->name('layanan-khusus.destroy');
+
+        Route::post('program-inklusi', [LembagaProgramInklusiController::class, 'store'])->name('program-inklusi.store');
+        Route::put('program-inklusi/{programInklusi}', [LembagaProgramInklusiController::class, 'update'])->name('program-inklusi.update');
+        Route::delete('program-inklusi/{programInklusi}', [LembagaProgramInklusiController::class, 'destroy'])->name('program-inklusi.destroy');
+    });
     Route::resource('guru', GuruController::class)->except(['show', 'destroy']);
     Route::patch('guru/{guru}/status', [GuruController::class, 'updateStatus'])->name('guru.update-status');
 
