@@ -61,48 +61,71 @@
             </div>
         </div>
 
-        {{-- Table Card with Tabs, Per Page & Search Toolbar --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div class="flex flex-col gap-3 border-b border-gray-200 px-5 py-3.5 lg:flex-row lg:items-center lg:justify-between">
-                <div class="flex items-center overflow-x-auto scrollbar-none gap-2 pb-1 lg:pb-0">
-                    <button @click="activeFilter = 'semua'; currentPage = 1" type="button" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
-                        <span>Semua</span>
-                        <span :class="activeFilter === 'semua' ? 'bg-brand-100 text-brand-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="items.length"></span>
+        {{-- Filter Card (Mobile-first responsive architecture matching Guru/Kelas standards) --}}
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                    Filter & Aksi Data
+                </p>
+                @can('jabatan-tambahan-master.create')
+                <x-tooltip text="Tambah referensi jabatan struktural atau fungsional baru">
+                    <button @click="openModal(false)" type="button" class="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 sm:w-auto">
+                        <span class="text-base leading-none">+</span> Tambah Jabatan
                     </button>
-                    <button @click="activeFilter = 'struktural'; currentPage = 1" type="button" :class="activeFilter === 'struktural' ? 'bg-indigo-50 font-semibold text-indigo-700 border-indigo-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
-                        <span>Struktural</span>
-                        <span :class="activeFilter === 'struktural' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countStruktural"></span>
-                    </button>
-                    <button @click="activeFilter = 'fungsional'; currentPage = 1" type="button" :class="activeFilter === 'fungsional' ? 'bg-amber-50 font-semibold text-amber-700 border-amber-200' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-gray-200'" class="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
-                        <span>Fungsional</span>
-                        <span :class="activeFilter === 'fungsional' ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countFungsional"></span>
-                    </button>
+                </x-tooltip>
+                @endcan
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-end">
+                {{-- Search Input (Mobile: 100%, Desktop: 5 cols) --}}
+                <div class="lg:col-span-5">
+                    <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Jabatan</label>
+                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                        <input x-model="searchQuery" @input="currentPage = 1" type="text" placeholder="Cari berdasarkan nama jabatan..." class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
+                    </div>
                 </div>
 
-                <div class="flex flex-wrap items-center justify-between gap-3 sm:justify-end">
-                    <div class="flex items-center gap-2 text-xs text-gray-500">
-                        <span class="shrink-0">Tampilkan</span>
-                        <select x-model.number="perPage" @change="currentPage = 1" class="rounded-lg border-gray-200 bg-gray-50 py-1 pl-2.5 pr-7 text-xs font-semibold text-gray-700 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="5">5</option>
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                        </select>
-                        <span class="shrink-0">per halaman</span>
-                    </div>
-
-                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 w-full sm:w-52">
-                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
-                        <input x-model="searchQuery" @input="currentPage = 1" type="text" placeholder="Cari nama jabatan..." class="w-full border-0 bg-transparent p-0 text-xs text-gray-900 placeholder:text-gray-400 focus:ring-0">
-                    </div>
-
-                    @can('jabatan-tambahan-master.create')
-                    <x-tooltip text="Tambah referensi jabatan struktural atau fungsional baru">
-                        <button @click="openModal(false)" type="button" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 whitespace-nowrap">
-                            <span class="text-sm leading-none">+</span> Tambah Jabatan
+                {{-- Kelompok Filter Tabs (Mobile: flex wrap/scroll, Desktop: 7 cols) --}}
+                <div class="lg:col-span-7">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Kelompok Jabatan</label>
+                    <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                        <button @click="activeFilter = 'semua'; currentPage = 1" type="button" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-4 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-2">
+                            <span>Semua</span>
+                            <span :class="activeFilter === 'semua' ? 'bg-brand-100/80 text-brand-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="items.length"></span>
                         </button>
-                    </x-tooltip>
-                    @endcan
+                        <button @click="activeFilter = 'struktural'; currentPage = 1" type="button" :class="activeFilter === 'struktural' ? 'bg-indigo-50 font-semibold text-indigo-700 border-indigo-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-4 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-2">
+                            <span>Struktural</span>
+                            <span :class="activeFilter === 'struktural' ? 'bg-indigo-100/80 text-indigo-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countStruktural"></span>
+                        </button>
+                        <button @click="activeFilter = 'fungsional'; currentPage = 1" type="button" :class="activeFilter === 'fungsional' ? 'bg-amber-50 font-semibold text-amber-700 border-amber-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-4 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-2">
+                            <span>Fungsional</span>
+                            <span :class="activeFilter === 'fungsional' ? 'bg-amber-100/80 text-amber-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countFungsional"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Table Card --}}
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
+            {{-- Clean, Uncluttered Table Header --}}
+            <div class="flex flex-col gap-2.5 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-2.5">
+                    <p class="font-display text-sm font-bold text-gray-900">Daftar Jabatan Tambahan</p>
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600" x-text="totalFiltered + ' Data'"></span>
+                </div>
+
+                <div class="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+                    <span class="shrink-0">Tampilkan</span>
+                    <select x-model.number="perPage" @change="currentPage = 1" class="rounded-lg border-gray-200 bg-gray-50 py-1 pl-2.5 pr-8 text-xs font-semibold text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                    </select>
+                    <span class="shrink-0">per halaman</span>
                 </div>
             </div>
 
@@ -168,7 +191,7 @@
                     </span>
 
                     <div class="flex items-center gap-1.5" x-show="totalPages > 1">
-                        <button @click="currentPage = Math.max(1, currentPage - 1)" type="button" :disabled="currentPage === 1" :class="currentPage === 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 transition hover:bg-gray-50'" class="flex h-8 w-8 items-center justify-center rounded-lg border bg-white">
+                        <button @click="currentPage = Math.max(1, currentPage - 1)" type="button" :disabled="currentPage === 1" :class="currentPage === 1 ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-500 transition hover:bg-gray-50'" class="flex h-8 w-8 items-center justify-center rounded-lg border bg-white">
                             <x-icon name="expand_more" class="h-3.5 w-3.5 rotate-90" />
                         </button>
 
@@ -176,7 +199,7 @@
                             <button @click="currentPage = page" type="button" :class="currentPage === page ? 'bg-brand-500 font-semibold text-white border-transparent' : 'border-gray-200 text-gray-600 transition hover:bg-gray-50 bg-white'" class="flex h-8 w-8 items-center justify-center rounded-lg border text-xs" x-text="page"></button>
                         </template>
 
-                        <button @click="currentPage = Math.min(totalPages, currentPage + 1)" type="button" :disabled="currentPage === totalPages" :class="currentPage === totalPages ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 transition hover:bg-gray-50'" class="flex h-8 w-8 items-center justify-center rounded-lg border bg-white">
+                        <button @click="currentPage = Math.min(totalPages, currentPage + 1)" type="button" :disabled="currentPage === totalPages" :class="currentPage === totalPages ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-500 transition hover:bg-gray-50'" class="flex h-8 w-8 items-center justify-center rounded-lg border bg-white">
                             <x-icon name="expand_more" class="h-3.5 w-3.5 -rotate-90" />
                         </button>
                     </div>
