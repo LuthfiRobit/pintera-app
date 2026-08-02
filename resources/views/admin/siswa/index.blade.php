@@ -28,23 +28,24 @@
                 </p>
                 <div class="flex flex-wrap items-center gap-2">
                     @if (($siswaTanpaAkunCount ?? 0) > 0 && auth()->user()->can('siswa.edit'))
-                        <form
-                            method="POST"
-                            action="{{ route('admin.siswa.generate-akun-massal') }}"
-                            x-data
-                            @submit.prevent="confirmDialog('Generate Akun Massal?', 'Bangkitkan akun login baru secara massal untuk {{ $siswaTanpaAkunCount }} siswa aktif yang belum memiliki akun?', { confirmLabel: 'Ya, Generate Massal' }).then(confirmed => { if (confirmed) $el.submit() })"
-                            class="inline-block"
-                        >
-                            @csrf
-                            <button
-                                type="submit"
-                                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-2xs transition hover:bg-gray-50 active:scale-[0.98] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-                                title="Terdapat {{ $siswaTanpaAkunCount }} siswa aktif tanpa akun login. Klik untuk membangkitkan username login baru dan password default (berdasarkan NIS) secara massal."
+                        <x-tooltip text="Terdapat {{ $siswaTanpaAkunCount }} siswa aktif tanpa akun login. Klik untuk membangkitkan username login baru dan password default (berdasarkan NIS) secara massal.">
+                            <form
+                                method="POST"
+                                action="{{ route('admin.siswa.generate-akun-massal') }}"
+                                x-data
+                                @submit.prevent="confirmDialog('Generate Akun Massal?', 'Bangkitkan akun login baru secara massal untuk {{ $siswaTanpaAkunCount }} siswa aktif yang belum memiliki akun?', { confirmLabel: 'Ya, Generate Massal' }).then(confirmed => { if (confirmed) $el.submit() })"
+                                class="inline-block"
                             >
-                                <x-icon name="person_add" class="h-4 w-4 text-brand-600 dark:text-brand-400" />
-                                <span>Generate Akun Massal ({{ $siswaTanpaAkunCount }})</span>
-                            </button>
-                        </form>
+                                @csrf
+                                <button
+                                    type="submit"
+                                    class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition active:scale-[0.98] hover:bg-gray-50"
+                                >
+                                    <x-icon name="person_add" class="h-4 w-4" />
+                                    <span>Generate Akun Massal ({{ $siswaTanpaAkunCount }})</span>
+                                </button>
+                            </form>
+                        </x-tooltip>
                     @endif
                     @can('siswa.spmb-daftar')
                         <x-link-button variant="ghost" href="{{ route('admin.siswa.spmb-daftar.index') }}">
