@@ -3,7 +3,9 @@
 namespace App\Imports;
 
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Siswa;
+use App\Services\AkunSiswaGenerator;
 use Illuminate\Support\Collection;
 
 class SiswaImportRow
@@ -96,7 +98,15 @@ class SiswaImportRow
                     $seenNisn[$result['data']['nisn']] = true;
                 }
 
-                $valid[] = $result['data'];
+                $rowValid = $result['data'];
+                $lembaga = Lembaga::withoutGlobalScopes()->find($lembagaId);
+                if ($lembaga) {
+                    $generator = app(AkunSiswaGenerator::class);
+                    $rowValid['predicted_username'] = $generator->usernameUntuk($lembaga, $rowValid['nis']);
+                    $rowValid['predicted_password'] = $rowValid['nis'];
+                }
+
+                $valid[] = $rowValid;
             } else {
                 $invalid[] = [...$result['data'], 'error' => $result['error']];
             }

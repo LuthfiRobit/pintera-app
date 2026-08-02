@@ -36,6 +36,16 @@
                 (harus persis sama dengan nama Kelas yang sudah ada).
             </p>
 
+            <div class="mt-4 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4 text-sm text-emerald-900">
+                <p class="flex items-center gap-2 font-semibold">
+                    <x-icon name="check_circle" class="h-4 w-4 text-emerald-600" />
+                    Otomatisasi Akun Login Siswa
+                </p>
+                <p class="mt-1 text-xs text-emerald-700">
+                    Saat proses import dikonfirmasi, sistem akan secara otomatis menduplikasi dan membuatkan akun login baru untuk setiap siswa dengan format username <code class="rounded bg-white/80 px-1.5 py-0.5 font-mono font-bold text-emerald-800">[Kode_Lembaga]-[NIS]</code> dan password default sesuai nomor <code class="rounded bg-white/80 px-1.5 py-0.5 font-mono font-bold text-emerald-800">[NIS]</code>.
+                </p>
+            </div>
+
             <form method="POST" action="{{ route('admin.siswa.import.preview') }}" enctype="multipart/form-data" class="mt-4 space-y-4">
                 @csrf
                 <div>

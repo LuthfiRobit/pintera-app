@@ -15,9 +15,25 @@
             </div>
             <ul class="divide-y divide-gray-100">
                 @forelse ($validRows as $row)
-                    <li class="px-5 py-3 text-sm text-gray-700">
-                        <span class="font-semibold text-gray-900">{{ $row['nama_lengkap'] }}</span>
-                        <span class="text-gray-500">&middot; NIS {{ $row['nis'] }}</span>
+                    <li class="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 text-sm transition hover:bg-gray-50/60">
+                        <div>
+                            <span class="font-bold text-gray-900">{{ $row['nama_lengkap'] }}</span>
+                            <span class="text-gray-500">&middot; NIS <strong class="font-mono text-gray-700">{{ $row['nis'] }}</strong></span>
+                            @if (!empty($row['nisn']))
+                                <span class="text-gray-400">&middot; NISN <strong class="font-mono text-gray-600">{{ $row['nisn'] }}</strong></span>
+                            @endif
+                            @if (!empty($row['kelas_nama']))
+                                <span class="ml-2 rounded-md bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">Kelas {{ $row['kelas_nama'] }}</span>
+                            @endif
+                        </div>
+                        @if (!empty($row['predicted_username']))
+                            <div class="flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/50 px-3 py-1.5 text-xs font-medium text-brand-900 shadow-2xs">
+                                <x-icon name="person" class="h-4 w-4 text-brand-600" />
+                                <span>Akun: <strong class="font-mono font-semibold">{{ $row['predicted_username'] }}</strong></span>
+                                <span class="text-gray-300">|</span>
+                                <span>Password Default: <strong class="font-mono font-semibold">{{ $row['predicted_password'] }}</strong></span>
+                            </div>
+                        @endif
                     </li>
                 @empty
                     <li class="px-5 py-4 text-sm text-gray-500">Tidak ada baris valid.</li>
