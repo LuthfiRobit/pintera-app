@@ -3,6 +3,9 @@
 use App\Http\Controllers\Admin\DokumenSyaratController;
 use App\Http\Controllers\Admin\FormulirFieldController;
 use App\Http\Controllers\Admin\GelombangPpdbController;
+use App\Http\Controllers\Admin\Guru\JabatanTambahanController as GuruJabatanTambahanController;
+use App\Http\Controllers\Admin\Guru\RiwayatPendidikanController as GuruRiwayatPendidikanController;
+use App\Http\Controllers\Admin\Guru\SertifikasiController as GuruSertifikasiController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JalurPpdbController;
@@ -42,6 +45,17 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('lembaga', LembagaController::class)->except(['show', 'destroy']);
     Route::resource('guru', GuruController::class)->except(['show', 'destroy']);
     Route::patch('guru/{guru}/status', [GuruController::class, 'updateStatus'])->name('guru.update-status');
+
+    Route::post('guru/{guru}/riwayat-pendidikan', [GuruRiwayatPendidikanController::class, 'store'])->name('guru.riwayat-pendidikan.store');
+    Route::put('guru/{guru}/riwayat-pendidikan/{riwayatPendidikan}', [GuruRiwayatPendidikanController::class, 'update'])->name('guru.riwayat-pendidikan.update');
+    Route::delete('guru/{guru}/riwayat-pendidikan/{riwayatPendidikan}', [GuruRiwayatPendidikanController::class, 'destroy'])->name('guru.riwayat-pendidikan.destroy');
+
+    Route::post('guru/{guru}/sertifikasi', [GuruSertifikasiController::class, 'store'])->name('guru.sertifikasi.store');
+    Route::put('guru/{guru}/sertifikasi/{sertifikasi}', [GuruSertifikasiController::class, 'update'])->name('guru.sertifikasi.update');
+    Route::delete('guru/{guru}/sertifikasi/{sertifikasi}', [GuruSertifikasiController::class, 'destroy'])->name('guru.sertifikasi.destroy');
+
+    Route::post('guru/{guru}/jabatan-tambahan', [GuruJabatanTambahanController::class, 'store'])->name('guru.jabatan-tambahan.store');
+    Route::delete('guru/{guru}/jabatan-tambahan/{jabatanMasterId}', [GuruJabatanTambahanController::class, 'destroy'])->name('guru.jabatan-tambahan.destroy');
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);

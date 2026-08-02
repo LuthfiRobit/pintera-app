@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Guru;
+use App\Models\JabatanTambahanMaster;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -103,8 +104,16 @@ class GuruController extends BaseController
     {
         $this->authorize('guru.edit');
 
+        $guru->load([
+            'user',
+            'riwayatPendidikan' => fn ($query) => $query->orderBy('tahun_lulus', 'desc'),
+            'sertifikasi' => fn ($query) => $query->orderBy('tahun_sertifikasi', 'desc'),
+            'jabatanTambahan',
+        ]);
+
         return view('admin.guru.edit', [
             'guru' => $guru,
+            'jabatanTambahanMasterList' => JabatanTambahanMaster::orderBy('nama')->get(),
             ...$this->formOptions(),
         ]);
     }
