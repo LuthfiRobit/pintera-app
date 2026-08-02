@@ -110,3 +110,59 @@ it('updates a mata pelajaran including status and no_urut', function () {
     expect($fresh->kelompok)->toBe(KelompokMataPelajaran::Pilihan);
     expect($fresh->status)->toBe(StatusMataPelajaran::Nonaktif);
 });
+
+it('calculates executive KPI statistics accurately in index view', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsMataPelajaranManager($lembaga);
+
+    MataPelajaran::create([
+        'lembaga_id' => $lembaga->id,
+        'kode' => 'SD-01',
+        'nama' => 'Matematika SD',
+        'no_urut' => 1,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
+    MataPelajaran::create([
+        'lembaga_id' => $lembaga->id,
+        'kode' => 'PAUD-01',
+        'nama' => 'Motorik Halus',
+        'no_urut' => 2,
+        'tipe' => TipeMataPelajaran::AspekPerkembangan->value,
+        'kelompok' => null,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'));
+    $response->assertOk();
+    $response->assertViewHas('totalMapel', 2);
+    $response->assertViewHas('countKurikulum', 1);
+    $response->assertViewHas('countAspek', 1);
+});
+
+it('returns only table partial view when requested via AJAX XMLHttpRequest', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsMataPelajaranManager($lembaga);
+
+    MataPelajaran::create([
+        'lembaga_id' => $lembaga->id,
+        'kode' => 'AJAX-01',
+        'nama' => 'Mapel AJAX',
+        'no_urut' => 1,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.mata-pelajaran.index', ['search' => 'AJAX']), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
+
+    $response->assertOk();
+    $response->assertViewIs('admin.mata-pelajaran._daftar');
+    $response->assertSee('Mapel AJAX');
+});
+

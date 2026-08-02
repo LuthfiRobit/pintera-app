@@ -21,7 +21,7 @@ class MataPelajaranController extends BaseController
     {
         $this->authorize('mata-pelajaran.view');
 
-        $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
         $query = MataPelajaran::orderBy('no_urut')->orderBy('nama');
 
@@ -44,12 +44,24 @@ class MataPelajaranController extends BaseController
             $query->where('status', $status);
         }
 
+        $paginated = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.mata-pelajaran._daftar', [
+                'mataPelajaranList' => $paginated,
+                'perPage'           => $perPage,
+            ]);
+        }
+
         return view('admin.mata-pelajaran.index', [
-            'mataPelajaranList' => $query->paginate($perPage)->withQueryString(),
+            'mataPelajaranList' => $paginated,
             'tipeList'          => TipeMataPelajaran::cases(),
             'kelompokList'      => KelompokMataPelajaran::cases(),
             'statusList'        => StatusMataPelajaran::cases(),
             'perPage'           => $perPage,
+            'totalMapel'        => MataPelajaran::count(),
+            'countKurikulum'    => MataPelajaran::where('tipe', TipeMataPelajaran::Mapel->value)->count(),
+            'countAspek'        => MataPelajaran::where('tipe', TipeMataPelajaran::AspekPerkembangan->value)->count(),
         ]);
     }
 
