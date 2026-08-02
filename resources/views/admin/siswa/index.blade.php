@@ -19,6 +19,29 @@
             </p>
         </div>
 
+        @if (($siswaTanpaAkunCount ?? 0) > 0 && auth()->user()->can('siswa.edit'))
+            <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/80 p-4.5 shadow-xs dark:border-amber-900/50 dark:bg-amber-950/40">
+                <div class="flex items-center gap-3.5">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold shadow-2xs">⚡</div>
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">Terdapat {{ $siswaTanpaAkunCount }} Siswa Aktif Tanpa Akun Login</h3>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Anda dapat membangkitkan username login baru dan password default (berdasarkan NIS) secara massal hanya dengan satu klik.</p>
+                    </div>
+                </div>
+                <form
+                    method="POST"
+                    action="{{ route('admin.siswa.generate-akun-massal') }}"
+                    x-data
+                    @submit.prevent="confirmDialog('Generate Akun Massal?', 'Bangkitkan akun login baru secara massal untuk {{ $siswaTanpaAkunCount }} siswa aktif yang belum memiliki akun?', { confirmLabel: '⚡ Ya, Generate Massal' }).then(confirmed => { if (confirmed) $el.submit() })"
+                >
+                    @csrf
+                    <button type="submit" class="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none active:scale-[0.98]">
+                        ⚡ Generate Akun Massal ({{ $siswaTanpaAkunCount }})
+                    </button>
+                </form>
+            </div>
+        @endif
+
         {{-- Filter Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -171,6 +194,19 @@
                                                 <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
                                                     <x-icon name="autorenew" class="h-4 w-4 text-gray-500" />
                                                     Reset Password ke NIS
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form
+                                                method="POST"
+                                                action="{{ route('admin.siswa.generate-akun', $siswa) }}"
+                                                x-data
+                                                @submit.prevent="confirmDialog('Buat Akun Login?', @js('Buat akun login untuk siswa \"' . $siswa->nama_lengkap . '\" dengan username berdasarkan NIS (' . $siswa->nis . ')?'), { confirmLabel: 'Ya, Buat Akun' }).then(confirmed => { if (confirmed) $el.submit() })"
+                                            >
+                                                @csrf
+                                                <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-brand-700 font-semibold transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                                    <x-icon name="person_add" class="h-4 w-4 text-brand-600" />
+                                                    Buat Akun Login
                                                 </button>
                                             </form>
                                         @endif

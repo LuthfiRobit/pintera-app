@@ -58,6 +58,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::delete('guru/{guru}/jabatan-tambahan/{jabatanMasterId}', [GuruJabatanTambahanController::class, 'destroy'])->name('guru.jabatan-tambahan.destroy');
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
+    Route::post('siswa/generate-akun-massal', [SiswaController::class, 'generateAkunMassal'])->name('siswa.generate-akun-massal');
+    Route::post('siswa/{siswa}/generate-akun', [SiswaController::class, 'generateAkun'])->name('siswa.generate-akun');
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
     Route::patch('siswa/{siswa}/status', [SiswaController::class, 'updateStatus'])->name('siswa.update-status');
     Route::patch('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');

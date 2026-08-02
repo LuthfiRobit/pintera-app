@@ -57,11 +57,14 @@ class SiswaController extends BaseController
             ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
             : collect();
 
+        $siswaTanpaAkunCount = Siswa::where('status', StatusSiswa::Aktif->value)->whereNull('user_id')->count();
+
         return view('admin.siswa.index', [
             'siswaList' => $query->paginate($perPage)->withQueryString(),
             'kelasList' => $kelasList,
             'statusList' => StatusSiswa::cases(),
             'perPage' => $perPage,
+            'siswaTanpaAkunCount' => $siswaTanpaAkunCount,
         ]);
     }
 
@@ -176,6 +179,53 @@ class SiswaController extends BaseController
         ]);
 
         return redirect()->route('admin.siswa.index')->with('status', 'Password siswa berhasil direset ke NIS. Siswa wajib mengganti password saat login berikutnya.');
+    }
+
+    public function generateAkunMassal(Request $request): RedirectResponse
+    {
+        $this->authorize('siswa.edit');
+
+        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+
+        if ($lembagaId === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif terlebih dahulu.']);
+        }
+
+        $lembaga = Lembaga::withoutGlobalScopes()->findOrFail($lembagaId);
+        $siswaWithoutAccount = Siswa::where('status', StatusSiswa::Aktif->value)
+            ->whereNull('user_id')
+            ->get();
+
+        if ($siswaWithoutAccount->isEmpty()) {
+            return back()->with('status', 'Semua siswa aktif sudah memiliki akun login.');
+        }
+
+        DB::transaction(function () use ($siswaWithoutAccount, $lembaga) {
+            $generator = app(AkunSiswaGenerator::class);
+            foreach ($siswaWithoutAccount as $siswa) {
+                $user = $generator->buat($siswa->nama_lengkap, $siswa->nis, $lembaga);
+                $siswa->update(['user_id' => $user->id]);
+            }
+        });
+
+        return back()->with('status', count($siswaWithoutAccount).' akun login baru berhasil dibangkitkan secara massal.');
+    }
+
+    public function generateAkun(Request $request, Siswa $siswa): RedirectResponse
+    {
+        $this->authorize('siswa.edit');
+
+        if ($siswa->user_id !== null) {
+            return back()->withErrors(['user' => 'Siswa ini sudah memiliki akun login.']);
+        }
+
+        DB::transaction(function () use ($siswa) {
+            $generator = app(AkunSiswaGenerator::class);
+            $user = $generator->buat($siswa->nama_lengkap, $siswa->nis, $siswa->lembaga);
+            $siswa->update(['user_id' => $user->id]);
+        });
+
+        return back()->with('status', "Akun login untuk {$siswa->nama_lengkap} berhasil dibuat (Username: {$siswa->refresh()->user->username}).");
     }
 
     private function validateSiswa(Request $request, ?Siswa $current = null): array
