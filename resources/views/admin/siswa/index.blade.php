@@ -19,29 +19,6 @@
             </p>
         </div>
 
-        @if (($siswaTanpaAkunCount ?? 0) > 0 && auth()->user()->can('siswa.edit'))
-            <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50/80 p-4.5 shadow-xs dark:border-amber-900/50 dark:bg-amber-950/40">
-                <div class="flex items-center gap-3.5">
-                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 font-bold shadow-2xs">⚡</div>
-                    <div>
-                        <h3 class="text-sm font-bold text-gray-900 dark:text-white">Terdapat {{ $siswaTanpaAkunCount }} Siswa Aktif Tanpa Akun Login</h3>
-                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-0.5">Anda dapat membangkitkan username login baru dan password default (berdasarkan NIS) secara massal hanya dengan satu klik.</p>
-                    </div>
-                </div>
-                <form
-                    method="POST"
-                    action="{{ route('admin.siswa.generate-akun-massal') }}"
-                    x-data
-                    @submit.prevent="confirmDialog('Generate Akun Massal?', 'Bangkitkan akun login baru secara massal untuk {{ $siswaTanpaAkunCount }} siswa aktif yang belum memiliki akun?', { confirmLabel: '⚡ Ya, Generate Massal' }).then(confirmed => { if (confirmed) $el.submit() })"
-                >
-                    @csrf
-                    <button type="submit" class="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-amber-600 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-amber-700 focus:outline-none active:scale-[0.98]">
-                        ⚡ Generate Akun Massal ({{ $siswaTanpaAkunCount }})
-                    </button>
-                </form>
-            </div>
-        @endif
-
         {{-- Filter Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -50,6 +27,25 @@
                     Filter Data
                 </p>
                 <div class="flex flex-wrap items-center gap-2">
+                    @if (($siswaTanpaAkunCount ?? 0) > 0 && auth()->user()->can('siswa.edit'))
+                        <form
+                            method="POST"
+                            action="{{ route('admin.siswa.generate-akun-massal') }}"
+                            x-data
+                            @submit.prevent="confirmDialog('Generate Akun Massal?', 'Bangkitkan akun login baru secara massal untuk {{ $siswaTanpaAkunCount }} siswa aktif yang belum memiliki akun?', { confirmLabel: 'Ya, Generate Massal' }).then(confirmed => { if (confirmed) $el.submit() })"
+                            class="inline-block"
+                        >
+                            @csrf
+                            <button
+                                type="submit"
+                                class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-2xs transition hover:bg-gray-50 active:scale-[0.98] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+                                title="Terdapat {{ $siswaTanpaAkunCount }} siswa aktif tanpa akun login. Klik untuk membangkitkan username login baru dan password default (berdasarkan NIS) secara massal."
+                            >
+                                <x-icon name="person_add" class="h-4 w-4 text-brand-600 dark:text-brand-400" />
+                                <span>Generate Akun Massal ({{ $siswaTanpaAkunCount }})</span>
+                            </button>
+                        </form>
+                    @endif
                     @can('siswa.spmb-daftar')
                         <x-link-button variant="ghost" href="{{ route('admin.siswa.spmb-daftar.index') }}">
                             <x-icon name="check_circle" class="h-4 w-4" /> Daftarkan dari SPMB
