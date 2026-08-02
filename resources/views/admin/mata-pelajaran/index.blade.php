@@ -19,11 +19,46 @@
             </p>
         </div>
 
-        {{-- KPI Compact Horizontal Statistic Cards --}}
+        {{-- KPI Compact Horizontal Statistic Cards (Samakan dengan Jabatan Tambahan) --}}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <x-stat-tile label="Total Mata Pelajaran" value="{{ $totalMapel ?? 0 }}" icon="menu_book" color="blue" class="p-4" />
-            <x-stat-tile label="Kurikulum Mapel (SD-SMK)" value="{{ $countKurikulum ?? 0 }}" icon="school" color="green" class="p-4" />
-            <x-stat-tile label="Aspek Perkembangan (PAUD/TK)" value="{{ $countAspek ?? 0 }}" icon="extension" color="amber" class="p-4" />
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <x-icon name="menu_book" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Mapel</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalMapel ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Semua Data</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <x-icon name="school" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Kurikulum Mapel</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $countKurikulum ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">SD - SMK</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                        <x-icon name="extension" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Aspek Perkembangan</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $countAspek ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">PAUD / TK</span>
+            </div>
         </div>
 
         {{-- Interactive Filter & AJAX Table Container --}}
@@ -39,36 +74,38 @@
             })"
         >
             {{-- Filter Card --}}
-            <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
-                <div class="mb-3 flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-3">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
-                        Filter Data
+                        Filter &amp; Aksi Data
                     </p>
+                    @can('mata-pelajaran.create')
                     <x-link-button href="{{ route('admin.mata-pelajaran.create') }}">
                         <span class="text-base leading-none">+</span> Tambah Mata Pelajaran
                     </x-link-button>
+                    @endcan
                 </div>
 
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
                     {{-- Search --}}
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-gray-500">Cari Kata Kunci</label>
-                        <div class="relative">
-                            <x-icon name="search" class="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Kata Kunci</label>
+                        <div class="flex h-[42px] items-center gap-2 rounded-[10px] border border-gray-200 bg-gray-50 px-3.5">
+                            <x-icon name="search" class="h-[14px] w-[14px] shrink-0 text-gray-400" />
                             <input
                                 type="text"
                                 x-model="search"
                                 @input.debounce.400ms="muatUlangDaftar()"
                                 placeholder="Nama atau Kode mapel..."
-                                class="w-full rounded-lg border-gray-200 py-1.5 pl-8 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-brand-500"
+                                class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
                             >
                         </div>
                     </div>
 
                     {{-- Filter Tipe --}}
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-gray-500">Tipe Kurikulum</label>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Tipe Kurikulum</label>
                         <select x-ref="tipeSelect" x-init="initFilterSelect($refs.tipeSelect, 'tipe')" class="w-full rounded-lg border-gray-200 text-sm text-gray-700">
                             <option value="">Semua Tipe</option>
                             @foreach ($tipeList as $item)
@@ -79,7 +116,7 @@
 
                     {{-- Filter Kelompok --}}
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-gray-500">Kelompok Mapel</label>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Kelompok Mapel</label>
                         <select x-ref="kelompokSelect" x-init="initFilterSelect($refs.kelompokSelect, 'kelompok')" class="w-full rounded-lg border-gray-200 text-sm text-gray-700">
                             <option value="">Semua Kelompok</option>
                             @foreach ($kelompokList as $item)
@@ -90,7 +127,7 @@
 
                     {{-- Filter Status --}}
                     <div>
-                        <label class="mb-1 block text-xs font-semibold text-gray-500">Status Keaktifan</label>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Status Keaktifan</label>
                         <select x-ref="statusSelect" x-init="initFilterSelect($refs.statusSelect, 'status')" class="w-full rounded-lg border-gray-200 text-sm text-gray-700">
                             <option value="">Semua Status</option>
                             @foreach ($statusList as $item)

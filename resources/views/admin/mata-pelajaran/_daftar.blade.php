@@ -21,7 +21,7 @@
         <table class="w-full border-collapse text-left text-sm">
             <thead>
                 <tr class="border-b border-gray-200 bg-gray-50/75 font-display text-xs font-bold uppercase tracking-wider text-gray-500">
-                    <th class="sticky left-0 z-10 bg-gray-50/75 px-5 py-3 text-center w-28">Aksi</th>
+                    <th class="sticky left-0 z-10 bg-gray-50/75 px-5 py-3 w-32">Aksi</th>
                     <th class="px-4 py-3 text-center w-20">No. Rapor</th>
                     <th class="px-4 py-3 w-32">Kode</th>
                     <th class="px-4 py-3">Nama Mata Pelajaran</th>
@@ -33,12 +33,15 @@
             <tbody class="divide-y divide-gray-100 font-normal">
                 @forelse ($mataPelajaranList as $mapel)
                     <tr class="transition-colors hover:bg-gray-50/60">
-                        <td class="sticky left-0 z-10 bg-white px-5 py-3.5 text-center group-hover:bg-gray-50/60">
-                            <div class="inline-flex items-center gap-1">
-                                <a href="{{ route('admin.mata-pelajaran.edit', $mapel) }}" class="inline-flex h-8 items-center justify-center rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-semibold text-gray-700 transition hover:bg-gray-50 hover:text-brand-600">
-                                    Edit
+                        <td class="sticky left-0 z-10 bg-white px-5 py-3">
+                            <x-table-actions>
+                                @can('mata-pelajaran.edit')
+                                <a href="{{ route('admin.mata-pelajaran.edit', $mapel) }}" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                    <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                    Edit Mata Pelajaran
                                 </a>
-                            </div>
+                                @endcan
+                            </x-table-actions>
                         </td>
                         <td class="px-4 py-3.5 text-center font-mono text-xs font-bold text-gray-600">
                             {{ $mapel->no_urut }}

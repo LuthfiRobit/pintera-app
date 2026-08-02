@@ -15,6 +15,7 @@ export function mataPelajaranFilter(config) {
                 maxItems: 1,
                 create: false,
                 allowEmptyOption: true,
+                controlInput: null,
                 onChange: (value) => {
                     this[fieldName] = value;
                     this.muatUlangDaftar();

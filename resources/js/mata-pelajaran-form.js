@@ -7,6 +7,7 @@ export function mataPelajaranForm() {
                 maxItems: 1,
                 create: false,
                 allowEmptyOption: true,
+                controlInput: null,
             });
         },
     };
