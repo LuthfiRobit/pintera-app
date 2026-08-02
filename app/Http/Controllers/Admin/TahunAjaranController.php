@@ -54,6 +54,21 @@ class TahunAjaranController extends BaseController
         return redirect()->route('admin.tahun-ajaran.index')->with('status', 'Tahun ajaran berhasil dibuat.');
     }
 
+    public function update(Request $request, TahunAjaran $tahunAjaran): RedirectResponse
+    {
+        $this->authorize('tahun-ajaran.create');
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:20'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
+        ]);
+
+        $tahunAjaran->update($data);
+
+        return redirect()->route('admin.tahun-ajaran.index')->with('status', 'Tahun ajaran berhasil diperbarui.');
+    }
+
     public function activate(TahunAjaran $tahunAjaran): RedirectResponse
     {
         $this->authorize('tahun-ajaran.activate');

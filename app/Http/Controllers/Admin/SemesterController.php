@@ -20,20 +20,41 @@ class SemesterController extends BaseController
 
         $data = $request->validate([
             'tahun_ajaran_id' => ['required', 'integer'],
-            'nama' => ['required', 'in:Ganjil,Genap'],
-            'urutan' => ['required', 'integer', 'in:1,2'],
-            'kode_dapodik' => ['nullable', 'string', 'max:5'],
-            'tanggal_mulai' => ['required', 'date'],
-            'tanggal_selesai' => ['required', 'date', 'after:tanggal_mulai'],
+            'ganjil_kode_dapodik' => ['nullable', 'string', 'max:5'],
+            'ganjil_tanggal_mulai' => ['required', 'date'],
+            'ganjil_tanggal_selesai' => ['required', 'date', 'after:ganjil_tanggal_mulai'],
+            'genap_kode_dapodik' => ['nullable', 'string', 'max:5'],
+            'genap_tanggal_mulai' => ['required', 'date', 'after:ganjil_tanggal_selesai'],
+            'genap_tanggal_selesai' => ['required', 'date', 'after:genap_tanggal_mulai'],
         ]);
 
-        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
-        abort_if($tahunAjaran === null, 404);
-        $data['tahun_ajaran_id'] = $tahunAjaran->id;
+        $tahunAjaran = TahunAjaran::withoutGlobalScopes()->findOrFail($data['tahun_ajaran_id']);
 
-        Semester::create($data);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $tahunAjaran) {
+            Semester::updateOrCreate(
+                ['tahun_ajaran_id' => $tahunAjaran->id, 'urutan' => 1],
+                [
+                    'lembaga_id' => $tahunAjaran->lembaga_id,
+                    'nama' => 'Ganjil',
+                    'kode_dapodik' => $data['ganjil_kode_dapodik'],
+                    'tanggal_mulai' => $data['ganjil_tanggal_mulai'],
+                    'tanggal_selesai' => $data['ganjil_tanggal_selesai'],
+                ]
+            );
 
-        return redirect()->route('admin.tahun-ajaran.index')->with('status', 'Semester berhasil dibuat.');
+            Semester::updateOrCreate(
+                ['tahun_ajaran_id' => $tahunAjaran->id, 'urutan' => 2],
+                [
+                    'lembaga_id' => $tahunAjaran->lembaga_id,
+                    'nama' => 'Genap',
+                    'kode_dapodik' => $data['genap_kode_dapodik'],
+                    'tanggal_mulai' => $data['genap_tanggal_mulai'],
+                    'tanggal_selesai' => $data['genap_tanggal_selesai'],
+                ]
+            );
+        });
+
+        return redirect()->route('admin.tahun-ajaran.index')->with('status', 'Konfigurasi semester Ganjil & Genap berhasil disimpan.');
     }
 
     public function activate(Semester $semester): RedirectResponse
