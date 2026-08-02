@@ -3,9 +3,9 @@
     $val = fn (string $field, $default = '') => old($field, $mataPelajaran?->$field instanceof \BackedEnum ? $mataPelajaran->$field->value : ($mataPelajaran?->$field ?? $default));
 @endphp
 
-<div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card" x-data="mataPelajaranForm()">
+<div class="rounded-2xl border border-gray-200 bg-white shadow-card" x-data="mataPelajaranForm()">
     {{-- Card Header --}}
-    <div class="border-b border-gray-100 bg-white px-6 py-4">
+    <div class="border-b border-gray-100 bg-white px-6 py-4 rounded-t-[15px]">
         <p class="flex items-center gap-2 font-display text-sm font-bold text-gray-900">
             <x-icon name="description" class="h-4 w-4 text-brand-500" />
             Identitas &amp; Klasifikasi Mata Pelajaran
