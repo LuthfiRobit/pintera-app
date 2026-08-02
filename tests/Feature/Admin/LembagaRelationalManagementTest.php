@@ -85,3 +85,16 @@ it('can manage data periodik with hash redirect', function () {
 
     expect(LembagaDataPeriodik::where('lembaga_id', $this->lembaga->id)->where('semester_id', $semester->id)->exists())->toBeTrue();
 });
+
+it('renders the 5-tab relational management portal cleanly without syntax errors', function () {
+    $this->actingAs($this->manager)
+        ->get(route('admin.lembaga.edit', $this->lembaga))
+        ->assertOk()
+        ->assertSee('Portal Kelembagaan &amp; Relasional', false)
+        ->assertSee('Profil &amp; Identitas', false)
+        ->assertSee('Data Periodik &amp; Fasilitas', false)
+        ->assertSee('Ekstrakurikuler')
+        ->assertSee('Layanan Khusus')
+        ->assertSee('Program Inklusi');
+});
+
