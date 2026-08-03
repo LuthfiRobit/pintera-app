@@ -64,7 +64,16 @@
                                             x-model="formAssign.selectedKelasIds"
                                             class="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
                                         >
-                                        <span class="truncate">{{ $kelasOpsi->nama }}</span>
+                                        <div class="flex flex-col overflow-hidden">
+                                            <span class="leading-tight truncate">{{ $kelasOpsi->nama }}</span>
+                                            @if ($kelasOpsi->pola_jam_id)
+                                                <span x-show="formAssign.polaId !== {{ $kelasOpsi->pola_jam_id }}" 
+                                                      class="mt-0.5 text-[10px] text-amber-700 font-semibold flex items-center gap-1 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80 w-fit max-w-full">
+                                                    <x-icon name="warning" class="h-3 w-3 text-amber-500 shrink-0" />
+                                                    <span class="truncate">Tertaut: {{ $kelasOpsi->polaJam->nama ?? 'Pola Lain' }}</span>
+                                                </span>
+                                            @endif
+                                        </div>
                                     </label>
                                 </div>
                             @endforeach

@@ -90,6 +90,17 @@
                         </div>
 
                         <div class="flex items-center gap-3">
+                            @can('pola-jam.create')
+                                <form action="{{ route('admin.pola-jam.duplicate', $pola) }}" method="POST" class="inline">
+                                    @csrf
+                                    <button type="submit"
+                                            class="rounded-lg border border-brand-200 bg-brand-50/50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100/70 hover:text-brand-800 transition flex items-center gap-1 shadow-2xs"
+                                            title="Salin / Duplikasi Pola Jam">
+                                        <x-icon name="content_copy" class="h-3.5 w-3.5" />
+                                        <span>Duplikat</span>
+                                    </button>
+                                </form>
+                            @endcan
                             @can('pola-jam.edit')
                                 <button type="button" @click="openEditPola({{ $pola->toJson() }}, '{{ route('admin.pola-jam.update', $pola) }}')" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition">
                                     Edit Nama
