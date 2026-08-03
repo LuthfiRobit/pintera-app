@@ -38,6 +38,8 @@
             </div>
         @endif
 
+        @include('admin.siswa._orang_tua', ['siswa' => $siswa])
+
         <form method="POST" action="{{ route('admin.siswa.update', $siswa) }}">
             @csrf
             @method('PUT')

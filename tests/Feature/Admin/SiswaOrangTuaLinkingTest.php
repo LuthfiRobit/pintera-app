@@ -7,6 +7,7 @@ use App\Models\OrangTua;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use Spatie\Permission\Models\Permission;
 
 function buatSiswaUntukTautan(): Siswa
 {
@@ -167,4 +168,19 @@ it('unlinks an orang tua from a siswa without deleting the orang tua profile or 
     expect($siswa->orangTua()->count())->toBe(0);
     expect(OrangTua::find($orangTua->id))->not->toBeNull();
     expect(User::find($orangTua->user_id))->not->toBeNull();
+});
+
+it('shows the linked orang tua list and a search box on the siswa edit page', function () {
+    $manager = actingAsSiswaOrangTuaManager();
+    Permission::firstOrCreate(['name' => 'siswa.edit', 'guard_name' => 'web']);
+    $manager->givePermissionTo('siswa.edit');
+    $siswa = buatSiswaUntukTautan();
+    $orangTua = OrangTua::factory()->create(['nama_lengkap' => 'Ibu Tertaut']);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.edit', $siswa));
+
+    $response->assertOk();
+    $response->assertSee('Orang Tua/Wali Tertaut');
+    $response->assertSee('Ibu Tertaut');
 });

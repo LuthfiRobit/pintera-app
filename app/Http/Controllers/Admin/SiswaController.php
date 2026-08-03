@@ -108,6 +108,8 @@ class SiswaController extends BaseController
     {
         $this->authorize('siswa.edit');
 
+        $siswa->load(['orangTua']);
+
         return view('admin.siswa.edit', [
             'siswa' => $siswa,
             'kelasList' => Kelas::orderBy('nama')->get(),
