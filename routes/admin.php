@@ -23,11 +23,11 @@ use App\Http\Controllers\Admin\Lembaga\LayananKhususController as LembagaLayanan
 use App\Http\Controllers\Admin\Lembaga\ProgramInklusiController as LembagaProgramInklusiController;
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\MataPelajaranController;
+use App\Http\Controllers\Admin\OrangTuaController;
 use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\PendaftaranSiswaController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
-use App\Http\Controllers\Admin\OrangTuaController;
 use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\RaporController;
 use App\Http\Controllers\Admin\RoleController;
@@ -35,11 +35,14 @@ use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
 use App\Http\Controllers\Admin\SiswaController;
 use App\Http\Controllers\Admin\SiswaImportController;
+use App\Http\Controllers\Admin\SiswaOrangTuaController;
 use App\Http\Controllers\Admin\SkPpdbController;
 use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TagihanController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Guru\AsesmenController;
+use App\Http\Controllers\Guru\SesiPembelajaranController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
@@ -88,6 +91,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('siswa/generate-akun-massal', [SiswaController::class, 'generateAkunMassal'])->name('siswa.generate-akun-massal');
     Route::post('siswa/{siswa}/generate-akun', [SiswaController::class, 'generateAkun'])->name('siswa.generate-akun');
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
+    Route::get('siswa/{siswa}/orang-tua/cari', [SiswaOrangTuaController::class, 'cari'])->name('siswa.orang-tua.cari');
+    Route::post('siswa/{siswa}/orang-tua', [SiswaOrangTuaController::class, 'store'])->name('siswa.orang-tua.store');
     Route::resource('orang-tua', OrangTuaController::class)->except(['show', 'destroy']);
     Route::patch('siswa/{siswa}/status', [SiswaController::class, 'updateStatus'])->name('siswa.update-status');
     Route::patch('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');
@@ -201,20 +206,20 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
-    Route::get('sesi', [\App\Http\Controllers\Guru\SesiPembelajaranController::class, 'index'])->name('sesi.index');
-    Route::get('sesi/{sesi}', [\App\Http\Controllers\Guru\SesiPembelajaranController::class, 'show'])->name('sesi.show');
-    Route::put('sesi/{sesi}', [\App\Http\Controllers\Guru\SesiPembelajaranController::class, 'update'])->name('sesi.update');
+    Route::get('sesi', [SesiPembelajaranController::class, 'index'])->name('sesi.index');
+    Route::get('sesi/{sesi}', [SesiPembelajaranController::class, 'show'])->name('sesi.show');
+    Route::put('sesi/{sesi}', [SesiPembelajaranController::class, 'update'])->name('sesi.update');
 
-    Route::get('asesmen', [\App\Http\Controllers\Guru\AsesmenController::class, 'index'])->name('asesmen.index');
-    Route::get('asesmen/create', [\App\Http\Controllers\Guru\AsesmenController::class, 'create'])->name('asesmen.create');
-    Route::post('asesmen', [\App\Http\Controllers\Guru\AsesmenController::class, 'store'])->name('asesmen.store');
-    Route::get('asesmen/{asesmen}', [\App\Http\Controllers\Guru\AsesmenController::class, 'show'])->name('asesmen.show');
-    Route::put('asesmen/{asesmen}/nilai', [\App\Http\Controllers\Guru\AsesmenController::class, 'updateNilai'])->name('asesmen.update-nilai');
+    Route::get('asesmen', [AsesmenController::class, 'index'])->name('asesmen.index');
+    Route::get('asesmen/create', [AsesmenController::class, 'create'])->name('asesmen.create');
+    Route::post('asesmen', [AsesmenController::class, 'store'])->name('asesmen.store');
+    Route::get('asesmen/{asesmen}', [AsesmenController::class, 'show'])->name('asesmen.show');
+    Route::put('asesmen/{asesmen}/nilai', [AsesmenController::class, 'updateNilai'])->name('asesmen.update-nilai');
 
-    Route::get('komponen-penilaian', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'index'])->name('komponen-penilaian.index');
-    Route::get('komponen-penilaian/create', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'create'])->name('komponen-penilaian.create');
-    Route::post('komponen-penilaian', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'store'])->name('komponen-penilaian.store');
-    Route::get('komponen-penilaian/{komponenPenilaian}/edit', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'edit'])->name('komponen-penilaian.edit');
-    Route::put('komponen-penilaian/{komponenPenilaian}', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'update'])->name('komponen-penilaian.update');
-    Route::delete('komponen-penilaian/{komponenPenilaian}', [\App\Http\Controllers\Guru\KomponenPenilaianController::class, 'destroy'])->name('komponen-penilaian.destroy');
+    Route::get('komponen-penilaian', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'index'])->name('komponen-penilaian.index');
+    Route::get('komponen-penilaian/create', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'create'])->name('komponen-penilaian.create');
+    Route::post('komponen-penilaian', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'store'])->name('komponen-penilaian.store');
+    Route::get('komponen-penilaian/{komponenPenilaian}/edit', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'edit'])->name('komponen-penilaian.edit');
+    Route::put('komponen-penilaian/{komponenPenilaian}', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'update'])->name('komponen-penilaian.update');
+    Route::delete('komponen-penilaian/{komponenPenilaian}', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'destroy'])->name('komponen-penilaian.destroy');
 });
