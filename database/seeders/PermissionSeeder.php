@@ -48,6 +48,7 @@ class PermissionSeeder extends Seeder
             'kelas.view', 'kelas.create', 'kelas.edit',
             'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
             'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
+            'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',
             'pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete',
             'jam-pelajaran.create', 'jam-pelajaran.edit', 'jam-pelajaran.delete',
             'jadwal-pelajaran.kelola',
