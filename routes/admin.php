@@ -27,6 +27,7 @@ use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\PendaftaranSiswaController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
+use App\Http\Controllers\Admin\OrangTuaController;
 use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\RaporController;
 use App\Http\Controllers\Admin\RoleController;
@@ -87,6 +88,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('siswa/generate-akun-massal', [SiswaController::class, 'generateAkunMassal'])->name('siswa.generate-akun-massal');
     Route::post('siswa/{siswa}/generate-akun', [SiswaController::class, 'generateAkun'])->name('siswa.generate-akun');
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
+    Route::resource('orang-tua', OrangTuaController::class)->except(['show', 'destroy']);
     Route::patch('siswa/{siswa}/status', [SiswaController::class, 'updateStatus'])->name('siswa.update-status');
     Route::patch('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');
     Route::post('kalender-akademik', [KalenderAkademikController::class, 'store'])->name('kalender-akademik.store');
