@@ -4,9 +4,7 @@
 
 use App\Models\Lembaga;
 use App\Models\OrangTua;
-use App\Models\Role;
 use App\Models\Siswa;
-use App\Models\User;
 use App\Models\Yayasan;
 
 function buatSiswaUntukTautan(): Siswa
@@ -17,27 +15,9 @@ function buatSiswaUntukTautan(): Siswa
     return Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
 }
 
-// `actingAsOrangTuaManager()` (defined in OrangTuaCrudTest.php) grants an
-// `admin_akademik` role scoped to 'lembaga', but the manager it creates has
-// no `lembaga_id`. Siswa uses the BelongsToTenant trait / TenantScope, which
-// filters every query by the acting user's lembaga_id — so with a null
-// lembaga_id, route-model-binding on {siswa} never resolves (404) regardless
-// of controller logic. Widening the manager to a 'yayasan'-scoped role
-// bypasses the per-lembaga filter (TenantScope only constrains yayasan-level
-// users when `active_lembaga_id` is set in session), which also matches
-// test 7's expectation that this manager can link the same orang tua across
-// siswa in different lembaga.
-function actingAsSiswaOrangTuaManager(): User
-{
-    $manager = actingAsOrangTuaManager();
-    $yayasanRole = Role::firstOrCreate(
-        ['name' => 'yayasan_admin_ortu_link', 'guard_name' => 'web'],
-        ['scope_level' => 'yayasan']
-    );
-    $manager->assignRole($yayasanRole);
-
-    return $manager;
-}
+// `actingAsSiswaOrangTuaManager()` is defined in tests/Pest.php as a shared
+// fixture, since Task 7/8 tests against this same controller also need a
+// manager correctly scoped to see tenant-scoped Siswa records.
 
 it('finds an existing orang tua by nik via the cari endpoint', function () {
     $manager = actingAsSiswaOrangTuaManager();

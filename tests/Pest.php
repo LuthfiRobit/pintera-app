@@ -5,7 +5,9 @@ use App\Models\GelombangPpdb;
 use App\Models\JalurPpdb;
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
+use App\Models\Role;
 use App\Models\TahunAjaran;
+use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -109,4 +111,27 @@ function buatPendaftaranUntukAdmin(?Lembaga $lembaga = null, string $namaCalon =
     ]);
 
     return [$lembaga, $jalur, $gelombang, $pendaftaran];
+}
+
+// `actingAsOrangTuaManager()` (defined in OrangTuaCrudTest.php) grants an
+// `admin_akademik` role scoped to 'lembaga', but the manager it creates has
+// no `lembaga_id`. Siswa uses the BelongsToTenant trait / TenantScope, which
+// filters every query by the acting user's lembaga_id — so with a null
+// lembaga_id, route-model-binding on {siswa} never resolves (404) regardless
+// of controller logic. Widening the manager to a 'yayasan'-scoped role
+// bypasses the per-lembaga filter (TenantScope only constrains yayasan-level
+// users when `active_lembaga_id` is set in session), which also lets this
+// manager link the same orang tua across siswa in different lembaga. Use this
+// helper (instead of `actingAsOrangTuaManager()`) for any test hitting a
+// {siswa}-bound route.
+function actingAsSiswaOrangTuaManager(): User
+{
+    $manager = actingAsOrangTuaManager();
+    $yayasanRole = Role::firstOrCreate(
+        ['name' => 'yayasan_admin_ortu_link', 'guard_name' => 'web'],
+        ['scope_level' => 'yayasan']
+    );
+    $manager->assignRole($yayasanRole);
+
+    return $manager;
 }
