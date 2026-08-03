@@ -85,3 +85,15 @@ it('does not create a duplicate User when the NIK is already registered, and red
     expect(OrangTua::where('nik', '3201234567894444')->count())->toBe(1);
     expect(User::where('username', '3201234567894444')->count())->toBe(1);
 });
+
+it('returns a validation error instead of crashing when the NIK belongs to a User with no OrangTua profile', function () {
+    $manager = actingAsOrangTuaManager();
+
+    User::factory()->create(['username' => '3201234567894444']);
+
+    $response = $this->actingAs($manager)->post(route('admin.orang-tua.store'), orangTuaFormPayload());
+
+    $response->assertSessionHasErrors('nik');
+    expect(OrangTua::where('nik', '3201234567894444')->exists())->toBeFalse();
+    expect(User::where('username', '3201234567894444')->count())->toBe(1);
+});

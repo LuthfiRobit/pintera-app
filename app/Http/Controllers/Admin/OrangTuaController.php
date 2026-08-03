@@ -49,7 +49,13 @@ class OrangTuaController extends BaseController
 
         $existingUser = User::where('username', $data['nik'])->first();
         if ($existingUser) {
-            $existingOrangTua = OrangTua::where('user_id', $existingUser->id)->firstOrFail();
+            $existingOrangTua = OrangTua::where('user_id', $existingUser->id)->first();
+
+            if ($existingOrangTua === null) {
+                return back()
+                    ->withErrors(['nik' => 'NIK ini sudah terdaftar ke akun lain yang bukan profil Orang Tua.'])
+                    ->withInput();
+            }
 
             return redirect()
                 ->route('admin.orang-tua.edit', $existingOrangTua)
