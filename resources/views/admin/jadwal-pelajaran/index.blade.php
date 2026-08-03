@@ -28,6 +28,7 @@
                 opsiUrl: @js(route('admin.jadwal-pelajaran.opsi')),
                 indexUrlBase: @js(route('admin.jadwal-pelajaran.index')),
                 createUrlBase: @js(route('admin.jadwal-pelajaran.create')),
+                storeUrlBase: @js(route('admin.jadwal-pelajaran.store')),
             })"
         >
             {{-- 1. Card Filter: Parameter Jadwal --}}
@@ -38,9 +39,19 @@
                         <p class="text-xs text-gray-500 mt-0.5">Pilih parameter tahun ajaran, semester, dan kelas untuk menampilkan data.</p>
                     </div>
                     <template x-if="kelasId && semesterId">
-                        <x-link-button href="#" x-bind:href="tambahSlotUrl()" class="shrink-0 justify-center">
-                            <span class="text-base leading-none mr-1.5">+</span> Tambah Slot Jadwal
-                        </x-link-button>
+                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+                            <button
+                                type="button"
+                                @click="openDuplicateModal()"
+                                class="inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+                            >
+                                <x-icon name="content_copy" class="h-4 w-4 text-gray-500" />
+                                <span>Salin dari Kelas Lain</span>
+                            </button>
+                            <x-link-button href="#" x-bind:href="tambahSlotUrl()" @click.prevent="openCreateModal()" class="shrink-0 justify-center">
+                                <span class="text-base leading-none mr-1.5">+</span> Tambah Slot Jadwal
+                            </x-link-button>
+                        </div>
                     </template>
                 </div>
 

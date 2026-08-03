@@ -45,24 +45,38 @@ class JadwalPelajaranController extends BaseController
                 ->where('kelas_id', $kelasId)->where('semester_id', $semesterId)->get()
             : collect();
 
+        $kelasList = $tahunAjaranId ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->orderBy('nama')->get() : collect();
+        $semesterList = $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect();
+        $jamPelajaranPerHari = $kelas ? $this->jamPelajaranPerHari($kelas) : collect();
+        $mataPelajaranList = MataPelajaran::orderBy('nama')->get();
+        $guruList = Guru::orderBy('nama')->get();
+
         if ($request->ajax()) {
             return view('admin.jadwal-pelajaran._daftar', [
                 'jadwalList' => $jadwalList,
                 'hariAktif' => $hariAktif,
                 'kelasId' => $kelasId,
                 'semesterId' => $semesterId,
+                'kelasList' => $kelasList,
+                'semesterList' => $semesterList,
+                'jamPelajaranPerHari' => $jamPelajaranPerHari,
+                'mataPelajaranList' => $mataPelajaranList,
+                'guruList' => $guruList,
             ])->render();
         }
 
         return view('admin.jadwal-pelajaran.index', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
-            'kelasList' => $tahunAjaranId ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->orderBy('nama')->get() : collect(),
-            'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
+            'kelasList' => $kelasList,
+            'semesterList' => $semesterList,
             'jadwalList' => $jadwalList,
             'hariAktif' => $hariAktif,
             'kelasId' => $kelasId,
             'semesterId' => $semesterId,
+            'jamPelajaranPerHari' => $jamPelajaranPerHari,
+            'mataPelajaranList' => $mataPelajaranList,
+            'guruList' => $guruList,
         ]);
     }
 
@@ -103,7 +117,7 @@ class JadwalPelajaranController extends BaseController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorize('jadwal-pelajaran.kelola');
 
@@ -139,15 +153,21 @@ class JadwalPelajaranController extends BaseController
         }
 
         if ($guru->lembaga_id !== $kelas->lembaga_id) {
-            return back()->withErrors(['guru_id' => 'Guru harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+            $msg = 'Guru harus berasal dari lembaga yang sama dengan kelas ini.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['guru_id' => [$msg]]], 422);
+            return back()->withErrors(['guru_id' => $msg])->withInput();
         }
 
         if ($semester->lembaga_id !== $kelas->lembaga_id) {
-            return back()->withErrors(['semester_id' => 'Semester harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+            $msg = 'Semester harus berasal dari lembaga yang sama dengan kelas ini.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['semester_id' => [$msg]]], 422);
+            return back()->withErrors(['semester_id' => $msg])->withInput();
         }
 
         if (isset($mataPelajaran) && $mataPelajaran->lembaga_id !== $kelas->lembaga_id) {
-            return back()->withErrors(['mata_pelajaran_id' => 'Mata pelajaran harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+            $msg = 'Mata pelajaran harus berasal dari lembaga yang sama dengan kelas ini.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['mata_pelajaran_id' => [$msg]]], 422);
+            return back()->withErrors(['mata_pelajaran_id' => $msg])->withInput();
         }
 
         $jamPelajaranIds = array_unique($data['jam_pelajaran_id']);
@@ -194,14 +214,20 @@ class JadwalPelajaranController extends BaseController
         });
 
         if (empty($berhasil)) {
+            $msg = 'Semua slot yang dipilih dilewati: ' . implode('; ', $dilewati) . '.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['jam_pelajaran_id' => [$msg]]], 422);
             return back()->withErrors([
-                'jam_pelajaran_id' => 'Semua slot yang dipilih dilewati: ' . implode('; ', $dilewati) . '.',
+                'jam_pelajaran_id' => $msg,
             ])->withInput();
         }
 
         $status = 'Jadwal pelajaran berhasil ditambahkan untuk ' . implode(', ', $berhasil) . '.';
         if (! empty($dilewati)) {
             $status .= ' Dilewati: ' . implode('; ', $dilewati) . '.';
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => $status]);
         }
 
         return redirect()->route('admin.jadwal-pelajaran.index', [
@@ -236,7 +262,7 @@ class JadwalPelajaranController extends BaseController
         ]);
     }
 
-    public function update(Request $request, JadwalPelajaran $jadwalPelajaran): RedirectResponse
+    public function update(Request $request, JadwalPelajaran $jadwalPelajaran): RedirectResponse|JsonResponse
     {
         $this->authorize('jadwal-pelajaran.kelola');
 
@@ -264,11 +290,15 @@ class JadwalPelajaranController extends BaseController
         }
 
         if ($guru->lembaga_id !== $kelas->lembaga_id) {
-            return back()->withErrors(['guru_id' => 'Guru harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+            $msg = 'Guru harus berasal dari lembaga yang sama dengan kelas ini.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['guru_id' => [$msg]]], 422);
+            return back()->withErrors(['guru_id' => $msg])->withInput();
         }
 
         if (isset($mataPelajaran) && $mataPelajaran->lembaga_id !== $kelas->lembaga_id) {
-            return back()->withErrors(['mata_pelajaran_id' => 'Mata pelajaran harus berasal dari lembaga yang sama dengan kelas ini.'])->withInput();
+            $msg = 'Mata pelajaran harus berasal dari lembaga yang sama dengan kelas ini.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['mata_pelajaran_id' => [$msg]]], 422);
+            return back()->withErrors(['mata_pelajaran_id' => $msg])->withInput();
         }
 
         $jamPelajaran = JamPelajaran::where('id', $data['jam_pelajaran_id'])
@@ -285,7 +315,9 @@ class JadwalPelajaranController extends BaseController
             ->where('id', '!=', $jadwalPelajaran->id)
             ->exists();
         if ($duplikat) {
-            return back()->withErrors(['jam_pelajaran_id' => 'Kelas ini sudah punya jadwal pada slot ini di semester yang sama.'])->withInput();
+            $msg = 'Kelas ini sudah punya jadwal pada slot ini di semester yang sama.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['jam_pelajaran_id' => [$msg]]], 422);
+            return back()->withErrors(['jam_pelajaran_id' => $msg])->withInput();
         }
 
         $guruBentrok = JadwalPelajaran::where('guru_id', $data['guru_id'])
@@ -294,7 +326,9 @@ class JadwalPelajaranController extends BaseController
             ->where('id', '!=', $jadwalPelajaran->id)
             ->exists();
         if ($guruBentrok) {
-            return back()->withErrors(['guru_id' => 'Guru ini sudah mengajar kelas lain pada jam dan semester yang sama.'])->withInput();
+            $msg = 'Guru ini sudah mengajar kelas lain pada jam dan semester yang sama.';
+            if ($request->ajax() || $request->wantsJson()) return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['guru_id' => [$msg]]], 422);
+            return back()->withErrors(['guru_id' => $msg])->withInput();
         }
 
         $jadwalPelajaran->update([
@@ -303,13 +337,18 @@ class JadwalPelajaranController extends BaseController
             'guru_id' => $data['guru_id'],
         ]);
 
+        $msg = 'Jadwal pelajaran berhasil diperbarui.';
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => $msg]);
+        }
+
         return redirect()->route('admin.jadwal-pelajaran.index', [
             'kelas_id' => $jadwalPelajaran->kelas_id,
             'semester_id' => $jadwalPelajaran->semester_id,
-        ])->with('status', 'Jadwal pelajaran berhasil diperbarui.');
+        ])->with('status', $msg);
     }
 
-    public function destroy(JadwalPelajaran $jadwalPelajaran): RedirectResponse
+    public function destroy(Request $request, JadwalPelajaran $jadwalPelajaran): RedirectResponse|JsonResponse
     {
         $this->authorize('jadwal-pelajaran.kelola');
 
@@ -322,10 +361,15 @@ class JadwalPelajaranController extends BaseController
         $semesterId = $jadwalPelajaran->semester_id;
         $jadwalPelajaran->delete();
 
+        $msg = 'Jadwal pelajaran berhasil dihapus.';
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => $msg]);
+        }
+
         return redirect()->route('admin.jadwal-pelajaran.index', [
             'kelas_id' => $kelasId,
             'semester_id' => $semesterId,
-        ])->with('status', 'Jadwal pelajaran berhasil dihapus.');
+        ])->with('status', $msg);
     }
 
     private function formatSlot(JamPelajaran $jamPelajaran): string

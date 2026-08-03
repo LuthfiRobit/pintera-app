@@ -1028,3 +1028,83 @@ it('rejects schedule duplication when target class belongs to a different tenant
     $response->assertStatus(404);
 });
 
+it('creates and updates jadwal pelajaran via JSON AJAX requests from SPA modal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $jam1 = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true, 'urutan' => 1]);
+    $jam2 = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true, 'urutan' => 2]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    // Test JSON store
+    $storeResponse = $this->actingAs($manager)->postJson(route('admin.jadwal-pelajaran.store'), [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'jam_pelajaran_id' => [$jam1->id],
+        'mata_pelajaran_id' => $mapel->id,
+        'guru_id' => $guru->id,
+    ]);
+
+    $storeResponse->assertOk()->assertJson(['status' => 'success']);
+    $this->assertDatabaseHas('jadwal_pelajaran', [
+        'kelas_id' => $kelas->id,
+        'jam_pelajaran_id' => $jam1->id,
+    ]);
+
+    $jadwal = JadwalPelajaran::where('kelas_id', $kelas->id)->where('jam_pelajaran_id', $jam1->id)->firstOrFail();
+
+    // Test JSON update
+    $updateResponse = $this->actingAs($manager)->putJson(route('admin.jadwal-pelajaran.update', $jadwal), [
+        'jam_pelajaran_id' => $jam2->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'guru_id' => $guru->id,
+    ]);
+
+    $updateResponse->assertOk()->assertJson(['status' => 'success']);
+    $this->assertDatabaseHas('jadwal_pelajaran', [
+        'id' => $jadwal->id,
+        'jam_pelajaran_id' => $jam2->id,
+    ]);
+});
+
+it('renders the interactive weekly roster matrix view with empty slot quick-add actions', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap']);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    
+    $jam1 = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true, 'urutan' => 1, 'label' => 'Jam Ke-1']);
+    $jam2 = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true, 'urutan' => 2, 'label' => 'Jam Ke-2']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika Pro Max']);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Budi Santoso']);
+    
+    JadwalPelajaran::factory()->create([
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'jam_pelajaran_id' => $jam1->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'guru_id' => $guru->id,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('Matriks Roster');
+    $response->assertSee('Tampilan Daftar');
+    $response->assertSee('Matematika Pro Max');
+    $response->assertSee('Budi Santoso');
+    $response->assertSee('+ Isi Jadwal');
+    $response->assertSee('openCreateModal({ jam_ids: [' . $jam2->id . '] })', false);
+});
+
