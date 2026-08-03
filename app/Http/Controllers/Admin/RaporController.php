@@ -131,7 +131,9 @@ class RaporController extends BaseController
             ->get();
 
         $mapelList = $asesmenList->pluck('mataPelajaran')->unique('id')->sortBy('nama');
-        $allNilai = NilaiSiswa::whereIn('asesmen_id', $asesmenList->pluck('id'))->get();
+        $allNilai = NilaiSiswa::whereIn('asesmen_id', $asesmenList->pluck('id'))
+            ->with('komponenPenilaian')
+            ->get();
 
         $rekapNilai = [];
         foreach ($siswaList as $siswa) {
@@ -140,10 +142,20 @@ class RaporController extends BaseController
                 $mapelAsesmenIds = $asesmenList->where('mata_pelajaran_id', $mapel->id)->pluck('id');
                 $scores = $allNilai->whereIn('asesmen_id', $mapelAsesmenIds)
                     ->where('siswa_id', $siswa->id)
-                    ->whereNotNull('nilai_angka')
-                    ->pluck('nilai_angka');
+                    ->whereNotNull('nilai_angka');
 
-                $rekapNilai[$siswa->id][$mapel->id] = $scores->count() > 0 ? round($scores->avg(), 1) : null;
+                if ($scores->count() > 0) {
+                    $totalWeight = 0;
+                    $weightedSum = 0;
+                    foreach ($scores as $item) {
+                        $w = $item->komponenPenilaian && $item->komponenPenilaian->bobot > 0 ? (int) $item->komponenPenilaian->bobot : 1;
+                        $weightedSum += ($item->nilai_angka * $w);
+                        $totalWeight += $w;
+                    }
+                    $rekapNilai[$siswa->id][$mapel->id] = $totalWeight > 0 ? round($weightedSum / $totalWeight, 1) : null;
+                } else {
+                    $rekapNilai[$siswa->id][$mapel->id] = null;
+                }
             }
         }
 

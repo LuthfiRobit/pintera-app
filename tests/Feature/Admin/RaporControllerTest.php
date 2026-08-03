@@ -257,3 +257,37 @@ it('shows the cetak rekap nilai link pointing at the cetak route when there are 
 
     $response->assertSee(e(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id])), false);
 });
+
+it('calculates rapor grade using weighted component averages instead of unweighted simple averages', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    // Komponen A (bobot 80%) & Komponen B (bobot 20%)
+    $kompA = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 80]);
+    $kompB = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 20]);
+
+    $asesmenA = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmenB = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+
+    $asesmenA->komponenPenilaian()->attach($kompA->id);
+    $asesmenB->komponenPenilaian()->attach($kompB->id);
+
+    // Nilai A: 100 (Bobot 80 => 80), Nilai B: 50 (Bobot 20 => 10). Total Weighted = 90. Unweighted avg would be 75.
+    NilaiSiswa::create(['asesmen_id' => $asesmenA->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $kompA->id, 'nilai_angka' => 100]);
+    NilaiSiswa::create(['asesmen_id' => $asesmenB->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $kompB->id, 'nilai_angka' => 50]);
+
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('90');
+});
+
+
