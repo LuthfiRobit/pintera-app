@@ -93,6 +93,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
     Route::get('siswa/{siswa}/orang-tua/cari', [SiswaOrangTuaController::class, 'cari'])->name('siswa.orang-tua.cari');
     Route::post('siswa/{siswa}/orang-tua', [SiswaOrangTuaController::class, 'store'])->name('siswa.orang-tua.store');
+    Route::patch('siswa/{siswa}/orang-tua/{orangTua}/kontak-utama', [SiswaOrangTuaController::class, 'updateKontakUtama'])->name('siswa.orang-tua.kontak-utama');
+    Route::delete('siswa/{siswa}/orang-tua/{orangTua}', [SiswaOrangTuaController::class, 'destroy'])->name('siswa.orang-tua.destroy');
     Route::resource('orang-tua', OrangTuaController::class)->except(['show', 'destroy']);
     Route::patch('siswa/{siswa}/status', [SiswaController::class, 'updateStatus'])->name('siswa.update-status');
     Route::patch('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');

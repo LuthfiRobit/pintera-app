@@ -97,4 +97,32 @@ class SiswaOrangTuaController extends BaseController
 
         return redirect()->route('admin.siswa.edit', $siswa)->with('status', 'Orang tua berhasil ditautkan.');
     }
+
+    public function updateKontakUtama(Siswa $siswa, OrangTua $orangTua): RedirectResponse
+    {
+        $this->authorize('orang-tua.edit');
+
+        if (! $siswa->orangTua()->where('orang_tua_id', $orangTua->id)->exists()) {
+            return back()->withErrors(['orang_tua_id' => 'Orang tua ini belum tertaut ke siswa ini.']);
+        }
+
+        DB::transaction(function () use ($siswa, $orangTua) {
+            DB::table('siswa_orang_tua')->where('siswa_id', $siswa->id)->update(['is_kontak_utama' => false]);
+            DB::table('siswa_orang_tua')
+                ->where('siswa_id', $siswa->id)
+                ->where('orang_tua_id', $orangTua->id)
+                ->update(['is_kontak_utama' => true]);
+        });
+
+        return redirect()->route('admin.siswa.edit', $siswa)->with('status', 'Kontak utama berhasil diperbarui.');
+    }
+
+    public function destroy(Siswa $siswa, OrangTua $orangTua): RedirectResponse
+    {
+        $this->authorize('orang-tua.edit');
+
+        $siswa->orangTua()->detach($orangTua->id);
+
+        return redirect()->route('admin.siswa.edit', $siswa)->with('status', 'Tautan orang tua berhasil dihapus.');
+    }
 }

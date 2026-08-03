@@ -5,6 +5,7 @@
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
+use App\Models\User;
 use App\Models\Yayasan;
 
 function buatSiswaUntukTautan(): Siswa
@@ -124,4 +125,46 @@ it('allows the same orang tua to link to a siswa in a different lembaga', functi
     ])->assertRedirect();
 
     expect($orangTua->siswa()->count())->toBe(2);
+});
+
+it('sets a different orang tua as the exclusive kontak utama', function () {
+    $manager = actingAsSiswaOrangTuaManager();
+    $siswa = buatSiswaUntukTautan();
+    $first = OrangTua::factory()->create();
+    $second = OrangTua::factory()->create();
+    $siswa->orangTua()->attach($first->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+    $siswa->orangTua()->attach($second->id, ['hubungan' => 'ibu', 'is_kontak_utama' => false]);
+
+    $this->actingAs($manager)
+        ->patch(route('admin.siswa.orang-tua.kontak-utama', [$siswa, $second]))
+        ->assertRedirect(route('admin.siswa.edit', $siswa));
+
+    $siswa->refresh();
+    expect((bool) $siswa->orangTua()->where('orang_tua_id', $first->id)->first()->pivot->is_kontak_utama)->toBeFalse();
+    expect((bool) $siswa->orangTua()->where('orang_tua_id', $second->id)->first()->pivot->is_kontak_utama)->toBeTrue();
+});
+
+it('rejects setting kontak utama for an orang tua not linked to the siswa', function () {
+    $manager = actingAsSiswaOrangTuaManager();
+    $siswa = buatSiswaUntukTautan();
+    $unlinked = OrangTua::factory()->create();
+
+    $this->actingAs($manager)
+        ->patch(route('admin.siswa.orang-tua.kontak-utama', [$siswa, $unlinked]))
+        ->assertSessionHasErrors();
+});
+
+it('unlinks an orang tua from a siswa without deleting the orang tua profile or user', function () {
+    $manager = actingAsSiswaOrangTuaManager();
+    $siswa = buatSiswaUntukTautan();
+    $orangTua = OrangTua::factory()->create();
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $this->actingAs($manager)
+        ->delete(route('admin.siswa.orang-tua.destroy', [$siswa, $orangTua]))
+        ->assertRedirect(route('admin.siswa.edit', $siswa));
+
+    expect($siswa->orangTua()->count())->toBe(0);
+    expect(OrangTua::find($orangTua->id))->not->toBeNull();
+    expect(User::find($orangTua->user_id))->not->toBeNull();
 });
