@@ -24,6 +24,12 @@ export function orangTuaCari(config) {
                     headers: { Accept: 'application/json' },
                 });
                 const json = await response.json();
+
+                if (!response.ok) {
+                    Alpine.store('toast').push('error', json.message ?? 'Gagal mencari data orang tua.');
+                    return;
+                }
+
                 this.found = json.found;
                 this.orangTua = json.orang_tua ?? null;
                 this.searched = true;
