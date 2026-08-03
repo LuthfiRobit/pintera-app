@@ -52,16 +52,34 @@
                 </div>
                 <p class="text-xs text-gray-400 -mt-3">Mata Pelajaran dan Semester tidak bisa diubah di sini — hapus lalu buat TP baru kalau butuh Mata Pelajaran/Semester yang berbeda.</p>
 
-                <div>
-                    <x-input-label value="Kode Tujuan Pembelajaran (Opsional)" />
-                    <input
-                        type="text"
-                        name="kode"
-                        value="{{ old('kode', $komponenPenilaian->kode) }}"
-                        placeholder="Contoh: TP 3.1 atau TP 4.2"
-                        class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
-                    >
-                    <x-input-error :messages="$errors->get('kode')" class="mt-1" />
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <x-input-label value="Kode Tujuan Pembelajaran (Opsional)" />
+                        <input
+                            type="text"
+                            name="kode"
+                            value="{{ old('kode', $komponenPenilaian->kode) }}"
+                            placeholder="Contoh: TP 3.1 atau TP 4.2"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                        >
+                        <x-input-error :messages="$errors->get('kode')" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <x-input-label value="Bobot Penilaian (%) *" />
+                        <input 
+                            type="number" 
+                            name="bobot" 
+                            value="{{ old('bobot', $komponenPenilaian->bobot ?? 100) }}" 
+                            min="1" 
+                            max="100" 
+                            required
+                            placeholder="1 - 100" 
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm font-semibold transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                        >
+                        <p class="mt-1 text-xs text-gray-400">Total bobot per Mapel dan Semester maksimal 100% (Guard aktif).</p>
+                        <x-input-error :messages="$errors->get('bobot')" class="mt-1" />
+                    </div>
                 </div>
 
                 <div>

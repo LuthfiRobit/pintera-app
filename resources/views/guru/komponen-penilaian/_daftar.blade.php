@@ -1,42 +1,4 @@
 <div class="space-y-4">
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Tujuan Pembelajaran</p>
-                    <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->count() }}</p>
-                </div>
-                <div class="rounded-xl bg-brand-50 p-3 text-brand-600">
-                    <x-icon name="checklist" class="h-6 w-6" />
-                </div>
-            </div>
-        </div>
-
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Mapel Tercover</p>
-                    <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->pluck('mata_pelajaran_id')->unique()->count() }}</p>
-                </div>
-                <div class="rounded-xl bg-blue-50 p-3 text-blue-600">
-                    <x-icon name="menu_book" class="h-6 w-6" />
-                </div>
-            </div>
-        </div>
-
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Dengan KKTP Spesifik</p>
-                    <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->filter(fn($k) => !empty($k->kktp))->count() }}</p>
-                </div>
-                <div class="rounded-xl bg-amber-50 p-3 text-amber-600">
-                    <x-icon name="fact_check" class="h-6 w-6" />
-                </div>
-            </div>
-        </div>
-    </div>
-
     @php
         $weightSummaries = $komponenList->groupBy(fn($k) => $k->mata_pelajaran_id . '-' . $k->semester_id);
     @endphp
@@ -82,10 +44,10 @@
 
     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
         <div class="flex flex-wrap items-center justify-between border-b border-gray-100 bg-white px-6 py-4 gap-3">
-            <p class="font-display text-sm font-bold text-gray-900">Daftar Komponen &amp; Tujuan Pembelajaran</p>
+            <p class="font-display text-sm font-bold text-gray-900">Daftar Tujuan Pembelajaran Anda</p>
             <div class="flex items-center gap-2">
                 <x-badge tone="brand" class="text-xs font-semibold px-2.5 py-0.5">{{ $komponenList->count() }} Data</x-badge>
-                <x-link-button href="{{ route('admin.komponen-penilaian.create') }}">
+                <x-link-button href="{{ route('guru.komponen-penilaian.create') }}">
                     <span class="text-base leading-none mr-1.5">+</span> Tambah TP Baru
                 </x-link-button>
             </div>
@@ -108,14 +70,12 @@
                         </div>
                         <div class="flex items-center gap-3">
                             <x-badge tone="slate" class="text-xs font-medium">{{ $komponen->semester->nama }} — {{ $komponen->semester->tahunAjaran->nama }}</x-badge>
-                            @can('komponen-penilaian.kelola')
-                                <a href="{{ route('admin.komponen-penilaian.edit', $komponen) }}" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">Edit</a>
-                                <form method="POST" action="{{ route('admin.komponen-penilaian.destroy', $komponen) }}" x-data @submit.prevent="confirmDialog('Hapus Komponen Penilaian?', @js('Apakah Anda yakin ingin menghapus TP ' . ($komponen->kode ?: $komponen->deskripsi) . '?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
-                                </form>
-                            @endcan
+                            <a href="{{ route('guru.komponen-penilaian.edit', $komponen) }}" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">Edit</a>
+                            <form method="POST" action="{{ route('guru.komponen-penilaian.destroy', $komponen) }}" x-data @submit.prevent="confirmDialog('Hapus Komponen Penilaian?', @js('Apakah Anda yakin ingin menghapus TP ' . ($komponen->kode ?: $komponen->deskripsi) . '?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
+                            </form>
                         </div>
                     </div>
 
@@ -140,9 +100,9 @@
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-gray-700">Belum Ada Tujuan Pembelajaran</p>
-                        <p class="text-xs text-gray-400 max-w-sm mx-auto mt-0.5">Tambahkan Tujuan Pembelajaran (TP) untuk mempermudah guru merujuk indikator penilaian saat menginput nilai asesmen.</p>
+                        <p class="text-xs text-gray-400 max-w-sm mx-auto mt-0.5">Tambahkan Tujuan Pembelajaran (TP) untuk mata pelajaran yang Anda ajar, supaya bisa dipilih saat membuat Asesmen.</p>
                     </div>
-                    <x-link-button href="{{ route('admin.komponen-penilaian.create') }}" class="inline-flex justify-center">
+                    <x-link-button href="{{ route('guru.komponen-penilaian.create') }}" class="inline-flex justify-center">
                         <span class="text-base leading-none mr-1.5">+</span> Tambah TP Pertama
                     </x-link-button>
                 </div>
