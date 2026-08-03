@@ -8,6 +8,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -55,6 +56,14 @@ class Siswa extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function orangTua(): BelongsToMany
+    {
+        return $this->belongsToMany(OrangTua::class, 'siswa_orang_tua')
+            ->withPivot(['hubungan', 'is_kontak_utama'])
+            ->withTimestamps()
+            ->using(SiswaOrangTua::class);
     }
 
     public function getActivitylogOptions(): LogOptions
