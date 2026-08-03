@@ -97,3 +97,33 @@ it('returns a validation error instead of crashing when the NIK belongs to a Use
     expect(OrangTua::where('nik', '3201234567894444')->exists())->toBeFalse();
     expect(User::where('username', '3201234567894444')->count())->toBe(1);
 });
+
+it('updates the orang tua profile and the linked user name, without touching nik or password', function () {
+    $manager = actingAsOrangTuaManager();
+    $this->actingAs($manager)->post(route('admin.orang-tua.store'), orangTuaFormPayload())->assertRedirect();
+    $orangTua = OrangTua::where('nik', '3201234567894444')->firstOrFail();
+    $originalPasswordHash = $orangTua->user->password;
+
+    $this->actingAs($manager)->put(route('admin.orang-tua.update', $orangTua), [
+        'nama_lengkap' => 'Nama Diperbarui',
+        'no_hp' => '089900001111',
+        'email' => 'updated@example.test',
+        'alamat' => 'Alamat Baru',
+        'pekerjaan' => 'Wiraswasta',
+    ])->assertRedirect(route('admin.orang-tua.index'));
+
+    $orangTua->refresh();
+    expect($orangTua->nama_lengkap)->toBe('Nama Diperbarui');
+    expect($orangTua->no_hp)->toBe('089900001111');
+    expect($orangTua->nik)->toBe('3201234567894444');
+    expect($orangTua->user->name)->toBe('Nama Diperbarui');
+    expect($orangTua->user->password)->toBe($originalPasswordHash);
+});
+
+it('denies edit access to a user without orang-tua.edit permission', function () {
+    $manager = actingAsOrangTuaManager();
+    $this->actingAs($manager)->post(route('admin.orang-tua.store'), orangTuaFormPayload())->assertRedirect();
+    $orangTua = OrangTua::where('nik', '3201234567894444')->firstOrFail();
+
+    $this->actingAs(User::factory()->create())->get(route('admin.orang-tua.edit', $orangTua))->assertForbidden();
+});

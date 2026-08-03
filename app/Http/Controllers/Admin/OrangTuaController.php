@@ -74,6 +74,33 @@ class OrangTuaController extends BaseController
         return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua & akun berhasil dibuat.');
     }
 
+    public function edit(OrangTua $orangTua): View
+    {
+        $this->authorize('orang-tua.edit');
+
+        $orangTua->load(['user', 'siswa']);
+
+        return view('admin.orang-tua.edit', ['orangTua' => $orangTua]);
+    }
+
+    public function update(Request $request, OrangTua $orangTua): RedirectResponse
+    {
+        $this->authorize('orang-tua.edit');
+
+        $data = $request->validate([
+            'nama_lengkap' => ['required', 'string', 'max:255'],
+            'no_hp' => ['required', 'string', 'max:20'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'alamat' => ['nullable', 'string'],
+            'pekerjaan' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $orangTua->user()->update(['name' => $data['nama_lengkap']]);
+        $orangTua->update($data);
+
+        return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua berhasil diperbarui.');
+    }
+
     private function validateProfil(Request $request): array
     {
         return $request->validate([
