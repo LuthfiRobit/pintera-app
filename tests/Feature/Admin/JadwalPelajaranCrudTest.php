@@ -920,3 +920,111 @@ it('shows a warning and forces re-selection when the jadwal\'s slot is no longer
     $response->assertDontSee('value="' . $jamLama->id . '" selected', false);
     $response->assertSee('Silakan pilih slot yang baru', false);
 });
+
+it('duplicates jadwal pelajaran from source kelas and semester to target kelas and semester while skipping teacher collisions', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $sourceSemester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $targetSemester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap']);
+    
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $slot1 = JamPelajaran::factory()->create([
+        'pola_jam_id' => $pola->id,
+        'hari' => \App\Enums\Hari::Senin->value,
+        'urutan' => 1,
+        'label' => 'Jam 1',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:45',
+        'is_pelajaran' => true,
+    ]);
+    $slot2 = JamPelajaran::factory()->create([
+        'pola_jam_id' => $pola->id,
+        'hari' => \App\Enums\Hari::Senin->value,
+        'urutan' => 2,
+        'label' => 'Jam 2',
+        'jam_mulai' => '07:45',
+        'jam_selesai' => '08:30',
+        'is_pelajaran' => true,
+    ]);
+    
+    $sourceKelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    $targetKelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    
+    $mapel1 = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $mapel2 = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    JadwalPelajaran::factory()->create([
+        'kelas_id' => $sourceKelas->id,
+        'semester_id' => $sourceSemester->id,
+        'jam_pelajaran_id' => $slot1->id,
+        'mata_pelajaran_id' => $mapel1->id,
+        'guru_id' => $guru->id,
+    ]);
+    JadwalPelajaran::factory()->create([
+        'kelas_id' => $sourceKelas->id,
+        'semester_id' => $sourceSemester->id,
+        'jam_pelajaran_id' => $slot2->id,
+        'mata_pelajaran_id' => $mapel2->id,
+        'guru_id' => $guru->id,
+    ]);
+
+    $otherKelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+    JadwalPelajaran::factory()->create([
+        'kelas_id' => $otherKelas->id,
+        'semester_id' => $targetSemester->id,
+        'jam_pelajaran_id' => $slot1->id,
+        'mata_pelajaran_id' => $mapel1->id,
+        'guru_id' => $guru->id,
+    ]);
+
+    $response = $this->actingAs($manager)->postJson(route('admin.jadwal-pelajaran.duplicate'), [
+        'source_kelas_id' => $sourceKelas->id,
+        'source_semester_id' => $sourceSemester->id,
+        'target_kelas_id' => $targetKelas->id,
+        'target_semester_id' => $targetSemester->id,
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'status' => 'success',
+            'copied_count' => 1,
+            'skipped_count' => 1,
+        ]);
+
+    $this->assertDatabaseHas('jadwal_pelajaran', [
+        'kelas_id' => $targetKelas->id,
+        'jam_pelajaran_id' => $slot2->id,
+        'mata_pelajaran_id' => $mapel2->id,
+    ]);
+    $this->assertDatabaseMissing('jadwal_pelajaran', [
+        'kelas_id' => $targetKelas->id,
+        'jam_pelajaran_id' => $slot1->id,
+    ]);
+});
+
+it('rejects schedule duplication when target class belongs to a different tenant', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $sourceKelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+
+    $otherLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $otherTahun = TahunAjaran::factory()->create(['lembaga_id' => $otherLembaga->id]);
+    $alienKelas = Kelas::factory()->create(['lembaga_id' => $otherLembaga->id, 'tahun_ajaran_id' => $otherTahun->id]);
+
+    $response = $this->actingAs($manager)->postJson(route('admin.jadwal-pelajaran.duplicate'), [
+        'source_kelas_id' => $sourceKelas->id,
+        'source_semester_id' => $semester->id,
+        'target_kelas_id' => $alienKelas->id,
+        'target_semester_id' => $semester->id,
+    ]);
+
+    $response->assertStatus(404);
+});
+

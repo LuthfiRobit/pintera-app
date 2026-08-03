@@ -354,4 +354,118 @@ class JadwalPelajaranController extends BaseController
 
         return $jamPelajaranPerHari;
     }
+
+    public function duplicate(Request $request): JsonResponse|RedirectResponse
+    {
+        $this->authorize('jadwal-pelajaran.kelola');
+
+        $data = $request->validate([
+            'source_kelas_id' => ['required', 'integer'],
+            'source_semester_id' => ['required', 'integer'],
+            'target_kelas_id' => ['required', 'integer', 'different:source_kelas_id'],
+            'target_semester_id' => ['required', 'integer'],
+        ]);
+
+        $sourceKelas = Kelas::find($data['source_kelas_id']);
+        $targetKelas = Kelas::find($data['target_kelas_id']);
+        $sourceSemester = Semester::find($data['source_semester_id']);
+        $targetSemester = Semester::find($data['target_semester_id']);
+
+        abort_if(! $sourceKelas || ! $targetKelas || ! $sourceSemester || ! $targetSemester, 404);
+        
+        $user = $request->user();
+        $lembagaId = $user->active_lembaga_id ?: ($user->lembaga_id ?: null);
+        
+        if ($lembagaId) {
+            abort_if($sourceKelas->lembaga_id !== $lembagaId || $targetKelas->lembaga_id !== $lembagaId, 404);
+            abort_if($sourceSemester->tahunAjaran?->lembaga_id !== $lembagaId || $targetSemester->tahunAjaran?->lembaga_id !== $lembagaId, 404);
+        } else {
+            abort_if($sourceKelas->lembaga_id !== $targetKelas->lembaga_id, 404);
+        }
+
+        if (! $targetKelas->pola_jam_id) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Kelas tujuan belum memiliki ikatan Pola Jam.',
+                ], 422);
+            }
+            return redirect()->back()->withErrors(['error' => 'Kelas tujuan belum memiliki ikatan Pola Jam.']);
+        }
+
+        $targetSlots = JamPelajaran::where('pola_jam_id', $targetKelas->pola_jam_id)->get()->keyBy(function ($slot) {
+            return ($slot->hari instanceof \UnitEnum ? $slot->hari->value : $slot->hari) . '-' . $slot->urutan;
+        });
+
+        $sourceJadwals = JadwalPelajaran::with('jamPelajaran')
+            ->where('kelas_id', $sourceKelas->id)
+            ->where('semester_id', $sourceSemester->id)
+            ->get();
+
+        $copiedCount = 0;
+        $skippedCount = 0;
+
+        DB::transaction(function () use ($sourceJadwals, $targetSlots, $targetKelas, $targetSemester, &$copiedCount, &$skippedCount) {
+            foreach ($sourceJadwals as $sj) {
+                if (! $sj->jamPelajaran) {
+                    $skippedCount++;
+                    continue;
+                }
+                $key = ($sj->jamPelajaran->hari instanceof \UnitEnum ? $sj->jamPelajaran->hari->value : $sj->jamPelajaran->hari) . '-' . $sj->jamPelajaran->urutan;
+                $targetSlot = $targetSlots->get($key);
+                
+                if (! $targetSlot) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                $classCollision = JadwalPelajaran::where('kelas_id', $targetKelas->id)
+                    ->where('semester_id', $targetSemester->id)
+                    ->where('jam_pelajaran_id', $targetSlot->id)
+                    ->exists();
+
+                if ($classCollision) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                $teacherCollision = JadwalPelajaran::where('guru_id', $sj->guru_id)
+                    ->where('semester_id', $targetSemester->id)
+                    ->where('jam_pelajaran_id', $targetSlot->id)
+                    ->exists();
+
+                if ($teacherCollision) {
+                    $skippedCount++;
+                    continue;
+                }
+
+                JadwalPelajaran::create([
+                    'kelas_id' => $targetKelas->id,
+                    'semester_id' => $targetSemester->id,
+                    'jam_pelajaran_id' => $targetSlot->id,
+                    'mata_pelajaran_id' => $sj->mata_pelajaran_id,
+                    'guru_id' => $sj->guru_id,
+                ]);
+                
+                $copiedCount++;
+            }
+        });
+
+        $message = "Berhasil menyalin {$copiedCount} sesi jadwal.";
+        if ($skippedCount > 0) {
+            $message .= " {$skippedCount} sesi dilewati karena bentrok waktu atau tidak sesuai pola jam.";
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => $message,
+                'copied_count' => $copiedCount,
+                'skipped_count' => $skippedCount,
+            ]);
+        }
+
+        return redirect()->back()->with('status', $message);
+    }
 }
+
