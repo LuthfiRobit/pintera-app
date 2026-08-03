@@ -84,7 +84,7 @@
                                 @endif
                             </div>
                             <button type="button" 
-                                    @click="openAssignModal({{ $pola->id }}, @js($pola->nama), {{ $pola->lembaga_id ?? 'null' }}, {{ $pola->kelas->pluck('id')->toJson() }}, @js(route('admin.pola-jam.assign-kelas', $pola)))" 
+                                    @click="openAssignModal({{ $pola->id }}, @js($pola->nama), {{ $pola->lembaga_id ?? 'null' }}, @js($pola->kelas->pluck('id')->values()->all()), @js(route('admin.pola-jam.assign-kelas', $pola)))" 
                                     class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 transition active:scale-95 shrink-0">
                                 <x-icon name="add_circle" class="h-4 w-4 text-brand-500" />
                                 <span>Kelola Tautan</span>
@@ -275,7 +275,7 @@
                         polaId: polaId,
                         polaNama: polaNama,
                         lembagaId: lembagaId,
-                        selectedKelasIds: Array.from(currentKelasIds),
+                        selectedKelasIds: Array.from(currentKelasIds).map(Number),
                         actionUrl: url
                     };
                     this.showModalAssign = true;
