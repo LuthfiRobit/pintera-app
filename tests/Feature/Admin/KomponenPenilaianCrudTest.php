@@ -532,3 +532,33 @@ it('preserves the selected tahun ajaran and semester after a validation failure 
     $followUp->assertSee('value="' . $tahunAjaran->id . '" selected', false);
     $followUp->assertSee('value="' . $semester->id . '" selected', false);
 });
+
+it('rejects storing a new assessment component when total bobot exceeds 100 percent in Admin portal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    KomponenPenilaian::create([
+        'lembaga_id' => $lembaga->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'K-1',
+        'deskripsi' => 'Existing',
+        'bobot' => 80,
+    ]);
+
+    $response = $this->actingAs($manager)->postJson(route('admin.komponen-penilaian.store'), [
+        'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'K-2',
+        'deskripsi' => 'Overload',
+        'bobot' => 30,
+    ]);
+
+    $response->assertStatus(422)->assertJson(['status' => 'error']);
+    expect(KomponenPenilaian::where('kode', 'K-2')->exists())->toBeFalse();
+});
+

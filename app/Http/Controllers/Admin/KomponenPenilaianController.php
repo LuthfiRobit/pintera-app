@@ -85,7 +85,7 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $this->authorize('komponen-penilaian.kelola');
 
@@ -94,6 +94,7 @@ class KomponenPenilaianController extends BaseController
             'semester_id' => ['required', 'integer'],
             'kode' => ['nullable', 'string', 'max:50'],
             'deskripsi' => ['required', 'string'],
+            'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
             'kktp' => ['nullable', 'string'],
         ]);
 
@@ -103,7 +104,25 @@ class KomponenPenilaianController extends BaseController
         abort_if($mataPelajaran === null || $semester === null, 404);
         abort_if($mataPelajaran->lembaga_id !== $semester->lembaga_id, 404);
 
+        $data['bobot'] = $data['bobot'] ?? 10;
+        $existingSum = KomponenPenilaian::where('mata_pelajaran_id', $data['mata_pelajaran_id'])
+            ->where('semester_id', $data['semester_id'])
+            ->sum('bobot');
+
+        if (($existingSum + (int) $data['bobot']) > 100) {
+            $remaining = max(0, 100 - $existingSum);
+            $msg = "Total bobot melebihi 100%. Sisa bobot yang tersedia untuk mata pelajaran ini adalah {$remaining}%.";
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $msg], 422);
+            }
+            return back()->withInput()->withErrors(['bobot' => $msg]);
+        }
+
         KomponenPenilaian::create($data);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil disimpan.']);
+        }
 
         return redirect()->route('admin.komponen-penilaian.index')->with('status', 'Komponen penilaian (TP) berhasil disimpan.');
     }
@@ -127,7 +146,7 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-    public function update(Request $request, KomponenPenilaian $komponenPenilaian): RedirectResponse
+    public function update(Request $request, KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
     {
         $this->authorize('komponen-penilaian.kelola');
 
@@ -141,6 +160,7 @@ class KomponenPenilaianController extends BaseController
         $rules = [
             'kode' => ['nullable', 'string', 'max:50'],
             'deskripsi' => ['required', 'string'],
+            'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
             'kktp' => ['nullable', 'string'],
         ];
         if (! $dipakai) {
@@ -160,15 +180,35 @@ class KomponenPenilaianController extends BaseController
             $komponenPenilaian->semester_id = $data['semester_id'];
         }
 
+        $newBobot = $data['bobot'] ?? $komponenPenilaian->bobot;
+        $existingSum = KomponenPenilaian::where('mata_pelajaran_id', $komponenPenilaian->mata_pelajaran_id)
+            ->where('semester_id', $komponenPenilaian->semester_id)
+            ->where('id', '!=', $komponenPenilaian->id)
+            ->sum('bobot');
+
+        if (($existingSum + (int) $newBobot) > 100) {
+            $remaining = max(0, 100 - $existingSum);
+            $msg = "Total bobot melebihi 100%. Sisa bobot yang tersedia untuk mata pelajaran ini adalah {$remaining}%.";
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $msg], 422);
+            }
+            return back()->withInput()->withErrors(['bobot' => $msg]);
+        }
+
         $komponenPenilaian->kode = $data['kode'] ?? null;
         $komponenPenilaian->deskripsi = $data['deskripsi'];
+        $komponenPenilaian->bobot = $newBobot;
         $komponenPenilaian->kktp = $data['kktp'] ?? null;
         $komponenPenilaian->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil diperbarui.']);
+        }
 
         return redirect()->route('admin.komponen-penilaian.index')->with('status', 'Komponen penilaian (TP) berhasil diperbarui.');
     }
 
-    public function destroy(KomponenPenilaian $komponenPenilaian): RedirectResponse
+    public function destroy(KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
     {
         $this->authorize('komponen-penilaian.kelola');
 
@@ -178,10 +218,18 @@ class KomponenPenilaianController extends BaseController
         }
 
         if ($komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists()) {
-            return back()->withErrors(['komponen_penilaian' => 'Komponen ini sudah dipakai pada asesmen atau nilai siswa — tidak bisa dihapus.']);
+            $msg = 'Komponen ini sudah dipakai pada asesmen atau nilai siswa — tidak bisa dihapus.';
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $msg], 422);
+            }
+            return back()->withErrors(['komponen_penilaian' => $msg]);
         }
 
         $komponenPenilaian->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil dihapus.']);
+        }
 
         return redirect()->route('admin.komponen-penilaian.index')->with('status', 'Komponen penilaian (TP) berhasil dihapus.');
     }

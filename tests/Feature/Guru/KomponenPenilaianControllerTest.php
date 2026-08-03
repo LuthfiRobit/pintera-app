@@ -170,3 +170,36 @@ it('blocks deleting a komponen penilaian already used by nilai siswa, same guard
 
     expect(KomponenPenilaian::find($tp->id))->not->toBeNull();
 });
+
+it('rejects storing a new assessment component when total bobot exceeds 100 percent in Guru portal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    mengajar($lembaga, $guru, $mapel, $semester, $kelas);
+    $user = actingAsGuruKomponenPenilaian($guru);
+
+    KomponenPenilaian::create([
+        'lembaga_id' => $lembaga->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'G-1',
+        'deskripsi' => 'Existing Guru',
+        'bobot' => 90,
+    ]);
+
+    $response = $this->actingAs($user)->postJson(route('guru.komponen-penilaian.store'), [
+        'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'G-2',
+        'deskripsi' => 'Overload Guru',
+        'bobot' => 20,
+    ]);
+
+    $response->assertStatus(422)->assertJson(['status' => 'error']);
+    expect(KomponenPenilaian::where('kode', 'G-2')->exists())->toBeFalse();
+});
+
