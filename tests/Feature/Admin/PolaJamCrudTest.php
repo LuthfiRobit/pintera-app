@@ -391,3 +391,71 @@ it('displays pola jam index with eager loaded kelas and tahun ajaran without n+1
     $response->assertSee('VII-A');
     $response->assertSee('2026/2027');
 });
+
+it('duplicates a pola jam along with all its jam pelajaran slots without copying kelas bindings', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Reguler']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'pola_jam_id' => $pola->id]);
+    
+    JamPelajaran::create([
+        'pola_jam_id' => $pola->id,
+        'hari' => 'senin',
+        'urutan' => 1,
+        'label' => 'Upacara',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:35',
+        'is_pelajaran' => false,
+    ]);
+    JamPelajaran::create([
+        'pola_jam_id' => $pola->id,
+        'hari' => 'senin',
+        'urutan' => 2,
+        'label' => 'KBM Ke-1',
+        'jam_mulai' => '07:35',
+        'jam_selesai' => '08:10',
+        'is_pelajaran' => true,
+    ]);
+
+    $response = $this->actingAs($manager)->post(route('admin.pola-jam.duplicate', $pola));
+
+    $response->assertRedirect(route('admin.pola-jam.index'));
+    $response->assertSessionHas('status', 'Pola jam "Pola Reguler" beserta 2 slot jam berhasil diduplikasi.');
+
+    $clonedPola = PolaJam::where('nama', 'Pola Reguler (Salinan)')->where('lembaga_id', $lembaga->id)->first();
+    expect($clonedPola)->not->toBeNull();
+    expect($clonedPola->jamPelajaran)->toHaveCount(2);
+    expect($clonedPola->kelas)->toHaveCount(0);
+});
+
+it('rejects duplicating another lembaga\'s pola jam with 404', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $manager = actingAsPolaJamManager($lembagaA);
+
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $polaB = PolaJam::factory()->create(['lembaga_id' => $lembagaB->id, 'nama' => 'Pola Lembaga B']);
+
+    $this->actingAs($manager)->post(route('admin.pola-jam.duplicate', $polaB))->assertNotFound();
+    expect(PolaJam::where('nama', 'Pola Lembaga B (Salinan)')->exists())->toBeFalse();
+});
+
+it('loads polaJam relation on kelasList in index view for conflict indicator', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    $pola1 = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Reguler']);
+    $pola2 = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Intensif']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'pola_jam_id' => $pola1->id, 'nama' => 'VIII-B']);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('VIII-B');
+    $response->assertSee('Pola Reguler');
+});
+

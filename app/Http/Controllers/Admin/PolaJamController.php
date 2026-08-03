@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PolaJamController extends BaseController
@@ -20,7 +21,7 @@ class PolaJamController extends BaseController
 
         return view('admin.pola-jam.index', [
             'polaJamList' => PolaJam::with(['jamPelajaran', 'lembaga', 'kelas.tahunAjaran'])->orderBy('nama')->get(),
-            'kelasList' => Kelas::with('tahunAjaran')->orderBy('nama')->get(),
+            'kelasList' => Kelas::with(['tahunAjaran', 'polaJam'])->orderBy('nama')->get(),
         ]);
     }
 
@@ -117,5 +118,32 @@ class PolaJamController extends BaseController
         Kelas::whereIn('id', $kelasIds)->update(['pola_jam_id' => $polaJam->id]);
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Tautan kelas untuk pola jam ini berhasil disimpan.');
+    }
+
+    public function duplicate(PolaJam $polaJam): RedirectResponse
+    {
+        $this->authorize('pola-jam.create');
+
+        $count = DB::transaction(function () use ($polaJam) {
+            $newPola = PolaJam::create([
+                'nama' => $polaJam->nama . ' (Salinan)',
+                'lembaga_id' => $polaJam->lembaga_id,
+            ]);
+
+            foreach ($polaJam->jamPelajaran as $slot) {
+                $newPola->jamPelajaran()->create([
+                    'hari' => $slot->hari->value,
+                    'urutan' => $slot->urutan,
+                    'jam_mulai' => $slot->jam_mulai,
+                    'jam_selesai' => $slot->jam_selesai,
+                    'label' => $slot->label,
+                    'is_pelajaran' => $slot->is_pelajaran,
+                ]);
+            }
+
+            return $polaJam->jamPelajaran->count();
+        });
+
+        return redirect()->route('admin.pola-jam.index')->with('status', "Pola jam \"{$polaJam->nama}\" beserta {$count} slot jam berhasil diduplikasi.");
     }
 }
