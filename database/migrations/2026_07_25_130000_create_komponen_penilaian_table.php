@@ -15,6 +15,7 @@ return new class extends Migration
             $table->foreignId('semester_id')->constrained('semester')->cascadeOnDelete();
             $table->string('kode')->nullable();
             $table->text('deskripsi');
+            $table->unsignedTinyInteger('bobot')->default(10);
             $table->text('kktp')->nullable();
             $table->timestamps();
 

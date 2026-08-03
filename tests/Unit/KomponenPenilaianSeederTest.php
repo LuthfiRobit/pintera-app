@@ -52,7 +52,8 @@ it('seeds assessment components across all K-9 institutions', function () {
 
     $smp = Lembaga::where('npsn', '20223344')->first();
     $mtk = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
-    expect(KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('kode', 'TP.1.1')->exists())->toBeTrue();
+    expect(KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('kode', 'TP.1.1')->where('bobot', 50)->exists())->toBeTrue();
+    expect((int) KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->sum('bobot'))->toBe(100);
 });
 
 it('is idempotent when run twice', function () {
