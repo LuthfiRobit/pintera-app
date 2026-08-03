@@ -36,7 +36,7 @@
 
             <div class="space-y-5">
                 @foreach ($groupedKelas as $groupTitle => $classes)
-                    <div x-show="formAssign.lembagaId === null || @js($classes->pluck('lembaga_id')->unique()->values()->all()).includes(formAssign.lembagaId)" 
+                    <div x-show="formAssign.lembagaId === null || {{ $classes->pluck('lembaga_id')->unique()->values()->toJson() }}.includes(formAssign.lembagaId)" 
                          class="rounded-xl border border-gray-200 overflow-hidden">
                         <div class="bg-gray-50/80 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between">
                             <span class="font-display text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -54,7 +54,7 @@
                         </div>
                         <div class="p-4 bg-white grid grid-cols-2 sm:grid-cols-3 gap-3">
                             @foreach ($classes as $kelasOpsi)
-                                <div x-show="formAssign.lembagaId === null || formAssign.lembagaId === @js($kelasOpsi->lembaga_id)" 
+                                <div x-show="formAssign.lembagaId === null || formAssign.lembagaId === {{ $kelasOpsi->lembaga_id ?? 'null' }}" 
                                      class="flex items-center">
                                     <label class="group flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-950 font-medium select-none w-full p-1.5 rounded-lg hover:bg-gray-50 transition">
                                         <input

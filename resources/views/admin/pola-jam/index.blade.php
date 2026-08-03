@@ -1,5 +1,52 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-6" x-data="polaJamController()">
+    <div x-data="{
+        showModalPola: false,
+        modalPolaMode: 'create',
+        formPola: { id: null, nama: '', actionUrl: '{{ route('admin.pola-jam.store') }}' },
+
+        showModalEditSlot: false,
+        formSlot: { id: null, hari: 'senin', urutan: 1, jam_mulai: '', jam_selesai: '', label: '', is_pelajaran: 1, updateUrl: '' },
+
+        showModalAssign: false,
+        formAssign: { polaId: null, polaNama: '', lembagaId: null, selectedKelasIds: [], actionUrl: '' },
+
+        openCreatePola() {
+            this.modalPolaMode = 'create';
+            this.formPola = { id: null, nama: '', actionUrl: '{{ route('admin.pola-jam.store') }}' };
+            this.showModalPola = true;
+        },
+
+        openEditPola(pola, url) {
+            this.modalPolaMode = 'edit';
+            this.formPola = { id: pola.id, nama: pola.nama, actionUrl: url };
+            this.showModalPola = true;
+        },
+
+        openEditSlot(slot, hariValue, url) {
+            this.formSlot = {
+                id: slot.id,
+                hari: hariValue,
+                urutan: slot.urutan,
+                jam_mulai: slot.jam_mulai ? String(slot.jam_mulai).substring(0, 5) : '',
+                jam_selesai: slot.jam_selesai ? String(slot.jam_selesai).substring(0, 5) : '',
+                label: slot.label,
+                is_pelajaran: slot.is_pelajaran ? 1 : 0,
+                updateUrl: url
+            };
+            this.showModalEditSlot = true;
+        },
+
+        openAssignModal(pola, kelasIds, url) {
+            this.formAssign = {
+                polaId: pola.id,
+                polaNama: pola.nama,
+                lembagaId: pola.lembaga_id || null,
+                selectedKelasIds: Array.from(kelasIds || []).map(Number),
+                actionUrl: url
+            };
+            this.showModalAssign = true;
+        }
+    }" class="mx-auto max-w-6xl space-y-6">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
@@ -16,7 +63,7 @@
             </div>
             <div class="flex items-center gap-4">
                 @can('pola-jam.create')
-                    <x-primary-button type="button" @click="openCreatePola(@js(route('admin.pola-jam.store')))" class="shrink-0 justify-center">
+                    <x-primary-button type="button" @click="openCreatePola()" class="shrink-0 justify-center">
                         <span class="text-base leading-none mr-1.5">+</span> Tambah Pola Jam
                     </x-primary-button>
                 @endcan
@@ -44,7 +91,7 @@
 
                         <div class="flex items-center gap-3">
                             @can('pola-jam.edit')
-                                <button type="button" @click="openEditPola({{ $pola->id }}, @js($pola->nama), @js(route('admin.pola-jam.update', $pola)))" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition">
+                                <button type="button" @click="openEditPola({{ $pola->toJson() }}, '{{ route('admin.pola-jam.update', $pola) }}')" class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition">
                                     Edit Nama
                                 </button>
                             @endcan
@@ -84,7 +131,7 @@
                                 @endif
                             </div>
                             <button type="button" 
-                                    @click="openAssignModal({{ $pola->id }}, @js($pola->nama), {{ $pola->lembaga_id ?? 'null' }}, @js($pola->kelas->pluck('id')->values()->all()), @js(route('admin.pola-jam.assign-kelas', $pola)))" 
+                                    @click="openAssignModal({{ $pola->toJson() }}, {{ $pola->kelas->pluck('id')->values()->toJson() }}, '{{ route('admin.pola-jam.assign-kelas', $pola) }}')" 
                                     class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-2xs hover:bg-gray-50 transition active:scale-95 shrink-0">
                                 <x-icon name="add_circle" class="h-4 w-4 text-brand-500" />
                                 <span>Kelola Tautan</span>
@@ -194,7 +241,7 @@
                                                     <div class="flex items-center gap-3">
                                                         @can('jam-pelajaran.edit')
                                                             <button type="button" 
-                                                                    @click="openEditSlot({{ $slot->id }}, @js($slot->hari->value), {{ $slot->urutan }}, @js($slot->jam_mulai), @js($slot->jam_selesai), @js($slot->label), {{ $slot->is_pelajaran ? 1 : 0 }}, @js(route('admin.jam-pelajaran.update', $slot)))" 
+                                                                    @click="openEditSlot({{ $slot->toJson() }}, '{{ $slot->hari->value }}', '{{ route('admin.jam-pelajaran.update', $slot) }}')" 
                                                                     class="text-xs font-semibold text-gray-500 hover:text-brand-600 transition">
                                                                 Edit
                                                             </button>
@@ -229,59 +276,4 @@
         @include('admin.pola-jam._modal-edit-slot')
         @include('admin.pola-jam._modal-assign-kelas')
     </div>
-
-    @push('scripts')
-    <script>
-        function polaJamController() {
-            return {
-                showModalPola: false,
-                modalPolaMode: 'create',
-                formPola: { id: null, nama: '', actionUrl: '' },
-
-                showModalEditSlot: false,
-                formSlot: { id: null, hari: 'senin', urutan: 1, jam_mulai: '', jam_selesai: '', label: '', is_pelajaran: 1, updateUrl: '' },
-
-                showModalAssign: false,
-                formAssign: { polaId: null, polaNama: '', lembagaId: null, selectedKelasIds: [], actionUrl: '' },
-
-                openCreatePola(url) {
-                    this.modalPolaMode = 'create';
-                    this.formPola = { id: null, nama: '', actionUrl: url };
-                    this.showModalPola = true;
-                },
-
-                openEditPola(id, nama, url) {
-                    this.modalPolaMode = 'edit';
-                    this.formPola = { id: id, nama: nama, actionUrl: url };
-                    this.showModalPola = true;
-                },
-
-                openEditSlot(id, hari, urutan, jamMulai, jamSelesai, label, isPelajaran, url) {
-                    this.formSlot = {
-                        id: id,
-                        hari: hari,
-                        urutan: urutan,
-                        jam_mulai: jamMulai,
-                        jam_selesai: jamSelesai,
-                        label: label,
-                        is_pelajaran: isPelajaran,
-                        updateUrl: url
-                    };
-                    this.showModalEditSlot = true;
-                },
-
-                openAssignModal(polaId, polaNama, lembagaId, currentKelasIds, url) {
-                    this.formAssign = {
-                        polaId: polaId,
-                        polaNama: polaNama,
-                        lembagaId: lembagaId,
-                        selectedKelasIds: Array.from(currentKelasIds).map(Number),
-                        actionUrl: url
-                    };
-                    this.showModalAssign = true;
-                }
-            }
-        }
-    </script>
-    @endpush
 </x-app-layout>
