@@ -368,3 +368,26 @@ it('rejects assigning a pola jam to a different lembaga\'s kelas for a yayasan-s
 
     expect($kelasB->fresh()->pola_jam_id)->toBeNull();
 });
+
+it('displays pola jam index with eager loaded kelas and tahun ajaran without n+1 or 500 errors', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'status_aktif' => true]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $manager->roles->first()->givePermissionTo(Permission::firstOrCreate(['name' => 'kelas.edit', 'guard_name' => 'web']));
+    
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Reguler']);
+    $kelas = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tahun_ajaran_id' => $ta->id,
+        'pola_jam_id' => $pola->id,
+        'nama' => 'VII-A',
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+    
+    $response->assertOk();
+    $response->assertSee('Pola Reguler');
+    $response->assertSee('VII-A');
+    $response->assertSee('2026/2027');
+});

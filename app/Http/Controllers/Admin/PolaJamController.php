@@ -19,8 +19,8 @@ class PolaJamController extends BaseController
         $this->authorize('pola-jam.view');
 
         return view('admin.pola-jam.index', [
-            'polaJamList' => PolaJam::with(['jamPelajaran', 'lembaga'])->orderBy('nama')->get(),
-            'kelasList' => Kelas::orderBy('nama')->get(),
+            'polaJamList' => PolaJam::with(['jamPelajaran', 'lembaga', 'kelas.tahunAjaran'])->orderBy('nama')->get(),
+            'kelasList' => Kelas::with('tahunAjaran')->orderBy('nama')->get(),
         ]);
     }
 
