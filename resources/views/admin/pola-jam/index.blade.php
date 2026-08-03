@@ -209,68 +209,146 @@
                         </div>
                     @endcan
 
-                    {{-- 4. Daftar Jam Pelajaran per Hari --}}
-                    <div class="divide-y divide-gray-100 bg-white">
+                    {{-- 4. Daftar Jam Pelajaran (List & Weekly Matrix) --}}
+                    <div x-data="{ viewMode: 'list' }" class="divide-y divide-gray-100 bg-white">
                         @if ($pola->jamPelajaran->isEmpty())
                             <div class="px-6 py-10 text-center text-xs text-gray-400 italic">
                                 Belum ada slot jam pelajaran yang didaftarkan pada pola ini.
                             </div>
                         @else
-                            @foreach (\App\Enums\Hari::cases() as $hari)
-                                @php $slotHariIni = $pola->jamPelajaran->where('hari', $hari)->sortBy('urutan'); @endphp
-                                @if ($slotHariIni->isNotEmpty())
-                                    <div>
-                                        <div class="flex items-center justify-between bg-gray-50/40 px-6 py-2.5 border-y border-gray-100 mt-[-1px]">
-                                            <p class="text-xs font-bold text-gray-800 flex items-center gap-2">
-                                                <span class="h-2 w-2 rounded-full bg-brand-500"></span>
-                                                <span>{{ $hari->label() }}</span>
-                                            </p>
-                                            <span class="text-xs font-semibold text-gray-500">{{ $slotHariIni->count() }} sesi terdaftar</span>
+                            {{-- Header View Toggle --}}
+                            <div class="flex items-center justify-between px-6 py-3 border-b border-gray-100 bg-gray-50/30">
+                                <span class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <x-icon name="schedule" class="h-4 w-4 text-brand-500" />
+                                    <span>Jadwal Jam Pelajaran</span>
+                                </span>
+                                <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5">
+                                    <button type="button" @click="viewMode = 'list'" :class="viewMode === 'list' ? 'bg-white text-gray-900 shadow-2xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'" class="flex items-center gap-1 px-3 py-1 rounded-md text-xs transition">
+                                        <x-icon name="list" class="h-3.5 w-3.5" />
+                                        <span>Daftar Harian</span>
+                                    </button>
+                                    <button type="button" @click="viewMode = 'matrix'" :class="viewMode === 'matrix' ? 'bg-white text-gray-900 shadow-2xs font-bold' : 'text-gray-600 hover:text-gray-900 font-medium'" class="flex items-center gap-1 px-3 py-1 rounded-md text-xs transition">
+                                        <x-icon name="grid_view" class="h-3.5 w-3.5 text-brand-500" />
+                                        <span>Matriks Mingguan</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {{-- Mode 1: Daftar Harian --}}
+                            <div x-show="viewMode === 'list'" class="divide-y divide-gray-100">
+                                @foreach (\App\Enums\Hari::cases() as $hari)
+                                    @php $slotHariIni = $pola->jamPelajaran->where('hari', $hari)->sortBy('urutan'); @endphp
+                                    @if ($slotHariIni->isNotEmpty())
+                                        <div>
+                                            <div class="flex items-center justify-between bg-gray-50/40 px-6 py-2.5 border-y border-gray-100 mt-[-1px]">
+                                                <p class="text-xs font-bold text-gray-800 flex items-center gap-2">
+                                                    <span class="h-2 w-2 rounded-full bg-brand-500"></span>
+                                                    <span>{{ $hari->label() }}</span>
+                                                </p>
+                                                <span class="text-xs font-semibold text-gray-500">{{ $slotHariIni->count() }} sesi terdaftar</span>
+                                            </div>
+
+                                            <ul class="divide-y divide-gray-50">
+                                                @foreach ($slotHariIni as $slot)
+                                                    <li class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 py-3 transition hover:bg-gray-50/60">
+                                                        <div class="flex flex-wrap items-center gap-4">
+                                                            <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 font-mono text-xs font-bold text-gray-700">{{ $slot->urutan }}</span>
+                                                            <div class="flex items-center gap-1.5 font-mono text-xs">
+                                                                <span class="rounded bg-brand-50 px-2 py-1 font-bold text-brand-700 ring-1 ring-inset ring-brand-500/20">{{ $slot->jam_mulai }}</span>
+                                                                <span class="text-gray-400">&rarr;</span>
+                                                                <span class="rounded bg-gray-100 px-2 py-1 font-semibold text-gray-700 ring-1 ring-inset ring-gray-300/50">{{ $slot->jam_selesai }}</span>
+                                                            </div>
+                                                            <span class="text-gray-300 hidden md:inline">&bull;</span>
+                                                            <div class="flex items-center gap-2.5">
+                                                                <span class="text-sm font-bold text-gray-900">{{ $slot->label }}</span>
+                                                                @if ($slot->is_pelajaran)
+                                                                    <span class="inline-flex items-center rounded-full bg-success-50 px-2.5 py-0.5 text-[11px] font-semibold text-success-700 ring-1 ring-inset ring-success-600/20">Belajar</span>
+                                                                @else
+                                                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400/20">Non-pelajaran</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="flex items-center gap-3">
+                                                            @can('jam-pelajaran.edit')
+                                                                <button type="button" 
+                                                                        @click="openEditSlot({{ $slot->toJson() }}, '{{ $slot->hari->value }}', '{{ route('admin.jam-pelajaran.update', $slot) }}')" 
+                                                                        class="text-xs font-semibold text-gray-500 hover:text-brand-600 transition">
+                                                                    Edit
+                                                                </button>
+                                                            @endcan
+                                                            @can('jam-pelajaran.delete')
+                                                                <form method="POST" action="{{ route('admin.jam-pelajaran.destroy', $slot) }}" x-data @submit.prevent="confirmDialog('Hapus Jam Pelajaran?', @js('Apakah Anda yakin ingin menghapus slot \"' . $slot->label . '\"?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition">Hapus</button>
+                                                                </form>
+                                                            @endcan
+                                                        </div>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
                                         </div>
+                                    @endif
+                                @endforeach
+                            </div>
 
-                                        <ul class="divide-y divide-gray-50">
-                                            @foreach ($slotHariIni as $slot)
-                                                <li class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 py-3 transition hover:bg-gray-50/60">
-                                                    <div class="flex flex-wrap items-center gap-4">
-                                                        <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 font-mono text-xs font-bold text-gray-700">{{ $slot->urutan }}</span>
-                                                        <div class="flex items-center gap-1.5 font-mono text-xs">
-                                                            <span class="rounded bg-brand-50 px-2 py-1 font-bold text-brand-700 ring-1 ring-inset ring-brand-500/20">{{ $slot->jam_mulai }}</span>
-                                                            <span class="text-gray-400">&rarr;</span>
-                                                            <span class="rounded bg-gray-100 px-2 py-1 font-semibold text-gray-700 ring-1 ring-inset ring-gray-300/50">{{ $slot->jam_selesai }}</span>
-                                                        </div>
-                                                        <span class="text-gray-300 hidden md:inline">&bull;</span>
-                                                        <div class="flex items-center gap-2.5">
-                                                            <span class="text-sm font-bold text-gray-900">{{ $slot->label }}</span>
-                                                            @if ($slot->is_pelajaran)
-                                                                <span class="inline-flex items-center rounded-full bg-success-50 px-2.5 py-0.5 text-[11px] font-semibold text-success-700 ring-1 ring-inset ring-success-600/20">Belajar</span>
-                                                            @else
-                                                                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-600 ring-1 ring-inset ring-gray-400/20">Non-pelajaran</span>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="flex items-center gap-3">
-                                                        @can('jam-pelajaran.edit')
-                                                            <button type="button" 
-                                                                    @click="openEditSlot({{ $slot->toJson() }}, '{{ $slot->hari->value }}', '{{ route('admin.jam-pelajaran.update', $slot) }}')" 
-                                                                    class="text-xs font-semibold text-gray-500 hover:text-brand-600 transition">
-                                                                Edit
-                                                            </button>
-                                                        @endcan
-                                                        @can('jam-pelajaran.delete')
-                                                            <form method="POST" action="{{ route('admin.jam-pelajaran.destroy', $slot) }}" x-data @submit.prevent="confirmDialog('Hapus Jam Pelajaran?', @js('Apakah Anda yakin ingin menghapus slot \"' . $slot->label . '\"?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition">Hapus</button>
-                                                            </form>
-                                                        @endcan
-                                                    </div>
-                                                </li>
+                            {{-- Mode 2: Matriks Mingguan --}}
+                            <div x-show="viewMode === 'matrix'" x-cloak style="display: none;" class="overflow-x-auto p-6 bg-gray-50/20 border-b border-gray-100">
+                                @php
+                                    $allUrutans = $pola->jamPelajaran->pluck('urutan')->unique()->sort()->values();
+                                @endphp
+                                <table class="w-full border-collapse rounded-xl overflow-hidden shadow-2xs border border-gray-200 bg-white text-left text-xs">
+                                    <thead>
+                                        <tr class="bg-gray-100 border-b border-gray-200 text-gray-700 font-bold">
+                                            <th class="py-2.5 px-4 w-32 border-r border-gray-200 text-center uppercase tracking-wider">Jam Ke- / Waktu</th>
+                                            @foreach ($hariAktifPola as $hariCol)
+                                                <th class="py-2.5 px-3 border-r border-gray-200 text-center uppercase tracking-wider last:border-r-0">{{ $hariCol->label() }}</th>
                                             @endforeach
-                                        </ul>
-                                    </div>
-                                @endif
-                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        @foreach ($allUrutans as $urutan)
+                                            <tr class="hover:bg-gray-50/50 transition">
+                                                @php
+                                                    $sampleSlot = $pola->jamPelajaran->where('urutan', $urutan)->first();
+                                                @endphp
+                                                <td class="py-3 px-3 border-r border-gray-100 text-center bg-gray-50/40 font-mono shrink-0">
+                                                    <div class="font-bold text-gray-900 text-sm">Ke-{{ $urutan }}</div>
+                                                    @if ($sampleSlot)
+                                                        <div class="text-[11px] text-gray-500 font-semibold mt-0.5">{{ \Carbon\Carbon::parse($sampleSlot->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($sampleSlot->jam_selesai)->format('H:i') }}</div>
+                                                    @endif
+                                                </td>
+                                                @foreach ($hariAktifPola as $hariCol)
+                                                    @php
+                                                        $cellSlot = $pola->jamPelajaran->where('hari', $hariCol)->where('urutan', $urutan)->first();
+                                                    @endphp
+                                                    <td class="py-2 px-2 border-r border-gray-100 align-top last:border-r-0 w-[14%]">
+                                                        @if ($cellSlot)
+                                                            <div @can('jam-pelajaran.edit') @click="openEditSlot({{ $cellSlot->toJson() }}, '{{ $cellSlot->hari->value }}', '{{ route('admin.jam-pelajaran.update', $cellSlot) }}')" @endcan
+                                                                 class="group rounded-lg p-2.5 border transition relative cursor-pointer {{ $cellSlot->is_pelajaran ? 'bg-brand-50/40 border-brand-200 hover:border-brand-400 hover:bg-brand-50/80 text-brand-950' : 'bg-gray-50 border-gray-200 hover:border-gray-300 hover:bg-gray-100/70 text-gray-700' }}">
+                                                                <div class="font-bold text-xs leading-tight mb-1 flex items-center justify-between gap-1">
+                                                                    <span>{{ $cellSlot->label }}</span>
+                                                                    @can('jam-pelajaran.edit')
+                                                                        <x-icon name="edit" class="h-3.5 w-3.5 opacity-0 group-hover:opacity-100 transition text-brand-600 shrink-0" />
+                                                                    @endcan
+                                                                </div>
+                                                                <div class="text-[10px] font-mono text-gray-500 font-medium flex items-center gap-1">
+                                                                    <span>{{ \Carbon\Carbon::parse($cellSlot->jam_mulai)->format('H:i') }} - {{ \Carbon\Carbon::parse($cellSlot->jam_selesai)->format('H:i') }}</span>
+                                                                </div>
+                                                            </div>
+                                                        @else
+                                                            <div class="h-full w-full min-h-[52px] rounded-lg border border-dashed border-gray-150 flex items-center justify-center text-[10px] text-gray-300 italic select-none">
+                                                                Kosong
+                                                            </div>
+                                                        @endif
+                                                    </td>
+                                                @endforeach
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         @endif
                     </div>
 

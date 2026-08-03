@@ -459,3 +459,29 @@ it('loads polaJam relation on kelasList in index view for conflict indicator', f
     $response->assertSee('Pola Reguler');
 });
 
+it('renders timetable matrix headers and slot chips on pola jam index', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Matriks']);
+    JamPelajaran::create([
+        'pola_jam_id' => $pola->id,
+        'hari' => 'rabu',
+        'urutan' => 3,
+        'label' => 'Kegiatan Literasi',
+        'jam_mulai' => '08:45',
+        'jam_selesai' => '09:20',
+        'is_pelajaran' => false,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+    
+    $response->assertOk();
+    $response->assertSee('Matriks Mingguan');
+    $response->assertSee('Jam Ke- / Waktu');
+    $response->assertSee('Kegiatan Literasi');
+    $response->assertSee('08:45 - 09:20');
+});
+
+
