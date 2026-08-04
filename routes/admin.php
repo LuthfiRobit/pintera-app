@@ -48,6 +48,7 @@ use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\SesiPembelajaranController;
 use App\Http\Controllers\KasusConsentController;
 use App\Http\Controllers\KasusController;
+use App\Http\Controllers\KasusEvaluasiController;
 use App\Http\Controllers\KasusSesiController;
 use App\Http\Controllers\KasusTugasController;
 use App\Http\Controllers\KasusTugasSubmissionController;
@@ -248,6 +249,7 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
     Route::patch('{kasus}/tugas/{kasusTugas}/submission/{kasusTugasSubmission}/review', [KasusTugasSubmissionController::class, 'review'])->name('tugas.submission.review');
     Route::get('{kasus}/tugas/{kasusTugas}/submission/{kasusTugasSubmission}/lampiran', [KasusTugasSubmissionController::class, 'download'])->name('tugas.submission.lampiran');
     Route::patch('{kasus}/tugas/{kasusTugas}/selesai', [KasusTugasController::class, 'markSelesai'])->name('tugas.selesai');
+    Route::post('{kasus}/evaluasi', [KasusEvaluasiController::class, 'store'])->name('evaluasi.store');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
