@@ -82,3 +82,30 @@ it('403s a konselor who is not assigned from giving tugas', function () {
 
     $this->actingAs($unrelatedKonselorUser)->post(route('kasus.tugas.store', $kasus), $payload)->assertForbidden();
 });
+
+it('notifies siswa and orang tua when a tugas is given', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+
+    $siswaUser = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa->update(['user_id' => $siswaUser->id]);
+
+    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = \App\Models\OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tugas',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007777',
+        'email' => 'ortu.tugas@example.test',
+    ]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    \Illuminate\Support\Facades\Notification::fake();
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), ['tugas' => [
+        ['judul' => 'Jurnal Harian', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
+    ]]);
+
+    \Illuminate\Support\Facades\Notification::assertSentTo($siswaUser, \App\Notifications\TugasDitugaskanNotification::class);
+    \Illuminate\Support\Facades\Notification::assertSentTo($orangTua, \App\Notifications\TugasDitugaskanNotification::class);
+});

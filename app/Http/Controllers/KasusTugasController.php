@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Kasus;
 use App\Models\KasusTugas;
+use App\Models\Scopes\TenantScope;
+use App\Notifications\TugasDitugaskanNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,18 +31,24 @@ class KasusTugasController extends BaseController
             'tugas.*.batas_selesai_pada' => ['required', 'date', 'after_or_equal:tugas.*.mulai_pada'],
         ]);
 
-        DB::transaction(function () use ($data, $kasus) {
-            foreach ($data['tugas'] as $row) {
-                KasusTugas::create([
-                    'kasus_id' => $kasus->id,
-                    'judul' => $row['judul'],
-                    'instruksi' => $row['instruksi'],
-                    'frekuensi' => $row['frekuensi'],
-                    'mulai_pada' => $row['mulai_pada'],
-                    'batas_selesai_pada' => $row['batas_selesai_pada'],
-                ]);
-            }
+        $created = DB::transaction(function () use ($data, $kasus) {
+            return collect($data['tugas'])->map(fn ($row) => KasusTugas::create([
+                'kasus_id' => $kasus->id,
+                'judul' => $row['judul'],
+                'instruksi' => $row['instruksi'],
+                'frekuensi' => $row['frekuensi'],
+                'mulai_pada' => $row['mulai_pada'],
+                'batas_selesai_pada' => $row['batas_selesai_pada'],
+            ]));
         });
+
+        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
+        $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+
+        foreach ($created as $tugas) {
+            $siswa?->user?->notify(new TugasDitugaskanNotification($tugas));
+            $kontakUtama?->notify(new TugasDitugaskanNotification($tugas));
+        }
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Tugas berhasil diberikan.');
     }
