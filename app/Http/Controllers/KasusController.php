@@ -33,7 +33,9 @@ class KasusController extends BaseController
             // on Kasus (a real, non-null lembaga_id) would fail-closed to zero rows for them.
             // Bypass it here; the where() on diajukan_oleh_orang_tua_id already scopes the
             // result to this orang_tua's own submissions.
-            $kasusList = Kasus::withoutGlobalScope(TenantScope::class)->with('siswa')->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
+            $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
+                ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                ->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
         } else {
             $kasusList = Kasus::with('siswa')->latest()->get();
         }
@@ -115,14 +117,21 @@ class KasusController extends BaseController
         $this->authorize('kasus.view');
 
         $user = auth()->user();
+
+        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
+        abort_if($siswa === null, 404);
+        $kasus->setRelation('siswa', $siswa);
+
         $isSubmitter = ($kasus->diajukan_oleh_guru_id !== null && $kasus->diajukan_oleh_guru_id === $user->guru?->id)
             || ($kasus->diajukan_oleh_orang_tua_id !== null && $kasus->diajukan_oleh_orang_tua_id === $user->orangTua?->id);
         $isKontakUtama = $user->orangTua !== null
-            && $kasus->siswa?->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
+            && $siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
+        $isTriaseAdmin = $user->can('kasus.triase')
+            && ($user->widestScopeLevel() === 'yayasan' || $kasus->lembaga_id === $user->lembaga_id);
 
-        abort_if(! $isSubmitter && ! $isKontakUtama && ! $user->can('kasus.triase'), 404);
+        abort_if(! $isSubmitter && ! $isKontakUtama && ! $isTriaseAdmin, 404);
 
-        $kasus->load(['siswa', 'consents', 'konselorGuru', 'konselorKaryawan']);
+        $kasus->load(['consents', 'konselorGuru', 'konselorKaryawan']);
 
         return view('kasus.show', [
             'kasus' => $kasus,
