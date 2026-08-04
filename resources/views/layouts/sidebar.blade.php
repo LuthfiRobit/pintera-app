@@ -67,7 +67,7 @@
         [
             'label' => 'VIII. Pendampingan',
             'items' => array_filter([
-                Auth::user()->can('kasus.ajukan') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'fact_check'] : null,
+                Auth::user()->can('kasus.view') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'fact_check'] : null,
                 Auth::user()->can('kasus.triase') ? ['route' => 'admin.kasus.index', 'pattern' => 'admin.kasus.*', 'label' => 'Triase Kasus', 'icon' => 'assessment'] : null,
             ]),
         ],

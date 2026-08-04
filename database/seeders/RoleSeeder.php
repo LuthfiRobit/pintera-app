@@ -99,6 +99,14 @@ class RoleSeeder extends Seeder
                     'kasus.ajukan', 'kasus.view', 'kasus.consent',
                 ]);
             }
+
+            if ($name === 'siswa') {
+                $role->givePermissionTo(['kasus.view']);
+            }
+
+            if (in_array($name, ['karyawan_pool', 'karyawan_lembaga'], true)) {
+                $role->givePermissionTo(['kasus.view']);
+            }
         }
     }
 }

@@ -26,8 +26,8 @@ class KasusController extends BaseController
 
         $user = $request->user();
 
-        if ($user->hasRole('guru')) {
-            $kasusList = Kasus::with('siswa')->where('diajukan_oleh_guru_id', $user->guru?->id)->latest()->get();
+        if ($user->hasRole('siswa')) {
+            $kasusList = Kasus::with('siswa')->where('siswa_id', $user->siswa?->id)->latest()->get();
         } elseif ($user->hasRole('orang_tua')) {
             // Orang tua accounts have no lembaga_id of their own, so the default TenantScope
             // on Kasus (a real, non-null lembaga_id) would fail-closed to zero rows for them.
@@ -36,6 +36,15 @@ class KasusController extends BaseController
             $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
                 ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
                 ->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
+        } elseif ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
+            $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
+                ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                ->where('konselor_karyawan_id', $user->karyawan?->id)->latest()->get();
+        } elseif ($user->hasRole('guru')) {
+            $kasusList = Kasus::with('siswa')
+                ->where(fn ($q) => $q->where('diajukan_oleh_guru_id', $user->guru?->id)
+                    ->orWhere('konselor_guru_id', $user->guru?->id))
+                ->latest()->get();
         } else {
             $kasusList = Kasus::with('siswa')->latest()->get();
         }
@@ -128,8 +137,11 @@ class KasusController extends BaseController
             && $siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
         $isTriaseAdmin = $user->can('kasus.triase')
             && ($user->widestScopeLevel() === 'yayasan' || $kasus->lembaga_id === $user->lembaga_id);
+        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
+            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $user->karyawan?->id);
+        $isSiswaTerkait = $user->siswa !== null && $user->siswa->id === $kasus->siswa_id;
 
-        abort_if(! $isSubmitter && ! $isKontakUtama && ! $isTriaseAdmin, 404);
+        abort_if(! $isSubmitter && ! $isKontakUtama && ! $isTriaseAdmin && ! $isKonselor && ! $isSiswaTerkait, 404);
 
         // Guru and Karyawan both use BelongsToTenant. For an orang_tua actor (null lembaga_id),
         // TenantScope would fail-closed to zero rows for these konselor relations, silently
@@ -143,6 +155,8 @@ class KasusController extends BaseController
         return view('kasus.show', [
             'kasus' => $kasus,
             'isKontakUtama' => $isKontakUtama,
+            'isKonselor' => $isKonselor,
+            'isSiswaTerkait' => $isSiswaTerkait,
         ]);
     }
 
