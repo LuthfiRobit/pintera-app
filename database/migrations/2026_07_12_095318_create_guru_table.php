@@ -36,7 +36,8 @@ return new class extends Migration
             $table->string('no_hp')->nullable();
             $table->string('email')->nullable();
 
-            $table->enum('jenis_ptk', ['guru_kelas', 'guru_mapel', 'kepala_sekolah', 'tenaga_administrasi']);
+            $table->enum('jenis_ptk', ['guru_kelas', 'guru_mapel', 'kepala_sekolah', 'tenaga_administrasi', 'guru_bk']);
+            $table->integer('kapasitas_kasus_aktif')->nullable();
             $table->enum('status_kepegawaian', ['PNS', 'PPPK', 'GTY', 'PTY', 'Honorer']);
             $table->string('golongan_pangkat')->nullable();
             $table->date('tmt_tugas')->nullable();

@@ -23,6 +23,7 @@ class Guru extends Model
         'alamat_jalan', 'rt', 'rw', 'desa_kelurahan', 'kecamatan', 'kabupaten_kota',
         'provinsi', 'kode_pos', 'no_hp', 'email',
         'jenis_ptk', 'status_kepegawaian', 'golongan_pangkat', 'tmt_tugas', 'tmt_pns', 'status_aktif',
+        'kapasitas_kasus_aktif',
     ];
 
     protected function casts(): array

@@ -25,6 +25,7 @@ class GuruController extends BaseController
         'guru_mapel' => 'Guru Mapel',
         'kepala_sekolah' => 'Kepala Sekolah',
         'tenaga_administrasi' => 'Tenaga Administrasi',
+        'guru_bk' => 'Guru BK',
     ];
 
     private const STATUS_KEPEGAWAIAN_OPTIONS = [
@@ -186,7 +187,8 @@ class GuruController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($guru?->user_id)],
             'jenis_kelamin' => ['required', 'in:L,P'],
-            'jenis_ptk' => ['required', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi'],
+            'jenis_ptk' => ['required', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi,guru_bk'],
+            'kapasitas_kasus_aktif' => ['nullable', 'integer', 'min:0'],
             'status_kepegawaian' => ['required', 'in:PNS,PPPK,GTY,PTY,Honorer'],
             'nuptk' => ['nullable', 'string', 'max:30', function ($attribute, $value, $fail) use ($guru) {
                 if (blank($value)) {

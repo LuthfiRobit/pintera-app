@@ -76,6 +76,13 @@
             </div>
 
             <div>
+                <x-input-label value="Kapasitas Kasus Aktif" />
+                <input type="number" name="kapasitas_kasus_aktif" min="0" value="{{ $val('kapasitas_kasus_aktif') }}" class="{{ $inputClass }}">
+                <p class="mt-1 text-xs text-gray-400">Khusus Guru BK. Kosongkan kalau tidak dibatasi.</p>
+                <x-input-error :messages="$errors->get('kapasitas_kasus_aktif')" class="mt-1.5" />
+            </div>
+
+            <div>
                 <x-input-label value="Status Kepegawaian *" />
                 <select name="status_kepegawaian" class="{{ $selectClass }}">
                     @foreach ($statusKepegawaianOptions as $value => $label)
