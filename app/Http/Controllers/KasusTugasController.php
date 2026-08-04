@@ -33,7 +33,7 @@ class KasusTugasController extends BaseController
         ]);
 
         $created = DB::transaction(function () use ($data, $kasus) {
-            return collect($data['tugas'])->map(fn ($row) => KasusTugas::create([
+            $rows = collect($data['tugas'])->map(fn ($row) => KasusTugas::create([
                 'kasus_id' => $kasus->id,
                 'judul' => $row['judul'],
                 'instruksi' => $row['instruksi'],
@@ -41,6 +41,12 @@ class KasusTugasController extends BaseController
                 'mulai_pada' => $row['mulai_pada'],
                 'batas_selesai_pada' => $row['batas_selesai_pada'],
             ]));
+
+            if ($kasus->status->value === 'ditugaskan') {
+                $kasus->update(['status' => 'berjalan']);
+            }
+
+            return $rows;
         });
 
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
