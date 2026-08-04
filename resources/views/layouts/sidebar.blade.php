@@ -64,6 +64,12 @@
                 Auth::user()->can('asesmen.kelola') ? ['route' => 'guru.asesmen.index', 'pattern' => 'guru.asesmen.*', 'label' => 'Asesmen & Nilai', 'icon' => 'assessment'] : null,
             ]),
         ],
+        [
+            'label' => 'Pendampingan',
+            'items' => array_filter([
+                Auth::user()->can('kasus.ajukan') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'fact_check'] : null,
+            ]),
+        ],
     ];
 @endphp
 

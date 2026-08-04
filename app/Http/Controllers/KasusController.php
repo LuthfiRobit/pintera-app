@@ -1,0 +1,146 @@
+<?php
+// app/Http/Controllers/KasusController.php
+
+namespace App\Http\Controllers;
+
+use App\Enums\StatusKasus;
+use App\Models\Kasus;
+use App\Models\Scopes\TenantScope;
+use App\Models\Siswa;
+use App\Notifications\KasusDiajukanNotification;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+
+class KasusController extends BaseController
+{
+    use AuthorizesRequests;
+
+    public function index(Request $request): View
+    {
+        $this->authorize('kasus.view');
+
+        $user = $request->user();
+
+        if ($user->hasRole('guru')) {
+            $kasusList = Kasus::with('siswa')->where('diajukan_oleh_guru_id', $user->guru?->id)->latest()->get();
+        } elseif ($user->hasRole('orang_tua')) {
+            $kasusList = Kasus::with('siswa')->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
+        } else {
+            $kasusList = Kasus::with('siswa')->latest()->get();
+        }
+
+        return view('kasus.index', ['kasusList' => $kasusList]);
+    }
+
+    public function create(Request $request): View
+    {
+        $this->authorize('kasus.ajukan');
+
+        $user = $request->user();
+
+        $siswaList = $user->hasRole('orang_tua')
+            ? ($user->orangTua?->siswa ?? collect())
+            : Siswa::orderBy('nama_lengkap')->get();
+
+        return view('kasus.create', ['siswaList' => $siswaList]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $this->authorize('kasus.ajukan');
+
+        $user = $request->user();
+        $isGuru = $user->hasRole('guru');
+
+        $rules = [
+            'siswa_id' => ['required', 'exists:siswa,id'],
+            'kategori_masalah' => ['required', 'string', 'max:255'],
+            'deskripsi' => ['required', 'string'],
+        ];
+        if ($isGuru) {
+            $rules['lampiran'] = ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'];
+        }
+        $data = $request->validate($rules);
+
+        // Orang tua accounts have no lembaga_id of their own (their linked children may
+        // belong to any lembaga), so the default TenantScope on Siswa would exclude every
+        // real row for them. Bypass it here; authorization is still enforced explicitly
+        // below (the orang_tua-child linkage check, or the guru-must-have-a-guru-record check).
+        $siswa = Siswa::withoutGlobalScope(TenantScope::class)->findOrFail($data['siswa_id']);
+
+        if ($isGuru) {
+            abort_if($user->guru === null, 403);
+        } else {
+            $orangTua = $user->orangTua;
+            abort_if(
+                $orangTua === null || ! $siswa->orangTua()->where('orang_tua_id', $orangTua->id)->exists(),
+                403,
+                'Anda tidak tertaut ke siswa ini.'
+            );
+        }
+
+        $lampiranPath = ($isGuru && $request->hasFile('lampiran'))
+            ? $request->file('lampiran')->store('kasus-lampiran', 'public')
+            : null;
+
+        $kasus = DB::transaction(function () use ($data, $siswa, $isGuru, $user, $lampiranPath) {
+            return Kasus::create([
+                'siswa_id' => $siswa->id,
+                'lembaga_id' => $siswa->lembaga_id,
+                'diajukan_oleh_guru_id' => $isGuru ? $user->guru->id : null,
+                'diajukan_oleh_orang_tua_id' => $isGuru ? null : $user->orangTua->id,
+                'kategori_masalah' => $data['kategori_masalah'],
+                'deskripsi' => $data['deskripsi'],
+                'lampiran' => $lampiranPath,
+                'status' => StatusKasus::Diajukan,
+            ]);
+        });
+
+        // The Kasus->siswa relation would re-apply Siswa's TenantScope when lazy-loaded,
+        // which (for an orang_tua submitter with no lembaga_id) filters the real siswa row
+        // out entirely. Cache the already-authorized, scope-bypassed $siswa on the relation
+        // so notifyPihakLain() (and the redirect target) see the correct record.
+        $kasus->setRelation('siswa', $siswa);
+
+        $this->notifyPihakLain($kasus, $isGuru);
+
+        return redirect()->route('kasus.index')->with('status', 'Kasus berhasil diajukan.');
+    }
+
+    public function show(Kasus $kasus): View
+    {
+        $this->authorize('kasus.view');
+
+        $user = auth()->user();
+        $isSubmitter = ($kasus->diajukan_oleh_guru_id !== null && $kasus->diajukan_oleh_guru_id === $user->guru?->id)
+            || ($kasus->diajukan_oleh_orang_tua_id !== null && $kasus->diajukan_oleh_orang_tua_id === $user->orangTua?->id);
+        $isKontakUtama = $user->orangTua !== null
+            && $kasus->siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
+
+        abort_if(! $isSubmitter && ! $isKontakUtama && ! $user->can('kasus.triase'), 404);
+
+        $kasus->load(['siswa', 'consents', 'konselorGuru', 'konselorKaryawan']);
+
+        return view('kasus.show', [
+            'kasus' => $kasus,
+            'isKontakUtama' => $isKontakUtama,
+        ]);
+    }
+
+    private function notifyPihakLain(Kasus $kasus, bool $isGuru): void
+    {
+        if ($isGuru) {
+            $kontakUtama = $kasus->siswa->orangTua()->wherePivot('is_kontak_utama', true)->first();
+            $kontakUtama?->notify(new KasusDiajukanNotification($kasus));
+
+            return;
+        }
+
+        $waliKelas = $kasus->siswa->kelas?->waliKelas;
+        $waliKelas?->notify(new KasusDiajukanNotification($kasus));
+    }
+}

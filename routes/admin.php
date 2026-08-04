@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KaryawanController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\KenaikanKelasController;
+use App\Http\Controllers\KasusController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
 use App\Http\Controllers\Admin\Lembaga\DataPeriodikController as LembagaDataPeriodikController;
 use App\Http\Controllers\Admin\Lembaga\EkstrakurikulerController as LembagaEkstrakurikulerController;
@@ -215,6 +216,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 
     Route::get('kenaikan-kelas', [KenaikanKelasController::class, 'index'])->name('kenaikan-kelas.index');
     Route::post('kenaikan-kelas', [KenaikanKelasController::class, 'store'])->name('kenaikan-kelas.store');
+});
+
+Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(function () {
+    Route::get('/', [KasusController::class, 'index'])->name('index');
+    Route::get('ajukan', [KasusController::class, 'create'])->name('create');
+    Route::post('/', [KasusController::class, 'store'])->name('store');
+    Route::get('{kasus}', [KasusController::class, 'show'])->name('show');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
