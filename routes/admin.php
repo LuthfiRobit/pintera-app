@@ -50,6 +50,7 @@ use App\Http\Controllers\KasusConsentController;
 use App\Http\Controllers\KasusController;
 use App\Http\Controllers\KasusSesiController;
 use App\Http\Controllers\KasusTugasController;
+use App\Http\Controllers\KasusTugasSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
@@ -243,6 +244,7 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
     Route::post('{kasus}/sesi', [KasusSesiController::class, 'store'])->name('sesi.store');
     Route::patch('{kasus}/sesi/{kasusSesi}', [KasusSesiController::class, 'updateStatus'])->name('sesi.update-status');
     Route::post('{kasus}/tugas', [KasusTugasController::class, 'store'])->name('tugas.store');
+    Route::post('{kasus}/tugas/{kasusTugas}/submission', [KasusTugasSubmissionController::class, 'store'])->name('tugas.submission.store');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {

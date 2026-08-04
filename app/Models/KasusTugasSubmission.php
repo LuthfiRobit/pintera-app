@@ -22,6 +22,17 @@ class KasusTugasSubmission extends Model
         'status_review' => 'menunggu_review',
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (KasusTugasSubmission $submission) {
+            $tugas = $submission->tugas;
+
+            if ($tugas->status === \App\Enums\StatusKasusTugas::Ditugaskan) {
+                $tugas->update(['status' => \App\Enums\StatusKasusTugas::Dikerjakan]);
+            }
+        });
+    }
+
     public function tugas(): BelongsTo
     {
         return $this->belongsTo(KasusTugas::class, 'tugas_id');

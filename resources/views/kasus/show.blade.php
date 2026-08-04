@@ -160,14 +160,40 @@
                 @if ($kasus->tugas->isNotEmpty())
                     <div class="space-y-2">
                         @foreach ($kasus->tugas as $tugas)
-                            <div class="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
-                                <div>
-                                    <p class="text-sm font-semibold text-gray-900">{{ $tugas->judul }}</p>
-                                    <p class="text-xs text-gray-500">Batas: {{ $tugas->batas_selesai_pada->format('d M Y') }} &middot; {{ ucfirst($tugas->frekuensi) }}</p>
+                            <div class="rounded-lg border border-gray-100 px-3 py-2 space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-900">{{ $tugas->judul }}</p>
+                                        <p class="text-xs text-gray-500">Batas: {{ $tugas->batas_selesai_pada->format('d M Y') }} &middot; {{ ucfirst($tugas->frekuensi) }}</p>
+                                    </div>
+                                    <x-badge tone="{{ $tugas->status->value === 'selesai' ? 'green' : ($tugas->status->value === 'terlewat' ? 'red' : ($tugas->status->value === 'revisi' ? 'amber' : 'blue')) }}">
+                                        {{ $tugas->status->label() }}
+                                    </x-badge>
                                 </div>
-                                <x-badge tone="{{ $tugas->status->value === 'selesai' ? 'green' : ($tugas->status->value === 'terlewat' ? 'red' : ($tugas->status->value === 'revisi' ? 'amber' : 'blue')) }}">
-                                    {{ $tugas->status->label() }}
-                                </x-badge>
+
+                                @if ($tugas->submissions->isNotEmpty())
+                                    <div class="space-y-1 border-t border-gray-100 pt-2">
+                                        @foreach ($tugas->submissions as $submission)
+                                            <div class="flex items-center justify-between text-xs">
+                                                <span class="text-gray-600">{{ $submission->created_at->format('d M Y H:i') }}: {{ $submission->teks ?? '(lampiran saja)' }}</span>
+                                                <x-badge tone="{{ $submission->status_review === 'diterima' ? 'green' : ($submission->status_review === 'revisi_diminta' ? 'amber' : 'slate') }}">
+                                                    {{ str_replace('_', ' ', ucfirst($submission->status_review)) }}
+                                                </x-badge>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+
+                                @if (($isSiswaTerkait || $isKontakUtama) && in_array($tugas->status->value, ['ditugaskan', 'dikerjakan', 'revisi'], true))
+                                    <form method="POST" action="{{ route('kasus.tugas.submission.store', [$kasus, $tugas]) }}" enctype="multipart/form-data" class="space-y-2 border-t border-gray-100 pt-2">
+                                        @csrf
+                                        <textarea name="teks" rows="2" placeholder="Ceritakan bukti pengerjaan Anda" class="block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
+                                        @if ($kasus->consents->firstWhere('jenis', 'pengumpulan_media')?->status === 'disetujui')
+                                            <input type="file" name="lampiran" class="block w-full text-xs text-gray-700">
+                                        @endif
+                                        <x-primary-button type="submit" class="text-xs">Kirim Bukti</x-primary-button>
+                                    </form>
+                                @endif
                             </div>
                         @endforeach
                     </div>
