@@ -105,6 +105,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('orang-tua', OrangTuaController::class)->except(['show', 'destroy']);
     Route::patch('orang-tua/{orangTua}/status', [OrangTuaController::class, 'updateStatus'])->name('orang-tua.update-status');
     Route::resource('karyawan', KaryawanController::class)->except(['show', 'destroy']);
+    Route::patch('karyawan/{karyawan}/status', [KaryawanController::class, 'updateStatus'])->name('karyawan.update-status');
     Route::patch('siswa/{siswa}/status', [SiswaController::class, 'updateStatus'])->name('siswa.update-status');
     Route::patch('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');
     Route::post('kalender-akademik', [KalenderAkademikController::class, 'store'])->name('kalender-akademik.store');

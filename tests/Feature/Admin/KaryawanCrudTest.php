@@ -103,3 +103,46 @@ it('lets yayasan_super_admin create a pool karyawan', function () {
     expect($karyawan->yayasan_id)->toBe($yayasan->id);
     expect($karyawan->user->hasRole('karyawan_pool'))->toBeTrue();
 });
+
+it('updates a karyawan profile without touching nik or lembaga_id', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKaryawanManager($lembaga);
+    $jenisA = JenisKaryawanMaster::factory()->create();
+    $jenisB = JenisKaryawanMaster::factory()->create();
+
+    $this->actingAs($manager)->post(route('admin.karyawan.store'), [
+        'nik' => '3201234567897777', 'nama' => 'Nama Lama', 'email' => 'lama@permata.sch.id', 'jenis_karyawan_id' => $jenisA->id,
+    ])->assertRedirect();
+    $karyawan = Karyawan::where('nik_hash', hash('sha256', '3201234567897777'))->firstOrFail();
+
+    $this->actingAs($manager)->put(route('admin.karyawan.update', $karyawan), [
+        'nama' => 'Nama Baru', 'email' => 'baru@permata.sch.id', 'jenis_karyawan_id' => $jenisB->id,
+    ])->assertRedirect(route('admin.karyawan.index'));
+
+    $karyawan->refresh();
+    expect($karyawan->nama)->toBe('Nama Baru');
+    expect($karyawan->jenis_karyawan_id)->toBe($jenisB->id);
+    expect($karyawan->nik)->toBe('3201234567897777');
+    expect($karyawan->lembaga_id)->toBe($lembaga->id);
+});
+
+it('toggles a karyawan status_aktif and the linked user is_active together', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKaryawanManager($lembaga);
+    $jenis = JenisKaryawanMaster::factory()->create();
+
+    $this->actingAs($manager)->post(route('admin.karyawan.store'), [
+        'nik' => '3201234567898888', 'nama' => 'Toggle Status', 'jenis_karyawan_id' => $jenis->id,
+    ])->assertRedirect();
+    $karyawan = Karyawan::where('nik_hash', hash('sha256', '3201234567898888'))->firstOrFail();
+
+    $this->actingAs($manager)->patch(route('admin.karyawan.update-status', $karyawan), [
+        'status_aktif' => 'non_aktif',
+    ])->assertRedirect(route('admin.karyawan.index'));
+
+    $karyawan->refresh();
+    expect($karyawan->status_aktif)->toBe('non_aktif');
+    expect($karyawan->user->is_active)->toBeFalse();
+});

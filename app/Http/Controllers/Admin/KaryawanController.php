@@ -81,6 +81,49 @@ class KaryawanController extends BaseController
         return redirect()->route('admin.karyawan.index')->with('status', 'Data karyawan & akun berhasil dibuat.');
     }
 
+    public function edit(Karyawan $karyawan): View
+    {
+        $this->authorize('karyawan.edit');
+
+        $karyawan->load(['user', 'jenisKaryawan', 'lembaga', 'yayasan']);
+
+        return view('admin.karyawan.edit', [
+            'karyawan' => $karyawan,
+            'jenisKaryawanList' => JenisKaryawanMaster::orderBy('nama')->get(),
+        ]);
+    }
+
+    public function update(Request $request, Karyawan $karyawan): RedirectResponse
+    {
+        $this->authorize('karyawan.edit');
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'no_hp' => ['nullable', 'string', 'max:20'],
+            'jenis_karyawan_id' => ['required', 'exists:jenis_karyawan_master,id'],
+        ]);
+
+        $karyawan->user()->update(['name' => $data['nama']]);
+        $karyawan->update($data);
+
+        return redirect()->route('admin.karyawan.index')->with('status', 'Data karyawan berhasil diperbarui.');
+    }
+
+    public function updateStatus(Request $request, Karyawan $karyawan): RedirectResponse
+    {
+        $this->authorize('karyawan.edit');
+
+        $data = $request->validate([
+            'status_aktif' => ['required', 'in:aktif,non_aktif'],
+        ]);
+
+        $karyawan->update(['status_aktif' => $data['status_aktif']]);
+        $karyawan->user()->update(['is_active' => $data['status_aktif'] === 'aktif']);
+
+        return redirect()->route('admin.karyawan.index')->with('status', 'Status karyawan berhasil diperbarui.');
+    }
+
     private function resolveLembagaId(Request $request): ?int
     {
         if ($request->user()->widestScopeLevel() === 'yayasan') {
