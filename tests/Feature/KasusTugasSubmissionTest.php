@@ -143,3 +143,18 @@ it('creates a new submission row on resubmit rather than updating the old one', 
     expect(KasusTugasSubmission::where('tugas_id', $tugas->id)->count())->toBe(2);
     expect($first->refresh()->teks)->toBe('Percobaan pertama.');
 });
+
+it('shows the submission form to siswa/orang tua on kasus.show but not the konselor-only create form', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, , $siswaUser, $orangTuaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);
+
+    $this->actingAs($siswaUser)->get(route('kasus.show', $kasus))
+        ->assertOk()
+        ->assertSee('Kirim Bukti')
+        ->assertDontSee('Beri Tugas');
+
+    $this->actingAs($orangTuaUser)->get(route('kasus.show', $kasus))
+        ->assertOk()
+        ->assertSee('Kirim Bukti')
+        ->assertDontSee('Beri Tugas');
+});

@@ -153,7 +153,7 @@
             </div>
         @endif
 
-        @if ($isKonselor)
+        @if ($isKonselor || $isSiswaTerkait || $isKontakUtama)
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
                 <p class="font-display text-sm font-bold text-gray-900">Tugas Pendampingan</p>
 
@@ -199,7 +199,7 @@
                     </div>
                 @endif
 
-                @if ($kasus->status->value === 'ditugaskan')
+                @if ($isKonselor && $kasus->status->value === 'ditugaskan')
                     <div x-data="{
                         rows: [{ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }],
                         tambah() { this.rows.push({ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }); },
