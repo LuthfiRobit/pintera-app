@@ -182,7 +182,7 @@
                                                     </x-badge>
                                                 </div>
                                                 @if ($submission->lampiran)
-                                                    <a href="{{ asset('storage/' . $submission->lampiran) }}" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:text-brand-700">Lihat Lampiran</a>
+                                                    <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]) }}" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:text-brand-700">Lihat Lampiran</a>
                                                 @endif
                                                 @if ($isKonselor && $submission->status_review === 'menunggu_review')
                                                     <div x-data="{ revisi: false }" class="flex items-center gap-2">

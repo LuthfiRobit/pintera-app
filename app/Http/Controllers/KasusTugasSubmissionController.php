@@ -13,6 +13,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class KasusTugasSubmissionController extends BaseController
 {
@@ -45,7 +47,7 @@ class KasusTugasSubmissionController extends BaseController
         $data = $request->validate($rules);
 
         $lampiranPath = ($mediaDisetujui && $request->hasFile('lampiran'))
-            ? $request->file('lampiran')->store('kasus-tugas-lampiran', 'public')
+            ? $request->file('lampiran')->store('kasus-tugas-lampiran', 'local')
             : null;
 
         KasusTugasSubmission::create([
@@ -87,6 +89,32 @@ class KasusTugasSubmissionController extends BaseController
         }
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Review submission berhasil disimpan.');
+    }
+
+    public function download(Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission): StreamedResponse
+    {
+        $this->authorize('kasus.view');
+        abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
+        abort_if($kasusTugasSubmission->tugas_id !== $kasusTugas->id, 404);
+        abort_if($kasusTugasSubmission->lampiran === null, 404);
+
+        $user = auth()->user();
+        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
+        abort_if($siswa === null, 404);
+
+        $isSubmitter = ($kasusTugasSubmission->siswa_id !== null && $kasusTugasSubmission->siswa_id === $user->siswa?->id)
+            || ($kasusTugasSubmission->orang_tua_id !== null && $kasusTugasSubmission->orang_tua_id === $user->orangTua?->id);
+        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
+        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
+            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
+        $isKontakUtama = $user->orangTua !== null
+            && $siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
+        $isTriaseAdmin = $user->can('kasus.triase')
+            && ($user->widestScopeLevel() === 'yayasan' || $kasus->lembaga_id === $user->lembaga_id);
+
+        abort_if(! $isSubmitter && ! $isKonselor && ! $isKontakUtama && ! $isTriaseAdmin, 404);
+
+        return Storage::disk('local')->download($kasusTugasSubmission->lampiran);
     }
 
     private function assertKonselorPemegangKasus(Kasus $kasus): void

@@ -60,7 +60,7 @@ it('lets siswa submit text-only evidence before media consent is approved', func
 });
 
 it('rejects lampiran on a submission when media consent is not yet approved', function () {
-    Storage::fake('public');
+    Storage::fake('local');
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);
 
@@ -74,7 +74,7 @@ it('rejects lampiran on a submission when media consent is not yet approved', fu
 });
 
 it('accepts lampiran once media consent is approved', function () {
-    Storage::fake('public');
+    Storage::fake('local');
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);
     KasusConsent::where('kasus_id', $kasus->id)->where('jenis', 'pengumpulan_media')
@@ -87,7 +87,7 @@ it('accepts lampiran once media consent is approved', function () {
 
     $submission = KasusTugasSubmission::where('tugas_id', $tugas->id)->first();
     expect($submission->lampiran)->not->toBeNull();
-    Storage::disk('public')->assertExists($submission->lampiran);
+    Storage::disk('local')->assertExists($submission->lampiran);
 });
 
 it('lets orang tua kontak utama submit on behalf of the child', function () {
@@ -181,7 +181,7 @@ it('renders a link to the lampiran in kasus.show for a konselor viewer', functio
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $tugas] = buatKasusDenganTugasDanKontakUtama($lembaga);
     $konselorUser = $kasus->konselorGuru->user;
-    KasusTugasSubmission::factory()->create([
+    $submission = KasusTugasSubmission::factory()->create([
         'tugas_id' => $tugas->id,
         'teks' => 'Ada foto bukti.',
         'lampiran' => 'kasus-tugas-lampiran/bukti-test.jpg',
@@ -189,7 +189,71 @@ it('renders a link to the lampiran in kasus.show for a konselor viewer', functio
 
     $this->actingAs($konselorUser)->get(route('kasus.show', $kasus))
         ->assertOk()
-        ->assertSee('kasus-tugas-lampiran/bukti-test.jpg', false);
+        ->assertSee(route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]), false)
+        ->assertDontSee(asset('storage/kasus-tugas-lampiran/bukti-test.jpg'), false);
+});
+
+it('lets the assigned konselor download a submission lampiran', function () {
+    Storage::fake('local');
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas] = buatKasusDenganTugasDanKontakUtama($lembaga);
+    $konselorUser = $kasus->konselorGuru->user;
+
+    Storage::disk('local')->put('kasus-tugas-lampiran/bukti-konselor.jpg', 'isi-file-bukti');
+    $submission = KasusTugasSubmission::factory()->create([
+        'tugas_id' => $tugas->id,
+        'lampiran' => 'kasus-tugas-lampiran/bukti-konselor.jpg',
+    ]);
+
+    $response = $this->actingAs($konselorUser)
+        ->get(route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]));
+
+    $response->assertOk();
+    expect($response->streamedContent())->toBe('isi-file-bukti');
+});
+
+it('lets the submitting siswa download their own submission lampiran', function () {
+    Storage::fake('local');
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);
+    $siswa = $siswaUser->siswa;
+
+    Storage::disk('local')->put('kasus-tugas-lampiran/bukti-siswa.jpg', 'isi-file-siswa');
+    $submission = KasusTugasSubmission::factory()->create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswa->id,
+        'orang_tua_id' => null,
+        'lampiran' => 'kasus-tugas-lampiran/bukti-siswa.jpg',
+    ]);
+
+    $response = $this->actingAs($siswaUser)
+        ->get(route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]));
+
+    $response->assertOk();
+    expect($response->streamedContent())->toBe('isi-file-siswa');
+});
+
+it('404s an unrelated user attempting to download a submission lampiran', function () {
+    Storage::fake('local');
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas] = buatKasusDenganTugasDanKontakUtama($lembaga);
+
+    Storage::disk('local')->put('kasus-tugas-lampiran/bukti-rahasia.jpg', 'isi-rahasia');
+    $submission = KasusTugasSubmission::factory()->create([
+        'tugas_id' => $tugas->id,
+        'lampiran' => 'kasus-tugas-lampiran/bukti-rahasia.jpg',
+    ]);
+
+    $unrelatedUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+    $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $siswaRole->givePermissionTo(['kasus.view']);
+    $unrelatedUser->assignRole('siswa');
+    \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $unrelatedUser->id]);
+
+    $this->actingAs($unrelatedUser)
+        ->get(route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]))
+        ->assertNotFound();
 });
 
 it('shows the submission form to siswa/orang tua on kasus.show but not the konselor-only create form', function () {
