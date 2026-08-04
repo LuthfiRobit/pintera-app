@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\StatusKasus;
+use App\Models\Guru;
 use App\Models\Kasus;
 use App\Models\KasusConsent;
 use App\Models\Lembaga;
@@ -10,13 +11,16 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use App\Notifications\ConsentDisetujuiNotification;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
-function siapkanKasusMenungguConsent(): array
+function siapkanKasusMenungguConsent(?Guru $guruPengaju = null, ?Lembaga $lembaga = null): array
 {
-    $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    if ($lembaga === null) {
+        $yayasan = Yayasan::factory()->create();
+        $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    }
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
 
     foreach (['kasus.consent', 'kasus.view'] as $permission) {
@@ -46,6 +50,7 @@ function siapkanKasusMenungguConsent(): array
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
         'status' => StatusKasus::MenungguConsent,
+        'diajukan_oleh_guru_id' => $guruPengaju?->id,
     ]);
     $sesiConsent = KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan']);
     $mediaConsent = KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media']);
@@ -89,7 +94,16 @@ it('rejects consent approval from an orang tua who is linked but not kontak utam
 });
 
 it('notifies the submitting guru and lembaga admins when sesi_pendampingan consent is approved', function () {
-    [$kasus, $sesiConsent, , $kontakUtamaUser] = siapkanKasusMenungguConsent();
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guruPengaju = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
+        'nama' => 'Guru Pengaju', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
+        'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
+    ]);
+
+    [$kasus, $sesiConsent, , $kontakUtamaUser] = siapkanKasusMenungguConsent($guruPengaju, $lembaga);
 
     Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
     $adminRole = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
@@ -102,4 +116,25 @@ it('notifies the submitting guru and lembaga admins when sesi_pendampingan conse
     $this->actingAs($kontakUtamaUser)->patch(route('kasus.consent.approve', [$kasus, $sesiConsent]));
 
     Notification::assertSentTo($lembagaAdmin, ConsentDisetujuiNotification::class);
+    Notification::assertSentTo($guruPengaju, ConsentDisetujuiNotification::class);
+});
+
+it('renders the consent-approved notification for real without a fake, using the already-scoped siswa relation', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guruPengaju = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
+        'nama' => 'Guru Pengaju Nyata', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_bk',
+        'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
+        'email' => 'guru.pengaju.nyata@example.test',
+    ]);
+
+    [$kasus, $sesiConsent, , $kontakUtamaUser] = siapkanKasusMenungguConsent($guruPengaju, $lembaga);
+
+    Mail::fake();
+
+    $this->actingAs($kontakUtamaUser)
+        ->patch(route('kasus.consent.approve', [$kasus, $sesiConsent]))
+        ->assertRedirect();
 });

@@ -26,6 +26,7 @@ class KasusConsentController extends BaseController
 
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
         abort_if($siswa === null, 404);
+        $kasus->setRelation('siswa', $siswa);
 
         $isKontakUtama = $siswa->orangTua()
             ->where('orang_tua_id', $orangTua->id)
