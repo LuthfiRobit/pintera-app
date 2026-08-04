@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Kasus;
 use App\Models\KasusSesi;
+use App\Models\Scopes\TenantScope;
+use App\Notifications\SesiDijadwalkanNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,16 +29,26 @@ class KasusSesiController extends BaseController
             'sesi.*.lokasi_mode' => ['required', 'string', 'max:255'],
         ]);
 
-        DB::transaction(function () use ($data, $kasus) {
-            foreach ($data['sesi'] as $row) {
-                KasusSesi::create([
-                    'kasus_id' => $kasus->id,
-                    'dijadwalkan_pada' => $row['dijadwalkan_pada'],
-                    'peserta' => $row['peserta'],
-                    'lokasi_mode' => $row['lokasi_mode'],
-                ]);
-            }
+        $created = DB::transaction(function () use ($data, $kasus) {
+            return collect($data['sesi'])->map(fn ($row) => KasusSesi::create([
+                'kasus_id' => $kasus->id,
+                'dijadwalkan_pada' => $row['dijadwalkan_pada'],
+                'peserta' => $row['peserta'],
+                'lokasi_mode' => $row['lokasi_mode'],
+            ]));
         });
+
+        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
+
+        foreach ($created as $sesi) {
+            if (in_array($sesi->peserta, ['siswa', 'keduanya'], true)) {
+                $siswa?->user?->notify(new SesiDijadwalkanNotification($sesi));
+            }
+            if (in_array($sesi->peserta, ['orang_tua', 'keduanya'], true)) {
+                $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+                $kontakUtama?->notify(new SesiDijadwalkanNotification($sesi));
+            }
+        }
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Sesi berhasil dijadwalkan.');
     }
