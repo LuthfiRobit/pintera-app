@@ -7,6 +7,9 @@ enum StatusKasus: string
     case Diajukan = 'diajukan';
     case MenungguConsent = 'menunggu_consent';
     case Ditugaskan = 'ditugaskan';
+    case Berjalan = 'berjalan';
+    case Eskalasi = 'eskalasi';
+    case Selesai = 'selesai';
 
     public function label(): string
     {
@@ -14,6 +17,9 @@ enum StatusKasus: string
             self::Diajukan => 'Diajukan',
             self::MenungguConsent => 'Menunggu Consent',
             self::Ditugaskan => 'Ditugaskan',
+            self::Berjalan => 'Berjalan',
+            self::Eskalasi => 'Eskalasi',
+            self::Selesai => 'Selesai',
         };
     }
 }

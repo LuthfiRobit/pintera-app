@@ -75,6 +75,11 @@ class Kasus extends Model
         return $this->hasMany(KasusTugas::class);
     }
 
+    public function evaluasi(): HasMany
+    {
+        return $this->hasMany(KasusEvaluasi::class);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
