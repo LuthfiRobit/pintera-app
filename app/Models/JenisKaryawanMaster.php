@@ -16,6 +16,6 @@ class JenisKaryawanMaster extends Model
 
     public function karyawan(): HasMany
     {
-        return $this->hasMany(Karyawan::class);
+        return $this->hasMany(Karyawan::class, 'jenis_karyawan_id');
     }
 }

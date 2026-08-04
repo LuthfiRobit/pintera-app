@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\JabatanTambahanMasterController;
 use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JalurPpdbController;
 use App\Http\Controllers\Admin\JamPelajaranController;
+use App\Http\Controllers\Admin\JenisKaryawanMasterController;
 use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
@@ -86,6 +87,11 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('jabatan-tambahan-master', [JabatanTambahanMasterController::class, 'store'])->name('jabatan-tambahan-master.store');
     Route::put('jabatan-tambahan-master/{jabatanTambahanMaster}', [JabatanTambahanMasterController::class, 'update'])->name('jabatan-tambahan-master.update');
     Route::delete('jabatan-tambahan-master/{jabatanTambahanMaster}', [JabatanTambahanMasterController::class, 'destroy'])->name('jabatan-tambahan-master.destroy');
+
+    Route::get('jenis-karyawan-master', [JenisKaryawanMasterController::class, 'index'])->name('jenis-karyawan-master.index');
+    Route::post('jenis-karyawan-master', [JenisKaryawanMasterController::class, 'store'])->name('jenis-karyawan-master.store');
+    Route::put('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterController::class, 'update'])->name('jenis-karyawan-master.update');
+    Route::delete('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterController::class, 'destroy'])->name('jenis-karyawan-master.destroy');
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
     Route::post('siswa/generate-akun-massal', [SiswaController::class, 'generateAkunMassal'])->name('siswa.generate-akun-massal');
