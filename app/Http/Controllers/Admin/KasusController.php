@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\StatusKasus;
 use App\Models\Kasus;
 use App\Models\KasusConsent;
+use App\Models\Scopes\TenantScope;
 use App\Notifications\KonselorDipilihNotification;
 use App\Services\KonselorAllocationResolver;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -30,21 +31,39 @@ class KasusController extends BaseController
     public function triase(Kasus $kasus, KonselorAllocationResolver $resolver): View
     {
         $this->authorize('kasus.triase');
+        $this->authorizeLembaga($kasus);
 
-        $kandidat = $resolver->kandidatUntuk($kasus->siswa);
+        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
+        abort_if($siswa === null, 404);
+        $kasus->setRelation('siswa', $siswa);
+
+        $kandidat = $resolver->kandidatUntuk($siswa);
 
         return view('admin.kasus.triase', ['kasus' => $kasus, 'kandidat' => $kandidat]);
     }
 
-    public function assignKonselor(Request $request, Kasus $kasus): RedirectResponse
+    public function assignKonselor(Request $request, Kasus $kasus, KonselorAllocationResolver $resolver): RedirectResponse
     {
         $this->authorize('kasus.triase');
+        $this->authorizeLembaga($kasus);
+
+        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
+        abort_if($siswa === null, 404);
+        $kasus->setRelation('siswa', $siswa);
 
         $data = $request->validate([
             'tingkat_urgensi' => ['required', 'in:rendah,sedang,tinggi'],
             'konselor_tipe' => ['required', 'in:guru,karyawan'],
             'konselor_id' => ['required', 'integer'],
         ]);
+
+        $kandidat = $resolver->kandidatUntuk($siswa);
+        $kandidatIds = $kandidat
+            ->filter(fn ($k) => $k->tipe === $data['konselor_tipe'])
+            ->map(fn ($k) => $k->model->id)
+            ->all();
+
+        abort_unless(in_array((int) $data['konselor_id'], $kandidatIds, true), 422, 'Konselor yang dipilih tidak valid.');
 
         DB::transaction(function () use ($data, $kasus) {
             $kasus->update([
@@ -58,9 +77,15 @@ class KasusController extends BaseController
             KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media']);
         });
 
-        $kontakUtama = $kasus->siswa->orangTua()->wherePivot('is_kontak_utama', true)->first();
+        $kontakUtama = $siswa->orangTua()->wherePivot('is_kontak_utama', true)->first();
         $kontakUtama?->notify(new KonselorDipilihNotification($kasus));
 
         return redirect()->route('admin.kasus.index')->with('status', 'Konselor berhasil ditugaskan, menunggu persetujuan orang tua.');
+    }
+
+    private function authorizeLembaga(Kasus $kasus): void
+    {
+        $user = auth()->user();
+        abort_if($user->widestScopeLevel() !== 'yayasan' && $kasus->lembaga_id !== $user->lembaga_id, 404);
     }
 }
