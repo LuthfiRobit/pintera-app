@@ -8,6 +8,7 @@ use App\Models\KasusConsent;
 use App\Models\KasusTugas;
 use App\Models\KasusTugasSubmission;
 use App\Models\Scopes\TenantScope;
+use App\Notifications\SubmissionRevisiNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -54,5 +55,43 @@ class KasusTugasSubmissionController extends BaseController
         ]);
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Bukti pengerjaan berhasil dikirim.');
+    }
+
+    public function review(Request $request, Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission): RedirectResponse
+    {
+        $this->authorize('kasus.view');
+        abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
+        abort_if($kasusTugasSubmission->tugas_id !== $kasusTugas->id, 404);
+        $this->assertKonselorPemegangKasus($kasus);
+
+        $data = $request->validate([
+            'status_review' => ['required', 'in:diterima,revisi_diminta'],
+            'catatan_revisi' => ['required_if:status_review,revisi_diminta', 'nullable', 'string'],
+        ]);
+
+        $kasusTugasSubmission->update([
+            'status_review' => $data['status_review'],
+            'catatan_revisi' => $data['catatan_revisi'] ?? null,
+        ]);
+
+        if ($data['status_review'] === 'revisi_diminta') {
+            $kasusTugas->update(['status' => 'revisi']);
+
+            $notifiable = $kasusTugasSubmission->siswa_id !== null
+                ? $kasusTugasSubmission->siswa?->user
+                : $kasusTugasSubmission->orangTua;
+            $notifiable?->notify(new SubmissionRevisiNotification($kasusTugasSubmission));
+        }
+
+        return redirect()->route('kasus.show', $kasus)->with('status', 'Review submission berhasil disimpan.');
+    }
+
+    private function assertKonselorPemegangKasus(Kasus $kasus): void
+    {
+        $user = auth()->user();
+        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
+            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $user->karyawan?->id);
+
+        abort_unless($isKonselor, 403);
     }
 }

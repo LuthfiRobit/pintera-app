@@ -7,6 +7,7 @@ use App\Models\Kasus;
 use App\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\TugasDitugaskanNotification;
+use App\Notifications\TugasSelesaiNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,21 @@ class KasusTugasController extends BaseController
         }
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Tugas berhasil diberikan.');
+    }
+
+    public function markSelesai(Kasus $kasus, KasusTugas $kasusTugas): RedirectResponse
+    {
+        $this->authorize('kasus.view');
+        abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
+        $this->assertKonselorPemegangKasus($kasus);
+
+        $kasusTugas->update(['status' => 'selesai']);
+
+        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
+        $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+        $kontakUtama?->notify(new TugasSelesaiNotification($kasusTugas));
+
+        return redirect()->route('kasus.show', $kasus)->with('status', 'Tugas ditandai selesai.');
     }
 
     private function assertKonselorPemegangKasus(Kasus $kasus): void

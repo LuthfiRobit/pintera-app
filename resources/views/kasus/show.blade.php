@@ -174,11 +174,29 @@
                                 @if ($tugas->submissions->isNotEmpty())
                                     <div class="space-y-1 border-t border-gray-100 pt-2">
                                         @foreach ($tugas->submissions as $submission)
-                                            <div class="flex items-center justify-between text-xs">
-                                                <span class="text-gray-600">{{ $submission->created_at->format('d M Y H:i') }}: {{ $submission->teks ?? '(lampiran saja)' }}</span>
-                                                <x-badge tone="{{ $submission->status_review === 'diterima' ? 'green' : ($submission->status_review === 'revisi_diminta' ? 'amber' : 'slate') }}">
-                                                    {{ str_replace('_', ' ', ucfirst($submission->status_review)) }}
-                                                </x-badge>
+                                            <div class="space-y-1 text-xs">
+                                                <div class="flex items-center justify-between">
+                                                    <span class="text-gray-600">{{ $submission->created_at->format('d M Y H:i') }}: {{ $submission->teks ?? '(lampiran saja)' }}</span>
+                                                    <x-badge tone="{{ $submission->status_review === 'diterima' ? 'green' : ($submission->status_review === 'revisi_diminta' ? 'amber' : 'slate') }}">
+                                                        {{ str_replace('_', ' ', ucfirst($submission->status_review)) }}
+                                                    </x-badge>
+                                                </div>
+                                                @if ($isKonselor && $submission->status_review === 'menunggu_review')
+                                                    <div x-data="{ revisi: false }" class="flex items-center gap-2">
+                                                        <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}">
+                                                            @csrf @method('PATCH')
+                                                            <input type="hidden" name="status_review" value="diterima">
+                                                            <button type="submit" class="font-semibold text-success-600 hover:text-success-700">Terima</button>
+                                                        </form>
+                                                        <button type="button" @click="revisi = !revisi" class="font-semibold text-amber-600 hover:text-amber-700">Minta Revisi</button>
+                                                    </div>
+                                                    <form x-show="revisi" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}" class="flex items-center gap-2">
+                                                        @csrf @method('PATCH')
+                                                        <input type="hidden" name="status_review" value="revisi_diminta">
+                                                        <input type="text" name="catatan_revisi" placeholder="Catatan revisi" class="block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                                        <button type="submit" class="whitespace-nowrap font-semibold text-amber-600 hover:text-amber-700">Kirim</button>
+                                                    </form>
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>
@@ -192,6 +210,13 @@
                                             <input type="file" name="lampiran" class="block w-full text-xs text-gray-700">
                                         @endif
                                         <x-primary-button type="submit" class="text-xs">Kirim Bukti</x-primary-button>
+                                    </form>
+                                @endif
+
+                                @if ($isKonselor && ! in_array($tugas->status->value, ['selesai', 'terlewat'], true))
+                                    <form method="POST" action="{{ route('kasus.tugas.selesai', [$kasus, $tugas]) }}" class="border-t border-gray-100 pt-2">
+                                        @csrf @method('PATCH')
+                                        <button type="submit" class="text-xs font-semibold text-success-600 hover:text-success-700">Tandai Tugas Selesai</button>
                                     </form>
                                 @endif
                             </div>
