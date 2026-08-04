@@ -117,7 +117,6 @@ it('does not recurse when a real session login resolves a tenant-scoped user', f
 it('returns zero rows for a non-yayasan actor with a null lembaga_id (fail-closed, not fail-open)', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
 
     TenantScopeTestModel::withoutGlobalScopes()->create(['lembaga_id' => $lembaga->id, 'label' => 'A']);
 

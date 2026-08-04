@@ -218,6 +218,14 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('kenaikan-kelas', [KenaikanKelasController::class, 'store'])->name('kenaikan-kelas.store');
 });
 
+// Orang tua accounts have no lembaga_id of their own, so implicit route-model binding's
+// default TenantScope-applied lookup would 404 on {kasus} before the controller's own
+// isSubmitter/isKontakUtama/kasus.triase authorization logic ever runs. Bind explicitly,
+// bypassing the tenant scope; real authorization stays inside each controller action.
+Route::bind('kasus', function ($value) {
+    return \App\Models\Kasus::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->findOrFail($value);
+});
+
 Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(function () {
     Route::get('/', [KasusController::class, 'index'])->name('index');
     Route::get('ajukan', [KasusController::class, 'create'])->name('create');

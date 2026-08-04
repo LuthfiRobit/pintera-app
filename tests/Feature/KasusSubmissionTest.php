@@ -57,6 +57,18 @@ function actingAsOrangTuaPengaju(Siswa $siswa): array
     return [$user, $orangTua];
 }
 
+it('shows the create form with the orang tua\'s linked children in the siswa dropdown', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Anak Terdaftar']);
+    [$user, $orangTua] = actingAsOrangTuaPengaju($siswa);
+
+    $response = $this->actingAs($user)->get(route('kasus.create'));
+
+    $response->assertOk();
+    $response->assertSee('Anak Terdaftar');
+});
+
 it('lets a guru submit a kasus and notifies the kontak utama orang tua', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -130,7 +142,10 @@ it('rejects an orang tua submitting a kasus for a siswa they are not linked to',
         'deskripsi' => 'Percobaan.',
     ])->assertNotFound();
 
-    expect(Kasus::where('siswa_id', $unrelatedSiswa->id)->exists())->toBeFalse();
+    // The still-authenticated orang_tua actor's own null lembaga_id would make the default
+    // TenantScope fail-closed to zero rows regardless of whether the bug this test guards
+    // against is present, so this assertion must bypass the scope to be meaningful.
+    expect(Kasus::withoutGlobalScope(TenantScope::class)->where('siswa_id', $unrelatedSiswa->id)->exists())->toBeFalse();
 });
 
 it('rejects a guru submitting a kasus for a siswa in a different lembaga', function () {
@@ -146,7 +161,9 @@ it('rejects a guru submitting a kasus for a siswa in a different lembaga', funct
         'deskripsi' => 'Percobaan lintas lembaga.',
     ])->assertNotFound();
 
-    expect(Kasus::where('siswa_id', $siswaLembagaB->id)->exists())->toBeFalse();
+    // Same reasoning as above: the acting guru's TenantScope would already exclude a row
+    // written under a different lembaga, so bypass it to make this a real assertion.
+    expect(Kasus::withoutGlobalScope(TenantScope::class)->where('siswa_id', $siswaLembagaB->id)->exists())->toBeFalse();
 });
 
 it('guru submission always leaves diajukan_oleh_orang_tua_id null (FK exclusivity is structural, not separately validated)', function () {

@@ -48,7 +48,7 @@ class KasusController extends BaseController
         $user = $request->user();
 
         $siswaList = $user->hasRole('orang_tua')
-            ? ($user->orangTua?->siswa ?? collect())
+            ? ($user->orangTua?->siswa()->withoutGlobalScope(TenantScope::class)->orderBy('nama_lengkap')->get() ?? collect())
             : Siswa::orderBy('nama_lengkap')->get();
 
         return view('kasus.create', ['siswaList' => $siswaList]);
