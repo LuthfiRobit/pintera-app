@@ -19,6 +19,8 @@ class RoleSeeder extends Seeder
             'guru' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
             'siswa' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
             'orang_tua' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
+            'karyawan_pool' => ['scope_level' => 'yayasan', 'is_protected' => false],
+            'karyawan_lembaga' => ['scope_level' => 'lembaga', 'is_protected' => false],
         ];
 
         foreach ($roles as $name => $attributes) {
@@ -76,6 +78,7 @@ class RoleSeeder extends Seeder
                     'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
                     'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
                     'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',
+                    'karyawan.view', 'karyawan.create', 'karyawan.edit',
                     'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
                     'semester.create', 'semester.activate',
                     'pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete',

@@ -20,7 +20,7 @@ it('seeds 6 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(88);
+    expect($superAdmin->permissions()->count())->toBe(95);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -70,7 +70,7 @@ it('is idempotent when run twice', function () {
     (new RoleSeeder())->run();
     (new RoleSeeder())->run();
 
-    expect(Role::count())->toBe(8);
+    expect(Role::count())->toBe(10);
 });
 
 it('grants kalender-akademik.kelola-nasional to yayasan_super_admin via bulk permission sync, but not to admin_akademik', function () {
@@ -101,7 +101,7 @@ it('seeds admin_akademik with the correct 30 academic-management permissions', f
     expect($adminAkademik)->not->toBeNull();
     expect($adminAkademik->scope_level)->toBe('lembaga');
     expect($adminAkademik->is_protected)->toBeFalse();
-    expect($adminAkademik->permissions()->count())->toBe(33);
+    expect($adminAkademik->permissions()->count())->toBe(36);
     expect($adminAkademik->hasPermissionTo('kelas.edit'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('siswa.import'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('jadwal-pelajaran.kelola'))->toBeTrue();
