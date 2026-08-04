@@ -31,6 +31,10 @@ class DashboardController extends BaseController
             return view('admin.dashboard.siswa');
         }
 
+        if ($user->hasRole('orang_tua')) {
+            return view('admin.dashboard.orang-tua');
+        }
+
         if ($user->widestScopeLevel() === 'yayasan') {
             $lembagaAktifId = session('active_lembaga_id');
 

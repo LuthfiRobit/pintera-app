@@ -1,7 +1,5 @@
 <?php
 
-// app/Http/Controllers/Admin/SiswaOrangTuaController.php
-
 namespace App\Http\Controllers\Admin;
 
 use App\Models\OrangTua;
@@ -14,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SiswaOrangTuaController extends BaseController
 {
@@ -21,6 +20,7 @@ class SiswaOrangTuaController extends BaseController
 
     public function cari(Request $request, Siswa $siswa): JsonResponse
     {
+        $this->authorize('siswa.edit');
         $this->authorize('orang-tua.create');
 
         $data = $request->validate(['nik' => ['required', 'digits:16']]);
@@ -45,6 +45,7 @@ class SiswaOrangTuaController extends BaseController
 
     public function store(Request $request, Siswa $siswa, AkunOrangTuaGenerator $generator): RedirectResponse
     {
+        $this->authorize('siswa.edit');
         $this->authorize('orang-tua.create');
 
         $data = $request->validate([
@@ -62,11 +63,28 @@ class SiswaOrangTuaController extends BaseController
         if (! empty($data['orang_tua_id'])) {
             $orangTua = OrangTua::findOrFail($data['orang_tua_id']);
         } else {
-            if (User::where('username', $data['nik'])->exists()) {
+            $existingUser = User::where('username', $data['nik'])->first();
+
+            if ($existingUser) {
+                $existingOrangTua = OrangTua::where('user_id', $existingUser->id)->first();
+
+                if ($existingOrangTua === null) {
+                    return back()
+                        ->withErrors(['nik' => 'NIK ini sudah terdaftar ke akun lain yang bukan profil Orang Tua.'])
+                        ->withInput();
+                }
+
                 return back()
                     ->withErrors(['nik' => 'NIK sudah terdaftar — cari NIK ini dulu untuk menautkan profil yang sudah ada.'])
                     ->withInput();
             }
+
+            // Defense-in-depth backstop for the race window between the manual check above and
+            // the insert below: re-validates uniqueness immediately before account creation.
+            // The manual check above already handles the common case with a friendly, specific
+            // message; this only fires if a concurrent request created the same username in
+            // between (see Finding 7 of the final review).
+            $request->validate(['nik' => [Rule::unique('users', 'username')]]);
 
             $orangTua = $generator->buat(
                 $data['nama_lengkap'],
@@ -100,6 +118,7 @@ class SiswaOrangTuaController extends BaseController
 
     public function updateKontakUtama(Siswa $siswa, OrangTua $orangTua): RedirectResponse
     {
+        $this->authorize('siswa.edit');
         $this->authorize('orang-tua.edit');
 
         if (! $siswa->orangTua()->where('orang_tua_id', $orangTua->id)->exists()) {
@@ -119,6 +138,7 @@ class SiswaOrangTuaController extends BaseController
 
     public function destroy(Siswa $siswa, OrangTua $orangTua): RedirectResponse
     {
+        $this->authorize('siswa.edit');
         $this->authorize('orang-tua.edit');
 
         $siswa->orangTua()->detach($orangTua->id);

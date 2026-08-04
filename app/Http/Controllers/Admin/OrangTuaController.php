@@ -17,6 +17,9 @@ class OrangTuaController extends BaseController
 
     public function index(Request $request): View
     {
+        // Deliberate v1 decision: parent profiles are intentionally viewable yayasan-wide by
+        // any orang-tua.view holder, not scoped to lembaga, because OrangTua has no
+        // lembaga_id by design (a parent can have children in multiple lembaga).
         $this->authorize('orang-tua.view');
 
         $search = $request->query('search');
@@ -76,6 +79,9 @@ class OrangTuaController extends BaseController
 
     public function edit(OrangTua $orangTua): View
     {
+        // Deliberate v1 decision: parent profiles are intentionally editable yayasan-wide by
+        // any orang-tua.edit holder, not scoped to lembaga, because OrangTua has no
+        // lembaga_id by design (a parent can have children in multiple lembaga).
         $this->authorize('orang-tua.edit');
 
         $orangTua->load(['user', 'siswa']);
@@ -99,6 +105,19 @@ class OrangTuaController extends BaseController
         $orangTua->update($data);
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua berhasil diperbarui.');
+    }
+
+    public function updateStatus(Request $request, OrangTua $orangTua): RedirectResponse
+    {
+        $this->authorize('orang-tua.edit');
+
+        $data = $request->validate([
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $orangTua->user()->update(['is_active' => $data['is_active']]);
+
+        return redirect()->route('admin.orang-tua.index')->with('status', 'Status akun Orang Tua berhasil diperbarui.');
     }
 
     private function validateProfil(Request $request): array
