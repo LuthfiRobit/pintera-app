@@ -46,6 +46,7 @@ use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\SesiPembelajaranController;
+use App\Http\Controllers\KasusConsentController;
 use App\Http\Controllers\KasusController;
 use Illuminate\Support\Facades\Route;
 
@@ -236,6 +237,7 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
     Route::get('ajukan', [KasusController::class, 'create'])->name('create');
     Route::post('/', [KasusController::class, 'store'])->name('store');
     Route::get('{kasus}', [KasusController::class, 'show'])->name('show');
+    Route::patch('{kasus}/consent/{kasusConsent}', [KasusConsentController::class, 'approve'])->name('consent.approve');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
