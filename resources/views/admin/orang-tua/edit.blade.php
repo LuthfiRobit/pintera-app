@@ -1,4 +1,3 @@
-{{-- resources/views/admin/orang-tua/edit.blade.php --}}
 <x-app-layout>
     <div class="mx-auto max-w-6xl space-y-4">
         @if (session('status'))
@@ -29,7 +28,22 @@
                 </div>
                 <div>
                     <p class="text-xs font-semibold text-gray-500">Status Akun</p>
-                    <x-badge tone="{{ $orangTua->user->is_active ? 'green' : 'amber' }}">{{ $orangTua->user->is_active ? 'Aktif' : 'Non-aktif' }}</x-badge>
+                    <div class="mt-1 flex items-center gap-3">
+                        <x-badge tone="{{ $orangTua->user->is_active ? 'green' : 'amber' }}">{{ $orangTua->user->is_active ? 'Aktif' : 'Non-aktif' }}</x-badge>
+                        <form
+                            method="POST"
+                            action="{{ route('admin.orang-tua.update-status', $orangTua) }}"
+                            x-data
+                            @submit.prevent="confirmDialog('Ubah Status Akun?', @js('Ubah status akun \"' . $orangTua->nama_lengkap . '\" menjadi \"' . ($orangTua->user->is_active ? 'Non-aktif' : 'Aktif') . '\"?'), { confirmLabel: 'Ya, Ubah' }).then(confirmed => { if (confirmed) $el.submit() })"
+                        >
+                            @csrf
+                            @method('PATCH')
+                            <input type="hidden" name="is_active" value="{{ $orangTua->user->is_active ? '0' : '1' }}">
+                            <button type="submit" class="text-xs font-semibold text-brand-600 hover:text-brand-700">
+                                Jadikan {{ $orangTua->user->is_active ? 'Non-aktif' : 'Aktif' }}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

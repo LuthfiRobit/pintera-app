@@ -1,4 +1,3 @@
-{{-- resources/views/admin/siswa/_orang_tua.blade.php --}}
 <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
     <p class="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
         <x-icon name="groups" class="h-[15px] w-[15px] text-gray-400" />
@@ -18,29 +17,32 @@
                         <span class="text-xs text-gray-400">{{ $orangTua->no_hp }}</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        @unless ($orangTua->pivot->is_kontak_utama)
-                            <form method="POST" action="{{ route('admin.siswa.orang-tua.kontak-utama', [$siswa, $orangTua]) }}">
+                        @can('orang-tua.edit')
+                            @unless ($orangTua->pivot->is_kontak_utama)
+                                <form method="POST" action="{{ route('admin.siswa.orang-tua.kontak-utama', [$siswa, $orangTua]) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Jadikan Kontak Utama</button>
+                                </form>
+                            @endunless
+                            <form
+                                method="POST"
+                                action="{{ route('admin.siswa.orang-tua.destroy', [$siswa, $orangTua]) }}"
+                                x-data
+                                @submit.prevent="confirmDialog('Hapus Tautan?', @js('Hapus tautan dengan \"' . $orangTua->nama_lengkap . '\"? Profil orang tua tidak akan terhapus.'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })"
+                            >
                                 @csrf
-                                @method('PATCH')
-                                <button type="submit" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Jadikan Kontak Utama</button>
+                                @method('DELETE')
+                                <button type="submit" class="text-xs font-semibold text-error-600 hover:text-error-700">Hapus Tautan</button>
                             </form>
-                        @endunless
-                        <form
-                            method="POST"
-                            action="{{ route('admin.siswa.orang-tua.destroy', [$siswa, $orangTua]) }}"
-                            x-data
-                            @submit.prevent="confirmDialog('Hapus Tautan?', @js('Hapus tautan dengan \"' . $orangTua->nama_lengkap . '\"? Profil orang tua tidak akan terhapus.'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })"
-                        >
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-xs font-semibold text-error-600 hover:text-error-700">Hapus Tautan</button>
-                        </form>
+                        @endcan
                     </div>
                 </li>
             @endforeach
         </ul>
     @endif
 
+    @can('orang-tua.create')
     <div x-data="orangTuaCari({ searchUrl: @js(route('admin.siswa.orang-tua.cari', $siswa)) })" class="rounded-lg border border-dashed border-gray-200 p-4">
         <p class="mb-2 text-xs font-semibold text-gray-500">Tautkan Orang Tua</p>
 
@@ -109,4 +111,5 @@
             </form>
         </template>
     </div>
+    @endcan
 </div>
