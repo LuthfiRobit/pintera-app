@@ -131,7 +131,14 @@ class KasusController extends BaseController
 
         abort_if(! $isSubmitter && ! $isKontakUtama && ! $isTriaseAdmin, 404);
 
-        $kasus->load(['consents', 'konselorGuru', 'konselorKaryawan']);
+        // Guru and Karyawan both use BelongsToTenant. For an orang_tua actor (null lembaga_id),
+        // TenantScope would fail-closed to zero rows for these konselor relations, silently
+        // hiding the assigned konselor's identity from the informed-consent screen.
+        $kasus->load([
+            'consents',
+            'konselorGuru' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+            'konselorKaryawan' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+        ]);
 
         return view('kasus.show', [
             'kasus' => $kasus,

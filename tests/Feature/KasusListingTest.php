@@ -123,4 +123,7 @@ it('lets an orang tua kontak utama list and view their kasus end-to-end through 
     $showResponse->assertOk();
     $showResponse->assertSee('Anak Orang Tua E2E');
     $showResponse->assertSee('Menunggu Persetujuan');
+    // Finding (6th occurrence of the same bug class): orang tua must see the assigned
+    // konselor's name for informed consent, not have it silently hidden by TenantScope.
+    $showResponse->assertSee($guruBk->nama);
 });
