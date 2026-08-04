@@ -13,12 +13,16 @@ class TandaiTugasTerlewat extends Command
 
     public function handle(): int
     {
-        $count = KasusTugas::whereDate('batas_selesai_pada', '<', now()->toDateString())
+        $tugasList = KasusTugas::whereDate('batas_selesai_pada', '<', now()->toDateString())
             ->whereDoesntHave('submissions')
             ->whereNotIn('status', ['selesai', 'terlewat'])
-            ->update(['status' => 'terlewat']);
+            ->get();
 
-        $this->info("{$count} tugas ditandai terlewat.");
+        foreach ($tugasList as $tugas) {
+            $tugas->update(['status' => 'terlewat']);
+        }
+
+        $this->info("{$tugasList->count()} tugas ditandai terlewat.");
 
         return self::SUCCESS;
     }

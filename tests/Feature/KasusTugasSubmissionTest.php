@@ -144,6 +144,54 @@ it('creates a new submission row on resubmit rather than updating the old one', 
     expect($first->refresh()->teks)->toBe('Percobaan pertama.');
 });
 
+it('rejects an empty submission (no teks, no lampiran) before media consent is approved', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);
+
+    $this->actingAs($siswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), [])
+        ->assertSessionHasErrors('teks');
+
+    expect(KasusTugasSubmission::where('tugas_id', $tugas->id)->count())->toBe(0);
+});
+
+it('rejects an empty submission (no teks, no lampiran) after media consent is approved', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);
+    KasusConsent::where('kasus_id', $kasus->id)->where('jenis', 'pengumpulan_media')
+        ->update(['status' => 'disetujui', 'disetujui_at' => now()]);
+
+    $this->actingAs($siswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), [])
+        ->assertSessionHasErrors('teks');
+
+    expect(KasusTugasSubmission::where('tugas_id', $tugas->id)->count())->toBe(0);
+});
+
+it('403s a submission against a tugas already terlewat and creates no row', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);
+    $tugas->update(['status' => 'terlewat']);
+
+    $this->actingAs($siswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), ['teks' => 'x'])
+        ->assertForbidden();
+
+    expect(KasusTugasSubmission::where('tugas_id', $tugas->id)->count())->toBe(0);
+});
+
+it('renders a link to the lampiran in kasus.show for a konselor viewer', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas] = buatKasusDenganTugasDanKontakUtama($lembaga);
+    $konselorUser = $kasus->konselorGuru->user;
+    KasusTugasSubmission::factory()->create([
+        'tugas_id' => $tugas->id,
+        'teks' => 'Ada foto bukti.',
+        'lampiran' => 'kasus-tugas-lampiran/bukti-test.jpg',
+    ]);
+
+    $this->actingAs($konselorUser)->get(route('kasus.show', $kasus))
+        ->assertOk()
+        ->assertSee('kasus-tugas-lampiran/bukti-test.jpg', false);
+});
+
 it('shows the submission form to siswa/orang tua on kasus.show but not the konselor-only create form', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, , $siswaUser, $orangTuaUser] = buatKasusDenganTugasDanKontakUtama($lembaga);

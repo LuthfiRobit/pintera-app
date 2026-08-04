@@ -31,4 +31,9 @@ it('marks tugas with no submissions past batas_selesai_pada as terlewat', functi
     expect($tugasTanpaSubmission->refresh()->status->value)->toBe('terlewat');
     expect($tugasBelumJatuhTempo->refresh()->status->value)->toBe('ditugaskan');
     expect($tugasSudahAdaSubmission->refresh()->status->value)->toBe('dikerjakan');
+
+    expect(\Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\KasusTugas::class)
+        ->where('subject_id', $tugasTanpaSubmission->id)
+        ->where('event', 'updated')
+        ->exists())->toBeTrue();
 });

@@ -22,6 +22,7 @@ class KasusTugasSubmissionController extends BaseController
     {
         $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
+        abort_if(! in_array($kasusTugas->status->value, ['ditugaskan', 'dikerjakan', 'revisi'], true), 403);
 
         $user = $request->user();
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
@@ -35,8 +36,9 @@ class KasusTugasSubmissionController extends BaseController
 
         $mediaDisetujui = KasusConsent::where('kasus_id', $kasus->id)
             ->where('jenis', 'pengumpulan_media')->where('status', 'disetujui')->exists();
+        $hasLampiran = $mediaDisetujui && $request->hasFile('lampiran');
 
-        $rules = ['teks' => ['nullable', 'string']];
+        $rules = ['teks' => [$hasLampiran ? 'nullable' : 'required', 'string']];
         if ($mediaDisetujui) {
             $rules['lampiran'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,mp4,mov', 'max:20480'];
         }
@@ -78,7 +80,8 @@ class KasusTugasSubmissionController extends BaseController
             $kasusTugas->update(['status' => 'revisi']);
 
             $notifiable = $kasusTugasSubmission->siswa_id !== null
-                ? $kasusTugasSubmission->siswa?->user
+                ? $kasusTugasSubmission->siswa()->withoutGlobalScope(TenantScope::class)->first()
+                    ?->user()->withoutGlobalScope(TenantScope::class)->first()
                 : $kasusTugasSubmission->orangTua;
             $notifiable?->notify(new SubmissionRevisiNotification($kasusTugasSubmission));
         }

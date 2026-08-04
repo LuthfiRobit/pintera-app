@@ -62,7 +62,7 @@
             </div>
         @endif
 
-        @if ($isKonselor)
+        @if ($isKonselor || $isSiswaTerkait || $isKontakUtama)
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
                 <p class="font-display text-sm font-bold text-gray-900">Sesi Pendampingan</p>
 
@@ -114,7 +114,7 @@
                     </div>
                 @endif
 
-                @if ($kasus->status->value === 'ditugaskan')
+                @if ($isKonselor && $kasus->status->value === 'ditugaskan')
                     <div x-data="{
                         rows: [{ dijadwalkan_pada: '', peserta: 'siswa', lokasi_mode: '' }],
                         tambah() { this.rows.push({ dijadwalkan_pada: '', peserta: 'siswa', lokasi_mode: '' }); },
@@ -181,6 +181,9 @@
                                                         {{ str_replace('_', ' ', ucfirst($submission->status_review)) }}
                                                     </x-badge>
                                                 </div>
+                                                @if ($submission->lampiran)
+                                                    <a href="{{ asset('storage/' . $submission->lampiran) }}" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:text-brand-700">Lihat Lampiran</a>
+                                                @endif
                                                 @if ($isKonselor && $submission->status_review === 'menunggu_review')
                                                     <div x-data="{ revisi: false }" class="flex items-center gap-2">
                                                         <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}">

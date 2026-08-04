@@ -96,6 +96,52 @@ it('hides catatan_internal from the orang tua kontak utama viewing kasus.show', 
         ->assertDontSee('RAHASIA-CATATAN-KONSELOR');
 });
 
+it('403s an attempt to update an already-selesai sesi and leaves it unchanged', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukStatus($lembaga);
+    $sesi = KasusSesi::factory()->create([
+        'kasus_id' => $kasus->id, 'status' => 'selesai',
+        'catatan_internal' => 'Catatan asli.',
+    ]);
+
+    $this->actingAs($konselorUser)->patch(route('kasus.sesi.update-status', [$kasus, $sesi]), [
+        'status' => 'batal',
+        'alasan_batal' => 'Coba ubah lagi.',
+    ])->assertForbidden();
+
+    $sesi->refresh();
+    expect($sesi->status->value)->toBe('selesai');
+    expect($sesi->catatan_internal)->toBe('Catatan asli.');
+    expect($sesi->alasan_batal)->toBeNull();
+});
+
+it('lets an orang tua kontak utama see sesi metadata but not the create-sesi form or catatan_internal', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukStatus($lembaga);
+    $sesi = KasusSesi::factory()->create([
+        'kasus_id' => $kasus->id, 'status' => 'terjadwal',
+        'dijadwalkan_pada' => now()->addDays(2),
+    ]);
+
+    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+    $orangTuaRole = \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaRole->givePermissionTo(['kasus.view']);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = \App\Models\OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Sesi',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200006666',
+        'email' => 'ortu.sesi@example.test',
+    ]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($orangTuaUser)->get(route('kasus.show', $kasus))->assertOk();
+
+    $response->assertSee($sesi->dijadwalkan_pada->format('d M Y H:i'));
+    $response->assertSee($sesi->status->label());
+    $response->assertDontSee('Jadwalkan Sesi');
+});
+
 it('403s a konselor who is not assigned from updating a sesi status', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus] = buatKasusDitugaskanKeGuruBkUntukStatus($lembaga);
