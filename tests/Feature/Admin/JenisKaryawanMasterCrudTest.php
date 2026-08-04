@@ -24,6 +24,32 @@ it('denies access to a user without jenis-karyawan-master.view permission', func
     $this->actingAs(User::factory()->create())->get(route('admin.jenis-karyawan-master.index'))->assertForbidden();
 });
 
+it('renders the index page for a manager', function () {
+    $manager = actingAsJenisKaryawanManager();
+
+    $this->actingAs($manager)->get(route('admin.jenis-karyawan-master.index'))->assertOk();
+});
+
+it('renders a well-formed root container, not JS leaking into the page as text', function () {
+    // Guards against unescaped `"` inside the x-data attribute (e.g. a JS
+    // template literal with `\"`) prematurely closing the attribute, which
+    // makes the browser swallow the class attribute and dump trailing JS as
+    // a stray text node instead of parsing it as part of the tag.
+    $manager = actingAsJenisKaryawanManager();
+
+    $html = $this->actingAs($manager)->get(route('admin.jenis-karyawan-master.index'))->getContent();
+
+    $dom = new DOMDocument();
+    libxml_use_internal_errors(true);
+    $dom->loadHTML($html);
+    libxml_clear_errors();
+
+    $xpath = new DOMXPath($dom);
+    $nodes = $xpath->query("//div[contains(concat(' ', normalize-space(@class), ' '), ' mx-auto ') and contains(concat(' ', normalize-space(@class), ' '), ' max-w-4xl ')]");
+
+    expect($nodes->length)->toBeGreaterThan(0);
+});
+
 it('creates a jenis karyawan via JSON', function () {
     $manager = actingAsJenisKaryawanManager();
 

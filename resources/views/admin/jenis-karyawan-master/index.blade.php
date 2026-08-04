@@ -8,8 +8,9 @@
             nama: '',
             error: '',
             csrfToken() { return document.querySelector('meta[name=csrf-token]').content; },
-            openCreate() { this.editing = null; this.nama = ''; this.error = ''; this.showForm = true; },
-            openEdit(item) { this.editing = item; this.nama = item.nama; this.error = ''; this.showForm = true; },
+            openCreate() { this.editing = null; this.nama = ''; this.error = ''; this.showForm = true; this.$dispatch('open-modal', 'jenis-karyawan-form'); },
+            openEdit(item) { this.editing = item; this.nama = item.nama; this.error = ''; this.showForm = true; this.$dispatch('open-modal', 'jenis-karyawan-form'); },
+            closeForm() { this.showForm = false; this.$dispatch('close-modal', 'jenis-karyawan-form'); },
             async submit() {
                 const url = this.editing ? `{{ url('admin/jenis-karyawan-master') }}/${this.editing.id}` : @js(route('admin.jenis-karyawan-master.store'));
                 const method = this.editing ? 'PUT' : 'POST';
@@ -25,10 +26,10 @@
                 } else {
                     this.items.push(json.item);
                 }
-                this.showForm = false;
+                this.closeForm();
             },
             async remove(item) {
-                const confirmed = await confirmDialog('Hapus Jenis Karyawan?', `Hapus \"${item.nama}\"?`, { confirmLabel: 'Ya, Hapus' });
+                const confirmed = await confirmDialog('Hapus Jenis Karyawan?', `Hapus '${item.nama}'?`, { confirmLabel: 'Ya, Hapus' });
                 if (!confirmed) return;
                 const response = await fetch(`{{ url('admin/jenis-karyawan-master') }}/${item.id}`, {
                     method: 'DELETE',
@@ -72,7 +73,7 @@
             </ul>
         </div>
 
-        <x-modal x-show="showForm" @close="showForm = false">
+        <x-modal name="jenis-karyawan-form" @close="closeForm()">
             <div class="p-5 space-y-4">
                 <p class="font-display text-sm font-bold text-gray-900" x-text="editing ? 'Edit Jenis Karyawan' : 'Tambah Jenis Karyawan'"></p>
                 <div>
@@ -82,7 +83,7 @@
                 </div>
                 <div class="flex items-center gap-3">
                     <x-primary-button type="button" @click="submit()">Simpan</x-primary-button>
-                    <button type="button" class="text-sm text-gray-500 hover:text-gray-700" @click="showForm = false">Batal</button>
+                    <button type="button" class="text-sm text-gray-500 hover:text-gray-700" @click="closeForm()">Batal</button>
                 </div>
             </div>
         </x-modal>
