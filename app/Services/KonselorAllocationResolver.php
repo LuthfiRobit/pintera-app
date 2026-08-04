@@ -26,6 +26,7 @@ class KonselorAllocationResolver
             ->whereNull('lembaga_id')
             ->where('yayasan_id', $siswa->lembaga->yayasan_id)
             ->where('status_aktif', 'aktif')
+            ->whereHas('jenisKaryawan', fn ($q) => $q->where('is_konselor', true))
             ->get();
 
         return $karyawanPool->map(fn (Karyawan $karyawan) => new KonselorKandidat('karyawan', $karyawan));

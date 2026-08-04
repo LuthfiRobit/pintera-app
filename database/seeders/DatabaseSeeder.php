@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             YayasanSeeder::class,
             JabatanTambahanMasterSeeder::class,
+            JenisKaryawanMasterSeeder::class,
             LembagaSeeder::class,
             EssentialUserSeeder::class,
             UserSeeder::class,

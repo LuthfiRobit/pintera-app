@@ -13,6 +13,14 @@ class JenisKaryawanMasterFactory extends Factory
     {
         return [
             'nama' => $this->faker->unique()->randomElement(['Psikolog', 'Konselor BK', 'Terapis', 'Pekerja Sosial']),
+            'is_konselor' => false,
         ];
+    }
+
+    public function konselor(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_konselor' => true,
+        ]);
     }
 }

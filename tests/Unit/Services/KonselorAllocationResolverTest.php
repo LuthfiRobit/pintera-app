@@ -30,7 +30,7 @@ function buatGuruBk(Lembaga $lembaga, array $overrides = []): Guru
 
 function buatKaryawanKonselor(Yayasan $yayasan, ?Lembaga $lembaga, array $overrides = []): Karyawan
 {
-    $jenis = JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->konselor()->create();
 
     return Karyawan::withoutGlobalScopes()->create(array_merge([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga?->id])->id,
@@ -99,6 +99,18 @@ it('excludes guru_bk in an inactive lembaga staff status', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     buatGuruBk($lembaga, ['status_aktif' => 'non_aktif']);
+
+    $kandidat = (new KonselorAllocationResolver())->kandidatUntuk($siswa);
+
+    expect($kandidat)->toBeEmpty();
+});
+
+it('excludes a pool karyawan whose jenis_karyawan is not marked is_konselor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisNonKonselor = JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
+    buatKaryawanKonselor($yayasan, null, ['jenis_karyawan_id' => $jenisNonKonselor->id]);
 
     $kandidat = (new KonselorAllocationResolver())->kandidatUntuk($siswa);
 

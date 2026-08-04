@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
+use App\Models\Scopes\TenantScope;
+use App\Models\User;
 use App\Models\Yayasan;
 use App\Services\AkunKaryawanGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -23,8 +25,39 @@ class KaryawanController extends BaseController
         $this->authorize('karyawan.view');
 
         $search = $request->query('search');
+        $user = $request->user();
+        $lembagaId = $this->resolveLembagaId($request);
 
-        $karyawanList = Karyawan::with(['user', 'jenisKaryawan', 'lembaga'])
+        // TenantScope only ever emits "WHERE lembaga_id = <viewer's active lembaga>", which
+        // excludes pool karyawan (lembaga_id IS NULL) entirely for any viewer with an active
+        // lembaga context. Pool karyawan belong to a yayasan, not a lembaga, so they need to
+        // be surfaced alongside the viewer's own dedicated karyawan whenever a lembaga context
+        // is active. We bypass the global scope here and rebuild the equivalent filter by hand
+        // (dedicated karyawan for this lembaga OR pool karyawan for this lembaga's yayasan).
+        $karyawanList = Karyawan::withoutGlobalScope(TenantScope::class)
+            ->with(['user', 'jenisKaryawan', 'lembaga'])
+            ->when(
+                $lembagaId !== null,
+                function ($query) use ($lembagaId) {
+                    $yayasanId = Lembaga::find($lembagaId)?->yayasan_id;
+
+                    $query->where(function ($q) use ($lembagaId, $yayasanId) {
+                        $q->where('lembaga_id', $lembagaId)
+                            ->orWhere(function ($q2) use ($yayasanId) {
+                                $q2->whereNull('lembaga_id')->where('yayasan_id', $yayasanId);
+                            });
+                    });
+                },
+                function ($query) use ($user, $lembagaId) {
+                    // No specific lembaga context resolved. For a non-yayasan-scoped viewer
+                    // this preserves TenantScope's prior (edge-case) behavior; a yayasan-scoped
+                    // viewer with no active lembaga ("all lembaga" mode) sees everything
+                    // unfiltered, matching the pre-existing behavior of that mode.
+                    if ($user->widestScopeLevel() !== 'yayasan') {
+                        $query->where('lembaga_id', $lembagaId);
+                    }
+                }
+            )
             ->when($search, fn ($q) => $q->where('nama', 'like', "%{$search}%"))
             ->orderBy('nama')
             ->get();
@@ -56,6 +89,16 @@ class KaryawanController extends BaseController
         }
 
         $data = $this->validateProfil($request);
+
+        // withoutGlobalScopes(): User also uses BelongsToTenant, so a plain query would be
+        // silently filtered to the acting admin's own lembaga_id and miss exactly the
+        // cross-lembaga/cross-tenant collisions (e.g. an existing guru or orang_tua account
+        // in a different lembaga) this check exists to catch.
+        if (User::withoutGlobalScopes()->where('username', $data['nik'])->exists()) {
+            return back()
+                ->withErrors(['nik' => 'NIK ini sudah terdaftar untuk akun lain.'])
+                ->withInput();
+        }
 
         if ($isPool) {
             $yayasanData = $request->validate(['yayasan_id' => ['required', 'exists:yayasan,id']]);
@@ -105,8 +148,10 @@ class KaryawanController extends BaseController
             'jenis_karyawan_id' => ['required', 'exists:jenis_karyawan_master,id'],
         ]);
 
-        $karyawan->user()->update(['name' => $data['nama']]);
-        $karyawan->update($data);
+        DB::transaction(function () use ($data, $karyawan) {
+            $karyawan->user()->update(['name' => $data['nama']]);
+            $karyawan->update($data);
+        });
 
         return redirect()->route('admin.karyawan.index')->with('status', 'Data karyawan berhasil diperbarui.');
     }

@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('jenis_karyawan_master', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
+            $table->boolean('is_konselor')->default(false);
             $table->timestamps();
         });
     }

@@ -127,6 +127,25 @@ it('updates a karyawan profile without touching nik or lembaga_id', function () 
     expect($karyawan->lembaga_id)->toBe($lembaga->id);
 });
 
+it('rejects creating a karyawan whose NIK is already registered to a non-karyawan account', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKaryawanManager($lembaga);
+    $jenis = JenisKaryawanMaster::factory()->create();
+
+    $existingUser = User::factory()->create(['username' => '3201234567899999']);
+    $usersBefore = User::withoutGlobalScopes()->count();
+
+    $this->actingAs($manager)->post(route('admin.karyawan.store'), [
+        'nik' => '3201234567899999',
+        'nama' => 'Percobaan Duplikat',
+        'jenis_karyawan_id' => $jenis->id,
+    ])->assertSessionHasErrors('nik');
+
+    expect(User::withoutGlobalScopes()->count())->toBe($usersBefore);
+    expect(Karyawan::where('nama', 'Percobaan Duplikat')->exists())->toBeFalse();
+});
+
 it('toggles a karyawan status_aktif and the linked user is_active together', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -145,4 +164,62 @@ it('toggles a karyawan status_aktif and the linked user is_active together', fun
     $karyawan->refresh();
     expect($karyawan->status_aktif)->toBe('non_aktif');
     expect($karyawan->user->is_active)->toBeFalse();
+});
+
+it('shows a lembaga-scoped admin their own dedicated karyawan plus their yayasan pool karyawan, but not other lembaga/yayasan data', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $lembagaAOther = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $manager = actingAsKaryawanManager($lembagaA);
+    $jenis = JenisKaryawanMaster::factory()->create();
+
+    $dedicatedOwn = Karyawan::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembagaA->id])->id,
+        'yayasan_id' => $yayasanA->id,
+        'lembaga_id' => $lembagaA->id,
+        'jenis_karyawan_id' => $jenis->id,
+        'nama' => 'Karyawan Lembaga Sendiri',
+        'nik' => '3201234567900001',
+        'status_aktif' => 'aktif',
+    ]);
+
+    $poolSameYayasan = Karyawan::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => null])->id,
+        'yayasan_id' => $yayasanA->id,
+        'lembaga_id' => null,
+        'jenis_karyawan_id' => $jenis->id,
+        'nama' => 'Karyawan Pool Yayasan Sendiri',
+        'nik' => '3201234567900002',
+        'status_aktif' => 'aktif',
+    ]);
+
+    $dedicatedOtherLembaga = Karyawan::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembagaAOther->id])->id,
+        'yayasan_id' => $yayasanA->id,
+        'lembaga_id' => $lembagaAOther->id,
+        'jenis_karyawan_id' => $jenis->id,
+        'nama' => 'Karyawan Lembaga Lain',
+        'nik' => '3201234567900003',
+        'status_aktif' => 'aktif',
+    ]);
+
+    $poolOtherYayasan = Karyawan::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => null])->id,
+        'yayasan_id' => $yayasanB->id,
+        'lembaga_id' => null,
+        'jenis_karyawan_id' => $jenis->id,
+        'nama' => 'Karyawan Pool Yayasan Lain',
+        'nik' => '3201234567900004',
+        'status_aktif' => 'aktif',
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.karyawan.index'));
+
+    $response->assertOk();
+    $response->assertSee('Karyawan Lembaga Sendiri');
+    $response->assertSee('Karyawan Pool Yayasan Sendiri');
+    $response->assertDontSee('Karyawan Lembaga Lain');
+    $response->assertDontSee('Karyawan Pool Yayasan Lain');
 });

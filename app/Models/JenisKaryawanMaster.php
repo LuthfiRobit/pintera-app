@@ -12,7 +12,14 @@ class JenisKaryawanMaster extends Model
 
     protected $table = 'jenis_karyawan_master';
 
-    protected $fillable = ['nama'];
+    protected $fillable = ['nama', 'is_konselor'];
+
+    protected function casts(): array
+    {
+        return [
+            'is_konselor' => 'boolean',
+        ];
+    }
 
     public function karyawan(): HasMany
     {

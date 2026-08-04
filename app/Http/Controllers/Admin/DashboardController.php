@@ -35,6 +35,10 @@ class DashboardController extends BaseController
             return view('admin.dashboard.orang-tua');
         }
 
+        if ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
+            return view('admin.dashboard.karyawan');
+        }
+
         if ($user->widestScopeLevel() === 'yayasan') {
             $lembagaAktifId = session('active_lembaga_id');
 
@@ -58,11 +62,15 @@ class DashboardController extends BaseController
             // Negligible at pilot scale (a yayasan has a handful of lembaga); revisit if a
             // yayasan ever grows to dozens.
             $lembagaList = Lembaga::all();
-            $ringkasanPerLembaga = $lembagaList->map(function (Lembaga $lembaga) {
+            $ringkasanPerLembaga = $lembagaList->map(function (Lembaga $lembaga) use ($user) {
                 return [
                     'lembaga' => $lembaga,
-                    'spmb' => $this->dashboardStats->statistikSpmb($lembaga->id),
-                    'keuangan' => $this->dashboardStats->statistikKeuangan($lembaga->id),
+                    'spmb' => $user->can('spmb-pendaftaran.view')
+                        ? $this->dashboardStats->statistikSpmb($lembaga->id)
+                        : ['total' => 0, 'diterima' => 0],
+                    'keuangan' => $user->can('tagihan.view')
+                        ? $this->dashboardStats->statistikKeuangan($lembaga->id)
+                        : ['rpTerkumpul' => 0],
                 ];
             });
 
