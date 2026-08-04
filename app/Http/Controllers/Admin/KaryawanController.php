@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class KaryawanController extends BaseController
@@ -118,8 +119,10 @@ class KaryawanController extends BaseController
             'status_aktif' => ['required', 'in:aktif,non_aktif'],
         ]);
 
-        $karyawan->update(['status_aktif' => $data['status_aktif']]);
-        $karyawan->user()->update(['is_active' => $data['status_aktif'] === 'aktif']);
+        DB::transaction(function () use ($data, $karyawan) {
+            $karyawan->update(['status_aktif' => $data['status_aktif']]);
+            $karyawan->user()->update(['is_active' => $data['status_aktif'] === 'aktif']);
+        });
 
         return redirect()->route('admin.karyawan.index')->with('status', 'Status karyawan berhasil diperbarui.');
     }
