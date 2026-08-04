@@ -14,6 +14,7 @@ class TenantScopeTestModel extends Model
     use BelongsToTenant;
 
     protected $table = 'tenant_scope_test_models';
+
     protected $fillable = ['lembaga_id', 'label'];
 }
 
@@ -111,6 +112,22 @@ it('does not recurse when a real session login resolves a tenant-scoped user', f
     // the session id via a real database query, instead of reusing an in-memory
     // instance the way actingAs() does in the tests above.
     $this->get('/dashboard')->assertOk();
+});
+
+it('returns zero rows for a non-yayasan actor with a null lembaga_id (fail-closed, not fail-open)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    TenantScopeTestModel::withoutGlobalScopes()->create(['lembaga_id' => $lembaga->id, 'label' => 'A']);
+
+    $actorWithNullLembaga = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $actorWithNullLembaga->assignRole('orang_tua');
+
+    $this->actingAs($actorWithNullLembaga);
+
+    expect(TenantScopeTestModel::count())->toBe(0);
 });
 
 it('only lists staff belonging to the acting lembaga-scoped user\'s own lembaga', function () {

@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/KasusController.php
 
 namespace App\Http\Controllers;
@@ -28,7 +29,11 @@ class KasusController extends BaseController
         if ($user->hasRole('guru')) {
             $kasusList = Kasus::with('siswa')->where('diajukan_oleh_guru_id', $user->guru?->id)->latest()->get();
         } elseif ($user->hasRole('orang_tua')) {
-            $kasusList = Kasus::with('siswa')->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
+            // Orang tua accounts have no lembaga_id of their own, so the default TenantScope
+            // on Kasus (a real, non-null lembaga_id) would fail-closed to zero rows for them.
+            // Bypass it here; the where() on diajukan_oleh_orang_tua_id already scopes the
+            // result to this orang_tua's own submissions.
+            $kasusList = Kasus::withoutGlobalScope(TenantScope::class)->with('siswa')->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
         } else {
             $kasusList = Kasus::with('siswa')->latest()->get();
         }
@@ -66,21 +71,15 @@ class KasusController extends BaseController
         }
         $data = $request->validate($rules);
 
-        // Orang tua accounts have no lembaga_id of their own (their linked children may
-        // belong to any lembaga), so the default TenantScope on Siswa would exclude every
-        // real row for them. Bypass it here; authorization is still enforced explicitly
-        // below (the orang_tua-child linkage check, or the guru-must-have-a-guru-record check).
-        $siswa = Siswa::withoutGlobalScope(TenantScope::class)->findOrFail($data['siswa_id']);
-
         if ($isGuru) {
             abort_if($user->guru === null, 403);
+            $siswa = Siswa::findOrFail($data['siswa_id']);
         } else {
-            $orangTua = $user->orangTua;
-            abort_if(
-                $orangTua === null || ! $siswa->orangTua()->where('orang_tua_id', $orangTua->id)->exists(),
-                403,
-                'Anda tidak tertaut ke siswa ini.'
-            );
+            abort_if($user->orangTua === null, 403);
+            $siswa = $user->orangTua->siswa()
+                ->withoutGlobalScope(TenantScope::class)
+                ->where('siswa.id', $data['siswa_id'])
+                ->firstOrFail();
         }
 
         $lampiranPath = ($isGuru && $request->hasFile('lampiran'))
@@ -119,7 +118,7 @@ class KasusController extends BaseController
         $isSubmitter = ($kasus->diajukan_oleh_guru_id !== null && $kasus->diajukan_oleh_guru_id === $user->guru?->id)
             || ($kasus->diajukan_oleh_orang_tua_id !== null && $kasus->diajukan_oleh_orang_tua_id === $user->orangTua?->id);
         $isKontakUtama = $user->orangTua !== null
-            && $kasus->siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
+            && $kasus->siswa?->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
 
         abort_if(! $isSubmitter && ! $isKontakUtama && ! $user->can('kasus.triase'), 404);
 
@@ -140,7 +139,8 @@ class KasusController extends BaseController
             return;
         }
 
-        $waliKelas = $kasus->siswa->kelas?->waliKelas;
+        $kelas = $kasus->siswa->kelas()->withoutGlobalScope(TenantScope::class)->first();
+        $waliKelas = $kelas?->waliKelas()->withoutGlobalScope(TenantScope::class)->first();
         $waliKelas?->notify(new KasusDiajukanNotification($kasus));
     }
 }

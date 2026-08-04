@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/KasusSubmissionTest.php
 
 use App\Enums\StatusKasus;
@@ -8,6 +9,7 @@ use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;
+use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -104,7 +106,11 @@ it('lets an orang tua submit a kasus for their own linked child and notifies the
         'deskripsi' => 'Deskripsi keluhan orang tua.',
     ])->assertRedirect(route('kasus.index'));
 
-    $kasus = Kasus::where('siswa_id', $siswa->id)->firstOrFail();
+    // The still-authenticated actor here is the orang_tua, whose null lembaga_id makes the
+    // default TenantScope fail-closed on Kasus (a real, non-null lembaga_id row can never
+    // satisfy `lembaga_id IS NULL`). Bypass it explicitly for this read-back assertion, same
+    // as the controller does for its own orang_tua-facing queries.
+    $kasus = Kasus::withoutGlobalScope(TenantScope::class)->where('siswa_id', $siswa->id)->firstOrFail();
     expect($kasus->diajukan_oleh_orang_tua_id)->toBe($orangTua->id);
     expect($kasus->diajukan_oleh_guru_id)->toBeNull();
 
@@ -122,12 +128,28 @@ it('rejects an orang tua submitting a kasus for a siswa they are not linked to',
         'siswa_id' => $unrelatedSiswa->id,
         'kategori_masalah' => 'Perilaku',
         'deskripsi' => 'Percobaan.',
-    ])->assertForbidden();
+    ])->assertNotFound();
 
     expect(Kasus::where('siswa_id', $unrelatedSiswa->id)->exists())->toBeFalse();
 });
 
-it('rejects creating a kasus with both or neither diajukan_oleh columns filled at once (model-level invariant check)', function () {
+it('rejects a guru submitting a kasus for a siswa in a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswaLembagaB = Siswa::factory()->create(['lembaga_id' => $lembagaB->id]);
+    [$user, $guru] = actingAsGuruPengaju($lembagaA);
+
+    $this->actingAs($user)->post(route('kasus.store'), [
+        'siswa_id' => $siswaLembagaB->id,
+        'kategori_masalah' => 'Perilaku',
+        'deskripsi' => 'Percobaan lintas lembaga.',
+    ])->assertNotFound();
+
+    expect(Kasus::where('siswa_id', $siswaLembagaB->id)->exists())->toBeFalse();
+});
+
+it('guru submission always leaves diajukan_oleh_orang_tua_id null (FK exclusivity is structural, not separately validated)', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);

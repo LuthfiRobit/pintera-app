@@ -54,16 +54,6 @@ class TenantScope implements Scope
             return;
         }
 
-        // Accounts with no lembaga_id of their own (currently: orang_tua) aren't tied to a
-        // single tenant — their children/records may span several lembaga. Filtering by a
-        // literal `lembaga_id = null` would exclude every real row, so skip tenant filtering
-        // for them; access to specific records is enforced at the controller/query level via
-        // explicit FK relations (e.g. Siswa::orangTua()) instead. This does not affect
-        // guru/admin accounts, which always carry a real lembaga_id.
-        if ($actingUser->lembaga_id === null) {
-            return;
-        }
-
         $builder->where($model->getTable().'.lembaga_id', $actingUser->lembaga_id);
     }
 }

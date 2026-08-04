@@ -18,7 +18,6 @@ use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KaryawanController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\KenaikanKelasController;
-use App\Http\Controllers\KasusController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
 use App\Http\Controllers\Admin\Lembaga\DataPeriodikController as LembagaDataPeriodikController;
 use App\Http\Controllers\Admin\Lembaga\EkstrakurikulerController as LembagaEkstrakurikulerController;
@@ -46,6 +45,7 @@ use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\SesiPembelajaranController;
+use App\Http\Controllers\KasusController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {

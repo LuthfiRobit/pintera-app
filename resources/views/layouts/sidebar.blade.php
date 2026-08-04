@@ -65,7 +65,7 @@
             ]),
         ],
         [
-            'label' => 'Pendampingan',
+            'label' => 'VIII. Pendampingan',
             'items' => array_filter([
                 Auth::user()->can('kasus.ajukan') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'fact_check'] : null,
             ]),
