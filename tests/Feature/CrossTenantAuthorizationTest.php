@@ -77,7 +77,7 @@ it('lets a yayasan-scoped user filter the guru list down to one lembaga via the 
     ]);
     Guru::withoutGlobalScopes()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaB->id])->id,
-        'lembaga_id' => $lembagaB->id, 'nik' => '3201234567898882', 'nama' => 'Guru B',
+        'lembaga_id' => $lembagaB->id, 'nik' => '3201234567898882', 'nama' => 'Guru Kedua',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
     ]);
 
@@ -90,12 +90,12 @@ it('lets a yayasan-scoped user filter the guru list down to one lembaga via the 
 
     $response = $this->get(route('admin.guru.index'));
     $response->assertSee('Guru A');
-    $response->assertDontSee('Guru B');
+    $response->assertDontSee('Guru Kedua');
 
     // Switch back to "all".
     $this->get('/dashboard?switch_lembaga=all');
 
     $response = $this->get(route('admin.guru.index'));
     $response->assertSee('Guru A');
-    $response->assertSee('Guru B');
+    $response->assertSee('Guru Kedua');
 });
