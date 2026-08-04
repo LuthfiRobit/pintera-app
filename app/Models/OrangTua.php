@@ -31,7 +31,7 @@ class OrangTua extends Model
             ->using(SiswaOrangTua::class);
     }
 
-    public function routeNotificationForMail(): string
+    public function routeNotificationForMail(): ?string
     {
         return $this->email;
     }

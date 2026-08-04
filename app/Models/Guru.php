@@ -80,7 +80,7 @@ class Guru extends Model
             ->useLogName('guru');
     }
 
-    public function routeNotificationForMail(): string
+    public function routeNotificationForMail(): ?string
     {
         return $this->email;
     }
