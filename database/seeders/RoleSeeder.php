@@ -69,6 +69,7 @@ class RoleSeeder extends Seeder
             if ($name === 'guru') {
                 $role->givePermissionTo([
                     'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola-sendiri',
+                    'kasus.ajukan', 'kasus.view',
                 ]);
             }
 
@@ -79,6 +80,7 @@ class RoleSeeder extends Seeder
                     'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
                     'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',
                     'karyawan.view', 'karyawan.create', 'karyawan.edit',
+                    'kasus.view', 'kasus.triase',
                     'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
                     'semester.create', 'semester.activate',
                     'pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete',
@@ -89,6 +91,12 @@ class RoleSeeder extends Seeder
                     'komponen-penilaian.kelola',
                     'rapor.view',
                     'kenaikan-kelas.kelola',
+                ]);
+            }
+
+            if ($name === 'orang_tua') {
+                $role->givePermissionTo([
+                    'kasus.ajukan', 'kasus.view', 'kasus.consent',
                 ]);
             }
         }
