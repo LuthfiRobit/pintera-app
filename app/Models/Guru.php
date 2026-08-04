@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Guru extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use HasFactory, BelongsToTenant, LogsActivity, Notifiable;
 
     protected $table = 'guru';
 
@@ -77,5 +78,10 @@ class Guru extends Model
             ->logOnly(['nama', 'jenis_ptk', 'status_kepegawaian', 'status_aktif', 'lembaga_id'])
             ->logOnlyDirty()
             ->useLogName('guru');
+    }
+
+    public function routeNotificationForMail(): string
+    {
+        return $this->email;
     }
 }

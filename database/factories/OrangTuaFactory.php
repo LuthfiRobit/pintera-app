@@ -13,7 +13,7 @@ class OrangTuaFactory extends Factory
     public function configure(): static
     {
         return $this->afterCreating(function (OrangTua $orangTua) {
-            $orangTua->user->update(['username' => $orangTua->nik]);
+            $orangTua->user->update(['username' => $orangTua->nik, 'email' => null]);
         });
     }
 

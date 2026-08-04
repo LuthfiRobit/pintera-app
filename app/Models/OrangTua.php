@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Notifications\Notifiable;
 
 class OrangTua extends Model
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $table = 'orang_tua';
 
@@ -28,5 +29,10 @@ class OrangTua extends Model
             ->withPivot(['hubungan', 'is_kontak_utama'])
             ->withTimestamps()
             ->using(SiswaOrangTua::class);
+    }
+
+    public function routeNotificationForMail(): string
+    {
+        return $this->email;
     }
 }
