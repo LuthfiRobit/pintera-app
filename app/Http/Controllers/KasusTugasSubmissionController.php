@@ -92,8 +92,9 @@ class KasusTugasSubmissionController extends BaseController
     private function assertKonselorPemegangKasus(Kasus $kasus): void
     {
         $user = auth()->user();
+        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
         $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
-            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $user->karyawan?->id);
+            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
 
         abort_unless($isKonselor, 403);
     }

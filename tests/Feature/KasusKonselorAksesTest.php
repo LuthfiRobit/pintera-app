@@ -103,6 +103,35 @@ it('lets the siswa a kasus is about open kasus.show, but not a different siswa',
     $this->actingAs($siswaLainUser)->get(route('kasus.show', $kasus))->assertNotFound();
 });
 
+it('lets a karyawan_pool konselor (lembaga_id null) schedule a sesi even with an unrelated active_lembaga_id in session', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $otherLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    [$konselorUser, $karyawan] = buatKaryawanKonselorAkses($yayasan);
+
+    $kasus = Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+        'status' => StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+    ]);
+
+    $this->actingAs($konselorUser);
+    // Put an active_lembaga_id in session that is NOT the konselor's own (they have none,
+    // being karyawan_pool) — this is the state that used to make $user->karyawan resolve
+    // to null via TenantScope and cause a false 403.
+    $this->get('/dashboard?switch_lembaga='.$otherLembaga->id);
+
+    $response = $this->post(route('kasus.sesi.store', $kasus), [
+        'sesi' => [
+            ['dijadwalkan_pada' => now()->addDay()->format('Y-m-d H:i:s'), 'peserta' => 'siswa', 'lokasi_mode' => 'Ruang BK'],
+        ],
+    ]);
+
+    $response->assertRedirect(route('kasus.show', $kasus));
+    $this->assertDatabaseHas('kasus_sesi', ['kasus_id' => $kasus->id, 'lokasi_mode' => 'Ruang BK']);
+});
+
 it('404s a guru_bk who is not assigned to the kasus', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

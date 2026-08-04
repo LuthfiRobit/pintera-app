@@ -37,9 +37,10 @@ class KasusController extends BaseController
                 ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
                 ->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
         } elseif ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
+            $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
             $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
                 ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
-                ->where('konselor_karyawan_id', $user->karyawan?->id)->latest()->get();
+                ->where('konselor_karyawan_id', $karyawanId)->latest()->get();
         } elseif ($user->hasRole('guru')) {
             $kasusList = Kasus::with('siswa')
                 ->where(fn ($q) => $q->where('diajukan_oleh_guru_id', $user->guru?->id)
@@ -137,8 +138,9 @@ class KasusController extends BaseController
             && $siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
         $isTriaseAdmin = $user->can('kasus.triase')
             && ($user->widestScopeLevel() === 'yayasan' || $kasus->lembaga_id === $user->lembaga_id);
+        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
         $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
-            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $user->karyawan?->id);
+            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
         $isSiswaTerkait = $user->siswa !== null && $user->siswa->id === $kasus->siswa_id;
 
         abort_if(! $isSubmitter && ! $isKontakUtama && ! $isTriaseAdmin && ! $isKonselor && ! $isSiswaTerkait, 404);
