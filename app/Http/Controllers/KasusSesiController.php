@@ -53,6 +53,27 @@ class KasusSesiController extends BaseController
         return redirect()->route('kasus.show', $kasus)->with('status', 'Sesi berhasil dijadwalkan.');
     }
 
+    public function updateStatus(Request $request, Kasus $kasus, KasusSesi $kasusSesi): RedirectResponse
+    {
+        $this->authorize('kasus.view');
+        $this->assertKonselorPemegangKasus($kasus);
+        abort_if($kasusSesi->kasus_id !== $kasus->id, 404);
+
+        $data = $request->validate([
+            'status' => ['required', 'in:selesai,batal,tidak_hadir'],
+            'catatan_internal' => ['nullable', 'string'],
+            'alasan_batal' => ['required_if:status,batal', 'nullable', 'string'],
+        ]);
+
+        $kasusSesi->update([
+            'status' => $data['status'],
+            'catatan_internal' => $data['catatan_internal'] ?? $kasusSesi->catatan_internal,
+            'alasan_batal' => $data['alasan_batal'] ?? null,
+        ]);
+
+        return redirect()->route('kasus.show', $kasus)->with('status', 'Status sesi berhasil diperbarui.');
+    }
+
     private function assertKonselorPemegangKasus(Kasus $kasus): void
     {
         $user = auth()->user();

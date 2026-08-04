@@ -240,6 +240,7 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
     Route::get('{kasus}', [KasusController::class, 'show'])->name('show');
     Route::patch('{kasus}/consent/{kasusConsent}', [KasusConsentController::class, 'approve'])->name('consent.approve');
     Route::post('{kasus}/sesi', [KasusSesiController::class, 'store'])->name('sesi.store');
+    Route::patch('{kasus}/sesi/{kasusSesi}', [KasusSesiController::class, 'updateStatus'])->name('sesi.update-status');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
