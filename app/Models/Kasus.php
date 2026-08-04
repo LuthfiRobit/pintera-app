@@ -65,6 +65,16 @@ class Kasus extends Model
         return $this->hasMany(KasusConsent::class);
     }
 
+    public function sesi(): HasMany
+    {
+        return $this->hasMany(KasusSesi::class);
+    }
+
+    public function tugas(): HasMany
+    {
+        return $this->hasMany(KasusTugas::class);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

@@ -73,6 +73,16 @@ class User extends Authenticatable
         return $this->hasOne(OrangTua::class);
     }
 
+    public function siswa(): HasOne
+    {
+        return $this->hasOne(Siswa::class);
+    }
+
+    public function karyawan(): HasOne
+    {
+        return $this->hasOne(Karyawan::class);
+    }
+
     public function widestScopeLevel(): string
     {
         $levels = $this->roles->pluck('scope_level');
