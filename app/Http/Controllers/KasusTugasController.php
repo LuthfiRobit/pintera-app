@@ -47,7 +47,7 @@ class KasusTugasController extends BaseController
         $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
 
         foreach ($created as $tugas) {
-            $siswa?->user?->notify(new TugasDitugaskanNotification($tugas));
+            $siswa?->user()->withoutGlobalScope(TenantScope::class)->first()?->notify(new TugasDitugaskanNotification($tugas));
             $kontakUtama?->notify(new TugasDitugaskanNotification($tugas));
         }
 

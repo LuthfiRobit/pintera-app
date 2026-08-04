@@ -10,6 +10,8 @@ use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use App\Notifications\SesiDijadwalkanNotification;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
 function buatGuruBkKonselorAkses(Lembaga $lembaga): array
@@ -104,10 +106,13 @@ it('lets the siswa a kasus is about open kasus.show, but not a different siswa',
 });
 
 it('lets a karyawan_pool konselor (lembaga_id null) schedule a sesi even with an unrelated active_lembaga_id in session', function () {
+    Notification::fake();
+
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $otherLembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $siswaUser->id]);
     [$konselorUser, $karyawan] = buatKaryawanKonselorAkses($yayasan);
 
     $kasus = Kasus::create([
@@ -130,6 +135,11 @@ it('lets a karyawan_pool konselor (lembaga_id null) schedule a sesi even with an
 
     $response->assertRedirect(route('kasus.show', $kasus));
     $this->assertDatabaseHas('kasus_sesi', ['kasus_id' => $kasus->id, 'lokasi_mode' => 'Ruang BK']);
+
+    // The siswa's User record lives under a different lembaga than the konselor's
+    // session active_lembaga_id; a stray TenantScope re-application on the ->user
+    // hop must not silently swallow this notification.
+    Notification::assertSentTo($siswaUser, SesiDijadwalkanNotification::class);
 });
 
 it('404s a guru_bk who is not assigned to the kasus', function () {

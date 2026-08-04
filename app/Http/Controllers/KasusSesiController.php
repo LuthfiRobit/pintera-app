@@ -42,7 +42,7 @@ class KasusSesiController extends BaseController
 
         foreach ($created as $sesi) {
             if (in_array($sesi->peserta, ['siswa', 'keduanya'], true)) {
-                $siswa?->user?->notify(new SesiDijadwalkanNotification($sesi));
+                $siswa?->user()->withoutGlobalScope(TenantScope::class)->first()?->notify(new SesiDijadwalkanNotification($sesi));
             }
             if (in_array($sesi->peserta, ['orang_tua', 'keduanya'], true)) {
                 $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
