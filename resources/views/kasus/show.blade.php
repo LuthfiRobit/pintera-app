@@ -152,5 +152,73 @@
                 @endif
             </div>
         @endif
+
+        @if ($isKonselor)
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
+                <p class="font-display text-sm font-bold text-gray-900">Tugas Pendampingan</p>
+
+                @if ($kasus->tugas->isNotEmpty())
+                    <div class="space-y-2">
+                        @foreach ($kasus->tugas as $tugas)
+                            <div class="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900">{{ $tugas->judul }}</p>
+                                    <p class="text-xs text-gray-500">Batas: {{ $tugas->batas_selesai_pada->format('d M Y') }} &middot; {{ ucfirst($tugas->frekuensi) }}</p>
+                                </div>
+                                <x-badge tone="{{ $tugas->status->value === 'selesai' ? 'green' : ($tugas->status->value === 'terlewat' ? 'red' : ($tugas->status->value === 'revisi' ? 'amber' : 'blue')) }}">
+                                    {{ $tugas->status->label() }}
+                                </x-badge>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                @if ($kasus->status->value === 'ditugaskan')
+                    <div x-data="{
+                        rows: [{ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }],
+                        tambah() { this.rows.push({ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }); },
+                        hapus(i) { if (this.rows.length > 1) this.rows.splice(i, 1); },
+                    }" class="border-t border-gray-100 pt-4">
+                        <form method="POST" action="{{ route('kasus.tugas.store', $kasus) }}" class="space-y-3">
+                            @csrf
+                            <template x-for="(row, i) in rows" :key="i">
+                                <div class="grid grid-cols-1 gap-2 rounded-lg border border-gray-100 p-3 sm:grid-cols-2">
+                                    <div>
+                                        <x-input-label value="Judul *" />
+                                        <input type="text" :name="`tugas[${i}][judul]`" x-model="row.judul" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <x-input-label value="Frekuensi *" />
+                                        <select :name="`tugas[${i}][frekuensi]`" x-model="row.frekuensi" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                            <option value="sekali">Sekali</option>
+                                            <option value="harian">Harian</option>
+                                            <option value="mingguan">Mingguan</option>
+                                            <option value="bulanan">Bulanan</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <x-input-label value="Instruksi *" />
+                                        <textarea :name="`tugas[${i}][instruksi]`" x-model="row.instruksi" rows="2" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
+                                    </div>
+                                    <div>
+                                        <x-input-label value="Mulai *" />
+                                        <input type="date" :name="`tugas[${i}][mulai_pada]`" x-model="row.mulai_pada" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div>
+                                        <x-input-label value="Batas Selesai *" />
+                                        <input type="date" :name="`tugas[${i}][batas_selesai_pada]`" x-model="row.batas_selesai_pada" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <button type="button" @click="hapus(i)" x-show="rows.length > 1" class="text-left text-xs font-semibold text-error-600 hover:text-error-700 sm:col-span-2">Hapus Baris</button>
+                                </div>
+                            </template>
+                            <div class="flex items-center gap-3">
+                                <button type="button" @click="tambah()" class="text-xs font-semibold text-brand-600 hover:text-brand-700">+ Tambah Baris</button>
+                                <x-primary-button type="submit">Beri Tugas</x-primary-button>
+                            </div>
+                        </form>
+                    </div>
+                @endif
+            </div>
+        @endif
     </div>
 </x-app-layout>
