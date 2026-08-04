@@ -1,26 +1,9 @@
 <?php
-// tests/Feature/Admin/OrangTuaCrudTest.php
 
 use App\Models\OrangTua;
-use App\Models\Role;
 use App\Models\User;
+use App\Services\AkunOrangTuaGenerator;
 use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Permission;
-
-function actingAsOrangTuaManager(): User
-{
-    foreach (['orang-tua.view', 'orang-tua.create', 'orang-tua.edit'] as $permission) {
-        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
-    }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo(['orang-tua.view', 'orang-tua.create', 'orang-tua.edit']);
-    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-
-    $manager = User::factory()->create();
-    $manager->assignRole($role);
-
-    return $manager;
-}
 
 function orangTuaFormPayload(array $overrides = []): array
 {
@@ -126,4 +109,48 @@ it('denies edit access to a user without orang-tua.edit permission', function ()
     $orangTua = OrangTua::where('nik', '3201234567894444')->firstOrFail();
 
     $this->actingAs(User::factory()->create())->get(route('admin.orang-tua.edit', $orangTua))->assertForbidden();
+});
+
+it('toggles an orang tua account status and reflects it on the index page', function () {
+    $manager = actingAsOrangTuaManager();
+    $this->actingAs($manager)->post(route('admin.orang-tua.store'), orangTuaFormPayload())->assertRedirect();
+    $orangTua = OrangTua::where('nik', '3201234567894444')->firstOrFail();
+    expect($orangTua->user->is_active)->toBeTrue();
+
+    $this->actingAs($manager)
+        ->patch(route('admin.orang-tua.update-status', $orangTua), ['is_active' => '0'])
+        ->assertRedirect(route('admin.orang-tua.index'));
+
+    $orangTua->refresh();
+    expect($orangTua->user->is_active)->toBeFalse();
+
+    $this->actingAs($manager)->get(route('admin.orang-tua.index'))->assertOk()->assertSee('Non-aktif');
+
+    $this->actingAs($manager)
+        ->patch(route('admin.orang-tua.update-status', $orangTua), ['is_active' => '1'])
+        ->assertRedirect(route('admin.orang-tua.index'));
+
+    $orangTua->refresh();
+    expect($orangTua->user->is_active)->toBeTrue();
+});
+
+it('denies status toggle to a user without orang-tua.edit permission', function () {
+    $manager = actingAsOrangTuaManager();
+    $this->actingAs($manager)->post(route('admin.orang-tua.store'), orangTuaFormPayload())->assertRedirect();
+    $orangTua = OrangTua::where('nik', '3201234567894444')->firstOrFail();
+
+    $this->actingAs(User::factory()->create())
+        ->patch(route('admin.orang-tua.update-status', $orangTua), ['is_active' => '0'])
+        ->assertForbidden();
+});
+
+it('logs an orang_tua user into a placeholder dashboard instead of a 500 error', function () {
+    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTua = app(AkunOrangTuaGenerator::class)->buat('Wali Uji Coba', '3201234567898888', '081234567890');
+    $orangTua->user->update(['must_change_password' => false]);
+
+    $response = $this->actingAs($orangTua->user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Selamat datang');
 });

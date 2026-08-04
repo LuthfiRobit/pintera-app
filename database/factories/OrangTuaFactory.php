@@ -10,6 +10,13 @@ class OrangTuaFactory extends Factory
 {
     protected $model = OrangTua::class;
 
+    public function configure(): static
+    {
+        return $this->afterCreating(function (OrangTua $orangTua) {
+            $orangTua->user->update(['username' => $orangTua->nik]);
+        });
+    }
+
     public function definition(): array
     {
         return [

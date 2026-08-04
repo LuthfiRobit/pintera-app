@@ -1,7 +1,5 @@
 <?php
 
-// tests/Feature/Admin/SiswaOrangTuaLinkingTest.php
-
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
@@ -25,7 +23,6 @@ it('finds an existing orang tua by nik via the cari endpoint', function () {
     $manager = actingAsSiswaOrangTuaManager();
     $siswa = buatSiswaUntukTautan();
     $orangTua = OrangTua::factory()->create(['nik' => '3201234567895555']);
-    $orangTua->user->update(['username' => '3201234567895555']);
 
     $response = $this->actingAs($manager)->getJson(route('admin.siswa.orang-tua.cari', $siswa).'?nik=3201234567895555');
 
@@ -82,7 +79,6 @@ it('rejects linking with a nik that is already registered instead of silently cr
     $manager = actingAsSiswaOrangTuaManager();
     $siswa = buatSiswaUntukTautan();
     $existing = OrangTua::factory()->create(['nik' => '3201234567897777']);
-    $existing->user->update(['username' => '3201234567897777']);
 
     $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswa), [
         'hubungan' => 'ayah',
@@ -112,6 +108,11 @@ it('sets is_kontak_utama exclusively when linking a second orang tua as the new 
     expect((bool) $siswa->orangTua()->where('orang_tua_id', $second->id)->first()->pivot->is_kontak_utama)->toBeTrue();
 });
 
+// Exercises a yayasan-scoped user's ability to cross-link the same orang tua across
+// lembaga (an intended capability, since OrangTua is cross-tenant by design) — it does
+// NOT assert anything about tenant isolation for an ordinary lembaga-scoped admin. See
+// 'blocks a lembaga-scoped manager from linking an orang tua to a siswa in another lembaga'
+// below for the tenant-isolation case.
 it('allows the same orang tua to link to a siswa in a different lembaga', function () {
     $manager = actingAsSiswaOrangTuaManager();
     $siswaA = buatSiswaUntukTautan();
@@ -168,6 +169,71 @@ it('unlinks an orang tua from a siswa without deleting the orang tua profile or 
     expect($siswa->orangTua()->count())->toBe(0);
     expect(OrangTua::find($orangTua->id))->not->toBeNull();
     expect(User::find($orangTua->user_id))->not->toBeNull();
+});
+
+it('blocks a lembaga-scoped manager from linking an orang tua to a siswa in another lembaga', function () {
+    $manager = actingAsOrangTuaManager();
+    $yayasanA = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $manager->update(['lembaga_id' => $lembagaA->id]);
+
+    $siswaInLembagaB = buatSiswaUntukTautan();
+    $orangTua = OrangTua::factory()->create();
+
+    $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswaInLembagaB), [
+        'orang_tua_id' => $orangTua->id,
+        'hubungan' => 'ayah',
+        'is_kontak_utama' => '1',
+    ])->assertNotFound();
+});
+
+it('requires siswa.edit in addition to orang-tua permissions on nested siswa/orang-tua routes', function () {
+    foreach (['orang-tua.view', 'orang-tua.create', 'orang-tua.edit'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = \App\Models\Role::firstOrCreate(
+        ['name' => 'orang_tua_only_no_siswa_edit', 'guard_name' => 'web'],
+        ['scope_level' => 'yayasan']
+    );
+    $role->givePermissionTo(['orang-tua.create', 'orang-tua.edit']);
+    $user = User::factory()->create();
+    $user->assignRole($role);
+
+    $siswa = buatSiswaUntukTautan();
+    $orangTua = OrangTua::factory()->create();
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $this->actingAs($user)
+        ->getJson(route('admin.siswa.orang-tua.cari', $siswa).'?nik=3201234567895555')
+        ->assertForbidden();
+
+    $this->actingAs($user)->post(route('admin.siswa.orang-tua.store', $siswa), [
+        'orang_tua_id' => $orangTua->id, 'hubungan' => 'ibu', 'is_kontak_utama' => '1',
+    ])->assertForbidden();
+
+    $this->actingAs($user)
+        ->patch(route('admin.siswa.orang-tua.kontak-utama', [$siswa, $orangTua]))
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->delete(route('admin.siswa.orang-tua.destroy', [$siswa, $orangTua]))
+        ->assertForbidden();
+});
+
+it('returns a distinct message when linking a nik that belongs to a non-parent user', function () {
+    $manager = actingAsSiswaOrangTuaManager();
+    $siswa = buatSiswaUntukTautan();
+    User::factory()->create(['username' => '3201234567899999']);
+
+    $response = $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswa), [
+        'hubungan' => 'ayah',
+        'nama_lengkap' => 'Nama Lain',
+        'nik' => '3201234567899999',
+        'no_hp' => '081200003333',
+    ]);
+
+    $response->assertSessionHasErrors('nik');
+    expect(session('errors')->get('nik')[0])->toBe('NIK ini sudah terdaftar ke akun lain yang bukan profil Orang Tua.');
 });
 
 it('shows the linked orang tua list and a search box on the siswa edit page', function () {
