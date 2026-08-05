@@ -25,6 +25,7 @@ class OrangTuaController extends BaseController
         $search = $request->query('search');
 
         $orangTuaList = OrangTua::with('user')
+            ->withCount('siswa')
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2
                 ->where('nama_lengkap', 'like', "%{$search}%")
                 ->orWhere('nik', 'like', "%{$search}%")))
@@ -34,6 +35,8 @@ class OrangTuaController extends BaseController
         return view('admin.orang-tua.index', [
             'orangTuaList' => $orangTuaList,
             'search' => $search,
+            'totalOrangTua' => $orangTuaList->count(),
+            'totalAktif' => $orangTuaList->filter(fn ($o) => $o->user && $o->user->is_active)->count(),
         ]);
     }
 

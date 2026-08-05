@@ -17,11 +17,38 @@
             </p>
         </div>
 
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-600">
+                        <x-icon name="group" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-600">Total Orang Tua</p>
+                        <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalOrangTua }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Terdaftar</span>
+            </div>
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                        <x-icon name="check-circle" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-green-600">Akun Aktif</p>
+                        <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalAktif }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Login siap</span>
+            </div>
+        </div>
+
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
-                    Filter Data
+                    Filter & Aksi Data
                 </p>
                 <x-link-button href="{{ route('admin.orang-tua.create') }}">
                     <span class="text-base leading-none">+</span> Tambah Data Orang Tua
@@ -66,6 +93,7 @@
                             <th class="px-5 py-3">Nama</th>
                             <th class="px-5 py-3">NIK</th>
                             <th class="px-5 py-3">No. HP</th>
+                            <th class="px-5 py-3">Anak Tertaut</th>
                             <th class="px-5 py-3">Status Akun</th>
                         </tr>
                     </thead>
@@ -100,6 +128,9 @@
                                 <td class="px-5 py-3.5 font-mono text-xs text-gray-600">{{ $item->nik }}</td>
                                 <td class="px-5 py-3.5 text-gray-600">{{ $item->no_hp }}</td>
                                 <td class="px-5 py-3.5">
+                                    <x-badge tone="{{ $item->siswa_count > 0 ? 'blue' : 'gray' }}">{{ $item->siswa_count }} Anak</x-badge>
+                                </td>
+                                <td class="px-5 py-3.5">
                                     <x-badge tone="{{ $item->user?->is_active ? 'green' : 'amber' }}">{{ $item->user?->is_active ? 'Aktif' : 'Non-aktif' }}</x-badge>
                                 </td>
                             </tr>
@@ -107,7 +138,7 @@
 
                         @if ($orangTuaList->isEmpty())
                             <tr>
-                                <td colspan="5" class="px-5 py-12 text-center text-gray-400">
+                                <td colspan="6" class="px-5 py-12 text-center text-gray-400">
                                     <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                                         <x-icon name="group" class="h-7 w-7" />
                                     </div>
