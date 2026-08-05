@@ -72,6 +72,8 @@ class DatabaseSeeder extends Seeder
             KomponenPenilaianSeeder::class,
             AsesmenSeeder::class,
             NilaiSiswaSeeder::class,
+            OrangTuaKaryawanSeeder::class,
+            PendampinganSeeder::class,
         ]);
     }
 }
