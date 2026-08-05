@@ -16,8 +16,15 @@ class KasusTugasSubmission extends Model
 
     protected $fillable = [
         'tugas_id', 'siswa_id', 'orang_tua_id', 'teks', 'lampiran',
-        'status_review', 'catatan_revisi',
+        'status_review', 'catatan_revisi', 'tanggal',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'tanggal' => 'date',
+        ];
+    }
 
     protected $attributes = [
         'status_review' => 'menunggu_review',
