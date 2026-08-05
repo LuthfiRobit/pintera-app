@@ -25,7 +25,10 @@ class KasusController extends BaseController
 
         $kasusList = Kasus::with('siswa')->where('status', StatusKasus::Diajukan)->latest()->get();
 
-        return view('admin.kasus.index', ['kasusList' => $kasusList]);
+        return view('admin.kasus.index', [
+            'kasusList' => $kasusList,
+            'totalMenunggu' => $kasusList->count(),
+        ]);
     }
 
     public function triase(Kasus $kasus, KonselorAllocationResolver $resolver): View
