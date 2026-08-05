@@ -62,9 +62,16 @@ class KaryawanController extends BaseController
             ->orderBy('nama')
             ->get();
 
+        $totalKaryawan = $karyawanList->count();
+        $totalAktif = $karyawanList->where('status_aktif', 'aktif')->count();
+        $totalPool = $karyawanList->whereNull('lembaga_id')->count();
+
         return view('admin.karyawan.index', [
             'karyawanList' => $karyawanList,
             'search' => $search,
+            'totalKaryawan' => $totalKaryawan,
+            'totalAktif' => $totalAktif,
+            'totalPool' => $totalPool,
         ]);
     }
 
