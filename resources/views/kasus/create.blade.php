@@ -14,6 +14,14 @@
             </p>
         </div>
 
+        <div class="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/50 p-4 text-sm text-blue-800">
+            <x-icon name="info" class="h-5 w-5 shrink-0 text-blue-600 mt-0.5" />
+            <div>
+                <p class="font-semibold text-blue-900">Jaminan Kerahasiaan Data</p>
+                <p class="text-xs text-blue-700 mt-0.5">Informasi yang Anda laporkan bersifat rahasia dan hanya dapat diakses oleh konselor penanggung jawab, orang tua/wali kontak utama, dan admin triase.</p>
+            </div>
+        </div>
+
         <form method="POST" action="{{ route('kasus.store') }}" enctype="multipart/form-data" x-data="kasusForm()">
             @csrf
 

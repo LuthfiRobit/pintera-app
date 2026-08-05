@@ -6,6 +6,11 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="font-display text-lg font-bold text-gray-900">Triase: {{ $kasus->siswa->nama_lengkap }}</h1>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.kasus.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Triase Kasus</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Tugaskan Konselor</b>
+            </p>
         </div>
 
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-2">
@@ -32,12 +37,16 @@
                 @if ($kandidat->isEmpty())
                     <p class="mt-2 text-sm text-gray-500">Menunggu alokasi tenaga ahli — tidak ada Guru BK atau karyawan pool tersedia saat ini.</p>
                 @else
-                    <div class="mt-2 space-y-2">
+                    <div class="mt-2 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                         @foreach ($kandidat as $index => $item)
-                            <label class="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-2 text-sm">
+                            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-3 text-sm transition hover:border-brand-500 hover:bg-brand-50/20 shadow-sm">
                                 <input type="radio" name="konselor_pilihan" value="{{ $index }}" required
-                                    onclick="document.getElementById('konselor_tipe').value='{{ $item->tipe }}'; document.getElementById('konselor_id').value='{{ $item->model->id }}';">
-                                <span>{{ $item->model->nama }} <span class="text-xs text-gray-400">({{ $item->tipe === 'guru' ? 'Guru BK' : 'Karyawan Pool' }})</span></span>
+                                    onclick="document.getElementById('konselor_tipe').value='{{ $item->tipe }}'; document.getElementById('konselor_id').value='{{ $item->model->id }}';"
+                                    class="text-brand-600 focus:ring-brand-500">
+                                <div class="flex flex-col">
+                                    <span class="font-semibold text-gray-900">{{ $item->model->nama }}</span>
+                                    <span class="text-xs text-gray-400">{{ $item->tipe === 'guru' ? 'Guru BK' : 'Karyawan Pool' }}</span>
+                                </div>
                             </label>
                         @endforeach
                     </div>
@@ -47,7 +56,10 @@
                 <x-input-error :messages="$errors->get('konselor_id')" class="mt-1.5" />
             </div>
 
-            <x-primary-button type="submit" @if($kandidat->isEmpty()) disabled @endif>Tugaskan Konselor</x-primary-button>
+            <div class="flex items-center gap-3 pt-2">
+                <x-primary-button type="submit" @if($kandidat->isEmpty()) disabled @endif>Tugaskan Konselor</x-primary-button>
+                <a href="{{ route('admin.kasus.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Batal</a>
+            </div>
         </form>
     </div>
 </x-app-layout>
