@@ -31,6 +31,7 @@ class PermissionSeeder extends Seeder
             'jenis-karyawan-master.view', 'jenis-karyawan-master.create', 'jenis-karyawan-master.edit', 'jenis-karyawan-master.delete',
             'whatsapp-template.edit',
             'kasus.ajukan', 'kasus.view', 'kasus.triase', 'kasus.consent',
+            'kasus.lihat-log-akses', 'kasus.hapus', 'kasus.pulihkan',
             'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
             'semester.create', 'semester.activate',
             'jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete',

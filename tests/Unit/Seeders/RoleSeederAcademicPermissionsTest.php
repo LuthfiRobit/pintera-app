@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Role;
+use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -9,6 +10,7 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 it('grants presensi and asesmen permissions to the guru role', function () {
+    (new PermissionSeeder())->run();
     Artisan::call('permissions:sync');
     (new RoleSeeder())->run();
 
@@ -19,6 +21,7 @@ it('grants presensi and asesmen permissions to the guru role', function () {
 });
 
 it('grants komponen-penilaian and rapor permissions to kepala_sekolah', function () {
+    (new PermissionSeeder())->run();
     Artisan::call('permissions:sync');
     (new RoleSeeder())->run();
 

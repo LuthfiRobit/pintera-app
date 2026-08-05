@@ -80,7 +80,7 @@ class RoleSeeder extends Seeder
                     'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
                     'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',
                     'karyawan.view', 'karyawan.create', 'karyawan.edit',
-                    'kasus.view', 'kasus.triase',
+                    'kasus.view', 'kasus.triase', 'kasus.lihat-log-akses', 'kasus.hapus', 'kasus.pulihkan',
                     'whatsapp-template.edit',
                     'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
                     'semester.create', 'semester.activate',
