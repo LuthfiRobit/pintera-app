@@ -31,11 +31,19 @@ class KasusController extends BaseController
         } elseif ($user->hasRole('orang_tua')) {
             // Orang tua accounts have no lembaga_id of their own, so the default TenantScope
             // on Kasus (a real, non-null lembaga_id) would fail-closed to zero rows for them.
-            // Bypass it here; the where() on diajukan_oleh_orang_tua_id already scopes the
-            // result to this orang_tua's own submissions.
+            // Bypass it here. Show every kasus this orang_tua either submitted themselves OR
+            // is the kontak utama for (matching the exact access rule show() uses) — filtering
+            // only by diajukan_oleh_orang_tua_id missed every kasus a GURU submitted for their
+            // child, at any status, since that column stays null in that case.
+            $orangTuaId = $user->orangTua?->id;
             $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
                 ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
-                ->where('diajukan_oleh_orang_tua_id', $user->orangTua?->id)->latest()->get();
+                ->where(fn ($q) => $q
+                    ->where('diajukan_oleh_orang_tua_id', $orangTuaId)
+                    ->orWhereHas('siswa', fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)
+                        ->whereHas('orangTua', fn ($q3) => $q3->where('orang_tua.id', $orangTuaId)
+                            ->where('siswa_orang_tua.is_kontak_utama', true))))
+                ->latest()->get();
         } elseif ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
             $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
             $kasusList = Kasus::withoutGlobalScope(TenantScope::class)

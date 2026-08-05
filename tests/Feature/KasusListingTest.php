@@ -7,6 +7,8 @@ use App\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\Yayasan;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 it('shows a guru only the kasus they submitted, not another guru\'s', function () {
     $yayasan = Yayasan::factory()->create();
@@ -126,4 +128,56 @@ it('lets an orang tua kontak utama list and view their kasus end-to-end through 
     // Finding (6th occurrence of the same bug class): orang tua must see the assigned
     // konselor's name for informed consent, not have it silently hidden by TenantScope.
     $showResponse->assertSee($guruBk->nama);
+});
+
+it('shows an orang tua kontak utama a kasus that a guru submitted, at every status', function () {
+    // Bug found manually 2026-08-05: KasusController::index()'s orang_tua branch only
+    // filtered by diajukan_oleh_orang_tua_id (who personally submitted it), so a kasus
+    // submitted by the reporting TEACHER never appeared in the kontak-utama parent's own
+    // list, at any status — not because of the status itself, but because that column is
+    // always null when a guru (not the parent) filed the case.
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Anak Diajukan Guru']);
+    [$guruUser, $guru] = actingAsGuruPengaju($lembaga);
+    [$ortuUser, $orangTua] = actingAsOrangTuaPengaju($siswa);
+
+    $kasus = Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'diajukan_oleh_guru_id' => $guru->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Diajukan oleh guru, bukan orang tua.',
+        'status' => StatusKasus::Selesai,
+    ]);
+
+    $response = $this->actingAs($ortuUser)->get(route('kasus.index'));
+
+    $response->assertOk();
+    $response->assertSee('Anak Diajukan Guru');
+});
+
+it('does not show a guru-submitted kasus to an orang tua who is not the kontak utama', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Anak Bukan Kontak Utama']);
+    [$guruUser, $guru] = actingAsGuruPengaju($lembaga);
+
+    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $role->givePermissionTo('kasus.view');
+    $bukanKontakUtamaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    $bukanKontakUtamaUser->assignRole('orang_tua');
+    $bukanKontakUtama = \App\Models\OrangTua::create([
+        'user_id' => $bukanKontakUtamaUser->id, 'nama_lengkap' => 'Bukan Kontak Utama',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009999',
+    ]);
+    $siswa->orangTua()->attach($bukanKontakUtama->id, ['hubungan' => 'ibu', 'is_kontak_utama' => false]);
+
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'diajukan_oleh_guru_id' => $guru->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Diajukan oleh guru.',
+    ]);
+
+    $response = $this->actingAs($bukanKontakUtamaUser)->get(route('kasus.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('Anak Bukan Kontak Utama');
 });
