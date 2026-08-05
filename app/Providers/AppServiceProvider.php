@@ -4,10 +4,12 @@ namespace App\Providers;
 
 use App\Auth\TenantAwareUserProvider;
 use App\Models\AkunPendaftar;
+use App\Notifications\Channels\WhatsAppChannel;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -45,5 +47,7 @@ class AppServiceProvider extends ServiceProvider
                 'email' => $notifiable->getEmailForPasswordReset(),
             ], false));
         });
+
+        Notification::extend('whatsapp', fn ($app) => new WhatsAppChannel);
     }
 }

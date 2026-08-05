@@ -35,4 +35,9 @@ class OrangTua extends Model
     {
         return $this->email;
     }
+
+    public function routeNotificationForWhatsapp(): ?string
+    {
+        return $this->no_hp;
+    }
 }
