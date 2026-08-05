@@ -92,9 +92,44 @@ it('locks a date once its submission is menunggu_review, rejecting a second subm
 
     $this->actingAs($siswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), [
         'teks' => 'Percobaan kedua di tanggal sama.', 'tanggal' => '2026-08-10',
-    ])->assertStatus(422);
+    ])->assertSessionHasErrors('tanggal');
 
     expect(KasusTugasSubmission::where('tugas_id', $tugas->id)->where('tanggal', '2026-08-10')->count())->toBe(1);
+});
+
+it('locks a date based on the LATEST submission for that date, not any submission ever created for it', function () {
+    // Reachable revisi-cycle scenario: an OLDER submission for a date ends up
+    // `diterima` (e.g. a konselor accepted it from a stale browser tab after a
+    // newer submission for the same date had already been created), while the
+    // NEWEST submission for that same date is `revisi_diminta`. The date must be
+    // treated as OPEN (matching the view's own "latest submission" semantics),
+    // not locked by the older, no-longer-current `diterima` row.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasHarianDanKontakUtama($lembaga);
+
+    $lama = KasusTugasSubmission::factory()->create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswaUser->siswa->id,
+        'tanggal' => '2026-08-10',
+        'status_review' => 'diterima',
+        'created_at' => now()->subDays(2),
+    ]);
+    $lama->forceFill(['created_at' => now()->subDays(2)])->save();
+
+    $baru = KasusTugasSubmission::factory()->create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswaUser->siswa->id,
+        'tanggal' => '2026-08-10',
+        'status_review' => 'revisi_diminta',
+        'created_at' => now()->subDay(),
+    ]);
+    $baru->forceFill(['created_at' => now()->subDay()])->save();
+
+    $this->actingAs($siswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), [
+        'teks' => 'Resubmit setelah revisi diminta pada submission terbaru.', 'tanggal' => '2026-08-10',
+    ])->assertRedirect(route('kasus.show', $kasus));
+
+    expect(KasusTugasSubmission::where('tugas_id', $tugas->id)->where('tanggal', '2026-08-10')->count())->toBe(3);
 });
 
 it('lets orang tua kontak utama submit on behalf of the child for a specific date', function () {

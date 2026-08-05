@@ -1,8 +1,6 @@
 <?php
 // tests/Feature/KasusTugasHarianViewTest.php
 
-use App\Models\Kasus;
-use App\Models\KasusConsent;
 use App\Models\KasusTugas;
 use App\Models\KasusTugasSubmission;
 use App\Models\Lembaga;
@@ -46,4 +44,48 @@ it('does not render the per-date checklist for a non-harian tugas', function () 
     // an August 2026 date depending on the factory's random dates. Assert on the
     // per-date checklist's own unique marker instead.
     $response->assertDontSee('Checklist Harian');
+});
+
+it('renders the kasus page without error and surfaces a harian submission whose tanggal falls outside the tugas date range', function () {
+    // Belt-and-suspenders for Finding 1: even after the backfill migration sets
+    // tanggal = DATE(created_at), a submission can still fail to land in any
+    // rendered per-date row if its (backfilled) tanggal happens to fall outside
+    // the tugas's own mulai_pada-batas_selesai_pada range. The view must not
+    // crash, and must not silently make this submission disappear.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasHarianDanKontakUtama($lembaga);
+
+    KasusTugasSubmission::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswaUser->siswa->id,
+        'teks' => 'Submisi lawas dengan tanggal di luar rentang tugas.',
+        'status_review' => 'menunggu_review',
+        'tanggal' => '2026-09-01', // outside the tugas's 2026-08-10..12 range
+    ]);
+
+    $response = $this->actingAs($siswaUser)->get(route('kasus.show', $kasus));
+
+    $response->assertOk();
+    $response->assertSee('Submisi lawas dengan tanggal di luar rentang tugas.');
+});
+
+it('shows the full submission history for a locked date, not just the latest attempt, after a revisi cycle', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasHarianDanKontakUtama($lembaga);
+
+    $this->actingAs($siswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), [
+        'teks' => 'Bukti percobaan pertama yang direvisi.', 'tanggal' => '2026-08-10',
+    ])->assertRedirect();
+    $submission = KasusTugasSubmission::where('tugas_id', $tugas->id)->where('tanggal', '2026-08-10')->firstOrFail();
+    $submission->update(['status_review' => 'revisi_diminta', 'catatan_revisi' => 'Perbaiki.']);
+
+    $this->actingAs($siswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), [
+        'teks' => 'Bukti hasil revisi yang sudah diperbaiki.', 'tanggal' => '2026-08-10',
+    ])->assertRedirect();
+
+    $response = $this->actingAs($siswaUser)->get(route('kasus.show', $kasus));
+
+    $response->assertOk();
+    $response->assertSee('Bukti percobaan pertama yang direvisi.');
+    $response->assertSee('Bukti hasil revisi yang sudah diperbaiki.');
 });

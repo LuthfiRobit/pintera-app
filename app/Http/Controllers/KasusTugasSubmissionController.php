@@ -13,7 +13,9 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class KasusTugasSubmissionController extends BaseController
@@ -53,26 +55,47 @@ class KasusTugasSubmissionController extends BaseController
         }
         $data = $request->validate($rules);
 
-        if ($kasusTugas->frekuensi === 'harian') {
-            $terkunci = KasusTugasSubmission::where('tugas_id', $kasusTugas->id)
-                ->whereDate('tanggal', $data['tanggal'])
-                ->whereIn('status_review', ['menunggu_review', 'diterima'])
-                ->exists();
-            abort_if($terkunci, 422, 'Tanggal ini sudah memiliki bukti pengerjaan yang menunggu atau sudah diterima.');
-        }
-
         $lampiranPath = ($mediaDisetujui && $request->hasFile('lampiran'))
             ? $request->file('lampiran')->store('kasus-tugas-lampiran', 'local')
             : null;
 
-        KasusTugasSubmission::create([
+        $payload = [
             'tugas_id' => $kasusTugas->id,
             'siswa_id' => $isSiswaTerkait ? $siswa->id : null,
             'orang_tua_id' => $isSiswaTerkait ? null : $user->orangTua->id,
             'teks' => $data['teks'] ?? null,
             'lampiran' => $lampiranPath,
             'tanggal' => $data['tanggal'] ?? null,
-        ]);
+        ];
+
+        if ($kasusTugas->frekuensi === 'harian') {
+            DB::transaction(function () use ($kasusTugas, $data, $payload): void {
+                // Re-check (and lock) the lock condition inside the transaction so a
+                // second concurrent request for the same date can't slip past this
+                // check before the first request's insert commits. The lock semantics
+                // here must match the view's: only the LATEST submission for this
+                // tugas_id + tanggal determines whether the date is currently locked —
+                // not "any submission that ever existed for that date".
+                $submisiTerbaru = KasusTugasSubmission::where('tugas_id', $kasusTugas->id)
+                    ->whereDate('tanggal', $data['tanggal'])
+                    ->orderByDesc('created_at')
+                    ->lockForUpdate()
+                    ->first();
+
+                $terkunci = $submisiTerbaru
+                    && in_array($submisiTerbaru->status_review, ['menunggu_review', 'diterima'], true);
+
+                if ($terkunci) {
+                    throw ValidationException::withMessages([
+                        'tanggal' => 'Tanggal ini sudah memiliki bukti pengerjaan yang menunggu atau sudah diterima.',
+                    ]);
+                }
+
+                KasusTugasSubmission::create($payload);
+            });
+        } else {
+            KasusTugasSubmission::create($payload);
+        }
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Bukti pengerjaan berhasil dikirim.');
     }

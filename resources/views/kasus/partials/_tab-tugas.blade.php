@@ -138,14 +138,23 @@
                                 $tanggalList->push($kursor->copy());
                                 $kursor->addDay();
                             }
+                            $tanggalDalamRentangSet = $tanggalList->map(fn ($t) => $t->toDateString())->all();
                             $submisiPerTanggal = $tugas->submissions->groupBy(fn ($s) => $s->tanggal?->toDateString());
+                            // Belt-and-suspenders: even after the tanggal backfill migration, a
+                            // submission can still fail to land in any rendered date row (null
+                            // tanggal, or a tanggal outside this tugas's own date range). Surface
+                            // those separately instead of letting them silently disappear.
+                            $submisiTanpaBaris = $tugas->submissions->filter(
+                                fn ($s) => $s->tanggal === null || ! in_array($s->tanggal->toDateString(), $tanggalDalamRentangSet, true)
+                            );
                         @endphp
                         <div class="space-y-2.5 pt-1">
                             <p class="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">Checklist Harian:</p>
                             @foreach ($tanggalList as $tanggal)
                                 @php
-                                    $submisiHariIni = $submisiPerTanggal->get($tanggal->toDateString(), collect())->sortByDesc('created_at')->first();
-                                    $terkunci = $submisiHariIni && in_array($submisiHariIni->status_review, ['menunggu_review', 'diterima'], true);
+                                    $submisiListHariIni = $submisiPerTanggal->get($tanggal->toDateString(), collect())->sortBy('created_at')->values();
+                                    $submisiTerbaru = $submisiListHariIni->sortByDesc('created_at')->first();
+                                    $terkunci = $submisiTerbaru && in_array($submisiTerbaru->status_review, ['menunggu_review', 'diterima'], true);
                                 @endphp
                                 <div class="rounded-lg border border-gray-200 bg-white p-3.5">
                                     <p class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
@@ -156,51 +165,55 @@
                                         @endif
                                     </p>
 
-                                    @if ($submisiHariIni)
-                                        <div class="mt-2 space-y-2 text-xs">
-                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                <div>
-                                                    <span class="font-bold text-gray-800">{{ $submisiHariIni->created_at->format('d M Y H:i') }}:</span>
-                                                    <span class="text-gray-700 ml-1 font-medium">{{ $submisiHariIni->teks ?? '(Lampiran saja)' }}</span>
-                                                </div>
-                                                <div class="flex items-center gap-2 shrink-0">
-                                                    @if ($submisiHariIni->lampiran)
-                                                        <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submisiHariIni]) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline bg-white px-2 py-1 rounded border border-brand-200 shadow-2xs text-[11px]">
-                                                            Lihat Lampiran
-                                                        </a>
-                                                    @endif
-                                                    <x-badge :tone="$submisiHariIni->status_review === 'diterima' ? 'green' : ($submisiHariIni->status_review === 'revisi_diminta' ? 'amber' : 'slate')" class="text-[10px] font-extrabold">
-                                                        {{ str_replace('_', ' ', ucfirst($submisiHariIni->status_review)) }}
-                                                    </x-badge>
-                                                </div>
-                                            </div>
-
-                                            @if ($isKonselor && $submisiHariIni->status_review === 'menunggu_review')
-                                                <div x-data="{ revisi: false }" class="rounded-lg bg-gray-50 p-3 border border-gray-200 shadow-2xs mt-2">
-                                                    <div class="flex items-center justify-between gap-3 text-xs">
-                                                        <span class="font-bold text-gray-700">Tindakan Review:</span>
-                                                        <div class="flex items-center gap-2">
-                                                            <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiHariIni]) }}">
-                                                                @csrf @method('PATCH')
-                                                                <input type="hidden" name="status_review" value="diterima">
-                                                                <button type="submit" class="inline-flex items-center gap-1 font-bold text-success-700 hover:bg-success-100 bg-success-50 px-3 py-1.5 rounded-lg transition border border-success-200">
-                                                                    <x-icon name="check_circle" class="h-3.5 w-3.5" />
-                                                                    Terima
-                                                                </button>
-                                                            </form>
-                                                            <button type="button" @click="revisi = !revisi" class="inline-flex items-center gap-1 font-bold text-amber-700 hover:bg-amber-100 bg-amber-50 px-3 py-1.5 rounded-lg transition border border-amber-200">
-                                                                Minta Revisi
-                                                            </button>
+                                    @if ($submisiListHariIni->isNotEmpty())
+                                        <div class="mt-2 space-y-2.5 divide-y divide-gray-100 text-xs">
+                                            @foreach ($submisiListHariIni as $submisiHariIni)
+                                                <div class="pt-2.5 first:pt-0 space-y-2">
+                                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                        <div>
+                                                            <span class="font-bold text-gray-800">{{ $submisiHariIni->created_at->format('d M Y H:i') }}:</span>
+                                                            <span class="text-gray-700 ml-1 font-medium">{{ $submisiHariIni->teks ?? '(Lampiran saja)' }}</span>
+                                                        </div>
+                                                        <div class="flex items-center gap-2 shrink-0">
+                                                            @if ($submisiHariIni->lampiran)
+                                                                <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submisiHariIni]) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline bg-white px-2 py-1 rounded border border-brand-200 shadow-2xs text-[11px]">
+                                                                    Lihat Lampiran
+                                                                </a>
+                                                            @endif
+                                                            <x-badge :tone="$submisiHariIni->status_review === 'diterima' ? 'green' : ($submisiHariIni->status_review === 'revisi_diminta' ? 'amber' : 'slate')" class="text-[10px] font-extrabold">
+                                                                {{ str_replace('_', ' ', ucfirst($submisiHariIni->status_review)) }}
+                                                            </x-badge>
                                                         </div>
                                                     </div>
-                                                    <form x-show="revisi" style="display: none;" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiHariIni]) }}" class="mt-3 pt-3 border-t border-gray-100 space-y-2">
-                                                        @csrf @method('PATCH')
-                                                        <input type="hidden" name="status_review" value="revisi_diminta">
-                                                        <input type="text" name="catatan_revisi" required placeholder="Catatan perbaikan untuk hari ini..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-amber-500 focus:ring-amber-500">
-                                                        <button type="submit" class="font-bold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg text-xs transition shadow-sm">Kirim Catatan</button>
-                                                    </form>
+
+                                                    @if ($isKonselor && $submisiHariIni->status_review === 'menunggu_review')
+                                                        <div x-data="{ revisi: false }" class="rounded-lg bg-gray-50 p-3 border border-gray-200 shadow-2xs mt-2">
+                                                            <div class="flex items-center justify-between gap-3 text-xs">
+                                                                <span class="font-bold text-gray-700">Tindakan Review:</span>
+                                                                <div class="flex items-center gap-2">
+                                                                    <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiHariIni]) }}">
+                                                                        @csrf @method('PATCH')
+                                                                        <input type="hidden" name="status_review" value="diterima">
+                                                                        <button type="submit" class="inline-flex items-center gap-1 font-bold text-success-700 hover:bg-success-100 bg-success-50 px-3 py-1.5 rounded-lg transition border border-success-200">
+                                                                            <x-icon name="check_circle" class="h-3.5 w-3.5" />
+                                                                            Terima
+                                                                        </button>
+                                                                    </form>
+                                                                    <button type="button" @click="revisi = !revisi" class="inline-flex items-center gap-1 font-bold text-amber-700 hover:bg-amber-100 bg-amber-50 px-3 py-1.5 rounded-lg transition border border-amber-200">
+                                                                        Minta Revisi
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <form x-show="revisi" style="display: none;" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiHariIni]) }}" class="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                                                                @csrf @method('PATCH')
+                                                                <input type="hidden" name="status_review" value="revisi_diminta">
+                                                                <input type="text" name="catatan_revisi" required placeholder="Catatan perbaikan untuk hari ini..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-amber-500 focus:ring-amber-500">
+                                                                <button type="submit" class="font-bold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg text-xs transition shadow-sm">Kirim Catatan</button>
+                                                            </form>
+                                                        </div>
+                                                    @endif
                                                 </div>
-                                            @endif
+                                            @endforeach
                                         </div>
                                     @endif
 
@@ -222,6 +235,61 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        @if ($submisiTanpaBaris->isNotEmpty())
+                            <div class="space-y-2 pt-1">
+                                <p class="text-[11px] font-extrabold text-amber-600 uppercase tracking-wider">Submisi Tanpa Tanggal / Di Luar Rentang Tugas:</p>
+                                <div class="space-y-2.5 divide-y divide-amber-100 rounded-xl border border-amber-200 bg-amber-50/40 p-3.5">
+                                    @foreach ($submisiTanpaBaris as $submisiLuar)
+                                        <div class="pt-2.5 first:pt-0 space-y-2 text-xs">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                <div>
+                                                    <span class="font-bold text-gray-800">{{ $submisiLuar->created_at->format('d M Y H:i') }}:</span>
+                                                    <span class="text-gray-700 ml-1 font-medium">{{ $submisiLuar->teks ?? '(Lampiran saja)' }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    @if ($submisiLuar->lampiran)
+                                                        <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submisiLuar]) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline bg-white px-2 py-1 rounded border border-brand-200 shadow-2xs text-[11px]">
+                                                            Lihat Lampiran
+                                                        </a>
+                                                    @endif
+                                                    <x-badge :tone="$submisiLuar->status_review === 'diterima' ? 'green' : ($submisiLuar->status_review === 'revisi_diminta' ? 'amber' : 'slate')" class="text-[10px] font-extrabold">
+                                                        {{ str_replace('_', ' ', ucfirst($submisiLuar->status_review)) }}
+                                                    </x-badge>
+                                                </div>
+                                            </div>
+
+                                            @if ($isKonselor && $submisiLuar->status_review === 'menunggu_review')
+                                                <div x-data="{ revisi: false }" class="rounded-lg bg-white p-3 border border-amber-200 shadow-2xs mt-2">
+                                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                                        <span class="font-bold text-gray-700">Tindakan Review:</span>
+                                                        <div class="flex items-center gap-2">
+                                                            <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiLuar]) }}">
+                                                                @csrf @method('PATCH')
+                                                                <input type="hidden" name="status_review" value="diterima">
+                                                                <button type="submit" class="inline-flex items-center gap-1 font-bold text-success-700 hover:bg-success-100 bg-success-50 px-3 py-1.5 rounded-lg transition border border-success-200">
+                                                                    <x-icon name="check_circle" class="h-3.5 w-3.5" />
+                                                                    Terima
+                                                                </button>
+                                                            </form>
+                                                            <button type="button" @click="revisi = !revisi" class="inline-flex items-center gap-1 font-bold text-amber-700 hover:bg-amber-100 bg-amber-50 px-3 py-1.5 rounded-lg transition border border-amber-200">
+                                                                Minta Revisi
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <form x-show="revisi" style="display: none;" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiLuar]) }}" class="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                                                        @csrf @method('PATCH')
+                                                        <input type="hidden" name="status_review" value="revisi_diminta">
+                                                        <input type="text" name="catatan_revisi" required placeholder="Catatan perbaikan..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-amber-500 focus:ring-amber-500">
+                                                        <button type="submit" class="font-bold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg text-xs transition shadow-sm">Kirim Catatan</button>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     @else
                         {{-- Daftar Submisi / Bukti Pengerjaan --}}
                         @if ($tugas->submissions->isNotEmpty())
