@@ -45,7 +45,7 @@ it('renders a well-formed root container, not JS leaking into the page as text',
     libxml_clear_errors();
 
     $xpath = new DOMXPath($dom);
-    $nodes = $xpath->query("//div[contains(concat(' ', normalize-space(@class), ' '), ' mx-auto ') and contains(concat(' ', normalize-space(@class), ' '), ' max-w-4xl ')]");
+    $nodes = $xpath->query("//div[contains(concat(' ', normalize-space(@class), ' '), ' mx-auto ') and contains(concat(' ', normalize-space(@class), ' '), ' max-w-6xl ')]");
 
     expect($nodes->length)->toBeGreaterThan(0);
 });
