@@ -124,3 +124,15 @@ it('403s a POST to give tugas against an already-selesai kasus and creates no ro
 
     expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
 });
+
+it('does not call Fonnte when a tugas is given (TugasDitugaskanNotification has no whatsapp channel)', function () {
+    \Illuminate\Support\Facades\Http::fake();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), ['tugas' => [
+        ['judul' => 'Tugas Tanpa WA', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
+    ]]);
+
+    \Illuminate\Support\Facades\Http::assertNothingSent();
+});
