@@ -17,321 +17,78 @@
             </p>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-3">
-            <div class="flex items-center gap-2">
-                <x-badge tone="slate">{{ $kasus->status->label() }}</x-badge>
+        <div x-data="{ tab: 'overview' }" class="space-y-4">
+            {{-- Navigation Pills / Tabs --}}
+            <div class="flex flex-wrap gap-2 rounded-xl border border-gray-200 bg-white p-2 shadow-sm">
+                <button
+                    type="button"
+                    @click="tab = 'overview'"
+                    :class="tab === 'overview' ? 'bg-brand-500 text-white font-semibold shadow-sm' : 'bg-transparent text-gray-600 hover:bg-gray-50 font-medium'"
+                    class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition"
+                >
+                    <x-icon name="info" class="h-4 w-4" />
+                    Ikhtisar & Consent
+                </button>
+                @if ($isKonselor || $isSiswaTerkait || $isKontakUtama || $isTriaseAdmin)
+                    <button
+                        type="button"
+                        @click="tab = 'sesi'"
+                        :class="tab === 'sesi' ? 'bg-brand-500 text-white font-semibold shadow-sm' : 'bg-transparent text-gray-600 hover:bg-gray-50 font-medium'"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition"
+                    >
+                        <x-icon name="event" class="h-4 w-4" />
+                        Sesi Pendampingan
+                        @if ($kasus->sesi->isNotEmpty())
+                            <span :class="tab === 'sesi' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'" class="rounded-full px-2 py-0.5 text-xs font-semibold">{{ $kasus->sesi->count() }}</span>
+                        @endif
+                    </button>
+                    <button
+                        type="button"
+                        @click="tab = 'tugas'"
+                        :class="tab === 'tugas' ? 'bg-brand-500 text-white font-semibold shadow-sm' : 'bg-transparent text-gray-600 hover:bg-gray-50 font-medium'"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition"
+                    >
+                        <x-icon name="assignment" class="h-4 w-4" />
+                        Tugas Pendampingan
+                        @if ($kasus->tugas->isNotEmpty())
+                            <span :class="tab === 'tugas' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'" class="rounded-full px-2 py-0.5 text-xs font-semibold">{{ $kasus->tugas->count() }}</span>
+                        @endif
+                    </button>
+                @endif
+                @if ($isKonselor || $isTriaseAdmin)
+                    <button
+                        type="button"
+                        @click="tab = 'evaluasi'"
+                        :class="tab === 'evaluasi' ? 'bg-brand-500 text-white font-semibold shadow-sm' : 'bg-transparent text-gray-600 hover:bg-gray-50 font-medium'"
+                        class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition"
+                    >
+                        <x-icon name="fact_check" class="h-4 w-4" />
+                        Evaluasi
+                        @if ($kasus->evaluasi->isNotEmpty())
+                            <span :class="tab === 'evaluasi' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'" class="rounded-full px-2 py-0.5 text-xs font-semibold">{{ $kasus->evaluasi->count() }}</span>
+                        @endif
+                    </button>
+                @endif
             </div>
-            <div>
-                <p class="text-xs font-semibold text-gray-500">Kategori Masalah</p>
-                <p class="mt-1 text-sm text-gray-900">{{ $kasus->kategori_masalah }}</p>
+
+            <div x-show="tab === 'overview'">
+                @include('kasus.partials.overview')
             </div>
-            <div>
-                <p class="text-xs font-semibold text-gray-500">Deskripsi</p>
-                <p class="mt-1 text-sm text-gray-900">{{ $kasus->deskripsi }}</p>
-            </div>
-            @if ($kasus->konselorGuru || $kasus->konselorKaryawan)
-                <div>
-                    <p class="text-xs font-semibold text-gray-500">Konselor Penanganan</p>
-                    <p class="mt-1 text-sm text-gray-900">{{ $kasus->konselorGuru?->nama ?? $kasus->konselorKaryawan?->nama }}</p>
+
+            @if ($isKonselor || $isSiswaTerkait || $isKontakUtama || $isTriaseAdmin)
+                <div x-show="tab === 'sesi'" style="display: none;" x-show.transition="tab === 'sesi'">
+                    @include('kasus.partials.sesi')
+                </div>
+                <div x-show="tab === 'tugas'" style="display: none;" x-show.transition="tab === 'tugas'">
+                    @include('kasus.partials.tugas')
+                </div>
+            @endif
+
+            @if ($isKonselor || $isTriaseAdmin)
+                <div x-show="tab === 'evaluasi'" style="display: none;" x-show.transition="tab === 'evaluasi'">
+                    @include('kasus.partials.evaluasi')
                 </div>
             @endif
         </div>
-
-        @if ($isKontakUtama && $kasus->consents->isNotEmpty())
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-3">
-                <p class="font-display text-sm font-bold text-gray-900">Persetujuan (Consent)</p>
-                @foreach ($kasus->consents as $consent)
-                    <div class="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2">
-                        <div>
-                            <p class="text-sm font-semibold text-gray-900">
-                                {{ $consent->jenis === 'sesi_pendampingan' ? 'Sesi Pendampingan' : 'Pengumpulan Media (Foto/Video)' }}
-                            </p>
-                            <x-badge tone="{{ $consent->status === 'disetujui' ? 'green' : 'amber' }}" class="mt-1 text-xs">
-                                {{ $consent->status === 'disetujui' ? 'Disetujui' : 'Menunggu Persetujuan' }}
-                            </x-badge>
-                        </div>
-                        @if ($consent->status !== 'disetujui')
-                            <form method="POST" action="{{ route('kasus.consent.approve', [$kasus, $consent]) }}">
-                                @csrf
-                                @method('PATCH')
-                                <x-primary-button type="submit">Setujui</x-primary-button>
-                            </form>
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
-        @if ($isKonselor || $isSiswaTerkait || $isKontakUtama || $isTriaseAdmin)
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
-                <p class="font-display text-sm font-bold text-gray-900">Sesi Pendampingan</p>
-
-                @if ($kasus->sesi->isNotEmpty())
-                    <div class="space-y-2">
-                        @foreach ($kasus->sesi as $sesi)
-                            <div class="rounded-lg border border-gray-100 px-3 py-2 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-900">{{ $sesi->dijadwalkan_pada->format('d M Y H:i') }}</p>
-                                        <p class="text-xs text-gray-500">{{ $sesi->lokasi_mode }} &middot; {{ ucfirst(str_replace('_', ' ', $sesi->peserta)) }}</p>
-                                    </div>
-                                    <x-badge tone="{{ $sesi->status->value === 'selesai' ? 'green' : ($sesi->status->value === 'terjadwal' ? 'blue' : 'slate') }}">
-                                        {{ $sesi->status->label() }}
-                                    </x-badge>
-                                </div>
-
-                                @if ($isKonselor && $sesi->status->value === 'terjadwal')
-                                    <div x-data="{ aksi: null }" class="border-t border-gray-100 pt-2">
-                                        <div class="flex items-center gap-3 text-xs">
-                                            <button type="button" @click="aksi = (aksi === 'selesai' ? null : 'selesai')" class="font-semibold text-success-600 hover:text-success-700">Tandai Selesai</button>
-                                            <button type="button" @click="aksi = (aksi === 'batal' ? null : 'batal')" class="font-semibold text-error-600 hover:text-error-700">Batalkan</button>
-                                            <form method="POST" action="{{ route('kasus.sesi.update-status', [$kasus, $sesi]) }}" class="inline">
-                                                @csrf @method('PATCH')
-                                                <input type="hidden" name="status" value="tidak_hadir">
-                                                <button type="submit" class="font-semibold text-gray-500 hover:text-gray-700">Tandai Tidak Hadir</button>
-                                            </form>
-                                        </div>
-                                        <form x-show="aksi === 'selesai'" method="POST" action="{{ route('kasus.sesi.update-status', [$kasus, $sesi]) }}" class="mt-2 space-y-2">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="selesai">
-                                            <textarea name="catatan_internal" rows="2" placeholder="Catatan internal (rahasia, hanya konselor & admin)" class="block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
-                                            <x-primary-button type="submit" class="text-xs">Simpan</x-primary-button>
-                                        </form>
-                                        <form x-show="aksi === 'batal'" method="POST" action="{{ route('kasus.sesi.update-status', [$kasus, $sesi]) }}" class="mt-2 space-y-2">
-                                            @csrf @method('PATCH')
-                                            <input type="hidden" name="status" value="batal">
-                                            <textarea name="alasan_batal" rows="2" placeholder="Alasan pembatalan" class="block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
-                                            <x-primary-button type="submit" class="text-xs">Simpan</x-primary-button>
-                                        </form>
-                                    </div>
-                                @endif
-
-                                @if (($isKonselor || $isTriaseAdmin) && $sesi->catatan_internal)
-                                    <p class="border-t border-gray-100 pt-2 text-xs text-gray-500"><span class="font-semibold">Catatan internal:</span> {{ $sesi->catatan_internal }}</p>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-                @if ($isKonselor && in_array($kasus->status->value, ['ditugaskan', 'berjalan', 'eskalasi'], true))
-                    <div x-data="{
-                        rows: [{ dijadwalkan_pada: '', peserta: 'siswa', lokasi_mode: '' }],
-                        tambah() { this.rows.push({ dijadwalkan_pada: '', peserta: 'siswa', lokasi_mode: '' }); },
-                        hapus(i) { if (this.rows.length > 1) this.rows.splice(i, 1); },
-                    }" class="border-t border-gray-100 pt-4">
-                        <form method="POST" action="{{ route('kasus.sesi.store', $kasus) }}" class="space-y-3">
-                            @csrf
-                            <template x-for="(row, i) in rows" :key="i">
-                                <div class="grid grid-cols-1 gap-2 rounded-lg border border-gray-100 p-3 sm:grid-cols-4 sm:items-end">
-                                    <div>
-                                        <x-input-label value="Tanggal & Jam *" />
-                                        <input type="datetime-local" :name="`sesi[${i}][dijadwalkan_pada]`" x-model="row.dijadwalkan_pada" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Peserta *" />
-                                        <select :name="`sesi[${i}][peserta]`" x-model="row.peserta" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                            <option value="siswa">Siswa</option>
-                                            <option value="orang_tua">Orang Tua</option>
-                                            <option value="keduanya">Keduanya</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Lokasi/Mode *" />
-                                        <input type="text" :name="`sesi[${i}][lokasi_mode]`" x-model="row.lokasi_mode" required placeholder="Ruang BK / Google Meet" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                    </div>
-                                    <button type="button" @click="hapus(i)" x-show="rows.length > 1" class="text-xs font-semibold text-error-600 hover:text-error-700">Hapus Baris</button>
-                                </div>
-                            </template>
-                            <div class="flex items-center gap-3">
-                                <button type="button" @click="tambah()" class="text-xs font-semibold text-brand-600 hover:text-brand-700">+ Tambah Baris</button>
-                                <x-primary-button type="submit">Jadwalkan Sesi</x-primary-button>
-                            </div>
-                        </form>
-                    </div>
-                @endif
-            </div>
-        @endif
-
-        @if ($isKonselor || $isSiswaTerkait || $isKontakUtama || $isTriaseAdmin)
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
-                <p class="font-display text-sm font-bold text-gray-900">Tugas Pendampingan</p>
-
-                @if ($kasus->tugas->isNotEmpty())
-                    <div class="space-y-2">
-                        @foreach ($kasus->tugas as $tugas)
-                            <div class="rounded-lg border border-gray-100 px-3 py-2 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-sm font-semibold text-gray-900">{{ $tugas->judul }}</p>
-                                        <p class="text-xs text-gray-500">Batas: {{ $tugas->batas_selesai_pada->format('d M Y') }} &middot; {{ ucfirst($tugas->frekuensi) }}</p>
-                                    </div>
-                                    <x-badge tone="{{ $tugas->status->value === 'selesai' ? 'green' : ($tugas->status->value === 'terlewat' ? 'red' : ($tugas->status->value === 'revisi' ? 'amber' : 'blue')) }}">
-                                        {{ $tugas->status->label() }}
-                                    </x-badge>
-                                </div>
-
-                                @if ($tugas->submissions->isNotEmpty())
-                                    <div class="space-y-1 border-t border-gray-100 pt-2">
-                                        @foreach ($tugas->submissions as $submission)
-                                            <div class="space-y-1 text-xs">
-                                                <div class="flex items-center justify-between">
-                                                    <span class="text-gray-600">{{ $submission->created_at->format('d M Y H:i') }}: {{ $submission->teks ?? '(lampiran saja)' }}</span>
-                                                    <x-badge tone="{{ $submission->status_review === 'diterima' ? 'green' : ($submission->status_review === 'revisi_diminta' ? 'amber' : 'slate') }}">
-                                                        {{ str_replace('_', ' ', ucfirst($submission->status_review)) }}
-                                                    </x-badge>
-                                                </div>
-                                                @if ($submission->lampiran)
-                                                    <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]) }}" target="_blank" rel="noopener" class="font-semibold text-brand-600 hover:text-brand-700">Lihat Lampiran</a>
-                                                @endif
-                                                @if ($isKonselor && $submission->status_review === 'menunggu_review')
-                                                    <div x-data="{ revisi: false }" class="flex items-center gap-2">
-                                                        <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}">
-                                                            @csrf @method('PATCH')
-                                                            <input type="hidden" name="status_review" value="diterima">
-                                                            <button type="submit" class="font-semibold text-success-600 hover:text-success-700">Terima</button>
-                                                        </form>
-                                                        <button type="button" @click="revisi = !revisi" class="font-semibold text-amber-600 hover:text-amber-700">Minta Revisi</button>
-                                                    </div>
-                                                    <form x-show="revisi" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}" class="flex items-center gap-2">
-                                                        @csrf @method('PATCH')
-                                                        <input type="hidden" name="status_review" value="revisi_diminta">
-                                                        <input type="text" name="catatan_revisi" placeholder="Catatan revisi" class="block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                        <button type="submit" class="whitespace-nowrap font-semibold text-amber-600 hover:text-amber-700">Kirim</button>
-                                                    </form>
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                @endif
-
-                                @if (($isSiswaTerkait || $isKontakUtama) && in_array($tugas->status->value, ['ditugaskan', 'dikerjakan', 'revisi'], true))
-                                    <form method="POST" action="{{ route('kasus.tugas.submission.store', [$kasus, $tugas]) }}" enctype="multipart/form-data" class="space-y-2 border-t border-gray-100 pt-2">
-                                        @csrf
-                                        <textarea name="teks" rows="2" placeholder="Ceritakan bukti pengerjaan Anda" class="block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
-                                        @if ($kasus->consents->firstWhere('jenis', 'pengumpulan_media')?->status === 'disetujui')
-                                            <input type="file" name="lampiran" class="block w-full text-xs text-gray-700">
-                                        @endif
-                                        <x-primary-button type="submit" class="text-xs">Kirim Bukti</x-primary-button>
-                                    </form>
-                                @endif
-
-                                @if ($isKonselor && ! in_array($tugas->status->value, ['selesai', 'terlewat'], true))
-                                    <form method="POST" action="{{ route('kasus.tugas.selesai', [$kasus, $tugas]) }}" class="border-t border-gray-100 pt-2">
-                                        @csrf @method('PATCH')
-                                        <button type="submit" class="text-xs font-semibold text-success-600 hover:text-success-700">Tandai Tugas Selesai</button>
-                                    </form>
-                                @endif
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-                @if ($isKonselor && in_array($kasus->status->value, ['ditugaskan', 'berjalan', 'eskalasi'], true))
-                    <div x-data="{
-                        rows: [{ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }],
-                        tambah() { this.rows.push({ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }); },
-                        hapus(i) { if (this.rows.length > 1) this.rows.splice(i, 1); },
-                    }" class="border-t border-gray-100 pt-4">
-                        <form method="POST" action="{{ route('kasus.tugas.store', $kasus) }}" class="space-y-3">
-                            @csrf
-                            <template x-for="(row, i) in rows" :key="i">
-                                <div class="grid grid-cols-1 gap-2 rounded-lg border border-gray-100 p-3 sm:grid-cols-2">
-                                    <div>
-                                        <x-input-label value="Judul *" />
-                                        <input type="text" :name="`tugas[${i}][judul]`" x-model="row.judul" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Frekuensi *" />
-                                        <select :name="`tugas[${i}][frekuensi]`" x-model="row.frekuensi" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                            <option value="sekali">Sekali</option>
-                                            <option value="harian">Harian</option>
-                                            <option value="mingguan">Mingguan</option>
-                                            <option value="bulanan">Bulanan</option>
-                                        </select>
-                                    </div>
-                                    <div class="sm:col-span-2">
-                                        <x-input-label value="Instruksi *" />
-                                        <textarea :name="`tugas[${i}][instruksi]`" x-model="row.instruksi" rows="2" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Mulai *" />
-                                        <input type="date" :name="`tugas[${i}][mulai_pada]`" x-model="row.mulai_pada" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                    </div>
-                                    <div>
-                                        <x-input-label value="Batas Selesai *" />
-                                        <input type="date" :name="`tugas[${i}][batas_selesai_pada]`" x-model="row.batas_selesai_pada" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                    </div>
-                                    <button type="button" @click="hapus(i)" x-show="rows.length > 1" class="text-left text-xs font-semibold text-error-600 hover:text-error-700 sm:col-span-2">Hapus Baris</button>
-                                </div>
-                            </template>
-                            <div class="flex items-center gap-3">
-                                <button type="button" @click="tambah()" class="text-xs font-semibold text-brand-600 hover:text-brand-700">+ Tambah Baris</button>
-                                <x-primary-button type="submit">Beri Tugas</x-primary-button>
-                            </div>
-                        </form>
-                    </div>
-                @endif
-            </div>
-        @endif
-
-        @if ($isKonselor || $isTriaseAdmin)
-            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
-                <p class="font-display text-sm font-bold text-gray-900">Evaluasi Kasus</p>
-
-                @if ($kasus->evaluasi->isNotEmpty())
-                    <div class="space-y-2">
-                        @foreach ($kasus->evaluasi as $evaluasi)
-                            <div class="rounded-lg border border-gray-100 px-3 py-2 space-y-1">
-                                <div class="flex items-center justify-between">
-                                    <p class="text-xs text-gray-500">{{ $evaluasi->tanggal->format('d M Y H:i') }}</p>
-                                    <x-badge tone="{{ $evaluasi->keputusan === 'eskalasi' ? 'red' : ($evaluasi->keputusan === 'selesai' ? 'green' : 'blue') }}">
-                                        {{ ucfirst($evaluasi->keputusan) }}
-                                    </x-badge>
-                                </div>
-                                <p class="text-sm text-gray-900">{{ $evaluasi->catatan }}</p>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
-
-                @if ($isKonselor && $kasus->status->value === 'berjalan')
-                    <form method="POST" action="{{ route('kasus.evaluasi.store', $kasus) }}" class="space-y-3 border-t border-gray-100 pt-4">
-                        @csrf
-                        <div>
-                            <x-input-label value="Catatan Evaluasi *" />
-                            <textarea name="catatan" rows="3" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
-                        </div>
-                        <div>
-                            <x-input-label value="Keputusan *" />
-                            <select name="keputusan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                <option value="lanjut">Lanjut</option>
-                                <option value="eskalasi">Eskalasi ke Admin</option>
-                                <option value="selesai">Selesai</option>
-                            </select>
-                        </div>
-                        <x-primary-button type="submit">Simpan Evaluasi</x-primary-button>
-                    </form>
-                @endif
-
-                @if ($isTriaseAdmin && $kasus->status->value === 'eskalasi')
-                    <form method="POST" action="{{ route('kasus.evaluasi.store', $kasus) }}" class="space-y-3 border-t border-gray-100 pt-4">
-                        @csrf
-                        <div>
-                            <x-input-label value="Catatan Evaluasi *" />
-                            <textarea name="catatan" rows="3" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"></textarea>
-                        </div>
-                        <div>
-                            <x-input-label value="Keputusan *" />
-                            <select name="keputusan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                <option value="lanjut">Kembalikan ke Konselor (Lanjut)</option>
-                                <option value="selesai">Selesai</option>
-                            </select>
-                        </div>
-                        <x-primary-button type="submit">Simpan Evaluasi</x-primary-button>
-                    </form>
-                @endif
-            </div>
-        @endif
     </div>
 </x-app-layout>
