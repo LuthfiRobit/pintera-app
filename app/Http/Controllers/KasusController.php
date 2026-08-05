@@ -50,7 +50,20 @@ class KasusController extends BaseController
             $kasusList = Kasus::with('siswa')->latest()->get();
         }
 
-        return view('kasus.index', ['kasusList' => $kasusList]);
+        $totalKasus = $kasusList->count();
+        $totalBerjalan = $kasusList->where('status', StatusKasus::Berjalan)->count();
+        $totalButuhTindakan = $kasusList->filter(fn ($k) => in_array($k->status, [
+            StatusKasus::Diajukan,
+            StatusKasus::MenungguConsent,
+            StatusKasus::Eskalasi,
+        ], true))->count();
+
+        return view('kasus.index', [
+            'kasusList' => $kasusList,
+            'totalKasus' => $totalKasus,
+            'totalBerjalan' => $totalBerjalan,
+            'totalButuhTindakan' => $totalButuhTindakan,
+        ]);
     }
 
     public function create(Request $request): View
