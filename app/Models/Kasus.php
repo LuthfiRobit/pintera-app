@@ -8,12 +8,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 class Kasus extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use HasFactory, BelongsToTenant, LogsActivity, SoftDeletes;
 
     protected $table = 'kasus';
 
