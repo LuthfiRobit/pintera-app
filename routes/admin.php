@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KaryawanController;
 use App\Http\Controllers\Admin\KasusAksesLogController;
 use App\Http\Controllers\Admin\KasusController as AdminKasusController;
+use App\Http\Controllers\Admin\KasusTerhapusController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\KenaikanKelasController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
@@ -234,6 +235,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::delete('kasus/{kasus}', [AdminKasusController::class, 'destroy'])->name('kasus.destroy');
     Route::post('kasus/{kasus}/pulihkan', [AdminKasusController::class, 'restore'])->name('kasus.restore');
     Route::get('kasus-log-akses', [KasusAksesLogController::class, 'index'])->name('kasus.log-akses');
+    Route::get('kasus-terhapus', [KasusTerhapusController::class, 'index'])->name('kasus.terhapus');
 });
 
 // Orang tua accounts have no lembaga_id of their own, so implicit route-model binding's

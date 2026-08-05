@@ -130,7 +130,7 @@ class KasusController extends BaseController
             $kasus->consents()->withTrashed()->restore();
         });
 
-        return redirect()->route('admin.kasus.index')->with('status', 'Kasus berhasil dipulihkan.');
+        return redirect()->route('admin.kasus.terhapus')->with('status', 'Kasus berhasil dipulihkan.');
     }
 
     private function authorizeLembaga(Kasus $kasus): void
