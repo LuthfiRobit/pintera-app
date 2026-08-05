@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Guru;
+use App\Models\Kasus;
 use App\Models\Lembaga;
+use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Services\DashboardStatsService;
@@ -22,8 +24,15 @@ class DashboardController extends BaseController
         $user = $request->user();
 
         if ($user->hasRole('guru')) {
+            $kasusDiajukan = Kasus::with('siswa')->where('diajukan_oleh_guru_id', $user->guru?->id)->latest()->get();
+            $kasusDitangani = Kasus::with('siswa')->where('konselor_guru_id', $user->guru?->id)->latest()->get();
+
             return view('admin.dashboard.guru', [
                 'jabatanTambahan' => $user->guru?->jabatanTambahan ?? collect(),
+                'kasusDiajukan' => $kasusDiajukan,
+                'kasusDitangani' => $kasusDitangani,
+                'kasusDiajukanStats' => $this->kasusStatusCounts($kasusDiajukan),
+                'kasusDitanganiStats' => $this->kasusStatusCounts($kasusDitangani),
             ]);
         }
 
@@ -32,11 +41,42 @@ class DashboardController extends BaseController
         }
 
         if ($user->hasRole('orang_tua')) {
-            return view('admin.dashboard.orang-tua');
+            $orangTua = $user->orangTua;
+            $kasusList = collect();
+            $kontakUtamaKasusIds = [];
+
+            if ($orangTua !== null) {
+                $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
+                    ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                    ->whereHas('siswa', function ($q) use ($orangTua) {
+                        $q->withoutGlobalScope(TenantScope::class)
+                            ->whereHas('orangTua', fn ($q2) => $q2->where('orang_tua_id', $orangTua->id));
+                    })
+                    ->latest()->get();
+
+                $kontakUtamaKasusIds = $kasusList->filter(function (Kasus $kasus) use ($orangTua) {
+                    return $kasus->siswa->orangTua()->where('orang_tua_id', $orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
+                })->pluck('id')->all();
+            }
+
+            return view('admin.dashboard.orang-tua', [
+                'kasusList' => $kasusList,
+                'kontakUtamaKasusIds' => $kontakUtamaKasusIds,
+                'kasusStats' => $this->kasusStatusCounts($kasusList),
+            ]);
         }
 
         if ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
-            return view('admin.dashboard.karyawan');
+            $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
+            $kasusDitangani = Kasus::withoutGlobalScope(TenantScope::class)
+                ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                ->where('konselor_karyawan_id', $karyawanId)
+                ->latest()->get();
+
+            return view('admin.dashboard.karyawan', [
+                'kasusDitangani' => $kasusDitangani,
+                'kasusDitanganiStats' => $this->kasusStatusCounts($kasusDitangani),
+            ]);
         }
 
         if ($user->widestScopeLevel() === 'yayasan') {
@@ -118,5 +158,15 @@ class DashboardController extends BaseController
         }
 
         return $data;
+    }
+
+    private function kasusStatusCounts(\Illuminate\Support\Collection $kasusList): array
+    {
+        return [
+            'ditugaskan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'ditugaskan')->count(),
+            'berjalan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'berjalan')->count(),
+            'eskalasi' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'eskalasi')->count(),
+            'selesai' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'selesai')->count(),
+        ];
     }
 }
