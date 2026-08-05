@@ -32,7 +32,7 @@
                                     <p class="text-sm font-semibold text-ink">{{ $kasus->siswa->nama_lengkap }}</p>
                                     <p class="text-xs text-slate">{{ $kasus->kategori_masalah }}</p>
                                 </div>
-                                <x-badge tone="brass">{{ $kasus->status->label() }}</x-badge>
+                                <x-badge tone="{{ $kasus->status->badgeTone() }}">{{ $kasus->status->label() }}</x-badge>
                             </a>
                         </li>
                     @endforeach
