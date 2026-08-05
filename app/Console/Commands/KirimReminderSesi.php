@@ -30,6 +30,8 @@ class KirimReminderSesi extends Command
                 continue;
             }
 
+            $sesi->kasus->setRelation('siswa', $siswa);
+
             if (in_array($sesi->peserta, ['siswa', 'keduanya'], true)) {
                 $siswa->user?->notify(new SesiReminderNotification($sesi));
             }

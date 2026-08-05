@@ -16,19 +16,25 @@ class SesiReminderNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail', 'whatsapp'];
+        $channels = ['database'];
+
+        if (filled($notifiable->routeNotificationFor('mail'))) {
+            $channels[] = 'mail';
+        }
+
+        $channels[] = 'whatsapp';
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): SesiReminderMail
     {
         $mail = new SesiReminderMail($this->sesi);
 
-        if (method_exists($notifiable, 'routeNotificationForMail')) {
-            $email = $notifiable->routeNotificationForMail();
+        $email = $notifiable->routeNotificationFor('mail');
 
-            if ($email !== null && $email !== '') {
-                $mail->to($email);
-            }
+        if ($email !== null && $email !== '') {
+            $mail->to($email);
         }
 
         return $mail;

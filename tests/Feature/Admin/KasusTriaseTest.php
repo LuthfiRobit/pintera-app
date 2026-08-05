@@ -346,3 +346,59 @@ it('still delivers database and mail when the Fonnte call fails', function () {
     expect($lastMessage->getTo()[0]->getAddress())->toBe('ortu.gagal.wa@example.test');
 });
 
+it('does not 500 when assigning a konselor for an orang tua kontak utama with no email, and still attempts whatsapp', function () {
+    // Regression test for the final whole-branch review's Finding 1/2: OrangTua.email is
+    // nullable while no_hp is NOT NULL, so "has a phone but no email" is a normal record --
+    // exactly the record this WhatsApp feature exists to serve. The old
+    // method_exists($notifiable, 'routeNotificationForMail') guard in toMail() still returned
+    // a Mailable with no recipient set when $email was null, and MailChannel::send() sends it
+    // regardless, throwing LogicException("An email must have a To, Cc, or Bcc header") and
+    // 500ing the whole admin action -- after the DB transaction had already committed.
+    \Illuminate\Support\Facades\Http::fake(['api.fonnte.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
+    \App\Models\WhatsAppTemplate::firstOrCreate(
+        ['kode' => 'consent_diminta'],
+        ['isi_template' => 'Konselor {nama_konselor} dipilih untuk {nama_siswa}.']
+    );
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Tanpa Email Ortu']);
+    $manager = actingAsKasusTriaseManager($lembaga);
+
+    $guruBk = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
+        'nama' => 'Konselor Tanpa Email Ortu', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
+        'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
+    ]);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser->assignRole('orang_tua');
+    $kontakUtama = OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tanpa Email',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200005500',
+        'email' => null,
+    ]);
+    $siswa->orangTua()->attach($kontakUtama->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $kasus = Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+    ]);
+
+    $this->actingAs($manager)->post(route('admin.kasus.assign-konselor', $kasus), [
+        'tingkat_urgensi' => 'sedang', 'konselor_tipe' => 'guru', 'konselor_id' => $guruBk->id,
+    ])->assertRedirect(route('admin.kasus.index'));
+
+    $kasus->refresh();
+    expect($kasus->status)->toBe(StatusKasus::MenungguConsent);
+    expect($kontakUtama->notifications()->where('type', KonselorDipilihNotification::class)->exists())->toBeTrue();
+
+    \Illuminate\Support\Facades\Http::assertSent(function ($request) {
+        return $request->url() === 'https://api.fonnte.com/send'
+            && $request['target'] === '081200005500'
+            && str_contains($request['message'], 'Siswa Tanpa Email Ortu');
+    });
+});
+

@@ -95,3 +95,78 @@ it('sends the H-1 reminder via whatsapp to the orang tua kontak utama', function
             && str_contains($request['message'], 'Ruang BK');
     });
 });
+
+it('sends both a siswa-user mail reminder and an orang-tua whatsapp reminder in the same run without one aborting the other', function () {
+    // Regression test for the final whole-branch review's Finding 1/2: the old
+    // method_exists($notifiable, 'routeNotificationForMail') guard in
+    // SesiReminderNotification::toMail() is FALSE for a plain App\Models\User (it relies on
+    // the Notifiable trait's generic routeNotificationFor('mail') fallback, not an explicit
+    // override), so ->to() was never called for a siswa's User, the Mailable had no
+    // recipient, and MailChannel::send() threw LogicException mid-foreach inside
+    // KirimReminderSesi::handle() -- with no try/catch, aborting the command and silently
+    // skipping every OTHER sesi's reminder in that same run, including orang-tua whatsapp
+    // reminders that come later in the loop.
+    \Illuminate\Support\Facades\Http::fake(['api.fonnte.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
+    \App\Models\WhatsAppTemplate::firstOrCreate(
+        ['kode' => 'reminder_sesi_h1'],
+        ['isi_template' => 'Sesi {nama_siswa} besok di {lokasi_sesi} jam {tanggal_sesi}.']
+    );
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    // First kasus/sesi: peserta = 'siswa', siswa has a linked User with a real email. This is
+    // the one that previously crashed the mail send mid-loop.
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id, 'email' => 'siswa.reminder@example.test']);
+    $siswaSatu = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $siswaUser->id]);
+    $kasusSatu = Kasus::create([
+        'siswa_id' => $siswaSatu->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh siswa.',
+    ]);
+    KasusSesi::factory()->create([
+        'kasus_id' => $kasusSatu->id, 'peserta' => 'siswa',
+        'dijadwalkan_pada' => now()->addDay()->setTime(8, 0), 'status' => 'terjadwal',
+    ]);
+
+    // Second, separate kasus/sesi: peserta = 'orang_tua'.
+    $siswaDua = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Dua']);
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTuaDua = OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Dua',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007701',
+        'email' => 'ortu.dua@example.test',
+    ]);
+    $siswaDua->orangTua()->attach($orangTuaDua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+    $kasusDua = Kasus::create([
+        'siswa_id' => $siswaDua->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh orang tua.',
+    ]);
+    KasusSesi::factory()->create([
+        'kasus_id' => $kasusDua->id, 'peserta' => 'orang_tua',
+        'dijadwalkan_pada' => now()->addDay()->setTime(9, 0), 'status' => 'terjadwal',
+        'lokasi_mode' => 'Ruang BK',
+    ]);
+
+    $this->artisan('kasus:kirim-reminder-sesi')->assertExitCode(0);
+
+    // Siswa's mail reminder actually sent (proves the command did not abort on this one).
+    $sentMessages = app('mailer')->getSymfonyTransport()->messages();
+    $siswaMailSent = $sentMessages->contains(
+        fn ($message) => in_array('siswa.reminder@example.test', array_map(
+            fn ($address) => $address->getAddress(),
+            $message->getOriginalMessage()->getTo()
+        ), true)
+    );
+    expect($siswaMailSent)->toBeTrue();
+
+    // Orang tua's whatsapp reminder also sent -- proving the loop did not abort partway
+    // through and silently skip the rest.
+    \Illuminate\Support\Facades\Http::assertSent(function ($request) {
+        return $request->url() === 'https://api.fonnte.com/send'
+            && $request['target'] === '081200007701'
+            && str_contains($request['message'], 'Siswa Dua')
+            && str_contains($request['message'], 'Ruang BK');
+    });
+});
