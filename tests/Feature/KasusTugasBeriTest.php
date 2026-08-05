@@ -109,3 +109,18 @@ it('notifies siswa and orang tua when a tugas is given', function () {
     \Illuminate\Support\Facades\Notification::assertSentTo($siswaUser, \App\Notifications\TugasDitugaskanNotification::class);
     \Illuminate\Support\Facades\Notification::assertSentTo($orangTua, \App\Notifications\TugasDitugaskanNotification::class);
 });
+
+it('403s a POST to give tugas against an already-selesai kasus and creates no row', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+    $kasus->update(['status' => StatusKasus::Selesai]);
+
+    $payload = ['tugas' => [
+        ['judul' => 'x', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), $payload)
+        ->assertForbidden();
+
+    expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
+});

@@ -274,3 +274,38 @@ it('lets the konselor keep scheduling sesi and giving tugas while the kasus is e
     expect(\App\Models\KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(1);
     expect($kasus->refresh()->status)->toBe(StatusKasus::Eskalasi);
 });
+
+it('records an activitylog entry when a konselor evaluates a berjalan kasus with keputusan eskalasi', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusBerjalanDenganKonselor($lembaga);
+
+    $this->actingAs($konselorUser)->post(route('kasus.evaluasi.store', $kasus), [
+        'catatan' => 'Butuh keterlibatan admin.', 'keputusan' => 'eskalasi',
+    ])->assertRedirect(route('kasus.show', $kasus));
+
+    expect(\Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Kasus::class)
+        ->where('subject_id', $kasus->id)
+        ->where('event', 'updated')
+        ->exists())->toBeTrue();
+});
+
+it('keeps showing the Jadwalkan Sesi and Beri Tugas forms to the konselor on a berjalan kasus', function () {
+    // F1: kasus.show gated both create forms on status === 'ditugaskan'. Since a task made
+    // the first sesi/tugas auto-transition the kasus to 'berjalan' in the same request,
+    // that gate makes both forms vanish forever after the first use.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusBerjalanDenganKonselor($lembaga);
+
+    $response = $this->actingAs($konselorUser)->get(route('kasus.show', $kasus));
+
+    $response->assertOk()->assertSee('Jadwalkan Sesi')->assertSee('Beri Tugas');
+});
+
+it('keeps showing the Jadwalkan Sesi and Beri Tugas forms to the konselor on an eskalasi kasus', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusEskalasi($lembaga);
+
+    $response = $this->actingAs($konselorUser)->get(route('kasus.show', $kasus));
+
+    $response->assertOk()->assertSee('Jadwalkan Sesi')->assertSee('Beri Tugas');
+});

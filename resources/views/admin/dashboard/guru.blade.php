@@ -27,7 +27,9 @@
             </x-panel>
         @endif
 
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <x-stat-tile label="Diajukan: Diajukan" :value="$kasusDiajukanStats['diajukan']" icon="assignment_late" />
+            <x-stat-tile label="Diajukan: Menunggu Consent" :value="$kasusDiajukanStats['menunggu_consent']" icon="hourglass_empty" />
             <x-stat-tile label="Diajukan: Ditugaskan" :value="$kasusDiajukanStats['ditugaskan']" icon="assignment" />
             <x-stat-tile label="Diajukan: Berjalan" :value="$kasusDiajukanStats['berjalan']" icon="pending_actions" />
             <x-stat-tile label="Diajukan: Eskalasi" :value="$kasusDiajukanStats['eskalasi']" icon="priority_high" />
@@ -58,7 +60,9 @@
         </x-panel>
 
         @if ($kasusDitangani->isNotEmpty())
-            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                <x-stat-tile label="Ditangani: Diajukan" :value="$kasusDitanganiStats['diajukan']" icon="assignment_late" />
+                <x-stat-tile label="Ditangani: Menunggu Consent" :value="$kasusDitanganiStats['menunggu_consent']" icon="hourglass_empty" />
                 <x-stat-tile label="Ditangani: Ditugaskan" :value="$kasusDitanganiStats['ditugaskan']" icon="assignment" />
                 <x-stat-tile label="Ditangani: Berjalan" :value="$kasusDitanganiStats['berjalan']" icon="pending_actions" />
                 <x-stat-tile label="Ditangani: Eskalasi" :value="$kasusDitanganiStats['eskalasi']" icon="priority_high" />

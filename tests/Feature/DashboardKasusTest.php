@@ -120,9 +120,48 @@ it('shows a karyawan_pool konselor only kasus they are assigned to', function ()
         'status' => StatusKasus::Berjalan, 'kategori_masalah' => 'Ditangani Karyawan', 'deskripsi' => 'x',
     ]);
 
+    // F2: an unassigned kasus (konselor_karyawan_id = null) in a DIFFERENT lembaga must
+    // NOT leak to this karyawan via the TenantScope-bypassed query defaulting a null
+    // $karyawanId to a `WHERE konselor_karyawan_id IS NULL` match.
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    Kasus::create([
+        'siswa_id' => $siswaLain->id, 'lembaga_id' => $lembagaLain->id, 'konselor_karyawan_id' => null,
+        'status' => StatusKasus::Ditugaskan, 'kategori_masalah' => 'Kasus Tak Ditugaskan Karyawan', 'deskripsi' => 'x',
+    ]);
+
     $response = $this->actingAs($karyawanUser)->get(route('dashboard'));
 
-    $response->assertOk()->assertSee('Ditangani Karyawan');
+    $response->assertOk()->assertSee('Ditangani Karyawan')->assertDontSee('Kasus Tak Ditugaskan Karyawan');
+});
+
+it('shows a guru-roled user with no Guru profile row neither an orang-tua-submitted kasus nor an unassigned kasus', function () {
+    // F3: $user->guru?->id resolving to null makes where('diajukan_oleh_guru_id', null)
+    // and where('konselor_guru_id', null) compile to IS NULL, leaking every
+    // orang-tua-submitted / unassigned kasus in the lembaga to a profile-less guru user.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $role->givePermissionTo(['kasus.view']);
+    $guruTanpaProfil = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guruTanpaProfil->assignRole('guru');
+
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'diajukan_oleh_guru_id' => null,
+        'kategori_masalah' => 'Diajukan Orang Tua', 'deskripsi' => 'x',
+    ]);
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'konselor_guru_id' => null,
+        'kategori_masalah' => 'Kasus Belum Ditugaskan', 'deskripsi' => 'x',
+    ]);
+
+    $response = $this->actingAs($guruTanpaProfil)->get(route('dashboard'));
+
+    $response->assertOk()
+        ->assertDontSee('Diajukan Orang Tua')
+        ->assertDontSee('Kasus Belum Ditugaskan');
 });
 
 it('counts the guru dashboard stat tiles from only that guru\'s own visible kasus, not a global count', function () {

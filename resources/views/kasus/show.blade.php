@@ -114,7 +114,7 @@
                     </div>
                 @endif
 
-                @if ($isKonselor && $kasus->status->value === 'ditugaskan')
+                @if ($isKonselor && in_array($kasus->status->value, ['ditugaskan', 'berjalan', 'eskalasi'], true))
                     <div x-data="{
                         rows: [{ dijadwalkan_pada: '', peserta: 'siswa', lokasi_mode: '' }],
                         tambah() { this.rows.push({ dijadwalkan_pada: '', peserta: 'siswa', lokasi_mode: '' }); },
@@ -227,7 +227,7 @@
                     </div>
                 @endif
 
-                @if ($isKonselor && $kasus->status->value === 'ditugaskan')
+                @if ($isKonselor && in_array($kasus->status->value, ['ditugaskan', 'berjalan', 'eskalasi'], true))
                     <div x-data="{
                         rows: [{ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }],
                         tambah() { this.rows.push({ judul: '', instruksi: '', frekuensi: 'sekali', mulai_pada: '', batas_selesai_pada: '' }); },

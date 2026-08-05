@@ -24,8 +24,12 @@ class DashboardController extends BaseController
         $user = $request->user();
 
         if ($user->hasRole('guru')) {
-            $kasusDiajukan = Kasus::with('siswa')->where('diajukan_oleh_guru_id', $user->guru?->id)->latest()->get();
-            $kasusDitangani = Kasus::with('siswa')->where('konselor_guru_id', $user->guru?->id)->latest()->get();
+            $kasusDiajukan = $user->guru === null
+                ? collect()
+                : Kasus::with('siswa')->where('diajukan_oleh_guru_id', $user->guru->id)->latest()->get();
+            $kasusDitangani = $user->guru === null
+                ? collect()
+                : Kasus::with('siswa')->where('konselor_guru_id', $user->guru->id)->latest()->get();
 
             return view('admin.dashboard.guru', [
                 'jabatanTambahan' => $user->guru?->jabatanTambahan ?? collect(),
@@ -68,10 +72,12 @@ class DashboardController extends BaseController
 
         if ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
             $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
-            $kasusDitangani = Kasus::withoutGlobalScope(TenantScope::class)
-                ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
-                ->where('konselor_karyawan_id', $karyawanId)
-                ->latest()->get();
+            $kasusDitangani = $karyawanId === null
+                ? collect()
+                : Kasus::withoutGlobalScope(TenantScope::class)
+                    ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                    ->where('konselor_karyawan_id', $karyawanId)
+                    ->latest()->get();
 
             return view('admin.dashboard.karyawan', [
                 'kasusDitangani' => $kasusDitangani,
@@ -165,11 +171,7 @@ class DashboardController extends BaseController
                 ->get();
 
             $data['kasusList'] = $kasusList;
-            $data['kasusStats'] = [
-                'berjalan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'berjalan')->count(),
-                'eskalasi' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'eskalasi')->count(),
-                'selesai' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'selesai')->count(),
-            ];
+            $data['kasusStats'] = $this->kasusStatusCounts($kasusList);
         } else {
             $data['kasusList'] = null;
             $data['kasusStats'] = null;
@@ -181,6 +183,8 @@ class DashboardController extends BaseController
     private function kasusStatusCounts(\Illuminate\Support\Collection $kasusList): array
     {
         return [
+            'diajukan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'diajukan')->count(),
+            'menunggu_consent' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'menunggu_consent')->count(),
             'ditugaskan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'ditugaskan')->count(),
             'berjalan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'berjalan')->count(),
             'eskalasi' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'eskalasi')->count(),

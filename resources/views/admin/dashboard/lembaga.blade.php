@@ -77,7 +77,10 @@
         @if ($kasusList !== null)
             <div>
                 <h3 class="font-display text-lg font-semibold text-ink">Kasus Pendampingan</h3>
-                <div class="mt-3 grid grid-cols-3 gap-4">
+                <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3">
+                    <x-stat-tile label="Diajukan" :value="$kasusStats['diajukan']" icon="assignment_late" />
+                    <x-stat-tile label="Menunggu Consent" :value="$kasusStats['menunggu_consent']" icon="hourglass_empty" />
+                    <x-stat-tile label="Ditugaskan" :value="$kasusStats['ditugaskan']" icon="assignment" />
                     <x-stat-tile label="Berjalan" :value="$kasusStats['berjalan']" icon="pending_actions" />
                     <x-stat-tile label="Eskalasi" :value="$kasusStats['eskalasi']" icon="priority_high" />
                     <x-stat-tile label="Selesai" :value="$kasusStats['selesai']" icon="check_circle" />

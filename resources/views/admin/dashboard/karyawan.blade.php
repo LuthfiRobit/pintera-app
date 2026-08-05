@@ -12,7 +12,9 @@
         />
 
         @if ($kasusDitangani->isNotEmpty())
-            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                <x-stat-tile label="Diajukan" :value="$kasusDitanganiStats['diajukan']" icon="assignment_late" />
+                <x-stat-tile label="Menunggu Consent" :value="$kasusDitanganiStats['menunggu_consent']" icon="hourglass_empty" />
                 <x-stat-tile label="Ditugaskan" :value="$kasusDitanganiStats['ditugaskan']" icon="assignment" />
                 <x-stat-tile label="Berjalan" :value="$kasusDitanganiStats['berjalan']" icon="pending_actions" />
                 <x-stat-tile label="Eskalasi" :value="$kasusDitanganiStats['eskalasi']" icon="priority_high" />

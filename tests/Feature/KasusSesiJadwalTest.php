@@ -104,3 +104,18 @@ it('notifies the relevant peserta when a sesi is scheduled', function () {
 
     \Illuminate\Support\Facades\Notification::assertSentTo($orangTua, \App\Notifications\SesiDijadwalkanNotification::class);
 });
+
+it('403s a POST to schedule a sesi against an already-selesai kasus and creates no row', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBk($lembaga);
+    $kasus->update(['status' => StatusKasus::Selesai]);
+
+    $payload = ['sesi' => [
+        ['dijadwalkan_pada' => now()->addDays(1)->format('Y-m-d H:i:s'), 'peserta' => 'siswa', 'lokasi_mode' => 'Ruang BK'],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.sesi.store', $kasus), $payload)
+        ->assertForbidden();
+
+    expect(KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
