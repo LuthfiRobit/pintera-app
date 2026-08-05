@@ -118,6 +118,7 @@ class KasusController extends BaseController
     {
         $this->authorize('kasus.pulihkan');
         $this->authorizeLembaga($kasus);
+        abort_unless($kasus->trashed(), 404);
 
         DB::transaction(function () use ($kasus) {
             $kasus->restore();

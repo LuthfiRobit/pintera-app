@@ -21,6 +21,7 @@ class KasusSesiController extends BaseController
     {
         $this->authorize('kasus.view');
         $this->assertKonselorPemegangKasus($kasus);
+        abort_if($kasus->trashed(), 404);
         abort_if($kasus->status->value === 'selesai', 403);
 
         $data = $request->validate([

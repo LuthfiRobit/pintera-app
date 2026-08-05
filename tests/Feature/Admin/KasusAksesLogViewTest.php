@@ -87,6 +87,24 @@ it('lets yayasan_super_admin see akses_klinis log rows across all lembaga', func
     $response->assertSee($siswaB->nama_lengkap);
 });
 
+it('shows the causer real name even when the causer lembaga_id differs from the viewing admin (e.g. orang_tua/null lembaga_id)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kasus = Kasus::factory()->create(['siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'status' => StatusKasus::Berjalan]);
+
+    $causer = User::factory()->create(['lembaga_id' => null, 'name' => 'Orang Tua Kontak Utama Test']);
+    activity('akses_klinis')->causedBy($causer)->performedOn($kasus)->log('Membuka detail kasus');
+
+    $viewer = actingAsKasusLogViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.kasus.log-akses'));
+
+    $response->assertOk();
+    $response->assertSee('Orang Tua Kontak Utama Test');
+    $response->assertDontSee('Pengguna tidak diketahui');
+});
+
 it('403s a user without kasus.lihat-log-akses permission', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

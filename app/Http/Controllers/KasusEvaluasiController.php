@@ -23,6 +23,7 @@ class KasusEvaluasiController extends BaseController
     public function store(Request $request, Kasus $kasus): RedirectResponse
     {
         $this->authorize('kasus.view');
+        abort_if($kasus->trashed(), 404);
         $user = auth()->user();
         $originalStatus = $kasus->status->value;
 

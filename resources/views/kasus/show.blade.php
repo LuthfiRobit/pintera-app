@@ -44,6 +44,18 @@
                     <x-badge :tone="$kasus->status->badgeTone()" class="px-3 py-1 text-xs font-bold uppercase tracking-wider">
                         {{ $kasus->status->label() }}
                     </x-badge>
+                    @can('kasus.hapus')
+                        @if ($kasus->status === \App\Enums\StatusKasus::Selesai)
+                            <form method="POST" action="{{ route('admin.kasus.destroy', $kasus) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kasus ini? Seluruh sesi, tugas, dan evaluasi terkait juga akan dihapus.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg border border-error-200 bg-error-50 px-3 py-1.5 text-xs font-bold text-error-600 transition hover:bg-error-100" title="Hapus Kasus">
+                                    <x-icon name="delete" class="h-4 w-4" />
+                                    <span>Hapus Kasus</span>
+                                </button>
+                            </form>
+                        @endif
+                    @endcan
                 </div>
             </div>
 

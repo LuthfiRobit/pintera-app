@@ -69,7 +69,7 @@
             'label' => 'VIII. Pendampingan',
             'items' => array_filter([
                 Auth::user()->can('kasus.view') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'fact_check'] : null,
-                Auth::user()->can('kasus.triase') ? ['route' => 'admin.kasus.index', 'pattern' => 'admin.kasus.*', 'label' => 'Triase Kasus', 'icon' => 'assessment'] : null,
+                Auth::user()->can('kasus.triase') ? ['route' => 'admin.kasus.index', 'pattern' => ['admin.kasus.index', 'admin.kasus.triase', 'admin.kasus.assign-konselor'], 'label' => 'Triase Kasus', 'icon' => 'assessment'] : null,
                 Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.log-akses', 'pattern' => 'admin.kasus.log-akses', 'label' => 'Log Akses Klinis', 'icon' => 'description'] : null,
                 Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.terhapus', 'pattern' => 'admin.kasus.terhapus', 'label' => 'Kasus Terhapus', 'icon' => 'cancel'] : null,
             ]),

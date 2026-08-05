@@ -29,7 +29,7 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($logs as $log)
                             <tr class="transition hover:bg-gray-50">
-                                <td class="px-5 py-3.5 font-medium text-gray-900">{{ $log->causer?->name ?? 'Pengguna tidak diketahui' }}</td>
+                                <td class="px-5 py-3.5 font-medium text-gray-900">{{ $causers[$log->causer_id]?->name ?? 'Pengguna tidak diketahui' }}</td>
                                 <td class="px-5 py-3.5 text-gray-700">{{ $log->subject?->siswa?->nama_lengkap ?? '—' }}</td>
                                 <td class="px-5 py-3.5 text-gray-700">{{ $log->subject?->kategori_masalah ?? '—' }}</td>
                                 <td class="px-5 py-3.5 text-gray-500 font-mono text-xs">{{ $log->created_at->format('d M Y H:i') }}</td>
