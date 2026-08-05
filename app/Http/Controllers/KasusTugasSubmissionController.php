@@ -99,7 +99,7 @@ class KasusTugasSubmissionController extends BaseController
                 $kasusTugas->update(['status' => 'revisi']);
             }
 
-            $notifiable =$kasusTugasSubmission->siswa_id !== null
+            $notifiable = $kasusTugasSubmission->siswa_id !== null
                 ? $kasusTugasSubmission->siswa()->withoutGlobalScope(TenantScope::class)->first()
                     ?->user()->withoutGlobalScope(TenantScope::class)->first()
                 : $kasusTugasSubmission->orangTua;
