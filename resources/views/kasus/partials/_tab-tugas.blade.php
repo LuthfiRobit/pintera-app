@@ -152,8 +152,8 @@
                             <p class="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">Checklist Harian:</p>
                             @foreach ($tanggalList as $tanggal)
                                 @php
-                                    $submisiListHariIni = $submisiPerTanggal->get($tanggal->toDateString(), collect())->sortBy('created_at')->values();
-                                    $submisiTerbaru = $submisiListHariIni->sortByDesc('created_at')->first();
+                                    $submisiListHariIni = $submisiPerTanggal->get($tanggal->toDateString(), collect())->sortBy(['created_at', 'id'])->values();
+                                    $submisiTerbaru = $submisiListHariIni->sortByDesc(['created_at', 'id'])->first();
                                     $terkunci = $submisiTerbaru && in_array($submisiTerbaru->status_review, ['menunggu_review', 'diterima'], true);
                                 @endphp
                                 <div class="rounded-lg border border-gray-200 bg-white p-3.5">

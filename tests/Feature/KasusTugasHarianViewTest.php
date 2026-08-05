@@ -69,6 +69,26 @@ it('renders the kasus page without error and surfaces a harian submission whose 
     $response->assertSee('Submisi lawas dengan tanggal di luar rentang tugas.');
 });
 
+it('renders the kasus page without error and surfaces a harian submission with a genuinely null tanggal', function () {
+    // The actual bug Finding 1 was about: a submission that was never backfilled at all
+    // (tanggal still null), not just one whose backfilled tanggal falls outside range.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasHarianDanKontakUtama($lembaga);
+
+    KasusTugasSubmission::create([
+        'tugas_id' => $tugas->id,
+        'siswa_id' => $siswaUser->siswa->id,
+        'teks' => 'Submisi lawas tanpa tanggal sama sekali.',
+        'status_review' => 'menunggu_review',
+        'tanggal' => null,
+    ]);
+
+    $response = $this->actingAs($siswaUser)->get(route('kasus.show', $kasus));
+
+    $response->assertOk();
+    $response->assertSee('Submisi lawas tanpa tanggal sama sekali.');
+});
+
 it('shows the full submission history for a locked date, not just the latest attempt, after a revisi cycle', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $tugas, $siswaUser] = buatKasusDenganTugasHarianDanKontakUtama($lembaga);
