@@ -14,12 +14,26 @@ class KasusDiajukanNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+
+        if (filled($notifiable->routeNotificationFor('mail'))) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): KasusDiajukanMail
     {
-        return new KasusDiajukanMail($this->kasus);
+        $mail = new KasusDiajukanMail($this->kasus);
+
+        $email = $notifiable->routeNotificationFor('mail');
+
+        if ($email !== null && $email !== '') {
+            $mail->to($email);
+        }
+
+        return $mail;
     }
 
     public function toDatabase(object $notifiable): array

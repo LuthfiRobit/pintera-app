@@ -118,6 +118,22 @@ it('lets the konselor evaluate a berjalan kasus with keputusan eskalasi, notifie
     Notification::assertSentTo($admin, KasusEskalasiNotification::class);
 });
 
+it('does not 500 when notifying KasusEskalasiNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusBerjalanDenganKonselor($lembaga);
+    buatAdminAkademik($lembaga);
+
+    $this->actingAs($konselorUser)->post(route('kasus.evaluasi.store', $kasus), [
+        'catatan' => 'Butuh keterlibatan admin.', 'keputusan' => 'eskalasi',
+    ])->assertRedirect(route('kasus.show', $kasus));
+
+    expect($kasus->refresh()->status)->toBe(StatusKasus::Eskalasi);
+});
+
 it('lets a karyawan_pool konselor with a mismatched active_lembaga_id session evaluate a berjalan kasus with keputusan eskalasi, notifies admin_akademik', function () {
     // This is the TenantScope-bypass path at KasusEvaluasiController::store() line ~58:
     // $user->karyawan()->withoutGlobalScope(TenantScope::class). The konselor's own
@@ -168,6 +184,31 @@ it('lets the konselor evaluate a berjalan kasus with keputusan selesai, no appro
     Notification::assertSentTo($orangTua, KasusSelesaiNotification::class);
 });
 
+it('does not 500 when notifying KasusSelesaiNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser, $siswa] = buatKasusBerjalanDenganKonselor($lembaga);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Selesai Real',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009988',
+        'email' => 'ortu.selesai.real@example.test',
+    ]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $this->actingAs($konselorUser)->post(route('kasus.evaluasi.store', $kasus), [
+        'catatan' => 'Kasus tuntas.', 'keputusan' => 'selesai',
+    ])->assertRedirect(route('kasus.show', $kasus));
+
+    expect($kasus->refresh()->status)->toBe(StatusKasus::Selesai);
+});
+
 it('lets admin_akademik evaluate an eskalasi kasus with keputusan lanjut, notifies the konselor, konselor unchanged', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusEskalasi($lembaga);
@@ -183,6 +224,23 @@ it('lets admin_akademik evaluate an eskalasi kasus with keputusan lanjut, notifi
     expect($kasus->status)->toBe(StatusKasus::Berjalan);
     expect($kasus->konselor_guru_id)->not->toBeNull();
     Notification::assertSentTo($konselorUser, KasusDikembalikanNotification::class);
+});
+
+it('does not 500 when notifying KasusDikembalikanNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusEskalasi($lembaga);
+    $admin = buatAdminAkademik($lembaga);
+
+    $this->actingAs($admin)->post(route('kasus.evaluasi.store', $kasus), [
+        'catatan' => 'Silakan lanjutkan penanganan.', 'keputusan' => 'lanjut',
+    ])->assertRedirect(route('kasus.show', $kasus));
+
+    $kasus->refresh();
+    expect($kasus->status)->toBe(StatusKasus::Berjalan);
 });
 
 it('lets admin_akademik evaluate an eskalasi kasus assigned to a karyawan_pool konselor with keputusan lanjut, notifies the konselor via the konselorKaryawan two-hop bypass', function () {

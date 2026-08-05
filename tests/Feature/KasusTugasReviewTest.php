@@ -30,6 +30,30 @@ it('marks a submission revisi_diminta with a catatan and moves tugas status to r
     expect($tugas->refresh()->status->value)->toBe('revisi');
 });
 
+it('does not 500 when notifying SubmissionRevisiNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBk($lembaga);
+
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+    $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $siswaRole->givePermissionTo(['kasus.view']);
+    $siswaUser->assignRole('siswa');
+    $siswa->update(['user_id' => $siswaUser->id]);
+
+    $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id, 'status' => 'dikerjakan']);
+    $submission = KasusTugasSubmission::factory()->create(['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id, 'orang_tua_id' => null]);
+
+    $this->actingAs($konselorUser)->patch(route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]), [
+        'status_review' => 'revisi_diminta',
+        'catatan_revisi' => 'Tolong lebih detail.',
+    ])->assertRedirect(route('kasus.show', $kasus));
+});
+
 it('marks a submission diterima without changing tugas status', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBk($lembaga);

@@ -15,12 +15,26 @@ class KasusSelesaiNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+
+        if (filled($notifiable->routeNotificationFor('mail'))) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): KasusSelesaiMail
     {
-        return new KasusSelesaiMail($this->kasus);
+        $mail = new KasusSelesaiMail($this->kasus);
+
+        $email = $notifiable->routeNotificationFor('mail');
+
+        if ($email !== null && $email !== '') {
+            $mail->to($email);
+        }
+
+        return $mail;
     }
 
     public function toDatabase(object $notifiable): array

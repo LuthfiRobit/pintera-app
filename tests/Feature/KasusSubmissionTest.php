@@ -102,6 +102,33 @@ it('lets a guru submit a kasus and notifies the kontak utama orang tua', functio
     Notification::assertSentTo($kontakUtama, KasusDiajukanNotification::class);
 });
 
+it('does not 500 when notifying KasusDiajukanNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    [$user] = actingAsGuruPengaju($lembaga);
+
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser->assignRole('orang_tua');
+    $kontakUtama = OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama Real',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200002233',
+        'email' => 'kontak.utama.real@example.test',
+    ]);
+    $siswa->orangTua()->attach($kontakUtama->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $this->actingAs($user)->post(route('kasus.store'), [
+        'siswa_id' => $siswa->id,
+        'kategori_masalah' => 'Perilaku',
+        'deskripsi' => 'Deskripsi observasi guru.',
+    ])->assertRedirect(route('kasus.index'));
+});
+
 it('lets an orang tua submit a kasus for their own linked child and notifies the wali kelas', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

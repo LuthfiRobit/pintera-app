@@ -14,12 +14,26 @@ class TugasDitugaskanNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+
+        if (filled($notifiable->routeNotificationFor('mail'))) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): TugasDitugaskanMail
     {
-        return new TugasDitugaskanMail($this->tugas);
+        $mail = new TugasDitugaskanMail($this->tugas);
+
+        $email = $notifiable->routeNotificationFor('mail');
+
+        if ($email !== null && $email !== '') {
+            $mail->to($email);
+        }
+
+        return $mail;
     }
 
     public function toDatabase(object $notifiable): array

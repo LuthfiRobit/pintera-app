@@ -14,12 +14,26 @@ class SesiDijadwalkanNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        $channels = ['database'];
+
+        if (filled($notifiable->routeNotificationFor('mail'))) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
     }
 
     public function toMail(object $notifiable): SesiDijadwalkanMail
     {
-        return new SesiDijadwalkanMail($this->sesi);
+        $mail = new SesiDijadwalkanMail($this->sesi);
+
+        $email = $notifiable->routeNotificationFor('mail');
+
+        if ($email !== null && $email !== '') {
+            $mail->to($email);
+        }
+
+        return $mail;
     }
 
     public function toDatabase(object $notifiable): array

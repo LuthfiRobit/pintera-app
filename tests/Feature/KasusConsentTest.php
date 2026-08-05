@@ -138,3 +138,25 @@ it('renders the consent-approved notification for real without a fake, using the
         ->patch(route('kasus.consent.approve', [$kasus, $sesiConsent]))
         ->assertRedirect();
 });
+
+it('does not 500 when notifying ConsentDisetujuiNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guruPengaju = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
+        'nama' => 'Guru Pengaju Konsent Real', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
+        'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
+        'email' => 'guru.pengaju.konsent.real@example.test',
+    ]);
+
+    [$kasus, $sesiConsent, , $kontakUtamaUser] = siapkanKasusMenungguConsent($guruPengaju, $lembaga);
+
+    $this->actingAs($kontakUtamaUser)
+        ->patch(route('kasus.consent.approve', [$kasus, $sesiConsent]))
+        ->assertRedirect();
+});
