@@ -105,6 +105,29 @@ it('notifies the relevant peserta when a sesi is scheduled', function () {
     \Illuminate\Support\Facades\Notification::assertSentTo($orangTua, \App\Notifications\SesiDijadwalkanNotification::class);
 });
 
+it('does not 500 when notifying SesiDijadwalkanNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBk($lembaga);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = \App\Models\OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama Real',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200004455',
+        'email' => 'ortu.sesi.real@example.test',
+    ]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $this->actingAs($konselorUser)->post(route('kasus.sesi.store', $kasus), ['sesi' => [
+        ['dijadwalkan_pada' => now()->addDays(1)->format('Y-m-d H:i:s'), 'peserta' => 'orang_tua', 'lokasi_mode' => 'Ruang BK'],
+    ]])->assertRedirect(route('kasus.show', $kasus));
+});
+
 it('403s a POST to schedule a sesi against an already-selesai kasus and creates no row', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBk($lembaga);
@@ -118,4 +141,49 @@ it('403s a POST to schedule a sesi against an already-selesai kasus and creates 
         ->assertForbidden();
 
     expect(KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
+
+it('403s a POST to schedule a sesi against a kasus still menunggu_consent and creates no row', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBk($lembaga);
+    $kasus->update(['status' => StatusKasus::MenungguConsent]);
+
+    $payload = ['sesi' => [
+        ['dijadwalkan_pada' => now()->addDays(1)->format('Y-m-d H:i:s'), 'peserta' => 'siswa', 'lokasi_mode' => 'Ruang BK'],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.sesi.store', $kasus), $payload)
+        ->assertForbidden();
+
+    expect(KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
+
+it('403s a POST to schedule a sesi against a kasus still diajukan and creates no row', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBk($lembaga);
+    $kasus->update(['status' => StatusKasus::Diajukan]);
+
+    $payload = ['sesi' => [
+        ['dijadwalkan_pada' => now()->addDays(1)->format('Y-m-d H:i:s'), 'peserta' => 'siswa', 'lokasi_mode' => 'Ruang BK'],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.sesi.store', $kasus), $payload)
+        ->assertForbidden();
+
+    expect(KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
+
+it('lets the assigned konselor schedule a sesi against a berjalan kasus', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBk($lembaga);
+    $kasus->update(['status' => StatusKasus::Berjalan]);
+
+    $payload = ['sesi' => [
+        ['dijadwalkan_pada' => now()->addDays(1)->format('Y-m-d H:i:s'), 'peserta' => 'siswa', 'lokasi_mode' => 'Ruang BK'],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.sesi.store', $kasus), $payload)
+        ->assertRedirect(route('kasus.show', $kasus));
+
+    expect(KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(1);
 });

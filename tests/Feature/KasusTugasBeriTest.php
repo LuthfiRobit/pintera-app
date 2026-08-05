@@ -110,6 +110,56 @@ it('notifies siswa and orang tua when a tugas is given', function () {
     \Illuminate\Support\Facades\Notification::assertSentTo($orangTua, \App\Notifications\TugasDitugaskanNotification::class);
 });
 
+it('does not 500 when notifying TugasDitugaskanNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+
+    $siswaUser = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa->update(['user_id' => $siswaUser->id]);
+
+    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = \App\Models\OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tugas Real',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007799',
+        'email' => 'ortu.tugas.real@example.test',
+    ]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), ['tugas' => [
+        ['judul' => 'Jurnal Harian', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
+    ]])->assertRedirect(route('kasus.show', $kasus));
+});
+
+it('does not 500 when notifying TugasSelesaiNotification for real (no Notification::fake)', function () {
+    // Regression test for the same MailChannel::send() bug fixed for KonselorDipilihMail
+    // and SesiReminderMail: toMail() returning a bare Mailable with no ->to() throws
+    // LogicException("An email must have a To, Cc, or Bcc header") the instant a real
+    // notifiable (with a real email) is notified outside Notification::fake().
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+
+    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = \App\Models\OrangTua::create([
+        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tugas Selesai Real',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007700',
+        'email' => 'ortu.tugas.selesai.real@example.test',
+    ]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id, 'status' => 'dikerjakan']);
+
+    $this->actingAs($konselorUser)->patch(route('kasus.tugas.selesai', [$kasus, $tugas]))
+        ->assertRedirect(route('kasus.show', $kasus));
+});
+
 it('403s a POST to give tugas against an already-selesai kasus and creates no row', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
@@ -123,6 +173,51 @@ it('403s a POST to give tugas against an already-selesai kasus and creates no ro
         ->assertForbidden();
 
     expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
+
+it('403s a POST to give tugas against a kasus still menunggu_consent and creates no row', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+    $kasus->update(['status' => StatusKasus::MenungguConsent]);
+
+    $payload = ['tugas' => [
+        ['judul' => 'x', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), $payload)
+        ->assertForbidden();
+
+    expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
+
+it('403s a POST to give tugas against a kasus still diajukan and creates no row', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+    $kasus->update(['status' => StatusKasus::Diajukan]);
+
+    $payload = ['tugas' => [
+        ['judul' => 'x', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), $payload)
+        ->assertForbidden();
+
+    expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
+
+it('lets the assigned konselor give tugas against a berjalan kasus', function () {
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+    $kasus->update(['status' => StatusKasus::Berjalan]);
+
+    $payload = ['tugas' => [
+        ['judul' => 'x', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
+    ]];
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), $payload)
+        ->assertRedirect(route('kasus.show', $kasus));
+
+    expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(1);
 });
 
 it('does not call Fonnte when a tugas is given (TugasDitugaskanNotification has no whatsapp channel)', function () {

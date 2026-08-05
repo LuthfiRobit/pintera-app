@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\StatusKasus;
 use App\Models\Kasus;
 use App\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
@@ -23,7 +24,7 @@ class KasusTugasController extends BaseController
         $this->authorize('kasus.view');
         $this->assertKonselorPemegangKasus($kasus);
         abort_if($kasus->trashed(), 404);
-        abort_if($kasus->status->value === 'selesai', 403);
+        abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
 
         $data = $request->validate([
             'tugas' => ['required', 'array', 'min:1'],
