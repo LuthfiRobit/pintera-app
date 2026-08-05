@@ -230,6 +230,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('kasus', [AdminKasusController::class, 'index'])->name('kasus.index');
     Route::get('kasus/{kasus}/triase', [AdminKasusController::class, 'triase'])->name('kasus.triase');
     Route::post('kasus/{kasus}/assign-konselor', [AdminKasusController::class, 'assignKonselor'])->name('kasus.assign-konselor');
+    Route::delete('kasus/{kasus}', [AdminKasusController::class, 'destroy'])->name('kasus.destroy');
+    Route::post('kasus/{kasus}/pulihkan', [AdminKasusController::class, 'restore'])->name('kasus.restore');
 });
 
 // Orang tua accounts have no lembaga_id of their own, so implicit route-model binding's
@@ -237,7 +239,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 // isSubmitter/isKontakUtama/kasus.triase authorization logic ever runs. Bind explicitly,
 // bypassing the tenant scope; real authorization stays inside each controller action.
 Route::bind('kasus', function ($value) {
-    return \App\Models\Kasus::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->findOrFail($value);
+    return \App\Models\Kasus::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+        ->withTrashed()
+        ->findOrFail($value);
 });
 
 Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(function () {

@@ -145,6 +145,8 @@ class KasusController extends BaseController
 
         $user = auth()->user();
 
+        abort_if($kasus->trashed(), 404);
+
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
         abort_if($siswa === null, 404);
         $kasus->setRelation('siswa', $siswa);

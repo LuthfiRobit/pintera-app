@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\StatusKasus;
 use App\Models\Kasus;
 use App\Models\KasusConsent;
+use App\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\KonselorDipilihNotification;
 use App\Services\KonselorAllocationResolver;
@@ -88,6 +89,46 @@ class KasusController extends BaseController
         $kontakUtama?->notify(new KonselorDipilihNotification($kasus));
 
         return redirect()->route('admin.kasus.index')->with('status', 'Konselor berhasil ditugaskan, menunggu persetujuan orang tua.');
+    }
+
+    public function destroy(Kasus $kasus): RedirectResponse
+    {
+        $this->authorize('kasus.hapus');
+        $this->authorizeLembaga($kasus);
+
+        abort_unless($kasus->status === StatusKasus::Selesai, 422, 'Hanya kasus berstatus Selesai yang dapat dihapus.');
+
+        DB::transaction(function () use ($kasus) {
+            foreach ($kasus->tugas as $tugas) {
+                $tugas->submissions()->delete();
+            }
+            $kasus->sesi()->delete();
+            $kasus->tugas()->delete();
+            $kasus->evaluasi()->delete();
+            $kasus->consents()->delete();
+            $kasus->delete();
+        });
+
+        return redirect()->route('admin.kasus.index')->with('status', 'Kasus berhasil dihapus.');
+    }
+
+    public function restore(Kasus $kasus): RedirectResponse
+    {
+        $this->authorize('kasus.pulihkan');
+        $this->authorizeLembaga($kasus);
+
+        DB::transaction(function () use ($kasus) {
+            $kasus->restore();
+            $kasus->sesi()->withTrashed()->restore();
+            KasusTugas::withTrashed()->where('kasus_id', $kasus->id)->get()->each(function (KasusTugas $tugas) {
+                $tugas->submissions()->withTrashed()->restore();
+                $tugas->restore();
+            });
+            $kasus->evaluasi()->withTrashed()->restore();
+            $kasus->consents()->withTrashed()->restore();
+        });
+
+        return redirect()->route('admin.kasus.index')->with('status', 'Kasus berhasil dipulihkan.');
     }
 
     private function authorizeLembaga(Kasus $kasus): void
