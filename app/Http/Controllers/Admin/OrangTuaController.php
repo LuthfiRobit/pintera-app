@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\OrangTua;
+use App\Models\Scopes\TenantScope;
 use App\Models\User;
 use App\Services\AkunOrangTuaGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -17,15 +18,21 @@ class OrangTuaController extends BaseController
 
     public function index(Request $request): View
     {
-        // Deliberate v1 decision: parent profiles are intentionally viewable yayasan-wide by
-        // any orang-tua.view holder, not scoped to lembaga, because OrangTua has no
-        // lembaga_id by design (a parent can have children in multiple lembaga).
         $this->authorize('orang-tua.view');
 
+        $user = auth()->user();
         $search = $request->query('search');
 
-        $orangTuaList = OrangTua::with('user')
+        // OrangTua accounts always have lembaga_id = null by design, so eager-loading `user`
+        // must bypass TenantScope or a lembaga-scoped viewer's own scope silently filters it
+        // to null (Eloquent turns `where('lembaga_id', null)` into `whereNull`, which happens
+        // to only pass when the viewer ALSO has a null lembaga_id — masking this for any
+        // fixture/manager that never set one).
+        $orangTuaList = OrangTua::with(['user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
             ->withCount('siswa')
+            ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where(fn ($q2) => $q2
+                ->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
+                ->orWhereHas('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $user->lembaga_id))))
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2
                 ->where('nama_lengkap', 'like', "%{$search}%")
                 ->orWhere('nik', 'like', "%{$search}%")))
@@ -82,12 +89,13 @@ class OrangTuaController extends BaseController
 
     public function edit(OrangTua $orangTua): View
     {
-        // Deliberate v1 decision: parent profiles are intentionally editable yayasan-wide by
-        // any orang-tua.edit holder, not scoped to lembaga, because OrangTua has no
-        // lembaga_id by design (a parent can have children in multiple lembaga).
         $this->authorize('orang-tua.edit');
+        $this->authorizeLembaga($orangTua);
 
-        $orangTua->load(['user', 'siswa']);
+        $orangTua->load([
+            'user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+            'siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+        ]);
 
         return view('admin.orang-tua.edit', ['orangTua' => $orangTua]);
     }
@@ -95,6 +103,7 @@ class OrangTuaController extends BaseController
     public function update(Request $request, OrangTua $orangTua): RedirectResponse
     {
         $this->authorize('orang-tua.edit');
+        $this->authorizeLembaga($orangTua);
 
         $data = $request->validate([
             'nama_lengkap' => ['required', 'string', 'max:255'],
@@ -104,7 +113,7 @@ class OrangTuaController extends BaseController
             'pekerjaan' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $orangTua->user()->update(['name' => $data['nama_lengkap']]);
+        $orangTua->user()->withoutGlobalScope(TenantScope::class)->update(['name' => $data['nama_lengkap']]);
         $orangTua->update($data);
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua berhasil diperbarui.');
@@ -113,14 +122,34 @@ class OrangTuaController extends BaseController
     public function updateStatus(Request $request, OrangTua $orangTua): RedirectResponse
     {
         $this->authorize('orang-tua.edit');
+        $this->authorizeLembaga($orangTua);
 
         $data = $request->validate([
             'is_active' => ['required', 'boolean'],
         ]);
 
-        $orangTua->user()->update(['is_active' => $data['is_active']]);
+        $orangTua->user()->withoutGlobalScope(TenantScope::class)->update(['is_active' => $data['is_active']]);
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Status akun Orang Tua berhasil diperbarui.');
+    }
+
+    // A lembaga-scoped admin (admin_akademik) may act on any orang tua profile that either has
+    // no linked siswa yet (so the just-created-but-not-yet-tautkan flow isn't blocked) or has
+    // at least one siswa in their own lembaga. yayasan_super_admin is unrestricted. OrangTua
+    // has no lembaga_id of its own by design (a parent can have children in multiple lembaga),
+    // so this checks the siswa pivot instead of a direct column.
+    private function authorizeLembaga(OrangTua $orangTua): void
+    {
+        $user = auth()->user();
+
+        if ($user->widestScopeLevel() === 'yayasan') {
+            return;
+        }
+
+        $hasSiswa = $orangTua->siswa()->withoutGlobalScope(TenantScope::class)->exists();
+        $hasSiswaDiLembaga = $orangTua->siswa()->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $user->lembaga_id)->exists();
+
+        abort_if($hasSiswa && ! $hasSiswaDiLembaga, 404);
     }
 
     private function validateProfil(Request $request): array

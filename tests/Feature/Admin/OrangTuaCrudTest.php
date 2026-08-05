@@ -1,7 +1,10 @@
 <?php
 
+use App\Models\Lembaga;
 use App\Models\OrangTua;
+use App\Models\Siswa;
 use App\Models\User;
+use App\Models\Yayasan;
 use App\Services\AkunOrangTuaGenerator;
 use Illuminate\Support\Facades\Hash;
 
@@ -142,6 +145,97 @@ it('denies status toggle to a user without orang-tua.edit permission', function 
     $this->actingAs(User::factory()->create())
         ->patch(route('admin.orang-tua.update-status', $orangTua), ['is_active' => '0'])
         ->assertForbidden();
+});
+
+it('shows an admin_akademik an orang tua that has no linked siswa yet', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->post(route('admin.orang-tua.store'), orangTuaFormPayload())->assertRedirect();
+
+    $response = $this->actingAs($manager)->get(route('admin.orang-tua.index'));
+    $response->assertOk()->assertSee('Wali Murid Baru');
+});
+
+it('shows an admin_akademik an orang tua linked to a siswa in their own lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembaga->id]);
+
+    $orangTua = app(AkunOrangTuaGenerator::class)->buat('Wali Lembaga Sendiri', '3201234567897777', '081234567800');
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($manager)->get(route('admin.orang-tua.index'));
+    $response->assertOk()->assertSee('Wali Lembaga Sendiri');
+});
+
+it('hides from an admin_akademik an orang tua linked only to siswa in a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembagaSendiri->id]);
+
+    $orangTua = app(AkunOrangTuaGenerator::class)->buat('Wali Lembaga Lain', '3201234567896666', '081234567801');
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($manager)->get(route('admin.orang-tua.index'));
+    $response->assertOk()->assertDontSee('Wali Lembaga Lain');
+});
+
+it('lets yayasan_super_admin see an orang tua regardless of which lembaga their siswa belongs to', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $orangTua = app(AkunOrangTuaGenerator::class)->buat('Wali Terlihat Super Admin', '3201234567895555', '081234567802');
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'orang-tua.view', 'guard_name' => 'web']);
+    $superAdminRole = \App\Models\Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $superAdminRole->givePermissionTo('orang-tua.view');
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole($superAdminRole);
+
+    $response = $this->actingAs($superAdmin)->get(route('admin.orang-tua.index'));
+    $response->assertOk()->assertSee('Wali Terlihat Super Admin');
+});
+
+it('404s an admin_akademik trying to edit an orang tua linked only to siswa in a different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembagaSendiri->id]);
+
+    $orangTua = app(AkunOrangTuaGenerator::class)->buat('Wali Tidak Boleh Diedit', '3201234567894321', '081234567803');
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $this->actingAs($manager)->get(route('admin.orang-tua.edit', $orangTua))->assertNotFound();
+    $this->actingAs($manager)->put(route('admin.orang-tua.update', $orangTua), [
+        'nama_lengkap' => 'Percobaan Ubah', 'no_hp' => '080000000000',
+    ])->assertNotFound();
+    $this->actingAs($manager)->patch(route('admin.orang-tua.update-status', $orangTua), [
+        'is_active' => '0',
+    ])->assertNotFound();
+});
+
+it('allows an admin_akademik to edit an orang tua that has no linked siswa yet', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembaga->id]);
+
+    $orangTua = app(AkunOrangTuaGenerator::class)->buat('Wali Belum Tertaut', '3201234567891234', '081234567804');
+
+    $this->actingAs($manager)->get(route('admin.orang-tua.edit', $orangTua))->assertOk();
 });
 
 it('logs an orang_tua user into a placeholder dashboard instead of a 500 error', function () {
