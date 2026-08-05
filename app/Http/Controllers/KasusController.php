@@ -162,6 +162,11 @@ class KasusController extends BaseController
 
         abort_if(! $isSubmitter && ! $isKontakUtama && ! $isTriaseAdmin && ! $isKonselor && ! $isSiswaTerkait, 404);
 
+        activity('akses_klinis')
+            ->causedBy($user)
+            ->performedOn($kasus)
+            ->log('Membuka detail kasus');
+
         // Guru and Karyawan both use BelongsToTenant. For an orang_tua actor (null lembaga_id),
         // TenantScope would fail-closed to zero rows for these konselor relations, silently
         // hiding the assigned konselor's identity from the informed-consent screen.
