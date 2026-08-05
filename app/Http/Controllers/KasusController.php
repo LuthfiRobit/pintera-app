@@ -159,6 +159,7 @@ class KasusController extends BaseController
             'isKontakUtama' => $isKontakUtama,
             'isKonselor' => $isKonselor,
             'isSiswaTerkait' => $isSiswaTerkait,
+            'isTriaseAdmin' => $isTriaseAdmin,
         ]);
     }
 
