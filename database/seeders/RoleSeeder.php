@@ -81,6 +81,7 @@ class RoleSeeder extends Seeder
                     'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',
                     'karyawan.view', 'karyawan.create', 'karyawan.edit',
                     'kasus.view', 'kasus.triase',
+                    'whatsapp-template.edit',
                     'tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate',
                     'semester.create', 'semester.activate',
                     'pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete',

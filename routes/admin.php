@@ -44,6 +44,7 @@ use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TagihanController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\SesiPembelajaranController;
 use App\Http\Controllers\KasusConsentController;
@@ -100,6 +101,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('jenis-karyawan-master', [JenisKaryawanMasterController::class, 'store'])->name('jenis-karyawan-master.store');
     Route::put('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterController::class, 'update'])->name('jenis-karyawan-master.update');
     Route::delete('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterController::class, 'destroy'])->name('jenis-karyawan-master.destroy');
+
+    Route::get('whatsapp-template', [WhatsAppTemplateController::class, 'index'])->name('whatsapp-template.index');
+    Route::put('whatsapp-template/{whatsappTemplate}', [WhatsAppTemplateController::class, 'update'])->name('whatsapp-template.update');
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
     Route::post('siswa/generate-akun-massal', [SiswaController::class, 'generateAkunMassal'])->name('siswa.generate-akun-massal');
