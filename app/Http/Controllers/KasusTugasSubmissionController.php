@@ -44,7 +44,22 @@ class KasusTugasSubmissionController extends BaseController
         if ($mediaDisetujui) {
             $rules['lampiran'] = ['nullable', 'file', 'mimes:jpg,jpeg,png,mp4,mov', 'max:20480'];
         }
+        if ($kasusTugas->frekuensi === 'harian') {
+            $rules['tanggal'] = [
+                'required', 'date',
+                'after_or_equal:'.$kasusTugas->mulai_pada->toDateString(),
+                'before_or_equal:'.$kasusTugas->batas_selesai_pada->toDateString(),
+            ];
+        }
         $data = $request->validate($rules);
+
+        if ($kasusTugas->frekuensi === 'harian') {
+            $terkunci = KasusTugasSubmission::where('tugas_id', $kasusTugas->id)
+                ->whereDate('tanggal', $data['tanggal'])
+                ->whereIn('status_review', ['menunggu_review', 'diterima'])
+                ->exists();
+            abort_if($terkunci, 422, 'Tanggal ini sudah memiliki bukti pengerjaan yang menunggu atau sudah diterima.');
+        }
 
         $lampiranPath = ($mediaDisetujui && $request->hasFile('lampiran'))
             ? $request->file('lampiran')->store('kasus-tugas-lampiran', 'local')
@@ -56,6 +71,7 @@ class KasusTugasSubmissionController extends BaseController
             'orang_tua_id' => $isSiswaTerkait ? null : $user->orangTua->id,
             'teks' => $data['teks'] ?? null,
             'lampiran' => $lampiranPath,
+            'tanggal' => $data['tanggal'] ?? null,
         ]);
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Bukti pengerjaan berhasil dikirim.');
@@ -79,9 +95,11 @@ class KasusTugasSubmissionController extends BaseController
         ]);
 
         if ($data['status_review'] === 'revisi_diminta') {
-            $kasusTugas->update(['status' => 'revisi']);
+            if ($kasusTugas->frekuensi !== 'harian') {
+                $kasusTugas->update(['status' => 'revisi']);
+            }
 
-            $notifiable = $kasusTugasSubmission->siswa_id !== null
+            $notifiable =$kasusTugasSubmission->siswa_id !== null
                 ? $kasusTugasSubmission->siswa()->withoutGlobalScope(TenantScope::class)->first()
                     ?->user()->withoutGlobalScope(TenantScope::class)->first()
                 : $kasusTugasSubmission->orangTua;
