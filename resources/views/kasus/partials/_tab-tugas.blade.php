@@ -129,96 +129,191 @@
                         </div>
                     @endif
 
-                    {{-- Daftar Submisi / Bukti Pengerjaan --}}
-                    @if ($tugas->submissions->isNotEmpty())
-                        <div class="space-y-2 pt-1">
-                            <p class="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">Riwayat Bukti & Hasil Pengerjaan:</p>
-                            <div class="space-y-2.5 divide-y divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/50 p-3.5">
-                                @foreach ($tugas->submissions as $submission)
-                                    <div class="pt-2.5 first:pt-0 space-y-2 text-xs">
-                                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                            <div>
-                                                <span class="font-bold text-gray-800">{{ $submission->created_at->format('d M Y H:i') }}:</span>
-                                                <span class="text-gray-700 ml-1 font-medium">{{ $submission->teks ?? '(Lampiran saja)' }}</span>
-                                            </div>
-                                            <div class="flex items-center gap-2 shrink-0">
-                                                @if ($submission->lampiran)
-                                                    <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline bg-white px-2 py-1 rounded border border-brand-200 shadow-2xs text-[11px]">
-                                                        <x-icon name="attach_file" class="h-3 w-3" />
-                                                        Lihat Lampiran
-                                                    </a>
-                                                @endif
-                                                <x-badge :tone="$submission->status_review === 'diterima' ? 'green' : ($submission->status_review === 'revisi_diminta' ? 'amber' : 'slate')" class="text-[10px] font-extrabold">
-                                                    {{ str_replace('_', ' ', ucfirst($submission->status_review)) }}
-                                                </x-badge>
-                                            </div>
-                                        </div>
+                    {{-- Submisi & Formulir: per-tanggal untuk harian, satu zona untuk lainnya --}}
+                    @if ($tugas->frekuensi === 'harian')
+                        @php
+                            $tanggalList = collect();
+                            $kursor = $tugas->mulai_pada->copy();
+                            while ($kursor->lte($tugas->batas_selesai_pada)) {
+                                $tanggalList->push($kursor->copy());
+                                $kursor->addDay();
+                            }
+                            $submisiPerTanggal = $tugas->submissions->groupBy(fn ($s) => $s->tanggal?->toDateString());
+                        @endphp
+                        <div class="space-y-2.5 pt-1">
+                            <p class="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">Checklist Harian:</p>
+                            @foreach ($tanggalList as $tanggal)
+                                @php
+                                    $submisiHariIni = $submisiPerTanggal->get($tanggal->toDateString(), collect())->sortByDesc('created_at')->first();
+                                    $terkunci = $submisiHariIni && in_array($submisiHariIni->status_review, ['menunggu_review', 'diterima'], true);
+                                @endphp
+                                <div class="rounded-lg border border-gray-200 bg-white p-3.5">
+                                    <p class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                                        <x-icon name="calendar_month" class="h-3.5 w-3.5 text-gray-400" />
+                                        {{ $tanggal->translatedFormat('d M Y') }}
+                                        @if ($terkunci)
+                                            <x-icon name="lock" class="h-3 w-3 text-gray-300" />
+                                        @endif
+                                    </p>
 
-                                        {{-- Aksi Review Konselor --}}
-                                        @if ($isKonselor && $submission->status_review === 'menunggu_review')
-                                            <div x-data="{ revisi: false }" class="rounded-lg bg-white p-3 border border-gray-200 shadow-2xs mt-2">
-                                                <div class="flex items-center justify-between gap-3 text-xs">
-                                                    <span class="font-bold text-gray-700">Tindakan Review:</span>
-                                                    <div class="flex items-center gap-2">
-                                                        <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}">
-                                                            @csrf @method('PATCH')
-                                                            <input type="hidden" name="status_review" value="diterima">
-                                                            <button type="submit" class="inline-flex items-center gap-1 font-bold text-success-700 hover:bg-success-100 bg-success-50 px-3 py-1.5 rounded-lg transition border border-success-200">
-                                                                <x-icon name="thumb_up" class="h-3.5 w-3.5" />
-                                                                Terima Hasil
-                                                            </button>
-                                                        </form>
-                                                        <button type="button" @click="revisi = !revisi" class="inline-flex items-center gap-1 font-bold text-amber-700 hover:bg-amber-100 bg-amber-50 px-3 py-1.5 rounded-lg transition border border-amber-200">
-                                                            <x-icon name="rate_review" class="h-3.5 w-3.5" />
-                                                            Minta Revisi
-                                                        </button>
-                                                    </div>
+                                    @if ($submisiHariIni)
+                                        <div class="mt-2 space-y-2 text-xs">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                <div>
+                                                    <span class="font-bold text-gray-800">{{ $submisiHariIni->created_at->format('d M Y H:i') }}:</span>
+                                                    <span class="text-gray-700 ml-1 font-medium">{{ $submisiHariIni->teks ?? '(Lampiran saja)' }}</span>
                                                 </div>
-                                                <form x-show="revisi" style="display: none;" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}" class="mt-3 pt-3 border-t border-gray-100 space-y-2">
-                                                    @csrf @method('PATCH')
-                                                    <input type="hidden" name="status_review" value="revisi_diminta">
-                                                    <label class="block text-[11px] font-bold text-amber-900">Catatan Perbaikan untuk Siswa:</label>
-                                                    <div class="flex items-center gap-2">
-                                                        <input type="text" name="catatan_revisi" required placeholder="Contoh: Harap lampirkan bukti foto refleksi..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-amber-500 focus:ring-amber-500">
-                                                        <button type="submit" class="whitespace-nowrap font-bold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg text-xs transition shadow-sm">Kirim Catatan</button>
-                                                    </div>
-                                                </form>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    @if ($submisiHariIni->lampiran)
+                                                        <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submisiHariIni]) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline bg-white px-2 py-1 rounded border border-brand-200 shadow-2xs text-[11px]">
+                                                            Lihat Lampiran
+                                                        </a>
+                                                    @endif
+                                                    <x-badge :tone="$submisiHariIni->status_review === 'diterima' ? 'green' : ($submisiHariIni->status_review === 'revisi_diminta' ? 'amber' : 'slate')" class="text-[10px] font-extrabold">
+                                                        {{ str_replace('_', ' ', ucfirst($submisiHariIni->status_review)) }}
+                                                    </x-badge>
+                                                </div>
                                             </div>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
 
-                    {{-- Form Submisi (Siswa / Orang Tua) --}}
-                    @if (($isSiswaTerkait || $isKontakUtama) && in_array($tugas->status->value, ['ditugaskan', 'dikerjakan', 'revisi'], true))
-                        <form method="POST" action="{{ route('kasus.tugas.submission.store', [$kasus, $tugas]) }}" enctype="multipart/form-data" class="space-y-3 border-t border-gray-100 pt-4">
-                            @csrf
-                            <div class="rounded-xl border border-brand-200 bg-brand-50/10 p-4 space-y-3">
-                                <h5 class="font-display text-xs font-bold text-brand-900 flex items-center gap-1.5">
-                                    <x-icon name="upload_file" class="h-4 w-4 text-brand-600" />
-                                    Kirim Hasil / Bukti Pengerjaan Tugas
-                                </h5>
-                                <div>
-                                    <textarea name="teks" rows="2" placeholder="Ceritakan bukti atau jelaskan hasil refleksi pengerjaan tugas Anda di sini..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                                            @if ($isKonselor && $submisiHariIni->status_review === 'menunggu_review')
+                                                <div x-data="{ revisi: false }" class="rounded-lg bg-gray-50 p-3 border border-gray-200 shadow-2xs mt-2">
+                                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                                        <span class="font-bold text-gray-700">Tindakan Review:</span>
+                                                        <div class="flex items-center gap-2">
+                                                            <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiHariIni]) }}">
+                                                                @csrf @method('PATCH')
+                                                                <input type="hidden" name="status_review" value="diterima">
+                                                                <button type="submit" class="inline-flex items-center gap-1 font-bold text-success-700 hover:bg-success-100 bg-success-50 px-3 py-1.5 rounded-lg transition border border-success-200">
+                                                                    <x-icon name="check_circle" class="h-3.5 w-3.5" />
+                                                                    Terima
+                                                                </button>
+                                                            </form>
+                                                            <button type="button" @click="revisi = !revisi" class="inline-flex items-center gap-1 font-bold text-amber-700 hover:bg-amber-100 bg-amber-50 px-3 py-1.5 rounded-lg transition border border-amber-200">
+                                                                Minta Revisi
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <form x-show="revisi" style="display: none;" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submisiHariIni]) }}" class="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                                                        @csrf @method('PATCH')
+                                                        <input type="hidden" name="status_review" value="revisi_diminta">
+                                                        <input type="text" name="catatan_revisi" required placeholder="Catatan perbaikan untuk hari ini..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-amber-500 focus:ring-amber-500">
+                                                        <button type="submit" class="font-bold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg text-xs transition shadow-sm">Kirim Catatan</button>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    @if (! $terkunci && ($isSiswaTerkait || $isKontakUtama) && in_array($tugas->status->value, ['ditugaskan', 'dikerjakan', 'revisi'], true))
+                                        <form method="POST" action="{{ route('kasus.tugas.submission.store', [$kasus, $tugas]) }}" enctype="multipart/form-data" class="mt-2.5 space-y-2 border-t border-gray-100 pt-2.5">
+                                            @csrf
+                                            <input type="hidden" name="tanggal" value="{{ $tanggal->toDateString() }}">
+                                            <textarea name="teks" rows="2" placeholder="Bukti/refleksi untuk tanggal ini..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                @if ($kasus->consents->firstWhere('jenis', 'pengumpulan_media')?->status === 'disetujui')
+                                                    <input type="file" name="lampiran" class="block w-full text-xs text-gray-700 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition">
+                                                @else
+                                                    <p class="text-[11px] font-medium text-gray-400 italic">Unggah media dinonaktifkan hingga informed consent media disetujui.</p>
+                                                @endif
+                                                <x-primary-button type="submit" class="px-4 py-1.5 rounded-lg text-xs font-bold shrink-0">Kirim</x-primary-button>
+                                            </div>
+                                        </form>
+                                    @endif
                                 </div>
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                                    <div>
-                                        @if ($kasus->consents->firstWhere('jenis', 'pengumpulan_media')?->status === 'disetujui')
-                                            <label class="block text-[11px] font-bold text-gray-600 mb-1">Unggah File/Foto Bukti (Opsional):</label>
-                                            <input type="file" name="lampiran" class="block w-full text-xs text-gray-700 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition">
-                                        @else
-                                            <p class="text-[11px] font-medium text-gray-400 italic">Unggah media dinonaktifkan hingga informed consent media disetujui.</p>
-                                        @endif
-                                    </div>
-                                    <x-primary-button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold shrink-0">
-                                        <x-icon name="send" class="mr-1.5 h-3.5 w-3.5" />
-                                        Kirim Bukti
-                                    </x-primary-button>
+                            @endforeach
+                        </div>
+                    @else
+                        {{-- Daftar Submisi / Bukti Pengerjaan --}}
+                        @if ($tugas->submissions->isNotEmpty())
+                            <div class="space-y-2 pt-1">
+                                <p class="text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">Riwayat Bukti & Hasil Pengerjaan:</p>
+                                <div class="space-y-2.5 divide-y divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/50 p-3.5">
+                                    @foreach ($tugas->submissions as $submission)
+                                        <div class="pt-2.5 first:pt-0 space-y-2 text-xs">
+                                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                <div>
+                                                    <span class="font-bold text-gray-800">{{ $submission->created_at->format('d M Y H:i') }}:</span>
+                                                    <span class="text-gray-700 ml-1 font-medium">{{ $submission->teks ?? '(Lampiran saja)' }}</span>
+                                                </div>
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    @if ($submission->lampiran)
+                                                        <a href="{{ route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1 font-bold text-brand-600 hover:text-brand-700 hover:underline bg-white px-2 py-1 rounded border border-brand-200 shadow-2xs text-[11px]">
+                                                            <x-icon name="attach_file" class="h-3 w-3" />
+                                                            Lihat Lampiran
+                                                        </a>
+                                                    @endif
+                                                    <x-badge :tone="$submission->status_review === 'diterima' ? 'green' : ($submission->status_review === 'revisi_diminta' ? 'amber' : 'slate')" class="text-[10px] font-extrabold">
+                                                        {{ str_replace('_', ' ', ucfirst($submission->status_review)) }}
+                                                    </x-badge>
+                                                </div>
+                                            </div>
+
+                                            {{-- Aksi Review Konselor --}}
+                                            @if ($isKonselor && $submission->status_review === 'menunggu_review')
+                                                <div x-data="{ revisi: false }" class="rounded-lg bg-white p-3 border border-gray-200 shadow-2xs mt-2">
+                                                    <div class="flex items-center justify-between gap-3 text-xs">
+                                                        <span class="font-bold text-gray-700">Tindakan Review:</span>
+                                                        <div class="flex items-center gap-2">
+                                                            <form method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}">
+                                                                @csrf @method('PATCH')
+                                                                <input type="hidden" name="status_review" value="diterima">
+                                                                <button type="submit" class="inline-flex items-center gap-1 font-bold text-success-700 hover:bg-success-100 bg-success-50 px-3 py-1.5 rounded-lg transition border border-success-200">
+                                                                    <x-icon name="thumb_up" class="h-3.5 w-3.5" />
+                                                                    Terima Hasil
+                                                                </button>
+                                                            </form>
+                                                            <button type="button" @click="revisi = !revisi" class="inline-flex items-center gap-1 font-bold text-amber-700 hover:bg-amber-100 bg-amber-50 px-3 py-1.5 rounded-lg transition border border-amber-200">
+                                                                <x-icon name="rate_review" class="h-3.5 w-3.5" />
+                                                                Minta Revisi
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    <form x-show="revisi" style="display: none;" method="POST" action="{{ route('kasus.tugas.submission.review', [$kasus, $tugas, $submission]) }}" class="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                                                        @csrf @method('PATCH')
+                                                        <input type="hidden" name="status_review" value="revisi_diminta">
+                                                        <label class="block text-[11px] font-bold text-amber-900">Catatan Perbaikan untuk Siswa:</label>
+                                                        <div class="flex items-center gap-2">
+                                                            <input type="text" name="catatan_revisi" required placeholder="Contoh: Harap lampirkan bukti foto refleksi..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-amber-500 focus:ring-amber-500">
+                                                            <button type="submit" class="whitespace-nowrap font-bold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-lg text-xs transition shadow-sm">Kirim Catatan</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
-                        </form>
+                        @endif
+
+                        {{-- Form Submisi (Siswa / Orang Tua) --}}
+                        @if (($isSiswaTerkait || $isKontakUtama) && in_array($tugas->status->value, ['ditugaskan', 'dikerjakan', 'revisi'], true))
+                            <form method="POST" action="{{ route('kasus.tugas.submission.store', [$kasus, $tugas]) }}" enctype="multipart/form-data" class="space-y-3 border-t border-gray-100 pt-4">
+                                @csrf
+                                <div class="rounded-xl border border-brand-200 bg-brand-50/10 p-4 space-y-3">
+                                    <h5 class="font-display text-xs font-bold text-brand-900 flex items-center gap-1.5">
+                                        <x-icon name="upload_file" class="h-4 w-4 text-brand-600" />
+                                        Kirim Hasil / Bukti Pengerjaan Tugas
+                                    </h5>
+                                    <div>
+                                        <textarea name="teks" rows="2" placeholder="Ceritakan bukti atau jelaskan hasil refleksi pengerjaan tugas Anda di sini..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                                    </div>
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                                        <div>
+                                            @if ($kasus->consents->firstWhere('jenis', 'pengumpulan_media')?->status === 'disetujui')
+                                                <label class="block text-[11px] font-bold text-gray-600 mb-1">Unggah File/Foto Bukti (Opsional):</label>
+                                                <input type="file" name="lampiran" class="block w-full text-xs text-gray-700 file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition">
+                                            @else
+                                                <p class="text-[11px] font-medium text-gray-400 italic">Unggah media dinonaktifkan hingga informed consent media disetujui.</p>
+                                            @endif
+                                        </div>
+                                        <x-primary-button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold shrink-0">
+                                            <x-icon name="send" class="mr-1.5 h-3.5 w-3.5" />
+                                            Kirim Bukti
+                                        </x-primary-button>
+                                    </div>
+                                </div>
+                            </form>
+                        @endif
                     @endif
                 </div>
             @endforeach
