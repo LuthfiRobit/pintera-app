@@ -157,6 +157,24 @@ class DashboardController extends BaseController
             $data['keuanganStats'] = $this->dashboardStats->statistikKeuangan($lembagaId);
         }
 
+        if ($user->can('kasus.triase')) {
+            $kasusList = Kasus::with('siswa')
+                ->where('lembaga_id', $lembagaId)
+                ->orderByRaw("CASE WHEN status = 'eskalasi' THEN 0 ELSE 1 END")
+                ->latest()
+                ->get();
+
+            $data['kasusList'] = $kasusList;
+            $data['kasusStats'] = [
+                'berjalan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'berjalan')->count(),
+                'eskalasi' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'eskalasi')->count(),
+                'selesai' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'selesai')->count(),
+            ];
+        } else {
+            $data['kasusList'] = null;
+            $data['kasusStats'] = null;
+        }
+
         return $data;
     }
 

@@ -73,5 +73,35 @@
                 Modul Akademik, E-Sarpra, E-HRD, dan E-BK menyusul di fase berikutnya.
             </x-panel>
         @endunless
+
+        @if ($kasusList !== null)
+            <div>
+                <h3 class="font-display text-lg font-semibold text-ink">Kasus Pendampingan</h3>
+                <div class="mt-3 grid grid-cols-3 gap-4">
+                    <x-stat-tile label="Berjalan" :value="$kasusStats['berjalan']" icon="pending_actions" />
+                    <x-stat-tile label="Eskalasi" :value="$kasusStats['eskalasi']" icon="priority_high" />
+                    <x-stat-tile label="Selesai" :value="$kasusStats['selesai']" icon="check_circle" />
+                </div>
+                <x-panel class="mt-4">
+                    @if ($kasusList->isEmpty())
+                        <p class="px-6 py-8 text-center text-sm text-slate">Belum ada kasus pendampingan di lembaga ini.</p>
+                    @else
+                        <ul class="divide-y divide-ink/10">
+                            @foreach ($kasusList as $kasus)
+                                <li class="px-6 py-3">
+                                    <a href="{{ route('kasus.show', $kasus) }}" class="flex items-center justify-between hover:text-brass">
+                                        <div>
+                                            <p class="text-sm font-semibold text-ink">{{ $kasus->siswa->nama_lengkap }}</p>
+                                            <p class="text-xs text-slate">{{ $kasus->kategori_masalah }}</p>
+                                        </div>
+                                        <x-badge tone="{{ $kasus->status->value === 'eskalasi' ? 'red' : 'brass' }}">{{ $kasus->status->label() }}</x-badge>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-panel>
+            </div>
+        @endif
     </div>
 </x-app-layout>
