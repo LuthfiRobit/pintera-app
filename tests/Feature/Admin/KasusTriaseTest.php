@@ -166,3 +166,36 @@ it('rejects a konselor_id that is not in the resolver\'s candidate list for the 
     expect($kasus->konselor_guru_id)->toBeNull();
     expect(KasusConsent::where('kasus_id', $kasus->id)->count())->toBe(0);
 });
+
+it('renders the triase index page with KPI statistics and the triase assignment page with workload indicators', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Uji Triase']);
+    $manager = actingAsKasusTriaseManager($lembaga);
+
+    $guruBk = Guru::withoutGlobalScopes()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+        'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
+        'nama' => 'Konselor BK Triase View', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
+        'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
+        'kapasitas_kasus_aktif' => 10,
+    ]);
+
+    $kasus = Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Akademik dan Perilaku', 'deskripsi' => 'Uji coba view triase.',
+    ]);
+
+    $this->actingAs($manager)->get(route('admin.kasus.index'))
+        ->assertOk()
+        ->assertSee('Triase Kasus Pendampingan')
+        ->assertSee('Siswa Uji Triase');
+
+    $this->actingAs($manager)->get(route('admin.kasus.triase', $kasus))
+        ->assertOk()
+        ->assertSee('Triase: Siswa Uji Triase')
+        ->assertSee('Konselor BK Triase View')
+        ->assertSee('Beban Kerja')
+        ->assertSee('/ 10');
+});
+

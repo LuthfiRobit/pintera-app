@@ -24,10 +24,14 @@ class KasusController extends BaseController
         $this->authorize('kasus.view');
 
         $kasusList = Kasus::with('siswa')->where('status', StatusKasus::Diajukan)->latest()->get();
+        $totalSemua = Kasus::count();
+        $totalProses = Kasus::whereIn('status', [StatusKasus::MenungguConsent, StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi])->count();
 
         return view('admin.kasus.index', [
             'kasusList' => $kasusList,
             'totalMenunggu' => $kasusList->count(),
+            'totalProses' => $totalProses,
+            'totalSemua' => $totalSemua,
         ]);
     }
 
