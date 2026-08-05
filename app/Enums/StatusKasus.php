@@ -22,4 +22,15 @@ enum StatusKasus: string
             self::Selesai => 'Selesai',
         };
     }
+
+    public function badgeTone(): string
+    {
+        return match ($this) {
+            self::Diajukan => 'amber',
+            self::MenungguConsent, self::Ditugaskan => 'blue',
+            self::Berjalan => 'green',
+            self::Eskalasi => 'red',
+            self::Selesai => 'slate',
+        };
+    }
 }
