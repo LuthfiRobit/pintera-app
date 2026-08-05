@@ -135,6 +135,32 @@ it('shows a karyawan_pool konselor only kasus they are assigned to', function ()
     $response->assertOk()->assertSee('Ditangani Karyawan')->assertDontSee('Kasus Tak Ditugaskan Karyawan');
 });
 
+it('shows a karyawan_pool-roled user with no Karyawan profile row no unassigned kasus', function () {
+    // F2: $user->karyawan()->...->first()?->id resolving to null makes
+    // where('konselor_karyawan_id', null) compile to IS NULL on a TenantScope-bypassed
+    // query, leaking every unassigned kasus across every lembaga/yayasan to a profile-less
+    // karyawan_pool user. The sibling test above always creates a real Karyawan row, so it
+    // never exercises this null path — this test does.
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['kasus.view']);
+    $karyawanTanpaProfil = User::factory()->create(['lembaga_id' => null]);
+    $karyawanTanpaProfil->assignRole('karyawan_pool');
+
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'konselor_karyawan_id' => null,
+        'kategori_masalah' => 'Kasus Karyawan Belum Ditugaskan', 'deskripsi' => 'x',
+    ]);
+
+    $response = $this->actingAs($karyawanTanpaProfil)->get(route('dashboard'));
+
+    $response->assertOk()->assertDontSee('Kasus Karyawan Belum Ditugaskan');
+});
+
 it('shows a guru-roled user with no Guru profile row neither an orang-tua-submitted kasus nor an unassigned kasus', function () {
     // F3: $user->guru?->id resolving to null makes where('diajukan_oleh_guru_id', null)
     // and where('konselor_guru_id', null) compile to IS NULL, leaking every
