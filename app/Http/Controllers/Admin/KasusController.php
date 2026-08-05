@@ -40,6 +40,7 @@ class KasusController extends BaseController
     {
         $this->authorize('kasus.triase');
         $this->authorizeLembaga($kasus);
+        abort_if($kasus->trashed(), 404);
 
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
         abort_if($siswa === null, 404);
@@ -54,6 +55,7 @@ class KasusController extends BaseController
     {
         $this->authorize('kasus.triase');
         $this->authorizeLembaga($kasus);
+        abort_if($kasus->trashed(), 404);
 
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
         abort_if($siswa === null, 404);

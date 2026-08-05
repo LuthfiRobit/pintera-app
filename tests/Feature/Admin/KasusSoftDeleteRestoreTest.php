@@ -163,3 +163,37 @@ it('404s a trashed kasus when a regular authorized viewer tries to open its deta
         ->get(route('kasus.show', $kasus))
         ->assertNotFound();
 });
+
+it('404s a trashed kasus when an authorized admin tries to open its triase page', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKasusHapusManager($lembaga);
+    $kasus = buatKasusSelesaiDenganFamily($lembaga);
+    $this->actingAs($manager)->delete(route('admin.kasus.destroy', $kasus))->assertRedirect();
+
+    Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
+    Role::where('name', 'admin_akademik')->first()->givePermissionTo('kasus.triase');
+
+    $this->actingAs($manager)
+        ->get(route('admin.kasus.triase', $kasus))
+        ->assertNotFound();
+});
+
+it('404s a trashed kasus when an authorized admin tries to assign a konselor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKasusHapusManager($lembaga);
+    $kasus = buatKasusSelesaiDenganFamily($lembaga);
+    $this->actingAs($manager)->delete(route('admin.kasus.destroy', $kasus))->assertRedirect();
+
+    Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
+    Role::where('name', 'admin_akademik')->first()->givePermissionTo('kasus.triase');
+
+    $this->actingAs($manager)
+        ->post(route('admin.kasus.assign-konselor', $kasus), [
+            'tingkat_urgensi' => 'sedang',
+            'konselor_tipe' => 'guru',
+            'konselor_id' => 1,
+        ])
+        ->assertNotFound();
+});
