@@ -60,9 +60,10 @@ it('404s kasus.tugas.store for a trashed kasus', function () {
     [$kasus, $konselorUser] = buatKasusTrashedNamunStatusBerjalan($lembaga);
 
     $this->actingAs($konselorUser)
-        ->post(route('kasus.tugas.store', $kasus), ['tugas' => [
-            ['judul' => 'T', 'instruksi' => 'I', 'frekuensi' => 'sekali', 'mulai_pada' => now()->format('Y-m-d'), 'batas_selesai_pada' => now()->addDay()->format('Y-m-d')],
-        ]])
+        ->post(route('kasus.tugas.store', $kasus), [
+            'judul' => 'T', 'instruksi' => 'I', 'frekuensi' => 'sekali',
+            'tanggal_mulai' => now()->format('Y-m-d'), 'tanggal_selesai' => now()->addDay()->format('Y-m-d'),
+        ])
         ->assertNotFound();
 });
 

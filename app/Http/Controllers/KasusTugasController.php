@@ -4,45 +4,63 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatusKasus;
+use App\Http\Requests\StoreKasusTugasBatchRequest;
 use App\Models\Kasus;
 use App\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
-use App\Notifications\TugasDitugaskanNotification;
+use App\Notifications\TugasBatchDibuatNotification;
 use App\Notifications\TugasSelesaiNotification;
+use App\Services\TugasBatchGenerator;
+use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class KasusTugasController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function store(Request $request, Kasus $kasus): RedirectResponse
+    public function store(StoreKasusTugasBatchRequest $request, Kasus $kasus, TugasBatchGenerator $generator): RedirectResponse
     {
         $this->authorize('kasus.view');
         $this->assertKonselorPemegangKasus($kasus);
         abort_if($kasus->trashed(), 404);
         abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
 
-        $data = $request->validate([
-            'tugas' => ['required', 'array', 'min:1'],
-            'tugas.*.judul' => ['required', 'string', 'max:255'],
-            'tugas.*.instruksi' => ['required', 'string'],
-            'tugas.*.frekuensi' => ['required', 'in:sekali,harian,mingguan,bulanan'],
-            'tugas.*.mulai_pada' => ['required', 'date'],
-            'tugas.*.batas_selesai_pada' => ['required', 'date', 'after_or_equal:tugas.*.mulai_pada'],
-        ]);
+        $data = $request->validated();
 
-        $created = DB::transaction(function () use ($data, $kasus) {
-            $rows = collect($data['tugas'])->map(fn ($row) => KasusTugas::create([
+        $tanggalPengumpulanBulanan = null;
+        $akhirBulan = false;
+        if (($data['tanggal_pengumpulan_bulanan'] ?? null) === 'akhir_bulan') {
+            $akhirBulan = true;
+        } elseif (! empty($data['tanggal_pengumpulan_bulanan'])) {
+            $tanggalPengumpulanBulanan = (int) $data['tanggal_pengumpulan_bulanan'];
+        }
+
+        $barisTanggal = $generator->generate(
+            $data['frekuensi'],
+            Carbon::parse($data['tanggal_mulai']),
+            Carbon::parse($data['tanggal_selesai']),
+            $tanggalPengumpulanBulanan,
+            $akhirBulan,
+        );
+
+        $created = DB::transaction(function () use ($data, $kasus, $barisTanggal) {
+            $batchId = (string) Str::uuid();
+            $batchTotal = $barisTanggal->count();
+
+            $rows = $barisTanggal->values()->map(fn ($baris, $index) => KasusTugas::create([
                 'kasus_id' => $kasus->id,
-                'judul' => $row['judul'],
-                'instruksi' => $row['instruksi'],
-                'frekuensi' => $row['frekuensi'],
-                'mulai_pada' => $row['mulai_pada'],
-                'batas_selesai_pada' => $row['batas_selesai_pada'],
+                'judul' => $data['judul'],
+                'instruksi' => $data['instruksi'],
+                'frekuensi' => $data['frekuensi'],
+                'batch_id' => $batchId,
+                'batch_urutan' => $index + 1,
+                'batch_total' => $batchTotal,
+                'mulai_pada' => $baris['mulai_pada'],
+                'batas_selesai_pada' => $baris['batas_selesai_pada'],
             ]));
 
             if ($kasus->status->value === 'ditugaskan') {
@@ -54,13 +72,16 @@ class KasusTugasController extends BaseController
 
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
         $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+        $siswaUser = $siswa?->user()->withoutGlobalScope(TenantScope::class)->first();
 
-        foreach ($created as $tugas) {
-            $siswa?->user()->withoutGlobalScope(TenantScope::class)->first()?->notify(new TugasDitugaskanNotification($tugas));
-            $kontakUtama?->notify(new TugasDitugaskanNotification($tugas));
-        }
+        // Satu notifikasi ringkasan per penerima untuk SELURUH batch, bukan satu notifikasi
+        // per baris — sebuah batch harian/bulanan yang panjang bisa menghasilkan puluhan
+        // baris kasus_tugas dalam satu submit, dan mengirim notifikasi terpisah untuk
+        // masing-masing akan membanjiri siswa/orang tua (keputusan desain 2026-08-06).
+        $siswaUser?->notify(new TugasBatchDibuatNotification($created));
+        $kontakUtama?->notify(new TugasBatchDibuatNotification($created));
 
-        return redirect()->route('kasus.show', $kasus)->with('status', 'Tugas berhasil diberikan.');
+        return redirect()->route('kasus.show', $kasus)->with('status', "Tugas berhasil diberikan ({$created->count()} baris dibuat).");
     }
 
     public function markSelesai(Kasus $kasus, KasusTugas $kasusTugas): RedirectResponse

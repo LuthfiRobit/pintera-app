@@ -51,9 +51,10 @@ it('moves kasus from ditugaskan to berjalan when the first tugas is given', func
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusDitugaskanUntukAutoBerjalan($lembaga);
 
-    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), ['tugas' => [
-        ['judul' => 'Jurnal', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
-    ]]);
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), [
+        'judul' => 'Jurnal', 'instruksi' => 'x', 'frekuensi' => 'sekali',
+        'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(3)->toDateString(),
+    ]);
 
     expect($kasus->refresh()->status)->toBe(StatusKasus::Berjalan);
 });

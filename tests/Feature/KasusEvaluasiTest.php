@@ -324,9 +324,10 @@ it('lets the konselor keep scheduling sesi and giving tugas while the kasus is e
         ['dijadwalkan_pada' => now()->addDay()->format('Y-m-d H:i:s'), 'peserta' => 'siswa', 'lokasi_mode' => 'Ruang BK'],
     ]])->assertRedirect(route('kasus.show', $kasus));
 
-    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), ['tugas' => [
-        ['judul' => 'Tugas Saat Eskalasi', 'instruksi' => 'x', 'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(), 'batas_selesai_pada' => now()->addDays(3)->toDateString()],
-    ]])->assertRedirect(route('kasus.show', $kasus));
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), [
+        'judul' => 'Tugas Saat Eskalasi', 'instruksi' => 'x', 'frekuensi' => 'sekali',
+        'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(3)->toDateString(),
+    ])->assertRedirect(route('kasus.show', $kasus));
 
     expect(\App\Models\KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(1);
     expect(\App\Models\KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(1);
