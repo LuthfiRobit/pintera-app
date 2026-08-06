@@ -41,6 +41,10 @@ fetch ke endpoint preview).
   dipertahankan sebagai kode mati.
 - Endpoint preview TIDAK PERNAH menulis ke database — dry-run murni, memanggil service yang
   sama persis dengan path submit sungguhan.
+- Siswa dan orang tua kontak utama menerima **satu** notifikasi ringkasan per batch
+  (`TugasBatchDibuatNotification`) saat tugas dibuat, bukan satu notifikasi per baris hasil
+  generate — keputusan desain 2026-08-06 untuk mencegah batch besar (harian 30 hari, bulanan
+  berbulan-bulan) membanjiri penerima dengan puluhan notifikasi terpisah dalam satu submit.
 - `markSelesai()`, `assertKonselorPemegangKasus()`, guard status kasus
   (`Ditugaskan`/`Berjalan`/`Eskalasi`), job `terlewat` — semuanya sudah bekerja per-baris
   `kasus_tugas` individual sejak Sub-proyek 4 dan **tidak perlu diubah** untuk mendukung model
@@ -720,9 +724,12 @@ git commit -m "feat(pendampingan): add fallback-aware FormRequest for the tugas 
 
 ---
 
-### Task 4: Controller submit — `KasusTugasController::store()` pakai FormRequest + service
+### Task 4: Controller submit — `KasusTugasController::store()` pakai FormRequest + service + notifikasi ringkasan per-batch
 
 **Files:**
+- Create: `app/Notifications/TugasBatchDibuatNotification.php`
+- Create: `app/Mail/TugasBatchDibuatMail.php`
+- Create: `resources/views/mail/tugas-batch-dibuat.blade.php`
 - Modify: `app/Http/Controllers/KasusTugasController.php`
 - Modify: `tests/Feature/KasusTugasBeriTest.php`
 
@@ -731,8 +738,127 @@ git commit -m "feat(pendampingan): add fallback-aware FormRequest for the tugas 
 - Produces: `KasusTugasController::store(StoreKasusTugasBatchRequest $request, Kasus $kasus):
   RedirectResponse` — signature method berubah (tipe request-nya), route name
   (`kasus.tugas.store`) dan URL TIDAK berubah. `markSelesai()` tidak disentuh sama sekali.
+  `App\Notifications\TugasBatchDibuatNotification(Collection $barisTugas)` — SATU notifikasi
+  per penerima (siswa & orang tua kontak utama) untuk SELURUH batch, menggantikan pola lama
+  yang mengirim satu notifikasi `TugasDitugaskanNotification` per baris. **Keputusan desain
+  (dikonfirmasi user 2026-08-06):** batch besar (harian 30 hari, bulanan 6 bulan) tidak boleh
+  membanjiri siswa/orang tua dengan puluhan notifikasi terpisah dalam satu submit — cukup satu
+  notifikasi ringkasan ("Tugas baru: Jurnal Emosi Harian, 30 baris, 1-30 Agustus").
+  `TugasDitugaskanNotification`/`TugasDitugaskanMail` yang lama TETAP ADA tanpa perubahan (masih
+  dipakai di tempat lain kalau ada — periksa dulu dengan `grep -rn TugasDitugaskanNotification
+  app/` sebelum menghapus apa pun; kalau ternyata tidak dipakai di tempat lain sama sekali
+  setelah task ini, itu di luar cakupan task ini untuk dihapus, biarkan saja sebagai kode yang
+  sudah tidak dipanggil tapi tidak mengganggu).
 
-- [ ] **Step 1: Baca dulu `tests/Feature/KasusTugasBeriTest.php` yang sudah ada secara utuh**
+- [ ] **Step 1: Tulis `TugasBatchDibuatNotification`, `TugasBatchDibuatMail`, dan view mail-nya**
+
+```php
+<?php
+// app/Notifications/TugasBatchDibuatNotification.php
+
+namespace App\Notifications;
+
+use App\Mail\TugasBatchDibuatMail;
+use Illuminate\Notifications\Notification;
+use Illuminate\Support\Collection;
+
+class TugasBatchDibuatNotification extends Notification
+{
+    /**
+     * @param Collection<int, \App\Models\KasusTugas> $barisTugas
+     */
+    public function __construct(public Collection $barisTugas)
+    {
+    }
+
+    public function via(object $notifiable): array
+    {
+        $channels = ['database'];
+
+        if (filled($notifiable->routeNotificationFor('mail'))) {
+            $channels[] = 'mail';
+        }
+
+        return $channels;
+    }
+
+    public function toMail(object $notifiable): TugasBatchDibuatMail
+    {
+        $mail = new TugasBatchDibuatMail($this->barisTugas);
+
+        $email = $notifiable->routeNotificationFor('mail');
+
+        if ($email !== null && $email !== '') {
+            $mail->to($email);
+        }
+
+        return $mail;
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        $pertama = $this->barisTugas->first();
+
+        return [
+            'kasus_tugas_batch_id' => $pertama->batch_id,
+            'jumlah_baris' => $this->barisTugas->count(),
+            'message' => 'Tugas baru "'.$pertama->judul.'" telah diberikan ('
+                .$this->barisTugas->count().' baris, '.ucfirst($pertama->frekuensi).').',
+        ];
+    }
+}
+```
+
+```php
+<?php
+// app/Mail/TugasBatchDibuatMail.php
+
+namespace App\Mail;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Collection;
+
+class TugasBatchDibuatMail extends Mailable
+{
+    use Queueable, SerializesModels;
+
+    /**
+     * @param Collection<int, \App\Models\KasusTugas> $barisTugas
+     */
+    public function __construct(public Collection $barisTugas)
+    {
+    }
+
+    public function build(): self
+    {
+        $pertama = $this->barisTugas->first();
+        $mulaiPada = $this->barisTugas->sortBy('mulai_pada')->first()->mulai_pada;
+        $batasSelesaiPada = $this->barisTugas->sortByDesc('batas_selesai_pada')->first()->batas_selesai_pada;
+
+        return $this->subject('Tugas Pendampingan Baru: '.$pertama->judul)
+            ->view('mail.tugas-batch-dibuat')
+            ->with([
+                'judul' => $pertama->judul,
+                'frekuensi' => $pertama->frekuensi,
+                'jumlahBaris' => $this->barisTugas->count(),
+                'mulaiPada' => $mulaiPada,
+                'batasSelesaiPada' => $batasSelesaiPada,
+            ]);
+    }
+}
+```
+
+```blade
+{{-- resources/views/mail/tugas-batch-dibuat.blade.php --}}
+<p>
+    Tugas baru "{{ $judul }}" ({{ ucfirst($frekuensi) }}) telah diberikan — {{ $jumlahBaris }}
+    baris tugas, dari {{ $mulaiPada->format('d M Y') }} sampai {{ $batasSelesaiPada->format('d M Y') }}.
+</p>
+```
+
+- [ ] **Step 2: Baca dulu `tests/Feature/KasusTugasBeriTest.php` yang sudah ada secara utuh**
 
 File ini punya test yang mengasumsikan payload lama (`tugas` sebagai array multi-baris) — SEMUA
 test yang mengirim payload lewat `route('kasus.tugas.store', ...)` perlu ditulis ulang memakai
@@ -741,7 +867,7 @@ helper `buatKasusDitugaskanKeGuruBkUntukTugas()`) sebelum mengubah — pertahank
 struktur/nama helper yang ada, ganti hanya payload dan asersi tiap `it(...)` yang perlu
 disesuaikan dengan model baru.
 
-- [ ] **Step 2: Tulis ulang test-test yang mengirim payload lama**
+- [ ] **Step 3: Tulis ulang test-test yang mengirim payload lama**
 
 Ganti isi `tests/Feature/KasusTugasBeriTest.php` — pertahankan helper
 `buatKasusDitugaskanKeGuruBkUntukTugas()` apa adanya, ganti seluruh `it(...)` yang mengirim
@@ -796,22 +922,26 @@ it('rejects an invalid payload and creates no row', function () {
 
 Untuk test yang menguji notifikasi (`'notifies siswa and orang tua when a tugas is given'`,
 `'does not 500 when notifying...'`, `'does not call Fonnte...'`) — ganti payload-nya ke bentuk
-baru juga, tapi PERTAHANKAN esensi pengujiannya (memastikan notifikasi terkirim untuk SETIAP
-baris hasil generate, bukan cuma baris pertama — kalau payload baru menghasilkan N baris,
-notifikasi harus terkirim N kali; sesuaikan asersi `Notification::assertSentTimes(...)` kalau
-ada, dari jumlah baris array lama ke jumlah baris hasil generate yang baru).
+baru juga, DAN ganti referensi kelas notifikasi dari `TugasDitugaskanNotification` ke
+`TugasBatchDibuatNotification`, dan ganti asersi jumlah pengiriman: sekarang **SATU** notifikasi
+terkirim per penerima (siswa & orang tua kontak utama) untuk SELURUH batch, TIDAK PEDULI berapa
+banyak baris `KasusTugas` yang dihasilkan (`Notification::assertSentTimes(TugasBatchDibuatNotification::class,
+1)` per penerima, bukan dikalikan jumlah baris seperti pola lama). Untuk test "does not 500 when
+notifying... for real (no Notification::fake)" — pastikan payload menghasilkan batch dengan
+LEBIH DARI SATU baris (mis. `frekuensi: 'harian'` rentang 3 hari) supaya test itu benar-benar
+membuktikan kirim-mail-sungguhan bekerja untuk kasus banyak-baris, bukan cuma kasus satu baris.
 
 Untuk test guard status kasus (`'403s a POST to give tugas against an already-selesai kasus'`,
 `'menunggu_consent'`, `'diajukan'`, `'lets the assigned konselor give tugas against a berjalan
 kasus'`) — cukup ganti payload ke bentuk baru (`sekali` dengan satu tanggal), esensi pengujian
 (guard status) tidak berubah.
 
-- [ ] **Step 3: Jalankan test, pastikan gagal (kode controller belum berubah)**
+- [ ] **Step 4: Jalankan test, pastikan gagal (kode controller belum berubah)**
 
 Run: `php artisan test --filter=KasusTugasBeriTest`
 Expected: FAIL — controller masih mengharapkan payload array `tugas.*`, bukan bentuk baru.
 
-- [ ] **Step 4: Tulis ulang `KasusTugasController::store()`**
+- [ ] **Step 5: Tulis ulang `KasusTugasController::store()`**
 
 ```php
 <?php
@@ -824,7 +954,7 @@ use App\Http\Requests\StoreKasusTugasBatchRequest;
 use App\Models\Kasus;
 use App\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
-use App\Notifications\TugasDitugaskanNotification;
+use App\Notifications\TugasBatchDibuatNotification;
 use App\Notifications\TugasSelesaiNotification;
 use App\Services\TugasBatchGenerator;
 use Carbon\Carbon;
@@ -888,11 +1018,14 @@ class KasusTugasController extends BaseController
 
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
         $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+        $siswaUser = $siswa?->user()->withoutGlobalScope(TenantScope::class)->first();
 
-        foreach ($created as $tugas) {
-            $siswa?->user()->withoutGlobalScope(TenantScope::class)->first()?->notify(new TugasDitugaskanNotification($tugas));
-            $kontakUtama?->notify(new TugasDitugaskanNotification($tugas));
-        }
+        // Satu notifikasi ringkasan per penerima untuk SELURUH batch, bukan satu notifikasi
+        // per baris — sebuah batch harian/bulanan yang panjang bisa menghasilkan puluhan
+        // baris kasus_tugas dalam satu submit, dan mengirim notifikasi terpisah untuk
+        // masing-masing akan membanjiri siswa/orang tua (keputusan desain 2026-08-06).
+        $siswaUser?->notify(new TugasBatchDibuatNotification($created));
+        $kontakUtama?->notify(new TugasBatchDibuatNotification($created));
 
         return redirect()->route('kasus.show', $kasus)->with('status', "Tugas berhasil diberikan ({$created->count()} baris dibuat).");
     }
@@ -928,22 +1061,22 @@ class KasusTugasController extends BaseController
 tidak ada perubahan perilaku di kedua method ini, hanya ikut ditulis ulang di sini karena
 seluruh isi file diganti.
 
-- [ ] **Step 5: Jalankan test, pastikan lolos**
+- [ ] **Step 6: Jalankan test, pastikan lolos**
 
 Run: `php artisan test --filter=KasusTugasBeriTest`
 Expected: PASS (jumlah test sama seperti sebelum ditulis ulang, semua lolos)
 
-- [ ] **Step 6: Jalankan regresi Kasus**
+- [ ] **Step 7: Jalankan regresi Kasus**
 
 Run: `php artisan test --filter=Kasus`
 Expected: kegagalan yang SAMA seperti di akhir Task 1 (test yang bergantung pada mekanisme lama
 — dihapus di Task 6), tidak ada kegagalan BARU selain itu.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add app/Http/Controllers/KasusTugasController.php tests/Feature/KasusTugasBeriTest.php
-git commit -m "feat(pendampingan): wire KasusTugasController::store() to the batch generator"
+git add app/Notifications/TugasBatchDibuatNotification.php app/Mail/TugasBatchDibuatMail.php resources/views/mail/tugas-batch-dibuat.blade.php app/Http/Controllers/KasusTugasController.php tests/Feature/KasusTugasBeriTest.php
+git commit -m "feat(pendampingan): wire KasusTugasController::store() to the batch generator, notify once per batch"
 ```
 
 ---
