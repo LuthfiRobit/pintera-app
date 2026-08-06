@@ -116,6 +116,24 @@ it('generates bulanan rows using end-of-month due dates, correctly handling Febr
     expect($baris[3]['batas_selesai_pada']->toDateString())->toBe('2026-04-30');
 });
 
+it('generates bulanan rows using end-of-month due dates, correctly handling a leap year February', function () {
+    $baris = $this->generator->generate('bulanan', Carbon::parse('2028-01-01'), Carbon::parse('2028-04-30'), akhirBulan: true);
+
+    expect($baris)->toHaveCount(4);
+    expect($baris[0]['batas_selesai_pada']->toDateString())->toBe('2028-01-31');
+    expect($baris[1]['batas_selesai_pada']->toDateString())->toBe('2028-02-29');
+    expect($baris[2]['batas_selesai_pada']->toDateString())->toBe('2028-03-31');
+    expect($baris[3]['batas_selesai_pada']->toDateString())->toBe('2028-04-30');
+});
+
+it('generates harian-shaped rows when bulanan cascades through both fallback steps', function () {
+    $baris = $this->generator->generate('bulanan', Carbon::parse('2026-08-01'), Carbon::parse('2026-08-05'));
+
+    expect($baris)->toHaveCount(5);
+    expect($baris[0]['mulai_pada']->toDateString())->toBe($baris[0]['batas_selesai_pada']->toDateString());
+    expect($baris[4]['mulai_pada']->toDateString())->toBe('2026-08-05');
+});
+
 it('pushes the first monthly due date to the next month when the range starts after that day of month', function () {
     // Mulai 20 Agustus, tanggal_pengumpulan_bulanan=15 -> jatuh tempo pertama BUKAN 15 Agustus
     // (sudah lewat relatif terhadap tanggal_mulai), melainkan 15 September.
