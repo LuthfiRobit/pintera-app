@@ -141,3 +141,28 @@ it('pushes the first monthly due date to the next month when the range starts af
 
     expect($baris[0]['batas_selesai_pada']->toDateString())->toBe('2026-09-15');
 });
+
+it('does not throw when generate() is called for bulanan with a null due-day (Finding 4 regression)', function () {
+    // hitungJatuhTempoBulanan() must be self-safe: Carbon::day(min(null, 31)) would throw
+    // a TypeError before this fix. A null due-day (and akhirBulan not set) should behave
+    // like "akhir_bulan" rather than blow up — the only thing normally preventing a null
+    // here is the FormRequest, which this call bypasses on purpose.
+    $baris = $this->generator->generate('bulanan', Carbon::parse('2026-01-01'), Carbon::parse('2026-04-30'));
+
+    expect($baris)->toHaveCount(4);
+    expect($baris[0]['batas_selesai_pada']->toDateString())->toBe('2026-01-31');
+    expect($baris[1]['batas_selesai_pada']->toDateString())->toBe('2026-02-28');
+});
+
+it('parses an empty/null raw tanggal_pengumpulan_bulanan to [null, false]', function () {
+    expect($this->generator->parseTanggalPengumpulanBulanan(null))->toBe([null, false]);
+    expect($this->generator->parseTanggalPengumpulanBulanan(''))->toBe([null, false]);
+});
+
+it('parses "akhir_bulan" to [null, true]', function () {
+    expect($this->generator->parseTanggalPengumpulanBulanan('akhir_bulan'))->toBe([null, true]);
+});
+
+it('parses a numeric string to [int, false]', function () {
+    expect($this->generator->parseTanggalPengumpulanBulanan('15'))->toBe([15, false]);
+});

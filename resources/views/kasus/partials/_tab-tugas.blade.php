@@ -241,11 +241,28 @@
     <script>
     function tugasBatchForm() {
         return {
-            showForm: false,
-            form: { judul: '', instruksi: '', frekuensi: 'sekali', tanggal_mulai: '', tanggal_selesai: '', tanggal_pengumpulan_bulanan: '' },
+            // Jika submit sebelumnya gagal validasi (mis. judul kosong), buka kembali panel
+            // formulir dan isi ulang dari old() alih-alih membiarkan konselor mengetik ulang
+            // semuanya dari awal — `frekuensi` cukup unik di halaman ini untuk dipakai sebagai
+            // penanda "submit tugas ini yang gagal".
+            showForm: {{ old('frekuensi') !== null ? 'true' : 'false' }},
+            form: {
+                judul: @js(old('judul', '')),
+                instruksi: @js(old('instruksi', '')),
+                frekuensi: @js(old('frekuensi', 'sekali')),
+                tanggal_mulai: @js(old('tanggal_mulai', '')),
+                tanggal_selesai: @js(old('tanggal_selesai', '')),
+                tanggal_pengumpulan_bulanan: @js(old('tanggal_pengumpulan_bulanan', '')),
+            },
             frekuensiAkhir: 'sekali',
             jumlahBaris: 0,
             pratinjauLoaded: false,
+
+            init() {
+                if (this.showForm && this.form.tanggal_mulai && this.form.tanggal_selesai) {
+                    this.pratinjau();
+                }
+            },
 
             async pratinjau() {
                 if (!this.form.tanggal_mulai || !this.form.tanggal_selesai) return;

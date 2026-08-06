@@ -3,9 +3,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreKasusTugasBatchRequest;
+use App\Enums\StatusKasus;
+use App\Http\Controllers\Concerns\AssertsKonselorPemegangKasus;
+use App\Http\Requests\PreviewKasusTugasBatchRequest;
 use App\Models\Kasus;
-use App\Models\Scopes\TenantScope;
 use App\Services\TugasBatchGenerator;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -15,21 +16,18 @@ use Illuminate\Routing\Controller as BaseController;
 class KasusTugasBatchPreviewController extends BaseController
 {
     use AuthorizesRequests;
+    use AssertsKonselorPemegangKasus;
 
-    public function preview(StoreKasusTugasBatchRequest $request, Kasus $kasus, TugasBatchGenerator $generator): JsonResponse
+    public function preview(PreviewKasusTugasBatchRequest $request, Kasus $kasus, TugasBatchGenerator $generator): JsonResponse
     {
         $this->authorize('kasus.view');
         $this->assertKonselorPemegangKasus($kasus);
+        abort_if($kasus->trashed(), 404);
+        abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
 
         $data = $request->validated();
 
-        $tanggalPengumpulanBulanan = null;
-        $akhirBulan = false;
-        if (($data['tanggal_pengumpulan_bulanan'] ?? null) === 'akhir_bulan') {
-            $akhirBulan = true;
-        } elseif (! empty($data['tanggal_pengumpulan_bulanan'])) {
-            $tanggalPengumpulanBulanan = (int) $data['tanggal_pengumpulan_bulanan'];
-        }
+        [$tanggalPengumpulanBulanan, $akhirBulan] = $generator->parseTanggalPengumpulanBulanan($data['tanggal_pengumpulan_bulanan'] ?? null);
 
         $tanggalMulai = Carbon::parse($data['tanggal_mulai']);
         $tanggalSelesai = Carbon::parse($data['tanggal_selesai']);
@@ -45,15 +43,5 @@ class KasusTugasBatchPreviewController extends BaseController
                 'batas_selesai_pada' => $baris['batas_selesai_pada']->toDateString(),
             ])->values(),
         ]);
-    }
-
-    private function assertKonselorPemegangKasus(Kasus $kasus): void
-    {
-        $user = auth()->user();
-        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
-        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
-            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
-
-        abort_unless($isKonselor, 403);
     }
 }

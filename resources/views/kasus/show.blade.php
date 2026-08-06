@@ -74,7 +74,7 @@
         </div>
 
         {{-- Tab Navigation & Modular Content Container --}}
-        <div x-data="{ activeTab: 'info', showSesiForm: false, showTugasForm: false }" class="space-y-6">
+        <div x-data="{ activeTab: '{{ old('frekuensi') !== null ? 'tugas' : 'info' }}', showSesiForm: false, showTugasForm: false }" class="space-y-6">
             {{-- Navigation Pill Bar --}}
             <div class="flex items-center gap-2 overflow-x-auto rounded-xl border border-gray-200 bg-white p-2 shadow-2xs scrollbar-none">
                 <button

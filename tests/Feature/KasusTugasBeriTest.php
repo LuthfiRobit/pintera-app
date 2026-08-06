@@ -73,6 +73,23 @@ it('generates multiple tugas rows sharing one batch_id for a harian submission',
     expect($barisBatch->pluck('batch_urutan')->all())->toBe([1, 2, 3]);
 });
 
+it('persists the post-fallback frekuensi on created rows, not the raw selected value (Finding 2 regression)', function () {
+    // Regression test: submitting "mingguan" over a 5-day range falls back to harian inside
+    // the generator (5 one-day rows), but the row must be stored with frekuensi='harian' — the
+    // value the counselor's preview actually showed — not the raw form-selected 'mingguan'.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+
+    $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), [
+        'judul' => 'Jurnal Emosi', 'instruksi' => 'Tulis jurnal.', 'frekuensi' => 'mingguan',
+        'tanggal_mulai' => '2026-08-01', 'tanggal_selesai' => '2026-08-05',
+    ])->assertRedirect(route('kasus.show', $kasus));
+
+    $barisBatch = KasusTugas::where('kasus_id', $kasus->id)->orderBy('batch_urutan')->get();
+    expect($barisBatch)->toHaveCount(5);
+    expect($barisBatch->pluck('frekuensi')->unique()->all())->toBe(['harian']);
+});
+
 it('rejects an invalid payload and creates no row', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
@@ -83,6 +100,26 @@ it('rejects an invalid payload and creates no row', function () {
     ])->assertSessionHasErrors('judul');
 
     expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
+});
+
+it('reopens the tugas form panel and repopulates old input after a validation failure', function () {
+    // The Alpine form has no old()/error bindings by default, so a blank judul would 422,
+    // then silently drop the counselor back on a collapsed, blank form. After the fix, the
+    // panel auto-reopens on the tugas tab and repopulates from old() instead of losing input.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+
+    $response = $this->actingAs($konselorUser)
+        ->from(route('kasus.show', $kasus))
+        ->followingRedirects()
+        ->post(route('kasus.tugas.store', $kasus), [
+            'judul' => '', 'instruksi' => 'Isi instruksi yang sudah diketik konselor.', 'frekuensi' => 'harian',
+            'tanggal_mulai' => '2026-08-10', 'tanggal_selesai' => '2026-08-12',
+        ]);
+
+    $response->assertOk();
+    $response->assertSee("activeTab: 'tugas'", false);
+    $response->assertSee('Isi instruksi yang sudah diketik konselor.', false);
 });
 
 it('403s a konselor who is not assigned from giving tugas', function () {
@@ -176,6 +213,20 @@ it('does not 500 when notifying TugasSelesaiNotification for real (no Notificati
 
     $this->actingAs($konselorUser)->patch(route('kasus.tugas.selesai', [$kasus, $tugas]))
         ->assertRedirect(route('kasus.show', $kasus));
+});
+
+it('gives a factory-created kasus_tugas row a non-null batch_id (Finding 8 regression)', function () {
+    // Regression test: any row-creation path (not just the batch generator) must populate
+    // batch_id/batch_urutan/batch_total, or _tab-tugas.blade.php's batch_id grouping silently
+    // collapses two null-batch rows under one judul.
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    [$kasus] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
+
+    $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id]);
+
+    expect($tugas->batch_id)->not->toBeNull();
+    expect($tugas->batch_urutan)->toBe(1);
+    expect($tugas->batch_total)->toBe(1);
 });
 
 it('403s a POST to give tugas against an already-selesai kasus and creates no row', function () {

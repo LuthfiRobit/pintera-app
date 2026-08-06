@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatusKasus;
+use App\Http\Controllers\Concerns\AssertsKonselorPemegangKasus;
 use App\Http\Requests\StoreKasusTugasBatchRequest;
 use App\Models\Kasus;
 use App\Models\KasusTugas;
@@ -21,6 +22,7 @@ use Illuminate\Support\Str;
 class KasusTugasController extends BaseController
 {
     use AuthorizesRequests;
+    use AssertsKonselorPemegangKasus;
 
     public function store(StoreKasusTugasBatchRequest $request, Kasus $kasus, TugasBatchGenerator $generator): RedirectResponse
     {
@@ -31,23 +33,26 @@ class KasusTugasController extends BaseController
 
         $data = $request->validated();
 
-        $tanggalPengumpulanBulanan = null;
-        $akhirBulan = false;
-        if (($data['tanggal_pengumpulan_bulanan'] ?? null) === 'akhir_bulan') {
-            $akhirBulan = true;
-        } elseif (! empty($data['tanggal_pengumpulan_bulanan'])) {
-            $tanggalPengumpulanBulanan = (int) $data['tanggal_pengumpulan_bulanan'];
-        }
+        [$tanggalPengumpulanBulanan, $akhirBulan] = $generator->parseTanggalPengumpulanBulanan($data['tanggal_pengumpulan_bulanan'] ?? null);
+
+        $tanggalMulai = Carbon::parse($data['tanggal_mulai']);
+        $tanggalSelesai = Carbon::parse($data['tanggal_selesai']);
+
+        // Frekuensi yang benar-benar dipakai bisa berbeda dari yang dipilih konselor (fallback
+        // bulanan->mingguan atau mingguan->harian jika rentangnya terlalu pendek). Baris yang
+        // dibuat harus mencatat frekuensi INI, sama seperti yang sudah ditampilkan di pratinjau,
+        // bukan nilai form mentah — lihat KasusTugasBatchPreviewController::preview().
+        $frekuensiAkhir = $generator->tentukanFrekuensiAkhir($data['frekuensi'], $tanggalMulai, $tanggalSelesai);
 
         $barisTanggal = $generator->generate(
             $data['frekuensi'],
-            Carbon::parse($data['tanggal_mulai']),
-            Carbon::parse($data['tanggal_selesai']),
+            $tanggalMulai,
+            $tanggalSelesai,
             $tanggalPengumpulanBulanan,
             $akhirBulan,
         );
 
-        $created = DB::transaction(function () use ($data, $kasus, $barisTanggal) {
+        $created = DB::transaction(function () use ($data, $kasus, $barisTanggal, $frekuensiAkhir) {
             $batchId = (string) Str::uuid();
             $batchTotal = $barisTanggal->count();
 
@@ -55,7 +60,7 @@ class KasusTugasController extends BaseController
                 'kasus_id' => $kasus->id,
                 'judul' => $data['judul'],
                 'instruksi' => $data['instruksi'],
-                'frekuensi' => $data['frekuensi'],
+                'frekuensi' => $frekuensiAkhir,
                 'batch_id' => $batchId,
                 'batch_urutan' => $index + 1,
                 'batch_total' => $batchTotal,
@@ -97,15 +102,5 @@ class KasusTugasController extends BaseController
         $kontakUtama?->notify(new TugasSelesaiNotification($kasusTugas));
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Tugas ditandai selesai.');
-    }
-
-    private function assertKonselorPemegangKasus(Kasus $kasus): void
-    {
-        $user = auth()->user();
-        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
-        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
-            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
-
-        abort_unless($isKonselor, 403);
     }
 }

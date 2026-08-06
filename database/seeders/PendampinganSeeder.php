@@ -20,6 +20,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PendampinganSeeder extends Seeder
 {
@@ -244,6 +245,9 @@ class PendampinganSeeder extends Seeder
             [
                 'instruksi'          => 'Setiap malam sebelum tidur, tulis 3 hal yang kamu rasakan hari ini dan apa yang membuatmu merasakan itu.',
                 'frekuensi'          => 'harian',
+                'batch_id'           => (string) Str::uuid(),
+                'batch_urutan'       => 1,
+                'batch_total'        => 1,
                 'mulai_pada'         => now()->subDays(7)->toDateString(),
                 'batas_selesai_pada' => now()->addDays(7)->toDateString(),
                 'status'             => StatusKasusTugas::Dikerjakan,
@@ -375,6 +379,9 @@ class PendampinganSeeder extends Seeder
             [
                 'instruksi'          => 'Buat jadwal belajar mingguan dan patuhi selama 2 minggu. Catat hambatan yang ditemui.',
                 'frekuensi'          => 'mingguan',
+                'batch_id'           => (string) Str::uuid(),
+                'batch_urutan'       => 1,
+                'batch_total'        => 1,
                 'mulai_pada'         => now()->subDays(30)->toDateString(),
                 'batas_selesai_pada' => now()->subDays(16)->toDateString(),
                 'status'             => StatusKasusTugas::Selesai,

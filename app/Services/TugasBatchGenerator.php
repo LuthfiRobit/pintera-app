@@ -8,6 +8,28 @@ use Illuminate\Support\Collection;
 
 class TugasBatchGenerator
 {
+    /**
+     * Menerjemahkan nilai mentah input `tanggal_pengumpulan_bulanan` (angka 1-31, string
+     * "akhir_bulan", atau kosong) menjadi pasangan [int|null $tanggalPengumpulanBulanan, bool $akhirBulan]
+     * yang dipakai oleh generate(). Satu-satunya tempat yang menafsirkan nilai ini — dipakai
+     * baik oleh alur submit (KasusTugasController) maupun alur pratinjau (KasusTugasBatchPreviewController)
+     * supaya keduanya selalu sepakat.
+     *
+     * @return array{0: ?int, 1: bool}
+     */
+    public function parseTanggalPengumpulanBulanan(mixed $raw): array
+    {
+        if ($raw === 'akhir_bulan') {
+            return [null, true];
+        }
+
+        if (! empty($raw)) {
+            return [(int) $raw, false];
+        }
+
+        return [null, false];
+    }
+
     public function tentukanFrekuensiAkhir(string $frekuensiDipilih, Carbon $tanggalMulai, Carbon $tanggalSelesai): string
     {
         $selisihHari = $tanggalMulai->diffInDays($tanggalSelesai);
@@ -101,6 +123,11 @@ class TugasBatchGenerator
 
     private function hitungJatuhTempoBulanan(Carbon $dariTanggal, ?int $tanggalPengumpulanBulanan, bool $akhirBulan): Carbon
     {
+        // Membuat method ini aman dipanggil sendiri (bukan hanya aman karena FormRequest
+        // memvalidasi lebih dulu): tanggal pengumpulan yang null diperlakukan sebagai
+        // "akhir bulan" alih-alih meledak di Carbon::day(null).
+        $akhirBulan = $akhirBulan || $tanggalPengumpulanBulanan === null;
+
         $kandidat = $akhirBulan
             ? $dariTanggal->copy()->endOfMonth()
             : $dariTanggal->copy()->day(min($tanggalPengumpulanBulanan, $dariTanggal->daysInMonth));
