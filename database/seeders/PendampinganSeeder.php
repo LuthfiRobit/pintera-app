@@ -287,7 +287,7 @@ class PendampinganSeeder extends Seeder
             [
                 'lembaga_id'              => $smpit->id,
                 'diajukan_oleh_guru_id'   => null,
-                'diajukan_oleh_orang_tua_id' => OrangTua::first()?->id,
+                'diajukan_oleh_orang_tua_id' => $this->resolveOrangTuaKontakUtama($siswa)?->id,
                 'kategori_masalah'        => 'Kesehatan Mental',
                 'deskripsi'               => 'Orang tua melaporkan anak menolak makan dan tidak tidur selama beberapa hari. Ada indikasi depresi ringan.',
                 'tingkat_urgensi'         => 'tinggi',
