@@ -20,6 +20,7 @@ class KasusTugas extends Model
 
     protected $fillable = [
         'kasus_id', 'judul', 'instruksi', 'frekuensi',
+        'batch_id', 'batch_urutan', 'batch_total',
         'mulai_pada', 'batas_selesai_pada', 'status',
     ];
 
