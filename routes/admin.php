@@ -53,6 +53,7 @@ use App\Http\Controllers\KasusConsentController;
 use App\Http\Controllers\KasusController;
 use App\Http\Controllers\KasusEvaluasiController;
 use App\Http\Controllers\KasusSesiController;
+use App\Http\Controllers\KasusTugasBatchPreviewController;
 use App\Http\Controllers\KasusTugasController;
 use App\Http\Controllers\KasusTugasSubmissionController;
 use Illuminate\Support\Facades\Route;
@@ -257,6 +258,7 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
     Route::post('{kasus}/sesi', [KasusSesiController::class, 'store'])->name('sesi.store');
     Route::patch('{kasus}/sesi/{kasusSesi}', [KasusSesiController::class, 'updateStatus'])->name('sesi.update-status');
     Route::post('{kasus}/tugas', [KasusTugasController::class, 'store'])->name('tugas.store');
+    Route::post('{kasus}/tugas/preview', [KasusTugasBatchPreviewController::class, 'preview'])->name('tugas.preview');
     Route::post('{kasus}/tugas/{kasusTugas}/submission', [KasusTugasSubmissionController::class, 'store'])->name('tugas.submission.store');
     Route::patch('{kasus}/tugas/{kasusTugas}/submission/{kasusTugasSubmission}/review', [KasusTugasSubmissionController::class, 'review'])->name('tugas.submission.review');
     Route::get('{kasus}/tugas/{kasusTugas}/submission/{kasusTugasSubmission}/lampiran', [KasusTugasSubmissionController::class, 'download'])->name('tugas.submission.lampiran');
