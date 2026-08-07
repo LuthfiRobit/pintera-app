@@ -43,15 +43,15 @@
             </div>
             <div>
                 <x-input-label value="Catatan Evaluasi / Rekomendasi *" class="text-xs font-bold text-gray-700" />
-                <textarea name="catatan" rows="3" required placeholder="Jelaskan kemajuan perilaku siswa, hasil konseling, atau alasan eskalasi..." class="mt-1.5 block w-full rounded-xl border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                <x-textarea name="catatan" rows="3" required placeholder="Jelaskan kemajuan perilaku siswa, hasil konseling, atau alasan eskalasi..." class="mt-1.5 block w-full"></x-textarea>
             </div>
             <div>
                 <x-input-label value="Keputusan Selanjutnya *" class="text-xs font-bold text-gray-700" />
-                <select name="keputusan" class="mt-1.5 block w-full max-w-sm rounded-xl border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                <x-select name="keputusan" class="mt-1.5 block w-full max-w-sm">
                     <option value="lanjut">🔵 Lanjut &mdash; Sesi bimbingan tetap berlangsung</option>
                     <option value="eskalasi">🔴 Eskalasi ke Admin &mdash; Kasus rumit / butuh tindakan manajemen</option>
                     <option value="selesai">🟢 Selesai &mdash; Pembinaan berhasil ditutup</option>
-                </select>
+                </x-select>
             </div>
             <div class="flex justify-end pt-2">
                 <x-primary-button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm">
@@ -75,14 +75,14 @@
             </div>
             <div>
                 <x-input-label value="Catatan Evaluasi / Keputusan Pimpinan *" class="text-xs font-bold text-gray-700" />
-                <textarea name="catatan" rows="3" required placeholder="Tuliskan arahan kepolisisan sekolah atau penyelesaian akhir atas kasus eskalasi ini..." class="mt-1.5 block w-full rounded-xl border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-red-500 focus:ring-red-500"></textarea>
+                <x-textarea name="catatan" rows="3" required placeholder="Tuliskan arahan kepolisisan sekolah atau penyelesaian akhir atas kasus eskalasi ini..." class="mt-1.5 block w-full"></x-textarea>
             </div>
             <div>
                 <x-input-label value="Keputusan Resolusi *" class="text-xs font-bold text-gray-700" />
-                <select name="keputusan" class="mt-1.5 block w-full max-w-md rounded-xl border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-red-500 focus:ring-red-500">
+                <x-select name="keputusan" class="mt-1.5 block w-full max-w-md">
                     <option value="lanjut">🔵 Kembalikan ke Konselor &mdash; Melanjutkan pembinaan normal</option>
                     <option value="selesai">🟢 Selesai &mdash; Kasus diselesaikan secara manajerial</option>
-                </select>
+                </x-select>
             </div>
             <div class="flex justify-end pt-2">
                 <x-primary-button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-700 shadow-sm">

@@ -35,19 +35,19 @@
                         <div class="grid grid-cols-1 gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-2xs sm:grid-cols-12 sm:items-end transition hover:border-brand-300">
                             <div class="sm:col-span-4">
                                 <x-input-label value="Tanggal & Jam *" class="text-xs font-bold text-gray-700" />
-                                <input type="datetime-local" :name="`sesi[${i}][dijadwalkan_pada]`" x-model="row.dijadwalkan_pada" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                                <x-text-input type="datetime-local" x-bind:name="`sesi[${i}][dijadwalkan_pada]`" x-model="row.dijadwalkan_pada" required class="mt-1.5 block w-full" />
                             </div>
                             <div class="sm:col-span-3">
                                 <x-input-label value="Peserta *" class="text-xs font-bold text-gray-700" />
-                                <select :name="`sesi[${i}][peserta]`" x-model="row.peserta" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                                <x-select x-bind:name="`sesi[${i}][peserta]`" x-model="row.peserta" class="mt-1.5 block w-full">
                                     <option value="siswa">Siswa</option>
                                     <option value="orang_tua">Orang Tua</option>
                                     <option value="keduanya">Keduanya</option>
-                                </select>
+                                </x-select>
                             </div>
                             <div class="sm:col-span-4">
                                 <x-input-label value="Lokasi / Mode *" class="text-xs font-bold text-gray-700" />
-                                <input type="text" :name="`sesi[${i}][lokasi_mode]`" x-model="row.lokasi_mode" required placeholder="Ruang BK / Google Meet" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                                <x-text-input type="text" x-bind:name="`sesi[${i}][lokasi_mode]`" x-model="row.lokasi_mode" required placeholder="Ruang BK / Google Meet" class="mt-1.5 block w-full" />
                             </div>
                             <div class="sm:col-span-1 flex items-center justify-end sm:justify-center">
                                 <button type="button" @click="hapus(i)" x-show="rows.length > 1" title="Hapus baris ini" class="p-2 text-error-500 hover:text-error-700 hover:bg-error-50 rounded-lg transition">
@@ -126,7 +126,7 @@
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="status" value="selesai">
                                     <label class="block text-xs font-bold text-gray-700">Catatan Hasil Sesi (Rahasia):</label>
-                                    <textarea name="catatan_internal" rows="2" placeholder="Catatan internal (rahasia, hanya konselor & admin)..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                                    <x-textarea name="catatan_internal" rows="2" placeholder="Catatan internal (rahasia, hanya konselor & admin)..." class="block w-full"></x-textarea>
                                     <div class="flex justify-end gap-2">
                                         <button type="button" @click="aksi = null" class="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 rounded-lg">Batal</button>
                                         <x-primary-button type="submit" class="text-xs px-4 py-1.5 rounded-lg font-bold">Simpan & Selesaikan</x-primary-button>
@@ -136,7 +136,7 @@
                                     @csrf @method('PATCH')
                                     <input type="hidden" name="status" value="batal">
                                     <label class="block text-xs font-bold text-error-800">Alasan Pembatalan Sesi:</label>
-                                    <textarea name="alasan_batal" rows="2" placeholder="Alasan pembatalan..." class="block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-error-500 focus:ring-error-500"></textarea>
+                                    <x-textarea name="alasan_batal" rows="2" placeholder="Alasan pembatalan..." class="block w-full"></x-textarea>
                                     <div class="flex justify-end gap-2">
                                         <button type="button" @click="aksi = null" class="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 rounded-lg">Batal</button>
                                         <x-primary-button type="submit" class="text-xs px-4 py-1.5 rounded-lg bg-error-600 hover:bg-error-700 font-bold">Konfirmasi Batal</x-primary-button>

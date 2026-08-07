@@ -29,38 +29,38 @@
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-12">
                     <div class="sm:col-span-8">
                         <x-input-label value="Judul Tugas *" class="text-xs font-bold text-gray-700" />
-                        <input type="text" name="judul" x-model="form.judul" required placeholder="Contoh: Jurnal Emosi Harian / Evaluasi Sikap" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                        <x-text-input type="text" name="judul" x-model="form.judul" required placeholder="Contoh: Jurnal Emosi Harian / Evaluasi Sikap" class="mt-1.5 block w-full" />
                     </div>
                     <div class="sm:col-span-4">
                         <x-input-label value="Frekuensi *" class="text-xs font-bold text-gray-700" />
-                        <select name="frekuensi" x-model="form.frekuensi" @change="pratinjau()" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                        <x-select name="frekuensi" x-model="form.frekuensi" @change="pratinjau()" class="mt-1.5 block w-full">
                             <option value="sekali">Sekali (One-off)</option>
                             <option value="harian">Harian</option>
                             <option value="mingguan">Mingguan</option>
                             <option value="bulanan">Bulanan</option>
-                        </select>
+                        </x-select>
                     </div>
                     <div class="sm:col-span-12">
                         <x-input-label value="Instruksi Pengerjaan *" class="text-xs font-bold text-gray-700" />
-                        <textarea name="instruksi" x-model="form.instruksi" rows="2" required placeholder="Jelaskan langkah-langkah detail pengerjaan atau pertanyaan yang harus dijawab siswa..." class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-medium text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                        <x-textarea name="instruksi" x-model="form.instruksi" rows="2" required placeholder="Jelaskan langkah-langkah detail pengerjaan atau pertanyaan yang harus dijawab siswa..." class="mt-1.5 block w-full"></x-textarea>
                     </div>
                     <div class="sm:col-span-4">
                         <x-input-label value="Tanggal Mulai *" class="text-xs font-bold text-gray-700" />
-                        <input type="date" name="tanggal_mulai" x-model="form.tanggal_mulai" @change="pratinjau()" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                        <x-text-input type="date" name="tanggal_mulai" x-model="form.tanggal_mulai" @change="pratinjau()" required class="mt-1.5 block w-full" />
                     </div>
                     <div class="sm:col-span-4">
                         <x-input-label value="Tanggal Selesai *" class="text-xs font-bold text-gray-700" />
-                        <input type="date" name="tanggal_selesai" x-model="form.tanggal_selesai" @change="pratinjau()" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                        <x-text-input type="date" name="tanggal_selesai" x-model="form.tanggal_selesai" @change="pratinjau()" required class="mt-1.5 block w-full" />
                     </div>
                     <div class="sm:col-span-4" x-show="frekuensiAkhir === 'bulanan'" style="display: none;">
                         <x-input-label value="Tanggal Pengumpulan Bulanan *" class="text-xs font-bold text-gray-700" />
-                        <select name="tanggal_pengumpulan_bulanan" x-model="form.tanggal_pengumpulan_bulanan" @change="pratinjau()" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                        <x-select name="tanggal_pengumpulan_bulanan" x-model="form.tanggal_pengumpulan_bulanan" @change="pratinjau()" class="mt-1.5 block w-full">
                             <option value="">Pilih tanggal...</option>
                             <template x-for="hari in 31" :key="hari">
                                 <option :value="hari" x-text="hari"></option>
                             </template>
                             <option value="akhir_bulan">Hari terakhir bulan</option>
-                        </select>
+                        </x-select>
                     </div>
                 </div>
 
