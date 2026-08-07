@@ -108,7 +108,15 @@
         </div>
     </div>
 
-    <nav class="scrollbar-none flex-1 overflow-y-auto px-4 py-6">
+    <nav 
+        class="scrollbar-none flex-1 overflow-y-auto px-4 py-6"
+        x-init="$nextTick(() => { 
+            const activeItem = $el.querySelector('.bg-brand-50');
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'center' });
+            }
+        })"
+    >
         @foreach ($navGroups as $group)
             @if (count($group['items']))
                 <div class="mb-7">
