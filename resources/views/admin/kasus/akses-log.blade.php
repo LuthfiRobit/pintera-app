@@ -1,6 +1,6 @@
 {{-- resources/views/admin/kasus/akses-log.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: '{{ addslashes($search ?? '') }}' }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: '{{ addslashes($search ?? '') }}', perPage: '{{ $perPage ?? 20 }}' }">
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif
@@ -54,7 +54,8 @@
                 </p>
             </div>
 
-            <form method="GET" action="{{ route('admin.kasus.log-akses') }}" class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-end">
+            <form method="GET" action="{{ route('admin.kasus.log-akses') }}" x-ref="filterForm" class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-end">
+                <input type="hidden" name="per_page" x-bind:value="perPage">
                 <div class="lg:col-span-12 max-w-lg">
                     <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Pengakses atau Siswa</label>
                     <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 transition-colors focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
@@ -62,7 +63,7 @@
                         <input x-model="search" type="text" name="search" id="search" placeholder="Ketik nama untuk mencari..." 
                                class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
                         
-                        <button type="button" x-show="search.length > 0" x-on:click="search = ''; $el.closest('form').submit()" style="display: none;" class="text-gray-400 hover:text-gray-600">
+                        <button type="button" x-show="search.length > 0" x-on:click="search = ''; $refs.filterForm.submit()" style="display: none;" class="text-gray-400 hover:text-gray-600">
                             <x-icon name="close" class="h-4 w-4" />
                         </button>
                     </div>
@@ -76,6 +77,19 @@
                 <div class="flex items-center gap-2.5">
                     <p class="font-display text-sm font-bold text-gray-900">Daftar Riwayat</p>
                     <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600">{{ $logs->total() }} Data</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label for="per_page" class="text-xs font-medium text-gray-500">Tampilkan:</label>
+                    <select
+                        id="per_page"
+                        x-model="perPage"
+                        @change="$refs.filterForm.submit()"
+                        class="rounded-lg border-gray-200 py-1 pl-2.5 pr-8 text-xs text-gray-700 shadow-sm transition focus:border-brand-500 focus:ring-brand-500"
+                    >
+                        @foreach ([10, 20, 25, 50] as $n)
+                            <option value="{{ $n }}">{{ $n }} / hal</option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
 

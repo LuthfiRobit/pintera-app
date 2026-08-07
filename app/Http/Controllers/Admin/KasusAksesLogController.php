@@ -18,6 +18,7 @@ class KasusAksesLogController extends BaseController
 
         $user = auth()->user();
         $search = request('search');
+        $perPage = request('per_page', 20);
 
         // Query dasar
         $baseQuery = Activity::query()
@@ -49,7 +50,7 @@ class KasusAksesLogController extends BaseController
 
         $logs = $baseQuery->with(['subject' => fn ($q) => $q->withoutGlobalScopes()->withTrashed()->with(['siswa' => fn ($sq) => $sq->withoutGlobalScopes()])])
             ->latest()
-            ->paginate(20)
+            ->paginate($perPage)
             ->withQueryString();
 
         // Eager-loading causers tanpa TenantScope (tetap seperti semula)
@@ -63,7 +64,8 @@ class KasusAksesLogController extends BaseController
             'causers' => $causers,
             'totalAkses' => $totalAkses,
             'aksesHariIni' => $aksesHariIni,
-            'search' => $search
+            'search' => $search,
+            'perPage' => $perPage
         ]);
     }
 }
