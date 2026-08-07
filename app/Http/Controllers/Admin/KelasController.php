@@ -32,10 +32,21 @@ class KelasController extends BaseController
             $query->where('tahun_ajaran_id', $tahunAjaranId);
         }
 
+        $kelasList = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.kelas._daftar', [
+                'kelasList' => $kelasList,
+                'perPage' => $perPage,
+            ]);
+        }
+
         return view('admin.kelas.index', [
-            'kelasList'       => $query->paginate($perPage)->withQueryString(),
+            'kelasList'       => $kelasList,
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
             'perPage'         => $perPage,
+            'totalKelas'      => Kelas::count(),
+            'totalTaAktif'    => Kelas::whereHas('tahunAjaran', fn($q) => $q->where('status_aktif', true))->count(),
         ]);
     }
 
