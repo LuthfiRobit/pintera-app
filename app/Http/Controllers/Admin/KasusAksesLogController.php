@@ -17,29 +17,53 @@ class KasusAksesLogController extends BaseController
         $this->authorize('kasus.lihat-log-akses');
 
         $user = auth()->user();
+        $search = request('search');
 
-        $logs = Activity::query()
+        // Query dasar
+        $baseQuery = Activity::query()
             ->where('log_name', 'akses_klinis')
-            ->with(['subject' => fn ($q) => $q->withoutGlobalScopes()->withTrashed()->with(['siswa' => fn ($sq) => $sq->withoutGlobalScopes()])])
             ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->whereHasMorph(
                 'subject',
                 [\App\Models\Kasus::class],
                 fn ($subQuery) => $subQuery->withoutGlobalScopes()->withTrashed()->where('lembaga_id', $user->lembaga_id)
-            ))
-            ->latest()
-            ->paginate(20);
+            ));
 
-        // The `causer` morphTo relation resolves through App\Models\User, which uses
-        // BelongsToTenant. Eager-loading it via ->with('causer') would silently apply
-        // TenantScope per morph type, resolving to null for any causer whose lembaga_id
-        // differs from the viewing admin (orang_tua and yayasan_super_admin both have a
-        // null lembaga_id; a konselor from another lembaga also differs). Resolve causers
-        // separately, scope-free, and key them by id for the view to look up.
+        // Statistik
+        $totalAkses = (clone $baseQuery)->count();
+        $aksesHariIni = (clone $baseQuery)->whereDate('created_at', today())->count();
+
+        // Pencarian (Siswa atau Pengakses)
+        // Karena subject dan causer adalah polymorphic, kita apply filter secara manual.
+        if (!empty($search)) {
+            $baseQuery->where(function ($q) use ($search) {
+                // Pencarian berdasarkan nama siswa di Kasus
+                $q->whereHasMorph('subject', [\App\Models\Kasus::class], function ($subQuery) use ($search) {
+                    $subQuery->withoutGlobalScopes()->withTrashed()->whereHas('siswa', function ($siswaQuery) use ($search) {
+                        $siswaQuery->withoutGlobalScopes()->where('nama_lengkap', 'like', '%' . $search . '%');
+                    });
+                })
+                // Pencarian berdasarkan nama causer (User)
+                ->orWhereIn('causer_id', User::withoutGlobalScopes()->where('name', 'like', '%' . $search . '%')->pluck('id'));
+            });
+        }
+
+        $logs = $baseQuery->with(['subject' => fn ($q) => $q->withoutGlobalScopes()->withTrashed()->with(['siswa' => fn ($sq) => $sq->withoutGlobalScopes()])])
+            ->latest()
+            ->paginate(20)
+            ->withQueryString();
+
+        // Eager-loading causers tanpa TenantScope (tetap seperti semula)
         $causers = User::withoutGlobalScopes()
             ->whereIn('id', $logs->getCollection()->pluck('causer_id')->filter()->unique())
             ->get()
             ->keyBy('id');
 
-        return view('admin.kasus.akses-log', ['logs' => $logs, 'causers' => $causers]);
+        return view('admin.kasus.akses-log', [
+            'logs' => $logs, 
+            'causers' => $causers,
+            'totalAkses' => $totalAkses,
+            'aksesHariIni' => $aksesHariIni,
+            'search' => $search
+        ]);
     }
 }
