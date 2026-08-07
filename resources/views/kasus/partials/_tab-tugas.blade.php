@@ -1,4 +1,4 @@
-<div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-6" x-data="tugasBatchForm()">
+<div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-6" @if($isKonselor) x-data="tugasBatchForm()" @endif>
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
         <div>
             <h3 class="font-display text-base font-bold text-gray-900">Tugas & Refleksi Pendampingan</h3>
