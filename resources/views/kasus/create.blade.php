@@ -1,5 +1,17 @@
 {{-- resources/views/kasus/create.blade.php --}}
 <x-app-layout>
+    @php
+        $siswaOptions = $siswaList->map(function ($s) {
+            return [
+                'id' => $s->id,
+                'nama' => $s->nama_lengkap,
+                'nis' => $s->nis ?: '-',
+                'nisn' => $s->nisn ?: '-',
+                'display' => $s->nama_lengkap . ' (NIS: ' . ($s->nis ?: '-') . ' / NISN: ' . ($s->nisn ?: '-') . ')'
+            ];
+        })->values();
+    @endphp
+
     <div class="mx-auto max-w-4xl space-y-6">
         @if ($errors->any())
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700 shadow-sm" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
@@ -88,17 +100,4 @@
             </form>
         </div>
     </div>
-
-    @php
-        $siswaOptions = $siswaList->map(function ($s) {
-            return [
-                'id' => $s->id,
-                'nama' => $s->nama_lengkap,
-                'nis' => $s->nis ?: '-',
-                'nisn' => $s->nisn ?: '-',
-                'display' => $s->nama_lengkap . ' (NIS: ' . ($s->nis ?: '-') . ' / NISN: ' . ($s->nisn ?: '-') . ')'
-            ];
-        })->values();
-    @endphp
-
 </x-app-layout>
