@@ -82,6 +82,6 @@ Review menyeluruh commit `2f89536`..`b2c8e8b` (39 commit) menemukan 6 temuan Cri
 - **[FIX]** Dropdown aksi kosong di "Kasus Terhapus" untuk user tanpa izin pulihkan — sekarang tidak dirender sama sekali kalau tidak ada isinya.
 - **[FIX]** Pencarian causer di Log Akses sekarang dibatasi `causer_type` supaya tidak salah cocok id.
 - **[FIX]** Field email di `reset-password` tidak lagi `readonly` — user bisa koreksi email salah ketik setelah validasi gagal.
-- **[DILEWATI, sengaja]** Guard `$orangTua->user` yang tidak seragam — dibiarkan karena `OrangTuaController::edit()` sudah eager-load aman, jadi bukan bug nyata, hanya gaya penulisan.
-- **[DILEWATI, sengaja]** Adopsi komponen belum menyeluruh di form NIK tab Orang Tua — sesuai spec relasi-tertaut yang memang minta raw input di situ.
+- **[FIX]** Guard `$orangTua->user` yang sebelumnya tidak seragam — sekarang menggunakan *null-safe operator* (`?->`) secara penuh untuk keamanan ekstra di level *View*.
+- **[FIX]** Form NIK, Nama Lengkap, No. HP, dan Hubungan di *tab* Orang Tua — sekarang sepenuhnya mengadopsi komponen `<x-text-input>` dan `<x-select>` (meneruskan `x-model`).
 - **[VERIFICATION]** `npm run build` bersih, `php artisan test` penuh: **1328 passed** (naik dari 1319, +9 test baru), 0 gagal.
