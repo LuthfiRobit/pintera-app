@@ -2,7 +2,7 @@
 <x-app-layout>
     <div class="mx-auto max-w-4xl space-y-4">
         @if (session('status'))
-            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast ? $store.toast.push('success', @js(session('status'))) : null">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
         @endif
         @if ($errors->any())
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast ? $store.toast.push('error', @js($errors->first())) : null">{{ $errors->first() }}</div>

@@ -55,13 +55,14 @@
                 <p class="text-xs text-gray-500 mb-4">Tentukan tingkat kesegeraan penanganan berdasarkan deskripsi masalah yang dilaporkan.</p>
                 
                 {{-- Hidden input untuk submit form backend --}}
-                <input type="hidden" name="tingkat_urgensi" x-bind:value="urgensi">
+                <input type="hidden" name="tingkat_urgensi" value="{{ old('tingkat_urgensi', 'sedang') }}" x-bind:value="urgensi">
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3" role="radiogroup" aria-label="Tingkat Urgensi">
                     <!-- Urgensi: Rendah -->
-                    <button type="button" 
+                    <button type="button"
                             x-on:click="setUrgensi('rendah')"
                             x-bind:class="urgensi === 'rendah' ? 'border-emerald-200 bg-emerald-50 ring-2 ring-emerald-500/20' : 'border-gray-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/50'"
+                            role="radio" x-bind:aria-checked="urgensi === 'rendah' ? 'true' : 'false'"
                             class="relative flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all duration-200">
                         <div class="flex items-center gap-2">
                             <span class="flex h-5 w-5 items-center justify-center rounded-full"
@@ -74,9 +75,10 @@
                     </button>
 
                     <!-- Urgensi: Sedang -->
-                    <button type="button" 
+                    <button type="button"
                             x-on:click="setUrgensi('sedang')"
                             x-bind:class="urgensi === 'sedang' ? 'border-amber-200 bg-amber-50 ring-2 ring-amber-500/20' : 'border-gray-200 bg-white hover:border-amber-200 hover:bg-amber-50/50'"
+                            role="radio" x-bind:aria-checked="urgensi === 'sedang' ? 'true' : 'false'"
                             class="relative flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all duration-200">
                         <div class="flex items-center gap-2">
                             <span class="flex h-5 w-5 items-center justify-center rounded-full"
@@ -89,9 +91,10 @@
                     </button>
 
                     <!-- Urgensi: Tinggi -->
-                    <button type="button" 
+                    <button type="button"
                             x-on:click="setUrgensi('tinggi')"
                             x-bind:class="urgensi === 'tinggi' ? 'border-error-200 bg-error-50 ring-2 ring-error-500/20' : 'border-gray-200 bg-white hover:border-error-200 hover:bg-error-50/50'"
+                            role="radio" x-bind:aria-checked="urgensi === 'tinggi' ? 'true' : 'false'"
                             class="relative flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all duration-200">
                         <div class="flex items-center gap-2">
                             <span class="flex h-5 w-5 items-center justify-center rounded-full"
@@ -102,6 +105,8 @@
                         </div>
                         <p class="text-[11px] font-medium leading-relaxed mt-1" x-bind:class="urgensi === 'tinggi' ? 'text-error-700' : 'text-gray-500'">Kritis / Segera. Membutuhkan intervensi langsung dan perlindungan cepat.</p>
                     </button>
+
+                    <x-input-error :messages="$errors->get('tingkat_urgensi')" class="mt-2 sm:col-span-3" />
                 </div>
             </div>
 
@@ -116,10 +121,10 @@
                         <p class="mt-0.5 text-xs text-amber-700">Menunggu alokasi tenaga ahli &mdash; tidak ada Guru BK aktif di lembaga atau Karyawan Psikologi/Konselor pool di yayasan saat ini.</p>
                     </div>
                 @else
-                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Konselor">
                         {{-- Hidden inputs for backend --}}
-                        <input type="hidden" name="konselor_tipe" x-bind:value="konselorTipe">
-                        <input type="hidden" name="konselor_id" x-bind:value="konselorId">
+                        <input type="hidden" name="konselor_tipe" value="{{ old('konselor_tipe') }}" x-bind:value="konselorTipe">
+                        <input type="hidden" name="konselor_id" value="{{ old('konselor_id') }}" x-bind:value="konselorId">
 
                         @foreach ($kandidat as $index => $item)
                             @php
@@ -132,9 +137,10 @@
                             
                             <button type="button"
                                     x-on:click="setKonselor('{{ $item->tipe }}', '{{ $item->model->id }}')"
-                                    x-bind:class="konselorTipe === '{{ $item->tipe }}' && konselorId == '{{ $item->model->id }}' 
-                                        ? 'border-brand-500 bg-brand-50/10 ring-2 ring-brand-500/20' 
+                                    x-bind:class="konselorTipe === '{{ $item->tipe }}' && konselorId == '{{ $item->model->id }}'
+                                        ? 'border-brand-500 bg-brand-50/10 ring-2 ring-brand-500/20'
                                         : '{{ $isFull ? 'border-error-200 bg-error-50/30' : 'border-gray-200 bg-white hover:border-brand-200 hover:bg-brand-50/30' }}'"
+                                    role="radio" x-bind:aria-checked="konselorTipe === '{{ $item->tipe }}' && konselorId == '{{ $item->model->id }}' ? 'true' : 'false'"
                                     class="relative flex items-start justify-between gap-3 rounded-xl border p-4 text-sm text-left transition-all duration-200 shadow-2xs">
                                 
                                 <div class="flex items-start gap-3">

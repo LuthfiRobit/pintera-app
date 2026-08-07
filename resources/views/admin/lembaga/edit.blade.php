@@ -23,12 +23,12 @@
     }">
         {{-- Flash Messages --}}
         @if (session('status') || session('success'))
-            <div class="rounded-lg bg-success-50 p-4 text-sm font-medium text-success-700 shadow-sm" x-init="$store.toast ? $store.toast.push('success', @js(session('status') ?? session('success'))) : null">
+            <div class="rounded-lg bg-success-50 p-4 text-sm font-medium text-success-700 shadow-sm">
                 {{ session('status') ?? session('success') }}
             </div>
         @endif
         @if (session('error'))
-            <div class="rounded-lg bg-error-50 p-4 text-sm font-medium text-error-700 shadow-sm" x-init="$store.toast ? $store.toast.push('error', @js(session('error'))) : null">
+            <div class="rounded-lg bg-error-50 p-4 text-sm font-medium text-error-700 shadow-sm">
                 {{ session('error') }}
             </div>
         @endif

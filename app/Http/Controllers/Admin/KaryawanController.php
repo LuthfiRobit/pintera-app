@@ -136,7 +136,12 @@ class KaryawanController extends BaseController
     {
         $this->authorize('karyawan.edit');
 
-        $karyawan->load(['user', 'jenisKaryawan', 'lembaga', 'yayasan']);
+        $karyawan->load([
+            'user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+            'jenisKaryawan',
+            'lembaga',
+            'yayasan',
+        ]);
 
         return view('admin.karyawan.edit', [
             'karyawan' => $karyawan,

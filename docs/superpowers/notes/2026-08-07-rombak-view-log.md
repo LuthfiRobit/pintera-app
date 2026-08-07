@@ -60,3 +60,28 @@ Dokumen ini mencatat setiap perubahan atau pembuatan file baru selama perombakan
 ---
 
 **Status Akhir**: Semua antarmuka form modul master (Karyawan, Orang Tua, Siswa), modul inti (Kasus), dan sistem Autentikasi kini sepenuhnya sejajar menggunakan konsep premium card dan standar *Premium Museum Quality UX*.
+
+## Tahap 6: Ronde Perbaikan (Review Agent A, 2026-08-07)
+
+Review menyeluruh commit `2f89536`..`b2c8e8b` (39 commit) menemukan 6 temuan Critical/Important dan 12 Minor. Semua diperbaiki langsung oleh Agent A pada sesi yang sama, atas permintaan user ("langsung perbaiki"):
+
+- **[FIX]** Toast dobel di 44 halaman (di luar rombakan ini juga) — dihapus push manual `x-init`, komponen `<x-toast>` global sudah menangani `session('status')`/`session('error')` sendiri.
+- **[FIX]** Field password (`login`, `confirm-password`, `reset-password`) render sebagai `type="text"` sebelum Alpine hidup — ditambahkan `type="password"` statis.
+- **[FIX]** 14 nama ikon dipakai tapi tidak ada di `<x-icon>`, render kosong tanpa error (`close`, `check`, `delete`, `arrow_back`, `event`, `assignment`, `assignment_add`, `support_agent`, `history`, `bolt`, `search_off`, `settings_backup_restore`, `work`, `family_restroom`) — ditambahkan semua + `@default` fallback supaya nama ikon yang salah/hilang terlihat, bukan diam-diam kosong.
+- **[FIX]** `per_page` tidak divalidasi di `KasusAksesLogController`/`KasusTerhapusController` — diklem ke whitelist `[10,20,25,50]` mengikuti pola `SiswaController`.
+- **[FIX]** Tidak ada test untuk logic backend baru (search, per_page, stats) — ditambahkan 9 test baru di `KasusAksesLogViewTest`/`KasusTerhapusViewTest`, termasuk regresi tenant-scope untuk pencarian causer orang tua.
+- **[FIX]** Constraint HTML lebih ketat dari validasi server (NISN siswa, No. HP karyawan/orang-tua) — dilonggarkan supaya selaras dengan rule backend, data lama tidak lagi terkunci dari form edit.
+- **[FIX]** Triase kehilangan guard client-side untuk urgensi — ditambahkan `<x-input-error>` + fallback `value` statis pada hidden input.
+- **[FIX]** A11y: kartu urgensi/konselor sekarang `role="radio"`/`aria-checked`; tombol toggle password kini bisa dijangkau keyboard dengan `aria-label`.
+- **[FIX]** `resources/js/kasus-form.js` dead code dihapus (sudah pindah ke `tomSelectSiswa`).
+- **[FIX]** Key `'display'` yang tidak pernah dibaca dihapus dari `$siswaOptions`.
+- **[FIX]** `addslashes()` diganti `@js()` di `akses-log`/`terhapus` sesuai konvensi.
+- **[FIX]** Teks "Akun: Aktif" yang hardcode di `siswa/edit` sekarang mengikuti status `is_active` sebenarnya.
+- **[FIX]** `KaryawanController::edit()` sekarang eager-load `user` dengan `withoutGlobalScope(TenantScope::class)` — menutup potensi 500 untuk karyawan pool (bug tenant-scope nyata, bukan cuma kosmetik).
+- **[FIX]** Trio komponen `<x-select>`/`<x-textarea>` disamakan gaya focus-ring & `shadow-sm`-nya dengan `<x-text-input>`.
+- **[FIX]** Dropdown aksi kosong di "Kasus Terhapus" untuk user tanpa izin pulihkan — sekarang tidak dirender sama sekali kalau tidak ada isinya.
+- **[FIX]** Pencarian causer di Log Akses sekarang dibatasi `causer_type` supaya tidak salah cocok id.
+- **[FIX]** Field email di `reset-password` tidak lagi `readonly` — user bisa koreksi email salah ketik setelah validasi gagal.
+- **[DILEWATI, sengaja]** Guard `$orangTua->user` yang tidak seragam — dibiarkan karena `OrangTuaController::edit()` sudah eager-load aman, jadi bukan bug nyata, hanya gaya penulisan.
+- **[DILEWATI, sengaja]** Adopsi komponen belum menyeluruh di form NIK tab Orang Tua — sesuai spec relasi-tertaut yang memang minta raw input di situ.
+- **[VERIFICATION]** `npm run build` bersih, `php artisan test` penuh: **1328 passed** (naik dari 1319, +9 test baru), 0 gagal.

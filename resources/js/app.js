@@ -36,7 +36,6 @@ import { mataPelajaranFilter } from './mata-pelajaran-filter';
 import { mataPelajaranForm } from './mata-pelajaran-form';
 import { orangTuaCari } from './orang-tua-cari';
 import { karyawanForm } from './karyawan-form';
-import { kasusForm } from './kasus-form';
 import { tomSelectSiswa } from './tom-select-siswa';
 import { triaseForm } from './triase-form';
 
@@ -80,7 +79,6 @@ Alpine.data('mataPelajaranFilter', mataPelajaranFilter);
 Alpine.data('mataPelajaranForm', mataPelajaranForm);
 Alpine.data('orangTuaCari', orangTuaCari);
 Alpine.data('karyawanForm', karyawanForm);
-Alpine.data('kasusForm', kasusForm);
 Alpine.data('tomSelectSiswa', tomSelectSiswa);
 Alpine.data('triaseForm', triaseForm);
 

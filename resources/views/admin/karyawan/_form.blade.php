@@ -37,7 +37,7 @@
 
             <div>
                 <x-input-label value="No. HP / WhatsApp" />
-                <x-text-input type="tel" name="no_hp" value="{{ $val('no_hp') }}" placeholder="08xxxxxxxxxx" class="mt-1.5 block w-full sm:w-3/4" maxlength="20" pattern="[0-9]+" :error="$errors->has('no_hp')" />
+                <x-text-input type="tel" name="no_hp" value="{{ $val('no_hp') }}" placeholder="08xxxxxxxxxx" class="mt-1.5 block w-full sm:w-3/4" maxlength="20" :error="$errors->has('no_hp')" />
                 <x-input-hint>(Opsional) Gunakan format awalan 08.</x-input-hint>
                 <x-input-error :messages="$errors->get('no_hp')" class="mt-1.5" />
             </div>

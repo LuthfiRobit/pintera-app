@@ -7,7 +7,6 @@
                 'nama' => $s->nama_lengkap,
                 'nis' => $s->nis ?: '-',
                 'nisn' => $s->nisn ?: '-',
-                'display' => $s->nama_lengkap . ' (NIS: ' . ($s->nis ?: '-') . ' / NISN: ' . ($s->nisn ?: '-') . ')'
             ];
         })->values();
     @endphp

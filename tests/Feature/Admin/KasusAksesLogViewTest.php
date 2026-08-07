@@ -105,6 +105,83 @@ it('shows the causer real name even when the causer lembaga_id differs from the 
     $response->assertDontSee('Pengguna tidak diketahui');
 });
 
+it('finds a log row by causer name via search even when the causer has a null lembaga_id (orang tua)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kasus = Kasus::factory()->create(['siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'status' => StatusKasus::Berjalan]);
+
+    $causer = User::factory()->create(['lembaga_id' => null, 'name' => 'Ibu Wulan Pencarian Test']);
+    activity('akses_klinis')->causedBy($causer)->performedOn($kasus)->log('Membuka detail kasus');
+
+    $viewer = actingAsKasusLogViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.kasus.log-akses', ['search' => 'Ibu Wulan Pencarian']));
+
+    $response->assertOk();
+    $response->assertSee($siswa->nama_lengkap);
+});
+
+it('does not leak another lembaga log row via causer-name search', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $kasusLain = Kasus::factory()->create(['siswa_id' => $siswaLain->id, 'lembaga_id' => $lembagaLain->id, 'status' => StatusKasus::Berjalan]);
+
+    $causerSama = User::factory()->create(['lembaga_id' => null, 'name' => 'Nama Sama Pencarian']);
+    activity('akses_klinis')->causedBy($causerSama)->performedOn($kasusLain)->log('Membuka detail kasus');
+
+    $viewer = actingAsKasusLogViewer($lembagaSendiri);
+
+    $response = $this->actingAs($viewer)->get(route('admin.kasus.log-akses', ['search' => 'Nama Sama Pencarian']));
+
+    $response->assertOk();
+    $response->assertDontSee($siswaLain->nama_lengkap);
+});
+
+it('clamps an out-of-list per_page value back to the default of 20', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $viewer = actingAsKasusLogViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.kasus.log-akses', ['per_page' => 999999]));
+
+    $response->assertOk();
+    $response->assertViewHas('perPage', 20);
+});
+
+it('accepts a whitelisted per_page value', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $viewer = actingAsKasusLogViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.kasus.log-akses', ['per_page' => 50]));
+
+    $response->assertOk();
+    $response->assertViewHas('perPage', 50);
+});
+
+it('reports totalAkses and aksesHariIni scoped to the viewing admin lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswaSendiri = Siswa::factory()->create(['lembaga_id' => $lembagaSendiri->id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $kasusSendiri = Kasus::factory()->create(['siswa_id' => $siswaSendiri->id, 'lembaga_id' => $lembagaSendiri->id, 'status' => StatusKasus::Berjalan]);
+    $kasusLain = Kasus::factory()->create(['siswa_id' => $siswaLain->id, 'lembaga_id' => $lembagaLain->id, 'status' => StatusKasus::Berjalan]);
+    bukaHalamanKasusSebagaiKonselor($kasusSendiri, $lembagaSendiri);
+    bukaHalamanKasusSebagaiKonselor($kasusLain, $lembagaLain);
+
+    $viewer = actingAsKasusLogViewer($lembagaSendiri);
+
+    $response = $this->actingAs($viewer)->get(route('admin.kasus.log-akses'));
+
+    $response->assertOk();
+    $response->assertViewHas('totalAkses', 1);
+    $response->assertViewHas('aksesHariIni', 1);
+});
+
 it('403s a user without kasus.lihat-log-akses permission', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

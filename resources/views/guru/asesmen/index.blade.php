@@ -2,7 +2,7 @@
     <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: '', filterJenis: '' }">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
         @endif
         @if ($errors->any())
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>

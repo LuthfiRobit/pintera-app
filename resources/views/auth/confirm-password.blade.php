@@ -11,12 +11,12 @@
         <div class="space-y-1.5">
             <x-input-label for="password" :value="__('Kata Sandi')" />
             <div x-data="{ show: false }" class="relative">
-                <x-text-input id="password" class="pr-10"
+                <x-text-input id="password" class="pr-10" type="password"
                                 x-bind:type="show ? 'text' : 'password'"
                                 name="password"
                                 placeholder="Masukkan kata sandi Anda"
                                 required autocomplete="current-password" autofocus />
-                <button type="button" @click="show = !show" tabindex="-1" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                <button type="button" @click="show = !show" :aria-label="show ? 'Sembunyikan password' : 'Tampilkan password'" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
                     <x-icon name="visibility_off" x-show="show" style="display: none;" class="h-5 w-5" />
                     <x-icon name="visibility" x-show="!show" class="h-5 w-5" />
                 </button>

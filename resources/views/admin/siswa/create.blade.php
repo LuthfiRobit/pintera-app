@@ -2,7 +2,7 @@
     <div class="mx-auto max-w-5xl space-y-6">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="rounded-lg bg-success-50 p-4 text-sm font-medium text-success-700 shadow-sm" x-data x-init="$store.toast ? $store.toast.push('success', @js(session('status'))) : null">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm font-medium text-success-700 shadow-sm" x-data>{{ session('status') }}</div>
         @endif
         @if ($errors->any())
             <div class="rounded-lg bg-error-50 p-4 text-sm font-medium text-error-700 shadow-sm" x-data x-init="$store.toast ? $store.toast.push('error', @js($errors->first())) : null">Terdapat kesalahan pengisian data, silakan periksa kembali formulir di bawah.</div>

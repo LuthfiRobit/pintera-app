@@ -37,7 +37,7 @@
                     </div>
                     <div class="flex justify-between py-2.5">
                         <dt class="text-gray-500">Username Login</dt>
-                        <dd class="font-mono font-medium text-brand-600">{{ $karyawan->user->username }}</dd>
+                        <dd class="font-mono font-medium text-brand-600">{{ $karyawan->user?->username ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between py-2.5">
                         <dt class="text-gray-500">Email Akun</dt>

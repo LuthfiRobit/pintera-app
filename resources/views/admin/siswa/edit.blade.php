@@ -5,7 +5,7 @@
     }">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="rounded-lg bg-success-50 p-4 text-sm font-medium text-success-700 shadow-sm" x-init="$store.toast ? $store.toast.push('success', @js(session('status'))) : null">{{ session('status') }}</div>
+            <div class="rounded-lg bg-success-50 p-4 text-sm font-medium text-success-700 shadow-sm">{{ session('status') }}</div>
         @endif
         @if ($errors->any())
             <div class="rounded-lg bg-error-50 p-4 text-sm font-medium text-error-700 shadow-sm" x-init="$store.toast ? $store.toast.push('error', @js($errors->first())) : null">Terdapat kesalahan pengisian data, silakan periksa kembali formulir di bawah.</div>
@@ -60,8 +60,8 @@
                         </span>
                         @if ($siswa->user)
                             <span class="flex items-center gap-1.5">
-                                <x-icon name="check_circle" class="h-4 w-4 text-brand-600" />
-                                <span class="text-xs text-gray-500">Akun: Aktif</span>
+                                <x-icon name="{{ $siswa->user->is_active ? 'check_circle' : 'cancel' }}" class="h-4 w-4 {{ $siswa->user->is_active ? 'text-brand-600' : 'text-gray-400' }}" />
+                                <span class="text-xs text-gray-500">Akun: {{ $siswa->user->is_active ? 'Aktif' : 'Non-aktif' }}</span>
                             </span>
                         @endif
                     </div>

@@ -54,7 +54,7 @@
 
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
-            <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-xs" x-data x-init="$store.toast.push('success', @js(session('status')))">
+            <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 shadow-xs" x-data>
                 <div class="flex items-center gap-3">
                     <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100/80 text-emerald-600">
                         <x-icon name="check_circle" class="h-5 w-5" />

@@ -1,6 +1,6 @@
 {{-- resources/views/admin/kasus/akses-log.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: '{{ addslashes($search ?? '') }}', perPage: '{{ $perPage ?? 20 }}' }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: @js($search ?? ''), perPage: @js((string) ($perPage ?? 20)) }">
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif

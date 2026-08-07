@@ -1,6 +1,6 @@
 {{-- resources/views/admin/kasus/terhapus.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: '{{ addslashes($search ?? '') }}', perPage: '{{ $perPage ?? 20 }}' }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ search: @js($search ?? ''), perPage: @js((string) ($perPage ?? 20)) }">
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
         @endif
@@ -107,8 +107,8 @@
                         @forelse ($kasusList as $kasus)
                             <tr class="transition hover:bg-gray-50">
                                 <td class="sticky left-0 z-10 bg-white px-5 py-3.5 border-r border-gray-100">
-                                    <x-table-actions>
-                                        @can('kasus.pulihkan')
+                                    @can('kasus.pulihkan')
+                                        <x-table-actions>
                                             <form method="POST" action="{{ route('admin.kasus.restore', $kasus) }}" x-data @submit.prevent="confirmDialog('Pulihkan Kasus?', 'Apakah Anda yakin ingin memulihkan kasus ini ke daftar aktif?', { confirmLabel: 'Ya, Pulihkan' }).then(confirmed => { if (confirmed) $el.submit() })">
                                                 @csrf
                                                 <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
@@ -116,8 +116,8 @@
                                                     <span class="font-medium text-brand-600">Pulihkan Data</span>
                                                 </button>
                                             </form>
-                                        @endcan
-                                    </x-table-actions>
+                                        </x-table-actions>
+                                    @endcan
                                 </td>
                                 <td class="px-5 py-3.5">
                                     <p class="font-bold text-gray-900">{{ $kasus->siswa?->nama_lengkap ?? '—' }}</p>

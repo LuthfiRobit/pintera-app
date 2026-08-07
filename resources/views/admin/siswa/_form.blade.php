@@ -24,7 +24,7 @@
 
             <div class="sm:col-span-6">
                 <x-input-label value="NISN (National ID)" />
-                <x-text-input type="text" name="nisn" value="{{ $val('nisn') }}" placeholder="10 digit NISN nasional" class="mt-1.5 block w-full font-mono transition duration-150" maxlength="10" minlength="10" pattern="[0-9]+" :error="$errors->has('nisn')" />
+                <x-text-input type="text" name="nisn" value="{{ $val('nisn') }}" placeholder="10 digit NISN nasional" class="mt-1.5 block w-full font-mono transition duration-150" maxlength="20" :error="$errors->has('nisn')" />
                 <x-input-hint>(Opsional)</x-input-hint>
                 <x-input-error :messages="$errors->get('nisn')" class="mt-1.5" />
             </div>

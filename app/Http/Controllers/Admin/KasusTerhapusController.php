@@ -19,7 +19,7 @@ class KasusTerhapusController extends BaseController
 
         $user = auth()->user();
         $search = request('search');
-        $perPage = request('per_page', 20);
+        $perPage = in_array((int) request('per_page'), [10, 20, 25, 50]) ? (int) request('per_page') : 20;
 
         // Query Dasar
         $baseQuery = Kasus::onlyTrashed()
