@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-5">
+    <div class="mx-auto max-w-6xl space-y-5" x-data="{ activeTab: '{{ old('frekuensi') !== null ? 'tugas' : 'info' }}', showSesiForm: false, showTugasForm: false }">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data x-init="$store.toast ? $store.toast.push('success', @js(session('status'))) : null">{{ session('status') }}</div>
@@ -22,7 +22,7 @@
         </div>
 
         {{-- Hero Summary Profile Card (Premium Museum Quality UX) --}}
-        <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-6 shadow-card md:p-8" x-data="{ activeTab: '{{ old('frekuensi') !== null ? 'tugas' : 'info' }}', showSesiForm: false, showTugasForm: false }">
+        <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white p-6 shadow-card md:p-8">
             <div class="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-gradient-to-br from-brand-50 to-purple-50 opacity-60 blur-xl"></div>
             
             <div class="relative flex flex-col gap-6 md:flex-row md:items-start justify-between">
@@ -110,7 +110,7 @@
         </div>
 
         {{-- Content Area for Tabs --}}
-        <div class="mt-6" x-data="{ activeTab: '{{ old('frekuensi') !== null ? 'tugas' : 'info' }}', showSesiForm: false, showTugasForm: false }" x-modelable="activeTab">
+        <div class="mt-6">
             {{-- Tab Partials Inclusions --}}
             <div x-show="activeTab === 'info'" x-transition:enter="transition ease-out duration-200">
                 @include('kasus.partials._tab-info')
