@@ -85,3 +85,6 @@ Review menyeluruh commit `2f89536`..`b2c8e8b` (39 commit) menemukan 6 temuan Cri
 - **[FIX]** Guard `$orangTua->user` yang sebelumnya tidak seragam — sekarang menggunakan *null-safe operator* (`?->`) secara penuh untuk keamanan ekstra di level *View*.
 - **[FIX]** Form NIK, Nama Lengkap, No. HP, dan Hubungan di *tab* Orang Tua — sekarang sepenuhnya mengadopsi komponen `<x-text-input>` dan `<x-select>` (meneruskan `x-model`).
 - **[VERIFICATION]** `npm run build` bersih, `php artisan test` penuh: **1328 passed** (naik dari 1319, +9 test baru), 0 gagal.
+
+## Tahap Tambahan: UI/UX Pro Max Optimization
+- **[UI/UX]** Mengubah arsitektur informasi (IA) pada `sidebar.blade.php` menjadi pola **Operational-First**. Grup menu operasional harian (Ruang Guru, Akademik, Pendampingan) dipindah ke area fokus utama (atas), sementara menu statis (Data Induk, Akses & Peran) diturunkan ke area pengaturan (bawah). Ini mengeliminasi beban kognitif (*Hick's Law*) dan memangkas jarak *scroll* (*Fitts's Law*) bagi *user* Administrator.
