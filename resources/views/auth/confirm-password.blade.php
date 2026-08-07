@@ -17,7 +17,8 @@
                                 placeholder="Masukkan kata sandi Anda"
                                 required autocomplete="current-password" autofocus />
                 <button type="button" @click="show = !show" tabindex="-1" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                    <x-icon x-bind:name="show ? 'visibility_off' : 'visibility'" class="h-5 w-5" />
+                    <x-icon name="visibility_off" x-show="show" style="display: none;" class="h-5 w-5" />
+                    <x-icon name="visibility" x-show="!show" class="h-5 w-5" />
                 </button>
             </div>
             <x-input-error :messages="$errors->get('password')" />
