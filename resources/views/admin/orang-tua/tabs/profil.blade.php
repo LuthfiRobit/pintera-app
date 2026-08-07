@@ -72,25 +72,25 @@
                 <dl class="divide-y divide-gray-100 text-sm">
                     <div class="flex justify-between py-2.5">
                         <dt class="text-gray-500">Username</dt>
-                        <dd class="font-mono font-medium text-brand-600">{{ $orangTua->user->username }}</dd>
+                        <dd class="font-mono font-medium text-brand-600">{{ $orangTua->user?->username ?? '-' }}</dd>
                     </div>
                     <div class="flex justify-between items-center py-2.5">
                         <dt class="text-gray-500">Status Akun</dt>
                         <dd class="flex items-center gap-3">
-                            <x-badge tone="{{ $orangTua->user->is_active ? 'green' : 'amber' }}">{{ $orangTua->user->is_active ? 'Aktif' : 'Non-aktif' }}</x-badge>
+                            <x-badge tone="{{ $orangTua->user?->is_active ? 'green' : 'amber' }}">{{ $orangTua->user?->is_active ? 'Aktif' : 'Non-aktif' }}</x-badge>
                             
                             @can('orang-tua.edit')
                                 <form
                                     method="POST"
                                     action="{{ route('admin.orang-tua.update-status', $orangTua) }}"
                                     x-data
-                                    @submit.prevent="confirmDialog('Ubah Status Akun?', @js('Ubah status akun \"' . $orangTua->nama_lengkap . '\" menjadi \"' . ($orangTua->user->is_active ? 'Non-aktif' : 'Aktif') . '\"?'), { confirmLabel: 'Ya, Ubah' }).then(confirmed => { if (confirmed) $el.submit() })"
+                                    @submit.prevent="confirmDialog('Ubah Status Akun?', @js('Ubah status akun \"' . $orangTua->nama_lengkap . '\" menjadi \"' . ($orangTua->user?->is_active ? 'Non-aktif' : 'Aktif') . '\"?'), { confirmLabel: 'Ya, Ubah' }).then(confirmed => { if (confirmed) $el.submit() })"
                                 >
                                     @csrf
                                     @method('PATCH')
-                                    <input type="hidden" name="is_active" value="{{ $orangTua->user->is_active ? '0' : '1' }}">
+                                    <input type="hidden" name="is_active" value="{{ $orangTua->user?->is_active ? '0' : '1' }}">
                                     <button type="submit" class="text-xs font-semibold text-brand-600 hover:text-brand-700">
-                                        Jadikan {{ $orangTua->user->is_active ? 'Non-aktif' : 'Aktif' }}
+                                        Jadikan {{ $orangTua->user?->is_active ? 'Non-aktif' : 'Aktif' }}
                                     </button>
                                 </form>
                             @endcan

@@ -21,7 +21,7 @@
                 <div class="flex flex-wrap items-end gap-2">
                     <div class="flex-1 min-w-[200px]">
                         <x-input-label value="NIK (Nomor Induk Kependudukan)" />
-                        <input type="text" x-model="nik" maxlength="16" placeholder="16 digit NIK" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-text-input type="text" x-model="nik" maxlength="16" placeholder="16 digit NIK" class="mt-1.5 font-mono" />
                     </div>
                     <button type="button" @click="cari()" :disabled="searching" class="inline-flex h-[42px] items-center gap-1.5 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50">
                         <x-icon name="search" class="h-[13px] w-[13px]" />
@@ -37,11 +37,11 @@
                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div>
                                 <x-input-label value="Hubungan *" />
-                                <select name="hubungan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <x-select name="hubungan" class="mt-1.5">
                                     <option value="ayah">Ayah</option>
                                     <option value="ibu">Ibu</option>
                                     <option value="wali">Wali</option>
-                                </select>
+                                </x-select>
                             </div>
                             <label class="mt-6 flex items-center gap-2 text-sm text-gray-700">
                                 <input type="checkbox" name="is_kontak_utama" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
@@ -62,19 +62,19 @@
                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div>
                                 <x-input-label value="Nama Lengkap *" />
-                                <input type="text" name="nama_lengkap" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <x-text-input type="text" name="nama_lengkap" class="mt-1.5" />
                             </div>
                             <div>
                                 <x-input-label value="No. HP / WhatsApp *" />
-                                <input type="text" name="no_hp" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <x-text-input type="text" name="no_hp" class="mt-1.5" />
                             </div>
                             <div>
                                 <x-input-label value="Hubungan *" />
-                                <select name="hubungan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <x-select name="hubungan" class="mt-1.5">
                                     <option value="ayah">Ayah</option>
                                     <option value="ibu">Ibu</option>
                                     <option value="wali">Wali</option>
-                                </select>
+                                </x-select>
                             </div>
                             <label class="mt-6 flex items-center gap-2 text-sm text-gray-700">
                                 <input type="checkbox" name="is_kontak_utama" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
