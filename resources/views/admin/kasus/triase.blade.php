@@ -117,6 +117,10 @@
                     </div>
                 @else
                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {{-- Hidden inputs for backend --}}
+                        <input type="hidden" name="konselor_tipe" x-bind:value="konselorTipe">
+                        <input type="hidden" name="konselor_id" x-bind:value="konselorId">
+
                         @foreach ($kandidat as $index => $item)
                             @php
                                 $activeCount = \App\Models\Kasus::where($item->tipe === 'guru' ? 'konselor_guru_id' : 'konselor_karyawan_id', $item->model->id)
@@ -125,11 +129,21 @@
                                 $maxCount = $item->model->kapasitas_kasus_aktif;
                                 $isFull = ($maxCount && $activeCount >= $maxCount);
                             @endphp
-                            <label class="flex cursor-pointer items-start justify-between gap-3 rounded-xl border border-gray-200 p-4 text-sm transition hover:border-brand-500 hover:bg-brand-50/10 shadow-2xs {{ $isFull ? 'bg-error-50/30 border-error-200' : 'bg-white' }}">
+                            
+                            <button type="button"
+                                    x-on:click="setKonselor('{{ $item->tipe }}', '{{ $item->model->id }}')"
+                                    x-bind:class="konselorTipe === '{{ $item->tipe }}' && konselorId == '{{ $item->model->id }}' 
+                                        ? 'border-brand-500 bg-brand-50/10 ring-2 ring-brand-500/20' 
+                                        : '{{ $isFull ? 'border-error-200 bg-error-50/30' : 'border-gray-200 bg-white hover:border-brand-200 hover:bg-brand-50/30' }}'"
+                                    class="relative flex items-start justify-between gap-3 rounded-xl border p-4 text-sm text-left transition-all duration-200 shadow-2xs">
+                                
                                 <div class="flex items-start gap-3">
-                                    <input type="radio" name="konselor_pilihan" value="{{ $index }}" required
-                                        onclick="document.getElementById('konselor_tipe').value='{{ $item->tipe }}'; document.getElementById('konselor_id').value='{{ $item->model->id }}';"
-                                        class="mt-1 text-brand-600 focus:ring-brand-500">
+                                    <div class="mt-1 flex h-4 w-4 items-center justify-center rounded-full border transition-colors"
+                                         x-bind:class="konselorTipe === '{{ $item->tipe }}' && konselorId == '{{ $item->model->id }}' ? 'border-brand-600 bg-brand-600' : 'border-gray-300'">
+                                        <div class="h-1.5 w-1.5 rounded-full bg-white transition-opacity"
+                                             x-show="konselorTipe === '{{ $item->tipe }}' && konselorId == '{{ $item->model->id }}'" style="display: none;"></div>
+                                    </div>
+
                                     <div class="flex flex-col">
                                         <span class="font-bold text-gray-900">{{ $item->model->nama }}</span>
                                         <div class="flex flex-wrap items-center gap-1.5 mt-1">
@@ -144,6 +158,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                
                                 <div class="text-right shrink-0">
                                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Beban Kerja</p>
                                     <p class="text-xs font-bold {{ $isFull ? 'text-error-600' : 'text-brand-600' }} mt-0.5">
@@ -153,13 +168,11 @@
                                         <span class="inline-block mt-1 rounded bg-error-100 px-1.5 py-0.5 text-[10px] font-bold text-error-700">Kapasitas Penuh</span>
                                     @endif
                                 </div>
-                            </label>
+                            </button>
                         @endforeach
                     </div>
-                    <input type="hidden" name="konselor_tipe" id="konselor_tipe" value="">
-                    <input type="hidden" name="konselor_id" id="konselor_id" value="">
                 @endif
-                <x-input-error :messages="$errors->get('konselor_id')" class="mt-1.5" />
+                <x-input-error :messages="$errors->get('konselor_id')" class="mt-2" />
             </div>
 
             <div class="flex items-center justify-end gap-3 border-t border-gray-100 pt-4">
