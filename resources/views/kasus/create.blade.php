@@ -48,7 +48,7 @@
                 
                 {{-- Form Grid --}}
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div class="sm:col-span-2" x-data="tomSelectSiswa()">
+                    <div class="sm:col-span-2" x-data="tomSelectSiswa({ options: @js($siswaOptions), oldValue: @js(old('siswa_id', '')) })">
                         <x-input-label value="{{ Auth::user()->hasRole('orang_tua') ? 'Anak Terdaftar *' : 'Pilih Siswa *' }}" />
                         <select name="siswa_id" x-ref="selectElement" class="mt-1.5 block w-full" autocomplete="off" required>
                             <option value="">Cari nama siswa atau NIS/NISN...</option>
@@ -101,35 +101,4 @@
         })->values();
     @endphp
 
-    <script>
-        function tomSelectSiswa() {
-            return {
-                options: @json($siswaOptions),
-                oldValue: @json(old('siswa_id', '')),
-                tomSelect: null,
-                init() {
-                    this.tomSelect = new TomSelect(this.$refs.selectElement, {
-                        valueField: 'id',
-                        labelField: 'nama',
-                        searchField: ['nama', 'nis', 'nisn'],
-                        options: this.options,
-                        items: this.oldValue ? [this.oldValue] : [],
-                        placeholder: 'Ketik nama, NIS, atau NISN...',
-                        maxOptions: 50,
-                        render: {
-                            option: function(data, escape) {
-                                return `<div>
-                                            <span class="block font-semibold text-gray-900">${escape(data.nama)}</span>
-                                            <span class="block text-xs font-mono text-gray-500">NIS: ${escape(data.nis)} | NISN: ${escape(data.nisn)}</span>
-                                        </div>`;
-                            },
-                            item: function(data, escape) {
-                                return `<div>${escape(data.nama)} <span class="text-gray-400 font-mono text-xs">(NIS: ${escape(data.nis)})</span></div>`;
-                            }
-                        },
-                    });
-                }
-            }
-        }
-    </script>
 </x-app-layout>

@@ -37,6 +37,7 @@ import { mataPelajaranForm } from './mata-pelajaran-form';
 import { orangTuaCari } from './orang-tua-cari';
 import { karyawanForm } from './karyawan-form';
 import { kasusForm } from './kasus-form';
+import { tomSelectSiswa } from './tom-select-siswa';
 
 window.Alpine = Alpine;
 window.flatpickr = flatpickr;
@@ -79,5 +80,6 @@ Alpine.data('mataPelajaranForm', mataPelajaranForm);
 Alpine.data('orangTuaCari', orangTuaCari);
 Alpine.data('karyawanForm', karyawanForm);
 Alpine.data('kasusForm', kasusForm);
+Alpine.data('tomSelectSiswa', tomSelectSiswa);
 
 Alpine.start();
