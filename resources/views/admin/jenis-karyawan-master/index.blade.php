@@ -122,15 +122,14 @@
                     <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-600" x-text="totalFiltered + ' Data'"></span>
                 </div>
 
-                <div class="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-                    <span class="shrink-0">Tampilkan</span>
-                    <select x-model.number="perPage" @change="currentPage = 1" class="rounded-lg border-gray-200 bg-gray-50 py-1 pl-2.5 pr-8 text-xs font-semibold text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                        <option value="5">5</option>
-                        <option value="10">10</option>
-                        <option value="20">20</option>
-                        <option value="50">50</option>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-medium text-gray-500">Tampilkan:</label>
+                    <select x-model.number="perPage" @change="currentPage = 1" class="rounded-lg border-gray-200 py-1 pl-2.5 pr-8 text-xs text-gray-700 shadow-sm transition focus:border-brand-500 focus:ring-brand-500">
+                        <option value="5">5 / hal</option>
+                        <option value="10">10 / hal</option>
+                        <option value="20">20 / hal</option>
+                        <option value="50">50 / hal</option>
                     </select>
-                    <span class="shrink-0">per halaman</span>
                 </div>
             </div>
 

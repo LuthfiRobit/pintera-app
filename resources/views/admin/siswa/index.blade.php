@@ -121,19 +121,18 @@
                     @foreach (request()->except('per_page', 'page') as $key => $value)
                         <input type="hidden" name="{{ $key }}" value="{{ $value }}">
                     @endforeach
-                    <div class="flex items-center gap-2 text-sm text-gray-500">
-                        <label for="per_page" class="shrink-0">Tampilkan</label>
+                    <div class="flex items-center gap-2">
+                        <label for="per_page" class="text-xs font-medium text-gray-500">Tampilkan:</label>
                         <select
                             name="per_page" id="per_page"
                             @change="$el.form.submit()"
-                            class="rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500"
+                            class="rounded-lg border-gray-200 py-1 pl-2.5 pr-8 text-xs text-gray-700 shadow-sm transition focus:border-brand-500 focus:ring-brand-500"
                         >
-                            <option value="10" @selected($perPage == 10)>10</option>
-                            <option value="20" @selected($perPage == 20)>20</option>
-                            <option value="25" @selected($perPage == 25)>25</option>
-                            <option value="50" @selected($perPage == 50)>50</option>
+                            <option value="10" @selected($perPage == 10)>10 / hal</option>
+                            <option value="20" @selected($perPage == 20)>20 / hal</option>
+                            <option value="25" @selected($perPage == 25)>25 / hal</option>
+                            <option value="50" @selected($perPage == 50)>50 / hal</option>
                         </select>
-                        <span class="shrink-0">per halaman</span>
                     </div>
                 </form>
             </div>
