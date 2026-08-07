@@ -2,23 +2,31 @@
     <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Konfirmasi</p>
     <h1 class="mt-1 font-display text-2xl font-semibold text-ink">Konfirmasi password</h1>
     <p class="mt-2 text-sm text-slate">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
+        Ini adalah area aman dalam aplikasi. Harap konfirmasi kata sandi Anda sebelum melanjutkan.
     </p>
 
-    <form method="POST" action="{{ route('password.confirm') }}" class="mt-6 space-y-5">
+    <form method="POST" action="{{ route('password.confirm') }}" class="mt-8 space-y-6">
         @csrf
 
-        <div>
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="mt-1.5"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-1.5" />
+        <div class="space-y-1.5">
+            <x-input-label for="password" :value="__('Kata Sandi')" />
+            <div x-data="{ show: false }" class="relative">
+                <x-text-input id="password" class="pr-10"
+                                x-bind:type="show ? 'text' : 'password'"
+                                name="password"
+                                placeholder="Masukkan kata sandi Anda"
+                                required autocomplete="current-password" autofocus />
+                <button type="button" @click="show = !show" tabindex="-1" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
+                    <x-icon x-bind:name="show ? 'visibility_off' : 'visibility'" class="h-5 w-5" />
+                </button>
+            </div>
+            <x-input-error :messages="$errors->get('password')" />
         </div>
 
-        <x-primary-button class="w-full justify-center">
-            {{ __('Confirm') }}
-        </x-primary-button>
+        <div class="pt-2">
+            <x-primary-button class="w-full justify-center py-3 text-base shadow-elevated">
+                Konfirmasi
+            </x-primary-button>
+        </div>
     </form>
 </x-guest-layout>
