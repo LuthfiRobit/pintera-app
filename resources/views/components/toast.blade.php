@@ -2,6 +2,13 @@
     x-data
     class="pointer-events-none fixed right-4 top-4 z-50 flex w-full max-w-sm flex-col gap-2 sm:right-6 sm:top-6"
 >
+    @if(session()->has('status'))
+        <div x-init="$store.toast.push('success', @js(session('status')))"></div>
+    @endif
+    @if(session()->has('error'))
+        <div x-init="$store.toast.push('error', @js(session('error')))"></div>
+    @endif
+
     <template x-for="toast in $store.toast.items" :key="toast.id">
         <div
             x-show="true"
