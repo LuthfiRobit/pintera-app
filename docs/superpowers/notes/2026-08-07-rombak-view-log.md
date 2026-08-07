@@ -88,3 +88,5 @@ Review menyeluruh commit `2f89536`..`b2c8e8b` (39 commit) menemukan 6 temuan Cri
 
 ## Tahap Tambahan: UI/UX Pro Max Optimization
 - **[UI/UX]** Mengubah arsitektur informasi (IA) pada `sidebar.blade.php` menjadi pola **Operational-First**. Grup menu operasional harian (Ruang Guru, Akademik, Pendampingan) dipindah ke area fokus utama (atas), sementara menu statis (Data Induk, Akses & Peran) diturunkan ke area pengaturan (bawah). Ini mengeliminasi beban kognitif (*Hick's Law*) dan memangkas jarak *scroll* (*Fitts's Law*) bagi *user* Administrator.
+- **[UI/UX]** Menghapus penomoran romawi yang kaku pada label grup *sidebar* dan menggantinya dengan **Group Icons** (menggunakan *icon set* yang selaras) untuk mempercepat pengenalan visual (pola *scanability*).
+- **[UI/UX]** Mengurutkan ulang hierarki internal (*sub-items*) di dalam grup **Data Induk** (dikelompokkan logis dari Institusi -> SDM -> Pengguna -> Komunikasi) dan **Pendampingan** (Triase -> Pendampingan -> Log) agar urutan langkah kerja lebih selaras dengan *mental model* pengguna nyata.
