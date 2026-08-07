@@ -1,15 +1,14 @@
 <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
         <p class="font-display text-sm font-bold text-gray-900">Daftar Lembaga</p>
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-            <label for="per_page" class="shrink-0">Tampilkan</label>
-            <select x-model="perPage" @change="muatUlangDaftar()" id="per_page" class="rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                <option value="10">10</option>
-                <option value="20">20</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
+        <div class="flex items-center gap-2">
+            <label for="per_page" class="text-xs font-medium text-gray-500">Tampilkan:</label>
+            <select id="per_page" x-model="perPage" @change="muatUlangDaftar()" class="rounded-lg border-gray-200 py-1 pl-2.5 pr-8 text-xs text-gray-700 shadow-sm transition focus:border-brand-500 focus:ring-brand-500">
+                <option value="10">10 / hal</option>
+                <option value="20">20 / hal</option>
+                <option value="25">25 / hal</option>
+                <option value="50">50 / hal</option>
             </select>
-            <span class="shrink-0">per halaman</span>
         </div>
     </div>
 
