@@ -7,7 +7,52 @@
             ],
         ],
         [
-            'label' => 'II. Data Induk',
+            'label' => 'II. Ruang Guru',
+            'items' => array_filter([
+                Auth::user()->can('presensi.isi') ? ['route' => 'guru.sesi.index', 'pattern' => 'guru.sesi.*', 'label' => 'Jurnal & Presensi', 'icon' => 'edit_note'] : null,
+                Auth::user()->can('komponen-penilaian.kelola-sendiri') ? ['route' => 'guru.komponen-penilaian.index', 'pattern' => 'guru.komponen-penilaian.*', 'label' => 'Komponen Penilaian (TP)', 'icon' => 'checklist'] : null,
+                Auth::user()->can('asesmen.kelola') ? ['route' => 'guru.asesmen.index', 'pattern' => 'guru.asesmen.*', 'label' => 'Asesmen & Nilai', 'icon' => 'assessment'] : null,
+            ]),
+        ],
+        [
+            'label' => 'III. Akademik',
+            'items' => array_filter([
+                Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.pengaturan.akademik.index', 'pattern' => 'admin.pengaturan.akademik.*', 'label' => 'Pengaturan Akademik', 'icon' => 'schedule'] : null,
+                Auth::user()->can('pola-jam.view') ? ['route' => 'admin.pola-jam.index', 'pattern' => 'admin.pola-jam.*', 'label' => 'Pola Jam', 'icon' => 'schedule'] : null,
+                Auth::user()->can('jadwal-pelajaran.kelola') ? ['route' => 'admin.jadwal-pelajaran.index', 'pattern' => 'admin.jadwal-pelajaran.*', 'label' => 'Jadwal Pelajaran', 'icon' => 'fact_check'] : null,
+                Auth::user()->can('komponen-penilaian.kelola') ? ['route' => 'admin.komponen-penilaian.index', 'pattern' => 'admin.komponen-penilaian.*', 'label' => 'Komponen Penilaian (TP)', 'icon' => 'checklist'] : null,
+                Auth::user()->can('rapor.view') ? ['route' => 'admin.rapor.index', 'pattern' => 'admin.rapor.*', 'label' => 'Rekap Rapor', 'icon' => 'assessment'] : null,
+                Auth::user()->can('kenaikan-kelas.kelola') ? ['route' => 'admin.kenaikan-kelas.index', 'pattern' => 'admin.kenaikan-kelas.*', 'label' => 'Kenaikan Kelas', 'icon' => 'trending_up'] : null,
+            ]),
+        ],
+        [
+            'label' => 'IV. Pendampingan',
+            'items' => array_filter([
+                Auth::user()->can('kasus.view') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'fact_check'] : null,
+                Auth::user()->can('kasus.triase') ? ['route' => 'admin.kasus.index', 'pattern' => ['admin.kasus.index', 'admin.kasus.triase', 'admin.kasus.assign-konselor'], 'label' => 'Triase Kasus', 'icon' => 'assessment'] : null,
+                Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.log-akses', 'pattern' => 'admin.kasus.log-akses', 'label' => 'Log Akses Klinis', 'icon' => 'description'] : null,
+                Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.terhapus', 'pattern' => 'admin.kasus.terhapus', 'label' => 'Kasus Terhapus', 'icon' => 'cancel'] : null,
+            ]),
+        ],
+        [
+            'label' => 'V. Keuangan',
+            'items' => array_filter([
+                Auth::user()->can('jenis-tagihan.view') ? ['route' => 'admin.jenis-tagihan.index', 'pattern' => 'admin.jenis-tagihan.*', 'label' => 'Jenis Tagihan', 'icon' => 'payments'] : null,
+                Auth::user()->can('tagihan.view') && Route::has('admin.tagihan.index') ? ['route' => 'admin.tagihan.index', 'pattern' => 'admin.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt_long'] : null,
+                Auth::user()->can('pembayaran.view') ? ['route' => 'admin.pembayaran.index', 'pattern' => 'admin.pembayaran.*', 'label' => 'Verifikasi Pembayaran', 'icon' => 'fact_check'] : null,
+            ]),
+        ],
+        [
+            'label' => 'VI. SPMB',
+            'items' => array_filter([
+                Auth::user()->can('gelombang-ppdb.view') ? ['route' => 'admin.gelombang-ppdb.index', 'pattern' => 'admin.gelombang-ppdb.*', 'label' => 'Gelombang PPDB', 'icon' => 'waves'] : null,
+                Auth::user()->can('jalur-ppdb.view') ? ['route' => 'admin.jalur-ppdb.index', 'pattern' => 'admin.jalur-ppdb.*', 'label' => 'Jalur PPDB', 'icon' => 'signpost'] : null,
+                Auth::user()->can('jenis-tes.view') ? ['route' => 'admin.jenis-tes.index', 'pattern' => 'admin.jenis-tes.*', 'label' => 'Jenis Tes', 'icon' => 'quiz'] : null,
+                Auth::user()->can('spmb-pendaftaran.view') ? ['route' => 'admin.spmb-pendaftaran.index', 'pattern' => 'admin.spmb-pendaftaran.*', 'label' => 'Verifikasi & Keputusan', 'icon' => 'fact_check'] : null,
+            ]),
+        ],
+        [
+            'label' => 'VII. Data Induk',
             'items' => array_filter([
                 Auth::user()->can('lembaga.view') ? ['route' => 'admin.lembaga.index', 'pattern' => 'admin.lembaga.*', 'label' => 'Lembaga', 'icon' => 'apartment'] : null,
                 Auth::user()->can('guru.view') ? ['route' => 'admin.guru.index', 'pattern' => 'admin.guru.*', 'label' => 'Guru', 'icon' => 'school'] : null,
@@ -23,55 +68,10 @@
             ]),
         ],
         [
-            'label' => 'III. Akademik',
-            'items' => array_filter([
-                Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.pengaturan.akademik.index', 'pattern' => 'admin.pengaturan.akademik.*', 'label' => 'Pengaturan Akademik', 'icon' => 'schedule'] : null,
-                Auth::user()->can('pola-jam.view') ? ['route' => 'admin.pola-jam.index', 'pattern' => 'admin.pola-jam.*', 'label' => 'Pola Jam', 'icon' => 'schedule'] : null,
-                Auth::user()->can('jadwal-pelajaran.kelola') ? ['route' => 'admin.jadwal-pelajaran.index', 'pattern' => 'admin.jadwal-pelajaran.*', 'label' => 'Jadwal Pelajaran', 'icon' => 'fact_check'] : null,
-                Auth::user()->can('komponen-penilaian.kelola') ? ['route' => 'admin.komponen-penilaian.index', 'pattern' => 'admin.komponen-penilaian.*', 'label' => 'Komponen Penilaian (TP)', 'icon' => 'checklist'] : null,
-                Auth::user()->can('rapor.view') ? ['route' => 'admin.rapor.index', 'pattern' => 'admin.rapor.*', 'label' => 'Rekap Rapor', 'icon' => 'assessment'] : null,
-                Auth::user()->can('kenaikan-kelas.kelola') ? ['route' => 'admin.kenaikan-kelas.index', 'pattern' => 'admin.kenaikan-kelas.*', 'label' => 'Kenaikan Kelas', 'icon' => 'trending_up'] : null,
-            ]),
-        ],
-        [
-            'label' => 'IV. SPMB',
-            'items' => array_filter([
-                Auth::user()->can('gelombang-ppdb.view') ? ['route' => 'admin.gelombang-ppdb.index', 'pattern' => 'admin.gelombang-ppdb.*', 'label' => 'Gelombang PPDB', 'icon' => 'waves'] : null,
-                Auth::user()->can('jalur-ppdb.view') ? ['route' => 'admin.jalur-ppdb.index', 'pattern' => 'admin.jalur-ppdb.*', 'label' => 'Jalur PPDB', 'icon' => 'signpost'] : null,
-                Auth::user()->can('jenis-tes.view') ? ['route' => 'admin.jenis-tes.index', 'pattern' => 'admin.jenis-tes.*', 'label' => 'Jenis Tes', 'icon' => 'quiz'] : null,
-                Auth::user()->can('spmb-pendaftaran.view') ? ['route' => 'admin.spmb-pendaftaran.index', 'pattern' => 'admin.spmb-pendaftaran.*', 'label' => 'Verifikasi & Keputusan', 'icon' => 'fact_check'] : null,
-            ]),
-        ],
-        [
-            'label' => 'V. Keuangan',
-            'items' => array_filter([
-                Auth::user()->can('jenis-tagihan.view') ? ['route' => 'admin.jenis-tagihan.index', 'pattern' => 'admin.jenis-tagihan.*', 'label' => 'Jenis Tagihan', 'icon' => 'payments'] : null,
-                Auth::user()->can('tagihan.view') && Route::has('admin.tagihan.index') ? ['route' => 'admin.tagihan.index', 'pattern' => 'admin.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt_long'] : null,
-                Auth::user()->can('pembayaran.view') ? ['route' => 'admin.pembayaran.index', 'pattern' => 'admin.pembayaran.*', 'label' => 'Verifikasi Pembayaran', 'icon' => 'fact_check'] : null,
-            ]),
-        ],
-        [
-            'label' => 'VI. Akses & Peran',
+            'label' => 'VIII. Akses & Peran',
             'items' => array_filter([
                 Auth::user()->can('users.view') ? ['route' => 'admin.users.index', 'pattern' => 'admin.users.*', 'label' => 'Pengguna', 'icon' => 'group'] : null,
                 Auth::user()->can('roles.view') ? ['route' => 'admin.roles.index', 'pattern' => 'admin.roles.*', 'label' => 'Peran', 'icon' => 'shield_person'] : null,
-            ]),
-        ],
-        [
-            'label' => 'VII. Ruang Guru',
-            'items' => array_filter([
-                Auth::user()->can('presensi.isi') ? ['route' => 'guru.sesi.index', 'pattern' => 'guru.sesi.*', 'label' => 'Jurnal & Presensi', 'icon' => 'edit_note'] : null,
-                Auth::user()->can('komponen-penilaian.kelola-sendiri') ? ['route' => 'guru.komponen-penilaian.index', 'pattern' => 'guru.komponen-penilaian.*', 'label' => 'Komponen Penilaian (TP)', 'icon' => 'checklist'] : null,
-                Auth::user()->can('asesmen.kelola') ? ['route' => 'guru.asesmen.index', 'pattern' => 'guru.asesmen.*', 'label' => 'Asesmen & Nilai', 'icon' => 'assessment'] : null,
-            ]),
-        ],
-        [
-            'label' => 'VIII. Pendampingan',
-            'items' => array_filter([
-                Auth::user()->can('kasus.view') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'fact_check'] : null,
-                Auth::user()->can('kasus.triase') ? ['route' => 'admin.kasus.index', 'pattern' => ['admin.kasus.index', 'admin.kasus.triase', 'admin.kasus.assign-konselor'], 'label' => 'Triase Kasus', 'icon' => 'assessment'] : null,
-                Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.log-akses', 'pattern' => 'admin.kasus.log-akses', 'label' => 'Log Akses Klinis', 'icon' => 'description'] : null,
-                Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.terhapus', 'pattern' => 'admin.kasus.terhapus', 'label' => 'Kasus Terhapus', 'icon' => 'cancel'] : null,
             ]),
         ],
     ];
