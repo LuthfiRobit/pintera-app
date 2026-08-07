@@ -62,7 +62,7 @@
                     </x-badge>
                     @can('kasus.hapus')
                         @if ($kasus->status === \App\Enums\StatusKasus::Selesai)
-                            <form method="POST" action="{{ route('admin.kasus.destroy', $kasus) }}" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kasus ini? Seluruh sesi, tugas, dan evaluasi terkait juga akan dihapus.');">
+                            <form method="POST" action="{{ route('admin.kasus.destroy', $kasus) }}" x-data @submit.prevent="confirmDialog('Hapus Kasus?', 'Apakah Anda yakin ingin menghapus kasus ini? Seluruh sesi, tugas, dan evaluasi terkait juga akan terhapus permanen.', { confirmLabel: 'Ya, Hapus Kasus' }).then(confirmed => { if (confirmed) $el.submit() })">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-error-200 bg-error-50 px-3 py-1.5 text-xs font-bold text-error-600 transition hover:bg-error-100" title="Hapus Kasus">
