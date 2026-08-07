@@ -18,14 +18,38 @@ class KasusTerhapusController extends BaseController
         $this->authorize('kasus.lihat-log-akses');
 
         $user = auth()->user();
+        $search = request('search');
+        $perPage = request('per_page', 20);
 
-        $kasusList = Kasus::onlyTrashed()
+        // Query Dasar
+        $baseQuery = Kasus::onlyTrashed()
             ->withoutGlobalScope(TenantScope::class)
-            ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where('lembaga_id', $user->lembaga_id))
-            ->with(['siswa' => fn ($q) => $q->withoutGlobalScopes()])
-            ->latest('deleted_at')
-            ->paginate(20);
+            ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where('lembaga_id', $user->lembaga_id));
 
-        return view('admin.kasus.terhapus', ['kasusList' => $kasusList]);
+        // Statistik
+        $totalTerhapus = (clone $baseQuery)->count();
+        $dihapusBulanIni = (clone $baseQuery)->whereYear('deleted_at', now()->year)->whereMonth('deleted_at', now()->month)->count();
+
+        // Pencarian
+        if (!empty($search)) {
+            $baseQuery->where(function ($q) use ($search) {
+                $q->whereHas('siswa', function ($siswaQuery) use ($search) {
+                    $siswaQuery->withoutGlobalScopes()->where('nama_lengkap', 'like', '%' . $search . '%');
+                })->orWhere('kategori_masalah', 'like', '%' . $search . '%');
+            });
+        }
+
+        $kasusList = $baseQuery->with(['siswa' => fn ($q) => $q->withoutGlobalScopes()])
+            ->latest('deleted_at')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        return view('admin.kasus.terhapus', [
+            'kasusList' => $kasusList,
+            'totalTerhapus' => $totalTerhapus,
+            'dihapusBulanIni' => $dihapusBulanIni,
+            'search' => $search,
+            'perPage' => $perPage
+        ]);
     }
 }
