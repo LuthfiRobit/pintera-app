@@ -66,6 +66,49 @@ class PendampinganSeeder extends Seeder
         if ($siswas->count() >= 6) {
             $this->buatKasusSelesai($siswas[5], $smpit, $gurubk, $adminUser);
         }
+
+        // ── Skenario 7: Kasus ringan SMP (percaya diri presentasi, selesai) ──
+        if ($siswas->count() >= 7 && $gurubk) {
+            $this->buatKasusRinganSmp($siswas[6], $smpit, $gurubk);
+        }
+
+        // ── Skenario ringan lintas jenjang: KB, TK, SD ───────────────────────
+        // Menunjukkan fitur ini juga cocok untuk kasus sehari-hari yang ringan,
+        // bukan hanya kasus berat — bukan cuma jenjang SMP.
+        $this->buatSkenarioRinganLintasJenjang($psikolog);
+    }
+
+    private function buatSkenarioRinganLintasJenjang(?Karyawan $psikolog): void
+    {
+        $kbit = Lembaga::where('npsn', '20223311')->first();
+        $tkit = Lembaga::where('npsn', '20223322')->first();
+        $sdit = Lembaga::where('npsn', '20223333')->first();
+
+        if ($kbit) {
+            $siswaKb = Siswa::where('lembaga_id', $kbit->id)->first();
+            $guruKb  = Guru::where('lembaga_id', $kbit->id)->first();
+            if ($siswaKb && $guruKb) {
+                $this->buatKasusRinganKb($siswaKb, $kbit, $guruKb);
+            }
+        }
+
+        if ($tkit) {
+            $siswaTk = Siswa::where('lembaga_id', $tkit->id)->first();
+            if ($siswaTk) {
+                $orangTuaTk = $this->resolveOrangTuaKontakUtama($siswaTk);
+                if ($orangTuaTk) {
+                    $this->buatKasusRinganTk($siswaTk, $tkit, $orangTuaTk, $psikolog);
+                }
+            }
+        }
+
+        if ($sdit) {
+            $siswaSd = Siswa::where('lembaga_id', $sdit->id)->first();
+            $guruSd  = Guru::where('lembaga_id', $sdit->id)->first();
+            if ($siswaSd && $guruSd) {
+                $this->buatKasusRinganSd($siswaSd, $sdit, $guruSd);
+            }
+        }
     }
 
     // ── Resolvers ────────────────────────────────────────────────────────────
@@ -405,5 +448,175 @@ class PendampinganSeeder extends Seeder
                 'keputusan' => 'selesai',
             ]
         );
+    }
+
+    /**
+     * Skenario ringan SMP — Status: selesai
+     * Contoh kasus ringan (bukan kasus berat) yang ditangani sampai tuntas,
+     * untuk menunjukkan fitur ini juga cocok untuk keperluan sehari-hari.
+     */
+    private function buatKasusRinganSmp(Siswa $siswa, Lembaga $smpit, Guru $gurubk): void
+    {
+        $kasus = Kasus::firstOrCreate(
+            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Selesai, 'kategori_masalah' => 'Kepercayaan Diri'],
+            [
+                'lembaga_id'            => $smpit->id,
+                'diajukan_oleh_guru_id' => $gurubk->id,
+                'deskripsi'             => 'Siswa terlihat gugup dan menghindar setiap kali diminta presentasi di depan kelas, meski persiapannya sudah baik.',
+                'tingkat_urgensi'       => 'rendah',
+                'konselor_guru_id'      => $gurubk->id,
+            ]
+        );
+
+        KasusConsent::firstOrCreate(
+            ['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan'],
+            ['status' => 'disetujui', 'disetujui_at' => now()->subDays(20)]
+        );
+        KasusConsent::firstOrCreate(
+            ['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media'],
+            ['status' => 'menunggu']
+        );
+
+        KasusSesi::firstOrCreate(
+            ['kasus_id' => $kasus->id, 'dijadwalkan_pada' => now()->subDays(10)->setTime(9, 0)],
+            [
+                'peserta'          => 'siswa',
+                'lokasi_mode'      => 'Ruang BK',
+                'status'           => StatusKasusSesi::Selesai,
+                'catatan_internal' => 'Latihan presentasi singkat 1-lawan-1 dengan konselor. Siswa lebih rileks setelah beberapa kali mencoba.',
+            ]
+        );
+
+        $tugas = KasusTugas::firstOrCreate(
+            ['kasus_id' => $kasus->id, 'judul' => 'Latihan Bicara di Depan Cermin'],
+            [
+                'instruksi'          => 'Latihan menyampaikan 1 topik singkat di depan cermin selama 2 menit setiap hari, rekam perasaanmu setelahnya.',
+                'frekuensi'          => 'harian',
+                'batch_id'           => (string) Str::uuid(),
+                'batch_urutan'       => 1,
+                'batch_total'        => 1,
+                'mulai_pada'         => now()->subDays(9)->toDateString(),
+                'batas_selesai_pada' => now()->subDays(9)->toDateString(),
+                'status'             => StatusKasusTugas::Selesai,
+            ]
+        );
+
+        KasusTugasSubmission::firstOrCreate(
+            ['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id],
+            [
+                'teks'          => 'Sudah coba latihan di depan cermin, awalnya canggung tapi lama-lama lebih pede.',
+                'status_review' => 'diterima',
+            ]
+        );
+
+        KasusEvaluasi::firstOrCreate(
+            ['kasus_id' => $kasus->id, 'dibuat_oleh_user_id' => $gurubk->user_id],
+            [
+                'tanggal'   => now()->subDays(8),
+                'catatan'   => 'Siswa sudah berhasil presentasi di kelas minggu ini tanpa menghindar. Kasus dinyatakan selesai.',
+                'keputusan' => 'selesai',
+            ]
+        );
+    }
+
+    /**
+     * Skenario ringan KB — Status: diajukan
+     * Diajukan oleh guru (wali kelas), belum ditriase. Contoh kasus keseharian
+     * jenjang usia dini, bukan masalah perilaku/emosional berat.
+     */
+    private function buatKasusRinganKb(Siswa $siswa, Lembaga $kbit, Guru $guruKb): void
+    {
+        Kasus::firstOrCreate(
+            ['siswa_id' => $siswa->id, 'diajukan_oleh_guru_id' => $guruKb->id, 'status' => StatusKasus::Diajukan],
+            [
+                'lembaga_id'       => $kbit->id,
+                'kategori_masalah' => 'Kebiasaan Makan',
+                'deskripsi'        => 'Ananda selalu menolak sayur saat makan bersama di kelas dan hanya mau makan nasi putih. Mohon saran pendampingan sederhana untuk orang tua di rumah.',
+                'tingkat_urgensi'  => 'rendah',
+            ]
+        );
+    }
+
+    /**
+     * Skenario ringan TK — Status: menunggu_consent
+     * Diajukan LANGSUNG oleh orang tua (bukan guru) — menunjukkan jalur
+     * pengajuan orang tua. Sudah ditriase admin (konselor psikolog pool
+     * ditugaskan), tinggal menunggu persetujuan consent dari orang tua yang
+     * sama.
+     */
+    private function buatKasusRinganTk(Siswa $siswa, Lembaga $tkit, OrangTua $orangTuaTk, ?Karyawan $psikolog): void
+    {
+        $kasus = Kasus::firstOrCreate(
+            ['siswa_id' => $siswa->id, 'diajukan_oleh_orang_tua_id' => $orangTuaTk->id, 'status' => StatusKasus::MenungguConsent],
+            [
+                'lembaga_id'           => $tkit->id,
+                'diajukan_oleh_guru_id' => null,
+                'kategori_masalah'     => 'Adaptasi Sekolah',
+                'deskripsi'            => 'Ananda masih menangis dan sulit dilepas setiap kali diantar ke sekolah, sudah berlangsung 2 minggu sejak masuk TK.',
+                'tingkat_urgensi'      => 'rendah',
+                'konselor_karyawan_id' => $psikolog?->id,
+            ]
+        );
+
+        KasusConsent::firstOrCreate(['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan'], ['status' => 'menunggu']);
+        KasusConsent::firstOrCreate(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media'],  ['status' => 'menunggu']);
+    }
+
+    /**
+     * Skenario ringan SD — Status: berjalan
+     * Memakai fitur tugas batch generator (frekuensi harian) pada kasus
+     * ringan, untuk menunjukkan fitur terbaru juga cocok dipakai di luar
+     * kasus berat.
+     */
+    private function buatKasusRinganSd(Siswa $siswa, Lembaga $sdit, Guru $guruSd): void
+    {
+        $kasus = Kasus::firstOrCreate(
+            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Berjalan, 'kategori_masalah' => 'Konsentrasi Belajar'],
+            [
+                'lembaga_id'            => $sdit->id,
+                'diajukan_oleh_guru_id' => $guruSd->id,
+                'deskripsi'             => 'Ananda mudah teralihkan dan sulit duduk tenang selama 10-15 menit saat pelajaran berlangsung.',
+                'tingkat_urgensi'       => 'rendah',
+                'konselor_guru_id'      => $guruSd->id,
+            ]
+        );
+
+        KasusConsent::firstOrCreate(
+            ['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan'],
+            ['status' => 'disetujui', 'disetujui_at' => now()->subDays(5)]
+        );
+        KasusConsent::firstOrCreate(
+            ['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media'],
+            ['status' => 'menunggu']
+        );
+
+        // Tugas batch: 5 baris harian (hasil generate TugasBatchGenerator, frekuensi harian).
+        // 2 hari pertama (lampau) sudah disubmit & diterima; 3 sisanya masih berjalan.
+        $batchId = (string) Str::uuid();
+        $mulai   = now()->subDays(4)->startOfDay();
+        for ($i = 0; $i < 5; $i++) {
+            $tugasHarian = KasusTugas::firstOrCreate(
+                ['kasus_id' => $kasus->id, 'judul' => 'Latihan Fokus 10 Menit', 'mulai_pada' => $mulai->copy()->addDays($i)->toDateString()],
+                [
+                    'instruksi'          => 'Duduk tenang dan kerjakan 1 lembar latihan soal selama 10 menit tanpa gangguan gawai.',
+                    'frekuensi'          => 'harian',
+                    'batch_id'           => $batchId,
+                    'batch_urutan'       => $i + 1,
+                    'batch_total'        => 5,
+                    'batas_selesai_pada' => $mulai->copy()->addDays($i)->toDateString(),
+                    'status'             => $i < 2 ? StatusKasusTugas::Selesai : StatusKasusTugas::Dikerjakan,
+                ]
+            );
+
+            if ($i < 2) {
+                KasusTugasSubmission::firstOrCreate(
+                    ['tugas_id' => $tugasHarian->id, 'siswa_id' => $siswa->id],
+                    [
+                        'teks'          => 'Sudah selesai duduk tenang dan kerjakan latihan soalnya selama 10 menit.',
+                        'status_review' => 'diterima',
+                    ]
+                );
+            }
+        }
     }
 }

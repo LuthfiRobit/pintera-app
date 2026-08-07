@@ -19,8 +19,10 @@ class OrangTuaKaryawanSeeder extends Seeder
 {
     public function run(): void
     {
-        $smpit   = Lembaga::where('npsn', '20223344')->firstOrFail();
+        $kbit    = Lembaga::where('npsn', '20223311')->firstOrFail();
+        $tkit    = Lembaga::where('npsn', '20223322')->firstOrFail();
         $sdit    = Lembaga::where('npsn', '20223333')->firstOrFail();
+        $smpit   = Lembaga::where('npsn', '20223344')->firstOrFail();
         $yayasan = Yayasan::firstOrFail();
 
         // ── 1. Upgrade Guru BK di SMPIT ─────────────────────────────────────
@@ -34,6 +36,11 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         // ── 4. Orang Tua lintas lembaga SDIT+SMPIT (demo) ────────────────────
         $this->seedOrangTuaLintasLembaga($sdit, $smpit);
+
+        // ── 5. Orang Tua demo KB & TK (untuk skenario kasus pendampingan
+        //      ringan yang diajukan langsung oleh orang tua) ─────────────────
+        $this->seedOrangTuaDemoKb($kbit);
+        $this->seedOrangTuaDemoTk($tkit);
     }
 
     // ── Guru BK ─────────────────────────────────────────────────────────────
@@ -211,6 +218,80 @@ class OrangTuaKaryawanSeeder extends Seeder
         ]);
 
         $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ibu', true);
+    }
+
+    // ── Orang Tua demo KB & TK ──────────────────────────────────────────────
+
+    private function seedOrangTuaDemoKb(Lembaga $kbit): void
+    {
+        $nik = '3273019901850002';
+
+        if (User::where('username', $nik)->exists()) {
+            return;
+        }
+
+        $siswaTarget = Siswa::where('lembaga_id', $kbit->id)->first();
+        if (! $siswaTarget) {
+            return;
+        }
+
+        $user = User::create([
+            'name'                 => 'Ibu Wulan (Demo Login KB)',
+            'email'                => 'ortu.kb.demo@permatakraksaan.sch.id',
+            'username'             => $nik,
+            'password'             => Hash::make('password'),
+            'lembaga_id'           => null,
+            'email_verified_at'    => now(),
+            'is_active'            => true,
+            'must_change_password' => false, // demo account, tidak perlu ganti password
+        ]);
+        $user->assignRole('orang_tua');
+
+        $orangTua = OrangTua::create([
+            'user_id'      => $user->id,
+            'nama_lengkap' => 'Ibu Wulan (Demo Login KB)',
+            'nik'          => $nik,
+            'no_hp'        => '081234560002',
+            'email'        => 'ortu.kb.demo@permatakraksaan.sch.id',
+        ]);
+
+        $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ibu', true);
+    }
+
+    private function seedOrangTuaDemoTk(Lembaga $tkit): void
+    {
+        $nik = '3273019901850003';
+
+        if (User::where('username', $nik)->exists()) {
+            return;
+        }
+
+        $siswaTarget = Siswa::where('lembaga_id', $tkit->id)->first();
+        if (! $siswaTarget) {
+            return;
+        }
+
+        $user = User::create([
+            'name'                 => 'Bp. Hendra (Demo Login TK)',
+            'email'                => 'ortu.tk.demo@permatakraksaan.sch.id',
+            'username'             => $nik,
+            'password'             => Hash::make('password'),
+            'lembaga_id'           => null,
+            'email_verified_at'    => now(),
+            'is_active'            => true,
+            'must_change_password' => false, // demo account, tidak perlu ganti password
+        ]);
+        $user->assignRole('orang_tua');
+
+        $orangTua = OrangTua::create([
+            'user_id'      => $user->id,
+            'nama_lengkap' => 'Bp. Hendra (Demo Login TK)',
+            'nik'          => $nik,
+            'no_hp'        => '081234560003',
+            'email'        => 'ortu.tk.demo@permatakraksaan.sch.id',
+        ]);
+
+        $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ayah', true);
     }
 
     // ── Demo lintas lembaga ─────────────────────────────────────────────────
