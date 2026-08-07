@@ -11,113 +11,108 @@
             </p>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
-                    Filter Data
-                </p>
-                @if (auth()->user()->widestScopeLevel() === 'yayasan')
-                    <x-link-button href="{{ route('admin.lembaga.create') }}">
-                        <span class="text-base leading-none">+</span> Tambah Lembaga
-                    </x-link-button>
-                @endif
-            </div>
-
-            <form method="GET" action="{{ route('admin.lembaga.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                    <label for="cari" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
-                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
-                        <input
-                            type="text" name="cari" id="cari" value="{{ request('cari') }}"
-                            placeholder="Nama atau NPSN"
-                            @input.debounce.500ms="$el.form.submit()"
-                            class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
-                        >
+        {{-- KPI Cards --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <x-icon name="corporate_fare" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Lembaga</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalLembaga ?? 0 }}</p>
                     </div>
                 </div>
+                <span class="text-[11px] font-medium text-gray-400">Semua Data</span>
+            </div>
 
-                <div>
-                    <label for="bentuk" class="mb-1.5 block text-xs font-semibold text-gray-500">Bentuk Pendidikan</label>
-                    <select name="bentuk" id="bentuk" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                        <option value="">Semua Bentuk</option>
-                        @foreach (['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB'] as $bentuk)
-                            <option value="{{ $bentuk }}" @selected(request('bentuk') === $bentuk)>{{ $bentuk }}</option>
-                        @endforeach
-                    </select>
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <x-icon name="account_balance" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Lembaga Negeri</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalNegeri ?? 0 }}</p>
+                    </div>
                 </div>
+            </div>
 
-                <div>
-                    <label for="status" class="mb-1.5 block text-xs font-semibold text-gray-500">Status Sekolah</label>
-                    <select name="status" id="status" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                        <option value="">Semua Status</option>
-                        <option value="negeri" @selected(request('status') === 'negeri')>Negeri</option>
-                        <option value="swasta" @selected(request('status') === 'swasta')>Swasta</option>
-                    </select>
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                        <x-icon name="domain" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Lembaga Swasta</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalSwasta ?? 0 }}</p>
+                    </div>
                 </div>
-
-                <div class="flex items-end">
-                    @if (request()->anyFilled(['cari', 'bentuk', 'status']))
-                        <a href="{{ route('admin.lembaga.index') }}" class="flex h-[42px] w-full items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">Reset Filter</a>
-                    @endif
-                </div>
-            </form>
+            </div>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div class="border-b border-gray-200 px-5 py-4">
-                <p class="font-display text-sm font-bold text-gray-900">Daftar Lembaga</p>
+        {{-- Interactive Filter & AJAX Table Container --}}
+        <div
+            class="space-y-4"
+            x-data="dataTableFilter({
+                filters: {
+                    cari: @js(request('cari', '')),
+                    bentuk: @js(request('bentuk', '')),
+                    status: @js(request('status', ''))
+                },
+                perPage: @js($perPage ?? 20),
+                indexUrlBase: @js(route('admin.lembaga.index'))
+            })"
+        >
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                        Filter Data
+                    </p>
+                    @if (auth()->user()->widestScopeLevel() === 'yayasan')
+                        <x-link-button href="{{ route('admin.lembaga.create') }}">
+                            <span class="text-base leading-none">+</span> Tambah Lembaga
+                        </x-link-button>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div>
+                        <label for="cari" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
+                        <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                            <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                            <input
+                                type="text" x-model="filters.cari" @input.debounce.500ms="muatUlangDaftar()"
+                                placeholder="Nama atau NPSN"
+                                class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Bentuk Pendidikan</label>
+                        <select x-ref="bentukSelect" x-init="initFilterSelect($refs.bentukSelect, 'bentuk', false)" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Bentuk</option>
+                            @foreach (['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB'] as $bentuk)
+                                <option value="{{ $bentuk }}" @selected(request('bentuk') === $bentuk)>{{ $bentuk }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Status Sekolah</label>
+                        <select x-ref="statusSelect" x-init="initFilterSelect($refs.statusSelect, 'status', false)" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Status</option>
+                            <option value="negeri" @selected(request('status') === 'negeri')>Negeri</option>
+                            <option value="swasta" @selected(request('status') === 'swasta')>Swasta</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                            <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
-                            <th class="px-5 py-3">NPSN</th>
-                            <th class="px-5 py-3">Nama</th>
-                            <th class="px-5 py-3">Bentuk</th>
-                            <th class="px-5 py-3">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach ($lembaga as $item)
-                            <tr class="transition hover:bg-gray-50">
-                                <td class="sticky left-0 z-10 bg-white px-5 py-3">
-                                    <x-table-actions>
-                                        <x-dropdown-link :href="route('admin.lembaga.edit', $item)">
-                                            <span class="inline-flex items-center gap-2.5">
-                                                <x-icon name="edit" class="h-4 w-4 text-gray-500" />
-                                                Edit Lembaga
-                                            </span>
-                                        </x-dropdown-link>
-                                    </x-table-actions>
-                                </td>
-                                <td class="px-5 py-3.5 font-mono text-gray-500">{{ $item->npsn }}</td>
-                                <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $item->nama }}</td>
-                                <td class="px-5 py-3.5 text-gray-600">{{ $item->bentuk_pendidikan }}</td>
-                                <td class="px-5 py-3.5">
-                                    @if ($item->status_sekolah === 'negeri')
-                                        <x-badge tone="brass">Negeri</x-badge>
-                                    @else
-                                        <x-badge tone="slate">Swasta</x-badge>
-                                    @endif
-                                </td>
-                            </tr>
-                        @endforeach
-
-                        @if ($lembaga->isEmpty())
-                            <tr>
-                                <td colspan="5" class="px-5 py-10 text-center text-gray-500">Tidak ada lembaga yang cocok dengan filter ini.</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="border-t border-gray-200 px-5 py-4">
-                {{ $lembaga->links('pagination.tailadmin') }}
+            <div x-ref="tableContainer">
+                @include('admin.lembaga._daftar')
             </div>
         </div>
     </div>

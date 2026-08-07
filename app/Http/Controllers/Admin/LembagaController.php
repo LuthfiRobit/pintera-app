@@ -36,9 +36,24 @@ class LembagaController extends BaseController
             ->when($request->filled('bentuk'), fn ($q) => $q->where('bentuk_pendidikan', $request->query('bentuk')))
             ->when($request->filled('status'), fn ($q) => $q->where('status_sekolah', $request->query('status')));
 
-        $lembaga = $query->orderBy('nama')->paginate(10)->withQueryString();
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        return view('admin.lembaga.index', ['lembaga' => $lembaga]);
+        $lembaga = $query->orderBy('nama')->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.lembaga._daftar', [
+                'lembaga' => $lembaga,
+                'perPage' => $perPage,
+            ]);
+        }
+
+        return view('admin.lembaga.index', [
+            'lembaga' => $lembaga,
+            'perPage' => $perPage,
+            'totalLembaga' => Lembaga::count(),
+            'totalSwasta' => Lembaga::where('status_sekolah', 'swasta')->count(),
+            'totalNegeri' => Lembaga::where('status_sekolah', 'negeri')->count(),
+        ]);
     }
 
     public function create(Request $request): View
