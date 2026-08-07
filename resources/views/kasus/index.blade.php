@@ -173,8 +173,8 @@
                             </tr>
                         </template>
                         <template x-for="(item, index) in paginatedItems" :key="item.id">
-                            <tr @click="window.location = item.show_url" :class="item.is_eskalasi ? 'bg-red-50/70 border-l-4 border-red-500 hover:bg-red-100/70 transition cursor-pointer' : 'transition hover:bg-gray-50 cursor-pointer'">
-                                <td class="sticky left-0 z-10 px-5 py-3" :class="item.is_eskalasi ? 'bg-red-50/70' : 'bg-white'" @click.stop>
+                            <tr :class="item.is_eskalasi ? 'bg-red-50/70 border-l-4 border-red-500 hover:bg-red-100/70 transition' : 'transition hover:bg-gray-50'">
+                                <td class="sticky left-0 z-10 px-5 py-3" :class="item.is_eskalasi ? 'bg-red-50/70' : 'bg-white'">
                                     <x-table-actions>
                                         <a :href="item.show_url" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
                                             <x-icon name="visibility" class="h-4 w-4 text-gray-500" />
