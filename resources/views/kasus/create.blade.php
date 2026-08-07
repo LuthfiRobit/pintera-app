@@ -49,7 +49,7 @@
                 {{-- Form Grid --}}
                 <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     <div class="sm:col-span-2" x-data="tomSelectSiswa()">
-                        <x-input-label value="Pilih Siswa *" />
+                        <x-input-label value="{{ Auth::user()->hasRole('orang_tua') ? 'Anak Terdaftar *' : 'Pilih Siswa *' }}" />
                         <select name="siswa_id" x-ref="selectElement" class="mt-1.5 block w-full" autocomplete="off" required>
                             <option value="">Cari nama siswa atau NIS/NISN...</option>
                         </select>
