@@ -41,18 +41,67 @@
         </div>
 
         {{-- Triase Allocation Form --}}
-        <form method="POST" action="{{ route('admin.kasus.assign-konselor', $kasus) }}" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-6">
+        <form method="POST" action="{{ route('admin.kasus.assign-konselor', $kasus) }}" 
+              class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-6"
+              x-data="triaseForm({ 
+                  urgensiAwal: @js(old('tingkat_urgensi', 'sedang')),
+                  konselorTipeAwal: @js(old('konselor_tipe', '')),
+                  konselorIdAwal: @js(old('konselor_id', ''))
+              })">
             @csrf
 
-            <div class="border-b border-gray-100 pb-5">
+            <div class="border-b border-gray-100 pb-6">
                 <h3 class="font-display text-sm font-bold text-gray-900 mb-1">1. Penilaian Tingkat Urgensi</h3>
-                <p class="text-xs text-gray-500 mb-3">Tentukan tingkat kesegeraan penanganan berdasarkan deskripsi masalah yang dilaporkan.</p>
-                <div class="max-w-xs">
-                    <select name="tingkat_urgensi" class="block w-full rounded-xl border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-2xs focus:border-brand-500 focus:bg-white focus:ring-brand-500">
-                        <option value="rendah">🟢 Rendah &mdash; Observasi standar</option>
-                        <option value="sedang" selected>🟡 Sedang &mdash; Penanganan berkala</option>
-                        <option value="tinggi">🔴 Tinggi &mdash; Segera / Kritis</option>
-                    </select>
+                <p class="text-xs text-gray-500 mb-4">Tentukan tingkat kesegeraan penanganan berdasarkan deskripsi masalah yang dilaporkan.</p>
+                
+                {{-- Hidden input untuk submit form backend --}}
+                <input type="hidden" name="tingkat_urgensi" x-bind:value="urgensi">
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- Urgensi: Rendah -->
+                    <button type="button" 
+                            x-on:click="setUrgensi('rendah')"
+                            x-bind:class="urgensi === 'rendah' ? 'border-emerald-200 bg-emerald-50 ring-2 ring-emerald-500/20' : 'border-gray-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/50'"
+                            class="relative flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all duration-200">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full"
+                                  x-bind:class="urgensi === 'rendah' ? 'bg-emerald-500 text-white shadow-sm' : 'bg-emerald-100 text-emerald-500'">
+                                <x-icon name="check" class="h-3.5 w-3.5" x-show="urgensi === 'rendah'" />
+                            </span>
+                            <span class="text-sm font-bold" x-bind:class="urgensi === 'rendah' ? 'text-emerald-900' : 'text-gray-900'">Rendah</span>
+                        </div>
+                        <p class="text-[11px] font-medium leading-relaxed mt-1" x-bind:class="urgensi === 'rendah' ? 'text-emerald-700' : 'text-gray-500'">Observasi standar, penanganan fleksibel tanpa tekanan waktu.</p>
+                    </button>
+
+                    <!-- Urgensi: Sedang -->
+                    <button type="button" 
+                            x-on:click="setUrgensi('sedang')"
+                            x-bind:class="urgensi === 'sedang' ? 'border-amber-200 bg-amber-50 ring-2 ring-amber-500/20' : 'border-gray-200 bg-white hover:border-amber-200 hover:bg-amber-50/50'"
+                            class="relative flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all duration-200">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full"
+                                  x-bind:class="urgensi === 'sedang' ? 'bg-amber-500 text-white shadow-sm' : 'bg-amber-100 text-amber-500'">
+                                <x-icon name="check" class="h-3.5 w-3.5" x-show="urgensi === 'sedang'" />
+                            </span>
+                            <span class="text-sm font-bold" x-bind:class="urgensi === 'sedang' ? 'text-amber-900' : 'text-gray-900'">Sedang</span>
+                        </div>
+                        <p class="text-[11px] font-medium leading-relaxed mt-1" x-bind:class="urgensi === 'sedang' ? 'text-amber-700' : 'text-gray-500'">Penanganan terencana secara berkala, potensi eskalasi moderat.</p>
+                    </button>
+
+                    <!-- Urgensi: Tinggi -->
+                    <button type="button" 
+                            x-on:click="setUrgensi('tinggi')"
+                            x-bind:class="urgensi === 'tinggi' ? 'border-error-200 bg-error-50 ring-2 ring-error-500/20' : 'border-gray-200 bg-white hover:border-error-200 hover:bg-error-50/50'"
+                            class="relative flex flex-col items-start gap-1 rounded-xl border p-4 text-left transition-all duration-200">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-5 w-5 items-center justify-center rounded-full"
+                                  x-bind:class="urgensi === 'tinggi' ? 'bg-error-500 text-white shadow-sm' : 'bg-error-100 text-error-500'">
+                                <x-icon name="check" class="h-3.5 w-3.5" x-show="urgensi === 'tinggi'" />
+                            </span>
+                            <span class="text-sm font-bold" x-bind:class="urgensi === 'tinggi' ? 'text-error-900' : 'text-gray-900'">Tinggi</span>
+                        </div>
+                        <p class="text-[11px] font-medium leading-relaxed mt-1" x-bind:class="urgensi === 'tinggi' ? 'text-error-700' : 'text-gray-500'">Kritis / Segera. Membutuhkan intervensi langsung dan perlindungan cepat.</p>
+                    </button>
                 </div>
             </div>
 
