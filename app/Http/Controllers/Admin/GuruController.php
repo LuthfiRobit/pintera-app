@@ -44,12 +44,24 @@ class GuruController extends BaseController
         $jenisPtk = $request->query('jenis_ptk');
         $statusAktif = $request->query('status_aktif');
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
+
         $guruList = Guru::with('user')
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('nama', 'like', "%{$search}%")->orWhere('nip', 'like', "%{$search}%")))
             ->when($jenisPtk, fn ($q) => $q->where('jenis_ptk', $jenisPtk))
             ->when($statusAktif, fn ($q) => $q->where('status_aktif', $statusAktif))
             ->orderBy('nama')
-            ->get();
+            ->paginate($perPage)
+            ->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.guru._daftar', [
+                'guruList' => $guruList,
+                'jenisPtkOptions' => self::JENIS_PTK_OPTIONS,
+                'statusAktifOptions' => self::STATUS_AKTIF_OPTIONS,
+                'perPage' => $perPage,
+            ]);
+        }
 
         return view('admin.guru.index', [
             'guruList' => $guruList,
@@ -58,6 +70,10 @@ class GuruController extends BaseController
             'statusAktif' => $statusAktif,
             'jenisPtkOptions' => self::JENIS_PTK_OPTIONS,
             'statusAktifOptions' => self::STATUS_AKTIF_OPTIONS,
+            'perPage' => $perPage,
+            'totalGuru' => Guru::count(),
+            'totalAktif' => Guru::where('status_aktif', 'aktif')->count(),
+            'totalPNS' => Guru::whereIn('status_kepegawaian', ['PNS', 'PPPK'])->count(),
         ]);
     }
 
