@@ -20,7 +20,7 @@
                     :disabled="syncing"
                     class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-gray-50 hover:text-gray-900 disabled:opacity-60"
                 >
-                    <x-icon name="sync" class="h-3.5 w-3.5" :class="syncing ? 'animate-spin' : ''" />
+                    <x-icon name="sync" class="h-3.5 w-3.5" x-bind:class="syncing ? 'animate-spin' : ''" />
                     <span x-text="syncing ? 'Menyegarkan...' : 'Sync Permission'"></span>
                 </button>
             </div>
