@@ -145,7 +145,10 @@
         {{-- Container Tabel Data --}}
         <div class="relative rounded-2xl border border-gray-200 bg-white shadow-card">
             {{-- Loading Overlay --}}
-            <div x-show="loading" style="display: none;" class="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-sm">
+            <div x-show="false" style="display: none;" class="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-sm"
+                 x-transition.opacity
+                 @ajax-start.window="$el.style.display = 'flex'"
+                 @ajax-end.window="$el.style.display = 'none'">
                 <x-icon name="sync" class="h-8 w-8 animate-spin text-brand-500" />
             </div>
 
