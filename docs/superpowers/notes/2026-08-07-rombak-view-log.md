@@ -94,3 +94,13 @@ Review menyeluruh commit `2f89536`..`b2c8e8b` (39 commit) menemukan 6 temuan Cri
 - **[FIX]** Melakukan **Systematic Debugging (Fase 1-4)** terhadap isu ikon yang tidak muncul (*placeholder tanda tanya `?`*). Ditemukan akar masalah berupa pemanggilan dinamis `<x-icon>` yang tidak terdaftar di dalam struktur statis `icon.blade.php`.
 - **[PILOT IMPLEMENTATION]** Memasang pustaka `mallardduck/blade-lucide-icons` via Composer. Merombak ikon *sidebar* di `sidebar.blade.php` sebagai area uji coba (*piloting*) menggunakan `<x-dynamic-component :component="'lucide-' . $item['icon']">` dengan pemetaan nama ikon Lucide murni.
 - **[FIX]** Memperbaiki eror *SvgNotFound* paska instalasi Blade UI Kit akibat tabrakan *namespace*. Secara asali (*default*), paket menguasai komponen `<x-icon>`. Saya mem-publikasikan konfigurasi `config/blade-icons.php` dan mengubah properti `default` menjadi `svg-icon` agar `<x-icon>` kembali ke komponen kustom milik kita (`icon.blade.php`).
+
+## Tahap 7: Standarisasi Data Master (Akses & Peran, Siswa) (2026-08-08)
+- **[UI/UX]** Merombak halaman Induk Pengguna (`admin/users/index.blade.php`) dan Peran (`admin/roles/index.blade.php`) menjadi SPA Parsial (Gold Standard) dengan tabel `_daftar.blade.php` terisolasi.
+- **[UI/UX]** Mengimplementasikan komponen `dataTableFilter` berbasis Alpine.js dengan integrasi `TomSelect` (sebagai filter Role yang interaktif dan *searchable*).
+- **[UI/UX]** Merombak halaman Induk Siswa (`admin/siswa/index.blade.php`) ke arsitektur SPA Parsial yang serupa.
+- **[UI/UX]** Menambahkan Statistik/KPI Cards dinamis (Total Siswa, Siswa Aktif, Tanpa Akun) di halaman Induk Siswa dengan gaya desain UI/UX terbaru (radius `rounded-xl`, bantalan `px-4 py-3`, dan `hover:shadow-elevated`).
+- **[UI/UX]** Mengoptimalkan layout pembungkus *Filter & Aksi Data* di layar sempit menggunakan mekanisme Flexbox responsif (`lg:flex-row lg:justify-end`) serta memangkas panjang teks tombol ("Generate Akun", "Tarik dari SPMB", "Impor", "+ Siswa Baru") untuk mencegah tabrakan/pecah baris (*squished layout*).
+- **[BUGFIX]** Menambal kesalahan pada *state* Alpine `x-show="loading"` di halaman Siswa, merubahnya menjadi perenderan berbasis tangkapan *event* (`@ajax-start.window` dan `@ajax-end.window`).
+- **[BACKEND]** Menyesuaikan `UserController`, `RoleController`, dan `SiswaController` agar dapat merespons panggilan AJAX dari JavaScript `fetch()` secara natural (`Accept: text/html`) tanpa tergantung eksklusif pada parameter JSON.
+- **[VERIFICATION]** `npm run build` sukses untuk perbaikan *style* Tailwind dan *Test Suite* terkait (termasuk `SiswaControllerTest` dan `PendaftaranSiswaControllerTest`) berstatus *Pass*.
