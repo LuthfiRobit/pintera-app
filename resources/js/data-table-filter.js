@@ -25,6 +25,7 @@ export function dataTableFilter(config) {
 
         async muatUlangDaftar() {
             try {
+                window.dispatchEvent(new CustomEvent('ajax-start'));
                 const url = new URL(this.indexUrlBase, window.location.origin);
                 for (const [key, value] of Object.entries(this.filters)) {
                     if (value) url.searchParams.set(key, value);
@@ -47,6 +48,8 @@ export function dataTableFilter(config) {
                 }
             } catch (error) {
                 window.Alpine.store('toast').push('error', 'Gagal memuat data.');
+            } finally {
+                window.dispatchEvent(new CustomEvent('ajax-end'));
             }
         },
     };
