@@ -30,18 +30,27 @@
             @forelse ($roles as $role)
                 <tr class="transition hover:bg-gray-50/50">
                     <td class="sticky left-0 z-10 bg-white px-5 py-3 align-top">
-                        <div class="flex items-center gap-3">
-                            <a href="{{ route('admin.roles.edit', $role) }}" class="font-medium text-gray-700 hover:text-brand-600">Edit</a>
-                            @if (!$role->is_protected)
-                                <form method="POST" action="{{ route('admin.roles.destroy', $role) }}" onsubmit="return confirm('Hapus role ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="font-medium text-red-600 hover:text-red-800">
-                                        Hapus
-                                    </button>
-                                </form>
-                            @endif
-                        </div>
+                            <x-table-actions>
+                                <a href="{{ route('admin.roles.edit', $role) }}" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                    <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                    Edit Role
+                                </a>
+                                @if (!$role->is_protected)
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.roles.destroy', $role) }}"
+                                        x-data
+                                        @submit.prevent="confirmDialog('Hapus Role?', @js('Yakin ingin menghapus role ' . $role->name . '?'), { confirmLabel: 'Ya, Hapus', isDanger: true }).then(confirmed => { if (confirmed) $el.submit() })"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-red-600 transition duration-150 ease-in-out hover:bg-red-50 focus:bg-red-50 focus:outline-none">
+                                            <x-icon name="delete" class="h-4 w-4 text-red-500" />
+                                            Hapus Role
+                                        </button>
+                                    </form>
+                                @endif
+                            </x-table-actions>
                     </td>
                     <td class="px-5 py-3 align-top">
                         <p class="font-medium text-gray-900">{{ $role->name }}</p>

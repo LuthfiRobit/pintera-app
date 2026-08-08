@@ -31,16 +31,25 @@
             @forelse ($users as $user)
                 <tr class="transition hover:bg-gray-50/50">
                     <td class="sticky left-0 z-10 bg-white px-5 py-3 align-top">
-                        <div class="flex items-center gap-3">
-                            <a href="{{ route('admin.users.edit', $user) }}" class="font-medium text-gray-700 hover:text-brand-600">Edit</a>
-                            <form method="POST" action="{{ route('admin.users.toggle-active', $user) }}">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="font-medium text-brand-600 hover:text-brand-800">
-                                    {{ $user->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
-                                </button>
-                            </form>
-                        </div>
+                            <x-table-actions>
+                                <a href="{{ route('admin.users.edit', $user) }}" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                    <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                    Edit Akun
+                                </a>
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.users.toggle-active', $user) }}"
+                                    x-data
+                                    @submit.prevent="confirmDialog('Ubah Status Akun?', @js('Ubah status akun menjadi ' . ($user->is_active ? 'Nonaktif' : 'Aktif') . '?'), { confirmLabel: 'Ya, Ubah', isDanger: {{ $user->is_active ? 'true' : 'false' }} }).then(confirmed => { if (confirmed) $el.submit() })"
+                                >
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 {{ $user->is_active ? 'text-red-600 hover:bg-red-50 focus:bg-red-50' : 'text-green-600 hover:bg-green-50 focus:bg-green-50' }} transition duration-150 ease-in-out focus:outline-none">
+                                        <x-icon name="{{ $user->is_active ? 'block' : 'check_circle' }}" class="h-4 w-4 {{ $user->is_active ? 'text-red-500' : 'text-green-500' }}" />
+                                        {{ $user->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}
+                                    </button>
+                                </form>
+                            </x-table-actions>
                     </td>
                     <td class="px-5 py-3 align-top font-medium text-gray-900">{{ $user->name }}</td>
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->email }}</td>
