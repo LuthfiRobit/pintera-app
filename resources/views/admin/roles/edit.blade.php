@@ -1,8 +1,18 @@
 <x-app-layout>
-    <x-slot name="header">
-        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-500">Akses &amp; Peran</p>
-        <h2 class="mt-1 font-display text-2xl font-semibold text-gray-900">Edit Role: {{ $role->name }}</h2>
-    </x-slot>
+    {{-- Top Navigation & Breadcrumbs --}}
+    <div class="mx-auto max-w-6xl mb-6 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0">
+        <div>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.roles.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Akses & Peran</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-900">Edit Role: {{ $role->name }}</b>
+            </p>
+        </div>
+        <a href="{{ route('admin.roles.index') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95">
+            <x-icon name="arrow_back" class="h-4 w-4 text-gray-500" />
+            <span>Kembali ke Daftar</span>
+        </a>
+    </div>
 
     <div
         class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,340px)_1fr] items-start"
