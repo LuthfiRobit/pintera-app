@@ -59,7 +59,7 @@ use App\Http\Controllers\KasusTugasSubmissionController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('roles/data', [RoleController::class, 'data'])->name('roles.data');
+
     Route::get('roles/permissions-catalog', [RoleController::class, 'permissionsCatalog'])->name('roles.permissions-catalog');
     Route::resource('roles', RoleController::class)->except(['show']);
     Route::resource('users', UserController::class)->except(['show', 'destroy']);

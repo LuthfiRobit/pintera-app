@@ -16,17 +16,38 @@ class UserController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View
+    public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $this->authorize('users.view');
+        
+        $search = $request->input('search');
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $users = User::with('roles', 'lembaga')
+        $query = User::with('roles', 'lembaga')
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
-            ->orderBy('name')
-            ->paginate(20)
-            ->withQueryString();
+            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
+            ->orderBy('name');
 
-        return view('admin.users.index', ['users' => $users]);
+        $users = $query->paginate($perPage)->withQueryString();
+        
+        $totalUsers = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->count();
+        $totalAktif = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->where('is_active', true)->count();
+        $totalNonaktif = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->where('is_active', false)->count();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html' => view('admin.users._daftar', ['users' => $users, 'perPage' => $perPage])->render(),
+            ]);
+        }
+
+        return view('admin.users.index', [
+            'users' => $users,
+            'perPage' => $perPage,
+            'search' => $search,
+            'totalUsers' => $totalUsers,
+            'totalAktif' => $totalAktif,
+            'totalNonaktif' => $totalNonaktif,
+        ]);
     }
 
     public function create(Request $request): View

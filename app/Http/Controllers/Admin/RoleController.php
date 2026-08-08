@@ -21,14 +21,7 @@ class RoleController extends BaseController
     {
     }
 
-    public function index(): View
-    {
-        $this->authorize('viewAny', Role::class);
-
-        return view('admin.roles.index');
-    }
-
-    public function data(Request $request): JsonResponse
+    public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $this->authorize('viewAny', Role::class);
 
@@ -37,34 +30,33 @@ class RoleController extends BaseController
         if ($search = trim((string) $request->string('search'))) {
             $query->where('name', 'like', '%'.$search.'%');
         }
-
         if ($scope = $request->string('scope')->value()) {
             $query->where('scope_level', $scope);
         }
 
-        $sortable = ['name', 'scope_level', 'users_count', 'permissions_count'];
-        $sort = in_array($request->string('sort')->value(), $sortable, true) ? $request->string('sort')->value() : 'name';
-        $direction = $request->string('direction')->value() === 'desc' ? 'desc' : 'asc';
-        $query->orderBy($sort, $direction);
+        $query->orderBy('name', 'asc');
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $perPage = min(max((int) $request->integer('per_page', 15), 1), 100);
-        $paginated = $query->paginate($perPage);
+        $roles = $query->paginate($perPage)->withQueryString();
+        
+        $totalRoles = Role::count();
+        $totalYayasan = Role::where('scope_level', 'yayasan')->count();
+        $totalLembaga = Role::where('scope_level', 'lembaga')->count();
 
-        return response()->json([
-            'data' => $paginated->getCollection()->map(fn (Role $role) => [
-                'id' => $role->id,
-                'name' => $role->name,
-                'scope_level' => $role->scope_level,
-                'is_protected' => $role->is_protected,
-                'users_count' => $role->users_count,
-                'permissions_count' => $role->permissions_count,
-            ])->values(),
-            'meta' => [
-                'current_page' => $paginated->currentPage(),
-                'last_page' => $paginated->lastPage(),
-                'per_page' => $paginated->perPage(),
-                'total' => $paginated->total(),
-            ],
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html' => view('admin.roles._daftar', ['roles' => $roles, 'perPage' => $perPage])->render(),
+            ]);
+        }
+
+        return view('admin.roles.index', [
+            'roles' => $roles,
+            'perPage' => $perPage,
+            'search' => $search,
+            'scope' => $scope,
+            'totalRoles' => $totalRoles,
+            'totalYayasan' => $totalYayasan,
+            'totalLembaga' => $totalLembaga,
         ]);
     }
 
