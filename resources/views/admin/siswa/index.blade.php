@@ -1,5 +1,13 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="dataTableFilter({
+        filters: {
+            search: @js(request('search')),
+            kelas_id: @js(request('kelas_id')),
+            status: @js(request('status')),
+        },
+        perPage: @js($perPage),
+        indexUrlBase: @js(route('admin.siswa.index')),
+    })">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
@@ -19,12 +27,43 @@
             </p>
         </div>
 
+        {{-- KPI Cards --}}
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-50">
+                    <x-icon name="group" class="h-6 w-6 text-gray-500" />
+                </div>
+                <div>
+                    <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Siswa</p>
+                    <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalSiswa }}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-50">
+                    <x-icon name="check_circle" class="h-6 w-6 text-green-500" />
+                </div>
+                <div>
+                    <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Siswa Aktif</p>
+                    <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalAktif }}</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-50">
+                    <x-icon name="warning" class="h-6 w-6 text-amber-500" />
+                </div>
+                <div>
+                    <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Tanpa Akun (Aktif)</p>
+                    <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $siswaTanpaAkunCount }}</p>
+                </div>
+            </div>
+        </div>
+
         {{-- Filter Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
-                    Filter Data
+                    <x-icon name="filter_alt" class="h-[15px] w-[15px] text-gray-400" />
+                    Filter & Aksi Data
                 </p>
                 <div class="flex flex-wrap items-center gap-2">
                     @if (($siswaTanpaAkunCount ?? 0) > 0 && auth()->user()->can('siswa.edit'))
@@ -63,186 +102,44 @@
                 </div>
             </div>
 
-            <form method="GET" action="{{ route('admin.siswa.index') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {{-- Search --}}
-                <div>
-                    <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
-                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
-                        <input
-                            type="text" name="search" id="search"
-                            value="{{ request('search') }}"
-                            placeholder="Nama atau NIS"
-                            @input.debounce.500ms="$el.form.submit()"
-                            class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
-                        >
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:items-end">
+                <div class="lg:col-span-2">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Siswa</label>
+                    <div class="flex h-[42px] items-center gap-2 rounded-[10px] border border-gray-200 bg-gray-50 px-3.5">
+                        <x-icon name="search" class="h-[14px] w-[14px] shrink-0 text-gray-400" />
+                        <input x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()" type="text" placeholder="Cari nama atau NIS..." class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
                     </div>
                 </div>
-
-                {{-- Filter Kelas --}}
                 <div>
-                    <label for="kelas_id" class="mb-1.5 block text-xs font-semibold text-gray-500">Kelas</label>
-                    <select name="kelas_id" id="kelas_id" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Filter Kelas</label>
+                    <select x-ref="kelasSelect" x-init="initFilterSelect($refs.kelasSelect, 'kelas_id', true)" class="w-full rounded-[10px] border-gray-200 text-sm text-gray-700">
                         <option value="">Semua Kelas</option>
                         @foreach ($kelasList as $kelas)
                             <option value="{{ $kelas->id }}" @selected(request('kelas_id') == $kelas->id)>{{ $kelas->nama }}</option>
                         @endforeach
                     </select>
                 </div>
-
-                {{-- Filter Status --}}
                 <div>
-                    <label for="status" class="mb-1.5 block text-xs font-semibold text-gray-500">Status</label>
-                    <select name="status" id="status" @change="$el.form.submit()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Filter Status</label>
+                    <select x-ref="statusSelect" x-init="initFilterSelect($refs.statusSelect, 'status')" class="w-full rounded-[10px] border-gray-200 text-sm text-gray-700">
                         <option value="">Semua Status</option>
                         @foreach ($statusList as $s)
                             <option value="{{ $s->value }}" @selected(request('status') === $s->value)>{{ $s->label() }}</option>
                         @endforeach
                     </select>
                 </div>
-
-                {{-- Reset --}}
-                <div class="flex items-end">
-                    @if (request()->anyFilled(['search', 'kelas_id', 'status']))
-                        <a href="{{ route('admin.siswa.index') }}" class="flex h-[42px] w-full items-center justify-center rounded-lg border border-gray-200 px-3 text-sm text-gray-500 transition hover:bg-gray-50">
-                            Reset Filter
-                        </a>
-                    @endif
-                </div>
-            </form>
+            </div>
         </div>
 
-        {{-- Table Card --}}
-        <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
-            {{-- Table header with per-page selector --}}
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
-                <p class="font-display text-sm font-bold text-gray-900">Daftar Siswa</p>
-                <form method="GET" action="{{ route('admin.siswa.index') }}" id="per-page-form">
-                    @foreach (request()->except('per_page', 'page') as $key => $value)
-                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
-                    @endforeach
-                    <div class="flex items-center gap-2">
-                        <label for="per_page" class="text-xs font-medium text-gray-500">Tampilkan:</label>
-                        <select
-                            name="per_page" id="per_page"
-                            @change="$el.form.submit()"
-                            class="rounded-lg border-gray-200 py-1 pl-2.5 pr-8 text-xs text-gray-700 shadow-sm transition focus:border-brand-500 focus:ring-brand-500"
-                        >
-                            <option value="10" @selected($perPage == 10)>10 / hal</option>
-                            <option value="20" @selected($perPage == 20)>20 / hal</option>
-                            <option value="25" @selected($perPage == 25)>25 / hal</option>
-                            <option value="50" @selected($perPage == 50)>50 / hal</option>
-                        </select>
-                    </div>
-                </form>
+        {{-- Container Tabel Data --}}
+        <div class="relative rounded-2xl border border-gray-200 bg-white shadow-card">
+            {{-- Loading Overlay --}}
+            <div x-show="loading" style="display: none;" class="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-sm">
+                <x-icon name="sync" class="h-8 w-8 animate-spin text-brand-500" />
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                            <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
-                            <th class="px-5 py-3">NIS</th>
-                            <th class="px-5 py-3">Nama</th>
-                            <th class="px-5 py-3">Kelas</th>
-                            <th class="px-5 py-3">Asal Data</th>
-                            <th class="px-5 py-3">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach ($siswaList as $siswa)
-                            <tr class="transition hover:bg-gray-50">
-                                <td class="sticky left-0 z-10 bg-white px-5 py-3">
-                                    <x-table-actions>
-                                        <x-dropdown-link :href="route('admin.siswa.edit', $siswa)">
-                                            <span class="inline-flex items-center gap-2.5">
-                                                <x-icon name="edit" class="h-4 w-4 text-gray-500" />
-                                                Edit Siswa
-                                            </span>
-                                        </x-dropdown-link>
-                                        @foreach (\App\Enums\StatusSiswa::cases() as $statusOption)
-                                            @if ($statusOption !== $siswa->status)
-                                                <form
-                                                    method="POST"
-                                                    action="{{ route('admin.siswa.update-status', $siswa) }}"
-                                                    x-data
-                                                    @submit.prevent="confirmDialog('Ubah Status Siswa?', @js('Ubah status \"' . $siswa->nama_lengkap . '\" menjadi \"' . $statusOption->label() . '\"?'), { confirmLabel: 'Ya, Ubah' }).then(confirmed => { if (confirmed) $el.submit() })"
-                                                >
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="status" value="{{ $statusOption->value }}">
-                                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
-                                                        <x-icon name="autorenew" class="h-4 w-4 text-gray-500" />
-                                                        Jadikan {{ $statusOption->label() }}
-                                                    </button>
-                                                </form>
-                                            @endif
-                                        @endforeach
-                                        @if ($siswa->user_id)
-                                            <form
-                                                method="POST"
-                                                action="{{ route('admin.siswa.reset-password', $siswa) }}"
-                                                x-data
-                                                @submit.prevent="confirmDialog('Reset Password Siswa?', @js('Reset password \"' . $siswa->nama_lengkap . '\" kembali ke NIS (' . $siswa->nis . ')? Siswa wajib menggantinya saat login berikutnya.'), { confirmLabel: 'Ya, Reset' }).then(confirmed => { if (confirmed) $el.submit() })"
-                                            >
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
-                                                    <x-icon name="autorenew" class="h-4 w-4 text-gray-500" />
-                                                    Reset Password ke NIS
-                                                </button>
-                                            </form>
-                                        @else
-                                            <form
-                                                method="POST"
-                                                action="{{ route('admin.siswa.generate-akun', $siswa) }}"
-                                                x-data
-                                                @submit.prevent="confirmDialog('Buat Akun Login?', @js('Buat akun login untuk siswa \"' . $siswa->nama_lengkap . '\" dengan username berdasarkan NIS (' . $siswa->nis . ')?'), { confirmLabel: 'Ya, Buat Akun' }).then(confirmed => { if (confirmed) $el.submit() })"
-                                            >
-                                                @csrf
-                                                <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-brand-700 font-semibold transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
-                                                    <x-icon name="person_add" class="h-4 w-4 text-brand-600" />
-                                                    Buat Akun Login
-                                                </button>
-                                            </form>
-                                        @endif
-                                    </x-table-actions>
-                                </td>
-                                <td class="px-5 py-3.5 font-mono text-gray-500">{{ $siswa->nis }}</td>
-                                <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $siswa->nama_lengkap }}</td>
-                                <td class="px-5 py-3.5 text-gray-600">
-                                    @if ($siswa->kelas)
-                                        {{ $siswa->kelas->nama }}
-                                    @else
-                                        <x-badge tone="amber">Belum ditempatkan</x-badge>
-                                    @endif
-                                </td>
-                                <td class="px-5 py-3.5">
-                                    <x-badge tone="slate">{{ $siswa->sumber_data->label() }}</x-badge>
-                                </td>
-                                <td class="px-5 py-3.5">
-                                    <x-badge :tone="$siswa->status === \App\Enums\StatusSiswa::Aktif ? 'green' : 'slate'">{{ $siswa->status->label() }}</x-badge>
-                                </td>
-                            </tr>
-                        @endforeach
-
-                        @if ($siswaList->isEmpty())
-                            <tr>
-                                <td colspan="6" class="px-5 py-10 text-center text-gray-500">
-                                    @if (request()->anyFilled(['search', 'kelas_id', 'status']))
-                                        Tidak ada siswa yang cocok dengan filter ini.
-                                    @else
-                                        Belum ada siswa yang didaftarkan.
-                                    @endif
-                                </td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="border-t border-gray-200 px-5 py-4">
-                {{ $siswaList->links('pagination.tailadmin') }}
+            <div id="tabel-container" x-ref="tableContainer">
+                @include('admin.siswa._daftar')
             </div>
         </div>
     </div>

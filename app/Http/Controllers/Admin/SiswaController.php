@@ -58,12 +58,25 @@ class SiswaController extends BaseController
             : collect();
 
         $siswaTanpaAkunCount = Siswa::where('status', StatusSiswa::Aktif->value)->whereNull('user_id')->count();
+        $totalSiswa = Siswa::count();
+        $totalAktif = Siswa::where('status', StatusSiswa::Aktif->value)->count();
+
+        $paginated = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.siswa._daftar', [
+                'siswaList' => $paginated,
+                'perPage' => $perPage,
+            ]);
+        }
 
         return view('admin.siswa.index', [
-            'siswaList' => $query->paginate($perPage)->withQueryString(),
+            'siswaList' => $paginated,
             'kelasList' => $kelasList,
             'statusList' => StatusSiswa::cases(),
             'perPage' => $perPage,
+            'totalSiswa' => $totalSiswa,
+            'totalAktif' => $totalAktif,
             'siswaTanpaAkunCount' => $siswaTanpaAkunCount,
         ]);
     }
