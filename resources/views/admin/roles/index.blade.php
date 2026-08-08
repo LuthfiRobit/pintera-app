@@ -1,124 +1,104 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex items-center justify-between gap-4">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="dataTableFilter({
+        filters: {
+            search: @js($search),
+            scope: @js($scope)
+        },
+        perPage: @js($perPage),
+        indexUrlBase: @js(route('admin.roles.index')),
+    })">
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
+        @endif
+
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Akses &amp; Peran</p>
-                <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Role Builder</h2>
+                <h1 class="font-display text-lg font-bold text-gray-900">Role Builder</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola tingkat kewenangan dan akses izin per modul secara spesifik.</p>
             </div>
-            <x-link-button href="{{ route('admin.roles.create') }}">
-                <span class="text-base leading-none">+</span> Buat Role Baru
-            </x-link-button>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Akses & Peran</b>
+            </p>
         </div>
-    </x-slot>
 
-    <div
-        class="mx-auto max-w-6xl space-y-6"
-        x-data="rolesTable({
-            dataUrl: @js(route('admin.roles.data')),
-            editUrlTemplate: @js(route('admin.roles.edit', ['role' => '__ID__'])),
-            deleteUrlTemplate: @js(route('admin.roles.destroy', ['role' => '__ID__'])),
-        })"
-    >
-        <x-panel>
-            <div class="flex flex-wrap items-center gap-3 border-b border-ink/10 p-4">
-                <input
-                    type="search"
-                    x-model="search"
-                    @input="onSearchInput()"
-                    placeholder="Cari nama role..."
-                    class="w-full max-w-xs rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass"
-                >
-                <select
-                    x-model="scope"
-                    @change="onScopeChange()"
-                    class="rounded-xl border-ink/15 text-sm text-ink shadow-sm focus:border-brass focus:ring-brass"
-                >
-                    <option value="">Semua Scope</option>
-                    <option value="yayasan">Yayasan</option>
-                    <option value="lembaga">Lembaga</option>
-                    <option value="diri_sendiri">Diri Sendiri</option>
-                </select>
-                <button
-                    type="button"
-                    @click="fetchData()"
-                    class="ml-auto inline-flex items-center gap-2 rounded-xl border border-ink/15 px-3 py-2 text-sm font-medium text-ink hover:bg-paper"
-                >
-                    <span x-show="loading" class="inline-block h-3 w-3 animate-spin rounded-full border-2 border-ink/30 border-t-ink"></span>
-                    Refresh
-                </button>
-            </div>
-
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
-                        <th class="px-5 py-3 font-display font-semibold">No</th>
-                        <th class="px-5 py-3 font-display font-semibold">
-                            <button type="button" @click="sortBy('name')" class="hover:text-ink">Nama Role &amp; Scope</button>
-                        </th>
-                        <th class="px-5 py-3 font-display font-semibold">
-                            <button type="button" @click="sortBy('permissions_count')" class="hover:text-ink">Permission</button>
-                        </th>
-                        <th class="px-5 py-3 font-display font-semibold">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-ink/10">
-                    <template x-for="(row, index) in rows" :key="row.id">
-                        <tr class="transition hover:bg-paper/50">
-                            <td class="px-5 py-3.5 font-mono text-slate" x-text="(meta.current_page - 1) * meta.per_page + index + 1"></td>
-                            <td class="px-5 py-3.5">
-                                <p class="font-medium text-ink" x-text="row.name"></p>
-                                <span
-                                    class="mt-1 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
-                                    :class="row.scope_level === 'yayasan' ? 'bg-brass/10 text-brass' : 'bg-slate/10 text-slate'"
-                                    x-text="row.scope_level"
-                                ></span>
-                                <span x-show="row.is_protected" class="ml-1.5 inline-flex items-center rounded-full bg-brass/10 px-2.5 py-0.5 text-xs font-bold text-brass">Protected</span>
-                            </td>
-                            <td class="px-5 py-3.5 font-mono text-slate" x-text="row.permissions_count"></td>
-                            <td class="px-5 py-3.5">
-                                <div class="relative" x-data="{ menuOpen: false }" @click.outside="menuOpen = false">
-                                    <button
-                                        type="button"
-                                        @click="menuOpen = !menuOpen"
-                                        class="rounded-lg p-1.5 text-slate hover:bg-paper hover:text-ink"
-                                        aria-label="Aksi"
-                                    >
-                                        <span class="text-lg leading-none">&#9881;</span>
-                                    </button>
-                                    <div
-                                        x-show="menuOpen"
-                                        x-transition
-                                        class="absolute right-0 z-10 mt-1 w-40 rounded-xl border border-ink/10 bg-white py-1 shadow-elevated"
-                                        style="display: none;"
-                                    >
-                                        <a :href="editUrl(row)" class="block px-4 py-2 text-sm text-ink hover:bg-paper">Edit Role</a>
-                                        <template x-if="!row.is_protected">
-                                            <button
-                                                type="button"
-                                                @click="menuOpen = false; deleteRole(row)"
-                                                class="block w-full px-4 py-2 text-left text-sm text-signal-red hover:bg-signal-red/5"
-                                            >
-                                                Hapus
-                                            </button>
-                                        </template>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </template>
-                    <tr x-show="!loading && rows.length === 0">
-                        <td colspan="4" class="px-5 py-10 text-center text-slate">Tidak ada role yang cocok.</td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <div class="flex items-center justify-between border-t border-ink/10 p-4 text-sm text-slate">
-                <p>Halaman <span x-text="meta.current_page"></span> dari <span x-text="meta.last_page"></span> &middot; <span x-text="meta.total"></span> role</p>
-                <div class="flex items-center gap-2">
-                    <button type="button" @click="goToPage(meta.current_page - 1)" :disabled="meta.current_page <= 1" class="rounded-lg border border-ink/15 px-3 py-1.5 disabled:opacity-40">Sebelumnya</button>
-                    <button type="button" @click="goToPage(meta.current_page + 1)" :disabled="meta.current_page >= meta.last_page" class="rounded-lg border border-ink/15 px-3 py-1.5 disabled:opacity-40">Berikutnya</button>
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <x-icon name="shield" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Roles</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalRoles }}</p>
+                    </div>
                 </div>
             </div>
-        </x-panel>
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <x-icon name="domain" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Scope Yayasan</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalYayasan }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                        <x-icon name="school" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-green-600">Scope Lembaga</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalLembaga }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <x-icon name="filter_alt" class="h-[15px] w-[15px] text-gray-400" />
+                    Filter & Aksi Data
+                </p>
+                <x-tooltip text="Tambah tingkat role kewenangan baru">
+                    <x-link-button href="{{ route('admin.roles.create') }}" class="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 active:scale-[0.98] sm:w-auto">
+                        <span class="text-base leading-none">+</span> Tambah Role
+                    </x-link-button>
+                </x-tooltip>
+            </div>
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+                <div class="lg:col-span-2">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Role</label>
+                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                        <input x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()" type="text" placeholder="Cari nama role..." class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
+                    </div>
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Scope Level</label>
+                    <select x-model="filters.scope" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">Semua Scope</option>
+                        <option value="yayasan">Yayasan</option>
+                        <option value="lembaga">Lembaga</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative rounded-2xl border border-gray-200 bg-white shadow-card">
+            <div x-show="loading" class="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-sm" style="display: none;">
+                <div class="flex items-center gap-3 rounded-full bg-white px-4 py-2 shadow-elevated ring-1 ring-gray-900/5">
+                    <svg class="h-4 w-4 animate-spin text-brand-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    <span class="text-xs font-medium text-gray-700">Memuat data...</span>
+                </div>
+            </div>
+
+            <div id="tabel-container">
+                @include('admin.roles._daftar')
+            </div>
+        </div>
     </div>
 </x-app-layout>
