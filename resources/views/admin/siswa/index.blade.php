@@ -71,12 +71,12 @@
 
         {{-- Filter Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-            <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <p class="flex shrink-0 items-center gap-2 text-sm font-semibold text-gray-700 whitespace-nowrap">
+            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <x-icon name="filter_alt" class="h-[15px] w-[15px] text-gray-400" />
                     Filter & Aksi Data
                 </p>
-                <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+                <div class="flex flex-wrap items-center gap-2">
                     @if (($siswaTanpaAkunCount ?? 0) > 0 && auth()->user()->can('siswa.edit'))
                         <x-tooltip text="Terdapat {{ $siswaTanpaAkunCount }} siswa aktif tanpa akun login. Klik untuk membangkitkan username login baru dan password default (berdasarkan NIS) secara massal.">
                             <form
@@ -92,23 +92,23 @@
                                     class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition active:scale-[0.98] hover:bg-gray-50"
                                 >
                                     <x-icon name="person_add" class="h-4 w-4" />
-                                    <span>Generate Akun Massal ({{ $siswaTanpaAkunCount }})</span>
+                                    <span>Generate Akun ({{ $siswaTanpaAkunCount }})</span>
                                 </button>
                             </form>
                         </x-tooltip>
                     @endif
                     @can('siswa.spmb-daftar')
                         <x-link-button variant="ghost" href="{{ route('admin.siswa.spmb-daftar.index') }}">
-                            <x-icon name="check_circle" class="h-4 w-4" /> Daftarkan dari SPMB
+                            <x-icon name="check_circle" class="h-4 w-4" /> Tarik dari SPMB
                         </x-link-button>
                     @endcan
                     @can('siswa.import')
                         <x-link-button variant="ghost" href="{{ route('admin.siswa.import.index') }}">
-                            <x-icon name="upload" class="h-4 w-4" /> Import Siswa
+                            <x-icon name="upload" class="h-4 w-4" /> Impor
                         </x-link-button>
                     @endcan
                     <x-link-button href="{{ route('admin.siswa.create') }}">
-                        <span class="text-base leading-none">+</span> Tambah Siswa
+                        <span class="text-base leading-none">+</span> Siswa Baru
                     </x-link-button>
                 </div>
             </div>
