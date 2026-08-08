@@ -2,6 +2,7 @@
     <div class="mx-auto max-w-6xl space-y-4" x-data="dataTableFilter({
         filters: {
             search: @js($search),
+            role: @js($roleFilter),
         },
         perPage: @js($perPage),
         indexUrlBase: @js(route('admin.users.index')),
@@ -70,13 +71,22 @@
                 </x-tooltip>
                 @endcan
             </div>
-            <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:items-end">
                 <div class="lg:col-span-2">
                     <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Akun</label>
-                    <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                        <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                    <div class="flex h-[42px] items-center gap-2 rounded-[10px] border border-gray-200 bg-gray-50 px-3.5">
+                        <x-icon name="search" class="h-[14px] w-[14px] shrink-0 text-gray-400" />
                         <input x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()" type="text" placeholder="Cari nama atau email..." class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
                     </div>
+                </div>
+                <div class="lg:col-span-2">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Filter Role</label>
+                    <select x-ref="roleSelect" x-init="initFilterSelect($refs.roleSelect, 'role', true)" class="w-full rounded-[10px] border-gray-200 text-sm text-gray-700">
+                        <option value="">Semua Role</option>
+                        @foreach ($availableRoles as $r)
+                            <option value="{{ $r->name }}" @selected($roleFilter === $r->name)>{{ $r->name }}</option>
+                        @endforeach
+                    </select>
                 </div>
             </div>
         </div>

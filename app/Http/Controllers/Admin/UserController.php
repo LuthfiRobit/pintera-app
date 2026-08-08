@@ -21,11 +21,13 @@ class UserController extends BaseController
         $this->authorize('users.view');
         
         $search = $request->input('search');
+        $roleFilter = $request->input('role');
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
         $query = User::with('roles', 'lembaga')
             ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
+            ->when($roleFilter, fn ($q) => $q->whereHas('roles', fn ($q2) => $q2->where('name', $roleFilter)))
             ->orderBy('name');
 
         $users = $query->paginate($perPage)->withQueryString();
@@ -41,10 +43,14 @@ class UserController extends BaseController
             ]);
         }
 
+        $availableRoles = Role::where('name', '!=', 'siswa')->orderBy('name')->get();
+
         return view('admin.users.index', [
             'users' => $users,
             'perPage' => $perPage,
             'search' => $search,
+            'roleFilter' => $roleFilter,
+            'availableRoles' => $availableRoles,
             'totalUsers' => $totalUsers,
             'totalAktif' => $totalAktif,
             'totalNonaktif' => $totalNonaktif,
