@@ -89,14 +89,7 @@
         </div>
 
         <div class="relative rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div x-show="loading" class="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-white/60 backdrop-blur-sm" style="display: none;">
-                <div class="flex items-center gap-3 rounded-full bg-white px-4 py-2 shadow-elevated ring-1 ring-gray-900/5">
-                    <svg class="h-4 w-4 animate-spin text-brand-500" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                    <span class="text-xs font-medium text-gray-700">Memuat data...</span>
-                </div>
-            </div>
-
-            <div id="tabel-container">
+            <div id="tabel-container" x-ref="tableContainer">
                 @include('admin.roles._daftar')
             </div>
         </div>
