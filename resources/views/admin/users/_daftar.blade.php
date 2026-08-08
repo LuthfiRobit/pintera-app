@@ -65,6 +65,6 @@
 
 @if ($users->hasPages())
     <div class="border-t border-gray-100 px-5 py-4">
-        {{ $users->links('pagination.tailwind-ajax') }}
+        {{ $users->links('pagination.tailadmin') }}
     </div>
 @endif

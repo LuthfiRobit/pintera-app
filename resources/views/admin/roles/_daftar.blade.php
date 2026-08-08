@@ -66,6 +66,6 @@
 
 @if ($roles->hasPages())
     <div class="border-t border-gray-100 px-5 py-4">
-        {{ $roles->links('pagination.tailwind-ajax') }}
+        {{ $roles->links('pagination.tailadmin') }}
     </div>
 @endif
