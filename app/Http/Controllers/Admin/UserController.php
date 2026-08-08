@@ -34,9 +34,10 @@ class UserController extends BaseController
         $totalAktif = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->where('is_active', true)->count();
         $totalNonaktif = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->where('is_active', false)->count();
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'html' => view('admin.users._daftar', ['users' => $users, 'perPage' => $perPage])->render(),
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.users._daftar', [
+                'users' => $users, 
+                'perPage' => $perPage
             ]);
         }
 

@@ -43,9 +43,10 @@ class RoleController extends BaseController
         $totalYayasan = Role::where('scope_level', 'yayasan')->count();
         $totalLembaga = Role::where('scope_level', 'lembaga')->count();
 
-        if ($request->wantsJson()) {
-            return response()->json([
-                'html' => view('admin.roles._daftar', ['roles' => $roles, 'perPage' => $perPage])->render(),
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.roles._daftar', [
+                'roles' => $roles, 
+                'perPage' => $perPage
             ]);
         }
 
