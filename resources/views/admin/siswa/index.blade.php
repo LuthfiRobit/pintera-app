@@ -71,12 +71,12 @@
 
         {{-- Filter Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+            <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <p class="flex shrink-0 items-center gap-2 text-sm font-semibold text-gray-700 whitespace-nowrap">
                     <x-icon name="filter_alt" class="h-[15px] w-[15px] text-gray-400" />
                     Filter & Aksi Data
                 </p>
-                <div class="flex flex-wrap items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2 lg:justify-end">
                     @if (($siswaTanpaAkunCount ?? 0) > 0 && auth()->user()->can('siswa.edit'))
                         <x-tooltip text="Terdapat {{ $siswaTanpaAkunCount }} siswa aktif tanpa akun login. Klik untuk membangkitkan username login baru dan password default (berdasarkan NIS) secara massal.">
                             <form
