@@ -29,32 +29,43 @@
 
         {{-- KPI Cards --}}
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gray-50">
-                    <x-icon name="group" class="h-6 w-6 text-gray-500" />
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                        <x-icon name="group" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-blue-600">Total Siswa</p>
+                        <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalSiswa }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Siswa</p>
-                    <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalSiswa }}</p>
-                </div>
+                <span class="text-[11px] font-medium text-gray-400">Semua Status</span>
             </div>
-            <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-50">
-                    <x-icon name="check_circle" class="h-6 w-6 text-green-500" />
+            
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-50 text-green-600">
+                        <x-icon name="check_circle" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-green-600">Siswa Aktif</p>
+                        <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalAktif }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Siswa Aktif</p>
-                    <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $totalAktif }}</p>
-                </div>
+                <span class="text-[11px] font-medium text-gray-400">Terdaftar</span>
             </div>
-            <div class="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-50">
-                    <x-icon name="warning" class="h-6 w-6 text-amber-500" />
+            
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                        <x-icon name="warning" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Tanpa Akun (Aktif)</p>
+                        <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $siswaTanpaAkunCount }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Tanpa Akun (Aktif)</p>
-                    <p class="font-display text-lg font-bold leading-tight text-gray-900">{{ $siswaTanpaAkunCount }}</p>
-                </div>
+                <span class="text-[11px] font-medium text-gray-400">Perlu Tindakan</span>
             </div>
         </div>
 
