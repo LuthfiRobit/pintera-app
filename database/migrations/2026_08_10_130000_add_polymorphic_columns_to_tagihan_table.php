@@ -10,14 +10,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('tagihan', function (Blueprint $table) {
-            // The pendaftaran_id foreign key relies on the (pendaftaran_id, kategori)
-            // unique index to satisfy MySQL's "column must be leftmost in some index"
-            // FK requirement. Add a plain index on pendaftaran_id first so MySQL has
-            // an alternative index to use once the unique index is dropped below.
-            $table->index('pendaftaran_id', 'idx_tagihan_pendaftaran_id');
-            $table->dropUnique(['pendaftaran_id', 'kategori']);
-        });
+        // The (pendaftaran_id, kategori) unique index is intentionally kept in place.
+        // MySQL/InnoDB treats NULL as distinct from every other NULL in a unique index,
+        // so it never blocked the polymorphic (NULL pendaftaran_id) rows this migration
+        // introduces, while it still guards against duplicate PPDB tagihan rows for the
+        // same pendaftaran_id + kategori. It also continues to back the pendaftaran_id
+        // foreign key, so no extra plain index is needed.
 
         DB::statement('ALTER TABLE tagihan MODIFY pendaftaran_id BIGINT UNSIGNED NULL');
 
@@ -42,6 +40,9 @@ return new class extends Migration
         DB::statement("ALTER TABLE tagihan MODIFY status ENUM('belum_bayar', 'dicicil', 'lunas', 'sebagian', 'dibatalkan') NOT NULL DEFAULT 'belum_bayar'");
     }
 
+    // NOTE: Rolling back is only safe on a schema with no siswa-targeted (polymorphic)
+    // tagihan rows yet — narrowing the enums back and re-tightening pendaftaran_id to
+    // NOT NULL will fail (or corrupt data) once such rows exist.
     public function down(): void
     {
         DB::statement("ALTER TABLE tagihan MODIFY status ENUM('belum_bayar', 'dicicil', 'lunas') NOT NULL DEFAULT 'belum_bayar'");
@@ -55,10 +56,5 @@ return new class extends Migration
         });
 
         DB::statement('ALTER TABLE tagihan MODIFY pendaftaran_id BIGINT UNSIGNED NOT NULL');
-
-        Schema::table('tagihan', function (Blueprint $table) {
-            $table->unique(['pendaftaran_id', 'kategori']);
-            $table->dropIndex('idx_tagihan_pendaftaran_id');
-        });
     }
 };
