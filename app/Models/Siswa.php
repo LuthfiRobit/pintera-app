@@ -1,4 +1,5 @@
 <?php
+// app/Models/Siswa.php
 
 namespace App\Models;
 
@@ -9,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -64,6 +66,11 @@ class Siswa extends Model
             ->withPivot(['hubungan', 'is_kontak_utama'])
             ->withTimestamps()
             ->using(SiswaOrangTua::class);
+    }
+
+    public function tagihan(): MorphMany
+    {
+        return $this->morphMany(Tagihan::class, 'tagihable');
     }
 
     public function getActivitylogOptions(): LogOptions
