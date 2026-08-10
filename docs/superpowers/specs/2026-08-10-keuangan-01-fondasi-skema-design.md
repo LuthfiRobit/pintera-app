@@ -49,6 +49,7 @@ tagihan
 ├─ discount_amount    decimal(12,2) NULLABLE  ← BARU
 ├─ discount_type       ENUM('fixed','persen') NULLABLE  ← BARU
 ├─ net_amount          decimal(12,2) NULLABLE  ← BARU (total_tagihan - discount, dihitung saat generate)
+├─ paid_amount         decimal(12,2) DEFAULT 0  ← BARU (akumulasi nominal terbayar; diupdate oleh payment channel di sub-project 4, tapi kolomnya jadi fondasi sejak sekarang karena dipakai dashboard monitoring sub-project 2)
 ├─ status              ENUM('belum_bayar','dicicil','lunas','sebagian','dibatalkan')  ← tambah 'sebagian','dibatalkan'
 ├─ cancelled_by        FK users, NULLABLE  ← BARU
 ├─ cancelled_at         timestamp NULLABLE  ← BARU
