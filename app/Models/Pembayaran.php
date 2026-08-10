@@ -1,10 +1,12 @@
 <?php
+// app/Models/Pembayaran.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -14,15 +16,22 @@ class Pembayaran extends Model
 
     protected $table = 'pembayaran';
 
+    protected $attributes = [
+        'is_auto_allocation' => false,
+        'identifier_method' => 'manual',
+    ];
+
     protected $fillable = [
         'tagihan_id', 'cicilan_id', 'sumber', 'metode', 'file_path',
         'status', 'catatan_verifikasi', 'diverifikasi_oleh_user_id', 'diverifikasi_pada',
+        'wallet_id', 'is_auto_allocation', 'channel_reference', 'identifier_method',
     ];
 
     protected function casts(): array
     {
         return [
             'diverifikasi_pada' => 'datetime',
+            'is_auto_allocation' => 'boolean',
         ];
     }
 
@@ -39,6 +48,11 @@ class Pembayaran extends Model
     public function diverifikasiOleh(): BelongsTo
     {
         return $this->belongsTo(User::class, 'diverifikasi_oleh_user_id');
+    }
+
+    public function pembayaranTagihan(): HasMany
+    {
+        return $this->hasMany(PembayaranTagihan::class);
     }
 
     public function getActivitylogOptions(): LogOptions
