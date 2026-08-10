@@ -14,12 +14,26 @@ class JenisTagihan extends Model
 
     protected $table = 'jenis_tagihan';
 
-    protected $fillable = ['lembaga_id', 'nama', 'kategori', 'bisa_dicicil', 'maks_cicilan'];
+    protected $attributes = [
+        'mode' => 'manual',
+        'is_active' => true,
+    ];
+
+    protected $fillable = [
+        'lembaga_id', 'nama', 'kategori', 'bisa_dicicil', 'maks_cicilan',
+        'priority_score', 'default_amount', 'mode',
+        'tanggal_mulai', 'tanggal_selesai', 'tanggal_generate', 'hari_jatuh_tempo',
+        'va_expire_hours', 'is_active', 'last_generated_period',
+    ];
 
     protected function casts(): array
     {
         return [
             'bisa_dicicil' => 'boolean',
+            'default_amount' => 'decimal:2',
+            'tanggal_mulai' => 'date',
+            'tanggal_selesai' => 'date',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -36,5 +50,20 @@ class JenisTagihan extends Model
     public function tagihanItem(): HasMany
     {
         return $this->hasMany(TagihanItem::class);
+    }
+
+    public function sasaranGrup(): HasMany
+    {
+        return $this->hasMany(JenisTagihanSasaranGrup::class);
+    }
+
+    public function nominalTagihanSiswa(): HasMany
+    {
+        return $this->hasMany(NominalTagihanSiswa::class);
+    }
+
+    public function keringananRules(): HasMany
+    {
+        return $this->hasMany(JenisTagihanKeringanan::class);
     }
 }
