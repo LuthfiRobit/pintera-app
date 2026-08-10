@@ -25,7 +25,7 @@ class Lembaga extends Model
         'kabupaten_kota', 'provinsi', 'kode_pos', 'lintang', 'bujur',
         'telepon', 'fax', 'email', 'website',
         'nama_bank', 'cabang_kcp_unit', 'rekening_atas_nama', 'nomor_rekening',
-        'mbs', 'nama_wajib_pajak', 'npwp', 'memungut_iuran', 'nominal_iuran', 'periode_iuran',
+        'mbs', 'nama_wajib_pajak', 'npwp',
         'status_aktif', 'hari_libur_mingguan',
     ];
 
@@ -38,8 +38,6 @@ class Lembaga extends Model
             'lintang' => 'decimal:7',
             'bujur' => 'decimal:7',
             'mbs' => 'boolean',
-            'memungut_iuran' => 'boolean',
-            'nominal_iuran' => 'decimal:2',
             'status_aktif' => 'boolean',
             'nomor_rekening' => 'encrypted',
             'npwp' => 'encrypted',

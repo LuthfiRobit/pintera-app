@@ -146,7 +146,6 @@ class LembagaController extends BaseController
     {
         return [
             'mbs' => $request->boolean('mbs'),
-            'memungut_iuran' => $request->boolean('memungut_iuran'),
             // On create, a request that never sent status_aktif at all (e.g. a raw API
             // call that predates this form) should still land active, matching the
             // migration's own default(true) — only an edit's unchecked box means "off".
@@ -196,8 +195,6 @@ class LembagaController extends BaseController
             'nomor_rekening' => ['nullable', 'string'],
             'nama_wajib_pajak' => ['nullable', 'string', 'max:255'],
             'npwp' => ['nullable', 'string'],
-            'nominal_iuran' => ['nullable', 'numeric', 'min:0'],
-            'periode_iuran' => ['nullable', 'in:bulanan,tahunan'],
         ]);
 
         $data['kode_lembaga'] = Str::upper($data['kode_lembaga']);

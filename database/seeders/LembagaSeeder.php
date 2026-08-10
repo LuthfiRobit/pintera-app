@@ -53,9 +53,6 @@ class LembagaSeeder extends Seeder
                 'mbs' => true,
                 'nama_wajib_pajak' => 'KBIT PERMATA KRAKSAAN',
                 'npwp' => '02.345.671.1-012.000',
-                'memungut_iuran' => true,
-                'nominal_iuran' => 200000,
-                'periode_iuran' => 'bulanan',
                 'status_aktif' => true,
             ]
         );
@@ -100,9 +97,6 @@ class LembagaSeeder extends Seeder
                 'mbs' => true,
                 'nama_wajib_pajak' => 'TKIT PERMATA KRAKSAAN',
                 'npwp' => '02.345.672.2-012.000',
-                'memungut_iuran' => true,
-                'nominal_iuran' => 250000,
-                'periode_iuran' => 'bulanan',
                 'status_aktif' => true,
             ]
         );
@@ -147,9 +141,6 @@ class LembagaSeeder extends Seeder
                 'mbs' => true,
                 'nama_wajib_pajak' => 'SDIT PERMATA KRAKSAAN',
                 'npwp' => '02.345.673.3-012.000',
-                'memungut_iuran' => true,
-                'nominal_iuran' => 350000,
-                'periode_iuran' => 'bulanan',
                 'status_aktif' => true,
             ]
         );
@@ -194,9 +185,6 @@ class LembagaSeeder extends Seeder
                 'mbs' => true,
                 'nama_wajib_pajak' => 'SMPIT PERMATA KRAKSAAN',
                 'npwp' => '02.345.674.4-012.000',
-                'memungut_iuran' => true,
-                'nominal_iuran' => 450000,
-                'periode_iuran' => 'bulanan',
                 'status_aktif' => true,
             ]
         );

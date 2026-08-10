@@ -293,27 +293,6 @@
                     Menerapkan MBS (Manajemen Berbasis Sekolah)
                 </label>
             </div>
-            <div class="flex items-center pt-1">
-                <label class="flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" name="memungut_iuran" value="1" class="rounded border-gray-300 text-brand-500 focus:ring-brand-500" @checked($val('memungut_iuran'))>
-                    Memungut iuran dari wali murid
-                </label>
-            </div>
-            <div></div>
-
-            <div>
-                <x-input-label value="Nominal Iuran" />
-                <x-text-input type="number" step="0.01" name="nominal_iuran" value="{{ $val('nominal_iuran') }}" placeholder="Contoh: 150000" class="mt-1.5" />
-                <x-input-error :messages="$errors->get('nominal_iuran')" class="mt-1.5" />
-            </div>
-            <div>
-                <x-input-label value="Periode Iuran" />
-                <select name="periode_iuran" class="mt-1.5 {{ $selectClass }}">
-                    <option value="">Tidak berlaku</option>
-                    <option value="bulanan" @selected($val('periode_iuran') === 'bulanan')>Bulanan</option>
-                    <option value="tahunan" @selected($val('periode_iuran') === 'tahunan')>Tahunan</option>
-                </select>
-            </div>
         </div>
     </div>
 </div>

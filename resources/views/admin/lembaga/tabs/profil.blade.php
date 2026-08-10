@@ -155,17 +155,6 @@
                                 @endif
                             </dd>
                         </div>
-                        <div class="flex justify-between items-center py-2">
-                            <dt class="text-sm font-medium text-gray-500">Iuran Wali Murid</dt>
-                            <dd class="text-right">
-                                @if($lembaga->memungut_iuran)
-                                    <span class="block font-bold text-brand-600">Rp {{ number_format($lembaga->nominal_iuran, 0, ',', '.') }}</span>
-                                    <span class="text-xs capitalize text-gray-500">Periode: {{ $lembaga->periode_iuran ?: 'bulanan' }}</span>
-                                @else
-                                    <span class="text-xs font-medium text-gray-400">Tidak Ada Iuran</span>
-                                @endif
-                            </dd>
-                        </div>
                     </dl>
                 </div>
             </div>

@@ -7,6 +7,12 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
+it('has dropped the legacy iuran columns now that jenis_tagihan covers billing', function () {
+    expect(\Illuminate\Support\Facades\Schema::hasColumn('lembaga', 'memungut_iuran'))->toBeFalse();
+    expect(\Illuminate\Support\Facades\Schema::hasColumn('lembaga', 'nominal_iuran'))->toBeFalse();
+    expect(\Illuminate\Support\Facades\Schema::hasColumn('lembaga', 'periode_iuran'))->toBeFalse();
+});
+
 it('denies access to a user without lembaga.view permission', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.lembaga.index'))->assertForbidden();
 });
@@ -170,7 +176,7 @@ it('defaults status_aktif to true on create when the checkbox key is absent from
     expect(Lembaga::where('npsn', '20301235')->first()->status_aktif)->toBeTrue();
 });
 
-it('turns status_aktif, mbs, and memungut_iuran off when their checkboxes are left unchecked on update', function () {
+it('turns status_aktif and mbs off when their checkboxes are left unchecked on update', function () {
     foreach (['lembaga.view', 'lembaga.create', 'lembaga.edit'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
@@ -184,7 +190,6 @@ it('turns status_aktif, mbs, and memungut_iuran off when their checkboxes are le
         'yayasan_id' => $yayasan->id,
         'status_aktif' => true,
         'mbs' => true,
-        'memungut_iuran' => true,
     ]);
 
     $this->actingAs($manager)->put(route('admin.lembaga.update', $lembaga), [
@@ -195,13 +200,12 @@ it('turns status_aktif, mbs, and memungut_iuran off when their checkboxes are le
         'bentuk_pendidikan' => $lembaga->bentuk_pendidikan,
         'status_sekolah' => $lembaga->status_sekolah,
         'naungan' => $lembaga->naungan,
-        // all three checkboxes omitted, simulating the user unchecking them
+        // both checkboxes omitted, simulating the user unchecking them
     ])->assertRedirect(route('admin.lembaga.index'));
 
     $fresh = $lembaga->fresh();
     expect($fresh->status_aktif)->toBeFalse();
     expect($fresh->mbs)->toBeFalse();
-    expect($fresh->memungut_iuran)->toBeFalse();
 });
 
 it('rejects a duplicate npsn on create but allows a lembaga to keep its own npsn on update', function () {
@@ -261,8 +265,6 @@ it('persists the extended profile fields (alamat, kontak, bank) on create', func
         'provinsi' => 'Jawa Timur',
         'telepon' => '0341-123456',
         'nama_bank' => 'Bank Jatim',
-        'nominal_iuran' => '150000',
-        'periode_iuran' => 'bulanan',
     ])->assertRedirect(route('admin.lembaga.index'));
 
     $created = Lembaga::where('npsn', '20301237')->first();
@@ -270,8 +272,6 @@ it('persists the extended profile fields (alamat, kontak, bank) on create', func
     expect($created->kabupaten_kota)->toBe('Malang');
     expect($created->provinsi)->toBe('Jawa Timur');
     expect($created->nama_bank)->toBe('Bank Jatim');
-    expect((float) $created->nominal_iuran)->toBe(150000.0);
-    expect($created->periode_iuran)->toBe('bulanan');
 });
 
 it('requires a unique kode_lembaga on create but allows a lembaga to keep its own on update', function () {
