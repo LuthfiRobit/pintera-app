@@ -55,8 +55,11 @@ class TagihanGenerator
         return DB::transaction(function () use ($pendaftaran, $kategori, $items, $total) {
             $tagihan = Tagihan::create([
                 'pendaftaran_id' => $pendaftaran->id,
+                'tagihable_type' => Pendaftaran::class,
+                'tagihable_id' => $pendaftaran->id,
                 'kategori' => $kategori,
                 'total_tagihan' => $total,
+                'net_amount' => $total,
                 'status' => $total == 0 ? 'lunas' : 'belum_bayar',
             ]);
 
