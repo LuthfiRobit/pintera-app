@@ -157,7 +157,8 @@ siswa_keringanan
 
 ```
 pembayaran
-├─ metode              ENUM(...) + tambah 'cash'
+├─ metode              ENUM(...) + tambah 'cash','qris','wallet_auto','wallet_saldo'
+├─ sumber               ENUM(...) + tambah 'orang_tua' (pembayar tagihan siswa aktif, beda dari 'calon_siswa' yang PPDB-only)
 ├─ wallet_id            FK, NULLABLE   ← BARU (kolom disiapkan; tabel wallets dibuat di sub-project 3)
 ├─ is_auto_allocation   boolean DEFAULT false  ← BARU
 ├─ channel_reference     string NULLABLE  ← BARU (VA number/QR ID/referensi BRI)
