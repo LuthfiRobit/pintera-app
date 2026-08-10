@@ -4,7 +4,7 @@
 
 ## Konteks & Sumber
 
-Dokumen ini adalah hasil sesi brainstorming lanjutan (2026-08-10) yang mengevaluasi ulang `BRAINSTORM_FINANCIAL.md` terhadap kondisi codebase nyata, dan menambahkan ide dari aplikasi demo Pusdatren (sistem keuangan pesantren) yang relevan untuk konteks yayasan multi-lembaga.
+Dokumen ini adalah hasil sesi brainstorming lanjutan (2026-08-10) yang mengevaluasi ulang `BRAINSTORM_FINANCIAL.md` terhadap kondisi codebase nyata, dan menambahkan ide dari aplikasi demo Pusdatren (sistem keuangan pesantren) yang relevan untuk konteks yayasan multi-lembaga. Ditinjau ulang sekali lagi pada hari yang sama setelah user membagikan referensi visual form "Tambah Tagihan Baru" (mode Manual & Otomatis) dari Pusdatren — struktur Target Sasaran, Tarif Berdimensi, dan Keringanan direvisi mengikuti bentuk data yang terlihat di UI tersebut (lihat bagian Perubahan Skema §3–§5).
 
 Modul ini terlalu besar untuk satu spec/implementation plan. Dipecah menjadi 6 sub-project berurutan (pola sama seperti Program Pendampingan):
 
@@ -76,46 +76,33 @@ jenis_tagihan
 └─ last_generated_period string(7) NULLABLE
 ```
 
-### 3. Tabel Baru — Target Multi-Kriteria
+### 3. Tabel Baru — Target Sasaran Multi-Kriteria (grup OR-of-AND)
+
+Ditinjau ulang 2026-08-10 dari referensi UI Pusdatren ("Tambah Tagihan Baru" — Target Sasaran & Tarif Berdimensi). Struktur asli (flat-AND, satu tabel) diganti struktur dua-level: **grup** (1 grup = 1 "Sasaran #N"/"Tarif #N" card di UI, field di dalamnya di-AND-kan) dan **antar-grup di-OR-kan**. Struktur ini dipakai ulang oleh dua fitur — Target Sasaran (eligibility) dan Tarif Berdimensi (pricing rule) — lewat satu pasang tabel generik + kolom pembeda `tipe`:
 
 ```
-jenis_tagihan_kriteria
+jenis_tagihan_sasaran_grup
 ├─ id
 ├─ jenis_tagihan_id  FK → jenis_tagihan, cascade delete
-├─ field             ENUM('lembaga','tahun_ajaran','tingkat','kelas','jenis_kelamin','status_siswa')
-├─ operator           ENUM('in','not_in')
-├─ value               json  (array of ids/values sesuai field)
+├─ tipe               ENUM('sasaran','tarif')   ← membedakan grup eligibility vs grup pricing
+├─ nominal            decimal(12,2) NULLABLE     (diisi HANYA jika tipe='tarif')
 └─ timestamps
 
-Kosong (tidak ada baris) = "Semua Siswa" di lembaga terkait jenis_tagihan.
-Antar baris di-AND-kan; nilai dalam satu field di-OR-kan (via operator IN).
-```
-
-### 4. Tabel Baru — Keringanan/Diskon Reusable
-
-```
-kategori_keringanan
+jenis_tagihan_sasaran_kriteria
 ├─ id
-├─ lembaga_id       FK → lembaga, cascade delete
-├─ nama             string  (mis. "Anak Pegawai", "Beasiswa Prestasi")
-├─ tipe_potongan    ENUM('fixed','persen')
-├─ nilai_default    decimal(12,2)
-├─ keterangan        text NULLABLE
-└─ timestamps
-
-siswa_keringanan
-├─ id
-├─ siswa_id                   FK → siswa, cascade delete
-├─ kategori_keringanan_id     FK → kategori_keringanan, restrict delete
-├─ nilai_override              decimal(12,2) NULLABLE  (override nilai_default per siswa)
-├─ berlaku_dari                date
-├─ berlaku_sampai              date NULLABLE
+├─ jenis_tagihan_sasaran_grup_id  FK → jenis_tagihan_sasaran_grup, cascade delete
+├─ field                           ENUM('lembaga','tahun_ajaran','tingkat','kelas','jenis_kelamin','status_siswa')
+├─ operator                         ENUM('in','not_in')
+├─ value                             json  (array of ids/values sesuai field)
 └─ timestamps
 ```
 
-Saat tagihan digenerate (sub-project 2), engine cek `siswa_keringanan` aktif pada `tagihable_id` (jika `tagihable_type=Siswa`) dan **snapshot** hasil potongan ke `tagihan.discount_amount`/`discount_type` — bukan live-reference — agar histori tagihan lama tidak berubah jika kategori keringanan diedit belakangan.
+**Semantik:**
+- Grup `tipe='sasaran'`: siswa masuk target tagihan ini jika match SEMUA kriteria dalam SATU grup manapun (AND dalam grup, OR antar grup). Tidak ada grup `tipe='sasaran'` sama sekali = "Semua Siswa" di lembaga terkait.
+- Grup `tipe='tarif'`: dievaluasi urutan dibuat (`id` ASC) setelah siswa lolos sasaran; grup pertama yang match menentukan `nominal` yang dipakai. Tidak ada grup `tipe='tarif'` yang match → fallback ke `jenis_tagihan.default_amount`.
+- Field set sengaja dibatasi ke entitas yang benar-benar ada di skema sekolah kita (`lembaga`, `tahun_ajaran`, `tingkat` dari `kelas.tingkat`, `kelas`, `jenis_kelamin`, `status_siswa`) — field pesantren-spesifik (Wilayah/Blok/Kamar/Angkatan/Status Mondok) tidak diadopsi karena tidak ada padanan entitasnya di skema kita.
 
-### 5. Tabel Baru — Nominal Override per Siswa (SPP/dinamis)
+### 4. Nominal Override per Siswa (tetap ada, berdampingan dengan Tarif Berdimensi)
 
 ```
 nominal_tagihan_siswa
@@ -127,7 +114,43 @@ nominal_tagihan_siswa
 
 unique(jenis_tagihan_id, siswa_id)
 ```
-Analog `nominal_tagihan_jalur` (PPDB) tapi untuk siswa individual pada tagihan dinamis. Jika tidak ada row, pakai `jenis_tagihan.default_amount` (kolom baru, decimal, nullable — nominal dasar untuk tagihan dinamis, terpisah dari `nominal_tagihan_jalur` yang PPDB-only).
+Analog `nominal_tagihan_jalur` (PPDB) tapi untuk siswa individual pada tagihan dinamis — dipakai untuk kasus 1-off yang tidak masuk pola kelompok manapun.
+
+**Urutan resolusi nominal saat generate (sub-project 2):** (1) cek `nominal_tagihan_siswa` untuk siswa ini → jika ada, pakai. (2) Jika tidak ada, evaluasi grup `jenis_tagihan_sasaran_grup` bertipe `tarif` yang match → pakai `nominal` grup pertama yang cocok. (3) Jika tidak ada yang match, pakai `jenis_tagihan.default_amount`.
+
+### 5. Tabel Baru — Keringanan (rule per-jenis-tagihan)
+
+Ditinjau ulang 2026-08-10: potongan untuk kondisi yang sama (mis. "Anak Pegawai") bisa berbeda besarannya antar jenis tagihan (SPP vs uang kegiatan), sesuai pola Pusdatren. `kategori_keringanan` jadi murni master daftar kondisi (tanpa nilai default); besaran potongan pindah ke rule per-tagihan:
+
+```
+kategori_keringanan
+├─ id
+├─ lembaga_id       FK → lembaga, cascade delete
+├─ nama             string  (mis. "Anak Pegawai", "Beasiswa Prestasi", "Yatim/Piatu")
+├─ keterangan        text NULLABLE
+└─ timestamps
+
+jenis_tagihan_keringanan
+├─ id
+├─ jenis_tagihan_id           FK → jenis_tagihan, cascade delete
+├─ kategori_keringanan_id     FK → kategori_keringanan, restrict delete
+├─ tipe_potongan               ENUM('fixed','persen')
+├─ nilai                        decimal(12,2)
+├─ keterangan                   text NULLABLE
+└─ timestamps
+
+unique(jenis_tagihan_id, kategori_keringanan_id)
+
+siswa_keringanan
+├─ id
+├─ siswa_id                   FK → siswa, cascade delete
+├─ kategori_keringanan_id     FK → kategori_keringanan, restrict delete
+├─ berlaku_dari                date
+├─ berlaku_sampai              date NULLABLE
+└─ timestamps
+```
+
+`siswa_keringanan` hanya menandai kondisi apa yang dimiliki siswa (tanpa nilai potongan). Saat tagihan digenerate (sub-project 2), engine cek kondisi aktif siswa pada `tagihable_id` (jika `tagihable_type=Siswa`), cari row `jenis_tagihan_keringanan` yang cocok untuk `jenis_tagihan_id` tagihan ini, lalu **snapshot** hasil potongan ke `tagihan.discount_amount`/`discount_type` — bukan live-reference — agar histori tagihan lama tidak berubah jika rule keringanan diedit belakangan. Jika siswa punya beberapa kondisi yang match beberapa rule sekaligus, ambil yang nilai potongannya terbesar (business rule sederhana; bisa direvisi di sub-project 2 jika ada kasus akumulasi).
 
 ### 6. `pembayaran` — Ekstensi (forward-compat, tidak dipakai penuh sampai sub-project 3–4)
 
@@ -186,13 +209,22 @@ Satu `pembayaran` bisa mengalokasikan ke banyak `tagihan` (dipakai untuk batch p
 - [x] Batch payment multi-select → 1 VA/QRIS gabungan + tabel junction `pembayaran_tagihan`
 - [x] Kwitansi PDF → Template standar sistem, personalisasi dari data `lembaga` + `yayasan.logo` (perlu UI upload baru)
 - [x] Reminder jatuh tempo → Masuk scope (H-3, H-1), sub-project 5
-- [x] Target scope tagihan → Multi-kriteria combo (`jenis_tagihan_kriteria`), bukan single enum
-- [x] Keringanan/diskon → Master data reusable (`kategori_keringanan` + `siswa_keringanan`), snapshot ke tagihan saat generate
+- [x] Target scope tagihan → Multi-kriteria combo, bukan single enum *(struktur tabelnya direvisi lagi di sesi lanjutan di bawah — lihat §3)*
+- [x] Keringanan/diskon → Master data reusable, snapshot ke tagihan saat generate *(mekanisme nilainya direvisi lagi di sesi lanjutan di bawah — lihat §5)*
 - [x] Dashboard monitoring admin → Masuk scope, sub-project 2
 - [x] Kartu siswa/NFC loket → Tetap manual sekarang, kolom `identifier_method` disiapkan agar forward-compatible
 - [x] Refactor PPDB existing → Bagian dari scope & definition-of-done sub-project 1, test suite lama harus tetap hijau
+
+### Sesi lanjutan — referensi visual Pusdatren (2026-08-10)
+
+- [x] Struktur Target Sasaran & Tarif Berdimensi → Grup OR-of-AND (`jenis_tagihan_sasaran_grup` + `jenis_tagihan_sasaran_kriteria`), menggantikan flat-AND, dipakai ulang untuk kedua fitur via kolom `tipe`
+- [x] Tarif Berdimensi vs override per-siswa → Berdampingan, urutan resolusi: override siswa → tarif dimensi match pertama → default_amount
+- [x] Keringanan → Rule per-jenis-tagihan (`jenis_tagihan_keringanan`), bukan nilai default global; `kategori_keringanan` jadi master nama kondisi saja, `siswa_keringanan` hanya menandai kepemilikan kondisi
+- [x] "Potongan Perizinan" (pesantren, potongan saat santri izin asrama) → Drop dari scope, tidak ada padanan konsep boarding di sekolah harian
 
 ## Ambiguitas Sisa (untuk sub-project 2 dan seterusnya)
 
 - [ ] Format `hari_jatuh_tempo` untuk kelas/tingkat berbeda tahun ajaran (mis. siswa pindah kelas di tengah periode) — detail behavior migrasi kriteria saat re-evaluate
 - [ ] Apakah `kategori_keringanan` bisa berlaku lintas lembaga (yayasan-level) atau strictly per lembaga — saat ini didesain per lembaga, perlu dikonfirmasi ulang saat sub-project 2 jika ada kasus siswa pindah lembaga dalam satu yayasan
+- [ ] Jika siswa punya beberapa kondisi keringanan yang match beberapa rule sekaligus pada satu jenis tagihan yang sama → sub-project 1 memakai aturan sederhana "ambil nilai potongan terbesar"; perlu dikonfirmasi ulang di sub-project 2 apakah ini yang benar-benar diinginkan atau harus akumulatif/pilihan admin
+- [ ] Urutan evaluasi grup `tipe='tarif'` yang overlap (dua grup sama-sama match untuk satu siswa) → saat ini "grup pertama dibuat (id ASC) yang menang"; perlu UI yang jelas menampilkan urutan prioritas ke admin di sub-project 2
