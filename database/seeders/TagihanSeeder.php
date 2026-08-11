@@ -52,18 +52,36 @@ class TagihanSeeder extends Seeder
             if ($diterima) {
                 Tagihan::firstOrCreate(
                     ['pendaftaran_id' => $diterima->id, 'kategori' => 'pendaftaran'],
-                    ['total_tagihan' => $nominalPendaftaran->nominal, 'status' => 'belum_bayar']
+                    [
+                        'tagihable_type' => Pendaftaran::class,
+                        'tagihable_id' => $diterima->id,
+                        'total_tagihan' => $nominalPendaftaran->nominal,
+                        'net_amount' => $nominalPendaftaran->nominal,
+                        'status' => 'belum_bayar',
+                    ]
                 );
                 Tagihan::firstOrCreate(
                     ['pendaftaran_id' => $diterima->id, 'kategori' => 'daftar_ulang'],
-                    ['total_tagihan' => $nominalDaftarUlang->nominal, 'status' => 'belum_bayar']
+                    [
+                        'tagihable_type' => Pendaftaran::class,
+                        'tagihable_id' => $diterima->id,
+                        'total_tagihan' => $nominalDaftarUlang->nominal,
+                        'net_amount' => $nominalDaftarUlang->nominal,
+                        'status' => 'belum_bayar',
+                    ]
                 );
             }
 
             if ($cicilanDemo) {
                 Tagihan::firstOrCreate(
                     ['pendaftaran_id' => $cicilanDemo->id, 'kategori' => 'daftar_ulang'],
-                    ['total_tagihan' => $nominalDaftarUlang->nominal, 'status' => 'belum_bayar']
+                    [
+                        'tagihable_type' => Pendaftaran::class,
+                        'tagihable_id' => $cicilanDemo->id,
+                        'total_tagihan' => $nominalDaftarUlang->nominal,
+                        'net_amount' => $nominalDaftarUlang->nominal,
+                        'status' => 'belum_bayar',
+                    ]
                 );
             }
         }
