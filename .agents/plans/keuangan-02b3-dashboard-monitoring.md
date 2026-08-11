@@ -31,15 +31,15 @@
 **Interfaces:**
 - Produces: Route `admin.jenis-tagihan.monitoring.index` dan `admin.jenis-tagihan.monitoring.batal`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
   - Uji tenant-scope (akses `jenis_tagihan` lembaga lain akan 404).
   - Uji permission: `index` butuh `jenis-tagihan.view`, `batalTagihan` butuh `jenis-tagihan.edit` (atau role relevan).
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Write minimal implementation**
   - Buat `JenisTagihanMonitoringController`. Method `index()` memanggil `$this->authorize('view', $jenisTagihan)`. Method `batalTagihan()` memanggil `$this->authorize('update', $jenisTagihan)`.
   - Daftarkan route di `routes/admin.php` di bawah prefix `jenis-tagihan/{jenisTagihan}` di dalam group middleware `['auth', 'verified']`. Implicit route model binding di Laravel akan secara otomatis mengaplikasikan `TenantScope` untuk `JenisTagihan`.
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ### Task 2: "Monitoring" Button in Index Page
 
@@ -51,15 +51,15 @@
 **Interfaces:**
 - Consumes: Route dari Task 1.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
   - Pastikan link Monitoring ada untuk tagihan non-PPDB.
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Write minimal implementation**
   - Tambahkan `monitoringUrlTemplate: @js(route('admin.jenis-tagihan.monitoring.index', ['jenisTagihan' => '__ID__']))` di konfigurasi `jenisTagihanTable`.
   - Tambahkan method `monitoringUrl(item)` di `jenis-tagihan-table.js`.
   - Tambahkan `<x-dropdown-link x-bind:href="monitoringUrl(item)">Monitoring</x-dropdown-link>` di `index.blade.php` (di dalam `template x-if="!['pendaftaran', 'daftar_ulang'].includes(item.kategori)"`).
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ### Task 3: Ringkasan Metrics & View Skeleton
 
@@ -71,16 +71,16 @@
 **Interfaces:**
 - Produces: Variabel `$ringkasan` (total_siswa, lunas, sebagian, belum_bayar, dibatalkan, total_tertagih, total_masuk).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
   - Buat dummy `Siswa` dan `Tagihan` dengan status berbeda, pastikan `$ringkasan` di view memiliki angka yang akurat.
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Write minimal implementation**
   - Di `index()`, hitung agregasi `$jenisTagihan->tagihan()`: total penerima (`count`), jumlah per status, total tertagih (`sum(net_amount)` where not dibatalkan).
   - Buat view `monitoring/index.blade.php` yang memiliki `x-data="{ activeTab: 'penerima', modalBatalkan: false, selectedTagihan: null }"`.
   - Buat bagian "Ringkasan" (Card grid di atas tabs).
   - Buat skeleton navigasi Tabs (Penerima & Tunggakan) menggunakan `x-show="activeTab === 'penerima'"`.
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ### Task 4: Tab "Daftar Penerima"
 
@@ -92,15 +92,15 @@
 **Interfaces:**
 - Produces: Variabel `$penerima` (`LengthAwarePaginator` dari `Tagihan` beserta relasi `tagihable`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
   - Uji apakah view `index` merender list tagihan, lengkap dengan nominal dan tombol "Batalkan" jika status `belum_bayar`.
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Write minimal implementation**
   - Di `index()`, ambil tagihan dengan pagination `->paginate(50, ['*'], 'penerima_page')`.
   - Di view, buat tabel: Nama Siswa, Periode, Nominal, Diskon, Net, Terbayar, Status, Aksi.
   - Tampilkan tombol "Batalkan" (trigger Modal Alpine JS) HANYA untuk status `belum_bayar`.
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ### Task 5: Tab "Daftar Tunggakan"
 
@@ -112,15 +112,15 @@
 **Interfaces:**
 - Produces: Variabel `$tunggakan` (`LengthAwarePaginator` hasil GROUP BY tagihable).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
   - Uji kalkulasi total tunggakan per siswa (rekap lintas periode).
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Write minimal implementation**
   - Di `index()`, query tunggakan: `select tagihable_id, tagihable_type, sum(net_amount - paid_amount) as total_tunggakan from tagihan where jenis_tagihan_id = ? and status in ('belum_bayar', 'sebagian') group by tagihable_type, tagihable_id order by total_tunggakan desc`.
   - Paginate query ini `->paginate(50, ['*'], 'tunggakan_page')`. (Gunakan eager loading manual atau JOIN untuk relasi Siswa agar performa baik).
   - Tampilkan di tab Tunggakan.
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ### Task 6: Action "Batalkan Tagihan"
 
@@ -133,18 +133,18 @@
 **Interfaces:**
 - Consumes: `cancel_reason` text dari form input modal.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
   - POST request membatalkan tagihan `belum_bayar` dengan alasan sukses.
   - POST request menolak membatalkan tagihan `sebagian` mengembalikan `422 Unprocessable Entity`.
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Write minimal implementation**
   - Method `batalTagihan(Request $request, JenisTagihan $jenisTagihan, Tagihan $tagihan)` memvalidasi `cancel_reason` `required|string|max:1000`.
   - Cek jika `$tagihan->status !== 'belum_bayar'`, lemparkan `ValidationException` atau return response JSON/View dengan HTTP code `422`.
   - Update `$tagihan->update(['status' => 'dibatalkan', 'cancelled_by' => auth()->id(), 'cancelled_at' => now(), 'cancel_reason' => $request->cancel_reason])`.
   - Jika via form biasa (bukan AJAX), gunakan `back()->with('success', 'Tagihan berhasil dibatalkan.')`. Jika AJAX, response JSON 200.
   - Di view, lengkapi Alpine modal untuk mensubmit URL POST dengan alasan pembatalan.
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ### Task 7: Manual Browser Verification
 
@@ -154,9 +154,9 @@
 **Interfaces:**
 - Consumes: Semua fungsionalitas UI yang telah dibangun di atas.
 
-- [ ] **Step 1: Siapkan Handoff Log**
+- [x] **Step 1: Siapkan Handoff Log**
   - Buat file log `.agents/logs/keuangan-02b3-dashboard-monitoring.md`.
-- [ ] **Step 2: Dispatch Browser Subagent**
+- [x] **Step 2: Dispatch Browser Subagent**
   - Instruksikan subagent untuk login sebagai `admin_keuangan`.
   - Masuk ke salah satu dashboard Monitoring `jenis_tagihan`.
   - Verifikasi: Card Ringkasan ter-render (tidak ada JS error).
@@ -164,6 +164,6 @@
   - Verifikasi Batalkan: Klik aksi "Batalkan" untuk tagihan berstatus *belum_bayar*.
   - Verifikasi: Modal Alpine muncul, isi alasan, lalu *submit* form.
   - Verifikasi: Halaman termuat ulang (atau merespons JSON) dan status tagihan tersebut sukses berubah menjadi `dibatalkan` di UI *Daftar Penerima*.
-- [ ] **Step 3: Dokumentasikan Hasil**
+- [x] **Step 3: Dokumentasikan Hasil**
   - Catat bukti eksekusi manual (apakah ada bug render-time yang terdeteksi) ke dalam Handoff Log.
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
