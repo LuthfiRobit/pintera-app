@@ -8,8 +8,6 @@ use App\Models\Tagihan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class JenisTagihanMonitoringController extends BaseController
 {
@@ -62,6 +60,11 @@ class JenisTagihanMonitoringController extends BaseController
 
         if ($tagihan->status !== 'belum_bayar') {
             abort(422, 'Hanya tagihan dengan status belum bayar yang dapat dibatalkan.');
+        }
+
+        // Tenant scope: verify tagihan belongs to this jenisTagihan
+        if ($tagihan->jenis_tagihan_id !== $jenisTagihan->id) {
+            abort(403, 'Tagihan tidak ditemukan untuk jenis tagihan ini.');
         }
 
         $tagihan->update([

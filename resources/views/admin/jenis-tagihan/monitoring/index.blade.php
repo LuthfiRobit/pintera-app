@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-5xl space-y-4">
+    <div class="mx-auto max-w-5xl space-y-4" x-data="{ activeTab: 'penerima', cancelModalOpen: false, cancelUrl: '' }">
         @if (session('success'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('success') }}</div>
         @endif
@@ -211,4 +211,4 @@
             </div>
         </div>
     </div>
-</x-admin-layout>
+</x-app-layout>
