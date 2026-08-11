@@ -90,9 +90,11 @@ Seperti pada 2b-1 dan 2b-2, error render-time pada template Alpine JS tidak terd
 ## Test Coverage
 
 ```
-73 tests passed, 180 assertions (Full Keuangan suite)
-10 tests passed, 33 assertions (Admin JenisTagihan Monitoring & Button suite)
+Full Test Suite (`php artisan test` tanpa filter):
+1419 passed, 6 pre-existing failed (4435 assertions) — Durasi: 268s
+(6 failure adalah pre-existing baseline yang sama sejak 2b-1/2b-2: LembagaCrudTest, RoleBuilderTest x4, RoleFormAuditBannerTest)
 
+Feature Keuangan & Monitoring Spesifik:
 - tests/Feature/Admin/JenisTagihanMonitoringTest.php: 8 tests passed
   * it denies access to monitoring page without jenis-tagihan.view permission
   * it enforces tenant scope on monitoring page
@@ -107,3 +109,4 @@ Seperti pada 2b-1 dan 2b-2, error render-time pada template Alpine JS tidak terd
   * it renders the Monitoring action for a non-ppdb jenis_tagihan on the index page
 - tests/Feature/Keuangan/: 63 tests passed
 ```
+
