@@ -21,6 +21,7 @@
                 nominalUrlTemplate: @js(route('admin.jenis-tagihan.nominal', ['jenisTagihan' => '__ID__'])),
                 editUrlTemplate: @js(route('admin.jenis-tagihan.edit', ['jenisTagihan' => '__ID__'])),
                 prosesUrlTemplate: @js(route('admin.jenis-tagihan.proses', ['jenisTagihan' => '__ID__'])),
+                monitoringUrlTemplate: @js(route('admin.jenis-tagihan.monitoring.index', ['jenisTagihan' => '__ID__'])),
             })"
             class="space-y-5"
         >
@@ -62,6 +63,9 @@
                                                 </template>
                                                 <template x-if="!['pendaftaran', 'daftar_ulang'].includes(item.kategori)">
                                                     <x-dropdown-link href="#" @click.prevent="prosesTagihan(item)">Proses Tagihan</x-dropdown-link>
+                                                </template>
+                                                <template x-if="!['pendaftaran', 'daftar_ulang'].includes(item.kategori)">
+                                                    <x-dropdown-link x-bind:href="monitoringUrl(item)">Monitoring</x-dropdown-link>
                                                 </template>
                                             @endcan
                                             @can('jenis-tagihan.delete')

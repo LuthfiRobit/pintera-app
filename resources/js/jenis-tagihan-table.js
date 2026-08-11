@@ -5,6 +5,11 @@ export function jenisTagihanTable(config) {
         nominalUrlTemplate: config.nominalUrlTemplate,
         editUrlTemplate: config.editUrlTemplate,
         prosesUrlTemplate: config.prosesUrlTemplate,
+        monitoringUrlTemplate: config.monitoringUrlTemplate,
+
+        monitoringUrl(item) {
+            return this.monitoringUrlTemplate.replace('__ID__', item.id);
+        },
 
         nominalUrl(item) {
             return this.nominalUrlTemplate.replace('__ID__', item.id);
