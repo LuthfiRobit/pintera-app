@@ -25,3 +25,13 @@ it('does not fire again when is_active is saved as true a second time without ch
 
     expect(Tagihan::count())->toBe(0);
 });
+
+it('does not throw and does not generate anything when a ppdb-kategori jenis_tagihan is reactivated', function () {
+    $jenisTagihan = JenisTagihan::factory()->create(['kategori' => 'pendaftaran', 'is_active' => false]);
+    Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+
+    $jenisTagihan->update(['is_active' => true]);
+
+    expect(Tagihan::count())->toBe(0);
+    expect(\App\Models\BillingJobLog::count())->toBe(0);
+});
