@@ -92,6 +92,7 @@ export function jenisTagihanForm(config) {
 
         initTomSelect(el, kriteria) {
             if (el.tomselect) {
+                el.tomselect.clearOptions();
                 el.tomselect.sync();
                 el.tomselect.clear();
                 return;
