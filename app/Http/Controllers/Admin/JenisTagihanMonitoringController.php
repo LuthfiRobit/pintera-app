@@ -31,9 +31,15 @@ class JenisTagihanMonitoringController extends BaseController
             'total_masuk' => (float) (clone $tagihanQuery)->where('status', '!=', 'dibatalkan')->sum('paid_amount'),
         ];
 
+        $tagihanPenerima = Tagihan::with('tagihable')
+            ->where('jenis_tagihan_id', $jenisTagihan->id)
+            ->where('status', '!=', 'dibatalkan')
+            ->paginate(15, ['*'], 'penerima_page');
+
         return view('admin.jenis-tagihan.monitoring.index', [
             'jenisTagihan' => $jenisTagihan,
             'ringkasan' => $ringkasan,
+            'tagihanPenerima' => $tagihanPenerima,
         ]);
     }
 

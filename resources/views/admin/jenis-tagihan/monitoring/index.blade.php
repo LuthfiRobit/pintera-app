@@ -60,10 +60,62 @@
 
             <div x-show="activeTab === 'penerima'" class="mt-5">
                 <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
-                    <div class="border-b border-gray-200 px-5 py-4">
+                    <div class="border-b border-gray-200 px-5 py-4 flex items-center justify-between">
                         <p class="font-display text-sm font-bold text-gray-900">Daftar Penerima Tagihan</p>
                     </div>
-                    <div class="p-5 text-sm text-gray-500">Tabel Penerima (Task 4)</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                    <th class="px-5 py-3">Penerima</th>
+                                    <th class="px-5 py-3">Status</th>
+                                    <th class="px-5 py-3 text-right">Total Tagihan</th>
+                                    <th class="px-5 py-3 text-right">Sisa Tagihan</th>
+                                    <th class="px-5 py-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse ($tagihanPenerima as $tagihan)
+                                    <tr class="transition hover:bg-gray-50">
+                                        <td class="px-5 py-3.5">
+                                            <p class="font-semibold text-gray-900">{{ $tagihan->tagihable->nama_lengkap ?? $tagihan->tagihable->nama ?? 'Unknown' }}</p>
+                                            <p class="text-xs text-gray-500">{{ class_basename($tagihan->tagihable_type) }}</p>
+                                        </td>
+                                        <td class="px-5 py-3.5">
+                                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold
+                                                @if($tagihan->status === 'lunas') bg-success-50 text-success-700
+                                                @elseif($tagihan->status === 'sebagian') bg-warning-50 text-warning-700
+                                                @elseif($tagihan->status === 'belum_bayar') bg-error-50 text-error-700
+                                                @else bg-gray-100 text-gray-700 @endif
+                                            ">
+                                                {{ str_replace('_', ' ', Str::title($tagihan->status)) }}
+                                            </span>
+                                        </td>
+                                        <td class="px-5 py-3.5 text-right font-medium text-gray-900">
+                                            Rp{{ number_format($tagihan->net_amount, 0, ',', '.') }}
+                                        </td>
+                                        <td class="px-5 py-3.5 text-right font-medium text-gray-900">
+                                            Rp{{ number_format($tagihan->net_amount - $tagihan->paid_amount, 0, ',', '.') }}
+                                        </td>
+                                        <td class="px-5 py-3.5 text-right">
+                                            <a href="#" class="text-brand-600 hover:text-brand-700">Detail</a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="px-5 py-8 text-center text-gray-500">
+                                            Belum ada data penerima tagihan.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    @if ($tagihanPenerima->hasPages())
+                        <div class="border-t border-gray-200 px-5 py-4">
+                            {{ $tagihanPenerima->appends(['tunggakan_page' => request('tunggakan_page')])->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
 

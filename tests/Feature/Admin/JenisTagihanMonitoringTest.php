@@ -126,3 +126,33 @@ it('calculates ringkasan metrics correctly', function () {
     expect($ringkasan['total_tertagih'])->toBe(370000.0); // 100k + 150k + 120k
     expect($ringkasan['total_masuk'])->toBe(150000.0); // 100k + 50k
 });
+
+it('lists daftar penerima correctly with pagination', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    
+    Tagihan::query()->delete();
+
+    Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id,
+        'tagihable_type' => Siswa::class,
+        'tagihable_id' => $siswa->id,
+        'status' => 'belum_bayar',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('admin.jenis-tagihan.monitoring.index', $jenisTagihan));
+
+    $response->assertOk();
+    $response->assertViewHas('tagihanPenerima');
+    
+    $tagihanPenerima = $response->viewData('tagihanPenerima');
+    expect($tagihanPenerima->count())->toBe(1);
+    expect($tagihanPenerima->first()->tagihable->id)->toBe($siswa->id);
+});
