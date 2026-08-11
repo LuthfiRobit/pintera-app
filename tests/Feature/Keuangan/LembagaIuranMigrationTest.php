@@ -3,6 +3,7 @@
 
 use App\Models\JenisTagihan;
 use App\Models\Lembaga;
+use App\Models\Yayasan;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -29,8 +30,9 @@ use Illuminate\Support\Facades\Schema;
 // MySQL DDL (Schema::table add/drop columns below) implicitly commits the
 // currently-open transaction, so RefreshDatabase's per-test rollback never
 // happens for rows created before or after that DDL runs in the same test.
-// Every caller of this helper must therefore delete its own Lembaga/
-// JenisTagihan rows explicitly in a finally block, or they leak permanently.
+// Every caller of this helper must therefore delete every row it created
+// explicitly in a finally block, including factory-created parents (e.g.,
+// the Yayasan that LembagaFactory creates by default), or they leak permanently.
 function withLegacyIuranColumns(callable $callback): void
 {
     $columns = ['memungut_iuran', 'nominal_iuran', 'periode_iuran'];
@@ -64,6 +66,7 @@ function withLegacyIuranColumns(callable $callback): void
 it('creates a spp jenis_tagihan for every lembaga that had memungut_iuran enabled', function () {
     withLegacyIuranColumns(function () {
         $lembaga = Lembaga::factory()->create();
+        $yayasanId = $lembaga->yayasan_id;
 
         try {
             DB::table('lembaga')->where('id', $lembaga->id)->update([
@@ -85,6 +88,7 @@ it('creates a spp jenis_tagihan for every lembaga that had memungut_iuran enable
         } finally {
             JenisTagihan::where('lembaga_id', $lembaga->id)->delete();
             Lembaga::where('id', $lembaga->id)->delete();
+            Yayasan::where('id', $yayasanId)->delete();
         }
     });
 });
@@ -92,6 +96,7 @@ it('creates a spp jenis_tagihan for every lembaga that had memungut_iuran enable
 it('does not duplicate the jenis_tagihan when the migration runs twice', function () {
     withLegacyIuranColumns(function () {
         $lembaga = Lembaga::factory()->create();
+        $yayasanId = $lembaga->yayasan_id;
 
         try {
             DB::table('lembaga')->where('id', $lembaga->id)->update([
@@ -108,6 +113,7 @@ it('does not duplicate the jenis_tagihan when the migration runs twice', functio
         } finally {
             JenisTagihan::where('lembaga_id', $lembaga->id)->delete();
             Lembaga::where('id', $lembaga->id)->delete();
+            Yayasan::where('id', $yayasanId)->delete();
         }
     });
 });
@@ -115,6 +121,7 @@ it('does not duplicate the jenis_tagihan when the migration runs twice', functio
 it('skips a lembaga where memungut_iuran is false', function () {
     withLegacyIuranColumns(function () {
         $lembaga = Lembaga::factory()->create();
+        $yayasanId = $lembaga->yayasan_id;
 
         try {
             DB::table('lembaga')->where('id', $lembaga->id)->update(['memungut_iuran' => false]);
@@ -125,6 +132,7 @@ it('skips a lembaga where memungut_iuran is false', function () {
         } finally {
             JenisTagihan::where('lembaga_id', $lembaga->id)->delete();
             Lembaga::where('id', $lembaga->id)->delete();
+            Yayasan::where('id', $yayasanId)->delete();
         }
     });
 });
