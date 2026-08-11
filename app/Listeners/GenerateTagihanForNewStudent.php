@@ -24,6 +24,7 @@ class GenerateTagihanForNewStudent
         JenisTagihan::withoutGlobalScope(TenantScope::class)
             ->where('lembaga_id', $siswa->lembaga_id)
             ->where('is_active', true)
+            ->whereNotIn('kategori', ['pendaftaran', 'daftar_ulang'])
             ->get()
             ->each(function (JenisTagihan $jenisTagihan) use ($siswa) {
                 if ($this->matcher->siswaMatchesJenisTagihan($siswa, $jenisTagihan)) {
