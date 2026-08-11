@@ -227,7 +227,7 @@
 
             <div class="flex items-center gap-3">
                 <x-primary-button type="submit">{{ $jenisTagihan === null ? 'Tambah' : 'Simpan' }}</x-primary-button>
-                <x-secondary-button type="button" @click="window.location.href = @js(route('admin.jenis-tagihan.index'))">Batal</x-secondary-button>
+                <x-secondary-button type="button" @click="window.location.href = '{{ route('admin.jenis-tagihan.index') }}'">Batal</x-secondary-button>
             </div>
         </form>
     </div>

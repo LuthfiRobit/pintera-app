@@ -13,3 +13,12 @@
 - Semua *task plan* dari 1-10 untuk fitur `keuangan-02b2-proses-tagihan` di branch `demo` telah sukses terimplementasi dan tersimpan di repositori lokal git.
 - Kode dan pengujian yang telah selesai kini menunggu konfirmasi (*human review*).
 - Jika ada perbaikan tambahan yang dibutuhkan, harap berikan instruksi; bila tidak, pekerjaan untuk *plan* ini resmi diselesaikan.
+
+## Final Whole-Plan Code Review Lintas-Task
+Berdasarkan instruksi tambahan, telah dilakukan review lintas-task (mirip pola 2b-1) dengan fokus pada 3 hal:
+1. **Konsistensi Guard (Generator + 3 Caller):** Keempat (bahkan kelima) guard berjalan konsisten. `TagihanBillingGenerator` bertindak sebagai pertahanan terakhir dengan melemparkan `\RuntimeException`. Callers (cron `GenerateTagihanHarian`, listener, console command, dan action `prosesTagihan` di UI) semuanya menangani guard ini dengan benar — baik dengan menangkap exception (pada cron agar loop terus berjalan), filter query (`whereNotIn`), atau pengecekan awal yang mengembalikan *graceful error* (422 pada HTTP, string error pada console). Tidak ada kebocoran 500 error.
+2. **Asumsi Saling Override (Skipped Count dll):** Tidak ditemukan benturan asumsi antara Task 2, 7, dan 10. `countTotalSiswaPool()` yang dibuat di Task 7 secara akurat menghitung total `Siswa` pada lembaga tanpa memperhatikan kriteria sasaran. Hal ini membuat kalkulasi `$tidak_memenuhi_kriteria` (Total - Target) pada Task 8 menjadi akurat dan terpisah dari kalkulasi `$sudah_tertagih` (Target - Generated - Gagal) yang diandalkan Task 2. Konsep idempotensi tetap terjaga murni tanpa percampuran logic.
+3. **Manual Browser Verification:** Subagent browser dijalankan pada `http://127.0.0.1:8000/admin/jenis-tagihan`. 
+   - Ditemukan adanya Alpine JS error `window.location.href = @js(...)` di `form.blade.php` (sisa *legacy bug* dari plan form-jenis-tagihan) yang mem-break tombol aksi. **Bug syntax ini telah diperbaiki secara live** sehingga JS dapat dieksekusi.
+   - Tombol "Proses Tagihan" tidak muncul untuk jenis_tagihan ber-kategori PPDB (terverifikasi UI).
+   - Eksekusi by-pass `POST` *request* via JS console (dengan CSRF token) ke endpoint proses untuk PPDB jenis_tagihan berhasil dicegat backend dengan status **422 Unprocessable Entity** (terverifikasi baik via browser console maupun automated test `JenisTagihanProsesTest.php`). Tidak ada crash 500.
