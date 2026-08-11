@@ -73,6 +73,11 @@ class Siswa extends Model
         return $this->morphMany(Tagihan::class, 'tagihable');
     }
 
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class);
+    }
+
     protected static function booted(): void
     {
         static::created(fn (Siswa $siswa) => event(new \App\Events\StudentCreated($siswa)));
