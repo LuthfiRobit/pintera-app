@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\JalurPpdbController;
 use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\JenisKaryawanMasterController;
 use App\Http\Controllers\Admin\JenisTagihanController;
+use App\Http\Controllers\Admin\JenisTagihanMonitoringController;
 use App\Http\Controllers\Admin\KategoriKeringananController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
@@ -186,6 +187,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::post('jenis-tagihan/{jenisTagihan}/proses', [JenisTagihanController::class, 'prosesTagihan'])->name('jenis-tagihan.proses');
     Route::get('jenis-tagihan/{jenisTagihan}/nominal', [JenisTagihanController::class, 'nominal'])->name('jenis-tagihan.nominal');
     Route::post('jenis-tagihan/{jenisTagihan}/nominal', [JenisTagihanController::class, 'simpanNominal'])->name('jenis-tagihan.nominal.store');
+    
+    Route::get('jenis-tagihan/{jenisTagihan}/monitoring', [JenisTagihanMonitoringController::class, 'index'])->name('jenis-tagihan.monitoring.index');
+    Route::post('jenis-tagihan/{jenisTagihan}/batal-tagihan/{tagihan}', [JenisTagihanMonitoringController::class, 'batalTagihan'])->name('jenis-tagihan.monitoring.batal');
+
     Route::post('kategori-keringanan', [KategoriKeringananController::class, 'store'])->name('kategori-keringanan.store');
 
     Route::get('tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
