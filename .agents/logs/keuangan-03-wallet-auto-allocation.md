@@ -6,21 +6,90 @@
 
 ## Update: Final Whole-Plan Review (post-delivery)
 
-Bug kritis ditemukan dan diperbaiki setelah final review lintas-task:
+### Bug Kritis: Nested Transaction + Double lockForUpdate di AutoAllocationEngine
 
-**BUG: Nested transaction + double lockForUpdate di AutoAllocationEngine**  
-Ketika `topup()` memanggil `AutoAllocationEngine::run()` (di luar outer transaction topup, benar),
-engine membungkus kerjanya dalam `DB::transaction()` + `lockForUpdate(wallet)`. Di dalam transaction
-itu, engine memanggil `wallet->debit()` yang membuka `DB::transaction()` **lagi** + `lockForUpdate`
-pada row yang sama. Di MySQL production environment, ini membuat nested transaction yang berpotensi
-menyebabkan deadlock atau perilaku tidak terduga.
+**Akar masalah — alur eksekusi saat topup dengan auto-debit aktif:**
 
-**Fix:** Refactor `Wallet` dengan memisahkan logika ke `debitCore()` (private), lalu expose dua method public:
-- `debit()` → untuk caller eksternal (bungkus transaction + lock sendiri)
-- `debitWithinTransaction()` → untuk caller yang sudah dalam transaction + lock (AutoAllocationEngine)
+```
+topup()
+  └─ DB::transaction()         ← Outer transaction T1, + lockForUpdate(wallet row)
+      └─ update balance, create mutasi_topup
+      └─ this->refresh()
+  // T1 COMMIT — lock dilepas ✓
 
-AutAllocationEngine kini menggunakan `debitWithinTransaction()`.  
-*(Commit: `fix(keuangan): eliminate nested transaction + re-lock in AutoAllocationEngine`)*
+  // Cek toggle (di luar transaction, benar ✓)
+  AutoAllocationEngine::run(wallet)
+    └─ DB::transaction()       ← Outer transaction T2, + lockForUpdate(wallet row) ✓
+        └─ ... hitung alokasi, buat Pembayaran record ...
+        └─ wallet->debit()     ← ‼️ debit() membuka DB::transaction() LAGI (T3, nested dalam T2)
+             └─ DB::transaction()   ← savepoint di MySQL — tidak crash, tapi...
+                 └─ lockForUpdate(wallet row)  ← re-lock row yang sudah dikunci T2!
+```
+
+**Mengapa berbahaya di MySQL:**  
+MySQL mengimplementasikan nested `DB::transaction()` via savepoints (Laravel memetakannya otomatis).
+Savepoint itu sendiri tidak crash, tapi `lockForUpdate` di dalam savepoint **pada row yang sudah
+dikunci oleh transaksi induknya sendiri** dapat menyebabkan:
+1. Behavior tidak deterministik — lock re-acquisition dalam nested context implementasinya berbeda
+   antar versi MySQL/MariaDB.
+2. Jika ada faktor eksternal (misalnya advisory lock, GR replication), ini dapat degrade ke deadlock.
+3. Performa buruk — double-locking pada row yang tidak perlu dikunci ulang.
+
+**Fix yang diterapkan** (commit `9b3208a`):
+```php
+// Sebelum: debit() selalu membuka DB::transaction() + lockForUpdate
+class Wallet {
+    public function debit(...): void {
+        DB::transaction(function() {
+            $wallet = self::where('id', ...)->lockForUpdate()->first(); // MASALAH
+            // ...
+        });
+    }
+}
+
+// Sesudah: logika dipisah ke debitCore(), dua public entry point
+class Wallet {
+    public function debit(...): void {              // Untuk caller EKSTERNAL
+        DB::transaction(fn() => $this->debitCore(..., lockRow: true));
+    }
+    public function debitWithinTransaction(...): void { // Untuk caller dalam transaction
+        $this->debitCore(..., lockRow: false);      // Tidak bungkus transaction baru
+    }
+    private function debitCore(..., bool $lockRow): void { /* shared logic */ }
+}
+```
+
+### Konvensi Wallet::debit() vs Wallet::debitWithinTransaction() — WAJIB DIBACA Agent Sub-project 04
+
+> **Sub-project 04 (Payment Channels) akan memanggil `Wallet::topup()` dari webhook callback.**  
+> Perhatikan aturan ini sebelum menulis kode integrasi:
+
+| Situasi | Method yang BENAR | Alasan |
+|---------|-------------------|--------|
+| Controller, Job, Command, Webhook handler | `wallet->debit()` | Caller tidak dalam transaction — `debit()` aman membuka transaction sendiri + lock |
+| Sudah dalam `DB::transaction()` + sudah memanggil `lockForUpdate` pada wallet | `wallet->debitWithinTransaction()` | Mencegah nested transaction + re-lock pada row yang sama |
+| Webhook callback yang memproses pembayaran (Sub-project 04) | `wallet->topup()` — **aman**, karena `topup()` membuka dan menutup transaction-nya sendiri sebelum trigger engine | Webhook handler biasanya tidak membungkus dirinya dalam outer transaction |
+| Jika Sub-project 04 membuat service layer yang membungkus `topup()` dalam outer `DB::transaction()` | **HATI-HATI** — `topup()` masih aman (dia membuka sub-transaction / savepoint), tapi `AutoAllocationEngine` yang dipicu oleh `topup()` kemudian akan dijalankan **di luar** outer transaction. Ini bisa jadi masalah jika Anda mengharapkan atomicity penuh antara proses pencatatan pembayaran dan alokasi. |
+
+**Aturan sederhana untuk Sub-project 04:**
+- Panggil `topup()` dari webhook handler **tanpa** membungkusnya dalam `DB::transaction()` tambahan di level controller/service.
+- Jika ada kebutuhan atomicity tambahan (misalnya update status webhook + topup harus satu atomic unit), bungkus hanya logika webhook-nya saja, dan panggil `topup()` **setelah** outer transaction commit.
+- Jangan pernah memanggl `debitWithinTransaction()` dari luar konteks yang sudah `lockForUpdate` pada wallet — ini akan membuat read tanpa lock yang berisiko race condition.
+
+### Audit Seluruh Caller Wallet::debit() dan Wallet::topup() (per Sub-project 03)
+
+**Hasil grep seluruh codebase (`app/` + `tests/`):**
+
+| File | Method | Konteks | Status |
+|------|--------|---------|--------|
+| `AutoAllocationEngine.php` | `debitWithinTransaction()` | Dalam `DB::transaction()` + lockForUpdate | ✅ Sudah diperbaiki |
+| `WalletTest.php` (5 call) | `debit()` / `topup()` | Test feature, tidak dalam transaction | ✅ Aman |
+| `SystemSettingTest.php` (2 call) | `topup()` | Test feature, tidak dalam transaction | ✅ Aman |
+
+**Tidak ada caller lain di `app/` selain AutoAllocationEngine.** `debit()` dan `topup()` belum dipakai
+oleh Controller, Job, atau Service lain — area ini akan pertama kali disentuh Sub-project 04.
+
+*(Commit fix: `9b3208a fix(keuangan): eliminate nested transaction + re-lock in AutoAllocationEngine`)*
 
 ## Apa yang dikerjakan
 Sub-project 03 telah diselesaikan sepenuhnya. Semua fitur terkait Wallet dan Auto-Allocation Engine telah diimplementasikan:
