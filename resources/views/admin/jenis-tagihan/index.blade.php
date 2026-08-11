@@ -26,7 +26,7 @@
             @can('jenis-tagihan.create')
                 <div class="flex justify-end">
                     <a href="{{ route('admin.jenis-tagihan.create') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600">
-                        <x-icon name="plus" class="h-4 w-4" /> Tambah Jenis Tagihan
+                        <x-icon name="add" class="h-4 w-4" /> Tambah Jenis Tagihan
                     </a>
                 </div>
             @endcan
