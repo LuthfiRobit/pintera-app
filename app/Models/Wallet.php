@@ -74,6 +74,7 @@ class Wallet extends Model
 
     /**
      * Debit saldo secara aman dengan pengecekan strict.
+     * Gunakan ini dari luar engine (membungkus dalam transaction sendiri).
      */
     public function debit(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
     {
@@ -82,31 +83,57 @@ class Wallet extends Model
         }
 
         DB::transaction(function () use ($amount, $pembayaran, $keterangan) {
-            // Pessimistic lock
-            $wallet = self::where('id', $this->id)->lockForUpdate()->first();
-            
-            if ($wallet->balance < $amount) {
-                throw new InsufficientBalanceException("Saldo tidak mencukupi untuk debit sejumlah " . $amount);
-            }
-
-            $saldoSebelum = $wallet->balance;
-            $saldoSesudah = $saldoSebelum - $amount;
-
-            $wallet->balance = $saldoSesudah;
-            $wallet->total_deducted += $amount;
-            $wallet->save();
-
-            $wallet->mutasi()->create([
-                'pembayaran_id' => $pembayaran?->id,
-                'tipe'          => 'debit',
-                'amount'        => $amount,
-                'saldo_sebelum' => $saldoSebelum,
-                'saldo_sesudah' => $saldoSesudah,
-                'keterangan'    => $keterangan ?? 'Debit wallet',
-            ]);
-
-            // Sync current instance
-            $this->refresh();
+            $this->debitCore($amount, $pembayaran, $keterangan, lockRow: true);
         });
+    }
+
+    /**
+     * Debit saldo tanpa membuka transaction baru.
+     * Dipakai oleh AutoAllocationEngine yang sudah dalam transaction + lockForUpdate.
+     * Tidak melakukan re-lock (wallet sudah dikunci oleh caller).
+     *
+     * @internal Jangan pakai dari luar kecuali dalam konteks DB::transaction yang sudah ada.
+     */
+    public function debitWithinTransaction(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
+    {
+        if ($amount <= 0) {
+            throw new \InvalidArgumentException("Amount debit harus lebih dari 0");
+        }
+
+        $this->debitCore($amount, $pembayaran, $keterangan, lockRow: false);
+    }
+
+    /**
+     * Core debit logic, bisa dipakai dengan atau tanpa lockForUpdate.
+     */
+    private function debitCore(float $amount, ?Pembayaran $pembayaran, ?string $keterangan, bool $lockRow): void
+    {
+        // Pessimistic lock (opsional, tidak dibutuhkan jika caller sudah lock)
+        $wallet = $lockRow
+            ? self::where('id', $this->id)->lockForUpdate()->first()
+            : self::where('id', $this->id)->first();
+
+        if ($wallet->balance < $amount) {
+            throw new InsufficientBalanceException("Saldo tidak mencukupi untuk debit sejumlah " . $amount);
+        }
+
+        $saldoSebelum = $wallet->balance;
+        $saldoSesudah = $saldoSebelum - $amount;
+
+        $wallet->balance = $saldoSesudah;
+        $wallet->total_deducted += $amount;
+        $wallet->save();
+
+        $wallet->mutasi()->create([
+            'pembayaran_id' => $pembayaran?->id,
+            'tipe'          => 'debit',
+            'amount'        => $amount,
+            'saldo_sebelum' => $saldoSebelum,
+            'saldo_sesudah' => $saldoSesudah,
+            'keterangan'    => $keterangan ?? 'Debit wallet',
+        ]);
+
+        // Sync current instance
+        $this->refresh();
     }
 }

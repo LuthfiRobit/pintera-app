@@ -71,8 +71,8 @@ class AutoAllocationEngine
                     'channel_reference' => 'AUTO-' . strtoupper(Str::random(10)),
                 ]);
 
-                // Debit wallet and create mutasi
-                $wallet->debit($totalAllocatedAmount, $pembayaran, 'Auto-allocation pembayaran tagihan');
+                // Debit wallet and create mutasi (within existing transaction — no nested lock)
+                $wallet->debitWithinTransaction($totalAllocatedAmount, $pembayaran, 'Auto-allocation pembayaran tagihan');
 
                 // Update tagihans and create pivot
                 foreach ($allocated as $item) {
