@@ -23,7 +23,7 @@ class Pembayaran extends Model
     ];
 
     protected $fillable = [
-        'tagihan_id', 'cicilan_id', 'sumber', 'metode', 'file_path',
+        'tagihan_id', 'cicilan_id', 'sumber', 'metode', 'amount', 'file_path',
         'status', 'catatan_verifikasi', 'diverifikasi_oleh_user_id', 'diverifikasi_pada',
         'wallet_id', 'siswa_id', 'is_auto_allocation', 'channel_reference', 'identifier_method',
         'topup_status',

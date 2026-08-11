@@ -12,5 +12,6 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(KirimReminderSesi::class)->dailyAt('07:00');
+Schedule::command('finance:reconcile-payments')->hourly();
 Schedule::command(TandaiTugasTerlewat::class)->dailyAt('01:00');
 Schedule::command(GenerateTagihanHarian::class)->dailyAt('00:01');
