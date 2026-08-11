@@ -144,7 +144,7 @@
                                             <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                         </select>
                                         <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1">
-                                            <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).includes(opt.value)"></option></template>
+                                            <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
                                         </select>
                                         <button type="button" class="text-xs font-semibold text-error-600" @click="grup.kriteria.splice(ki, 1)">Hapus Kriteria</button>
                                     </div>
@@ -178,7 +178,7 @@
                                     <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                 </select>
                                 <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1">
-                                    <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).includes(opt.value)"></option></template>
+                                    <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
                                 </select>
                                 <button type="button" class="text-xs font-semibold text-error-600" @click="grup.kriteria.splice(ki, 1)">Hapus Kriteria</button>
                             </div>
