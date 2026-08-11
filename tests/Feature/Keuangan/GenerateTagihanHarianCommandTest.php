@@ -2,6 +2,7 @@
 // tests/Feature/Keuangan/GenerateTagihanHarianCommandTest.php
 
 use App\Models\JenisTagihan;
+use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 use Illuminate\Support\Carbon;
@@ -9,7 +10,10 @@ use Illuminate\Support\Carbon;
 it('processes only jenis_tagihan whose tanggal_generate matches today and is within the active window', function () {
     Carbon::setTestNow('2026-09-15');
 
+    $lembagaCocok = Lembaga::factory()->create();
+    Siswa::factory()->create(['lembaga_id' => $lembagaCocok->id]);
     $cocok = JenisTagihan::factory()->create([
+        'lembaga_id' => $lembagaCocok->id,
         'default_amount' => 200000,
         'mode' => 'otomatis',
         'is_active' => true,
@@ -17,18 +21,22 @@ it('processes only jenis_tagihan whose tanggal_generate matches today and is wit
         'tanggal_mulai' => '2026-01-01',
         'tanggal_selesai' => null,
     ]);
-    Siswa::factory()->create(['lembaga_id' => $cocok->lembaga_id]);
 
+    $lembagaBedaTanggal = Lembaga::factory()->create();
+    Siswa::factory()->create(['lembaga_id' => $lembagaBedaTanggal->id]);
     $bedaTanggal = JenisTagihan::factory()->create([
+        'lembaga_id' => $lembagaBedaTanggal->id,
         'default_amount' => 100000,
         'mode' => 'otomatis',
         'is_active' => true,
         'tanggal_generate' => 1,
         'tanggal_mulai' => '2026-01-01',
     ]);
-    Siswa::factory()->create(['lembaga_id' => $bedaTanggal->lembaga_id]);
 
+    $lembagaSudahSelesai = Lembaga::factory()->create();
+    Siswa::factory()->create(['lembaga_id' => $lembagaSudahSelesai->id]);
     $sudahSelesai = JenisTagihan::factory()->create([
+        'lembaga_id' => $lembagaSudahSelesai->id,
         'default_amount' => 100000,
         'mode' => 'otomatis',
         'is_active' => true,
@@ -36,16 +44,17 @@ it('processes only jenis_tagihan whose tanggal_generate matches today and is wit
         'tanggal_mulai' => '2026-01-01',
         'tanggal_selesai' => '2026-06-30',
     ]);
-    Siswa::factory()->create(['lembaga_id' => $sudahSelesai->lembaga_id]);
 
+    $lembagaTidakAktif = Lembaga::factory()->create();
+    Siswa::factory()->create(['lembaga_id' => $lembagaTidakAktif->id]);
     $tidakAktif = JenisTagihan::factory()->create([
+        'lembaga_id' => $lembagaTidakAktif->id,
         'default_amount' => 100000,
         'mode' => 'otomatis',
         'is_active' => false,
         'tanggal_generate' => 15,
         'tanggal_mulai' => '2026-01-01',
     ]);
-    Siswa::factory()->create(['lembaga_id' => $tidakAktif->lembaga_id]);
 
     $this->artisan('billing:generate-harian')
         ->expectsOutputToContain('1 jenis tagihan diproses')
