@@ -95,7 +95,7 @@ export function jenisTagihanForm(config) {
             const ts = new TomSelect(el, {
                 plugins: ['remove_button'],
                 create: false,
-                placeholder: 'Pilih...',
+                placeholder: 'Pilih (bisa pilih lebih dari satu)...',
                 onChange: (value) => {
                     kriteria.value = Array.isArray(value) ? value : (value ? [value] : []);
                 },
