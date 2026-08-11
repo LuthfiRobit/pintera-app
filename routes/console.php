@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\GenerateTagihanHarian;
 use App\Console\Commands\KirimReminderSesi;
 use App\Console\Commands\TandaiTugasTerlewat;
 use Illuminate\Foundation\Inspiring;
@@ -12,3 +13,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command(KirimReminderSesi::class)->dailyAt('07:00');
 Schedule::command(TandaiTugasTerlewat::class)->dailyAt('01:00');
+Schedule::command(GenerateTagihanHarian::class)->dailyAt('00:01');
