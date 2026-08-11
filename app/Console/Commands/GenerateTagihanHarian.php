@@ -32,7 +32,11 @@ class GenerateTagihanHarian extends Command
             ->get();
 
         foreach ($kandidat as $jenisTagihan) {
-            $generator->generate($jenisTagihan, 'cron');
+            try {
+                $generator->generate($jenisTagihan, 'cron');
+            } catch (\Throwable $e) {
+                $this->error("Gagal memproses jenis_tagihan #{$jenisTagihan->id} ({$jenisTagihan->nama}): {$e->getMessage()}");
+            }
         }
 
         $this->info("{$kandidat->count()} jenis tagihan diproses.");
