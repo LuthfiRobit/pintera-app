@@ -25,6 +25,7 @@ export function jenisTagihanForm(config) {
         kategoriBaruNama: '',
         kategoriBaruError: '',
         kategoriBaruSubmitting: false,
+        showKategoriBaru: false,
         tomSelectInstances: {},
 
         get kategoriPpdb() {
@@ -66,7 +67,7 @@ export function jenisTagihanForm(config) {
                 
                 this.kategoriKeringananOptions.push(json.data);
                 this.kategoriBaruNama = '';
-                this.$dispatch('close-modal', 'modal-kategori-keringanan');
+                this.showKategoriBaru = false;
                 Alpine.store('toast').push('success', 'Kategori Keringanan berhasil ditambahkan.');
             } catch (error) {
                 this.kategoriBaruError = 'Gagal menambah kategori.';
