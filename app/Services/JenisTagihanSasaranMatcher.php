@@ -81,7 +81,18 @@ class JenisTagihanSasaranMatcher
                 $isIn ? $query->whereIn('lembaga_id', $values) : $query->whereNotIn('lembaga_id', $values);
                 break;
             case 'kelas':
-                $isIn ? $query->whereIn('kelas_id', $values) : $query->whereNotIn('kelas_id', $values);
+                if ($isIn) {
+                    $query->whereIn('kelas_id', $values);
+                } else {
+                    // A siswa with no kelas assigned does not have any of the
+                    // excluded kelas, so it must match `not_in` — mirroring
+                    // siswaMatchesKriteria()'s PHP-side null handling. Grouped
+                    // in a nested where() so this stays AND-scoped to the
+                    // enclosing grup regardless of outer OR nesting.
+                    $query->where(function (Builder $q) use ($values) {
+                        $q->whereNotIn('kelas_id', $values)->orWhereNull('kelas_id');
+                    });
+                }
                 break;
             case 'jenis_kelamin':
                 $isIn ? $query->whereIn('jenis_kelamin', $values) : $query->whereNotIn('jenis_kelamin', $values);

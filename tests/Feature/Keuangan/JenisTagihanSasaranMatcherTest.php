@@ -99,6 +99,26 @@ it('matches tahun_ajaran and tingkat kriteria through the kelas relation', funct
     expect($result->pluck('id')->all())->toBe([$siswaKelasEnam->id]);
 });
 
+it('treats siswa with kelas_id null as matching a not_in kelas kriteria, agreeing with the PHP path', function () {
+    $lembaga = Lembaga::factory()->create();
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasExcluded = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $siswaTanpaKelas = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => null]);
+    $siswaKelasLain = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLain->id]);
+    $siswaKelasExcluded = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasExcluded->id]);
+
+    $grup = JenisTagihanSasaranGrup::create(['jenis_tagihan_id' => $jenisTagihan->id, 'tipe' => 'sasaran']);
+    JenisTagihanSasaranKriteria::create(['jenis_tagihan_sasaran_grup_id' => $grup->id, 'field' => 'kelas', 'operator' => 'not_in', 'value' => [$kelasExcluded->id]]);
+
+    $result = (new JenisTagihanSasaranMatcher())->resolveTargetSiswa($jenisTagihan);
+
+    expect($result->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$siswaTanpaKelas->id, $siswaKelasLain->id])->sort()->values()->all());
+    expect($result->pluck('id')->all())->not->toContain($siswaKelasExcluded->id);
+});
+
 it('siswaMatchesJenisTagihan is true for an empty sasaran and false for a non-matching lembaga', function () {
     $lembaga = Lembaga::factory()->create();
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
