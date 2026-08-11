@@ -4,7 +4,7 @@
 
 **Goal:** Extend the existing PPDB billing schema (`tagihan`, `jenis_tagihan`, `pembayaran`) so it can also represent recurring school billing (SPP) for enrolled students, without breaking any existing PPDB behavior, and lay down every new table the later Keuangan sub-projects (2-6) will build on.
 
-**Architecture:** Additive, expand-only schema changes. `tagihan` gains a polymorphic `tagihable_type`/`tagihable_id` pair alongside the existing `pendaftaran_id` (which stays populated and untouched for PPDB rows — no PPDB controller needs to change). Six new tables support multi-criteria targeting, dimensional pricing, per-student overrides, discount rules, and multi-bill payment allocation. One decommission migration retires the legacy `lembaga.memungut_iuran` fields once their data is folded into the new `jenis_tagihan` shape.
+**Architecture:** Additive, expand-only schema changes. `tagihan` gains a polymorphic `tagihable_type`/`tagihable_id` pair alongside the existing `pendaftaran_id` (which stays populated and untouched for PPDB rows — no PPDB controller needs to change). Seven new tables support multi-criteria targeting, dimensional pricing, per-student overrides, discount rules, and multi-bill payment allocation. One decommission migration retires the legacy `lembaga.memungut_iuran` fields once their data is folded into the new `jenis_tagihan` shape.
 
 **Tech Stack:** Laravel 11 migrations (no doctrine/dbal — schema changes needing raw SQL use `DB::statement`), Eloquent models, Pest tests with `RefreshDatabase`.
 
@@ -784,6 +784,8 @@ Expected: FAIL — "tagihable_type" column not found / "pendaftaran_id" NOT NULL
 
 - [ ] **Step 3: Write the migration**
 
+(Corrected after a task-review fix — the original plan text below was superseded; see commit abfffa1.)
+
 ```php
 <?php
 // database/migrations/2026_08_10_130000_add_polymorphic_columns_to_tagihan_table.php
@@ -797,9 +799,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('tagihan', function (Blueprint $table) {
-            $table->dropUnique(['pendaftaran_id', 'kategori']);
-        });
+        // The (pendaftaran_id, kategori) unique index is intentionally kept in place.
+        // MySQL/InnoDB treats NULL as distinct from every other NULL in a unique index,
+        // so it never blocked the polymorphic (NULL pendaftaran_id) rows this migration
+        // introduces, while it still guards against duplicate PPDB tagihan rows for the
+        // same pendaftaran_id + kategori. It also continues to back the pendaftaran_id
+        // foreign key, so no extra plain index is needed.
 
         DB::statement('ALTER TABLE tagihan MODIFY pendaftaran_id BIGINT UNSIGNED NULL');
 
@@ -824,6 +829,9 @@ return new class extends Migration
         DB::statement("ALTER TABLE tagihan MODIFY status ENUM('belum_bayar', 'dicicil', 'lunas', 'sebagian', 'dibatalkan') NOT NULL DEFAULT 'belum_bayar'");
     }
 
+    // NOTE: Rolling back is only safe on a schema with no siswa-targeted (polymorphic)
+    // tagihan rows yet — narrowing the enums back and re-tightening pendaftaran_id to
+    // NOT NULL will fail (or corrupt data) once such rows exist.
     public function down(): void
     {
         DB::statement("ALTER TABLE tagihan MODIFY status ENUM('belum_bayar', 'dicicil', 'lunas') NOT NULL DEFAULT 'belum_bayar'");
@@ -837,10 +845,6 @@ return new class extends Migration
         });
 
         DB::statement('ALTER TABLE tagihan MODIFY pendaftaran_id BIGINT UNSIGNED NOT NULL');
-
-        Schema::table('tagihan', function (Blueprint $table) {
-            $table->unique(['pendaftaran_id', 'kategori']);
-        });
     }
 };
 ```

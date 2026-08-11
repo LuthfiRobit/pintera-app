@@ -26,6 +26,8 @@ return new class extends Migration
             'UPDATE tagihan SET tagihable_id = pendaftaran_id WHERE tagihable_type = ? AND tagihable_id IS NULL',
             [Pendaftaran::class]
         );
+
+        DB::statement('UPDATE tagihan SET net_amount = total_tagihan - COALESCE(discount_amount, 0) WHERE net_amount IS NULL');
     }
 
     public function down(): void

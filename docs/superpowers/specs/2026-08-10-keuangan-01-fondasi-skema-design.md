@@ -224,6 +224,12 @@ Satu `pembayaran` bisa mengalokasikan ke banyak `tagihan` (dipakai untuk batch p
 - [x] Keringanan → Rule per-jenis-tagihan (`jenis_tagihan_keringanan`), bukan nilai default global; `kategori_keringanan` jadi master nama kondisi saja, `siswa_keringanan` hanya menandai kepemilikan kondisi
 - [x] "Potongan Perizinan" (pesantren, potongan saat santri izin asrama) → Drop dari scope, tidak ada padanan konsep boarding di sekolah harian
 
+## Amendemen Setelah Implementasi
+
+- Unique index `(pendaftaran_id, kategori)` TIDAK dihapus — dipertahankan apa adanya, karena MySQL memperlakukan NULL sebagai berbeda-beda (distinct) pada unique index sehingga index ini tidak pernah menghalangi baris Siswa polymorphic (yang punya `pendaftaran_id` NULL), sementara menghapusnya justru akan menghilangkan safety net dedupe PPDB yang nyata untuk submission bersamaan. Lihat commit abfffa1 pada implementasi.
+- Ketiga controller PPDB (`Admin/TagihanController`, `Portal/TagihanController`, `Admin/PembayaranController`) TIDAK direfactor, dan `pendaftaran()` TIDAK diubah menjadi accessor turunan dari `tagihable()` — sengaja dibiarkan tidak tersentuh karena `pendaftaran_id` tetap terisi untuk setiap tagihan PPDB ke depannya, sehingga pola existing `$tagihan->pendaftaran->lembaga_id` di controller-controller tersebut tetap berfungsi tanpa perubahan apa pun. Ini keputusan berisiko lebih rendah yang diambil saat implementasi, menggantikan rencana awal spec yang lebih invasif.
+- `paid_amount` pada `tagihan` saat ini hanya reliably terisi ke depannya untuk baris bertarget Siswa (SPP) via alur pembayaran sub-project mendatang — jalur pembayaran PPDB yang ada (`app/Services/PembayaranService.php`) belum menulis ke kolom ini saat menandai tagihan `lunas`. Dashboard/laporan mana pun yang membaca `paid_amount` sebaiknya di-scope ke `tagihable_type = App\Models\Siswa::class`, atau memperlakukan `paid_amount` baris PPDB sebagai tidak reliable sampai hal ini ditangani secara eksplisit (dicatat di sini untuk siapa pun yang merencanakan pekerjaan tersebut, tidak diperbaiki di sub-project ini agar tidak menyentuh kode pembayaran PPDB tanpa perlu).
+
 ## Ambiguitas Sisa (untuk sub-project 2 dan seterusnya)
 
 - [ ] Format `hari_jatuh_tempo` untuk kelas/tingkat berbeda tahun ajaran (mis. siswa pindah kelas di tengah periode) — detail behavior migrasi kriteria saat re-evaluate

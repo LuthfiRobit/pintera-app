@@ -26,6 +26,11 @@ use Illuminate\Support\Facades\Schema;
  * are dropped again in the finally block — pre-existing columns are left
  * untouched.
  */
+// MySQL DDL (Schema::table add/drop columns below) implicitly commits the
+// currently-open transaction, so RefreshDatabase's per-test rollback never
+// happens for rows created before or after that DDL runs in the same test.
+// Every caller of this helper must therefore delete its own Lembaga/
+// JenisTagihan rows explicitly in a finally block, or they leak permanently.
 function withLegacyIuranColumns(callable $callback): void
 {
     $columns = ['memungut_iuran', 'nominal_iuran', 'periode_iuran'];
@@ -59,49 +64,67 @@ function withLegacyIuranColumns(callable $callback): void
 it('creates a spp jenis_tagihan for every lembaga that had memungut_iuran enabled', function () {
     withLegacyIuranColumns(function () {
         $lembaga = Lembaga::factory()->create();
-        DB::table('lembaga')->where('id', $lembaga->id)->update([
-            'memungut_iuran' => true,
-            'nominal_iuran' => 275000,
-            'periode_iuran' => 'bulanan',
-        ]);
 
-        (require database_path('migrations/2026_08_10_170000_migrate_lembaga_iuran_to_jenis_tagihan.php'))->up();
+        try {
+            DB::table('lembaga')->where('id', $lembaga->id)->update([
+                'memungut_iuran' => true,
+                'nominal_iuran' => 275000,
+                'periode_iuran' => 'bulanan',
+            ]);
 
-        $jenisTagihan = JenisTagihan::where('lembaga_id', $lembaga->id)->where('kategori', 'spp')->first();
+            (require database_path('migrations/2026_08_10_170000_migrate_lembaga_iuran_to_jenis_tagihan.php'))->up();
 
-        expect($jenisTagihan)->not->toBeNull();
-        expect((float) $jenisTagihan->default_amount)->toBe(275000.0);
-        expect($jenisTagihan->mode)->toBe('otomatis');
-        expect($jenisTagihan->nama)->toBe('SPP Bulanan');
-        expect($jenisTagihan->tanggal_generate)->toBe(1);
-        expect($jenisTagihan->hari_jatuh_tempo)->toBe(10);
+            $jenisTagihan = JenisTagihan::where('lembaga_id', $lembaga->id)->where('kategori', 'spp')->first();
+
+            expect($jenisTagihan)->not->toBeNull();
+            expect((float) $jenisTagihan->default_amount)->toBe(275000.0);
+            expect($jenisTagihan->mode)->toBe('otomatis');
+            expect($jenisTagihan->nama)->toBe('SPP Bulanan');
+            expect($jenisTagihan->tanggal_generate)->toBe(1);
+            expect($jenisTagihan->hari_jatuh_tempo)->toBe(10);
+        } finally {
+            JenisTagihan::where('lembaga_id', $lembaga->id)->delete();
+            Lembaga::where('id', $lembaga->id)->delete();
+        }
     });
 });
 
 it('does not duplicate the jenis_tagihan when the migration runs twice', function () {
     withLegacyIuranColumns(function () {
         $lembaga = Lembaga::factory()->create();
-        DB::table('lembaga')->where('id', $lembaga->id)->update([
-            'memungut_iuran' => true,
-            'nominal_iuran' => 100000,
-            'periode_iuran' => 'bulanan',
-        ]);
 
-        $migration = require database_path('migrations/2026_08_10_170000_migrate_lembaga_iuran_to_jenis_tagihan.php');
-        $migration->up();
-        $migration->up();
+        try {
+            DB::table('lembaga')->where('id', $lembaga->id)->update([
+                'memungut_iuran' => true,
+                'nominal_iuran' => 100000,
+                'periode_iuran' => 'bulanan',
+            ]);
 
-        expect(JenisTagihan::where('lembaga_id', $lembaga->id)->where('kategori', 'spp')->count())->toBe(1);
+            $migration = require database_path('migrations/2026_08_10_170000_migrate_lembaga_iuran_to_jenis_tagihan.php');
+            $migration->up();
+            $migration->up();
+
+            expect(JenisTagihan::where('lembaga_id', $lembaga->id)->where('kategori', 'spp')->count())->toBe(1);
+        } finally {
+            JenisTagihan::where('lembaga_id', $lembaga->id)->delete();
+            Lembaga::where('id', $lembaga->id)->delete();
+        }
     });
 });
 
 it('skips a lembaga where memungut_iuran is false', function () {
     withLegacyIuranColumns(function () {
         $lembaga = Lembaga::factory()->create();
-        DB::table('lembaga')->where('id', $lembaga->id)->update(['memungut_iuran' => false]);
 
-        (require database_path('migrations/2026_08_10_170000_migrate_lembaga_iuran_to_jenis_tagihan.php'))->up();
+        try {
+            DB::table('lembaga')->where('id', $lembaga->id)->update(['memungut_iuran' => false]);
 
-        expect(JenisTagihan::where('lembaga_id', $lembaga->id)->where('kategori', 'spp')->exists())->toBeFalse();
+            (require database_path('migrations/2026_08_10_170000_migrate_lembaga_iuran_to_jenis_tagihan.php'))->up();
+
+            expect(JenisTagihan::where('lembaga_id', $lembaga->id)->where('kategori', 'spp')->exists())->toBeFalse();
+        } finally {
+            JenisTagihan::where('lembaga_id', $lembaga->id)->delete();
+            Lembaga::where('id', $lembaga->id)->delete();
+        }
     });
 });

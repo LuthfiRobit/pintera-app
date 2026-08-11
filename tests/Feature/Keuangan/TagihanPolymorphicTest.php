@@ -55,3 +55,23 @@ it('allows the dibatalkan status with a cancellation audit trail', function () {
     expect($tagihan->fresh()->status)->toBe('dibatalkan');
     expect($tagihan->fresh()->cancelled_by)->toBe($admin->id);
 });
+
+it('still enforces the unique constraint on pendaftaran_id + kategori for PPDB rows', function () {
+    $pendaftaran = Pendaftaran::factory()->create();
+
+    Tagihan::create([
+        'pendaftaran_id' => $pendaftaran->id,
+        'kategori' => 'pendaftaran',
+        'total_tagihan' => 150000,
+        'net_amount' => 150000,
+        'status' => 'belum_bayar',
+    ]);
+
+    expect(fn () => Tagihan::create([
+        'pendaftaran_id' => $pendaftaran->id,
+        'kategori' => 'pendaftaran',
+        'total_tagihan' => 150000,
+        'net_amount' => 150000,
+        'status' => 'belum_bayar',
+    ]))->toThrow(\Illuminate\Database\QueryException::class);
+});
