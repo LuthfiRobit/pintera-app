@@ -56,7 +56,9 @@
                                         <x-table-actions>
                                             @can('jenis-tagihan.edit')
                                                 <x-dropdown-link x-bind:href="editUrl(item)">Edit</x-dropdown-link>
-                                                <x-dropdown-link x-bind:href="nominalUrl(item)">Kelola Nominal</x-dropdown-link>
+                                                <template x-if="['pendaftaran', 'daftar_ulang'].includes(item.kategori)">
+                                                    <x-dropdown-link x-bind:href="nominalUrl(item)">Kelola Nominal</x-dropdown-link>
+                                                </template>
                                             @endcan
                                             @can('jenis-tagihan.delete')
                                                 <x-dropdown-link href="#" @click.prevent="deleteItem(item)" class="text-error-600">Hapus</x-dropdown-link>
@@ -64,7 +66,7 @@
                                         </x-table-actions>
                                     </td>
                                     <td class="px-5 py-3.5 font-semibold text-gray-900" x-text="item.nama"></td>
-                                    <td class="px-5 py-3.5 text-gray-600" x-text="item.kategori"></td>
+                                    <td class="px-5 py-3.5 text-gray-600" x-text="{ pendaftaran: 'Pendaftaran', daftar_ulang: 'Daftar Ulang', lainnya: 'Lainnya', spp: 'SPP', tahunan: 'Tahunan', kegiatan: 'Kegiatan', custom: 'Custom' }[item.kategori]"></td>
                                     <td class="px-5 py-3.5 text-gray-600" x-text="item.bisa_dicicil ? 'Maks ' + item.maks_cicilan + 'x' : 'Tidak dicicil'"></td>
                                     <td class="px-5 py-3.5">
                                         <span

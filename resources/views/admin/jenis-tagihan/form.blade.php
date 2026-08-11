@@ -81,7 +81,8 @@
                     </div>
                 </div>
 
-                <div x-show="!kategoriPpdb" x-cloak class="grid grid-cols-1 gap-3 border-t border-gray-100 pt-4 sm:grid-cols-2">
+                <template x-if="!kategoriPpdb">
+                <div class="grid grid-cols-1 gap-3 border-t border-gray-100 pt-4 sm:grid-cols-2">
                     <div>
                         <x-input-label value="Nominal Default" />
                         <x-text-input type="number" step="0.01" min="0" name="default_amount" :value="old('default_amount', $jenisTagihan?->default_amount)" class="mt-1.5" placeholder="Dipakai jika tidak ada Tarif Berdimensi yang cocok" />
@@ -114,9 +115,11 @@
                         </div>
                     </template>
                 </div>
+                </template>
             </div>
 
-            <div x-show="!kategoriPpdb" x-cloak class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
+            <template x-if="!kategoriPpdb">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
                 <p class="font-display text-sm font-bold text-gray-900">2. Target Sasaran</p>
                 <div class="flex items-center gap-4 text-sm">
                     <label class="flex items-center gap-2"><input type="radio" value="semua" x-model="sasaranMode"> Semua Siswa</label>
@@ -141,7 +144,7 @@
                                             <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                         </select>
                                         <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1">
-                                            <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label"></option></template>
+                                            <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).includes(opt.value)"></option></template>
                                         </select>
                                         <button type="button" class="text-xs font-semibold text-error-600" @click="grup.kriteria.splice(ki, 1)">Hapus Kriteria</button>
                                     </div>
@@ -153,8 +156,10 @@
                     </div>
                 </template>
             </div>
+            </template>
 
-            <div x-show="!kategoriPpdb" x-cloak class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
+            <template x-if="!kategoriPpdb">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
                 <p class="font-display text-sm font-bold text-gray-900">3. Tarif Berdimensi <span class="font-normal text-gray-400">(opsional)</span></p>
                 <template x-for="(grup, gi) in form.tarif" :key="grup.uid">
                     <div class="rounded-xl border border-gray-200 p-4 space-y-3">
@@ -173,7 +178,7 @@
                                     <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                 </select>
                                 <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1">
-                                    <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label"></option></template>
+                                    <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).includes(opt.value)"></option></template>
                                 </select>
                                 <button type="button" class="text-xs font-semibold text-error-600" @click="grup.kriteria.splice(ki, 1)">Hapus Kriteria</button>
                             </div>
@@ -183,12 +188,15 @@
                 </template>
                 <button type="button" class="text-sm font-semibold text-brand-600" @click="form.tarif.push(newGrup())">+ Tambah Tarif</button>
             </div>
+            </template>
 
-            <div x-show="!kategoriPpdb" x-cloak class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
+            <template x-if="!kategoriPpdb">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
                 <p class="font-display text-sm font-bold text-gray-900">4. Keringanan <span class="font-normal text-gray-400">(opsional)</span></p>
                 <template x-for="(rule, ri) in form.keringanan" :key="rule.uid">
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-5">
                         <select :name="'keringanan[' + ri + '][kategori_keringanan_id]'" x-model.number="rule.kategori_keringanan_id" class="rounded-lg border-gray-200 text-sm">
+                            <option value="">-- Pilih Kategori --</option>
                             <template x-for="opt in kategoriKeringananOptions" :key="opt.id"><option :value="opt.id" x-text="opt.nama" :selected="opt.id === rule.kategori_keringanan_id"></option></template>
                         </select>
                         <select :name="'keringanan[' + ri + '][tipe_potongan]'" x-model="rule.tipe_potongan" class="rounded-lg border-gray-200 text-sm">
@@ -215,6 +223,7 @@
                     </div>
                 </div>
             </div>
+            </template>
 
             <div class="flex items-center gap-3">
                 <x-primary-button type="submit">{{ $jenisTagihan === null ? 'Tambah' : 'Simpan' }}</x-primary-button>
@@ -251,7 +260,7 @@
                 },
                 hydrateGrup,
                 newKeringanan() {
-                    return { uid: nextUid(), kategori_keringanan_id: this.kategoriKeringananOptions[0]?.id ?? null, tipe_potongan: 'fixed', nilai: '', keterangan: '' };
+                    return { uid: nextUid(), kategori_keringanan_id: null, tipe_potongan: 'fixed', nilai: '', keterangan: '' };
                 },
                 async submitKategoriBaru() {
                     this.kategoriBaruSubmitting = true;

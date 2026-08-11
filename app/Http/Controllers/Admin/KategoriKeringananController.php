@@ -16,11 +16,18 @@ class KategoriKeringananController extends BaseController
 
     public function store(Request $request): JsonResponse
     {
-        $this->authorize('jenis-tagihan.create');
+        abort_unless($request->user()->can('jenis-tagihan.create') || $request->user()->can('jenis-tagihan.edit'), 403);
 
         $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
             ? session('active_lembaga_id')
             : $request->user()->lembaga_id;
+
+        if ($lembagaId === null) {
+            return response()->json([
+                'message' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah kategori keringanan.',
+                'errors' => ['lembaga_id' => ['Pilih lembaga aktif melalui pengalih lembaga sebelum menambah kategori keringanan.']],
+            ], 422);
+        }
 
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255', Rule::unique('kategori_keringanan', 'nama')

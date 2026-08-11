@@ -85,10 +85,11 @@ class JenisTagihanController extends BaseController
 
         $data = $request->validate($this->baseRules($lembagaId, null));
         $data['bisa_dicicil'] = $request->boolean('bisa_dicicil');
+        $data['is_active'] = $request->boolean('is_active');
 
         $billing = null;
         if (! $isPpdbKategori) {
-            $billing = $request->validate($this->billingRules($lembagaId));
+            $billing = $request->validate($this->billingRules($lembagaId, $request));
             $duplicateError = $this->findDuplicateKeringanan($billing['keringanan'] ?? []);
             if ($duplicateError) {
                 return $this->errorResponse($request, $duplicateError);
@@ -136,10 +137,11 @@ class JenisTagihanController extends BaseController
 
         $data = $request->validate($this->baseRules($jenisTagihan->lembaga_id, $jenisTagihan));
         $data['bisa_dicicil'] = $request->boolean('bisa_dicicil');
+        $data['is_active'] = $request->boolean('is_active');
 
         $billing = null;
         if (! $isPpdbKategori) {
-            $billing = $request->validate($this->billingRules($jenisTagihan->lembaga_id));
+            $billing = $request->validate($this->billingRules($jenisTagihan->lembaga_id, $request));
             $duplicateError = $this->findDuplicateKeringanan($billing['keringanan'] ?? []);
             if ($duplicateError) {
                 return $this->errorResponse($request, $duplicateError);
@@ -147,13 +149,13 @@ class JenisTagihanController extends BaseController
         }
 
         DB::transaction(function () use ($jenisTagihan, $data, $billing) {
-            $jenisTagihan->update($data);
             if ($billing !== null) {
                 $this->syncBillingConfig($jenisTagihan, $billing);
             } else {
                 $jenisTagihan->sasaranGrup()->delete();
                 $jenisTagihan->keringananRules()->delete();
             }
+            $jenisTagihan->update($data);
         });
 
         if ($request->wantsJson()) {
@@ -196,7 +198,7 @@ class JenisTagihanController extends BaseController
     {
         $this->authorize('jenis-tagihan.edit');
 
-        if ($jenisTagihan->kategori === 'lainnya') {
+        if (! in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
             return redirect()->route('admin.jenis-tagihan.index')
                 ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang. Kategori "Lainnya" belum punya mekanisme penentuan nominal.']);
         }
@@ -217,7 +219,7 @@ class JenisTagihanController extends BaseController
     {
         $this->authorize('jenis-tagihan.edit');
 
-        if ($jenisTagihan->kategori === 'lainnya') {
+        if (! in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
             return redirect()->route('admin.jenis-tagihan.index')
                 ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang.']);
         }
@@ -287,7 +289,7 @@ class JenisTagihanController extends BaseController
         ];
     }
 
-    private function billingRules(int $lembagaId): array
+    private function billingRules(int $lembagaId, Request $request): array
     {
         return [
             'sasaran' => ['nullable', 'array'],
@@ -295,16 +297,25 @@ class JenisTagihanController extends BaseController
             'sasaran.*.kriteria.*.field' => ['required', Rule::in(self::KRITERIA_FIELDS)],
             'sasaran.*.kriteria.*.operator' => ['required', Rule::in(['in', 'not_in'])],
             'sasaran.*.kriteria.*.value' => ['required', 'array', 'min:1'],
+            'sasaran.*.kriteria.*.value.*' => ['string', 'max:255'],
             'tarif' => ['nullable', 'array'],
             'tarif.*.nominal' => ['required', 'numeric', 'min:0'],
             'tarif.*.kriteria' => ['required', 'array', 'min:1'],
             'tarif.*.kriteria.*.field' => ['required', Rule::in(self::KRITERIA_FIELDS)],
             'tarif.*.kriteria.*.operator' => ['required', Rule::in(['in', 'not_in'])],
             'tarif.*.kriteria.*.value' => ['required', 'array', 'min:1'],
+            'tarif.*.kriteria.*.value.*' => ['string', 'max:255'],
             'keringanan' => ['nullable', 'array'],
             'keringanan.*.kategori_keringanan_id' => ['required', 'integer', Rule::exists('kategori_keringanan', 'id')->where('lembaga_id', $lembagaId)],
             'keringanan.*.tipe_potongan' => ['required', Rule::in(['fixed', 'persen'])],
-            'keringanan.*.nilai' => ['required', 'numeric', 'min:0'],
+            'keringanan.*.nilai' => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+                preg_match('/keringanan\.(\d+)\.nilai/', $attribute, $matches);
+                $index = $matches[1] ?? null;
+                $tipe = $request->input("keringanan.{$index}.tipe_potongan");
+                if ($tipe === 'persen' && $value > 100) {
+                    $fail('Potongan persentase tidak boleh lebih dari 100.');
+                }
+            }],
             'keringanan.*.keterangan' => ['nullable', 'string', 'max:255'],
         ];
     }
