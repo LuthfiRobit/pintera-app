@@ -9,6 +9,8 @@ use Illuminate\Console\Command;
 
 class ProsesTagihan extends Command
 {
+    private const PPDB_KATEGORI = ['pendaftaran', 'daftar_ulang'];
+
     protected $signature = 'billing:proses {jenis_tagihan_id}';
 
     protected $description = 'Generate tagihan manually for one jenis_tagihan (admin "Proses Tagihan" button, or backfill/testing)';
@@ -19,6 +21,12 @@ class ProsesTagihan extends Command
 
         if (! $jenisTagihan) {
             $this->error('Jenis tagihan tidak ditemukan.');
+
+            return self::FAILURE;
+        }
+
+        if (in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
+            $this->error("Jenis tagihan berkategori {$jenisTagihan->kategori} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB.");
 
             return self::FAILURE;
         }

@@ -23,3 +23,14 @@ it('fails gracefully when the jenis_tagihan_id does not exist', function () {
         ->expectsOutputToContain('tidak ditemukan')
         ->assertExitCode(1);
 });
+
+it('fails gracefully with a clear message for a ppdb-kategori jenis_tagihan', function () {
+    $jenisTagihan = JenisTagihan::factory()->create(['kategori' => 'daftar_ulang']);
+    Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+
+    $this->artisan('billing:proses', ['jenis_tagihan_id' => $jenisTagihan->id])
+        ->expectsOutputToContain('tidak bisa diproses lewat billing engine')
+        ->assertExitCode(1);
+
+    expect(Tagihan::count())->toBe(0);
+});
