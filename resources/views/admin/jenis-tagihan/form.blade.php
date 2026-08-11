@@ -189,7 +189,6 @@
                                             </select>
                                             <div class="sm:col-span-4">
                                                 <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="initTomSelect($el, kriteria)" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                    <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
                                                 </select>
                                                 <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk batal.</p>
                                             </div>
@@ -242,7 +241,6 @@
                                         </select>
                                         <div class="sm:col-span-4">
                                             <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="initTomSelect($el, kriteria)" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
                                             </select>
                                             <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk batal.</p>
                                         </div>
