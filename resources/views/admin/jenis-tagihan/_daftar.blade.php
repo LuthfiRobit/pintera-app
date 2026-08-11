@@ -30,7 +30,7 @@
                     </td>
                     <td class="px-5 py-4 font-bold text-gray-900">{{ $item->nama }}</td>
                     <td class="px-5 py-4 font-medium text-gray-600">
-                        @match($item->kategori)
+                        @switch($item->kategori)
                             @case('pendaftaran') Pendaftaran @break
                             @case('daftar_ulang') Daftar Ulang @break
                             @case('spp') SPP @break
@@ -38,7 +38,7 @@
                             @case('kegiatan') Kegiatan @break
                             @case('custom') Custom @break
                             @default Lainnya
-                        @endmatch
+                        @endswitch
                     </td>
                     <td class="px-5 py-4 text-gray-600">{{ $item->bisa_dicicil ? 'Maks ' . $item->maks_cicilan . 'x' : 'Tidak dicicil' }}</td>
                     <td class="px-5 py-4">
