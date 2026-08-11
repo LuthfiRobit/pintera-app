@@ -73,6 +73,17 @@ class Siswa extends Model
         return $this->morphMany(Tagihan::class, 'tagihable');
     }
 
+    protected static function booted(): void
+    {
+        static::created(fn (Siswa $siswa) => event(new \App\Events\StudentCreated($siswa)));
+
+        static::updated(function (Siswa $siswa) {
+            if ($siswa->wasChanged('kelas_id')) {
+                event(new \App\Events\StudentUpdatedClass($siswa));
+            }
+        });
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
