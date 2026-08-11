@@ -20,6 +20,7 @@
                 deleteUrlTemplate: @js(route('admin.jenis-tagihan.destroy', ['jenisTagihan' => '__ID__'])),
                 nominalUrlTemplate: @js(route('admin.jenis-tagihan.nominal', ['jenisTagihan' => '__ID__'])),
                 editUrlTemplate: @js(route('admin.jenis-tagihan.edit', ['jenisTagihan' => '__ID__'])),
+                prosesUrlTemplate: @js(route('admin.jenis-tagihan.proses', ['jenisTagihan' => '__ID__'])),
             })"
             class="space-y-5"
         >
@@ -58,6 +59,9 @@
                                                 <x-dropdown-link x-bind:href="editUrl(item)">Edit</x-dropdown-link>
                                                 <template x-if="['pendaftaran', 'daftar_ulang'].includes(item.kategori)">
                                                     <x-dropdown-link x-bind:href="nominalUrl(item)">Kelola Nominal</x-dropdown-link>
+                                                </template>
+                                                <template x-if="!['pendaftaran', 'daftar_ulang'].includes(item.kategori)">
+                                                    <x-dropdown-link href="#" @click.prevent="prosesTagihan(item)">Proses Tagihan</x-dropdown-link>
                                                 </template>
                                             @endcan
                                             @can('jenis-tagihan.delete')
