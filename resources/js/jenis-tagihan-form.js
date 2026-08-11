@@ -93,15 +93,10 @@ export function jenisTagihanForm(config) {
         initTomSelect(el, kriteria) {
             if (el.tomselect) el.tomselect.destroy();
             
-            const optionsList = this.optionsFor(kriteria.field);
             const ts = new TomSelect(el, {
                 plugins: ['remove_button'],
                 create: false,
                 placeholder: 'Pilih (bisa pilih lebih dari satu)...',
-                options: optionsList,
-                valueField: 'value',
-                labelField: 'label',
-                searchField: 'label',
                 onChange: (value) => {
                     kriteria.value = Array.isArray(value) ? value : (value ? [value] : []);
                 },
