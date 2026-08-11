@@ -3,8 +3,11 @@
 namespace App\Providers;
 
 use App\Auth\TenantAwareUserProvider;
+use App\Contracts\PaymentGatewayInterface;
 use App\Models\AkunPendaftar;
 use App\Notifications\Channels\WhatsAppChannel;
+use App\Services\Finance\Gateway\BriSnapGateway;
+use App\Services\Finance\Gateway\MockPaymentGateway;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -19,7 +22,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(PaymentGatewayInterface::class, function ($app) {
+            $gatewayConfig = config('services.bri.gateway', 'mock');
+            
+            if ($gatewayConfig === 'snap') {
+                return new BriSnapGateway();
+            }
+
+            return new MockPaymentGateway();
+        });
     }
 
     /**
