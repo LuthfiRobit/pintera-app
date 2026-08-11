@@ -1,0 +1,128 @@
+<?php
+// app/Services/TagihanBillingGenerator.php
+
+namespace App\Services;
+
+use App\Models\BillingJobLog;
+use App\Models\JenisTagihan;
+use App\Models\Siswa;
+use App\Models\Tagihan;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+
+class TagihanBillingGenerator
+{
+    public function __construct(
+        private readonly JenisTagihanSasaranMatcher $matcher,
+        private readonly TagihanNominalResolver $nominalResolver,
+    ) {
+    }
+
+    public function generate(JenisTagihan $jenisTagihan, string $triggerType, ?string $triggerEvent = null): BillingJobLog
+    {
+        $targetSiswa = $this->matcher->resolveTargetSiswa($jenisTagihan);
+
+        $billsGenerated = 0;
+        $errors = [];
+
+        foreach ($targetSiswa as $siswa) {
+            try {
+                if ($this->generateForSiswa($siswa, $jenisTagihan, $triggerType)) {
+                    $billsGenerated++;
+                }
+            } catch (\Throwable $e) {
+                $errors[] = ['siswa_id' => $siswa->id, 'message' => $e->getMessage()];
+            }
+        }
+
+        return $this->logResult($jenisTagihan, $triggerType, $triggerEvent, $billsGenerated, $errors);
+    }
+
+    public function generateForSiswa(Siswa $siswa, JenisTagihan $jenisTagihan, string $triggerType): bool
+    {
+        return DB::transaction(function () use ($siswa, $jenisTagihan, $triggerType) {
+            $billingPeriod = $jenisTagihan->mode === 'otomatis' ? now()->format('Y-m') : null;
+
+            $exists = Tagihan::where('tagihable_type', Siswa::class)
+                ->where('tagihable_id', $siswa->id)
+                ->where('jenis_tagihan_id', $jenisTagihan->id)
+                ->where('billing_period', $billingPeriod)
+                ->where('status', '!=', 'dibatalkan')
+                ->exists();
+
+            if ($exists) {
+                return false;
+            }
+
+            $resolved = $this->nominalResolver->resolve($siswa, $jenisTagihan);
+            $netAmount = max(0, $resolved['nominal'] - $resolved['discount_amount']);
+
+            Tagihan::create([
+                'tagihable_type' => Siswa::class,
+                'tagihable_id' => $siswa->id,
+                'jenis_tagihan_id' => $jenisTagihan->id,
+                'kategori' => $jenisTagihan->kategori,
+                'billing_period' => $billingPeriod,
+                'source_trigger' => $triggerType,
+                'total_tagihan' => $resolved['nominal'],
+                'discount_amount' => $resolved['discount_amount'] ?: null,
+                'discount_type' => $resolved['discount_type'],
+                'net_amount' => $netAmount,
+                'jatuh_tempo' => $this->resolveDueDate($jenisTagihan, $billingPeriod),
+                'status' => 'belum_bayar',
+            ]);
+
+            return true;
+        });
+    }
+
+    public function generateForSiswaViaEvent(Siswa $siswa, JenisTagihan $jenisTagihan, string $triggerEvent): BillingJobLog
+    {
+        $billsGenerated = 0;
+        $errors = [];
+
+        try {
+            if ($this->generateForSiswa($siswa, $jenisTagihan, 'event')) {
+                $billsGenerated = 1;
+            }
+        } catch (\Throwable $e) {
+            $errors[] = ['siswa_id' => $siswa->id, 'message' => $e->getMessage()];
+        }
+
+        return $this->logResult($jenisTagihan, 'event', $triggerEvent, $billsGenerated, $errors);
+    }
+
+    private function resolveDueDate(JenisTagihan $jenisTagihan, ?string $billingPeriod): ?string
+    {
+        if (! $billingPeriod || ! $jenisTagihan->hari_jatuh_tempo) {
+            return null;
+        }
+
+        $year = (int) substr($billingPeriod, 0, 4);
+        $month = (int) substr($billingPeriod, 5, 2);
+        $daysInMonth = Carbon::create($year, $month, 1)->daysInMonth;
+        $day = min($jenisTagihan->hari_jatuh_tempo, $daysInMonth);
+
+        return Carbon::create($year, $month, $day)->toDateString();
+    }
+
+    private function logResult(JenisTagihan $jenisTagihan, string $triggerType, ?string $triggerEvent, int $billsGenerated, array $errors): BillingJobLog
+    {
+        $status = match (true) {
+            empty($errors) => 'success',
+            $billsGenerated === 0 => 'failed',
+            default => 'partial',
+        };
+
+        return BillingJobLog::create([
+            'jenis_tagihan_id' => $jenisTagihan->id,
+            'trigger_type' => $triggerType,
+            'trigger_event' => $triggerEvent,
+            'period' => $jenisTagihan->mode === 'otomatis' ? now()->format('Y-m') : null,
+            'bills_generated' => $billsGenerated,
+            'status' => $status,
+            'error_log' => empty($errors) ? null : $errors,
+            'executed_at' => now(),
+        ]);
+    }
+}
