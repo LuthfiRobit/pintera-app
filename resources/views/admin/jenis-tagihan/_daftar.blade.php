@@ -10,10 +10,10 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-            <template x-if="items.length === 0">
+            <template x-if="filteredItems.length === 0">
                 <tr><td colspan="5" class="px-5 py-12 text-center text-sm font-medium text-gray-500">Belum ada jenis tagihan yang ditambahkan.</td></tr>
             </template>
-            <template x-for="item in items" :key="item.id">
+            <template x-for="item in filteredItems" :key="item.id">
                 <tr class="transition hover:bg-gray-50/80">
                     <td class="sticky left-0 z-10 bg-white px-5 py-4 shadow-[1px_0_0_0_#f3f4f6]">
                         <x-table-actions>
