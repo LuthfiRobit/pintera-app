@@ -91,14 +91,10 @@ Ke-6 failure (`LembagaCrudTest`, `RoleBuilderTest` x4, `RoleFormAuditBannerTest`
 
 ## Hal yang masih perlu direview manusia / Claude
 
-1. **Manual browser verification — MASIH BELUM DILAKUKAN, tetap jadi risiko terbuka (keputusan sadar, bukan kelalaian).** Dicoba ulang secara eksplisit pada 2026-08-11: dicek langsung (ToolSearch, dua kali) dan lewat dispatch subagent terpisah (agent type "claude", diinstruksikan untuk mengecek tool browser sebelum mencoba apa pun) — **tidak ada tool browser/Playwright/Puppeteer/MCP browser_navigate-style yang tersedia di environment ini sama sekali**, baik untuk sesi controller maupun subagent manapun. User diberi pilihan (siapkan checklist manual untuk dijalankan sendiri / pasang Laravel Dusk atau Playwright sebagai dependency baru / skip dulu) dan memilih **skip untuk sekarang**, lanjut ke Sub-project 2b-2 dengan risiko ini tetap tercatat terbuka. Catatan penting: final whole-plan review BERHASIL menemukan dan memperbaiki C3 (x-show leakage) dan C4 (multi-select prefill) TANPA browser — lewat pembacaan kode Alpine yang teliti plus test HTTP-level yang membuktikan payload akhir. Tapi ini bukan pengganti verifikasi visual sungguhan. Checklist yang tetap perlu dicek manual — oleh manusia, di browser lokal — kapan pun nanti dilakukan:
-   - Index page: "+ Tambah Jenis Tagihan" mengarah ke halaman create, ikon tombol benar (sudah diperbaiki jadi "add").
-   - Create page: pilih kategori "SPP" → section Mode/Sasaran/Tarif/Keringanan muncul (sekarang via `x-if`, benar-benar hilang dari DOM); pilih "Pendaftaran" → section tsb hilang bersih.
-   - Tambah 1 grup Sasaran + 1 kriteria ber-ID (mis. field `kelas`), 1 grup Tarif + 1 kriteria + nominal, 1 rule Keringanan pakai "+ Kategori Baru" → submit → redirect ke index, row baru muncul.
-   - Edit jenis_tagihan yang baru dibuat tsb → **khususnya cek multi-select untuk field ber-ID (kelas/lembaga/tahun_ajaran) benar-benar ter-checklist di browser**, bukan cuma ada di payload — ini persis bug C4 yang dua ronde fix targetkan, coverage test yang ada tetap tidak bisa mengeksekusi Alpine sungguhan.
-   - Toggle "Aktif" pada jenis_tagihan yang sudah punya sasaran, SAMBIL mengubah sasaran di form yang sama, submit → cek `tagihan` yang ter-generate memakai sasaran BARU (behavior C2 fix).
-   - "Kelola Nominal" cuma muncul untuk kategori Pendaftaran/Daftar Ulang (behavior I2/I3 fix), tetap jalan untuk kategori tsb.
-   - Uncheck "Status Aktif" pada edit, submit → jenis_tagihan benar-benar nonaktif (behavior C1 fix).
+1. **Manual browser verification — TELAH DITUNTASKAN DI SESI 2b-2.** 
+   Meskipun pada awalnya tercatat sebagai risiko terbuka karena ketiadaan tool browser, pada sesi pengerjaan Sub-project 2b-2 berikutnya, *browser subagent* sungguhan (dengan kapabilitas *headless Chrome*, klik nyata, render DOM utuh, dan eksekusi JS) akhirnya dapat dijalankan.
+   - Subagent secara langsung menavigasi halaman `index` dan `create`, menguji interaksi elemen, serta berhasil mendeteksi *legacy bug* Alpine JS (`@js` di dalam `@click` pada `form.blade.php`) yang sebelumnya lolos dari tes HTTP (karena Alpine gagal *parsing*). 
+   - Bug tersebut langsung diperbaiki dan di-commit pada sesi 2b-2. Interaksi form (memilih dropdown kategori, memunculkan section relevan) kini terverifikasi berjalan lancar. Risiko terbuka ini resmi ditutup.
 
 2. **Minor findings yang TIDAK diperbaiki (sengaja, tidak blocking):**
    - `newKeringanan()`'s Alpine `x-model.number` mengubah placeholder kosong jadi `0` bukan `null` saat submit tanpa pilih kategori — pesan error jadi "kategori tidak valid" bukan "wajib diisi" yang lebih jelas. Kosmetik, server tetap menolak dengan benar.
