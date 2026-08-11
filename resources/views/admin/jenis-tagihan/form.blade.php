@@ -33,7 +33,8 @@
                 },
                 initialSasaran: @js(old('sasaran', $jenisTagihan?->sasaranGrup->where('tipe', 'sasaran')->map(fn ($g) => ['nominal' => null, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),
                 initialTarif: @js(old('tarif', $jenisTagihan?->sasaranGrup->where('tipe', 'tarif')->map(fn ($g) => ['nominal' => $g->nominal, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),
-                initialKeringanan: @js(old('keringanan', [])),
+                kategoriKeringananStoreUrl: @js(route('admin.kategori-keringanan.store')),
+                initialKeringanan: @js(old('keringanan', $jenisTagihan?->keringananRules->map(fn ($r) => ['kategori_keringanan_id' => $r->kategori_keringanan_id, 'tipe_potongan' => $r->tipe_potongan, 'nilai' => (float) $r->nilai, 'keterangan' => $r->keterangan])->values()->all() ?? [])),
             })"
             class="space-y-5"
         >
@@ -183,7 +184,37 @@
                 <button type="button" class="text-sm font-semibold text-brand-600" @click="form.tarif.push(newGrup())">+ Tambah Tarif</button>
             </div>
 
-            <!-- Task 5: Section 4 (Keringanan) goes here -->
+            <div x-show="!kategoriPpdb" x-cloak class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
+                <p class="font-display text-sm font-bold text-gray-900">4. Keringanan <span class="font-normal text-gray-400">(opsional)</span></p>
+                <template x-for="(rule, ri) in form.keringanan" :key="rule.uid">
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-5">
+                        <select :name="'keringanan[' + ri + '][kategori_keringanan_id]'" x-model.number="rule.kategori_keringanan_id" class="rounded-lg border-gray-200 text-sm">
+                            <template x-for="opt in kategoriKeringananOptions" :key="opt.id"><option :value="opt.id" x-text="opt.nama" :selected="opt.id === rule.kategori_keringanan_id"></option></template>
+                        </select>
+                        <select :name="'keringanan[' + ri + '][tipe_potongan]'" x-model="rule.tipe_potongan" class="rounded-lg border-gray-200 text-sm">
+                            <option value="fixed" :selected="rule.tipe_potongan === 'fixed'">Nominal Tetap</option>
+                            <option value="persen" :selected="rule.tipe_potongan === 'persen'">Persentase</option>
+                        </select>
+                        <input type="number" min="0" :max="rule.tipe_potongan === 'persen' ? 100 : null" step="0.01" :name="'keringanan[' + ri + '][nilai]'" x-model="rule.nilai" placeholder="Nilai" class="rounded-lg border-gray-200 text-sm">
+                        <input type="text" :name="'keringanan[' + ri + '][keterangan]'" x-model="rule.keterangan" placeholder="Keterangan" class="rounded-lg border-gray-200 text-sm">
+                        <button type="button" class="text-xs font-semibold text-error-600" @click="form.keringanan.splice(ri, 1)">Hapus</button>
+                    </div>
+                </template>
+                <div class="flex items-center gap-3">
+                    <button type="button" class="text-sm font-semibold text-brand-600" @click="form.keringanan.push(newKeringanan())">+ Tambah Keringanan</button>
+                    <button type="button" class="text-sm font-semibold text-gray-500" @click="showKategoriBaru = true">+ Kategori Baru</button>
+                </div>
+
+                <div x-show="showKategoriBaru" x-cloak class="rounded-xl border border-dashed border-gray-300 p-4 space-y-2">
+                    <x-input-label value="Nama Kategori Keringanan" />
+                    <input type="text" x-model="kategoriBaruNama" class="w-full rounded-lg border-gray-200 text-sm" placeholder="mis. Prestasi Akademik">
+                    <p class="text-sm text-error-600" x-show="kategoriBaruError" x-text="kategoriBaruError"></p>
+                    <div class="flex gap-2">
+                        <x-secondary-button type="button" x-bind:disabled="kategoriBaruSubmitting" @click="submitKategoriBaru()">Simpan Kategori</x-secondary-button>
+                        <x-secondary-button type="button" @click="showKategoriBaru = false">Batal</x-secondary-button>
+                    </div>
+                </div>
+            </div>
 
             <div class="flex items-center gap-3">
                 <x-primary-button type="submit">{{ $jenisTagihan === null ? 'Tambah' : 'Simpan' }}</x-primary-button>
@@ -211,10 +242,44 @@
                     keringanan: config.initialKeringanan.map((k) => ({ uid: nextUid(), ...k })),
                 },
                 kategoriKeringananOptions: config.kategoriKeringananList,
+                showKategoriBaru: false,
+                kategoriBaruNama: '',
+                kategoriBaruError: '',
+                kategoriBaruSubmitting: false,
                 get kategoriPpdb() {
                     return ['pendaftaran', 'daftar_ulang'].includes(this.form.kategori);
                 },
                 hydrateGrup,
+                newKeringanan() {
+                    return { uid: nextUid(), kategori_keringanan_id: this.kategoriKeringananOptions[0]?.id ?? null, tipe_potongan: 'fixed', nilai: '', keterangan: '' };
+                },
+                async submitKategoriBaru() {
+                    this.kategoriBaruSubmitting = true;
+                    this.kategoriBaruError = '';
+                    try {
+                        const response = await fetch(config.kategoriKeringananStoreUrl, {
+                            method: 'POST',
+                            headers: {
+                                Accept: 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                            },
+                            body: JSON.stringify({ nama: this.kategoriBaruNama }),
+                        });
+                        const json = await response.json();
+                        if (!response.ok) {
+                            this.kategoriBaruError = json.message ?? 'Gagal menambah kategori.';
+                            return;
+                        }
+                        this.kategoriKeringananOptions.push(json.data);
+                        this.kategoriBaruNama = '';
+                        this.showKategoriBaru = false;
+                    } catch (error) {
+                        this.kategoriBaruError = 'Gagal menambah kategori.';
+                    } finally {
+                        this.kategoriBaruSubmitting = false;
+                    }
+                },
                 newKriteria() {
                     return { uid: nextUid(), field: 'status_siswa', operator: 'in', value: [] };
                 },
