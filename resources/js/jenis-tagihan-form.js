@@ -91,7 +91,11 @@ export function jenisTagihanForm(config) {
         },
 
         initTomSelect(el, kriteria) {
-            if (el.tomselect) el.tomselect.destroy();
+            if (el.tomselect) {
+                el.tomselect.sync();
+                el.tomselect.clear();
+                return;
+            }
             
             const ts = new TomSelect(el, {
                 plugins: ['remove_button'],
