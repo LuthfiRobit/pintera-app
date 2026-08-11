@@ -17,46 +17,17 @@
         <div
             x-data="jenisTagihanTable({
                 initialItems: @js($jenisTagihanList),
-                storeUrl: @js(route('admin.jenis-tagihan.store')),
-                updateUrlTemplate: @js(route('admin.jenis-tagihan.update', ['jenisTagihan' => '__ID__'])),
                 deleteUrlTemplate: @js(route('admin.jenis-tagihan.destroy', ['jenisTagihan' => '__ID__'])),
                 nominalUrlTemplate: @js(route('admin.jenis-tagihan.nominal', ['jenisTagihan' => '__ID__'])),
+                editUrlTemplate: @js(route('admin.jenis-tagihan.edit', ['jenisTagihan' => '__ID__'])),
             })"
             class="space-y-5"
         >
             @can('jenis-tagihan.create')
-                <div x-ref="formCard" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-                    <p class="font-display text-sm font-bold text-gray-900" x-text="editingId === null ? 'Tambah Jenis Tagihan' : 'Edit Jenis Tagihan'"></p>
-                    <form @submit.prevent="submit()" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <div>
-                            <x-input-label value="Nama" />
-                            <x-text-input type="text" x-model="form.nama" placeholder="mis. Biaya Pendaftaran" class="mt-1.5" />
-                            <p class="mt-1.5 text-sm text-error-600" x-show="errors.nama" x-text="errors.nama?.[0]"></p>
-                        </div>
-                        <div>
-                            <x-input-label value="Kategori" />
-                            <select x-model="form.kategori" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                <option value="pendaftaran">Pendaftaran</option>
-                                <option value="daftar_ulang">Daftar Ulang</option>
-                                <option value="lainnya">Lainnya</option>
-                            </select>
-                            <p class="mt-1.5 text-sm text-error-600" x-show="errors.kategori" x-text="errors.kategori?.[0]"></p>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="flex items-center gap-2 text-sm text-gray-700">
-                                <input type="checkbox" x-model="form.bisa_dicicil" class="rounded border-gray-300 text-brand-500 focus:ring-brand-500">
-                                Bisa dicicil
-                            </label>
-                            <div x-show="form.bisa_dicicil" x-cloak class="mt-2 max-w-[160px]">
-                                <x-input-label value="Maksimal Jumlah Cicilan" />
-                                <x-text-input type="number" min="2" x-model="form.maks_cicilan" class="mt-1.5" />
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-3 sm:col-span-2">
-                            <x-primary-button type="submit" x-bind:disabled="submitting" x-text="editingId === null ? 'Tambah' : 'Simpan'"></x-primary-button>
-                            <x-secondary-button type="button" x-show="editingId !== null" @click="cancelEdit()">Batal</x-secondary-button>
-                        </div>
-                    </form>
+                <div class="flex justify-end">
+                    <a href="{{ route('admin.jenis-tagihan.create') }}" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600">
+                        <x-icon name="plus" class="h-4 w-4" /> Tambah Jenis Tagihan
+                    </a>
                 </div>
             @endcan
 
@@ -84,12 +55,7 @@
                                     <td class="sticky left-0 z-10 bg-white px-5 py-3">
                                         <x-table-actions>
                                             @can('jenis-tagihan.edit')
-                                                <x-dropdown-link href="#" @click.prevent="startEdit(item)">
-                                                    <span class="inline-flex items-center gap-2.5">
-                                                        <x-icon name="edit" class="h-4 w-4 text-gray-500" />
-                                                        Edit
-                                                    </span>
-                                                </x-dropdown-link>
+                                                <x-dropdown-link x-bind:href="editUrl(item)">Edit</x-dropdown-link>
                                                 <x-dropdown-link x-bind:href="nominalUrl(item)">Kelola Nominal</x-dropdown-link>
                                             @endcan
                                             @can('jenis-tagihan.delete')
@@ -98,7 +64,7 @@
                                         </x-table-actions>
                                     </td>
                                     <td class="px-5 py-3.5 font-semibold text-gray-900" x-text="item.nama"></td>
-                                    <td class="px-5 py-3.5 text-gray-600" x-text="{ pendaftaran: 'Pendaftaran', daftar_ulang: 'Daftar Ulang', lainnya: 'Lainnya' }[item.kategori]"></td>
+                                    <td class="px-5 py-3.5 text-gray-600" x-text="item.kategori"></td>
                                     <td class="px-5 py-3.5 text-gray-600" x-text="item.bisa_dicicil ? 'Maks ' + item.maks_cicilan + 'x' : 'Tidak dicicil'"></td>
                                     <td class="px-5 py-3.5">
                                         <span
