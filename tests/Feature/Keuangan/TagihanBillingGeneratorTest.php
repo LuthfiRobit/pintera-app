@@ -16,9 +16,10 @@ function buatGenerator(): TagihanBillingGenerator
 }
 
 it('generates a belum_bayar tagihan for every matching siswa and logs a success job', function () {
-    $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 200000, 'mode' => 'otomatis', 'hari_jatuh_tempo' => 10]);
-    $siswaSatu = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
-    $siswaDua = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+    $lembaga = \App\Models\Lembaga::factory()->create();
+    $siswaSatu = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswaDua = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'default_amount' => 200000, 'mode' => 'otomatis', 'hari_jatuh_tempo' => 10]);
 
     $log = buatGenerator()->generate($jenisTagihan, 'cron');
 
@@ -59,8 +60,9 @@ it('sets billing_period to null for a manual-mode jenis_tagihan regardless of tr
 });
 
 it('applies the discount from TagihanNominalResolver to net_amount', function () {
-    $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 500000, 'mode' => 'otomatis']);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+    $lembaga = \App\Models\Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'default_amount' => 500000, 'mode' => 'otomatis']);
     $kategori = \App\Models\KategoriKeringanan::create(['lembaga_id' => $jenisTagihan->lembaga_id, 'nama' => 'Anak Pegawai']);
     \App\Models\JenisTagihanKeringanan::create(['jenis_tagihan_id' => $jenisTagihan->id, 'kategori_keringanan_id' => $kategori->id, 'tipe_potongan' => 'fixed', 'nilai' => 100000]);
     \App\Models\SiswaKeringanan::create(['siswa_id' => $siswa->id, 'kategori_keringanan_id' => $kategori->id, 'berlaku_dari' => now()->subDay()->toDateString()]);
@@ -74,8 +76,9 @@ it('applies the discount from TagihanNominalResolver to net_amount', function ()
 });
 
 it('generateForSiswa returns false and creates nothing when a tagihan for that period already exists', function () {
-    $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 200000, 'mode' => 'otomatis']);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+    $lembaga = \App\Models\Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'default_amount' => 200000, 'mode' => 'otomatis']);
     $generator = buatGenerator();
 
     expect($generator->generateForSiswa($siswa, $jenisTagihan, 'event'))->toBeTrue();
@@ -84,8 +87,9 @@ it('generateForSiswa returns false and creates nothing when a tagihan for that p
 });
 
 it('generateForSiswaViaEvent logs a single-siswa job with the given trigger_event', function () {
-    $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 200000, 'mode' => 'otomatis']);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+    $lembaga = \App\Models\Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'default_amount' => 200000, 'mode' => 'otomatis']);
 
     $log = buatGenerator()->generateForSiswaViaEvent($siswa, $jenisTagihan, 'StudentCreated');
 
@@ -96,9 +100,10 @@ it('generateForSiswaViaEvent logs a single-siswa job with the given trigger_even
 });
 
 it('does not abort the batch when one siswa throws — other siswa still get billed and the log is partial', function () {
-    $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 200000, 'mode' => 'otomatis']);
-    $siswaGagal = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
-    $siswaBerhasil = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+    $lembaga = \App\Models\Lembaga::factory()->create();
+    $siswaGagal = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswaBerhasil = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'default_amount' => 200000, 'mode' => 'otomatis']);
 
     $resolverAsli = new TagihanNominalResolver(new JenisTagihanSasaranMatcher());
     $resolverMock = \Mockery::mock(TagihanNominalResolver::class);
