@@ -7,7 +7,8 @@
   - Plan: `.agents/plans/2026-08-11-jenis-tagihan-ui-ux.md`
 
 ## Apa yang Dikerjakan
-- **Index (`index.blade.php`)**: Diubah menjadi arsitektur **Partial SPA** dengan memisahkan kerangka struktur tabel ke `_daftar.blade.php`. Tampilan disempurnakan dengan bingkai *premium card*, tata letak breadcrumb sebaris, dan *badge* Tailwind elegan untuk indikator status pemakaian tagihan.
+- **Index (`index.blade.php`)**: Diubah menjadi arsitektur **Server-Side Pagination & Filter AJAX**. Kerangka tabel dipisah ke `_daftar.blade.php`. `dataTableFilter` digunakan untuk menangani *Search*, *Filter Kategori*, dan *Filter Status* layaknya Modul Mata Pelajaran. Tampilan disempurnakan dengan bingkai *premium card*, *breadcrumbs* sebaris, dan komponen 3 *KPI Cards* responsif di bagian atas tabel.
+- **Backend Controller (`JenisTagihanController.php`)**: Perombakan fungsi `index()` dari `.get()` statis menjadi `.paginate(20)` dengan kemampuan menanggapi *query parameter* serta mengembalikan komponen Blade `_daftar` murni secara dinamis untuk interaksi AJAX.
 - **Form (`form.blade.php`)**: Dirombak menggunakan tata letak **Sticky Sidebar Premium**. Kolom kiri (profil/identitas tagihan dan tombol simpan) dibuat menempel (*sticky*) di bagian atas, memungkinkan pengguna menyunting formulir panjang ("Tarif Berdimensi", "Target Sasaran", "Keringanan") di kolom kanan tanpa kehilangan jangkar tombol aksi "Simpan".
 
 ## Keputusan Penting yang Diambil

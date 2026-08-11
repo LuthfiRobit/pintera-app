@@ -20,9 +20,7 @@
         </div>
     @endif
 
-    <form
-        method="POST"
-        action="{{ $jenisTagihan === null ? route('admin.jenis-tagihan.store') : route('admin.jenis-tagihan.update', $jenisTagihan) }}"
+    <div
         x-data="jenisTagihanForm({
             kategoriAwal: @js(old('kategori', $jenisTagihan?->kategori ?? 'lainnya')),
             modeAwal: @js(old('mode', $jenisTagihan?->mode ?? 'manual')),
@@ -39,12 +37,17 @@
             kategoriKeringananStoreUrl: @js(route('admin.kategori-keringanan.store')),
             initialKeringanan: @js(old('keringanan', $jenisTagihan?->keringananRules->map(fn ($r) => ['kategori_keringanan_id' => $r->kategori_keringanan_id, 'tipe_potongan' => $r->tipe_potongan, 'nilai' => (float) $r->nilai, 'keterangan' => $r->keterangan])->values()->all() ?? [])),
         })"
-        class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,340px)_1fr] items-start px-4 sm:px-0"
     >
-        @csrf
-        @if ($jenisTagihan !== null)
-            @method('PUT')
-        @endif
+        <form
+            method="POST"
+            action="{{ $jenisTagihan === null ? route('admin.jenis-tagihan.store') : route('admin.jenis-tagihan.update', $jenisTagihan) }}"
+            @submit.prevent="validateBeforeSubmit($event)"
+            class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[minmax(0,340px)_1fr] items-start px-4 sm:px-0"
+        >
+            @csrf
+            @if ($jenisTagihan !== null)
+                @method('PUT')
+            @endif
 
         {{-- Sticky Sidebar Form (Kolom Kiri) --}}
         <div class="sticky top-6 flex flex-col gap-5">
@@ -177,14 +180,14 @@
                                     </div>
                                     <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
                                         <div class="grid grid-cols-1 gap-2 sm:grid-cols-4 items-center">
-                                            <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                            <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
                                                 <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
                                             </select>
                                             <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
                                                 <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
                                                 <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                             </select>
-                                            <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1 focus:border-brand-500 focus:ring-brand-500">
+                                            <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="initTomSelect($el, kriteria)" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="rounded-lg border-gray-200 text-sm sm:col-span-1 focus:border-brand-500 focus:ring-brand-500 min-w-[200px]">
                                                 <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
                                             </select>
                                             <div class="text-right sm:text-left">
@@ -227,14 +230,14 @@
                                 </div>
                                 <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
                                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-4 items-center">
-                                        <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                        <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
                                             <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
                                         </select>
                                         <select :name="'tarif[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
                                             <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
                                             <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                         </select>
-                                        <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1 focus:border-brand-500 focus:ring-brand-500">
+                                        <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="initTomSelect($el, kriteria)" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="rounded-lg border-gray-200 text-sm sm:col-span-1 focus:border-brand-500 focus:ring-brand-500 min-w-[200px]">
                                             <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
                                         </select>
                                         <div class="text-right sm:text-left">
@@ -286,96 +289,43 @@
                             <x-icon name="add" class="h-4 w-4" /> Tambah Keringanan
                         </button>
                         <span class="text-gray-300">|</span>
-                        <button type="button" class="inline-flex items-center gap-1 text-sm font-bold text-gray-500 hover:text-gray-700" @click="showKategoriBaru = true">
+                        <button type="button" class="inline-flex items-center gap-1 text-sm font-bold text-gray-500 hover:text-gray-700" @click="$dispatch('open-modal', 'modal-kategori-keringanan')">
                             <x-icon name="category" class="h-4 w-4" /> Buat Kategori Baru
                         </button>
-                    </div>
-
-                    <div x-show="showKategoriBaru" x-cloak x-transition class="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 space-y-3 mt-4">
-                        <x-input-label value="Nama Kategori Keringanan Baru" />
-                        <div class="flex items-center gap-2">
-                            <input type="text" x-model="kategoriBaruNama" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="mis. Beasiswa Berprestasi">
-                            <x-secondary-button type="button" x-bind:disabled="kategoriBaruSubmitting" @click="submitKategoriBaru()" class="shrink-0 bg-white shadow-sm">Simpan</x-secondary-button>
-                            <button type="button" @click="showKategoriBaru = false" class="shrink-0 p-2 text-gray-400 hover:text-gray-600">
-                                <x-icon name="close" class="h-4 w-4" />
-                            </button>
-                        </div>
-                        <p class="text-sm font-medium text-error-600" x-show="kategoriBaruError" x-text="kategoriBaruError"></p>
                     </div>
                 </div>
             </template>
         </div>
-    </form>
+        </form>
 
-    <script>
-        function jenisTagihanForm(config) {
-            let uidCounter = 0;
-            const nextUid = () => ++uidCounter;
-            const hydrateGrup = (grup) => ({ uid: nextUid(), nominal: grup.nominal ?? '', kriteria: grup.kriteria.map((k) => ({ uid: nextUid(), ...k })) });
-
-            return {
-                kriteriaFields: ['lembaga', 'tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'],
-                referenceOptions: config.referenceOptions,
-                sasaranMode: config.initialSasaran.length > 0 ? 'kriteria' : 'semua',
-                form: {
-                    kategori: config.kategoriAwal,
-                    mode: config.modeAwal,
-                    bisaDicicil: config.bisaDicicilAwal,
-                    sasaran: config.initialSasaran.map(hydrateGrup),
-                    tarif: config.initialTarif.map(hydrateGrup),
-                    keringanan: config.initialKeringanan.map((k) => ({ uid: nextUid(), ...k })),
-                },
-                kategoriKeringananOptions: config.kategoriKeringananList,
-                showKategoriBaru: false,
-                kategoriBaruNama: '',
-                kategoriBaruError: '',
-                kategoriBaruSubmitting: false,
-                get kategoriPpdb() {
-                    return ['pendaftaran', 'daftar_ulang'].includes(this.form.kategori);
-                },
-                hydrateGrup,
-                newKeringanan() {
-                    return { uid: nextUid(), kategori_keringanan_id: null, tipe_potongan: 'fixed', nilai: '', keterangan: '' };
-                },
-                async submitKategoriBaru() {
-                    this.kategoriBaruSubmitting = true;
-                    this.kategoriBaruError = '';
-                    try {
-                        const response = await fetch(config.kategoriKeringananStoreUrl, {
-                            method: 'POST',
-                            headers: {
-                                Accept: 'application/json',
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                            },
-                            body: JSON.stringify({ nama: this.kategoriBaruNama }),
-                        });
-                        const json = await response.json();
-                        if (!response.ok) {
-                            this.kategoriBaruError = json.message ?? 'Gagal menambah kategori.';
-                            return;
-                        }
-                        this.kategoriKeringananOptions.push(json.data);
-                        this.kategoriBaruNama = '';
-                        this.showKategoriBaru = false;
-                    } catch (error) {
-                        this.kategoriBaruError = 'Gagal menambah kategori.';
-                    } finally {
-                        this.kategoriBaruSubmitting = false;
-                    }
-                },
-                newKriteria() {
-                    return { uid: nextUid(), field: 'status_siswa', operator: 'in', value: [] };
-                },
-                newGrup() {
-                    return { uid: nextUid(), nominal: '', kriteria: [this.newKriteria()] };
-                },
-                optionsFor(field) {
-                    if (field === 'jenis_kelamin') return [{ value: 'L', label: 'Laki-laki' }, { value: 'P', label: 'Perempuan' }];
-                    if (field === 'status_siswa') return [{ value: 'aktif', label: 'Aktif' }, { value: 'lulus', label: 'Lulus' }, { value: 'pindah', label: 'Pindah' }, { value: 'keluar', label: 'Keluar' }];
-                    return this.referenceOptions[field] ?? [];
-                },
-            };
-        }
-    </script>
+        {{-- Modal Kategori Keringanan --}}
+        <x-modal name="modal-kategori-keringanan" maxWidth="md">
+            <div class="p-6 relative text-left">
+                <div class="flex items-center justify-between pb-3.5 border-b border-gray-200 shrink-0 mb-4">
+                    <div>
+                        <h3 class="font-display text-base font-bold text-gray-900 flex items-center gap-2">
+                            <x-icon name="category" class="h-5 w-5 text-brand-500" />
+                            <span>Kategori Keringanan Baru</span>
+                        </h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Tambahkan kategori baru untuk pemotongan tagihan.</p>
+                    </div>
+                    <button @click="$dispatch('close-modal', 'modal-kategori-keringanan')" type="button" class="text-gray-400 hover:text-gray-600 transition">
+                        <x-icon name="cancel" class="h-5 w-5" />
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <x-input-label value="Nama Kategori" />
+                        <input type="text" x-model="kategoriBaruNama" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500" placeholder="mis. Beasiswa Berprestasi">
+                    </div>
+                    <p class="text-sm font-medium text-error-600" x-show="kategoriBaruError" x-text="kategoriBaruError"></p>
+                    <div class="flex items-center justify-end gap-2 pt-4 border-t border-gray-100 shrink-0 mt-6">
+                        <x-secondary-button type="button" @click="$dispatch('close-modal', 'modal-kategori-keringanan')" x-bind:disabled="kategoriBaruSubmitting">Batal</x-secondary-button>
+                        <x-primary-button type="button" x-bind:disabled="kategoriBaruSubmitting" @click="submitKategoriBaru()">Simpan Kategori</x-primary-button>
+                    </div>
+                </div>
+            </div>
+        </x-modal>
+    </div>
 </x-app-layout>
