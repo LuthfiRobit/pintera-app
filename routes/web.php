@@ -2,7 +2,10 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Api\BriWebhookController;
 use Illuminate\Support\Facades\Route;
+
+Route::post('/webhook/bri/payment-notification', [BriWebhookController::class, 'handlePaymentNotification']);
 
 Route::get('/', function () {
     return view('welcome');
