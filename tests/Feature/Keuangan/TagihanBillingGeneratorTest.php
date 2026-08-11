@@ -94,3 +94,28 @@ it('generateForSiswaViaEvent logs a single-siswa job with the given trigger_even
     expect($log->bills_generated)->toBe(1);
     expect($log->status)->toBe('success');
 });
+
+it('does not abort the batch when one siswa throws — other siswa still get billed and the log is partial', function () {
+    $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 200000, 'mode' => 'otomatis']);
+    $siswaGagal = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+    $siswaBerhasil = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
+
+    $resolverAsli = new TagihanNominalResolver(new JenisTagihanSasaranMatcher());
+    $resolverMock = \Mockery::mock(TagihanNominalResolver::class);
+    $resolverMock->shouldReceive('resolve')
+        ->with(\Mockery::on(fn (Siswa $s) => $s->id === $siswaGagal->id), \Mockery::any())
+        ->andThrow(new \RuntimeException('Simulasi kegagalan resolusi nominal'));
+    $resolverMock->shouldReceive('resolve')
+        ->with(\Mockery::on(fn (Siswa $s) => $s->id === $siswaBerhasil->id), \Mockery::any())
+        ->andReturnUsing(fn (Siswa $s, JenisTagihan $jt) => $resolverAsli->resolve($s, $jt));
+
+    $generator = new TagihanBillingGenerator(new JenisTagihanSasaranMatcher(), $resolverMock);
+    $log = $generator->generate($jenisTagihan, 'cron');
+
+    expect($log->status)->toBe('partial');
+    expect($log->bills_generated)->toBe(1);
+    expect($log->error_log)->toHaveCount(1);
+    expect($log->error_log[0]['siswa_id'])->toBe($siswaGagal->id);
+    expect(Tagihan::where('tagihable_id', $siswaBerhasil->id)->exists())->toBeTrue();
+    expect(Tagihan::where('tagihable_id', $siswaGagal->id)->exists())->toBeFalse();
+});
