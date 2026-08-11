@@ -56,6 +56,21 @@ class JenisTagihanMonitoringController extends BaseController
     {
         $this->authorize('jenis-tagihan.edit');
 
-        return response('OK', 200);
+        $request->validate([
+            'cancel_reason' => 'required|string|max:255',
+        ]);
+
+        if ($tagihan->status !== 'belum_bayar') {
+            abort(422, 'Hanya tagihan dengan status belum bayar yang dapat dibatalkan.');
+        }
+
+        $tagihan->update([
+            'status' => 'dibatalkan',
+            'cancelled_by' => auth()->id(),
+            'cancelled_at' => now(),
+            'cancel_reason' => $request->cancel_reason,
+        ]);
+
+        return back()->with('success', 'Tagihan berhasil dibatalkan.');
     }
 }

@@ -202,3 +202,70 @@ it('lists daftar tunggakan correctly with pagination', function () {
     expect((float) $firstTunggakan->total_tunggakan)->toBe(200000.0);
     expect($firstTunggakan->jumlah_tunggakan)->toBe(2);
 });
+
+it('can cancel a tagihan if status is belum_bayar', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    
+    Tagihan::query()->delete();
+
+    $tagihan = Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id,
+        'tagihable_type' => Siswa::class,
+        'tagihable_id' => $siswa->id,
+        'status' => 'belum_bayar',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->post(route('admin.jenis-tagihan.monitoring.batal', [$jenisTagihan, $tagihan]), [
+            'cancel_reason' => 'Salah input',
+        ]);
+
+    $response->assertRedirect();
+    
+    $tagihan->refresh();
+    expect($tagihan->status)->toBe('dibatalkan');
+    expect($tagihan->cancel_reason)->toBe('Salah input');
+    expect($tagihan->cancelled_by)->toBe($user->id);
+    expect($tagihan->cancelled_at)->not->toBeNull();
+});
+
+it('cannot cancel a tagihan if status is not belum_bayar', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    
+    Tagihan::query()->delete();
+
+    $tagihan = Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id,
+        'tagihable_type' => Siswa::class,
+        'tagihable_id' => $siswa->id,
+        'status' => 'sebagian',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->from(route('admin.jenis-tagihan.monitoring.index', $jenisTagihan))
+        ->post(route('admin.jenis-tagihan.monitoring.batal', [$jenisTagihan, $tagihan]), [
+            'cancel_reason' => 'Salah input',
+        ]);
+
+    // Should return 422 or redirect back with errors depending on ValidationException format.
+    // Let's assert redirect with errors for standard form validation or 422 if it's an API. Since this is web, usually redirect back with errors, but I should use abort(422) if that's what's preferred.
+    // User specifically asked: "Task 6: pastikan response code-nya 422 (bukan "403 atau 422"), konsisten dengan pola validasi 2b-1/2b-2."
+    $response->assertStatus(422);
+    
+    $tagihan->refresh();
+    expect($tagihan->status)->toBe('sebagian');
+});
