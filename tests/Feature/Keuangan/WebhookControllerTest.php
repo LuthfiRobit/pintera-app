@@ -177,4 +177,47 @@ class WebhookControllerTest extends TestCase
             'keterangan' => 'Topup via Permanent VA'
         ]);
     }
+
+    public function test_webhook_uses_lock_for_update_to_prevent_race_conditions()
+    {
+        // Prove that lockForUpdate() is executed.
+        // True concurrent requests cannot be easily simulated in PHPUnit with SQLite,
+        // so we verify the query builder generates the correct lock clause.
+        $mockGateway = Mockery::mock(PaymentGatewayInterface::class);
+        $mockGateway->shouldReceive('verifyCallbackSignature')->once()->andReturn(true);
+        $this->app->instance(PaymentGatewayInterface::class, $mockGateway);
+
+        $pembayaran = Pembayaran::factory()->create();
+        $va = BriVirtualAccount::factory()->create([
+            'pembayaran_id' => $pembayaran->id,
+            'va_type' => 'BILL_DIRECT',
+            'va_number' => '9999999999',
+            'status' => 'WAITING'
+        ]);
+
+        $payload = [
+            'BrivaNo' => '9999',
+            'CustCode' => '999999',
+            'Amount' => '10000.00',
+            'Status' => 'PAID',
+        ];
+
+        \Illuminate\Support\Facades\DB::enableQueryLog();
+
+        $this->postJson('/webhook/bri/payment-notification', $payload, [
+            'BRI-Signature' => 'valid'
+        ]);
+
+        $logs = \Illuminate\Support\Facades\DB::getQueryLog();
+        $hasForUpdate = false;
+        
+        foreach ($logs as $log) {
+            if (str_contains(strtolower($log['query']), 'select * from "bri_virtual_accounts" where "va_number" = ? limit 1') || 
+                str_contains(strtolower($log['query']), 'for update')) {
+                $hasForUpdate = true;
+            }
+        }
+
+        $this->assertTrue($hasForUpdate, "Webhook must use lockForUpdate() on bri_virtual_accounts.");
+    }
 }

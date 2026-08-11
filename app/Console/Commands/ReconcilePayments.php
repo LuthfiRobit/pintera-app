@@ -91,7 +91,7 @@ class ReconcilePayments extends Command
 
         foreach ($waitingQris as $qris) {
             try {
-                $statusResult = $this->gateway->checkStatus($qris->qris_id); // Assuming checkStatus works for QRIS ID too
+                $statusResult = $this->gateway->checkStatus($qris->qr_code); 
                 
                 if ($statusResult->status === 'PAID') {
                     DB::transaction(function () use ($qris) {
@@ -109,11 +109,11 @@ class ReconcilePayments extends Command
                             }
                         }
                     });
-                    $this->line("Reconciled QRIS: {$qris->qris_id}");
+                    $this->line("Reconciled QRIS: {$qris->qr_code}");
                 }
             } catch (\Exception $e) {
-                Log::error("Failed to reconcile QRIS {$qris->qris_id}: " . $e->getMessage());
-                $this->error("Failed to reconcile QRIS {$qris->qris_id}");
+                Log::error("Failed to reconcile QRIS {$qris->qr_code}: " . $e->getMessage());
+                $this->error("Failed to reconcile QRIS {$qris->qr_code}");
             }
         }
     }
@@ -128,14 +128,12 @@ class ReconcilePayments extends Command
 
         foreach ($failedTopups as $pembayaran) {
             try {
-                DB::transaction(function () use ($pembayaran) {
-                    $wallet = Wallet::where('siswa_id', $pembayaran->siswa_id)->lockForUpdate()->first();
-                    if ($wallet) {
-                        $wallet->topup($pembayaran->amount, $pembayaran, 'Retry Failed Topup');
-                        $pembayaran->update(['topup_status' => 'completed']);
-                        $this->line("Retried failed topup for Pembayaran ID: {$pembayaran->id}");
-                    }
-                });
+                $wallet = Wallet::where('siswa_id', $pembayaran->siswa_id)->first();
+                if ($wallet) {
+                    $wallet->topup($pembayaran->amount, $pembayaran, 'Retry Failed Topup');
+                    $pembayaran->update(['topup_status' => 'completed']);
+                    $this->line("Retried failed topup for Pembayaran ID: {$pembayaran->id}");
+                }
             } catch (\Exception $e) {
                 Log::error("Failed to retry topup for Pembayaran ID {$pembayaran->id}: " . $e->getMessage());
                 $this->error("Failed to retry topup for Pembayaran ID {$pembayaran->id}");

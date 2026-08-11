@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Contracts\PaymentGatewayInterface;
 use App\Http\Controllers\Controller;
+use App\Models\BriQrisPayment;
 use App\Models\BriVirtualAccount;
 use App\Models\Pembayaran;
 use App\Models\Wallet;
@@ -35,69 +36,98 @@ class BriWebhookController extends Controller
         $vaNumber = $brivaNo . $custCode;
         $status = $data['Status'] ?? '';
         $amountPaid = floatval($data['Amount'] ?? 0);
+        $qrisReference = $data['QrCode'] ?? null;
 
         if ($status !== 'PAID') {
             return response()->json(['status' => 'success', 'message' => 'Ignored non-PAID status']);
         }
 
+        $walletTopupData = null; // Store data to execute topup outside transaction
+
         try {
-            DB::transaction(function () use ($vaNumber, $amountPaid, $data) {
-                // Lock VA record to prevent race conditions
-                $va = BriVirtualAccount::where('va_number', $vaNumber)->lockForUpdate()->first();
+            DB::transaction(function () use ($vaNumber, $qrisReference, $amountPaid, &$walletTopupData) {
+                if (!empty($vaNumber)) {
+                    $va = BriVirtualAccount::where('va_number', $vaNumber)->lockForUpdate()->first();
+                    if ($va) {
+                        if ($va->status === 'PAID') {
+                            return; // Idempotent
+                        }
+                        
+                        if ($va->va_type === 'BILL_DIRECT') {
+                            $va->status = 'PAID';
+                            $va->save();
 
-                if (!$va) {
-                    throw new \Exception("VA Number {$vaNumber} not found");
-                }
+                            $pembayaran = Pembayaran::find($va->pembayaran_id);
+                            if ($pembayaran && $pembayaran->status !== 'lunas') {
+                                $pembayaran->status = 'lunas';
+                                $pembayaran->save();
+                                $this->allocationService->allocate($pembayaran);
+                            }
+                        } elseif ($va->va_type === 'WALLET_PERMANENT') {
+                            $wallet = Wallet::lockForUpdate()->find($va->wallet_id);
+                            if (!$wallet) {
+                                throw new \Exception("Wallet not found for VA {$vaNumber}");
+                            }
 
-                if ($va->va_type === 'BILL_DIRECT') {
-                    if ($va->status === 'PAID') {
-                        // Idempotent: Already paid
+                            $pembayaran = Pembayaran::create([
+                                'siswa_id' => $wallet->siswa_id,
+                                'metode' => 'va_bri',
+                                'amount' => $amountPaid,
+                                'status' => 'lunas',
+                                'topup_status' => 'pending',
+                                'channel_reference' => 'WALLET_PERMANENT_TOPUP',
+                            ]);
+
+                            $walletTopupData = [
+                                'wallet' => $wallet,
+                                'pembayaran' => $pembayaran,
+                                'amount' => $amountPaid
+                            ];
+                        }
                         return;
                     }
+                }
 
-                    $va->status = 'PAID';
-                    $va->save();
+                if (!empty($qrisReference)) {
+                    $qris = BriQrisPayment::where('qr_code', $qrisReference)->lockForUpdate()->first();
+                    if ($qris) {
+                        if ($qris->status === 'PAID') {
+                            return; // Idempotent
+                        }
 
-                    $pembayaran = Pembayaran::find($va->pembayaran_id);
-                    if ($pembayaran && $pembayaran->status !== 'lunas') {
-                        $pembayaran->status = 'lunas';
-                        $pembayaran->save();
+                        $qris->status = 'PAID';
+                        $qris->save();
 
-                        // Allocate payment to bills
-                        $this->allocationService->allocate($pembayaran);
-                    }
-                } elseif ($va->va_type === 'WALLET_PERMANENT') {
-                    // For permanent VA, we top up the wallet directly
-                    $wallet = Wallet::lockForUpdate()->find($va->wallet_id);
-                    if (!$wallet) {
-                        throw new \Exception("Wallet not found for VA {$vaNumber}");
-                    }
-
-                    // Create topup history record
-                    $pembayaran = Pembayaran::create([
-                        'siswa_id' => $wallet->siswa_id,
-                        'metode' => 'va_bri',
-                        'status' => 'lunas', // Instant lunas
-                        'topup_status' => 'pending', // Initial status
-                        'channel_reference' => 'WALLET_PERMANENT_TOPUP',
-                    ]);
-
-                    try {
-                        $wallet->topup($amountPaid, $pembayaran, 'Topup via Permanent VA');
-                        $pembayaran->update(['topup_status' => 'completed']);
-                    } catch (\Exception $e) {
-                        Log::error("Failed to topup wallet: " . $e->getMessage());
-                        $pembayaran->update(['topup_status' => 'failed']);
-                        // Re-throw if you want it to retry, or swallow it so we return 200 to gateway
-                        // Requirements: "if topup() fails, log error, return 200, status=failed"
+                        $pembayaran = Pembayaran::find($qris->pembayaran_id);
+                        if ($pembayaran && $pembayaran->status !== 'lunas') {
+                            $pembayaran->status = 'lunas';
+                            $pembayaran->save();
+                            $this->allocationService->allocate($pembayaran);
+                        }
+                        return;
                     }
                 }
+
+                throw new \Exception("Payment reference not found");
             });
+
+            // Execute Wallet topup outside transaction
+            if ($walletTopupData) {
+                try {
+                    $walletTopupData['wallet']->topup(
+                        $walletTopupData['amount'], 
+                        $walletTopupData['pembayaran'], 
+                        'Topup via Permanent VA'
+                    );
+                    $walletTopupData['pembayaran']->update(['topup_status' => 'completed']);
+                } catch (\Exception $e) {
+                    Log::error("Failed to topup wallet: " . $e->getMessage());
+                    $walletTopupData['pembayaran']->update(['topup_status' => 'failed']);
+                }
+            }
+
         } catch (\Exception $e) {
             Log::error("Webhook error: " . $e->getMessage());
-            // Depending on gateway spec, you might return 500 to force retry, 
-            // but for now we log and return 200 if we handled it gracefully.
-            // If it's a critical DB lock issue, let it bubble up or return 500.
         }
 
         return response()->json(['status' => 'success']);
