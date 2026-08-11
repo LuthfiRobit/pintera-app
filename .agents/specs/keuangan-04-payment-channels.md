@@ -1,4 +1,4 @@
-﻿# Spec: Keuangan 04 — Payment Channels
+# Spec: Keuangan 04 — Payment Channels
 
 **Tanggal:** 2026-08-11
 **Status:** Final (post-grill-me review)
@@ -103,6 +103,7 @@ Index: (pembayaran_id, status)
 a) Tambah kolom siswa_id (nullable FK ke siswa, SET NULL on delete) setelah wallet_id.
 b) Extend enum status: tambah 'menunggu_pembayaran' tanpa hapus nilai existing.
    Nilai existing: menunggu_verifikasi, lunas, ditolak.
+c) Tambah kolom topup_status ENUM('none', 'pending', 'completed', 'failed') NOT NULL DEFAULT 'none' setelah status.
 
 ## Service Layer
 
@@ -121,6 +122,8 @@ expired_at: now() + min(va_expire_hours dari semua jenis_tagihan yang dipilih).
   Membaca pembayaran_tagihan, update tagihan.paid_amount dan tagihan.status.
   Tagihan dibatalkan dilewati.
 
+*Catatan untuk Transfer Manual:* Alur approval Manual Payment oleh admin mematuhi konvensi transaction yang persis sama dengan webhook (lihat Alur Webhook di bawah): update status pembayaran dan alokasi berjalan di dalam `DB::transaction()`, sementara eksekusi `topup()` (serta status tracking `completed`/`failed`) dijalankan **di luar** (setelah commit).
+
 ## Alur Webhook
 
 POST /webhook/bri/payment-notification:
@@ -133,8 +136,14 @@ POST /webhook/bri/payment-notification:
      PaymentAllocationService::allocate(pembayaran)
    } // commit
 5. JIKA pembayaran.wallet_id:
-     ->topup(, )  // DI LUAR transaction (konvensi log 03)
-     Jika topup() gagal: log error, tetap return 200 (tagihan sudah aman)
+     try {
+         $wallet->topup($amount, $pembayaran)  // DI LUAR transaction (konvensi log 03)
+         pembayaran.update(['topup_status' => 'completed'])
+     } catch (\Exception $e) {
+         pembayaran.update(['topup_status' => 'failed'])
+         // log error
+     }
+     (tetap return 200, tagihan sudah aman)
 6. return 200
 
 ## Polling Fallback
@@ -145,11 +154,22 @@ Jadwal: everyFifteenMinutes() via Laravel Task Scheduler
 Algoritma:
 1. Ambil bri_virtual_accounts dengan status=WAITING dan expired_at > now()
 2. Ambil bri_qris_payments dengan status=WAITING dan expired_at > now()
-3. Untuk setiap record: ->checkStatus()
+3. Untuk setiap record: $gateway->checkStatus($reference)
 4. Jika PAID: jalankan alur alokasi sama seperti webhook handler
 5. Jika EXPIRED: update bri_record.status = EXPIRED, biarkan pembayaran.status = menunggu_pembayaran
 
 VA Permanen (expired_at = NULL) tidak di-poll.
+
+## Topup Reconciliation
+
+Command: billing:retry-failed-topup
+Jadwal: everyHour() via Laravel Task Scheduler
+
+Algoritma:
+1. Ambil pembayaran dengan status=lunas, wallet_id IS NOT NULL, dan topup_status IN ('pending', 'failed')
+2. Untuk setiap pembayaran, coba jalankan `$wallet->topup($amount, $pembayaran)`
+3. Jika berhasil, update `topup_status = 'completed'`
+4. Jika gagal lagi, log error dan biarkan statusnya tetap `failed` untuk retry berikutnya.
 
 ## MockPaymentGateway Detail
 
@@ -176,6 +196,7 @@ app/Models/BriQrisPayment.php
 app/Models/ManualPaymentRequest.php
 app/Http/Controllers/WebhookController.php
 app/Console/Commands/PollBriStatusCommand.php
+app/Console/Commands/RetryFailedTopupCommand.php
 database/migrations/*_create_bri_virtual_accounts_table.php
 database/migrations/*_create_bri_qris_payments_table.php
 database/migrations/*_create_manual_payment_requests_table.php
