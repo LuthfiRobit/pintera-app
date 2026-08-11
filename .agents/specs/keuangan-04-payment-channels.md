@@ -129,9 +129,13 @@ expired_at: now() + min(va_expire_hours dari semua jenis_tagihan yang dipilih).
 POST /webhook/bri/payment-notification:
 1. verifyCallbackSignature() gagal -> return 401 (BRI retry dari sisinya)
 2. Lookup bri_virtual_accounts atau bri_qris_payments by reference
-3. Idempotency: jika pembayaran.status == lunas atau bri_record.status == PAID -> return 200, stop
+3. Idempotency awal: jika pembayaran.status == lunas atau bri_record.status == PAID -> return 200, stop
 4. DB::transaction() {
-     bri_record.status = PAID, simpan callback_payload
+     // LOCK & DOUBLE-CHECK (mencegah concurrent webhook race condition)
+     $lockedRecord = $gatewayRecord->lockForUpdate()->find($gatewayRecord->id);
+     if ($lockedRecord->status == 'PAID') { return; } // stop, sudah diproses
+
+     $lockedRecord->status = 'PAID', simpan callback_payload
      pembayaran.status = lunas, diverifikasi_pada = now()
      PaymentAllocationService::allocate(pembayaran)
    } // commit
