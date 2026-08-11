@@ -42,7 +42,7 @@ it('resolves setting with fallback from lembaga to global', function () {
 it('triggers auto allocation on topup when auto debit is enabled', function () {
     $lembaga = Lembaga::factory()->create();
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
-    $wallet = Wallet::create(['siswa_id' => $siswa->id]);
+    $wallet = $siswa->wallet;
 
     SystemSetting::create([
         'lembaga_id' => $lembaga->id,
@@ -74,7 +74,7 @@ it('triggers auto allocation on topup when auto debit is enabled', function () {
 it('does not trigger auto allocation when auto debit is disabled', function () {
     $lembaga = Lembaga::factory()->create();
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
-    $wallet = Wallet::create(['siswa_id' => $siswa->id]);
+    $wallet = $siswa->wallet;
 
     SystemSetting::create([
         'lembaga_id' => $lembaga->id,

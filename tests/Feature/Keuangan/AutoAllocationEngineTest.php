@@ -12,7 +12,8 @@ uses(RefreshDatabase::class);
 
 it('allocates wallet balance to tagihan fully when balance is sufficient', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id, 'balance' => 500000]);
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 500000]);
 
     $jenis1 = JenisTagihan::factory()->create(['priority_score' => 1]);
     $jenis2 = JenisTagihan::factory()->create(['priority_score' => 2]);
@@ -60,7 +61,8 @@ it('allocates wallet balance to tagihan fully when balance is sufficient', funct
 
 it('allocates wallet balance partially top-down', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id, 'balance' => 300000]);
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 300000]);
 
     $jenis1 = JenisTagihan::factory()->create(['priority_score' => 1]);
     $jenis2 = JenisTagihan::factory()->create(['priority_score' => 2]);
@@ -121,7 +123,8 @@ it('allocates wallet balance partially top-down', function () {
 
 it('resolves tie-breaker by jatuh_tempo', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id, 'balance' => 100000]);
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 100000]);
 
     $jenis = JenisTagihan::factory()->create(['priority_score' => 5]);
 
@@ -163,7 +166,8 @@ it('resolves tie-breaker by jatuh_tempo', function () {
 
 it('does not allocate to dibatalkan tagihan', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id, 'balance' => 100000]);
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 100000]);
 
     $jenis = JenisTagihan::factory()->create(['priority_score' => 1]);
 

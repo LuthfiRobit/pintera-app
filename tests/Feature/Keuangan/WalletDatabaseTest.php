@@ -26,8 +26,8 @@ it('can create a system setting and resolve relationships', function () {
 it('can create a wallet and access relations', function () {
     $siswa = Siswa::factory()->create();
     
-    $wallet = Wallet::create([
-        'siswa_id' => $siswa->id,
+    $wallet = $siswa->wallet;
+    $wallet->update([
         'balance' => 100000,
         'va_number' => 'VA-123456',
     ]);
@@ -39,7 +39,8 @@ it('can create a wallet and access relations', function () {
 
 it('can create wallet mutasi', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id, 'balance' => 100000]);
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 100000]);
     
     $mutasi = WalletMutasi::create([
         'wallet_id' => $wallet->id,

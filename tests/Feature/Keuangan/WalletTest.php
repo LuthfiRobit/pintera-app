@@ -10,7 +10,7 @@ uses(RefreshDatabase::class);
 
 it('can topup wallet and create mutasi', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id]);
+    $wallet = $siswa->wallet;
 
     $wallet->topup(50000);
 
@@ -28,7 +28,8 @@ it('can topup wallet and create mutasi', function () {
 
 it('can debit wallet and create mutasi', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id, 'balance' => 100000, 'total_topup' => 100000]);
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 100000, 'total_topup' => 100000]);
 
     $wallet->debit(30000);
 
@@ -46,7 +47,8 @@ it('can debit wallet and create mutasi', function () {
 
 it('throws InsufficientBalanceException when debit amount exceeds balance and asserts rollback', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id, 'balance' => 20000]);
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 20000]);
 
     $initialMutasiCount = $wallet->mutasi()->count();
 
@@ -64,7 +66,8 @@ it('throws InsufficientBalanceException when debit amount exceeds balance and as
 
 it('maintains consistency between balance and mutasi history', function () {
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id]);
+    // Wallet is auto-created by CreateWalletForNewStudent listener
+    $wallet = $siswa->wallet;
 
     $wallet->topup(100000);
     $wallet->debit(20000);
@@ -88,7 +91,7 @@ it('uses lockForUpdate when querying wallet in topup and debit', function () {
     DB::enableQueryLog();
 
     $siswa = Siswa::factory()->create();
-    $wallet = Wallet::create(['siswa_id' => $siswa->id]);
+    $wallet = $siswa->wallet;
     
     $wallet->topup(10000);
     $wallet->debit(5000);
