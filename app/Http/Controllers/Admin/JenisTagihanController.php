@@ -9,6 +9,8 @@ use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\NominalTagihanJalur;
 use App\Models\TahunAjaran;
+use App\Services\JenisTagihanSasaranMatcher;
+use App\Services\TagihanBillingGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -192,6 +194,40 @@ class JenisTagihanController extends BaseController
         }
 
         return redirect()->route('admin.jenis-tagihan.index')->with('status', 'Jenis tagihan berhasil dihapus.');
+    }
+
+    public function prosesTagihan(JenisTagihan $jenisTagihan, JenisTagihanSasaranMatcher $matcher, TagihanBillingGenerator $generator): JsonResponse
+    {
+        $this->authorize('jenis-tagihan.edit');
+
+        if (in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
+            return response()->json([
+                'message' => "Jenis tagihan berkategori {$jenisTagihan->kategori} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB.",
+            ], 422);
+        }
+
+        $totalPool = $matcher->countTotalSiswaPool($jenisTagihan);
+        $targetCount = $matcher->resolveTargetSiswa($jenisTagihan)->count();
+
+        $log = $generator->generate($jenisTagihan, 'manual');
+
+        $gagal = count($log->error_log ?? []);
+        $tidakMemenuhiKriteria = $totalPool - $targetCount;
+        $sudahTertagih = $targetCount - $log->bills_generated - $gagal;
+
+        return response()->json([
+            'message' => "{$log->bills_generated} tagihan dibuat, {$sudahTertagih} sudah tertagih, {$tidakMemenuhiKriteria} tidak memenuhi kriteria, {$gagal} gagal.",
+            'bills_generated' => $log->bills_generated,
+            'sudah_tertagih' => $sudahTertagih,
+            'tidak_memenuhi_kriteria' => $tidakMemenuhiKriteria,
+            'gagal' => $gagal,
+            'status_text' => match ($log->status) {
+                'success' => 'Berhasil',
+                'partial' => 'Selesai Parsial',
+                'failed' => 'Gagal Total',
+                default => 'Selesai',
+            },
+        ]);
     }
 
     public function nominal(JenisTagihan $jenisTagihan): View|RedirectResponse
