@@ -130,3 +130,19 @@ it('siswaMatchesJenisTagihan is true for an empty sasaran and false for a non-ma
     expect($matcher->siswaMatchesJenisTagihan($siswaSendiri, $jenisTagihan))->toBeTrue();
     expect($matcher->siswaMatchesJenisTagihan($siswaLain, $jenisTagihan))->toBeFalse();
 });
+
+it('countTotalSiswaPool counts every siswa in the lembaga regardless of any sasaran kriteria', function () {
+    $lembaga = Lembaga::factory()->create();
+    $lembagaLain = Lembaga::factory()->create();
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $grup = JenisTagihanSasaranGrup::create(['jenis_tagihan_id' => $jenisTagihan->id, 'tipe' => 'sasaran']);
+    JenisTagihanSasaranKriteria::create(['jenis_tagihan_sasaran_grup_id' => $grup->id, 'field' => 'jenis_kelamin', 'operator' => 'in', 'value' => ['L']]);
+
+    Siswa::factory()->count(3)->create(['lembaga_id' => $lembaga->id, 'jenis_kelamin' => 'L']);
+    Siswa::factory()->count(2)->create(['lembaga_id' => $lembaga->id, 'jenis_kelamin' => 'P']);
+    Siswa::factory()->create(['lembaga_id' => $lembagaLain->id, 'jenis_kelamin' => 'L']);
+
+    $total = (new JenisTagihanSasaranMatcher())->countTotalSiswaPool($jenisTagihan);
+
+    expect($total)->toBe(5); // 3 L + 2 P di lembaga yang sama, kriteria diabaikan; siswa lembaga lain tidak dihitung
+});

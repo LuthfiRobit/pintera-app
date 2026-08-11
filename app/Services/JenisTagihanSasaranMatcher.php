@@ -39,6 +39,13 @@ class JenisTagihanSasaranMatcher
         return $query->get();
     }
 
+    public function countTotalSiswaPool(JenisTagihan $jenisTagihan): int
+    {
+        return Siswa::withoutGlobalScope(TenantScope::class)
+            ->where('lembaga_id', $jenisTagihan->lembaga_id)
+            ->count();
+    }
+
     public function siswaMatchesGrup(Siswa $siswa, JenisTagihanSasaranGrup $grup): bool
     {
         foreach ($grup->kriteria as $kriteria) {
