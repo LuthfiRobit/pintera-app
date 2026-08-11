@@ -28,12 +28,54 @@ class JenisTagihanController extends BaseController
 
     private const KRITERIA_FIELDS = ['lembaga', 'tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'];
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('jenis-tagihan.view');
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
+
+        $query = JenisTagihan::withCount(['nominalJalur', 'tagihanItem'])->orderBy('nama');
+
+        if ($search = $request->input('search')) {
+            $query->where('nama', 'like', '%' . $search . '%');
+        }
+
+        if ($kategori = $request->input('kategori')) {
+            $query->where('kategori', $kategori);
+        }
+
+        if ($request->has('status') && $request->input('status') !== '') {
+            $query->where('is_active', $request->input('status'));
+        }
+
+        $paginated = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.jenis-tagihan._daftar', [
+                'jenisTagihanList' => $paginated,
+                'perPage'          => $perPage,
+            ]);
+        }
+
         return view('admin.jenis-tagihan.index', [
-            'jenisTagihanList' => JenisTagihan::withCount(['nominalJalur', 'tagihanItem'])->orderBy('nama')->get(),
+            'jenisTagihanList' => $paginated,
+            'perPage'          => $perPage,
+            'totalJenis'       => JenisTagihan::count(),
+            'totalAktif'       => JenisTagihan::where('is_active', true)->count(),
+            'totalDipakai'     => JenisTagihan::has('tagihanItem')->count(),
+            'kategoriList'     => [
+                'pendaftaran'  => 'Pendaftaran',
+                'daftar_ulang' => 'Daftar Ulang',
+                'spp'          => 'SPP',
+                'tahunan'      => 'Tahunan',
+                'kegiatan'     => 'Kegiatan',
+                'lainnya'      => 'Lainnya',
+                'custom'       => 'Custom',
+            ],
+            'statusList'       => [
+                '1' => 'Aktif',
+                '0' => 'Tidak Aktif',
+            ],
         ]);
     }
 

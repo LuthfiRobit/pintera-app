@@ -19,30 +19,25 @@
             </p>
         </div>
 
+        {{-- Interactive Filter & AJAX Table Container --}}
         <div
+            class="space-y-4"
             x-data="{
+                ...dataTableFilter({
+                    search: @js(request('search', '')),
+                    kategori: @js(request('kategori', '')),
+                    status: @js(request('status', '')),
+                    perPage: @js($perPage ?? 20),
+                    indexUrlBase: @js(route('admin.jenis-tagihan.index')),
+                }),
                 ...jenisTagihanTable({
-                    initialItems: @js($jenisTagihanList),
                     deleteUrlTemplate: @js(route('admin.jenis-tagihan.destroy', ['jenisTagihan' => '__ID__'])),
                     nominalUrlTemplate: @js(route('admin.jenis-tagihan.nominal', ['jenisTagihan' => '__ID__'])),
                     editUrlTemplate: @js(route('admin.jenis-tagihan.edit', ['jenisTagihan' => '__ID__'])),
                     prosesUrlTemplate: @js(route('admin.jenis-tagihan.proses', ['jenisTagihan' => '__ID__'])),
                     monitoringUrlTemplate: @js(route('admin.jenis-tagihan.monitoring.index', ['jenisTagihan' => '__ID__'])),
-                }),
-                search: '',
-                get filteredItems() {
-                    if (this.search === '') return this.items;
-                    const q = this.search.toLowerCase();
-                    return this.items.filter(i => i.nama.toLowerCase().includes(q) || i.kategori.toLowerCase().includes(q));
-                },
-                get totalAktif() {
-                    return this.items.filter(i => i.is_active).length;
-                },
-                get totalDipakai() {
-                    return this.items.filter(i => i.tagihan_item_count > 0).length;
-                }
+                })
             }"
-            class="space-y-4"
         >
             {{-- KPI Compact Horizontal Statistic Cards --}}
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -53,7 +48,7 @@
                         </span>
                         <div>
                             <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Jenis</p>
-                            <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="items.length"></p>
+                            <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalJenis ?? 0 }}</p>
                         </div>
                     </div>
                     <span class="text-[11px] font-medium text-gray-400">Semua Data</span>
@@ -66,7 +61,7 @@
                         </span>
                         <div>
                             <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Status Aktif</p>
-                            <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="totalAktif"></p>
+                            <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalAktif ?? 0 }}</p>
                         </div>
                     </div>
                     <span class="text-[11px] font-medium text-gray-400">Siap Diproses</span>
@@ -79,7 +74,7 @@
                         </span>
                         <div>
                             <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-brand-600">Terpakai</p>
-                            <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="totalDipakai"></p>
+                            <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalDipakai ?? 0 }}</p>
                         </div>
                     </div>
                     <span class="text-[11px] font-medium text-gray-400">Didaftarkan</span>
@@ -108,20 +103,41 @@
                             <x-icon name="search" class="h-[14px] w-[14px] shrink-0 text-gray-400" />
                             <input
                                 type="text"
-                                x-model="search"
+                                x-model="filters.search"
+                                @input.debounce.400ms="muatUlangDaftar()"
                                 placeholder="Nama tagihan..."
                                 class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
                             >
                         </div>
                     </div>
+
+                    {{-- Filter Kategori --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Kategori Tagihan</label>
+                        <select x-ref="kategoriSelect" x-init="initFilterSelect($refs.kategoriSelect, 'kategori')" class="w-full rounded-lg border-gray-200 text-sm text-gray-700">
+                            <option value="">Semua Kategori</option>
+                            @foreach ($kategoriList as $val => $label)
+                                <option value="{{ $val }}" @selected(request('kategori') === $val)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Filter Status --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Status Keaktifan</label>
+                        <select x-ref="statusSelect" x-init="initFilterSelect($refs.statusSelect, 'status')" class="w-full rounded-lg border-gray-200 text-sm text-gray-700">
+                            <option value="">Semua Status</option>
+                            @foreach ($statusList as $val => $label)
+                                <option value="{{ $val }}" @selected(request('status') === $val)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
 
             {{-- Table Wrapper --}}
-            <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
-                <div id="table-container">
-                    @include('admin.jenis-tagihan._daftar')
-                </div>
+            <div x-ref="tableContainer" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
+                @include('admin.jenis-tagihan._daftar')
             </div>
         </div>
     </div>
