@@ -124,3 +124,32 @@ it('does not abort the batch when one siswa throws — other siswa still get bil
     expect(Tagihan::where('tagihable_id', $siswaBerhasil->id)->exists())->toBeTrue();
     expect(Tagihan::where('tagihable_id', $siswaGagal->id)->exists())->toBeFalse();
 });
+
+it('rejects generate() for a pendaftaran-kategori jenis_tagihan without creating anything', function () {
+    // Siswa is created before the PPDB-kategori JenisTagihan exists so the sync
+    // StudentCreated -> GenerateTagihanForNewStudent listener (guarded in a later
+    // task, not this one) finds nothing to act on and doesn't itself trip this
+    // guard during Arrange — the only trigger under test is the manual generate() call below.
+    $lembaga = \App\Models\Lembaga::factory()->create();
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'kategori' => 'pendaftaran', 'default_amount' => 200000]);
+
+    expect(fn () => buatGenerator()->generate($jenisTagihan, 'manual'))->toThrow(\RuntimeException::class);
+
+    expect(Tagihan::count())->toBe(0);
+    expect(\App\Models\BillingJobLog::count())->toBe(0);
+});
+
+it('rejects generateForSiswaViaEvent() for a daftar_ulang-kategori jenis_tagihan without creating anything', function () {
+    // Same ordering rationale as above: Siswa exists before the PPDB-kategori
+    // JenisTagihan is created, so the sync StudentCreated listener has nothing to
+    // match and the guard is only exercised by the explicit call below.
+    $lembaga = \App\Models\Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'kategori' => 'daftar_ulang', 'default_amount' => 200000]);
+
+    expect(fn () => buatGenerator()->generateForSiswaViaEvent($siswa, $jenisTagihan, 'StudentCreated'))->toThrow(\RuntimeException::class);
+
+    expect(Tagihan::count())->toBe(0);
+    expect(\App\Models\BillingJobLog::count())->toBe(0);
+});

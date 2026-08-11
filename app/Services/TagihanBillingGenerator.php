@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 
 class TagihanBillingGenerator
 {
+    private const PPDB_KATEGORI = ['pendaftaran', 'daftar_ulang'];
+
     public function __construct(
         private readonly JenisTagihanSasaranMatcher $matcher,
         private readonly TagihanNominalResolver $nominalResolver,
@@ -20,6 +22,8 @@ class TagihanBillingGenerator
 
     public function generate(JenisTagihan $jenisTagihan, string $triggerType, ?string $triggerEvent = null): BillingJobLog
     {
+        $this->assertBillable($jenisTagihan);
+
         $targetSiswa = $this->matcher->resolveTargetSiswa($jenisTagihan);
 
         $billsGenerated = 0;
@@ -78,6 +82,8 @@ class TagihanBillingGenerator
 
     public function generateForSiswaViaEvent(Siswa $siswa, JenisTagihan $jenisTagihan, string $triggerEvent): BillingJobLog
     {
+        $this->assertBillable($jenisTagihan);
+
         $billsGenerated = 0;
         $errors = [];
 
@@ -90,6 +96,15 @@ class TagihanBillingGenerator
         }
 
         return $this->logResult($jenisTagihan, 'event', $triggerEvent, $billsGenerated, $errors);
+    }
+
+    private function assertBillable(JenisTagihan $jenisTagihan): void
+    {
+        if (in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
+            throw new \RuntimeException(
+                "Jenis tagihan berkategori {$jenisTagihan->kategori} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB."
+            );
+        }
     }
 
     private function resolveDueDate(JenisTagihan $jenisTagihan, ?string $billingPeriod): ?string
