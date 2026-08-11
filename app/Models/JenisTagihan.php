@@ -66,4 +66,13 @@ class JenisTagihan extends Model
     {
         return $this->hasMany(JenisTagihanKeringanan::class);
     }
+
+    protected static function booted(): void
+    {
+        static::updated(function (JenisTagihan $jenisTagihan) {
+            if ($jenisTagihan->wasChanged('is_active') && $jenisTagihan->is_active) {
+                event(new \App\Events\BillTypeActivated($jenisTagihan));
+            }
+        });
+    }
 }
