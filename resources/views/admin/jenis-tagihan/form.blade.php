@@ -22,7 +22,18 @@
             action="{{ $jenisTagihan === null ? route('admin.jenis-tagihan.store') : route('admin.jenis-tagihan.update', $jenisTagihan) }}"
             x-data="jenisTagihanForm({
                 kategoriAwal: @js(old('kategori', $jenisTagihan?->kategori ?? 'lainnya')),
+                modeAwal: @js(old('mode', $jenisTagihan?->mode ?? 'manual')),
+                bisaDicicilAwal: @js((bool) old('bisa_dicicil', $jenisTagihan?->bisa_dicicil ?? false)),
                 kategoriKeringananList: @js($kategoriKeringananList),
+                referenceOptions: {
+                    lembaga: @js($lembagaList->map(fn ($l) => ['value' => $l->id, 'label' => $l->nama])),
+                    tahun_ajaran: @js($tahunAjaranList->map(fn ($t) => ['value' => $t->id, 'label' => $t->nama])),
+                    tingkat: @js($tingkatList->map(fn ($t) => ['value' => $t, 'label' => $t])),
+                    kelas: @js($kelasList->map(fn ($k) => ['value' => $k->id, 'label' => $k->nama])),
+                },
+                initialSasaran: @js(old('sasaran', $jenisTagihan?->sasaranGrup->where('tipe', 'sasaran')->map(fn ($g) => ['nominal' => null, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),
+                initialTarif: @js(old('tarif', $jenisTagihan?->sasaranGrup->where('tipe', 'tarif')->map(fn ($g) => ['nominal' => $g->nominal, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),
+                initialKeringanan: @js(old('keringanan', [])),
             })"
             class="space-y-5"
         >
@@ -104,7 +115,73 @@
                 </div>
             </div>
 
-            <!-- Task 4: Section 2 (Target Sasaran) + Section 3 (Tarif Berdimensi) go here -->
+            <div x-show="!kategoriPpdb" x-cloak class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
+                <p class="font-display text-sm font-bold text-gray-900">2. Target Sasaran</p>
+                <div class="flex items-center gap-4 text-sm">
+                    <label class="flex items-center gap-2"><input type="radio" value="semua" x-model="sasaranMode"> Semua Siswa</label>
+                    <label class="flex items-center gap-2"><input type="radio" value="kriteria" x-model="sasaranMode"> Berdasarkan Kriteria</label>
+                </div>
+
+                <template x-if="sasaranMode === 'kriteria'">
+                    <div class="space-y-3">
+                        <template x-for="(grup, gi) in form.sasaran" :key="grup.uid">
+                            <div class="rounded-xl border border-gray-200 p-4 space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-xs font-semibold uppercase text-gray-500" x-text="'Sasaran #' + (gi + 1)"></p>
+                                    <button type="button" class="text-xs font-semibold text-error-600" @click="form.sasaran.splice(gi, 1)">Hapus</button>
+                                </div>
+                                <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
+                                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-4">
+                                        <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" class="rounded-lg border-gray-200 text-sm">
+                                            <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
+                                        </select>
+                                        <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm">
+                                            <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
+                                            <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
+                                        </select>
+                                        <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1">
+                                            <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label"></option></template>
+                                        </select>
+                                        <button type="button" class="text-xs font-semibold text-error-600" @click="grup.kriteria.splice(ki, 1)">Hapus Kriteria</button>
+                                    </div>
+                                </template>
+                                <button type="button" class="text-xs font-semibold text-brand-600" @click="grup.kriteria.push(newKriteria())">+ Tambah Kriteria</button>
+                            </div>
+                        </template>
+                        <button type="button" class="text-sm font-semibold text-brand-600" @click="form.sasaran.push(newGrup())">+ Tambah Sasaran</button>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="!kategoriPpdb" x-cloak class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
+                <p class="font-display text-sm font-bold text-gray-900">3. Tarif Berdimensi <span class="font-normal text-gray-400">(opsional)</span></p>
+                <template x-for="(grup, gi) in form.tarif" :key="grup.uid">
+                    <div class="rounded-xl border border-gray-200 p-4 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="text-xs font-semibold uppercase text-gray-500" x-text="'Tarif #' + (gi + 1)"></p>
+                            <input type="number" step="0.01" min="0" :name="'tarif[' + gi + '][nominal]'" x-model="grup.nominal" placeholder="Nominal" class="w-40 rounded-lg border-gray-200 text-sm">
+                            <button type="button" class="text-xs font-semibold text-error-600" @click="form.tarif.splice(gi, 1)">Hapus</button>
+                        </div>
+                        <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
+                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-4">
+                                <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" class="rounded-lg border-gray-200 text-sm">
+                                    <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
+                                </select>
+                                <select :name="'tarif[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm">
+                                    <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
+                                    <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
+                                </select>
+                                <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-model="kriteria.value" class="rounded-lg border-gray-200 text-sm sm:col-span-1">
+                                    <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label"></option></template>
+                                </select>
+                                <button type="button" class="text-xs font-semibold text-error-600" @click="grup.kriteria.splice(ki, 1)">Hapus Kriteria</button>
+                            </div>
+                        </template>
+                        <button type="button" class="text-xs font-semibold text-brand-600" @click="grup.kriteria.push(newKriteria())">+ Tambah Kriteria</button>
+                    </div>
+                </template>
+                <button type="button" class="text-sm font-semibold text-brand-600" @click="form.tarif.push(newGrup())">+ Tambah Tarif</button>
+            </div>
 
             <!-- Task 5: Section 4 (Keringanan) goes here -->
 
@@ -117,15 +194,38 @@
 
     <script>
         function jenisTagihanForm(config) {
+            let uidCounter = 0;
+            const nextUid = () => ++uidCounter;
+
             return {
+                kriteriaFields: ['lembaga', 'tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'],
+                referenceOptions: config.referenceOptions,
+                sasaranMode: config.initialSasaran.length > 0 ? 'kriteria' : 'semua',
                 form: {
                     kategori: config.kategoriAwal,
-                    mode: @js(old('mode', $jenisTagihan?->mode ?? 'manual')),
-                    bisaDicicil: @js((bool) old('bisa_dicicil', $jenisTagihan?->bisa_dicicil ?? false)),
+                    mode: config.modeAwal,
+                    bisaDicicil: config.bisaDicicilAwal,
+                    sasaran: config.initialSasaran.map((g) => this.hydrateGrup(g)),
+                    tarif: config.initialTarif.map((g) => this.hydrateGrup(g)),
+                    keringanan: config.initialKeringanan.map((k) => ({ uid: nextUid(), ...k })),
                 },
                 kategoriKeringananOptions: config.kategoriKeringananList,
                 get kategoriPpdb() {
                     return ['pendaftaran', 'daftar_ulang'].includes(this.form.kategori);
+                },
+                hydrateGrup(grup) {
+                    return { uid: nextUid(), nominal: grup.nominal ?? '', kriteria: grup.kriteria.map((k) => ({ uid: nextUid(), ...k })) };
+                },
+                newKriteria() {
+                    return { uid: nextUid(), field: 'status_siswa', operator: 'in', value: [] };
+                },
+                newGrup() {
+                    return { uid: nextUid(), nominal: '', kriteria: [this.newKriteria()] };
+                },
+                optionsFor(field) {
+                    if (field === 'jenis_kelamin') return [{ value: 'L', label: 'Laki-laki' }, { value: 'P', label: 'Perempuan' }];
+                    if (field === 'status_siswa') return [{ value: 'aktif', label: 'Aktif' }, { value: 'lulus', label: 'Lulus' }, { value: 'pindah', label: 'Pindah' }, { value: 'keluar', label: 'Keluar' }];
+                    return this.referenceOptions[field] ?? [];
                 },
             };
         }
