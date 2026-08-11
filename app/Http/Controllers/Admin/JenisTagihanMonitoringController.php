@@ -36,10 +36,19 @@ class JenisTagihanMonitoringController extends BaseController
             ->where('status', '!=', 'dibatalkan')
             ->paginate(15, ['*'], 'penerima_page');
 
+        $tagihanTunggakan = Tagihan::with('tagihable')
+            ->where('jenis_tagihan_id', $jenisTagihan->id)
+            ->whereIn('status', ['belum_bayar', 'sebagian'])
+            ->selectRaw('MAX(id) as id, tagihable_type, tagihable_id, SUM(net_amount - paid_amount) as total_tunggakan, COUNT(*) as jumlah_tunggakan')
+            ->groupBy('tagihable_type', 'tagihable_id')
+            ->orderByDesc('total_tunggakan')
+            ->paginate(15, ['*'], 'tunggakan_page');
+
         return view('admin.jenis-tagihan.monitoring.index', [
             'jenisTagihan' => $jenisTagihan,
             'ringkasan' => $ringkasan,
             'tagihanPenerima' => $tagihanPenerima,
+            'tagihanTunggakan' => $tagihanTunggakan,
         ]);
     }
 

@@ -156,3 +156,49 @@ it('lists daftar penerima correctly with pagination', function () {
     expect($tagihanPenerima->count())->toBe(1);
     expect($tagihanPenerima->first()->tagihable->id)->toBe($siswa->id);
 });
+
+it('lists daftar tunggakan correctly with pagination', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+    
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    
+    Tagihan::query()->delete();
+
+    // 2 belum_bayar items for the same student
+    Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id,
+        'tagihable_type' => Siswa::class,
+        'tagihable_id' => $siswa->id,
+        'status' => 'belum_bayar',
+        'net_amount' => 100000,
+        'paid_amount' => 0,
+    ]);
+
+    Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id,
+        'tagihable_type' => Siswa::class,
+        'tagihable_id' => $siswa->id,
+        'status' => 'sebagian',
+        'net_amount' => 150000,
+        'paid_amount' => 50000, // sisa 100000
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('admin.jenis-tagihan.monitoring.index', $jenisTagihan));
+
+    $response->assertOk();
+    $response->assertViewHas('tagihanTunggakan');
+    
+    $tagihanTunggakan = $response->viewData('tagihanTunggakan');
+    expect($tagihanTunggakan->count())->toBe(1); // Grouped by siswa
+    
+    $firstTunggakan = $tagihanTunggakan->first();
+    expect($firstTunggakan->tagihable->id)->toBe($siswa->id);
+    expect((float) $firstTunggakan->total_tunggakan)->toBe(200000.0);
+    expect($firstTunggakan->jumlah_tunggakan)->toBe(2);
+});

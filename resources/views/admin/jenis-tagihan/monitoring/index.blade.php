@@ -121,10 +121,46 @@
 
             <div x-show="activeTab === 'tunggakan'" class="mt-5" style="display: none;">
                 <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
-                    <div class="border-b border-gray-200 px-5 py-4">
+                    <div class="border-b border-gray-200 px-5 py-4 flex items-center justify-between">
                         <p class="font-display text-sm font-bold text-gray-900">Daftar Tunggakan</p>
                     </div>
-                    <div class="p-5 text-sm text-gray-500">Tabel Tunggakan (Task 5)</div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                                    <th class="px-5 py-3">Siswa</th>
+                                    <th class="px-5 py-3 text-center">Jumlah Tagihan</th>
+                                    <th class="px-5 py-3 text-right">Total Tunggakan</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                @forelse ($tagihanTunggakan as $tunggakan)
+                                    <tr class="transition hover:bg-gray-50">
+                                        <td class="px-5 py-3.5">
+                                            <p class="font-semibold text-gray-900">{{ $tunggakan->tagihable->nama_lengkap ?? $tunggakan->tagihable->nama ?? 'Unknown' }}</p>
+                                        </td>
+                                        <td class="px-5 py-3.5 text-center text-gray-600">
+                                            {{ $tunggakan->jumlah_tunggakan }}
+                                        </td>
+                                        <td class="px-5 py-3.5 text-right font-bold text-error-600">
+                                            Rp{{ number_format($tunggakan->total_tunggakan, 0, ',', '.') }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="px-5 py-8 text-center text-gray-500">
+                                            Tidak ada data tunggakan.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    @if ($tagihanTunggakan->hasPages())
+                        <div class="border-t border-gray-200 px-5 py-4">
+                            {{ $tagihanTunggakan->appends(['penerima_page' => request('penerima_page')])->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
