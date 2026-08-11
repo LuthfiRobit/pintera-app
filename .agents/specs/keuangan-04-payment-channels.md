@@ -1,150 +1,195 @@
-# Spec: Keuangan 04 — Payment Channels
+ï»¿# Spec: Keuangan 04 â€” Payment Channels
 
-> Status: Disetujui — siap ke Implementation Plan (dieksekusi setelah Sub-project 3 selesai & diverifikasi).
+**Tanggal:** 2026-08-11
+**Status:** Final (post-grill-me review)
+**Referensi:** Sub-project 01 (skema dasar), Sub-project 03 (Wallet::topup/debit, konvensi transaction)
 
-## Konteks & Dependensi
+## Konteks dan Dependensi
 
-Bergantung pada:
-- **Sub-project 1**: skema `pembayaran` yang telah diperluas (`metode` enum mencakup `transfer_manual`, `va_bri`, `cash`, `qris`, `wallet_auto`, `wallet_saldo`; `sumber` enum mencakup `calon_siswa`, `admin`, `orang_tua`; `wallet_id`, `is_auto_allocation`, `channel_reference`, `identifier_method`), serta tabel pivot `pembayaran_tagihan`.
-- **Sub-project 2 (2a, 2b-1, 2b-2, 2b-3)**: tagihan dengan kategori PPDB maupun non-PPDB (`spp`, `tahunan`, `kegiatan`, `lainnya`, `custom`).
-- **Sub-project 3**: model `Wallet`, `wallet_mutasi`, dan method `Wallet::topup()` / `debit()`.
+- **Sub-project 1**: skema dasar pembayaran, tagihan, siswa.
+- **Sub-project 2 (2a, 2b-1/2/3)**: tagihan PPDB dan non-PPDB; status dibatalkan pada tagihan.
+- **Sub-project 3**: model Wallet, wallet_mutasi, Wallet::topup() / debit() / debitWithinTransaction().
 
-Sub-project ini mengisi jalur pembayaran nyata: BRI Virtual Account (VA), QRIS Dinamis, transfer bank manual dengan persetujuan admin, dan pembayaran tunai di loket. Desain menggunakan abstraksi gateway (`PaymentGatewayInterface`) sehingga sub-project dapat diuji dan didemonstrasikan penuh menggunakan `MockPaymentGateway` sebelum kredensial sandbox BRI asli tersedia.
+WAJIB DIBACA sebelum menyentuh Wallet: Lihat .agents/logs/keuangan-03-wallet-auto-allocation.md
+bagian Konvensi Wallet::debit() vs Wallet::debitWithinTransaction() â€” WAJIB DIBACA Agent Sub-project 04.
 
-## Tujuan Sub-project 4
+## Tujuan Sub-project 04
 
-Orang tua dapat melunasi tagihan atau melakukan top-up wallet melalui:
-1. **Virtual Account BRI (VA)** — nomor VA ter-generate otomatis dengan batas waktu kadaluarsa (atau VA permanen untuk wallet).
-2. **QRIS Dinamis** — QR code ter-generate on-demand dengan nominal dinamis.
-3. **Transfer Manual** — upload bukti transfer untuk diverifikasi oleh admin.
-4. **Tunai (Cash di Loket)** — input langsung oleh admin kasir di loket sekolah.
+Membangun backend service layer (tidak ada UI baru) untuk:
+1. Virtual Account BRI (VA) â€” dua tipe: BILL_DIRECT (tagihan) dan WALLET_PERMANENT (top-up wallet).
+2. QRIS Dinamis â€” hanya DIRECT (bayar tagihan). QRIS untuk top-up wallet TIDAK dalam scope ini.
+3. Transfer Manual â€” backend only: create record + alokasi saat diapprove admin.
+4. Tunai (Cash di Loket) â€” backend only: create pembayaran langsung lunas + alokasi.
 
-Status pembayaran otomatis terverifikasi secara real-time melalui webhook callback dan didukung fallback polling terjadwal.
+Tidak termasuk scope: UI Parent Portal (Sub-project 06), UI Admin Kasir.
+
+## Keputusan Arsitektural (hasil grill-me 2026-08-11)
+
+- VA Permanen lifecycle: Satu per siswa, seumur hidup. expired_at=NULL, status=PERMANENT selamanya.
+- QRIS scope: Hanya DIRECT. Top-up wallet via VA Permanen atau Transfer Manual.
+- Webhook atomicity: Step 1-3 dalam outer DB::transaction(). topup() dipanggil SETELAH commit.
+- Webhook retry: Tidak ada retry internal. Return 401 jika signature gagal.
+- Idempotency: Cek pembayaran.status == lunas atau bri_record.status == PAID sebelum alokasi.
+- Double payment guard: Boleh buat VA/QRIS baru selama tagihan belum lunas.
+- BriSnapGateway: Hanya stub (throw NotImplementedException).
+- MockPaymentGateway: Full implementation + /dev/simulate-payment/{reference}.
+- Service layer: PaymentService (orchestrate) + PaymentAllocationService (alokasi).
+- Gateway reference: Pakai pembayaran.channel_reference yang sudah ada.
+- Tambah kolom siswa_id di pembayaran (nullable FK).
+- Extend enum pembayaran.status: tambah menunggu_pembayaran (pertahankan nilai lama).
 
 ## Abstraksi Payment Gateway
 
-```php
-interface PaymentGatewayInterface
-{
-    public function createVirtualAccount(array $params): VirtualAccountResult; // amount nullable untuk WALLET_PERMANENT
-    public function createQris(array $params): QrisResult;
-    public function checkStatus(string $reference): PaymentStatusResult;
-    public function verifyCallbackSignature(Request $request): bool;
-}
-```
+Interface: app/Contracts/PaymentGatewayInterface.php
 
-- **`BriSnapGateway`**: Implementasi protokol BRI SNAP API (`virtual-account-snap`, `payment-transfer-va-snap`, `transaction-status-snap`, `qris-mpm-dinamis`). Kredensial (`client_id`, private key, partner ID) dibaca dari `config('services.bri')` / `.env`.
-- **`MockPaymentGateway`**: Simulator lokal untuk environment `local` dan `testing`. Menghasilkan VA number dan QR string dummy yang konsisten, menyediakan endpoint dev `POST /dev/simulate-payment/{reference}` untuk simulasi pelunasan instan, dan `verifyCallbackSignature` selalu bernilai `true`.
-- **Binding**: Diatur via `config('services.bri.gateway')` (`mock` sebagai default | `bri_snap`).
+Methods:
+- createVirtualAccount(array params): VirtualAccountResult
+- createQris(array params): QrisResult
+- checkStatus(string reference): PaymentStatusResult
+- verifyCallbackSignature(Request request): bool
 
-## Perubahan Skema
+Value Objects (DTO):
+- VirtualAccountResult: va_number, expired_at, reference, gateway_raw_response
+- QrisResult: qr_code, expired_at, reference, gateway_raw_response
+- PaymentStatusResult: status (WAITING|PAID|EXPIRED), paid_at, amount
 
-### 1. Tabel Baru — `bri_virtual_accounts`
+Gateway implementations:
+- MockPaymentGateway: VA format MOCK-VA-{siswa_id}-{dechex(time())}, verifyCallbackSignature() always true.
+- BriSnapGateway: stub, throw RuntimeException('BriSnapGateway not implemented: awaiting credentials').
+- Binding: config('services.bri.gateway') = mock (default) | bri_snap. Daftarkan di AppServiceProvider.
 
-```
-bri_virtual_accounts
-+- id
-+- pembayaran_id       FK ? pembayaran, cascade delete
-+- wallet_id           FK ? wallets, NULLABLE (terisi untuk VA permanen top-up)
-+- va_type             ENUM('WALLET_PERMANENT', 'BILL_DIRECT')
-+- va_number           string
-+- amount              decimal(15,2) NULLABLE (NULL untuk WALLET_PERMANENT)
-+- expired_at          timestamp NULLABLE (NULL untuk WALLET_PERMANENT)
-+- status              ENUM('PERMANENT', 'WAITING', 'PAID', 'EXPIRED')
-+- callback_payload    json NULLABLE
-+- timestamps
-```
+## Perubahan Skema Database
 
-### 2. Tabel Baru — `bri_qris_payments`
+### Tabel bri_virtual_accounts (BARU)
+- id
+- pembayaran_id: FK -> pembayaran nullable cascade delete
+- wallet_id: FK -> wallets nullable (untuk WALLET_PERMANENT)
+- va_type: ENUM('WALLET_PERMANENT', 'BILL_DIRECT')
+- va_number: string unique
+- amount: decimal(15,2) nullable (NULL untuk WALLET_PERMANENT)
+- expired_at: timestamp nullable (NULL untuk WALLET_PERMANENT)
+- status: ENUM('PERMANENT', 'WAITING', 'PAID', 'EXPIRED')
+- callback_payload: json nullable
+- timestamps
+Index: va_number unique, (wallet_id, va_type)
 
-```
-bri_qris_payments
-+- id
-+- pembayaran_id       FK ? pembayaran, cascade delete
-+- qris_type           ENUM('TOPUP', 'DIRECT')
-+- amount              decimal(15,2)
-+- qr_code             text
-+- expired_at          timestamp
-+- status              ENUM('WAITING', 'PAID', 'EXPIRED')
-+- callback_payload    json NULLABLE
-+- timestamps
-```
+### Tabel bri_qris_payments (BARU)
+- id
+- pembayaran_id: FK -> pembayaran cascade delete
+- qris_type: ENUM('DIRECT') [TOPUP dihapus dari scope]
+- amount: decimal(15,2)
+- qr_code: text
+- expired_at: timestamp
+- status: ENUM('WAITING', 'PAID', 'EXPIRED')
+- callback_payload: json nullable
+- timestamps
+Index: (pembayaran_id, status)
 
-### 3. Tabel Baru — `manual_payment_requests`
+### Tabel manual_payment_requests (BARU)
+- id
+- pembayaran_id: FK -> pembayaran cascade delete
+- requested_by: FK -> users
+- amount: decimal(15,2)
+- transfer_proof_path: string
+- bank_origin: string nullable
+- transfer_date: date
+- status: ENUM('PENDING', 'APPROVED', 'REJECTED')
+- reviewed_by: FK -> users nullable
+- reviewed_at: timestamp nullable
+- rejection_reason: text nullable
+- timestamps
 
-```
-manual_payment_requests
-+- id
-+- pembayaran_id       FK ? pembayaran, cascade delete
-+- requested_by        FK ? users
-+- amount              decimal(15,2)
-+- transfer_proof_path string
-+- bank_origin         string NULLABLE
-+- transfer_date       date
-+- status              ENUM('PENDING', 'APPROVED', 'REJECTED')
-+- reviewed_by         FK ? users, NULLABLE
-+- reviewed_at         timestamp NULLABLE
-+- rejection_reason    text NULLABLE
-+- timestamps
-```
+### Migrasi pembayaran (MODIFIKASI)
+a) Tambah kolom siswa_id (nullable FK ke siswa, SET NULL on delete) setelah wallet_id.
+b) Extend enum status: tambah 'menunggu_pembayaran' tanpa hapus nilai existing.
+   Nilai existing: menunggu_verifikasi, lunas, ditolak.
 
-### 4. Modifikasi Tabel `pembayaran` — Penambahan Status
+## Service Layer
 
-Modifikasi enum `pembayaran.status`:
-```sql
-ALTER TABLE pembayaran MODIFY status ENUM('menunggu_pembayaran', 'menunggu_verifikasi', 'lunas', 'ditolak') NOT NULL;
-```
-- `menunggu_pembayaran`: VA atau QRIS telah diterbitkan, menunggu pembayaran dari pihak orang tua.
-- `menunggu_verifikasi`: Bukti transfer manual telah diunggah, menunggu persetujuan admin.
-- `lunas`: Dana telah diterima dan dialokasikan.
-- `ditolak`: Pembayaran transfer manual ditolak admin.
+### PaymentService (orchestrator)
+- createVaPayment(tagihanIds[], siswaId): Pembayaran
+- createQrisPayment(tagihanIds[], siswaId): Pembayaran
+- getOrCreatePermanentVa(siswaId): BriVirtualAccount (idempotent)
+- createManualPayment(data[], siswaId): Pembayaran
+- createCashPayment(tagihanIds[], amount, siswaId): Pembayaran (langsung lunas + alokasi)
 
-## Alur per Channel Pembayaran
+Guard: tagihan dengan status dibatalkan ditolak dari semua alur.
+expired_at: now() + min(va_expire_hours dari semua jenis_tagihan yang dipilih).
 
-### 1. BRI VA / QRIS (Single atau Multi-Tagihan)
-1. Orang tua memilih 1 atau lebih tagihan aktif (atau memilih top-up saldo wallet).
-2. Sistem membuat record `pembayaran` (`metode='va_bri'` atau `'qris'`, `status='menunggu_pembayaran'`, `sumber='orang_tua'`) dan record `pembayaran_tagihan` untuk setiap tagihan yang dipilih.
-3. Gateway dipanggil (`createVirtualAccount` atau `createQris`):
-   - Tagihan berstatus `dibatalkan` ditolak dari proses pembuatan pembayaran.
-   - `amount` = total nominal yang ditagihkan.
-   - `expired_at` = `now() + jenis_tagihan.va_expire_hours` (jika multi-jenis, ambil `va_expire_hours` terpendek).
-4. Hasil disimpan di `bri_virtual_accounts` atau `bri_qris_payments` dengan `status='WAITING'`.
+### PaymentAllocationService (alokasi)
+- allocate(Pembayaran): void
+  Membaca pembayaran_tagihan, update tagihan.paid_amount dan tagihan.status.
+  Tagihan dibatalkan dilewati.
 
-### 2. Webhook Callback (`POST /webhook/bri/payment-notification`)
-1. Verifikasi tanda tangan digital: `$gateway->verifyCallbackSignature($request)`. Jika gagal, return 401.
-2. Cari record `bri_virtual_accounts` / `bri_qris_payments` berdasarkan referensi.
-3. Update `status = 'PAID'`, simpan `callback_payload`.
-4. Update `pembayaran.status = 'lunas'`.
-5. Alokasikan pembayaran:
-   - Untuk setiap `pembayaran_tagihan`: update tagihan terkait `$tagihan->paid_amount += $amount_allocated`, set `$tagihan->status = ($tagihan->paid_amount >= $tagihan->net_amount) ? 'lunas' : 'sebagian'`. Tagihan berstatus `dibatalkan` dilewati/dicegah dari alokasi.
-   - Jika pembayaran memiliki `wallet_id` (top-up wallet): eksekusi `$wallet->topup($amount, $pembayaran)`.
-6. **Idempotensi**: Jika status pembayaran sudah `lunas` / `PAID`, callback diabaikan dengan response sukses 200 tanpa mengeksekusi alokasi ganda.
+## Alur Webhook
 
-### 3. Polling Fallback
-Cron job `billing:poll-bri-status` dijalankan berkala (misal tiap 15 menit):
-- Memeriksa transaksi `bri_virtual_accounts` / `bri_qris_payments` dengan `status='WAITING'` dan `expired_at > now()`.
-- Memanggil `$gateway->checkStatus($reference)` untuk memastikan status terbaru di sistem bank jika webhook callback mengalami keterlambatan.
+POST /webhook/bri/payment-notification:
+1. verifyCallbackSignature() gagal -> return 401 (BRI retry dari sisinya)
+2. Lookup bri_virtual_accounts atau bri_qris_payments by reference
+3. Idempotency: jika pembayaran.status == lunas atau bri_record.status == PAID -> return 200, stop
+4. DB::transaction() {
+     bri_record.status = PAID, simpan callback_payload
+     pembayaran.status = lunas, diverifikasi_pada = now()
+     PaymentAllocationService::allocate(pembayaran)
+   } // commit
+5. JIKA pembayaran.wallet_id:
+     ->topup(, )  // DI LUAR transaction (konvensi log 03)
+     Jika topup() gagal: log error, tetap return 200 (tagihan sudah aman)
+6. return 200
 
-### 4. Transfer Manual
-1. Orang tua mengunggah bukti transfer, menginput bank asal dan tanggal transfer.
-2. Dibuat record `pembayaran` (`metode='transfer_manual'`, `status='menunggu_verifikasi'`) dan `manual_payment_requests` (`status='PENDING'`).
-3. Admin memverifikasi di menu antrean:
-   - **Approve**: Set `manual_payment_requests.status = 'APPROVED'`, catat reviewer & waktu, set `pembayaran.status = 'lunas'`, dan jalankan alokasi saldo/tagihan.
-   - **Reject**: Set `manual_payment_requests.status = 'REJECTED'`, input alasan penolakan, set `pembayaran.status = 'ditolak'`.
+## Polling Fallback
 
-### 5. Tunai (Cash di Loket)
-Admin kasir menginput pembayaran langsung di loket:
-- Input siswa, pilih tagihan yang dibayar, input nominal yang diterima.
-- Sistem membuat record `pembayaran` (`metode='cash'`, `sumber='admin'`, `status='lunas'`) langsung tanpa melalui antrean verifikasi, lalu mengeksekusi alokasi tagihan secara instan.
+Command: billing:poll-bri-status
+Jadwal: everyFifteenMinutes() via Laravel Task Scheduler
 
-## Yang TIDAK Termasuk Sub-project 4
+Algoritma:
+1. Ambil bri_virtual_accounts dengan status=WAITING dan expired_at > now()
+2. Ambil bri_qris_payments dengan status=WAITING dan expired_at > now()
+3. Untuk setiap record: ->checkStatus()
+4. Jika PAID: jalankan alur alokasi sama seperti webhook handler
+5. Jika EXPIRED: update bri_record.status = EXPIRED, biarkan pembayaran.status = menunggu_pembayaran
 
-- Kredensial production/live sandbox BRI asli (digunakan Mock gateway hingga kredensial siap).
-- UI Parent Portal untuk pemilihan channel (dibangun di Sub-project 6).
-- UI Admin untuk loket kasir & antrean verifikasi manual (dibangun bersamaan/setelah fondasi service selesai).
+VA Permanen (expired_at = NULL) tidak di-poll.
 
-## Ambiguitas Terselesaikan
+## MockPaymentGateway Detail
 
-- [x] Kredensial gateway belum tersedia ? Menggunakan abstraksi `PaymentGatewayInterface` + `MockPaymentGateway`.
-- [x] Idempotensi alokasi webhook ? Cek status `PAID`/`lunas` sebelum mutasi data.
-- [x] Guard tagihan dibatalkan ? Tagihan `dibatalkan` tidak dapat dialokasikan pembayaran.
+- VA number: MOCK-VA-{siswa_id}-{dechex(time())}
+- QRIS: MOCK-QR-{pembayaran_id}-{random(6)}
+- verifyCallbackSignature(): selalu true
+- checkStatus(): lookup di DB by channel_reference, return status aktual
+- Endpoint dev: POST /dev/simulate-payment/{reference} (hanya jika app()->isLocal())
+  Trigger alur webhook handler (method call, bukan HTTP roundtrip)
+
+## Struktur File
+
+app/Contracts/PaymentGatewayInterface.php
+app/DTO/VirtualAccountResult.php
+app/DTO/QrisResult.php
+app/DTO/PaymentStatusResult.php
+app/Exceptions/PaymentException.php
+app/Services/Finance/PaymentService.php
+app/Services/Finance/PaymentAllocationService.php
+app/Services/Finance/Gateway/MockPaymentGateway.php
+app/Services/Finance/Gateway/BriSnapGateway.php
+app/Models/BriVirtualAccount.php
+app/Models/BriQrisPayment.php
+app/Models/ManualPaymentRequest.php
+app/Http/Controllers/WebhookController.php
+app/Console/Commands/PollBriStatusCommand.php
+database/migrations/*_create_bri_virtual_accounts_table.php
+database/migrations/*_create_bri_qris_payments_table.php
+database/migrations/*_create_manual_payment_requests_table.php
+database/migrations/*_add_siswa_id_and_status_to_pembayaran_table.php
+
+## Acceptance Criteria
+
+1. MockPaymentGateway::createVirtualAccount() menghasilkan VA number unik per panggilan.
+2. getOrCreatePermanentVa() untuk siswa yang sama return record yang sama (idempotent).
+3. Webhook dengan signature invalid return 401 tanpa mutasi database.
+4. Webhook yang sama dipanggil dua kali: alokasi hanya dieksekusi sekali (idempotency).
+5. Setelah webhook sukses: bri_va.status=PAID, pembayaran.status=lunas, tagihan.paid_amount terupdate.
+6. Setelah webhook top-up wallet: wallet.balance bertambah, wallet_mutasi tercipta.
+7. Tagihan dibatalkan tidak bisa masuk alur pembayaran (PaymentService return error).
+8. billing:poll-bri-status memanggil checkStatus() hanya untuk WAITING + expired_at > now().
+9. /dev/simulate-payment hanya aktif di environment local.
+10. Semua tabel baru cascade delete saat pembayaran dihapus.
