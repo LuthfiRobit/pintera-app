@@ -84,18 +84,20 @@ it('picks the largest computed rupiah discount when multiple keringanan rules ma
     $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 500000]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $jenisTagihan->lembaga_id]);
 
+    // Raw nilai comparison (60 vs 200000) disagrees with computed-amount comparison (300000 vs 200000),
+    // so this test only passes if the resolver compares computed Rupiah amounts, not raw nilai.
     $kategoriPersen = KategoriKeringanan::create(['lembaga_id' => $jenisTagihan->lembaga_id, 'nama' => 'Beasiswa']);
-    JenisTagihanKeringanan::create(['jenis_tagihan_id' => $jenisTagihan->id, 'kategori_keringanan_id' => $kategoriPersen->id, 'tipe_potongan' => 'persen', 'nilai' => 10]); // = 50000
+    JenisTagihanKeringanan::create(['jenis_tagihan_id' => $jenisTagihan->id, 'kategori_keringanan_id' => $kategoriPersen->id, 'tipe_potongan' => 'persen', 'nilai' => 60]); // = 300000
     SiswaKeringanan::create(['siswa_id' => $siswa->id, 'kategori_keringanan_id' => $kategoriPersen->id, 'berlaku_dari' => now()->subDay()->toDateString()]);
 
     $kategoriFixed = KategoriKeringanan::create(['lembaga_id' => $jenisTagihan->lembaga_id, 'nama' => 'Anak Pegawai']);
-    JenisTagihanKeringanan::create(['jenis_tagihan_id' => $jenisTagihan->id, 'kategori_keringanan_id' => $kategoriFixed->id, 'tipe_potongan' => 'fixed', 'nilai' => 100000]);
+    JenisTagihanKeringanan::create(['jenis_tagihan_id' => $jenisTagihan->id, 'kategori_keringanan_id' => $kategoriFixed->id, 'tipe_potongan' => 'fixed', 'nilai' => 200000]); // = 200000
     SiswaKeringanan::create(['siswa_id' => $siswa->id, 'kategori_keringanan_id' => $kategoriFixed->id, 'berlaku_dari' => now()->subDay()->toDateString()]);
 
     $result = buatResolver()->resolve($siswa, $jenisTagihan);
 
-    expect($result['discount_amount'])->toBe(100000.0);
-    expect($result['discount_type'])->toBe('fixed');
+    expect($result['discount_amount'])->toBe(300000.0);
+    expect($result['discount_type'])->toBe('persen');
 });
 
 it('ignores a keringanan whose berlaku_sampai has already passed', function () {
