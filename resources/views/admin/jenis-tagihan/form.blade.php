@@ -196,6 +196,7 @@
         function jenisTagihanForm(config) {
             let uidCounter = 0;
             const nextUid = () => ++uidCounter;
+            const hydrateGrup = (grup) => ({ uid: nextUid(), nominal: grup.nominal ?? '', kriteria: grup.kriteria.map((k) => ({ uid: nextUid(), ...k })) });
 
             return {
                 kriteriaFields: ['lembaga', 'tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'],
@@ -205,17 +206,15 @@
                     kategori: config.kategoriAwal,
                     mode: config.modeAwal,
                     bisaDicicil: config.bisaDicicilAwal,
-                    sasaran: config.initialSasaran.map((g) => this.hydrateGrup(g)),
-                    tarif: config.initialTarif.map((g) => this.hydrateGrup(g)),
+                    sasaran: config.initialSasaran.map(hydrateGrup),
+                    tarif: config.initialTarif.map(hydrateGrup),
                     keringanan: config.initialKeringanan.map((k) => ({ uid: nextUid(), ...k })),
                 },
                 kategoriKeringananOptions: config.kategoriKeringananList,
                 get kategoriPpdb() {
                     return ['pendaftaran', 'daftar_ulang'].includes(this.form.kategori);
                 },
-                hydrateGrup(grup) {
-                    return { uid: nextUid(), nominal: grup.nominal ?? '', kriteria: grup.kriteria.map((k) => ({ uid: nextUid(), ...k })) };
-                },
+                hydrateGrup,
                 newKriteria() {
                     return { uid: nextUid(), field: 'status_siswa', operator: 'in', value: [] };
                 },
