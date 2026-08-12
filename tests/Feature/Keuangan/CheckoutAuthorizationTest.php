@@ -35,7 +35,7 @@ function makeParentWithChild(string $label, float $walletBalance = 0): array
     ]);
     $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
-    $jenis = JenisTagihan::factory()->create();
+    $jenis = JenisTagihan::factory()->create(['nama' => "Jenis Tagihan {$label}"]);
     $tagihan = Tagihan::factory()->create([
         'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
         'status' => 'belum_bayar', 'net_amount' => 100000, 'paid_amount' => 0,
@@ -56,10 +56,11 @@ it('does not show another parent\'s tagihan in the rekap tagihan list', function
     // bypass it explicitly to fetch the name for the assertion -- this mirrors how
     // TagihanController@index itself eager-loads jenisTagihan withoutGlobalScope.
     $namaJenisA = JenisTagihan::withoutGlobalScope(TenantScope::class)->find($tagihanA->jenis_tagihan_id)->nama;
+    $namaJenisB = JenisTagihan::withoutGlobalScope(TenantScope::class)->find($tagihanB->jenis_tagihan_id)->nama;
 
     $response->assertOk();
     $response->assertSee($namaJenisA);
-    $this->assertDatabaseMissing('tagihan', ['id' => $tagihanB->id, 'tagihable_id' => $tagihanA->tagihable_id]);
+    $response->assertDontSee($namaJenisB);
 });
 
 it('rejects wallet checkout for a tagihan belonging to another parent\'s child', function () {
@@ -68,7 +69,13 @@ it('rejects wallet checkout for a tagihan belonging to another parent\'s child',
 
     $this->actingAs($userA)->post(route('keuangan.checkout.wallet'), ['tagihan_ids' => [$tagihanB->id]]);
 
-    $this->assertEquals(0, Pembayaran::where('siswa_id', $tagihanB->tagihable_id)->count());
+    // PaymentService::createPembayaranRecord() stamps siswa_id from the acting parent's
+    // own siswa (siswaA), never from the tagihan being paid -- so a leaked payment here
+    // would NOT have siswa_id === tagihanB->tagihable_id. Assert on the total count and
+    // on tagihanB's own status remaining untouched instead, so a regression that drops
+    // the ownership check in resolveSelectedTagihan() is actually caught.
+    $this->assertEquals(0, Pembayaran::count());
+    $this->assertEquals('belum_bayar', $tagihanB->fresh()->status);
 });
 
 it('rejects manual transfer checkout for a tagihan belonging to another parent\'s child', function () {
@@ -106,6 +113,18 @@ it('blocks a parent from viewing another parent\'s wallet success page', functio
     [$userB] = makeParentWithChild('B');
 
     $response = $this->actingAs($userB)->get(route('keuangan.checkout.sukses', $pembayaranA));
+
+    $response->assertForbidden();
+});
+
+it('blocks a parent from viewing another parent\'s qris checkout page', function () {
+    [$userA, , , $tagihanA] = makeParentWithChild('A');
+    $this->actingAs($userA)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihanA->id]]);
+    $pembayaranA = Pembayaran::where('metode', 'qris')->firstOrFail();
+
+    [$userB] = makeParentWithChild('B');
+
+    $response = $this->actingAs($userB)->get(route('keuangan.checkout.show', $pembayaranA));
 
     $response->assertForbidden();
 });
