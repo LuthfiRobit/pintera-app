@@ -8,7 +8,7 @@ use Illuminate\Notifications\Notification;
 
 class NotificationDispatcher
 {
-    public function send(object $notifiable, Notification $notification, string $module = 'finance'): void
+    public function send(object $notifiable, Notification $notification, string $module = 'finance', array $payload = []): void
     {
         $isUrgent = method_exists($notification, 'isUrgent') && $notification->isUrgent();
 
@@ -25,12 +25,12 @@ class NotificationDispatcher
 
         $notifiable->notify($notification);
 
-        $this->logAttempt($notifiable, $notification, 'database', 'sent');
-        $this->logAttempt($notifiable, $notification, 'wa', $allowWa ? 'sent' : 'skipped');
-        $this->logAttempt($notifiable, $notification, 'email', $allowEmail ? 'sent' : 'skipped');
+        $this->logAttempt($notifiable, $notification, 'database', 'sent', $payload);
+        $this->logAttempt($notifiable, $notification, 'wa', $allowWa ? 'sent' : 'skipped', $payload);
+        $this->logAttempt($notifiable, $notification, 'email', $allowEmail ? 'sent' : 'skipped', $payload);
     }
 
-    private function logAttempt(object $notifiable, Notification $notification, string $channel, string $status): void
+    private function logAttempt(object $notifiable, Notification $notification, string $channel, string $status, array $payload = []): void
     {
         // notification_logs.user_id is a FK to users.id. For a User notifiable that's
         // ->id directly; for other notifiables (e.g. OrangTua) it's the ->user_id
@@ -47,6 +47,7 @@ class NotificationDispatcher
             'user_id' => $userId,
             'event_key' => get_class($notification),
             'channel' => $channel,
+            'payload' => $payload,
             'status' => $status,
         ]);
     }
