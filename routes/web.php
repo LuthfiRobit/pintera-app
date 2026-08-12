@@ -31,6 +31,8 @@ Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.act
         Route::get('/checkout', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'create'])->name('checkout.create');
         Route::post('/checkout/va', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'va'])->name('checkout.va');
         Route::post('/checkout/qris', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'qris'])->name('checkout.qris');
+        Route::post('/checkout/wallet', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'wallet'])->name('checkout.wallet');
+        Route::get('/checkout/{pembayaran}/sukses', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'sukses'])->name('checkout.sukses');
         Route::get('/checkout/{pembayaran}', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'show'])->name('checkout.show');
         Route::get('/checkout/{pembayaran}/status', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'status'])->name('checkout.status');
     });

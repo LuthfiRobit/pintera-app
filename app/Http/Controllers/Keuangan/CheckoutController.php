@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers\Keuangan;
 
+use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
 use App\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
@@ -87,6 +88,33 @@ class CheckoutController extends BaseController
         }
 
         return redirect()->route('keuangan.checkout.show', $pembayaran);
+    }
+
+    public function wallet(Request $request)
+    {
+        $activeSiswa = $request->attributes->get('activeSiswa');
+        $tagihans = $this->resolveSelectedTagihan($activeSiswa, (array) $request->input('tagihan_ids', []));
+
+        if ($tagihans->isEmpty()) {
+            return back()->withErrors(['tagihan_ids' => 'Tidak ada tagihan valid yang dipilih.']);
+        }
+
+        try {
+            $pembayaran = $this->paymentService->createWalletPayment($activeSiswa, $tagihans);
+        } catch (InsufficientBalanceException|PaymentException $e) {
+            return back()->withErrors(['tagihan_ids' => 'Saldo wallet tidak mencukupi untuk tagihan terpilih.']);
+        }
+
+        return redirect()->route('keuangan.checkout.sukses', $pembayaran);
+    }
+
+    public function sukses(Request $request, Pembayaran $pembayaran)
+    {
+        $this->authorizePembayaran($request, $pembayaran);
+
+        $pembayaran->load(['pembayaranTagihan.tagihan.jenisTagihan' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)]);
+
+        return view('keuangan.checkout.sukses', ['pembayaran' => $pembayaran]);
     }
 
     public function show(Request $request, Pembayaran $pembayaran)
