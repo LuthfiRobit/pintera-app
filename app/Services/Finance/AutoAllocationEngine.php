@@ -6,15 +6,22 @@ use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
 use App\Models\Tagihan;
 use App\Models\Wallet;
+use App\Notifications\Finance\SaldoTidakCukupNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AutoAllocationEngine
 {
+    public function __construct(private readonly NotificationDispatcher $dispatcher)
+    {
+    }
+
     public function run(Wallet $wallet): void
     {
+        $skippedTagihan = collect();
+
         // lockForUpdate to ensure wallet balance doesn't change concurrently during calculation
-        DB::transaction(function () use ($wallet) {
+        DB::transaction(function () use ($wallet, &$skippedTagihan) {
             $wallet = Wallet::where('id', $wallet->id)->lockForUpdate()->first();
             
             $saldo = $wallet->balance;
@@ -59,6 +66,8 @@ class AutoAllocationEngine
                 }
             }
 
+            $skippedTagihan = $tagihans->whereNotIn('id', collect($allocated)->pluck('tagihan.id'))->values();
+
             if ($totalAllocatedAmount > 0) {
                 // Buat record pembayaran
                 $pembayaran = Pembayaran::create([
@@ -95,5 +104,17 @@ class AutoAllocationEngine
                 }
             }
         });
+
+        if ($skippedTagihan->isNotEmpty()) {
+            $siswa = $wallet->siswa;
+            $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+
+            if ($kontakUtama !== null) {
+                foreach ($skippedTagihan as $tagihan) {
+                    $selisih = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
+                    $this->dispatcher->send($kontakUtama, new SaldoTidakCukupNotification($tagihan->load('jenisTagihan'), $selisih));
+                }
+            }
+        }
     }
 }
