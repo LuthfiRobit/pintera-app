@@ -8,6 +8,7 @@ use App\Models\Tagihan;
 use App\Models\Wallet;
 use App\Notifications\Finance\SaldoTidakCukupNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class AutoAllocationEngine
@@ -110,9 +111,16 @@ class AutoAllocationEngine
             $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
 
             if ($kontakUtama !== null) {
-                foreach ($skippedTagihan as $tagihan) {
-                    $selisih = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
+                // Spec (keuangan-05-notifikasi.md Addendum A): hanya tagihan berprioritas
+                // tertinggi (yang pertama dalam koleksi $skippedTagihan yang sudah terurut
+                // priority_score) yang memicu notifikasi ini — bukan semua tagihan yang ter-skip.
+                $tagihan = $skippedTagihan->first();
+                $selisih = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
+
+                try {
                     $this->dispatcher->send($kontakUtama, new SaldoTidakCukupNotification($tagihan->load('jenisTagihan'), $selisih));
+                } catch (\Throwable $e) {
+                    Log::error('Gagal mengirim SaldoTidakCukupNotification: '.$e->getMessage());
                 }
             }
         }

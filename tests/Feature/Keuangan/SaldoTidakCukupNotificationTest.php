@@ -45,6 +45,47 @@ it('sends SaldoTidakCukupNotification for a tagihan that gets fully skipped due 
     });
 });
 
+it('only sends SaldoTidakCukupNotification for the highest-priority skipped tagihan when multiple are skipped', function () {
+    Notification::fake();
+
+    $lembaga = Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $orangTua = OrangTua::factory()->create();
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+    SystemSetting::create(['lembaga_id' => $lembaga->id, 'key' => 'auto_debit_enabled', 'value' => 'true']);
+
+    // Three tagihan ordered by priority_score. The wallet only covers the first
+    // (highest priority) one, so the second and third are both skipped. Per the
+    // spec (Addendum A), only the FIRST skipped tagihan (highest priority among the
+    // skipped ones) should trigger a notification — not both.
+    $jenisTagihanTinggi = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'priority_score' => 1]);
+    Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihanTinggi->id,
+        'net_amount' => 100000, 'paid_amount' => 0, 'status' => 'belum_bayar',
+    ]);
+
+    $jenisTagihanMenengah = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'priority_score' => 2]);
+    $tagihanMenengah = Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihanMenengah->id,
+        'net_amount' => 300000, 'paid_amount' => 0, 'status' => 'belum_bayar',
+    ]);
+
+    $jenisTagihanRendah = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'priority_score' => 3]);
+    $tagihanRendah = Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihanRendah->id,
+        'net_amount' => 500000, 'paid_amount' => 0, 'status' => 'belum_bayar',
+    ]);
+
+    $wallet = $siswa->wallet;
+    $wallet->topup(100000); // habis dipakai tagihan pertama, dua tagihan lainnya ter-skip
+
+    Notification::assertSentTo($orangTua, SaldoTidakCukupNotification::class, function ($notification) use ($tagihanMenengah) {
+        return $notification->tagihan->id === $tagihanMenengah->id;
+    });
+
+    Notification::assertSentToTimes($orangTua, SaldoTidakCukupNotification::class, 1);
+});
+
 it('does not send when the wallet balance fully covers every active tagihan', function () {
     Notification::fake();
 

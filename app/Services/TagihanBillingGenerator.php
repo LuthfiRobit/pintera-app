@@ -11,6 +11,7 @@ use App\Notifications\Finance\TagihanDiterbitkanNotification;
 use App\Services\Finance\NotificationDispatcher;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class TagihanBillingGenerator
 {
@@ -87,7 +88,11 @@ class TagihanBillingGenerator
         if ($createdTagihan !== null) {
             $kontakUtama = $siswa->orangTua()->wherePivot('is_kontak_utama', true)->first();
             if ($kontakUtama !== null) {
-                $this->dispatcher->send($kontakUtama, new TagihanDiterbitkanNotification($createdTagihan->load('jenisTagihan')));
+                try {
+                    $this->dispatcher->send($kontakUtama, new TagihanDiterbitkanNotification($createdTagihan->load('jenisTagihan')));
+                } catch (\Throwable $e) {
+                    Log::error('Gagal mengirim TagihanDiterbitkanNotification: '.$e->getMessage());
+                }
             }
         }
 

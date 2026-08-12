@@ -29,9 +29,9 @@ use App\Http\Controllers\Admin\Lembaga\EkstrakurikulerController as LembagaEkstr
 use App\Http\Controllers\Admin\Lembaga\LayananKhususController as LembagaLayananKhususController;
 use App\Http\Controllers\Admin\Lembaga\ProgramInklusiController as LembagaProgramInklusiController;
 use App\Http\Controllers\Admin\LembagaController;
+use App\Http\Controllers\Admin\ManualPaymentController;
 use App\Http\Controllers\Admin\MataPelajaranController;
 use App\Http\Controllers\Admin\OrangTuaController;
-use App\Http\Controllers\Admin\ManualPaymentController;
 use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\PendaftaranSiswaController;

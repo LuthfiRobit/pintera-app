@@ -8,6 +8,7 @@ use App\Models\Tagihan;
 use App\Notifications\Finance\DueReminderNotification;
 use App\Services\Finance\NotificationDispatcher;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 
 class KirimDueReminderTagihan extends Command
 {
@@ -54,8 +55,13 @@ class KirimDueReminderTagihan extends Command
                 continue;
             }
 
-            $dispatcher->send($kontakUtama, new DueReminderNotification($tagihan, $isUrgent), 'finance', ['tagihan_id' => $tagihan->id]);
-            $terkirim++;
+            try {
+                $dispatcher->send($kontakUtama, new DueReminderNotification($tagihan, $isUrgent), 'finance', ['tagihan_id' => $tagihan->id]);
+                $terkirim++;
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengirim DueReminderNotification: '.$e->getMessage());
+                continue;
+            }
         }
 
         $this->info("Reminder terkirim untuk {$terkirim} tagihan.");

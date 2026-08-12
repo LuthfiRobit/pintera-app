@@ -31,10 +31,3 @@ it('creates a manual topup payment with topup_status pending and no pembayaran_t
     expect($manualRequest->status)->toBe('PENDING');
     expect((float) $manualRequest->amount)->toBe(250000.0);
 });
-
-it('does not affect the existing createManualPayment bill-payment path', function () {
-    // Regression guard: this new sibling method must not have touched createManualPayment()'s
-    // own behavior. Run the EXISTING test file for it as part of this task's verification
-    // (see Step 4) rather than duplicating its assertions here.
-    expect(true)->toBeTrue();
-});

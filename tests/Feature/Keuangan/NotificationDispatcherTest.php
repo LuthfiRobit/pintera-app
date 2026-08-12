@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\NotificationLog;
+use App\Models\OrangTua;
 use App\Models\User;
 use App\Models\UserNotificationPreference;
 use App\Notifications\Finance\FinanceNotification;
@@ -95,4 +97,25 @@ it('logs a notification_logs row per channel attempted', function () {
     app(NotificationDispatcher::class)->send($user, new TestableFinanceNotification(isUrgent: true));
 
     expect(\App\Models\NotificationLog::where('user_id', $user->id)->count())->toBeGreaterThan(0);
+});
+
+it('logs notification_logs.user_id using the OrangTua notifiable\'s user_id, not its own id', function () {
+    // Create a first OrangTua/User pair purely to push the ids out of sync — without
+    // it, a freshly seeded test DB could coincidentally have orangTua.id === user_id
+    // for the very first row created, which would let the pre-fix bug pass silently.
+    OrangTua::factory()->create();
+
+    $orangTua = OrangTua::factory()->create();
+
+    expect($orangTua->id)->not->toBe($orangTua->user_id);
+
+    Notification::fake();
+
+    app(NotificationDispatcher::class)->send($orangTua, new TestableFinanceNotification(isUrgent: true));
+
+    $log = NotificationLog::where('event_key', TestableFinanceNotification::class)->first();
+
+    expect($log)->not->toBeNull();
+    expect($log->user_id)->toBe($orangTua->user_id);
+    expect($log->user_id)->not->toBe($orangTua->id);
 });

@@ -34,8 +34,12 @@ class ManualPaymentController extends BaseController
     // lembaga berbeda. Di sini kita justru BUTUH tahu lembaga_id sebenarnya (siswa
     // tenant manapun) supaya bisa dibandingkan secara eksplisit dengan lembagaId(),
     // makanya scope-nya sengaja di-bypass.
-    private function siswaLembagaId(int $siswaId): ?int
+    private function siswaLembagaId(?int $siswaId): ?int
     {
+        if ($siswaId === null) {
+            return null;
+        }
+
         return Siswa::withoutGlobalScope(TenantScope::class)->find($siswaId)?->lembaga_id;
     }
 
