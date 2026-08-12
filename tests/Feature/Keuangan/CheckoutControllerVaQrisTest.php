@@ -76,6 +76,28 @@ it('does not create a second VA for the same tagihan while one is still waiting'
     expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(1);
 });
 
+it('creates a new VA when selection expands beyond an existing pending VA set', function () {
+    [$user, , $siswa, $tagihanA] = actingAsOrangTuaForVaQris();
+    $jenis = JenisTagihan::factory()->create();
+    $tagihanB = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'net_amount' => 75000, 'paid_amount' => 0,
+    ]);
+
+    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihanA->id]]);
+    $firstVa = Pembayaran::where('metode', 'va_bri')->firstOrFail();
+
+    $this->actingAs($user)->post(route('keuangan.checkout.va'), [
+        'tagihan_ids' => [$tagihanA->id, $tagihanB->id],
+    ]);
+
+    expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(2);
+
+    $secondVa = Pembayaran::where('metode', 'va_bri')->where('id', '!=', $firstVa->id)->firstOrFail();
+    $coveredTagihanIds = $secondVa->pembayaranTagihan()->pluck('tagihan_id')->sort()->values()->all();
+    expect($coveredTagihanIds)->toBe(collect([$tagihanA->id, $tagihanB->id])->sort()->values()->all());
+});
+
 it('rejects tagihan_ids that do not belong to the active child', function () {
     [$user] = actingAsOrangTuaForVaQris();
     $otherSiswa = Siswa::factory()->create();

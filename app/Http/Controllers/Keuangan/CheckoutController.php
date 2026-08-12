@@ -114,13 +114,20 @@ class CheckoutController extends BaseController
 
     private function findPendingVaFor($tagihans): ?Pembayaran
     {
-        $tagihanIds = $tagihans->pluck('id');
+        $requestedIds = $tagihans->pluck('id')->sort()->values()->all();
 
-        return Pembayaran::where('metode', 'va_bri')
+        $candidates = Pembayaran::where('metode', 'va_bri')
             ->where('status', 'menunggu_pembayaran')
-            ->whereHas('pembayaranTagihan', fn ($q) => $q->whereIn('tagihan_id', $tagihanIds))
+            ->whereHas('pembayaranTagihan', fn ($q) => $q->whereIn('tagihan_id', $requestedIds))
             ->whereHas('briVirtualAccount', fn ($q) => $q->where('expired_at', '>', now()))
-            ->first();
+            ->with('pembayaranTagihan')
+            ->get();
+
+        return $candidates->first(function (Pembayaran $candidate) use ($requestedIds) {
+            $candidateIds = $candidate->pembayaranTagihan->pluck('tagihan_id')->sort()->values()->all();
+
+            return $candidateIds === $requestedIds;
+        });
     }
 
     private function authorizePembayaran(Request $request, Pembayaran $pembayaran): void
