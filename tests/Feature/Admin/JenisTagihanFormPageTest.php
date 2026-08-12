@@ -42,3 +42,34 @@ it('renders the edit page pre-filled with the existing jenis tagihan nama', func
     $response->assertOk();
     $response->assertSee('value="SPP Bulanan"', false);
 });
+
+it('shows the tahun ajaran alongside the kelas name in the sasaran kriteria options to disambiguate same-named classes', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $tahunAjaranLama = \App\Models\TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
+        'tanggal_mulai' => '2025-07-01', 'tanggal_selesai' => '2026-06-30', 'status_aktif' => false,
+    ]);
+    $tahunAjaranBaru = \App\Models\TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
+    ]);
+    // Two classes with the SAME name in different tahun ajaran — the exact ambiguity this fixes.
+    \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranLama->id, 'nama' => '7A']);
+    \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranBaru->id, 'nama' => '7A']);
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertOk();
+    // Assert on the view data the controller passes, not the rendered/escaped HTML — Blade's
+    // @js() JSON-encodes this string for embedding (slash-escaping details are an implementation
+    // Detail of that encoding, not what this fix is actually about). This directly tests the
+    // controller's query/eager-load change, which is the substantive part of this fix.
+    $kelasList = $response->viewData('kelasList');
+    expect($kelasList)->toHaveCount(2);
+    expect($kelasList->pluck('nama')->unique()->all())->toBe(['7A']);
+    expect($kelasList->pluck('tahunAjaran.nama')->sort()->values()->all())->toBe(['2025/2026', '2026/2027']);
+});

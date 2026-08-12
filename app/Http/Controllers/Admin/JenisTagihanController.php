@@ -337,7 +337,7 @@ class JenisTagihanController extends BaseController
         return [
             'lembagaList' => Lembaga::orderBy('nama')->get(['id', 'nama']),
             'tahunAjaranList' => TahunAjaran::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']),
-            'kelasList' => Kelas::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']),
+            'kelasList' => Kelas::where('lembaga_id', $lembagaId)->with('tahunAjaran')->orderBy('nama')->get(['id', 'nama', 'tahun_ajaran_id']),
             'tingkatList' => Kelas::where('lembaga_id', $lembagaId)->whereNotNull('tingkat')->distinct()->orderBy('tingkat')->pluck('tingkat'),
             'kategoriKeringananList' => KategoriKeringanan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']),
         ];
