@@ -3,6 +3,7 @@
 namespace App\Services\Finance;
 
 use App\Contracts\PaymentGatewayInterface;
+use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
 use App\Models\BriQrisPayment;
 use App\Models\BriVirtualAccount;
@@ -10,6 +11,7 @@ use App\Models\ManualPaymentRequest;
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
 use App\Models\Siswa;
+use App\Models\Tagihan;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -165,6 +167,42 @@ class PaymentService
                 'transfer_date' => $data['transfer_date'],
                 'status' => 'PENDING',
             ]);
+
+            return $pembayaran;
+        });
+    }
+
+    /**
+     * Pay one or more tagihan directly from the student's wallet balance.
+     * Debits within the same locked transaction as the balance check
+     * (via Wallet::debitWithinTransaction) so two concurrent submissions
+     * cannot both pass the balance check and double-spend.
+     */
+    public function createWalletPayment(Siswa $siswa, Collection $tagihans): Pembayaran
+    {
+        $this->guardAgainstInvalidTagihan($tagihans);
+
+        return DB::transaction(function () use ($siswa, $tagihans) {
+            $wallet = $siswa->wallet()->lockForUpdate()->first();
+
+            if ($wallet === null) {
+                throw new PaymentException('Siswa tidak memiliki wallet.');
+            }
+
+            $totalTagihan = $tagihans->reduce(
+                fn (float $carry, Tagihan $tagihan) => $carry + ($tagihan->net_amount - $tagihan->paid_amount),
+                0.0
+            );
+
+            if ($wallet->balance < $totalTagihan) {
+                throw new InsufficientBalanceException('Saldo wallet tidak mencukupi untuk membayar tagihan terpilih.');
+            }
+
+            $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'wallet_saldo', 'lunas');
+
+            $wallet->debitWithinTransaction($totalTagihan, $pembayaran, 'Bayar tagihan dari saldo wallet');
+
+            $this->allocationService->allocate($pembayaran);
 
             return $pembayaran;
         });
