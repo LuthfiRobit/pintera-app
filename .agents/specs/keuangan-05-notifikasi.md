@@ -155,17 +155,53 @@ $skippedTagihan = $tagihans->whereNotIn('id', collect($allocated)->pluck('tagiha
 2. `wallet_mutasi` + `billing_job_logs` yang sudah ada tetap menyediakan jejak forensik "kenapa tagihan ini belum lunas" (saldo di titik waktu T) kalau suatu saat perlu direkonstruksi manual.
 3. Tabel "skipped_tagihan" terpisah adalah scope yang tidak diminta spec manapun — YAGNI.
 
-### B. Endpoint Approve/Reject `ManualPaymentRequest`
+### B. Endpoint Approve/Reject `ManualPaymentRequest` — TERMASUK menambal gap topup manual dari Sub-project 04
 
-**Otorisasi**: permission `pembayaran.verifikasi` — SUDAH ADA di `database/seeders/PermissionSeeder.php` (dikonfirmasi langsung, baris yang sama dengan `pembayaran.view`, `pembayaran.catat-manual`), tidak perlu permission baru.
+**Koreksi dari draf addendum sebelumnya**: kesimpulan awal ("topup() tidak relevan untuk endpoint ini") **KELIRU**, dikoreksi setelah user meminta verifikasi ulang terhadap spec 04 yang sudah final. Spec 04 baris 29 & 125 eksplisit mendesain "Top-up wallet via VA Permanen **atau Transfer Manual**", dengan alur approval yang WAJIB mematuhi konvensi persis sama dengan webhook BRI (`topup()` di luar transaction). Kode `PaymentService::createManualPayment()` yang ada memang tidak punya jalur untuk kasus ini — tapi ini backend gap nyata dari Sub-project 04 yang HARUS ditambal, bukan alasan untuk menyederhanakan endpoint ini. Lihat koreksi di `.agents/logs/keuangan-04-payment-channels.md` bagian "Manual Payment Integrasi" untuk riwayat lengkap.
 
-**Konfirmasi alur `topup()` — TIDAK RELEVAN untuk endpoint ini, dan ini penting untuk dipahami sebelum implementasi:**
+**Kabar baik — penambalan ini kecil, murni aditif, tanpa migrasi baru**: seluruh kolom yang dibutuhkan SUDAH ADA di tabel `pembayaran` dari migrasi Sub-project 3 & 4 (`wallet_id`, `amount`, `topup_status`, `siswa_id`) — `PaymentService::createManualPayment()` yang ada juga dikonfirmasi **tanpa pemanggil apa pun di luar 1 test** (`PaymentServiceTest.php`), jadi menambahkan jalur topup tidak berisiko sama sekali terhadap kode/test yang sudah ada.
 
-Dibaca langsung `PaymentService::createManualPayment(Siswa $siswa, Collection $tagihans, array $data)` — parameter `$tagihans` WAJIB diisi (dipakai `createPembayaranRecord()` untuk membangun baris `pembayaran_tagihan` per tagihan yang dibayar). **Tidak ada jalur kode di mana pun untuk "transfer manual yang ditujukan sebagai top-up wallet murni"** — beda dengan VA/QRIS yang punya tipe eksplisit `WALLET_PERMANENT` di `getOrCreatePermanentVa()`. Manual payment di codebase ini SELALU menyasar tagihan spesifik lewat `pembayaran_tagihan`, tidak pernah wallet secara langsung. `Pembayaran.topup_status` (kolom dari Sub-project 04) tidak pernah di-set oleh `createManualPayment()`/`createPembayaranRecord()` — tetap default `'none'`.
+**Otorisasi**: permission `pembayaran.verifikasi` — SUDAH ADA di `database/seeders/PermissionSeeder.php` (baris yang sama dengan `pembayaran.view`, `pembayaran.catat-manual`), tidak perlu permission baru.
 
-**Konsekuensi desain**: approve action **TIDAK PERNAH memanggil `Wallet::topup()`**, jadi tidak butuh pola "keluarkan side-effect dari transaction" seperti webhook BRI. Approve action mengikuti pola `createCashPayment()` (persis di file yang sama, `PaymentService.php` baris 147-164) — alokasi terjadi LANGSUNG di dalam satu transaction, karena satu-satunya efek samping adalah `PaymentAllocationService::allocate($pembayaran)` (query+update biasa, bukan operasi wallet dengan lock terpisah).
+#### B.1 — Method baru: `PaymentService::createManualTopupPayment()`
 
-**Desain controller**:
+Method BARU (sibling, TIDAK mengubah `createManualPayment()` yang ada sama sekali — nol risiko terhadap `PaymentServiceTest.php`), mengikuti pola eksplisit yang sudah dipakai `getOrCreatePermanentVa()`/`createVaPayment()` (satu method per jenis transaksi, bukan satu method generik dengan flag tersembunyi — menghindari ambiguitas "collection tagihan kosong = topup atau kebetulan kosong?"):
+
+```php
+// app/Services/Finance/PaymentService.php — method baru
+
+public function createManualTopupPayment(Siswa $siswa, array $data): Pembayaran
+{
+    return DB::transaction(function () use ($siswa, $data) {
+        $pembayaran = Pembayaran::create([
+            'siswa_id' => $siswa->id,
+            'metode' => 'transfer_manual',
+            'status' => 'menunggu_verifikasi',
+            'amount' => $data['amount'],
+            'topup_status' => 'pending',
+            'channel_reference' => (string) Str::uuid(),
+        ]);
+
+        ManualPaymentRequest::create([
+            'pembayaran_id' => $pembayaran->id,
+            'requested_by' => $data['requested_by'],
+            'amount' => $data['amount'],
+            'transfer_proof_path' => $data['transfer_proof_path'],
+            'bank_origin' => $data['bank_origin'] ?? null,
+            'transfer_date' => $data['transfer_date'],
+            'status' => 'PENDING',
+        ]);
+
+        return $pembayaran;
+    });
+}
+```
+Tidak ada `pembayaran_tagihan` yang dibuat (tidak ada tagihan target) — persis mencerminkan bagaimana `BriWebhookController` menangani `WALLET_PERMANENT` (`Pembayaran` tanpa pivot tagihan, `topup_status='pending'`, `amount` terisi).
+
+**Diskriminator topup vs bill-payment**: `pembayaran.topup_status !== 'none'` — kolom yang SAMA yang sudah dipakai `ReconcilePayments::retryFailedTopups()` untuk query pembayaran yang butuh di-retry topup-nya. Konsisten, bukan konvensi baru.
+
+#### B.2 — Controller approve/reject, BERCABANG sesuai diskriminator di atas
+
 ```php
 // app/Http/Controllers/Admin/ManualPaymentController.php (baru)
 
@@ -177,22 +213,42 @@ public function approve(Request $request, ManualPaymentRequest $manualPaymentReq
         // 422 — sudah diproses sebelumnya, cegah approve/reject ganda
     }
 
-    DB::transaction(function () use ($manualPaymentRequest, $request) {
+    $pembayaran = $manualPaymentRequest->pembayaran;
+    $isTopup = $pembayaran->topup_status !== 'none';
+
+    DB::transaction(function () use ($manualPaymentRequest, $pembayaran, $request) {
         $manualPaymentRequest->update([
             'status' => 'APPROVED',
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
         ]);
 
-        $pembayaran = $manualPaymentRequest->pembayaran;
         $pembayaran->update(['status' => 'lunas']);
 
-        app(PaymentAllocationService::class)->allocate($pembayaran);
+        // Kasus bill-payment: alokasi terjadi DI DALAM transaction ini (pola createCashPayment(),
+        // tidak ada Wallet::topup() yang terlibat sama sekali untuk cabang ini).
+        if ($pembayaran->topup_status === 'none') {
+            app(PaymentAllocationService::class)->allocate($pembayaran);
+        }
     });
 
-    // Notifikasi TransferManualDisetujuiNotification dikirim di sini, SETELAH transaction —
-    // konsisten dengan prinsip "side-effect eksternal (termasuk notifikasi) di luar transaction",
-    // meski di kasus ini tidak ada risiko nested-lock karena tidak ada Wallet::topup() terlibat.
+    // Kasus topup: Wallet::topup() dipanggil DI LUAR transaction, persis konvensi webhook BRI
+    // (spec 04 baris 125/144-147) — try/catch menandai topup_status completed/failed, TIDAK
+    // pernah membungkus ulang topup() dalam transaction tambahan (ReconcilePayments sudah
+    // menyediakan retry kalau langkah ini gagal, sama seperti jalur webhook).
+    if ($isTopup) {
+        $wallet = \App\Models\Wallet::where('siswa_id', $pembayaran->siswa_id)->first();
+        try {
+            $wallet->topup((float) $pembayaran->amount, $pembayaran, 'Topup via transfer manual disetujui');
+            $pembayaran->update(['topup_status' => 'completed']);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal topup dari manual payment approval: '.$e->getMessage());
+            $pembayaran->update(['topup_status' => 'failed']);
+        }
+    }
+
+    // TransferManualDisetujuiNotification dikirim di sini (setelah SEMUA proses di atas selesai,
+    // termasuk topup jika relevan — supaya pesan notifikasi bisa mencerminkan hasil akhir yang benar).
 }
 
 public function reject(Request $request, ManualPaymentRequest $manualPaymentRequest): RedirectResponse
@@ -213,14 +269,17 @@ public function reject(Request $request, ManualPaymentRequest $manualPaymentRequ
         ]);
 
         $manualPaymentRequest->pembayaran->update(['status' => 'ditolak']);
+        // Reject tidak pernah memicu Wallet::topup() — baik kasus bill maupun topup, ditolak
+        // berarti tidak ada dana yang masuk sama sekali, cukup ubah status.
     });
 
-    // Notifikasi TransferManualDitolakNotification (is_urgent=true) dikirim di sini.
+    // TransferManualDitolakNotification (is_urgent=true) dikirim di sini.
 }
 ```
 
-**Guard idempotency eksplisit**: cek `status !== 'PENDING'` sebelum memproses APPROVE atau REJECT — mencegah approve/reject ganda (mis. admin klik approve dua kali, atau approve setelah reject) menghasilkan notifikasi/alokasi dobel. Pola ini konsisten dengan idempotency check yang sudah ada di `BriWebhookController` (cek `status === 'PAID'` sebelum proses) dan `batalTagihan()` (cek `status !== 'belum_bayar'`).
+**Guard idempotency eksplisit**: cek `status !== 'PENDING'` sebelum memproses APPROVE atau REJECT — mencegah approve/reject ganda menghasilkan notifikasi/alokasi/topup dobel. Konsisten dengan idempotency check yang sudah ada di `BriWebhookController` (cek `status === 'PAID'`) dan `batalTagihan()` (cek `status !== 'belum_bayar'`).
 
-**Yang TIDAK termasuk endpoint ini** (scope minimal, cukup untuk membuka hook notifikasi):
+**Yang TIDAK termasuk endpoint ini** (scope minimal, cukup untuk menambal gap + membuka hook notifikasi):
 - UI admin untuk daftar `ManualPaymentRequest` pending + tombol approve/reject — di luar scope sub-project ini (backend-only, sama seperti keputusan Sub-project 04 untuk seluruh Payment Channels). Endpoint POST siap dipakai kapan pun UI-nya dibangun.
+- UI/route untuk PARENT mengajukan transfer manual sebagai topup (memanggil `createManualTopupPayment()`) — method service-nya siap, tapi tidak ada controller/route baru untuk submission-nya di sub-project ini (mengikuti scope 04 sendiri: "Transfer Manual — backend only"). Method ini akan dipanggil dari UI portal orang tua nanti (Sub-project 6) atau admin input manual.
 - Preview/download bukti transfer (`transfer_proof_path`) — sudah ada kolomnya dari Sub-project 04, tidak perlu logic baru di sub-project ini.
