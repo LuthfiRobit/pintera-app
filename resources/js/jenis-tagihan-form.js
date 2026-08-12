@@ -11,6 +11,10 @@ export function jenisTagihanForm(config) {
 
     return {
         kriteriaFields: ['lembaga', 'tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'],
+        fieldLabels: {
+            lembaga: 'Lembaga', tahun_ajaran: 'Tahun Ajaran', tingkat: 'Tingkat',
+            kelas: 'Kelas', jenis_kelamin: 'Jenis Kelamin', status_siswa: 'Status Siswa',
+        },
         referenceOptions: config.referenceOptions,
         sasaranMode: config.initialSasaran.length > 0 ? 'kriteria' : 'semua',
         form: {

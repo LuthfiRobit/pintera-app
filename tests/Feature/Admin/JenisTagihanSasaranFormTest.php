@@ -76,3 +76,18 @@ it('exposes both the stored kriteria value and the matching reference option id 
     $kelasOptionJson = $asEmbeddedJs([['value' => $kelas->id, 'label' => $kelas->nama]]);
     $response->assertSee($kelasOptionJson, false);
 });
+
+it('shows human-readable labels for kriteria fields instead of raw keys', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertOk();
+    // fieldLabels itself lives in the Vite-bundled JS (never inlined into the HTTP response,
+    // and this codebase has no JS test tooling), so the verifiable surface via a Pest/Blade
+    // test is that the Blade binding was actually swapped from the raw key to the lookup.
+    $response->assertSee('x-text="fieldLabels[fieldOpt] ?? fieldOpt"', false);
+});

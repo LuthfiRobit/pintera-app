@@ -185,7 +185,7 @@
                                     <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
                                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-start">
                                             <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
-                                                <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
+                                                <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldLabels[fieldOpt] ?? fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
                                             </select>
                                             <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
                                                 <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
@@ -238,7 +238,7 @@
                                 <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
                                     <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-start">
                                         <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
-                                            <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
+                                            <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldLabels[fieldOpt] ?? fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
                                         </select>
                                         <select :name="'tarif[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
                                             <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
