@@ -1,72 +1,172 @@
-# Task 5 Report: `PembayaranBerhasilNotification` + hook in `PaymentAllocationService`
+# Task 5 Report: Dashboard route, controller, skip-alert banner, views, sidebar entry
 
-## What I implemented
+## Summary
 
-1. **`app/Notifications/Finance/PembayaranBerhasilNotification.php`** (new) — extends `FinanceNotification`, constructed with `Tagihan $tagihan, string $metode`. `isUrgent()` returns `false`. `via()` returns `baseChannels()`. Implements `toDatabase`, `toMail`, `toWhatsApp` (via `WhatsAppTemplate::renderKode('pembayaran_berhasil', ...)`) exactly per the brief's Step 3 code.
+Implemented the parent-facing finance dashboard: `SkipAlertResolver` service, `Keuangan\DashboardController`,
+two Blade views (`keuangan.dashboard`, `keuangan.tanpa-anak`), the `keuangan.dashboard` route, and the sidebar
+nav entry, following `task-5-brief.md`. Two deviations from the brief's verbatim code were required to make the
+brief's own Step-1 tests pass (see **Deviations** below) — both were found via TDD, not introduced speculatively.
 
-2. **`app/Services/Finance/PaymentAllocationService.php`** (modified) — added a constructor taking `NotificationDispatcher $dispatcher` (this class previously had no constructor). In `allocate()`, `$becameLunas` is computed as `$lockedTagihan->status !== 'lunas'` **before** the status is reassigned to `'lunas'`, so a tagihan that's already lunas re-processed a second time does not re-trigger. When `$becameLunas` is true, a `DB::afterCommit()` callback is registered (capturing only the scalar `$tagihanId` and `$metode`, not the Eloquent model) that re-fetches the tagihan fresh (with `jenisTagihan`, `tagihable`), resolves the kontak utama via `$siswa->orangTua()->wherePivot('is_kontak_utama', true)->first()`, and dispatches through `$this->dispatcher->send(...)` (used the injected dispatcher directly rather than `app(NotificationDispatcher::class)` inside the closure — equivalent behavior, slightly cleaner since it's already a constructor dependency).
+## Files changed
 
-3. **`tests/Feature/Keuangan/PembayaranBerhasilNotificationTest.php`** (new) — the 3 tests exactly as specified in the brief.
+- Created `app/Services/Finance/SkipAlertResolver.php`
+- Created `app/Http/Controllers/Keuangan/DashboardController.php`
+- Created `resources/views/keuangan/dashboard.blade.php`
+- Created `resources/views/keuangan/tanpa-anak.blade.php`
+- Created `tests/Feature/Keuangan/DashboardControllerTest.php`
+- Modified `routes/web.php` (registered `keuangan.dashboard` route group, before `require __DIR__.'/spmb.php';`)
+- Modified `resources/views/layouts/sidebar.blade.php` (added "Dompet & Tagihan Saya" nav entry under Keuangan group)
 
-## Deviation: fixed a pre-existing bug in `NotificationDispatcher::logAttempt`
+## Test-driven flow
 
-**Not in the brief's file list, but required for the feature to actually work and for the full regression suite to pass.**
+1. Wrote `tests/Feature/Keuangan/DashboardControllerTest.php` exactly as given in the brief (5 test cases).
+2. Ran it before any implementation existed:
+   `php artisan test tests/Feature/Keuangan/DashboardControllerTest.php`
+   → Result: **5 failed** — `RouteNotFoundException: Route [keuangan.dashboard] not defined.` (expected).
+3. Implemented `SkipAlertResolver`, `DashboardController`, both views, the route, and the sidebar entry verbatim
+   per the brief.
+4. Ran the test file again:
+   `php artisan test tests/Feature/Keuangan/DashboardControllerTest.php`
+   → Result: **3 passed, 2 failed**. Investigated both failures with a throwaway debug test (removed afterward)
+   rather than guessing:
+   - `it shows the skip-alert banner when balance cannot cover the highest-priority tagihan` — failed because the
+     verbatim `SkipAlertResolver` algorithm (copied from `AutoAllocationEngine::run()`) treats *any* partial
+     allocation (`amountToPay > 0`) as "allocated", so a single under-funded tagihan (saldo 50.000 vs tagihan
+     200.000) was marked allocated, never landing in the `$skipped` collection — the resolver returned `null`
+     and no banner rendered. See **Deviations** for the fix.
+   - `it shows the "tanpa anak" page...` — failed because the view's heading text
+     "Belum ada anak terdaftar" (capital B, as written in the brief's Step 5 code) does not contain the
+     case-sensitive substring the brief's own test asserts: `assertSee('belum ada anak terdaftar', false)`.
+5. Applied both fixes (below), reran:
+   `php artisan test tests/Feature/Keuangan/DashboardControllerTest.php`
+   → Result: **5 passed (10 assertions)**.
+6. Regression check — ran the whole `Keuangan` feature directory alone (not the full suite, per the
+   controller's instruction to avoid racing concurrent `php artisan test` runs against the same MySQL test DB):
+   `php artisan test tests/Feature/Keuangan/`
+   → Result: **140 passed (371 assertions)**, no regressions.
 
-`NotificationDispatcher::logAttempt()` (from Task 2) wrote `notification_logs.user_id = $notifiable->id` unconditionally for any notifiable with an integer `id`. That's correct for a `User` notifiable, but wrong for `OrangTua` — `OrangTua->id` is the `orang_tua` table's own primary key, not `users.id`; the actual FK-linked user id lives on `OrangTua->user_id`. Since this task's design (per the brief itself, and matching the existing `TagihanDiterbitkanNotification` pattern from Task 4) dispatches directly to `$kontakUtama` (an `OrangTua` instance), the old code would insert `notification_logs.user_id = <orang_tua.id>`, which only "works" by coincidence when that numeric value happens to also be a valid `users.id` — otherwise it throws a FK `QueryException`. This is exactly what happened: my new test passed in isolation (lucky ID collision with a real user) but failed with `SQLSTATE[23000]` under the full `tests/Feature/Keuangan/` run once more prior tests had shifted the ID sequences out of coincidental alignment.
+## Deviations from the brief's verbatim code, with justification
 
-Fix in `app/Services/Finance/NotificationDispatcher.php`:
+### 1. `SkipAlertResolver::resolve()` — allocation-walk semantics changed from "partial counts as allocated" to "full-or-skip"
+
+The brief's Step 3 code is a byte-for-byte copy of `AutoAllocationEngine::run()`'s walk: for each tagihan in
+priority order, `amountToPay = min($saldo, $sisaTagihan)`; if `amountToPay > 0` the tagihan is marked
+"allocated" (even if only partially paid) and removed from the candidate "skipped" list. This exactly mirrors
+production engine behavior (confirmed by reading `AutoAllocationEngine.php`), where `$skippedTagihan` only ever
+contains tagihan that received **zero** allocation.
+
+Under that definition, the brief's own Step-1 test 2 (single tagihan, `net_amount` 200.000, wallet balance
+50.000) can never produce a "skip": the tagihan receives a non-zero partial allocation (50.000) and is
+therefore "allocated", not "skipped" — `resolve()` returns `null`, and the test's `assertSee('150.000', false)`
+fails. This was confirmed directly: the join/where query correctly returns the one tagihan row, and the
+`isEmpty()`/`whereNotIn` filtering was the point of divergence, verified via a scratch debug test.
+
+Given `SkipAlertResolver`'s own docblock says it exists "used ONLY to compute what the banner should show" and
+the dashboard banner copy is "Saldo tidak cukup untuk {jenis} … Kekurangan Rp{selisih} agar tagihan ini bisa
+terbayar" (a full-coverage framing, not a partial-allocation framing), I changed the walk to a full-or-skip
+model instead of partial-allocation-counts-as-covered:
+
 ```php
-$userId = $notifiable instanceof \App\Models\User
-    ? $notifiable->id
-    : ($notifiable->user_id ?? null);
-```
-This is a minimal, targeted fix scoped to the exact bug; it doesn't touch anything else in that class. Existing `NotificationDispatcherTest.php` tests only ever pass a `User` notifiable, so this path was previously untested and unexercised outside `Notification::fake()`-shielded contexts.
+foreach ($tagihans as $tagihan) {
+    $sisaTagihan = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
 
-## Existing test fixed for the new constructor (Step 6, same pattern as Task 4)
+    if ($saldo >= $sisaTagihan) {
+        $saldo -= $sisaTagihan;
+        continue;
+    }
 
-`tests/Feature/Keuangan/PaymentAllocationServiceTest.php` had two call sites using `new PaymentAllocationService()` (old 0-arg constructor). Changed both to `app(PaymentAllocationService::class)`.
-
-Verified no other production or test code calls `new PaymentAllocationService(...)` (grep confirmed the only remaining textual match was in the plan doc itself).
-
-## Test commands run and output
-
-**Step 2 — RED**, `php artisan test tests/Feature/Keuangan/PembayaranBerhasilNotificationTest.php`:
-```
-FAIL  Tests\Feature\Keuangan\PembayaranBerhasilNotificationTest
-⨯ it sends PembayaranBerhasilNotification when a tagihan transitions to lunas   8.01s
-✓ it does not send when the tagihan only becomes sebagian, not lunas           0.09s
-✓ it does not send twice if allocate() is somehow called again on an already-lunas tagihan  0.11s
-Tests: 1 failed, 2 passed (3 assertions)
-```
-Failure: `The expected [App\Notifications\Finance\PembayaranBerhasilNotification] notification was not sent.` — expected, since the class and hook didn't exist yet (the other two "pass" trivially because nothing is sent in either case pre-implementation).
-
-**Step 5 — GREEN**, same command after implementing:
-```
-PASS  Tests\Feature\Keuangan\PembayaranBerhasilNotificationTest
-✓ it sends PembayaranBerhasilNotification when a tagihan transitions to lunas   8.23s
-✓ it does not send when the tagihan only becomes sebagian, not lunas           0.09s
-✓ it does not send twice if allocate() is somehow called again on an already-lunas tagihan  0.09s
-Tests: 3 passed (3 assertions)
+    $selisih = $sisaTagihan - $saldo;
+    // ... return ['tagihan' => ..., 'selisih' => $selisih];
+}
+return null;
 ```
 
-**Step 6 — full regression**, `php artisan test tests/Feature/Keuangan/`:
+This satisfies all three balance-related brief tests: test 1 (no tagihan, n/a), test 2 (50.000 vs 200.000 →
+selisih 150.000, banner shown), test 3 (500.000 fully covers 200.000 → no banner). It does **not** touch
+`AutoAllocationEngine` itself (per the plan's Global Constraint that 6a must not modify or invoke that engine's
+write path) — this is purely a read-only, display-only reinterpretation local to the new resolver class.
 
-First run (before the `NotificationDispatcher` fix) failed with:
-- `PaymentAllocationServiceTest` × 2 — `ArgumentCountError` (old 0-arg construction) → fixed by switching to `app(PaymentAllocationService::class)`.
-- `PembayaranBerhasilNotificationTest` × 2 — `SQLSTATE[23000]` FK violation on `notification_logs.user_id` → fixed by the `NotificationDispatcher::logAttempt` change described above.
+I flag this explicitly because it is a real behavioral divergence from "replica of `AutoAllocationEngine::run()`'s
+... allocation walk" as the brief's docblock comment states, even though I left that docblock comment in place
+(it remains accurate for the *ordering* logic, just not the *allocated-vs-skipped* classification). If task 6b
+(or a later reviewer) expects byte-identical semantics with the real engine, this should be revisited —
+possibly by asking product/spec owner whether the banner should ever fire for partially-payable tagihan at all
+under the real engine's actual behavior (currently: it would not).
 
-Second run, after both fixes:
+A related fix was needed in the same method: `$tagihan->load('jenisTagihan')` failed with "Attempt to read
+property 'nama' on null" because `JenisTagihan` uses the `BelongsToTenant` trait (global `TenantScope`), and the
+authenticated orang_tua user's `lembaga_id` is `null`, so the scoped `jenisTagihan()` relation silently returned
+nothing for a `JenisTagihan` row belonging to a different lembaga. Fixed by loading the relation with
+`->withoutGlobalScope(TenantScope::class)`, consistent with how the tagihan query itself already does this (and
+consistent with `ResolveActiveSiswa`'s established pattern of bypassing `TenantScope` for orang_tua cross-tenant
+reads).
+
+### 2. `tanpa-anak.blade.php` — heading text lowercased
+
+Brief's Step 5 view has `<p ...>Belum ada anak terdaftar</p>` (capitalized). The brief's Step-1 test asserts
+`assertSee('belum ada anak terdaftar', false)` (all-lowercase, and `assertSee` is case-sensitive). Changed the
+rendered heading text to lowercase `belum ada anak terdaftar` to satisfy the test literally, since the brief's
+test is presumably authoritative for what real-world sub-project 6a QA / other tasks might assert against. This
+is a purely cosmetic change (Indonesian doesn't strictly require sentence-case headings) with no functional
+impact.
+
+No other deviations. Route registration, controller, sidebar entry, and the `dashboard.blade.php` wallet/VA/
+notification-feed rendering match the brief verbatim.
+
+## Manual browser verification
+
+No interactive browser/Playwright tool was available in this session's toolset (Windows/Laragon environment,
+no `chromium-cli` or MCP browser tool present). Instead, verification was done by driving the real running dev
+server (`http://localhost/pintera-app/public`, confirmed live and serving the actual Laravel app — note:
+`http://pintera-app.test/` on this machine currently serves an Apache directory listing of the repo root, not
+the app; the working vhost path is `http://localhost/pintera-app/public`) via `curl` with a cookie jar, exactly
+reproducing the login → navigate flow a human would do in a browser, against the real dev MySQL database.
+
+**Step A — admin side (child link check):**
+- Logged in as `superadmin@sistem.test` / `password` via `POST /login` → `302` redirect to `/dashboard` (success).
+- Fetched `/admin/orang-tua` (`200 OK`) and confirmed phone number `081234560001` — the exact `no_hp` seeded for
+  the demo parent in `OrangTuaKaryawanSeeder.php` (`'no_hp' => '081234560001'`, `'email' => 'ortu.demo@...'`) —
+  is present in the listing, confirming the orang tua record exists and is seeded. (The listing table doesn't
+  render email column, so matched by phone number instead, per the brief's suggested fallback.)
+- Did not need to re-run `OrangTuaKaryawanSeeder` — the record and its child link were already present (verified
+  conclusively in Step B below, since the dashboard rendered the wallet view, not the "tanpa anak" empty state).
+
+**Step B — parent-facing dashboard:**
+- Logged in as `ortu.demo@permatakraksaan.sch.id` / `password` via `POST /login` → `302` redirect to
+  `/dashboard` (success).
+- Fetched `GET /keuangan` → **`200 OK`**.
+- Response contained:
+  - `<h2>Dompet &amp; Tagihan — Eliana Putri</h2>` (proves `activeSiswa` resolved correctly to the linked child,
+    NOT the `tanpa-anak` empty state)
+  - `Saldo Wallet` label with balance `Rp500.000`
+  - `Notifikasi Terbaru` section header
+  - No skip-alert banner (no `Top-up Rp...` string found) — consistent with a fully-funded wallet
+  - No PHP exception/error markers (`Exception`, `Fatal error`, `Whoops` all absent; the only `error` substring
+    hits were Tailwind CSS class names like `bg-error-500`, not real errors)
+
+This confirms the dashboard renders correctly end-to-end against the real dev database for the demo account,
+including the tenant-scope fix in `SkipAlertResolver` (which would have thrown on any lembaga-scoped
+`jenisTagihan` lookup had it not been applied — though in this particular account's data there was no
+outstanding tagihan to trigger that code path, the automated test suite's skip-alert tests do exercise it and
+pass).
+
+I did not visually screenshot the page (no browser/screenshot tool available) — if a true visual check is
+required, recommend running `/run-skill-generator` to capture a Playwright-based verification skill for this
+project, as suggested by the `run` skill's fallback guidance.
+
+## Commit
+
 ```
-Tests:    117 passed (322 assertions)
-Duration: 34.28s
+77ee... feat(keuangan): add orang tua dashboard with wallet card and skip-alert banner
 ```
-All 33 test files in `tests/Feature/Keuangan/` pass, including the 3 new tests and the 2 corrected `PaymentAllocationServiceTest` cases.
+(see actual hash below, filled in after commit)
 
-## Self-review
+## Test commands run (final)
 
-- Idempotency: verified `$becameLunas` is computed strictly before the status mutation, and the 3rd test (calling `allocate()` twice on an already-lunas tagihan) passes — no duplicate notification.
-- `afterCommit` closure captures only `$tagihanId` (int) and `$metode` (string), not the `$lockedTagihan` Eloquent instance, avoiding stale-model issues; it re-fetches fresh inside the callback as instructed.
-- Guarded against `tagihable_type !== Siswa::class` and `$freshTagihan === null` (tagihan could theoretically have been deleted between commit and callback) before touching `$siswa`.
-- Guarded against no kontak-utama existing (`$kontakUtama !== null`) so a tagihan with no parent contact doesn't throw.
-- The `NotificationDispatcher` fix is a real production bug fix, not scope creep for its own sake — without it, dispatching `PembayaranBerhasilNotification` (or `TagihanDiterbitkanNotification` from Task 4, which has the identical `$kontakUtama`-is-`OrangTua` pattern) to a parent whose `orang_tua.id` doesn't coincidentally equal a valid `users.id` would throw an uncaught `QueryException` in production, outside a transaction, when persisting the notification log. I flagged this explicitly rather than silently patching it.
-- Ran the entire `tests/Feature/Keuangan/` directory (117 tests), not just the new file, per Step 6's requirement, since the constructor signature change affects all 4 callers of `PaymentAllocationService`.
+```
+php artisan test tests/Feature/Keuangan/DashboardControllerTest.php
+# Tests: 5 passed (10 assertions)
+
+php artisan test tests/Feature/Keuangan/
+# Tests: 140 passed (371 assertions)
+```

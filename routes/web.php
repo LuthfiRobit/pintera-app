@@ -23,5 +23,11 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
+
+Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.active.siswa'])
+    ->prefix('keuangan')->name('keuangan.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Keuangan\DashboardController::class, 'index'])->name('dashboard');
+    });
+
 require __DIR__.'/spmb.php';
 require __DIR__.'/portal.php';
