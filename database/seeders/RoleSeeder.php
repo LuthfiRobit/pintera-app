@@ -98,6 +98,7 @@ class RoleSeeder extends Seeder
             if ($name === 'orang_tua') {
                 $role->givePermissionTo([
                     'kasus.ajukan', 'kasus.view', 'kasus.consent',
+                    'keuangan.akses',
                 ]);
             }
 
