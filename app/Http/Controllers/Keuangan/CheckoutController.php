@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Keuangan;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
+use App\Http\Requests\Keuangan\StoreManualTransferRequest;
 use App\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tagihan;
@@ -106,6 +107,44 @@ class CheckoutController extends BaseController
         }
 
         return redirect()->route('keuangan.checkout.sukses', $pembayaran);
+    }
+
+    public function transfer(StoreManualTransferRequest $request)
+    {
+        $activeSiswa = $request->attributes->get('activeSiswa');
+        $tagihans = $this->resolveSelectedTagihan($activeSiswa, (array) $request->input('tagihan_ids', []));
+
+        if ($tagihans->isEmpty()) {
+            return back()->withErrors(['tagihan_ids' => 'Tidak ada tagihan valid yang dipilih.']);
+        }
+
+        $path = $request->file('transfer_proof')->store('bukti-transfer', 'public');
+
+        $totalTagihan = $tagihans->reduce(
+            fn (float $carry, Tagihan $tagihan) => $carry + ($tagihan->net_amount - $tagihan->paid_amount),
+            0.0
+        );
+
+        try {
+            $pembayaran = $this->paymentService->createManualPayment($activeSiswa, $tagihans, [
+                'amount' => $totalTagihan,
+                'transfer_proof_path' => $path,
+                'bank_origin' => $request->input('bank_origin'),
+                'transfer_date' => $request->input('transfer_date'),
+                'requested_by' => Auth::id(),
+            ]);
+        } catch (PaymentException $e) {
+            return back()->withErrors(['tagihan_ids' => 'Gagal mengirim bukti transfer, silakan coba lagi.']);
+        }
+
+        return redirect()->route('keuangan.checkout.menunggu-verifikasi', $pembayaran);
+    }
+
+    public function menungguVerifikasi(Request $request, Pembayaran $pembayaran)
+    {
+        $this->authorizePembayaran($request, $pembayaran);
+
+        return view('keuangan.checkout.menunggu-verifikasi', ['pembayaran' => $pembayaran->load('manualRequest')]);
     }
 
     public function sukses(Request $request, Pembayaran $pembayaran)
