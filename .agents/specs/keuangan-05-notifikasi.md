@@ -200,6 +200,8 @@ Tidak ada `pembayaran_tagihan` yang dibuat (tidak ada tagihan target) — persis
 
 **Diskriminator topup vs bill-payment**: `pembayaran.topup_status !== 'none'` — kolom yang SAMA yang sudah dipakai `ReconcilePayments::retryFailedTopups()` untuk query pembayaran yang butuh di-retry topup-nya. Konsisten, bukan konvensi baru.
 
+**Tidak ada risiko admin salah pilih action** — hanya ADA SATU endpoint/tombol approve per `ManualPaymentRequest`. Admin tidak pernah memilih "approve sebagai bill" vs "approve sebagai topup" saat approve; jenisnya sudah ditentukan sejak SAAT PENGAJUAN (metode `PaymentService` mana yang dipanggil — `createManualPayment()` dengan target tagihan, atau `createManualTopupPayment()` dengan jumlah topup). `approve()` cuma membaca kembali `topup_status` yang sudah tersimpan. Risiko yang SEBENARNYA ada bukan soal pilihan admin, tapi soal **integritas data** — kalau `topup_status` pernah keluar sinkron dari kenyataan (baris `pembayaran_tagihan` yang ada/tidak ada), `approve()` bisa diam-diam salah proses. Makanya endpoint ini WAJIB cross-validasi (lihat kode B.2 di bawah — cek `hasTagihanTargets` vs `topup_status` sebelum dipercaya, gagal keras dengan 500 kalau tidak konsisten, bukan menebak).
+
 #### B.2 — Controller approve/reject, BERCABANG sesuai diskriminator di atas
 
 ```php
@@ -214,7 +216,23 @@ public function approve(Request $request, ManualPaymentRequest $manualPaymentReq
     }
 
     $pembayaran = $manualPaymentRequest->pembayaran;
+
+    // Cross-validasi diskriminator SEBELUM dipercaya — topup_status dan keberadaan
+    // pembayaran_tagihan wajib konsisten (mutually exclusive by construction, karena
+    // createManualPayment() dan createManualTopupPayment() adalah 2 jalur creation terpisah),
+    // tapi endpoint ini TIDAK BOLEH cuma percaya topup_status mentah-mentah — kalau suatu saat
+    // data drift terjadi (bug lain, migrasi, edit manual DB), approve() bisa diam-diam salah:
+    // skip topup yang seharusnya jalan, ATAU skip alokasi tagihan sambil tetap menandai lunas.
+    // Uang nyata terlibat — lebih baik gagal keras & jelas daripada salah diam-diam.
+    $hasTagihanTargets = $pembayaran->pembayaranTagihan()->exists();
     $isTopup = $pembayaran->topup_status !== 'none';
+
+    if ($hasTagihanTargets && $isTopup) {
+        abort(500, 'Data pembayaran tidak konsisten: punya target tagihan sekaligus ditandai topup.');
+    }
+    if (! $hasTagihanTargets && ! $isTopup) {
+        abort(500, 'Data pembayaran tidak konsisten: tidak ada target tagihan maupun penanda topup.');
+    }
 
     DB::transaction(function () use ($manualPaymentRequest, $pembayaran, $request) {
         $manualPaymentRequest->update([
