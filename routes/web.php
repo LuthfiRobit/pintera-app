@@ -29,6 +29,10 @@ Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.act
         Route::get('/', [\App\Http\Controllers\Keuangan\DashboardController::class, 'index'])->name('dashboard');
         Route::get('/tagihan', [\App\Http\Controllers\Keuangan\TagihanController::class, 'index'])->name('tagihan.index');
         Route::get('/checkout', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'create'])->name('checkout.create');
+        Route::post('/checkout/va', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'va'])->name('checkout.va');
+        Route::post('/checkout/qris', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'qris'])->name('checkout.qris');
+        Route::get('/checkout/{pembayaran}', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'show'])->name('checkout.show');
+        Route::get('/checkout/{pembayaran}/status', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'status'])->name('checkout.status');
     });
 
 require __DIR__.'/spmb.php';
