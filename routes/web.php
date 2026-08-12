@@ -27,6 +27,7 @@ require __DIR__.'/admin.php';
 Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.active.siswa'])
     ->prefix('keuangan')->name('keuangan.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Keuangan\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/tagihan', [\App\Http\Controllers\Keuangan\TagihanController::class, 'index'])->name('tagihan.index');
     });
 
 require __DIR__.'/spmb.php';
