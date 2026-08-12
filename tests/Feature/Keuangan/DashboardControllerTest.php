@@ -152,3 +152,33 @@ it('blocks a user without keuangan.akses permission', function () {
 
     $response->assertForbidden();
 });
+
+it('does not show "Dompet & Tagihan Saya" in sidebar for a user with keuangan.akses permission but no OrangTua profile', function () {
+    // Create a user with the keuangan.akses permission but NO OrangTua profile.
+    // This represents a super_admin or other staff user who has all permissions
+    // but is not a parent (ortu). The sidebar should NOT render the nav item
+    // to prevent a dead link to the 403-blocked keuangan.dashboard.
+    Permission::firstOrCreate(['name' => 'keuangan.akses', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $role->givePermissionTo('keuangan.akses');
+
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('orang_tua');
+    // Deliberately do NOT create an OrangTua record for this user.
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertDontSee('Dompet & Tagihan Saya');
+});
+
+it('shows "Dompet & Tagihan Saya" in sidebar for a user with keuangan.akses permission and OrangTua profile', function () {
+    // Verify the positive case: a user with both the permission AND a real
+    // OrangTua profile SHOULD see the nav item in the sidebar.
+    [$user, , ] = actingAsOrangTuaForDashboard();
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Dompet & Tagihan Saya');
+});
