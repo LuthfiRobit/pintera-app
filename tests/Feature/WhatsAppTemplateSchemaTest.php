@@ -32,10 +32,19 @@ it('returns null when rendering a kode that has no template row', function () {
     expect(WhatsAppTemplate::renderKode('kode_tidak_ada', []))->toBeNull();
 });
 
-it('seeds exactly the two required template rows', function () {
+it('seeds all required template rows, including the 6 finance-module additions from Sub-project 05', function () {
     (new WhatsAppTemplateSeeder())->run();
 
-    expect(WhatsAppTemplate::count())->toBe(2);
+    // Was originally "exactly 2" (consent_diminta, reminder_sesi_h1) before Sub-project 05
+    // added 6 finance notification templates to the same seeder — count updated to 8, and
+    // all 8 kode values are asserted individually so a future addition/removal is caught here too.
+    expect(WhatsAppTemplate::count())->toBe(8);
     expect(WhatsAppTemplate::where('kode', 'consent_diminta')->exists())->toBeTrue();
     expect(WhatsAppTemplate::where('kode', 'reminder_sesi_h1')->exists())->toBeTrue();
+    expect(WhatsAppTemplate::where('kode', 'tagihan_baru')->exists())->toBeTrue();
+    expect(WhatsAppTemplate::where('kode', 'pembayaran_berhasil')->exists())->toBeTrue();
+    expect(WhatsAppTemplate::where('kode', 'transfer_manual_disetujui')->exists())->toBeTrue();
+    expect(WhatsAppTemplate::where('kode', 'transfer_manual_ditolak')->exists())->toBeTrue();
+    expect(WhatsAppTemplate::where('kode', 'saldo_tidak_cukup')->exists())->toBeTrue();
+    expect(WhatsAppTemplate::where('kode', 'tagihan_jatuh_tempo')->exists())->toBeTrue();
 });
