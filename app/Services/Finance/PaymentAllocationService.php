@@ -7,6 +7,7 @@ use App\Models\Siswa;
 use App\Models\Tagihan;
 use App\Notifications\Finance\PembayaranBerhasilNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentAllocationService
 {
@@ -63,7 +64,11 @@ class PaymentAllocationService
                     $siswa = $freshTagihan->tagihable;
                     $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
                     if ($kontakUtama !== null) {
-                        $this->dispatcher->send($kontakUtama, new PembayaranBerhasilNotification($freshTagihan, $metode));
+                        try {
+                            $this->dispatcher->send($kontakUtama, new PembayaranBerhasilNotification($freshTagihan, $metode));
+                        } catch (\Throwable $e) {
+                            Log::error('Gagal mengirim PembayaranBerhasilNotification: '.$e->getMessage());
+                        }
                     }
                 });
             }

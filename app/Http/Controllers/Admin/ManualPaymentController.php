@@ -6,6 +6,9 @@ use App\Models\ManualPaymentRequest;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use App\Models\Wallet;
+use App\Notifications\Finance\TransferManualDisetujuiNotification;
+use App\Notifications\Finance\TransferManualDitolakNotification;
+use App\Services\Finance\NotificationDispatcher;
 use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -106,6 +109,16 @@ class ManualPaymentController extends BaseController
             }
         }
 
+        $siswa = $pembayaran->siswa;
+        $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+        if ($kontakUtama !== null) {
+            try {
+                app(NotificationDispatcher::class)->send($kontakUtama, new TransferManualDisetujuiNotification());
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengirim TransferManualDisetujuiNotification: '.$e->getMessage());
+            }
+        }
+
         return redirect()->back()->with('status', 'Transfer manual berhasil disetujui.');
     }
 
@@ -134,6 +147,16 @@ class ManualPaymentController extends BaseController
             // ditolak berarti tidak ada dana yang masuk sama sekali, cukup ubah status.
             $manualPaymentRequest->pembayaran->update(['status' => 'ditolak']);
         });
+
+        $siswa = $manualPaymentRequest->pembayaran->siswa;
+        $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+        if ($kontakUtama !== null) {
+            try {
+                app(NotificationDispatcher::class)->send($kontakUtama, new TransferManualDitolakNotification($request->rejection_reason));
+            } catch (\Throwable $e) {
+                Log::error('Gagal mengirim TransferManualDitolakNotification: '.$e->getMessage());
+            }
+        }
 
         return redirect()->back()->with('status', 'Transfer manual ditolak.');
     }
