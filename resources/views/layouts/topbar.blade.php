@@ -4,6 +4,8 @@
     $lembagaOptions = $isYayasan ? once(fn () => \App\Models\Lembaga::query()->select('id', 'nama')->orderBy('nama')->get()) : collect();
     $activeLembaga = $activeLembagaId ? $lembagaOptions->firstWhere('id', $activeLembagaId) : null;
     $sealLabel = $activeLembaga ? Str::of($activeLembaga->nama)->explode(' ')->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('') : 'YY';
+    $notificationFeed = app(\App\Services\Finance\NotificationFeedResolver::class)->resolve(Auth::user());
+    $unreadCount = $notificationFeed->whereNull('read_at')->count();
 @endphp
 
 <header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-300 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">
@@ -32,6 +34,9 @@
             <x-slot name="trigger">
                 <button type="button" class="relative flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Notifikasi">
                     <x-icon name="notifications" class="h-4 w-4" />
+                    @if ($unreadCount > 0)
+                        <span class="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
+                    @endif
                 </button>
             </x-slot>
 
@@ -39,10 +44,21 @@
                 <div class="flex items-center justify-between border-b border-gray-200 px-4 pb-3 pt-1">
                     <p class="font-display text-sm font-bold text-gray-900">Notifikasi</p>
                 </div>
-                <div class="flex flex-col items-center gap-2 px-4 py-8 text-center">
-                    <x-icon name="notifications" class="h-6 w-6 text-gray-300" />
-                    <p class="text-sm text-gray-500">Belum ada notifikasi.</p>
-                </div>
+                @if ($notificationFeed->isEmpty())
+                    <div class="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                        <x-icon name="notifications" class="h-6 w-6 text-gray-300" />
+                        <p class="text-sm text-gray-500">Belum ada notifikasi.</p>
+                    </div>
+                @else
+                    <div class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
+                        @foreach ($notificationFeed as $notification)
+                            <div class="px-4 py-3 {{ $notification->read_at === null ? 'bg-brand-50/40' : '' }}">
+                                <p class="text-sm text-gray-800">{{ $notification->data['message'] ?? '-' }}</p>
+                                <p class="mt-1 text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </x-slot>
         </x-dropdown>
 
