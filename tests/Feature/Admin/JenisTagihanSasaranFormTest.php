@@ -23,8 +23,10 @@ it('renders sasaran and tarif section markers on the create page for a non-ppdb 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
-    $response->assertSee('2. Target Sasaran');
-    $response->assertSee('3. Tarif Berdimensi');
+    // The 2026-08-11 "gold standard" UI rework dropped the numbered-step prefixes from section
+    // titles (see .agents/logs/2026-08-11-jenis-tagihan-ui-ux.md) — assert on the current text.
+    $response->assertSee('Target Sasaran');
+    $response->assertSee('Tarif Berdimensi');
 });
 
 it('pre-fills sasaran kriteria fields from an existing jenis tagihan on the edit page', function () {

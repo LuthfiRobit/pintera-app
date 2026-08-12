@@ -24,7 +24,9 @@ it('renders the keringanan section with existing kategori keringanan options', f
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
-    $response->assertSee('4. Keringanan');
+    // The 2026-08-11 "gold standard" UI rework renamed this section from "4. Keringanan" to
+    // "Keringanan Tagihan" (see .agents/logs/2026-08-11-jenis-tagihan-ui-ux.md).
+    $response->assertSee('Keringanan Tagihan');
     $response->assertSee('Yatim Piatu');
 });
 

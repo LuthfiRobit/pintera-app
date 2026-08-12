@@ -23,7 +23,10 @@ it('renders the create page with the kategori select and mode toggle', function 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
-    $response->assertSee('Tambah Jenis Tagihan');
+    // The 2026-08-11 "gold standard" UI rework replaced the page's H1 ("Tambah Jenis Tagihan")
+    // with a breadcrumb-only "Tambah"/"Edit" label — assert on that specific breadcrumb markup
+    // instead of the removed heading (see .agents/logs/2026-08-11-jenis-tagihan-ui-ux.md).
+    $response->assertSee('<b class="font-semibold text-gray-900">Tambah</b>', false);
     $response->assertSee('name="kategori"', false);
 });
 

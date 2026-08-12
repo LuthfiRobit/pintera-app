@@ -57,16 +57,13 @@ Dicek satu contoh (`JenisTagihanFormPageTest`): gagal karena `assertSee('Tambah 
 **Baseline pre-existing yang SUDAH DIKETAHUI (6 failure, tidak berubah, tidak terkait modul Keuangan):**
 `LembagaCrudTest`, `RoleBuilderTest` x4, `RoleFormAuditBannerTest`.
 
-**Baseline pre-existing BARU (3 failure, ditemukan sesi ini, TIDAK diperbaiki — di luar scope plan ini):**
-`JenisTagihanFormPageTest`, `JenisTagihanKeringananFormTest`, `JenisTagihanSasaranFormTest` — basi akibat rombak UI/UX jenis-tagihan yang terjadi di luar sesi/plan ini.
-
-**Total baseline pre-existing sekarang: 9 failure** (bukan 6 lagi) — siapa pun yang lanjut kerja di modul ini harus pakai angka 9 sebagai baseline, bukan 6.
+**Update (2026-08-11, follow-up di sesi yang sama):** 3 failure di atas **SUDAH DIPERBAIKI** — lihat bagian "Hal yang masih perlu direview" poin 1 di bawah untuk detail lengkap. Full suite re-run final: **1459 passed, 6 failed** — baseline kembali ke angka 6 yang benar (`LembagaCrudTest`, `RoleBuilderTest` x4, `RoleFormAuditBannerTest`, semua tidak terkait Keuangan). Siapa pun yang lanjut kerja di modul ini pakai angka **6** sebagai baseline.
 
 ---
 
 ## Hal yang masih perlu direview manusia/Claude
 
-1. **3 test form jenis-tagihan yang basi akibat rombak UI** — perlu diputuskan: update test-nya mengikuti struktur UI baru (TomSelect/gold-standard), atau hapus kalau sudah digantikan test lain yang lebih relevan dengan UI baru. Tidak diperbaiki di sesi ini karena di luar scope 4 bug yang diaudit (murni soal 1-4), dan menyentuhnya butuh riset terpisah tentang apa sebenarnya yang berubah di rombak UI tsb (saya tidak terlibat dalam sesi rombak UI itu).
+1. ~~**3 test form jenis-tagihan yang basi akibat rombak UI**~~ — **DIPERBAIKI (2026-08-11, follow-up sesi ini).** Root cause: rombak UI (`d562cee`..`9383f72`) menghapus H1 "Tambah/Edit Jenis Tagihan" dan prefix nomor di judul section, sementara plan rework itu sendiri (`.agents/plans/2026-08-11-jenis-tagihan-ui-ux.md`) TIDAK PERNAH menjalankan `php artisan test` di langkah verifikasinya — cuma `npm run build` + commit. Klaim "tidak ada efek samping fungsional" di handoff log rework itu tidak pernah diverifikasi, dan sekarang terbukti salah untuk 3 assertion teks. Diperbaiki: 3 baris `assertSee()` diupdate ke teks baru (dikomentari dengan alasan + referensi ke `.agents/logs/2026-08-11-jenis-tagihan-ui-ux.md`), struktur data Alpine/nama field TIDAK disentuh (memang tidak berubah). Full suite kembali ke baseline 6 failure yang benar (1459 passed, +3 dari perbaikan ini). Koreksi juga ditambahkan ke log rework UI itu sendiri sebagai pelajaran proses.
 2. **Amount-validation di webhook (Task 3) bersifat defensif** — efektivitasnya di produksi nyata bergantung pada apakah BRI sendiri sudah enforce exact-amount settlement di VA/QRIS mereka (belum bisa diverifikasi tanpa kredensial sandbox BRI, sesuai catatan log sub-project 04 sebelumnya).
-3. **Git state:** Semua 5 commit (3 fix + 2 docs) ada di `demo` langsung. **Belum di-push ke remote.**
-4. **Belum ada final whole-plan review terpisah** untuk 3 fix ini (task-level review sudah 0 findings tiap task, dianggap cukup mengingat scope kecil dan independen antar-task — beda dengan plan besar seperti 2b-1/2b-2 yang butuh whole-plan pass terpisah).
+3. **Git state:** Semua commit (3 fix bug + 3 docs + 1 fix test stale) ada di `demo` langsung. **Belum di-push ke remote.**
+4. **Belum ada final whole-plan review terpisah** untuk 3 fix bug ini (task-level review sudah 0 findings tiap task, dianggap cukup mengingat scope kecil dan independen antar-task — beda dengan plan besar seperti 2b-1/2b-2 yang butuh whole-plan pass terpisah).
