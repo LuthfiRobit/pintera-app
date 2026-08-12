@@ -109,3 +109,21 @@ it('shows human-readable labels for kriteria fields instead of raw keys', functi
     // test is that the Blade binding was actually swapped from the raw key to the lookup.
     $response->assertSee('x-text="fieldLabels[fieldOpt] ?? fieldOpt"', false);
 });
+
+it('explains the and/or relationship between kriteria rows and grup cards for both sasaran and tarif', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertOk();
+    // Appears once per section (Sasaran, Tarif) = 2 occurrences each string.
+    $response->assertSeeInOrder([
+        'Semua kriteria di atas harus terpenuhi bersamaan (DAN).',
+        'Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).',
+        'Semua kriteria di atas harus terpenuhi bersamaan (DAN).',
+        'Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).',
+    ]);
+});
