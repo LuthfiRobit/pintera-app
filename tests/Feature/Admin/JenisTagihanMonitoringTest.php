@@ -241,11 +241,11 @@ it('cannot cancel a tagihan if status is not belum_bayar', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('admin_keuangan');
-    
+
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
-    
+
     Tagihan::query()->delete();
 
     $tagihan = Tagihan::factory()->create([
@@ -265,7 +265,40 @@ it('cannot cancel a tagihan if status is not belum_bayar', function () {
     // Let's assert redirect with errors for standard form validation or 422 if it's an API. Since this is web, usually redirect back with errors, but I should use abort(422) if that's what's preferred.
     // User specifically asked: "Task 6: pastikan response code-nya 422 (bukan "403 atau 422"), konsisten dengan pola validasi 2b-1/2b-2."
     $response->assertStatus(422);
-    
+
     $tagihan->refresh();
     expect($tagihan->status)->toBe('sebagian');
+});
+
+it('checks tagihan ownership before the status business rule, preventing a cross-jenis_tagihan status leak', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $jenisTagihanOwned = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihanOther = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    Tagihan::query()->delete();
+
+    // Tagihan belongs to a DIFFERENT jenis_tagihan than the one in the URL, AND its status
+    // is NOT belum_bayar. Before the fix, the status check runs first and returns 422
+    // (leaking that this arbitrary tagihan is not belum_bayar) instead of 403 (ownership).
+    $tagihanFromOtherJenisTagihan = Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihanOther->id,
+        'tagihable_type' => Siswa::class,
+        'tagihable_id' => $siswa->id,
+        'status' => 'lunas',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->post(route('admin.jenis-tagihan.monitoring.batal', [$jenisTagihanOwned, $tagihanFromOtherJenisTagihan]), [
+            'cancel_reason' => 'Probe percobaan',
+        ]);
+
+    $response->assertStatus(403);
+
+    $tagihanFromOtherJenisTagihan->refresh();
+    expect($tagihanFromOtherJenisTagihan->status)->toBe('lunas');
 });

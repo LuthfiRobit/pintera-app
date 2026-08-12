@@ -58,13 +58,15 @@ class JenisTagihanMonitoringController extends BaseController
             'cancel_reason' => 'required|string|max:255',
         ]);
 
-        if ($tagihan->status !== 'belum_bayar') {
-            abort(422, 'Hanya tagihan dengan status belum bayar yang dapat dibatalkan.');
-        }
-
-        // Tenant scope: verify tagihan belongs to this jenisTagihan
+        // Ownership check MUST run before any business-rule check — otherwise a status-based
+        // 422/403 response difference leaks whether an arbitrary cross-tenant tagihan is
+        // belum_bayar, before we've verified it even belongs to this jenisTagihan.
         if ($tagihan->jenis_tagihan_id !== $jenisTagihan->id) {
             abort(403, 'Tagihan tidak ditemukan untuk jenis tagihan ini.');
+        }
+
+        if ($tagihan->status !== 'belum_bayar') {
+            abort(422, 'Hanya tagihan dengan status belum bayar yang dapat dibatalkan.');
         }
 
         $tagihan->update([
