@@ -31,14 +31,12 @@
                     @endforeach
                 </div>
 
-                @if (Route::has('keuangan.checkout.create'))
-                    <div x-show="selected.length > 0" x-cloak class="mt-6 flex items-center justify-end">
-                        <a :href="`{{ route('keuangan.checkout.create') }}?` + selected.map(id => `tagihan_ids[]=${id}`).join('&')"
-                           class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
-                            Bayar Terpilih
-                        </a>
-                    </div>
-                @endif
+                <div x-show="selected.length > 0" x-cloak class="mt-6 flex items-center justify-end">
+                    <a :href="`{{ route('keuangan.checkout.create') }}?` + selected.map(id => `tagihan_ids[]=${id}`).join('&')"
+                       class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700">
+                        Bayar Terpilih
+                    </a>
+                </div>
             @endif
         </div>
     </div>

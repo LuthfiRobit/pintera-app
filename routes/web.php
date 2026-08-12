@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.act
     ->prefix('keuangan')->name('keuangan.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Keuangan\DashboardController::class, 'index'])->name('dashboard');
         Route::get('/tagihan', [\App\Http\Controllers\Keuangan\TagihanController::class, 'index'])->name('tagihan.index');
+        Route::get('/checkout', [\App\Http\Controllers\Keuangan\CheckoutController::class, 'create'])->name('checkout.create');
     });
 
 require __DIR__.'/spmb.php';
