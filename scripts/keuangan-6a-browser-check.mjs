@@ -44,6 +44,15 @@ async function checkSwitcher(page) {
   console.log('[switcher] dropdown opened, option clicked, page reloaded: OK');
 }
 
+async function checkDashboard(page) {
+  await page.goto(`${BASE_URL}/keuangan`);
+  const walletCard = page.locator('text=Saldo Wallet');
+  await walletCard.waitFor({ state: 'visible', timeout: 3000 });
+  const topupButton = page.locator('button:has-text("+ Top Up")');
+  await topupButton.waitFor({ state: 'visible', timeout: 3000 });
+  console.log('[dashboard] wallet card and top-up button rendered: OK');
+}
+
 const args = process.argv.slice(2);
 const checkArg = args.find((a) => a.startsWith('--check='))?.split('=')[1] ?? 'all';
 
@@ -57,6 +66,9 @@ try {
   }
   if (checkArg === 'all' || checkArg === 'switcher') {
     await checkSwitcher(page);
+  }
+  if (checkArg === 'all' || checkArg === 'dashboard') {
+    await checkDashboard(page);
   }
 } finally {
   await browser.close();
