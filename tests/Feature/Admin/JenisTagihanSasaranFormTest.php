@@ -127,3 +127,15 @@ it('explains the and/or relationship between kriteria rows and grup cards for bo
         'Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).',
     ]);
 });
+
+it('explains that tarif grup cards are evaluated in priority order', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertOk();
+    $response->assertSee('Diproses berurutan dari atas — Grup pertama yang cocok dengan siswa akan dipakai nominalnya.');
+});

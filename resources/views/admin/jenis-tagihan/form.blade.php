@@ -223,7 +223,8 @@
                         <p class="font-display text-sm font-bold text-gray-900">Tarif Berdimensi</p>
                         <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
                     </div>
-                    
+                    <p class="text-[10px] text-gray-400 leading-tight">Diproses berurutan dari atas — Grup pertama yang cocok dengan siswa akan dipakai nominalnya.</p>
+
                     <div class="space-y-4 pt-1">
                         <template x-for="(grup, gi) in form.tarif" :key="grup.uid">
                             <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-5 space-y-4 shadow-sm">
