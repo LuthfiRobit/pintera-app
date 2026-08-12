@@ -7,6 +7,8 @@ use App\Models\BillingJobLog;
 use App\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
+use App\Notifications\Finance\TagihanDiterbitkanNotification;
+use App\Services\Finance\NotificationDispatcher;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -17,6 +19,7 @@ class TagihanBillingGenerator
     public function __construct(
         private readonly JenisTagihanSasaranMatcher $matcher,
         private readonly TagihanNominalResolver $nominalResolver,
+        private readonly NotificationDispatcher $dispatcher,
     ) {
     }
 
@@ -44,7 +47,9 @@ class TagihanBillingGenerator
 
     public function generateForSiswa(Siswa $siswa, JenisTagihan $jenisTagihan, string $triggerType): bool
     {
-        return DB::transaction(function () use ($siswa, $jenisTagihan, $triggerType) {
+        $createdTagihan = null;
+
+        $result = DB::transaction(function () use ($siswa, $jenisTagihan, $triggerType, &$createdTagihan) {
             $billingPeriod = $jenisTagihan->mode === 'otomatis' ? now()->format('Y-m') : null;
 
             $exists = Tagihan::where('tagihable_type', Siswa::class)
@@ -61,7 +66,7 @@ class TagihanBillingGenerator
             $resolved = $this->nominalResolver->resolve($siswa, $jenisTagihan);
             $netAmount = max(0, $resolved['nominal'] - $resolved['discount_amount']);
 
-            Tagihan::create([
+            $createdTagihan = Tagihan::create([
                 'tagihable_type' => Siswa::class,
                 'tagihable_id' => $siswa->id,
                 'jenis_tagihan_id' => $jenisTagihan->id,
@@ -78,6 +83,15 @@ class TagihanBillingGenerator
 
             return true;
         });
+
+        if ($createdTagihan !== null) {
+            $kontakUtama = $siswa->orangTua()->wherePivot('is_kontak_utama', true)->first();
+            if ($kontakUtama !== null) {
+                $this->dispatcher->send($kontakUtama, new TagihanDiterbitkanNotification($createdTagihan->load('jenisTagihan')));
+            }
+        }
+
+        return $result;
     }
 
     public function generateForSiswaViaEvent(Siswa $siswa, JenisTagihan $jenisTagihan, string $triggerEvent): BillingJobLog

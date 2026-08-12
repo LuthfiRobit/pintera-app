@@ -4,6 +4,7 @@
 use App\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
+use App\Services\Finance\NotificationDispatcher;
 use App\Services\JenisTagihanSasaranMatcher;
 use App\Services\TagihanBillingGenerator;
 use App\Services\TagihanNominalResolver;
@@ -12,7 +13,7 @@ function buatGenerator(): TagihanBillingGenerator
 {
     $matcher = new JenisTagihanSasaranMatcher();
 
-    return new TagihanBillingGenerator($matcher, new TagihanNominalResolver($matcher));
+    return new TagihanBillingGenerator($matcher, new TagihanNominalResolver($matcher), app(NotificationDispatcher::class));
 }
 
 it('generates a belum_bayar tagihan for every matching siswa and logs a success job', function () {
@@ -114,7 +115,7 @@ it('does not abort the batch when one siswa throws — other siswa still get bil
         ->with(\Mockery::on(fn (Siswa $s) => $s->id === $siswaBerhasil->id), \Mockery::any())
         ->andReturnUsing(fn (Siswa $s, JenisTagihan $jt) => $resolverAsli->resolve($s, $jt));
 
-    $generator = new TagihanBillingGenerator(new JenisTagihanSasaranMatcher(), $resolverMock);
+    $generator = new TagihanBillingGenerator(new JenisTagihanSasaranMatcher(), $resolverMock, app(NotificationDispatcher::class));
     $log = $generator->generate($jenisTagihan, 'cron');
 
     expect($log->status)->toBe('partial');
