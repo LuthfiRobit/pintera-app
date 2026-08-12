@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'portal.verified' => \App\Http\Middleware\EnsureAkunPendaftarVerified::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'resolve.active.siswa' => \App\Http\Middleware\ResolveActiveSiswa::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
