@@ -94,6 +94,7 @@ it('does not crash when a kelas is linked to a tahun_ajaran belonging to a diffe
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
+    expect($response->viewData('kelasList')->first()->tahunAjaran?->nama)->toBe('2026/2027');
 });
 
 it('explains what each mode otomatis field controls', function () {
