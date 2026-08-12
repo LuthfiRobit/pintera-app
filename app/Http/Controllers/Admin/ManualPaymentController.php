@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\ManualPaymentRequest;
+use App\Models\Scopes\TenantScope;
+use App\Models\Siswa;
 use App\Models\Wallet;
 use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -16,9 +18,30 @@ class ManualPaymentController extends BaseController
 {
     use AuthorizesRequests;
 
+    private function lembagaId(Request $request): ?int
+    {
+        return $request->user()->widestScopeLevel() === 'yayasan'
+            ? session('active_lembaga_id')
+            : $request->user()->lembaga_id;
+    }
+
+    // Siswa punya TenantScope global (BelongsToTenant) yang otomatis memfilter query
+    // berdasarkan tenant user yang sedang login — artinya relasi ->siswa biasa akan
+    // bernilai null (bukan siswa milik tenant lain) kalau diakses oleh admin dari
+    // lembaga berbeda. Di sini kita justru BUTUH tahu lembaga_id sebenarnya (siswa
+    // tenant manapun) supaya bisa dibandingkan secara eksplisit dengan lembagaId(),
+    // makanya scope-nya sengaja di-bypass.
+    private function siswaLembagaId(int $siswaId): ?int
+    {
+        return Siswa::withoutGlobalScope(TenantScope::class)->find($siswaId)?->lembaga_id;
+    }
+
     public function approve(Request $request, ManualPaymentRequest $manualPaymentRequest): RedirectResponse
     {
         $this->authorize('pembayaran.verifikasi');
+
+        $siswaLembagaId = $this->siswaLembagaId($manualPaymentRequest->pembayaran->siswa_id);
+        abort_unless($siswaLembagaId !== null && $siswaLembagaId === $this->lembagaId($request), 404);
 
         if ($manualPaymentRequest->status !== 'PENDING') {
             abort(422, 'Permintaan ini sudah diproses sebelumnya.');
@@ -37,9 +60,11 @@ class ManualPaymentController extends BaseController
         $isTopup = $pembayaran->topup_status !== 'none';
 
         if ($hasTagihanTargets && $isTopup) {
+            Log::critical("Manual payment guard mismatch: pembayaran id={$pembayaran->id} punya target tagihan (hasTagihanTargets=true) sekaligus ditandai topup (isTopup=true).");
             abort(500, 'Data pembayaran tidak konsisten: punya target tagihan sekaligus ditandai topup.');
         }
         if (! $hasTagihanTargets && ! $isTopup) {
+            Log::critical("Manual payment guard mismatch: pembayaran id={$pembayaran->id} tidak ada target tagihan (hasTagihanTargets=false) maupun penanda topup (isTopup=false).");
             abort(500, 'Data pembayaran tidak konsisten: tidak ada target tagihan maupun penanda topup.');
         }
 
@@ -75,6 +100,9 @@ class ManualPaymentController extends BaseController
                     Log::error('Gagal topup dari manual payment approval: '.$e->getMessage());
                     $pembayaran->update(['topup_status' => 'failed']);
                 }
+            } else {
+                Log::error("Wallet tidak ditemukan saat approve manual topup payment: pembayaran id={$pembayaran->id}, siswa_id={$pembayaran->siswa_id}.");
+                $pembayaran->update(['topup_status' => 'failed']);
             }
         }
 
@@ -84,6 +112,9 @@ class ManualPaymentController extends BaseController
     public function reject(Request $request, ManualPaymentRequest $manualPaymentRequest): RedirectResponse
     {
         $this->authorize('pembayaran.verifikasi');
+
+        $siswaLembagaId = $this->siswaLembagaId($manualPaymentRequest->pembayaran->siswa_id);
+        abort_unless($siswaLembagaId !== null && $siswaLembagaId === $this->lembagaId($request), 404);
 
         if ($manualPaymentRequest->status !== 'PENDING') {
             abort(422, 'Permintaan ini sudah diproses sebelumnya.');

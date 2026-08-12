@@ -97,6 +97,32 @@ it('approves a TOPUP manual request: calls Wallet::topup() outside the transacti
     expect((float) $siswa->wallet->fresh()->balance)->toBe($walletSaldoAwal + 200000.0);
 });
 
+it('blocks cross-tenant approve/reject: admin_keuangan in lembaga A cannot touch a manual payment request belonging to lembaga B', function () {
+    [$userA, $lembagaA] = buatAdminKeuanganUntukManualPayment();
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $siswaB = Siswa::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $walletSaldoAwal = (float) $siswaB->wallet->balance;
+    $pembayaran = Pembayaran::factory()->create(['siswa_id' => $siswaB->id, 'status' => 'menunggu_verifikasi', 'topup_status' => 'none']);
+    $manualRequest = ManualPaymentRequest::create([
+        'pembayaran_id' => $pembayaran->id, 'requested_by' => $userA->id, 'amount' => 100000,
+        'transfer_proof_path' => 'x.jpg', 'transfer_date' => now()->toDateString(), 'status' => 'PENDING',
+    ]);
+
+    $this->actingAs($userA)->post(route('admin.manual-payment.approve', $manualRequest))->assertNotFound();
+    $manualRequest->refresh();
+    expect($manualRequest->status)->toBe('PENDING');
+    $pembayaran->refresh();
+    expect($pembayaran->status)->toBe('menunggu_verifikasi');
+    expect((float) $siswaB->wallet->fresh()->balance)->toBe($walletSaldoAwal);
+
+    $this->actingAs($userA)->post(route('admin.manual-payment.reject', $manualRequest), ['rejection_reason' => 'test'])->assertNotFound();
+    $manualRequest->refresh();
+    expect($manualRequest->status)->toBe('PENDING');
+    $pembayaran->refresh();
+    expect($pembayaran->status)->toBe('menunggu_verifikasi');
+});
+
 it('rejects the guard scenario: topup_status is pending but pembayaran_tagihan rows ALSO exist — must 500, not silently pick a branch', function () {
     [$user, $lembaga] = buatAdminKeuanganUntukManualPayment();
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -147,8 +173,17 @@ it('rejects approve/reject on a request that is not PENDING (idempotency guard)'
         'reviewed_by' => $user->id, 'reviewed_at' => now(),
     ]);
 
+    $walletSaldoAwal = (float) $siswa->wallet->balance;
+
     $this->actingAs($user)->post(route('admin.manual-payment.approve', $manualRequest))->assertStatus(422);
+    $pembayaran->refresh();
+    expect($pembayaran->status)->toBe('lunas');
+    expect((float) $siswa->wallet->fresh()->balance)->toBe($walletSaldoAwal);
+
     $this->actingAs($user)->post(route('admin.manual-payment.reject', $manualRequest), ['rejection_reason' => 'test'])->assertStatus(422);
+    $pembayaran->refresh();
+    expect($pembayaran->status)->toBe('lunas');
+    expect((float) $siswa->wallet->fresh()->balance)->toBe($walletSaldoAwal);
 });
 
 it('rejects a manual payment request: sets status ditolak, requires rejection_reason, never touches wallet', function () {
