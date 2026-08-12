@@ -6,6 +6,11 @@
     $sealLabel = $activeLembaga ? Str::of($activeLembaga->nama)->explode(' ')->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('') : 'YY';
     $notificationFeed = app(\App\Services\Finance\NotificationFeedResolver::class)->resolve(Auth::user());
     $unreadCount = $notificationFeed->whereNull('read_at')->count();
+    $orangTua = Auth::user()->orangTua;
+    $childOptions = $orangTua !== null
+        ? $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->select('siswa.id', 'siswa.nama_lengkap')->orderBy('siswa.nama_lengkap')->get()
+        : collect();
+    $activeSiswaId = session('active_siswa_id');
 @endphp
 
 <header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-300 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">
@@ -99,6 +104,38 @@
                         >
                             {{ $option->nama }}
                             @if ($activeLembagaId === $option->id)<span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>@endif
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        @if ($orangTua !== null && $childOptions->count() > 1)
+            <div x-data="{ open: false }" class="relative">
+                <button
+                    @click="open = !open"
+                    class="flex items-center gap-2.5 rounded-full border border-brand-100 bg-brand-50 py-1 pl-1 pr-3 transition hover:bg-brand-100"
+                >
+                    <x-icon name="family_restroom" class="h-4 w-4 text-brand-600" />
+                    <span class="hidden text-left leading-tight sm:block">
+                        <span class="block text-[10px] uppercase tracking-[0.12em] text-gray-400">Pilih Profil Anak</span>
+                        <span class="block max-w-[10rem] truncate text-sm font-medium text-gray-900">{{ $childOptions->firstWhere('id', $activeSiswaId)?->nama_lengkap ?? $childOptions->first()->nama_lengkap }}</span>
+                    </span>
+                    <x-icon name="expand_more" class="h-[18px] w-[18px] text-gray-500" />
+                </button>
+
+                <div
+                    x-show="open" @click.outside="open = false" x-transition
+                    class="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-gray-200 bg-white py-2 shadow-elevated"
+                    style="display: none;"
+                >
+                    @foreach ($childOptions as $option)
+                        <a
+                            href="{{ request()->fullUrlWithQuery(['switch_siswa' => $option->id]) }}"
+                            class="flex items-center justify-between px-4 py-2 text-sm {{ $activeSiswaId === $option->id ? 'font-semibold text-gray-900' : 'text-gray-600 hover:bg-gray-50' }}"
+                        >
+                            {{ $option->nama_lengkap }}
+                            @if ($activeSiswaId === $option->id)<span class="h-1.5 w-1.5 rounded-full bg-brand-500"></span>@endif
                         </a>
                     @endforeach
                 </div>

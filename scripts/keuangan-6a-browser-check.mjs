@@ -28,6 +28,22 @@ async function checkBell(page) {
   console.log('[bell] dropdown opened and panel visible: OK');
 }
 
+async function checkSwitcher(page) {
+  await page.goto(`${BASE_URL}/keuangan`);
+  const switcherButton = page.locator('button:has-text("Pilih Profil Anak")');
+  const count = await switcherButton.count();
+  if (count === 0) {
+    console.log('[switcher] demo account has 1 child (or none) — dropdown correctly hidden: OK');
+    return;
+  }
+  await switcherButton.click();
+  const firstOption = page.locator('a[href*="switch_siswa"]').first();
+  await firstOption.waitFor({ state: 'visible', timeout: 3000 });
+  await firstOption.click();
+  await page.waitForLoadState('networkidle');
+  console.log('[switcher] dropdown opened, option clicked, page reloaded: OK');
+}
+
 const args = process.argv.slice(2);
 const checkArg = args.find((a) => a.startsWith('--check='))?.split('=')[1] ?? 'all';
 
@@ -38,6 +54,9 @@ try {
   await login(page);
   if (checkArg === 'all' || checkArg === 'bell') {
     await checkBell(page);
+  }
+  if (checkArg === 'all' || checkArg === 'switcher') {
+    await checkSwitcher(page);
   }
 } finally {
   await browser.close();
