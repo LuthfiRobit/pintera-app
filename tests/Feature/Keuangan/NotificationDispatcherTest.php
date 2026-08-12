@@ -100,10 +100,13 @@ it('logs a notification_logs row per channel attempted', function () {
 });
 
 it('logs notification_logs.user_id using the OrangTua notifiable\'s user_id, not its own id', function () {
-    // Create a first OrangTua/User pair purely to push the ids out of sync — without
-    // it, a freshly seeded test DB could coincidentally have orangTua.id === user_id
-    // for the very first row created, which would let the pre-fix bug pass silently.
-    OrangTua::factory()->create();
+    // Create a standalone User first, purely to push orang_tua.id out of sync with
+    // users.id — an OrangTua::factory() pair would NOT work here (OrangTuaFactory
+    // creates its own User via User::factory(), so the two sequences advance in
+    // lockstep and orangTua.id === user_id would stay true). Without this desync, a
+    // freshly seeded test DB could coincidentally have orangTua.id === user_id for
+    // the very first row created, which would let the pre-fix bug pass silently.
+    \App\Models\User::factory()->create();
 
     $orangTua = OrangTua::factory()->create();
 

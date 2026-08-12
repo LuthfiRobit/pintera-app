@@ -111,9 +111,9 @@ class AutoAllocationEngine
             $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
 
             if ($kontakUtama !== null) {
-                // Spec (keuangan-05-notifikasi.md Addendum A): hanya tagihan berprioritas
-                // tertinggi (yang pertama dalam koleksi $skippedTagihan yang sudah terurut
-                // priority_score) yang memicu notifikasi ini — bukan semua tagihan yang ter-skip.
+                // Spec (keuangan-05-notifikasi.md, tabel event notifikasi): "men-skip tagihan
+                // prioritas tertinggi" — hanya tagihan pertama dalam koleksi $skippedTagihan
+                // yang sudah terurut priority_score yang memicu notifikasi ini, bukan semuanya.
                 $tagihan = $skippedTagihan->first();
                 $selisih = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
 
