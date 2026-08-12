@@ -54,6 +54,10 @@ class BriWebhookController extends Controller
                         }
                         
                         if ($va->va_type === 'BILL_DIRECT') {
+                            if ($va->amount !== null && bccomp((string) $va->amount, (string) $amountPaid, 2) !== 0) {
+                                throw new \Exception("Amount mismatch for VA {$vaNumber}: expected {$va->amount}, got {$amountPaid}");
+                            }
+
                             $va->status = 'PAID';
                             $va->save();
 

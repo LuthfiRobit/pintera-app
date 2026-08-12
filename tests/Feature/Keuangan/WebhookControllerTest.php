@@ -242,4 +242,64 @@ class WebhookControllerTest extends TestCase
         // Must NOT be a 2xx — BRI needs a failure status to retry delivery.
         $response->assertStatus(500);
     }
+
+    public function test_webhook_rejects_bill_direct_payment_when_amount_does_not_match()
+    {
+        $mockGateway = Mockery::mock(PaymentGatewayInterface::class);
+        $mockGateway->shouldReceive('verifyCallbackSignature')->once()->andReturn(true);
+        $this->app->instance(PaymentGatewayInterface::class, $mockGateway);
+
+        $siswa = Siswa::factory()->create();
+        $tagihan = Tagihan::factory()->create([
+            'total_tagihan' => 100000,
+            'net_amount' => 100000,
+            'paid_amount' => 0,
+            'status' => 'belum_bayar'
+        ]);
+
+        $pembayaran = Pembayaran::factory()->create([
+            'siswa_id' => $siswa->id,
+            'metode' => 'va_bri',
+            'status' => 'menunggu_pembayaran'
+        ]);
+
+        PembayaranTagihan::create([
+            'pembayaran_id' => $pembayaran->id,
+            'tagihan_id' => $tagihan->id,
+            'amount_allocated' => 100000
+        ]);
+
+        $va = BriVirtualAccount::factory()->create([
+            'pembayaran_id' => $pembayaran->id,
+            'va_type' => 'BILL_DIRECT',
+            'va_number' => '1234567890',
+            'amount' => 100000,
+            'status' => 'WAITING'
+        ]);
+
+        // BRI reports a DIFFERENT amount than the VA was created for.
+        $payload = [
+            'BrivaNo' => '1234',
+            'CustCode' => '567890',
+            'Amount' => '75000.00',
+            'Status' => 'PAID',
+        ];
+
+        $response = $this->postJson('/webhook/bri/payment-notification', $payload, [
+            'BRI-Signature' => 'valid'
+        ]);
+
+        $response->assertStatus(500);
+
+        // Nothing should have been marked paid/lunas — the mismatch blocks allocation.
+        $va->refresh();
+        expect($va->status)->toBe('WAITING');
+
+        $pembayaran->refresh();
+        expect($pembayaran->status)->toBe('menunggu_pembayaran');
+
+        $tagihan->refresh();
+        expect($tagihan->paid_amount)->toEqual(0);
+        expect($tagihan->status)->toBe('belum_bayar');
+    }
 }
