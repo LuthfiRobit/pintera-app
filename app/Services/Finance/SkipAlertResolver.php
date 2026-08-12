@@ -10,11 +10,19 @@ use App\Models\Tagihan;
 class SkipAlertResolver
 {
     /**
-     * Read-only replica of AutoAllocationEngine::run()'s priority ordering and
-     * allocation walk, used ONLY to compute what the banner should show — never
-     * touches the wallet or any tagihan row. Does not call AutoAllocationEngine
-     * itself, per this plan's Global Constraints (6a does not modify or invoke
-     * that engine's write path from the dashboard).
+     * Read-only replica of AutoAllocationEngine::run()'s FULL allocation walk
+     * (priority ordering AND the partial-allocation logic), used ONLY to compute
+     * what the banner should show — never touches the wallet or any tagihan row.
+     * Does not call AutoAllocationEngine itself, per this plan's Global
+     * Constraints (6a does not modify or invoke that engine's write path from
+     * the dashboard).
+     *
+     * Semantics match AutoAllocationEngine exactly: a tagihan that would receive
+     * ANY partial payment (amountToPay > 0) is NOT "skipped" — it would be marked
+     * 'sebagian' by the real engine. Only a tagihan that would receive literally
+     * $0 counts as skipped (zero-or-skip, not full-or-skip), and only the
+     * highest-priority such tagihan is surfaced, matching
+     * SaldoTidakCukupNotification's selection of $skippedTagihan->first().
      *
      * @return array{tagihan: Tagihan, selisih: float}|null
      */
@@ -41,31 +49,36 @@ class SkipAlertResolver
         }
 
         $saldo = (float) $wallet->balance;
+        $allocatedIds = [];
 
         foreach ($tagihans as $tagihan) {
-            $sisaTagihan = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
-
-            if ($saldo >= $sisaTagihan) {
-                // Fully covered by remaining balance — walk continues to the next
-                // priority tagihan, same as AutoAllocationEngine's allocation order.
-                $saldo -= $sisaTagihan;
-
-                continue;
+            if ($saldo <= 0) {
+                break;
             }
 
-            // First tagihan the remaining balance can't fully cover: this is the
-            // one the dashboard banner should surface, with the shortfall being
-            // how much more is needed on top of the current balance.
-            $selisih = $sisaTagihan - $saldo;
+            $sisaTagihan = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
+            $amountToPay = min($saldo, $sisaTagihan);
 
-            $tagihan->setRelation(
-                'jenisTagihan',
-                $tagihan->jenisTagihan()->withoutGlobalScope(TenantScope::class)->first()
-            );
-
-            return ['tagihan' => $tagihan, 'selisih' => $selisih];
+            if ($amountToPay > 0) {
+                $saldo -= $amountToPay;
+                $allocatedIds[] = $tagihan->id;
+            }
         }
 
-        return null;
+        $skipped = $tagihans->whereNotIn('id', $allocatedIds)->values();
+
+        if ($skipped->isEmpty()) {
+            return null;
+        }
+
+        $tagihan = $skipped->first();
+        $selisih = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
+
+        $tagihan->setRelation(
+            'jenisTagihan',
+            $tagihan->jenisTagihan()->withoutGlobalScope(TenantScope::class)->first()
+        );
+
+        return ['tagihan' => $tagihan, 'selisih' => $selisih];
     }
 }

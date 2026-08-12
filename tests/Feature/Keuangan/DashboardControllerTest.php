@@ -46,8 +46,36 @@ it('shows the wallet balance and VA number on the dashboard', function () {
     $response->assertSee('8808081234567890');
 });
 
-it('shows the skip-alert banner when balance cannot cover the highest-priority tagihan', function () {
+it('shows the skip-alert banner for a tagihan that receives zero allocation', function () {
     [$user, , $siswa] = actingAsOrangTuaForDashboard();
+    // Wallet balance exactly covers the higher-priority tagihan, leaving nothing
+    // for the lower-priority one — mirrors AutoAllocationEngine/SaldoTidakCukupNotificationTest's
+    // zero-or-skip scenario: the second tagihan receives literally $0 (amountToPay == 0).
+    $siswa->wallet->update(['balance' => 100000]);
+    $jenisTinggi = JenisTagihan::factory()->create(['priority_score' => 1, 'nama' => 'SPP']);
+    Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenisTinggi->id,
+        'total_tagihan' => 100000, 'net_amount' => 100000, 'paid_amount' => 0,
+        'status' => 'belum_bayar', 'jatuh_tempo' => now()->addDays(5),
+    ]);
+    $jenisRendah = JenisTagihan::factory()->create(['priority_score' => 2, 'nama' => 'Buku']);
+    Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenisRendah->id,
+        'total_tagihan' => 500000, 'net_amount' => 500000, 'paid_amount' => 0,
+        'status' => 'belum_bayar', 'jatuh_tempo' => now()->addDays(5),
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('500.000', false); // shortfall = full net_amount, zero allocated
+});
+
+it('does not show the skip-alert banner for a single tagihan that receives a partial allocation', function () {
+    [$user, , $siswa] = actingAsOrangTuaForDashboard();
+    // Under zero-or-skip semantics, a tagihan that WOULD receive a partial payment
+    // (amountToPay > 0) is not "skipped" — it would be marked 'sebagian' by the real
+    // engine, not left out of allocation entirely. This locks in the reverted decision.
     $siswa->wallet->update(['balance' => 50000]);
     $jenis = JenisTagihan::factory()->create(['priority_score' => 1, 'nama' => 'SPP']);
     Tagihan::factory()->create([
@@ -59,7 +87,7 @@ it('shows the skip-alert banner when balance cannot cover the highest-priority t
     $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
 
     $response->assertOk();
-    $response->assertSee('150.000', false); // shortfall = 200000 - 50000
+    $response->assertDontSee('Top-up Rp');
 });
 
 it('does not show the skip-alert banner when balance fully covers all tagihan', function () {
