@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\Lembaga\ProgramInklusiController as LembagaProgra
 use App\Http\Controllers\Admin\LembagaController;
 use App\Http\Controllers\Admin\MataPelajaranController;
 use App\Http\Controllers\Admin\OrangTuaController;
+use App\Http\Controllers\Admin\ManualPaymentController;
 use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\PendaftaranSiswaController;
@@ -203,6 +204,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');
     Route::get('pembayaran/data', [PembayaranController::class, 'data'])->name('pembayaran.data');
     Route::post('pembayaran/{pembayaran}/verifikasi', [PembayaranController::class, 'verifikasi'])->name('pembayaran.verifikasi');
+
+    Route::post('manual-payment/{manualPaymentRequest}/approve', [ManualPaymentController::class, 'approve'])->name('manual-payment.approve');
+    Route::post('manual-payment/{manualPaymentRequest}/reject', [ManualPaymentController::class, 'reject'])->name('manual-payment.reject');
 
     Route::get('pola-jam', [PolaJamController::class, 'index'])->name('pola-jam.index');
     Route::get('pola-jam/create', [PolaJamController::class, 'create'])->name('pola-jam.create');
