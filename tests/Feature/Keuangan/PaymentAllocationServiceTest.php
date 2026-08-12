@@ -45,7 +45,7 @@ class PaymentAllocationServiceTest extends TestCase
             'amount_allocated' => 30000
         ]);
 
-        $service = new PaymentAllocationService();
+        $service = app(PaymentAllocationService::class);
         $service->allocate($pembayaran);
 
         $tagihan1->refresh();
@@ -76,7 +76,7 @@ class PaymentAllocationServiceTest extends TestCase
             'amount_allocated' => 100000
         ]);
 
-        $service = new PaymentAllocationService();
+        $service = app(PaymentAllocationService::class);
         $service->allocate($pembayaran);
 
         $tagihan->refresh();

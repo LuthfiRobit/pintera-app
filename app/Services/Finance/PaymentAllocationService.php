@@ -3,10 +3,17 @@
 namespace App\Services\Finance;
 
 use App\Models\Pembayaran;
+use App\Models\Siswa;
+use App\Models\Tagihan;
+use App\Notifications\Finance\PembayaranBerhasilNotification;
 use Illuminate\Support\Facades\DB;
 
 class PaymentAllocationService
 {
+    public function __construct(private readonly NotificationDispatcher $dispatcher)
+    {
+    }
+
     /**
      * Allocate payment amount to related bills (tagihan) and update their statuses.
      */
@@ -33,13 +40,33 @@ class PaymentAllocationService
             $lockedTagihan->paid_amount += $pt->amount_allocated;
 
             // Update status based on the new paid amount compared to net_amount
+            $becameLunas = false;
             if ($lockedTagihan->paid_amount >= $lockedTagihan->net_amount) {
+                $becameLunas = $lockedTagihan->status !== 'lunas';
                 $lockedTagihan->status = 'lunas';
             } elseif ($lockedTagihan->paid_amount > 0) {
                 $lockedTagihan->status = 'sebagian';
             }
 
             $lockedTagihan->save();
+
+            if ($becameLunas) {
+                $tagihanId = $lockedTagihan->id;
+                $metode = $pembayaran->metode;
+
+                DB::afterCommit(function () use ($tagihanId, $metode) {
+                    $freshTagihan = Tagihan::with(['jenisTagihan', 'tagihable'])->find($tagihanId);
+                    if ($freshTagihan === null || $freshTagihan->tagihable_type !== Siswa::class) {
+                        return;
+                    }
+
+                    $siswa = $freshTagihan->tagihable;
+                    $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
+                    if ($kontakUtama !== null) {
+                        $this->dispatcher->send($kontakUtama, new PembayaranBerhasilNotification($freshTagihan, $metode));
+                    }
+                });
+            }
         }
     }
 }
