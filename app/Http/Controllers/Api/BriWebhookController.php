@@ -128,6 +128,8 @@ class BriWebhookController extends Controller
 
         } catch (\Exception $e) {
             Log::error("Webhook error: " . $e->getMessage());
+
+            return response()->json(['status' => 'error', 'message' => 'Failed to process payment notification'], 500);
         }
 
         return response()->json(['status' => 'success']);

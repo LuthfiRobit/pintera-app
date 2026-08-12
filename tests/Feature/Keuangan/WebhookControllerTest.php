@@ -220,4 +220,26 @@ class WebhookControllerTest extends TestCase
 
         $this->assertTrue($hasForUpdate, "Webhook must use lockForUpdate() on bri_virtual_accounts.");
     }
+
+    public function test_webhook_returns_error_status_when_payment_reference_not_found()
+    {
+        $mockGateway = Mockery::mock(PaymentGatewayInterface::class);
+        $mockGateway->shouldReceive('verifyCallbackSignature')->once()->andReturn(true);
+        $this->app->instance(PaymentGatewayInterface::class, $mockGateway);
+
+        // No BriVirtualAccount or BriQrisPayment record matches this payload at all.
+        $payload = [
+            'BrivaNo' => '0000',
+            'CustCode' => '000000',
+            'Amount' => '10000.00',
+            'Status' => 'PAID',
+        ];
+
+        $response = $this->postJson('/webhook/bri/payment-notification', $payload, [
+            'BRI-Signature' => 'valid'
+        ]);
+
+        // Must NOT be a 2xx — BRI needs a failure status to retry delivery.
+        $response->assertStatus(500);
+    }
 }
