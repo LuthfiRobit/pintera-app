@@ -15,11 +15,11 @@ class NotificationFeedResolver
      */
     public function resolve(User $user): Collection
     {
-        $userNotifications = $user->notifications()->limit(self::LIMIT)->get();
+        $userNotifications = $user->notifications()->latest()->limit(self::LIMIT)->get();
 
         $orangTua = $user->orangTua;
         $orangTuaNotifications = $orangTua !== null
-            ? $orangTua->notifications()->limit(self::LIMIT)->get()
+            ? $orangTua->notifications()->latest()->limit(self::LIMIT)->get()
             : collect();
 
         return $userNotifications
