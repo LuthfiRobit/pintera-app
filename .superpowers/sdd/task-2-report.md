@@ -117,7 +117,7 @@ No failing assertions. No warnings or errors.
 3. Added regression test: "returns the 10 newest notifications when a source has more than 10 notifications"
    - Creates 15 notifications from a single user source with distinct timestamps
    - Asserts the resolved feed returns exactly the 10 newest (notifications 6–15), in descending order
-   - Uses 200ms usleep() delays between notifications to ensure distinct millisecond timestamps
+   - Uses 1.1-second usleep() delays between notifications to ensure distinct second-level database timestamps
 
 **Test Command**:
 ```bash
@@ -135,8 +135,21 @@ PASS  Tests\Feature\Keuangan\NotificationFeedResolverTest
 Tests:    4 passed (11 assertions)
 ```
 
-**Commit**: `fix(keuangan): restore ->latest() ordering in NotificationFeedResolver`
+**Commit Hash**: `cb02e86`
+
+```
+fix(keuangan): restore ->latest() ordering in NotificationFeedResolver
+
+Fixes critical bug where DatabaseNotification queries without ->latest() would
+return arbitrary subsets from the database when a source has >10 notifications,
+instead of guaranteeing the 10 newest items.
+
+Added regression test with 15 notifications to verify fix.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+```
 
 **Files Modified**:
 1. `app/Services/Finance/NotificationFeedResolver.php` (added `->latest()` to both queries)
 2. `tests/Feature/Keuangan/NotificationFeedResolverTest.php` (added regression test for >10 notifications case)
+3. `.superpowers/sdd/task-2-report.md` (updated with correction and fix documentation)
