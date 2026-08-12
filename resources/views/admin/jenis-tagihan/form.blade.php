@@ -290,7 +290,7 @@
                                     <option value="fixed" :selected="rule.tipe_potongan === 'fixed'">Nominal Tetap</option>
                                     <option value="persen" :selected="rule.tipe_potongan === 'persen'">Persentase</option>
                                 </select>
-                                <input type="number" min="0" :max="rule.tipe_potongan === 'persen' ? 100 : null" step="0.01" :name="'keringanan[' + ri + '][nilai]'" x-model="rule.nilai" placeholder="Nilai Potongan" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                <input type="number" min="0" :max="rule.tipe_potongan === 'persen' ? 100 : null" step="0.01" :name="'keringanan[' + ri + '][nilai]'" x-model="rule.nilai" :placeholder="rule.tipe_potongan === 'persen' ? 'Contoh: 20 (%)' : 'Contoh: 50000 (Rupiah)'" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
                                 <input type="text" :name="'keringanan[' + ri + '][keterangan]'" x-model="rule.keterangan" placeholder="Keterangan" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
                                 <div class="text-right sm:text-center">
                                     <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.keringanan.splice(ri, 1)">Hapus</button>

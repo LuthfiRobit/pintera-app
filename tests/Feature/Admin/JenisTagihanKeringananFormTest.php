@@ -44,3 +44,15 @@ it('pre-fills existing keringanan rules on the edit page', function () {
     $response->assertOk();
     $response->assertSee((string) $kategori->id, false);
 });
+
+it('shows a reactive placeholder on nilai potongan indicating rupiah vs percent', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertOk();
+    $response->assertSee(":placeholder=\"rule.tipe_potongan === 'persen' ? 'Contoh: 20 (%)' : 'Contoh: 50000 (Rupiah)'\"", false);
+});
