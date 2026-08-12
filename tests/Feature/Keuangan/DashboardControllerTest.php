@@ -90,6 +90,28 @@ it('does not show the skip-alert banner for a single tagihan that receives a par
     $response->assertDontSee('Top-up Rp');
 });
 
+it('shows the skip-alert banner when wallet balance is zero and a tagihan is outstanding', function () {
+    // Deliberate divergence from AutoAllocationEngine::run(), which returns early
+    // when balance <= 0 (before $skippedTagihan is ever populated) and so sends no
+    // notification in this exact scenario. SkipAlertResolver has no such early
+    // return: a parent with Rp0 and unpaid bills should still see the dashboard
+    // "top up" banner. Locks in this intentional behavior (see SkipAlertResolver
+    // docblock).
+    [$user, , $siswa] = actingAsOrangTuaForDashboard();
+    $siswa->wallet->update(['balance' => 0]);
+    $jenis = JenisTagihan::factory()->create(['priority_score' => 1, 'nama' => 'SPP']);
+    Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'total_tagihan' => 300000, 'net_amount' => 300000, 'paid_amount' => 0,
+        'status' => 'belum_bayar', 'jatuh_tempo' => now()->addDays(5),
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('300.000', false);
+});
+
 it('does not show the skip-alert banner when balance fully covers all tagihan', function () {
     [$user, , $siswa] = actingAsOrangTuaForDashboard();
     $siswa->wallet->update(['balance' => 500000]);
@@ -120,7 +142,7 @@ it('shows the "tanpa anak" page for an orang tua with zero linked siswa', functi
     $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
 
     $response->assertOk();
-    $response->assertSee('belum ada anak terdaftar', false);
+    $response->assertSee('Belum ada anak terdaftar', false);
 });
 
 it('blocks a user without keuangan.akses permission', function () {

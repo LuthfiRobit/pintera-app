@@ -10,19 +10,20 @@ use App\Models\Tagihan;
 class SkipAlertResolver
 {
     /**
-     * Read-only replica of AutoAllocationEngine::run()'s FULL allocation walk
-     * (priority ordering AND the partial-allocation logic), used ONLY to compute
-     * what the banner should show — never touches the wallet or any tagihan row.
-     * Does not call AutoAllocationEngine itself, per this plan's Global
-     * Constraints (6a does not modify or invoke that engine's write path from
-     * the dashboard).
+     * Read-only replica of AutoAllocationEngine::run()'s priority ordering and
+     * allocation walk (zero-or-skip semantics — a tagihan receiving ANY partial
+     * payment is not "skipped"), used ONLY to compute what the banner should
+     * show. Never touches the wallet or any tagihan row, and does not call
+     * AutoAllocationEngine itself.
      *
-     * Semantics match AutoAllocationEngine exactly: a tagihan that would receive
-     * ANY partial payment (amountToPay > 0) is NOT "skipped" — it would be marked
-     * 'sebagian' by the real engine. Only a tagihan that would receive literally
-     * $0 counts as skipped (zero-or-skip, not full-or-skip), and only the
-     * highest-priority such tagihan is surfaced, matching
-     * SaldoTidakCukupNotification's selection of $skippedTagihan->first().
+     * One deliberate divergence: AutoAllocationEngine::run() returns early when
+     * balance <= 0, before computing $skippedTagihan at all, so a zero-balance
+     * wallet with outstanding tagihan produces no notification from the engine.
+     * This resolver has no such early return — a zero balance still surfaces the
+     * dashboard banner (the highest-priority tagihan is treated as fully
+     * skipped), which is the correct proactive-warning behavior for a parent
+     * viewing their own dashboard, even though the backend notification system
+     * would stay silent in the same scenario.
      *
      * @return array{tagihan: Tagihan, selisih: float}|null
      */

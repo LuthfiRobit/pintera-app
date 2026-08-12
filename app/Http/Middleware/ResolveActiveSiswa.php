@@ -40,6 +40,10 @@ class ResolveActiveSiswa
                 ?? $orangTua->siswa()->withoutGlobalScope(TenantScope::class)->first();
         }
 
+        if ($activeSiswa !== null) {
+            view()->share('resolvedActiveSiswaId', $activeSiswa->id);
+        }
+
         $request->attributes->set('activeSiswa', $activeSiswa);
 
         return $next($request);

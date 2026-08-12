@@ -11,6 +11,7 @@
         ? $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->select('siswa.id', 'siswa.nama_lengkap')->orderBy('siswa.nama_lengkap')->get()
         : collect();
     $activeSiswaId = session('active_siswa_id');
+    $activeSiswaId = $activeSiswaId ?? (isset($resolvedActiveSiswaId) ? $resolvedActiveSiswaId : null);
 @endphp
 
 <header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-300 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">
@@ -131,7 +132,7 @@
                 >
                     @foreach ($childOptions as $option)
                         <a
-                            href="{{ request()->fullUrlWithQuery(['switch_siswa' => $option->id]) }}"
+                            href="{{ route('keuangan.dashboard', ['switch_siswa' => $option->id]) }}"
                             class="flex items-center justify-between px-4 py-2 text-sm {{ $activeSiswaId === $option->id ? 'font-semibold text-gray-900' : 'text-gray-600 hover:bg-gray-50' }}"
                         >
                             {{ $option->nama_lengkap }}
