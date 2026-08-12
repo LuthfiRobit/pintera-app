@@ -107,3 +107,120 @@ Algoritma:
 - [x] Pembatalan tagihan → Tidak memicu notifikasi real-time.
 - [x] **Cakupan penerima reminder H-3 vs H-1** (2026-08-11, dikonfirmasi ulang user setelah ditemukan perbedaan dengan draf spec sebelumnya): **kontak utama saja untuk KEDUA reminder** (H-3 dan H-1). Draf spec sebelumnya sempat menyisakan ini sebagai "keputusan sementara" dengan opsi mengirim ke SEMUA kontak orang tua khusus untuk H-1 (karena urgent) — user memutuskan tetap kontak utama saja untuk kesederhanaan implementasi, mengorbankan cakupan ekstra di H-1 demi konsistensi & kesederhanaan.
 - [x] **Asumsi badge notifikasi in-app "sudah ada"** (2026-08-11, ditemukan saat audit sebelum implementation plan ditulis): **SALAH — dicek langsung, tidak ada satu pun dari 11 `Notification` class existing (`app/Notifications/`) yang memakai channel `database`.** Tidak ada badge/dropdown lonceng in-app di codebase ini sama sekali saat ini. Dikonfirmasi ke user: Sub-project 5 tetap backend-only (kirim ke channel `database` seperti rencana awal, siap dipakai), UI badge-nya tetap scope Sub-project 6 seperti draf spec awal — cuma asumsi "kemungkinan besar sudah ada, tinggal reuse" yang keliru dan sekarang diluruskan di dokumen ini.
+
+---
+
+## Addendum (2026-08-11): 2 Perluasan Scope + Detail Teknis
+
+Ditemukan saat riset pra-plan bahwa endpoint approve/reject `ManualPaymentRequest` (dari Sub-project 4) belum pernah dibangun — cuma model+migration+pembuatan request `PENDING` yang ada (`PaymentService::createManualPayment()`). Dikonfirmasi ke user: dibangun sebagai bagian Sub-project 5 (bukan ditunda), karena jadi satu-satunya hook point untuk 2 dari 6 notification class di spec ini. Detail kedua perluasan scope ada di bawah.
+
+### A. Skip-Tracking di `AutoAllocationEngine::run()`
+
+**Lokasi persis penyisipan** — dibaca langsung dari `app/Services/Finance/AutoAllocationEngine.php` versi saat ini (baris 14-98):
+
+```php
+public function run(Wallet $wallet): void
+{
+    DB::transaction(function () use ($wallet) {
+        $wallet = Wallet::where('id', $wallet->id)->lockForUpdate()->first();
+        // ... query $tagihans (baris 26-34), tidak berubah ...
+
+        $allocated = [];
+        $totalAllocatedAmount = 0;
+
+        foreach ($tagihans as $tagihan) {
+            if ($saldo <= 0) { break; }
+            $sisaTagihan = $tagihan->net_amount - $tagihan->paid_amount;
+            $amountToPay = min($saldo, $sisaTagihan);
+            if ($amountToPay > 0) { /* ...isi $allocated seperti sekarang... */ }
+        }
+
+        // ... blok if ($totalAllocatedAmount > 0) { ...isi Pembayaran/PembayaranTagihan/Tagihan seperti sekarang... }
+    });
+}
+```
+
+**Fakta penting yang menyederhanakan desain**: query `$tagihans` (baris 26-34) sudah difilter `status IN ('belum_bayar', 'sebagian')`, yang menjamin `net_amount > paid_amount` untuk SETIAP baris — artinya `$sisaTagihan` selalu `> 0` untuk tagihan mana pun yang benar-benar dicapai loop. Kombinasi dengan guard `if ($saldo <= 0) break;` di awal iterasi berarti: **setiap tagihan yang benar-benar diproses loop PASTI masuk `$allocated`** (tidak pernah ada kasus "diproses tapi $amountToPay <= 0"). Jadi tagihan yang "ter-skip" bukan hasil dari cabang logic baru — cukup dihitung SETELAH loop selesai sebagai selisih set:
+
+```php
+$skippedTagihan = $tagihans->whereNotIn('id', collect($allocated)->pluck('tagihan.id'));
+```
+
+**Di mana persis disisipkan**: baris ini ditambahkan tepat SETELAH `foreach` loop selesai (setelah baris 60 di kode saat ini), MASIH DI DALAM closure `DB::transaction(...)` — karena cuma butuh data yang sudah ada di memori (`$tagihans`, `$allocated`), tidak perlu query tambahan, tidak menyentuh row/lock apa pun yang belum dikunci. Variabel `$skippedTagihan` di-capture keluar transaction lewat `use (&$skippedTagihan)` pada closure — **pola identik** dengan `$walletTopupData` di `BriWebhookController::handlePaymentNotification()` (Sub-project 04, sudah diaudit & disetujui).
+
+**Notifikasi dikirim SETELAH `DB::transaction(...)` selesai** (setelah baris 97/98 kode saat ini), loop `foreach ($skippedTagihan as $tagihan) { ... }` memanggil `SaldoTidakCukupNotification` ke kontak utama siswa pemilik tagihan tsb. **Prinsip yang dijaga**: TIDAK ADA operasi DB baru (query/lock) yang ditambahkan ke dalam transaction — murni pembacaan array yang sudah ada di memori, jadi tidak mengubah sama sekali pola locking yang diperbaiki di audit Sub-project 03 (nested-transaction fix, `debitWithinTransaction()` vs `debit()`). `run()` sendiri TETAP `void` (satu-satunya caller, `Wallet::topup()` baris 71, tidak perlu diubah) — notifikasi dikirim dari DALAM `run()`, bukan di-bubble-up ke caller.
+
+**In-memory atau persist ke DB?** **Murni in-memory** (array lokal, tidak ada tabel/kolom baru). Alasan:
+1. `notification_logs` (tabel baru di spec ini) SUDAH mencatat setiap percobaan kirim `SaldoTidakCukupNotification` — audit trail "kapan siswa X diberitahu saldo kurang" sudah tercakup di situ.
+2. `wallet_mutasi` + `billing_job_logs` yang sudah ada tetap menyediakan jejak forensik "kenapa tagihan ini belum lunas" (saldo di titik waktu T) kalau suatu saat perlu direkonstruksi manual.
+3. Tabel "skipped_tagihan" terpisah adalah scope yang tidak diminta spec manapun — YAGNI.
+
+### B. Endpoint Approve/Reject `ManualPaymentRequest`
+
+**Otorisasi**: permission `pembayaran.verifikasi` — SUDAH ADA di `database/seeders/PermissionSeeder.php` (dikonfirmasi langsung, baris yang sama dengan `pembayaran.view`, `pembayaran.catat-manual`), tidak perlu permission baru.
+
+**Konfirmasi alur `topup()` — TIDAK RELEVAN untuk endpoint ini, dan ini penting untuk dipahami sebelum implementasi:**
+
+Dibaca langsung `PaymentService::createManualPayment(Siswa $siswa, Collection $tagihans, array $data)` — parameter `$tagihans` WAJIB diisi (dipakai `createPembayaranRecord()` untuk membangun baris `pembayaran_tagihan` per tagihan yang dibayar). **Tidak ada jalur kode di mana pun untuk "transfer manual yang ditujukan sebagai top-up wallet murni"** — beda dengan VA/QRIS yang punya tipe eksplisit `WALLET_PERMANENT` di `getOrCreatePermanentVa()`. Manual payment di codebase ini SELALU menyasar tagihan spesifik lewat `pembayaran_tagihan`, tidak pernah wallet secara langsung. `Pembayaran.topup_status` (kolom dari Sub-project 04) tidak pernah di-set oleh `createManualPayment()`/`createPembayaranRecord()` — tetap default `'none'`.
+
+**Konsekuensi desain**: approve action **TIDAK PERNAH memanggil `Wallet::topup()`**, jadi tidak butuh pola "keluarkan side-effect dari transaction" seperti webhook BRI. Approve action mengikuti pola `createCashPayment()` (persis di file yang sama, `PaymentService.php` baris 147-164) — alokasi terjadi LANGSUNG di dalam satu transaction, karena satu-satunya efek samping adalah `PaymentAllocationService::allocate($pembayaran)` (query+update biasa, bukan operasi wallet dengan lock terpisah).
+
+**Desain controller**:
+```php
+// app/Http/Controllers/Admin/ManualPaymentController.php (baru)
+
+public function approve(Request $request, ManualPaymentRequest $manualPaymentRequest): RedirectResponse
+{
+    $this->authorize('pembayaran.verifikasi');
+
+    if ($manualPaymentRequest->status !== 'PENDING') {
+        // 422 — sudah diproses sebelumnya, cegah approve/reject ganda
+    }
+
+    DB::transaction(function () use ($manualPaymentRequest, $request) {
+        $manualPaymentRequest->update([
+            'status' => 'APPROVED',
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        $pembayaran = $manualPaymentRequest->pembayaran;
+        $pembayaran->update(['status' => 'lunas']);
+
+        app(PaymentAllocationService::class)->allocate($pembayaran);
+    });
+
+    // Notifikasi TransferManualDisetujuiNotification dikirim di sini, SETELAH transaction —
+    // konsisten dengan prinsip "side-effect eksternal (termasuk notifikasi) di luar transaction",
+    // meski di kasus ini tidak ada risiko nested-lock karena tidak ada Wallet::topup() terlibat.
+}
+
+public function reject(Request $request, ManualPaymentRequest $manualPaymentRequest): RedirectResponse
+{
+    $this->authorize('pembayaran.verifikasi');
+    $request->validate(['rejection_reason' => 'required|string|max:255']);
+
+    if ($manualPaymentRequest->status !== 'PENDING') {
+        // 422 — sudah diproses sebelumnya
+    }
+
+    DB::transaction(function () use ($manualPaymentRequest, $request) {
+        $manualPaymentRequest->update([
+            'status' => 'REJECTED',
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'rejection_reason' => $request->rejection_reason,
+        ]);
+
+        $manualPaymentRequest->pembayaran->update(['status' => 'ditolak']);
+    });
+
+    // Notifikasi TransferManualDitolakNotification (is_urgent=true) dikirim di sini.
+}
+```
+
+**Guard idempotency eksplisit**: cek `status !== 'PENDING'` sebelum memproses APPROVE atau REJECT — mencegah approve/reject ganda (mis. admin klik approve dua kali, atau approve setelah reject) menghasilkan notifikasi/alokasi dobel. Pola ini konsisten dengan idempotency check yang sudah ada di `BriWebhookController` (cek `status === 'PAID'` sebelum proses) dan `batalTagihan()` (cek `status !== 'belum_bayar'`).
+
+**Yang TIDAK termasuk endpoint ini** (scope minimal, cukup untuk membuka hook notifikasi):
+- UI admin untuk daftar `ManualPaymentRequest` pending + tombol approve/reject — di luar scope sub-project ini (backend-only, sama seperti keputusan Sub-project 04 untuk seluruh Payment Channels). Endpoint POST siap dipakai kapan pun UI-nya dibangun.
+- Preview/download bukti transfer (`transfer_proof_path`) — sudah ada kolomnya dari Sub-project 04, tidak perlu logic baru di sub-project ini.
