@@ -126,7 +126,36 @@ class PaymentService
 
         return DB::transaction(function () use ($siswa, $tagihans, $data) {
             $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'transfer_manual', 'menunggu_verifikasi');
-            
+
+            ManualPaymentRequest::create([
+                'pembayaran_id' => $pembayaran->id,
+                'requested_by' => $data['requested_by'],
+                'amount' => $data['amount'],
+                'transfer_proof_path' => $data['transfer_proof_path'],
+                'bank_origin' => $data['bank_origin'] ?? null,
+                'transfer_date' => $data['transfer_date'],
+                'status' => 'PENDING',
+            ]);
+
+            return $pembayaran;
+        });
+    }
+
+    /**
+     * Create a manual transfer request intended as a wallet top-up (not tied to any tagihan).
+     */
+    public function createManualTopupPayment(Siswa $siswa, array $data): Pembayaran
+    {
+        return DB::transaction(function () use ($siswa, $data) {
+            $pembayaran = Pembayaran::create([
+                'siswa_id' => $siswa->id,
+                'metode' => 'transfer_manual',
+                'status' => 'menunggu_verifikasi',
+                'amount' => $data['amount'],
+                'topup_status' => 'pending',
+                'channel_reference' => (string) Str::uuid(),
+            ]);
+
             ManualPaymentRequest::create([
                 'pembayaran_id' => $pembayaran->id,
                 'requested_by' => $data['requested_by'],
