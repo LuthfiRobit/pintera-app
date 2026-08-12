@@ -30,7 +30,7 @@
                 lembaga: @js($lembagaList->map(fn ($l) => ['value' => $l->id, 'label' => $l->nama])),
                 tahun_ajaran: @js($tahunAjaranList->map(fn ($t) => ['value' => $t->id, 'label' => $t->nama])),
                 tingkat: @js($tingkatList->map(fn ($t) => ['value' => $t, 'label' => $t])),
-                kelas: @js($kelasList->map(fn ($k) => ['value' => $k->id, 'label' => $k->nama.' ('.$k->tahunAjaran->nama.')'])),
+                kelas: @js($kelasList->map(fn ($k) => ['value' => $k->id, 'label' => $k->nama.' ('.($k->tahunAjaran?->nama ?? '-').')'])),
             },
             initialSasaran: @js(old('sasaran', $jenisTagihan?->sasaranGrup->where('tipe', 'sasaran')->map(fn ($g) => ['nominal' => null, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),
             initialTarif: @js(old('tarif', $jenisTagihan?->sasaranGrup->where('tipe', 'tarif')->map(fn ($g) => ['nominal' => $g->nominal, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),

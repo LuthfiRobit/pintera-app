@@ -49,7 +49,13 @@ it('exposes both the stored kriteria value and the matching reference option id 
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('admin_keuangan');
-    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    // Pin the tahun ajaran explicitly (same lembaga, fixed nama) instead of relying on
+    // KelasFactory's default `tahun_ajaran_id => TahunAjaran::factory()` — that default creates
+    // a TahunAjaran with its own random lembaga_id, which used to crash this page via the
+    // TenantScope eager-load mismatch, and even now would make the expected label below
+    // non-deterministic (random faker year).
+    $tahunAjaran = \App\Models\TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
 
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Kelas', 'kategori' => 'spp', 'bisa_dicicil' => false]);
     $grup = $jenisTagihan->sasaranGrup()->create(['tipe' => 'sasaran']);
@@ -60,11 +66,22 @@ it('exposes both the stored kriteria value and the matching reference option id 
 
     $response->assertOk();
 
-    // Blade's @js directive wraps the JSON payload as `JSON.parse('...')`, which requires a
-    // second encoding pass that turns every literal double quote into the six-character
-    // sequence " (so it doesn't collide with the surrounding single-quoted JS string).
-    // Mirror that here so the expected fragments match the raw HTML byte-for-byte.
-    $asEmbeddedJs = fn ($data) => str_replace('"', chr(92).chr(117).chr(48).chr(48).chr(50).chr(50), json_encode($data));
+    // Blade's @js directive wraps the JSON payload as `JSON.parse('...')` via
+    // Illuminate\Support\Js::from(), which double-json-encodes the value (once to produce the
+    // JSON payload, once more to safely embed that string inside a single-quoted JS string
+    // literal — escaping quotes to \u0022 AND doubling up already-escaped forward slashes, e.g.
+    // "2026/2027" becomes \u0022...2026\\\/2027...\u0022). A naive single json_encode() plus a
+    // manual quote-only replacement (the previous version of this helper) diverges the moment
+    // the payload contains a "/" — as it now does via the tahun ajaran suffix in kelas labels
+    // (e.g. "27A (2026/2027)"). Delegate to the real Js::from() so this always matches Blade's
+    // actual output byte-for-byte, then strip the "JSON.parse('...')" wrapper to get just the
+    // inner escaped JSON fragment (which is what actually appears embedded in the larger
+    // referenceOptions/initialSasaran config blob in the rendered HTML).
+    $asEmbeddedJs = function ($data) {
+        $wrapped = (string) \Illuminate\Support\Js::from($data);
+
+        return preg_replace('/^JSON\.parse\\(\'(.*)\'\\)$/s', '$1', $wrapped);
+    };
 
     // The kriteria's stored value must appear as a string in the initialSasaran config blob.
     $kriteriaJson = $asEmbeddedJs(['field' => 'kelas', 'operator' => 'in', 'value' => [(string) $kelas->id]]);
@@ -72,8 +89,9 @@ it('exposes both the stored kriteria value and the matching reference option id 
 
     // The referenceOptions.kelas list must contain the matching option (as an integer id) so
     // the two sides of the Alpine `:selected` comparison (String(kriteria.value) vs
-    // String(opt.value)) actually match after coercion.
-    $kelasOptionJson = $asEmbeddedJs([['value' => $kelas->id, 'label' => $kelas->nama]]);
+    // String(opt.value)) actually match after coercion. Label includes the tahun ajaran suffix
+    // (the 2026-08-11 UI rework's disambiguation format — see JenisTagihanFormPageTest).
+    $kelasOptionJson = $asEmbeddedJs([['value' => $kelas->id, 'label' => $kelas->nama.' (2026/2027)']]);
     $response->assertSee($kelasOptionJson, false);
 });
 

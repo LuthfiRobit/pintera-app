@@ -74,6 +74,28 @@ it('shows the tahun ajaran alongside the kelas name in the sasaran kriteria opti
     expect($kelasList->pluck('tahunAjaran.nama')->sort()->values()->all())->toBe(['2025/2026', '2026/2027']);
 });
 
+it('does not crash when a kelas is linked to a tahun_ajaran belonging to a different lembaga (TenantScope mismatch)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    // TahunAjaran belongs to a DIFFERENT lembaga than the acting user — the exact TenantScope
+    // mismatch condition that crashed the page before this fix.
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranLembagaLain = \App\Models\TahunAjaran::create([
+        'lembaga_id' => $lembagaLain->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
+    ]);
+    \App\Models\Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranLembagaLain->id, 'nama' => '7A',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertOk();
+});
+
 it('explains what each mode otomatis field controls', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
