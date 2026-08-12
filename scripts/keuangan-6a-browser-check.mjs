@@ -4,7 +4,7 @@
 // manual-book-screenshots.mjs, this clicks/asserts DOM state rather than only
 // capturing screenshots — needed because Alpine.js interactivity bugs (e.g. a
 // @js() escaping bug inside @click) do not show up in Pest HTTP tests.
-// Usage: node scripts/keuangan-6a-browser-check.mjs [--check=<bell|switcher|dashboard|all>]
+// Usage: node scripts/keuangan-6a-browser-check.mjs [--check=<bell|switcher|dashboard|tagihan-checkout|all>]
 
 import { chromium } from 'playwright';
 
@@ -53,6 +53,30 @@ async function checkDashboard(page) {
   console.log('[dashboard] wallet card and top-up button rendered: OK');
 }
 
+async function checkTagihanAndWalletCheckout(page) {
+  await page.goto(`${BASE_URL}/keuangan/tagihan`);
+  const firstCheckbox = page.locator('input[type="checkbox"]').first();
+  await firstCheckbox.waitFor({ state: 'visible', timeout: 3000 });
+  await firstCheckbox.check();
+
+  const bayarButton = page.locator('a:has-text("Bayar Terpilih")');
+  await bayarButton.waitFor({ state: 'visible', timeout: 3000 });
+  await bayarButton.click();
+
+  await page.waitForURL(/\/keuangan\/checkout/, { timeout: 5000 });
+
+  const walletTab = page.getByRole('button', { name: 'Saldo Wallet', exact: true });
+  await walletTab.click();
+  const walletSubmit = page.locator('form[action*="checkout/wallet"] button[type="submit"]');
+  await walletSubmit.waitFor({ state: 'visible', timeout: 3000 });
+  await walletSubmit.click();
+
+  await page.waitForURL(/\/keuangan\/checkout\/\d+\/sukses/, { timeout: 5000 });
+  const successMessage = page.locator('text=Pembayaran dari Saldo Wallet berhasil diproses.');
+  await successMessage.waitFor({ state: 'visible', timeout: 3000 });
+  console.log('[tagihan+wallet] tagihan list -> checkout tabs -> wallet payment succeeded: OK');
+}
+
 const args = process.argv.slice(2);
 const checkArg = args.find((a) => a.startsWith('--check='))?.split('=')[1] ?? 'all';
 
@@ -69,6 +93,9 @@ try {
   }
   if (checkArg === 'all' || checkArg === 'dashboard') {
     await checkDashboard(page);
+  }
+  if (checkArg === 'all' || checkArg === 'tagihan-checkout') {
+    await checkTagihanAndWalletCheckout(page);
   }
 } finally {
   await browser.close();
