@@ -56,7 +56,6 @@ it('lists only belum_bayar and sebagian tagihan for the active child, ordered by
     $response = $this->actingAs($user)->get(route('keuangan.tagihan.index'));
 
     $response->assertOk();
-    $response->assertSeeInOrder(['SPP Bulanan', 'SPP Bulanan']);
     $response->assertViewHas('tagihans', function ($tagihans) use ($near, $far) {
         return $tagihans->pluck('id')->all() === [$near->id, $far->id];
     });

@@ -4,6 +4,7 @@ namespace Tests\Feature\Keuangan;
 
 use App\Contracts\PaymentGatewayInterface;
 use App\Exceptions\InsufficientBalanceException;
+use App\Exceptions\PaymentException;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Tagihan;
@@ -96,5 +97,45 @@ class PaymentServiceWalletPaymentTest extends TestCase
         $this->expectException(\App\Exceptions\PaymentException::class);
 
         $this->service->createWalletPayment($siswa, collect([$tagihan]));
+    }
+
+    public function test_create_wallet_payment_rejects_stale_tagihan_collection_and_does_not_double_debit()
+    {
+        $siswa = Siswa::factory()->create();
+        $siswa->wallet->update(['balance' => 200000]);
+
+        $tagihan = Tagihan::factory()->create([
+            'tagihable_id' => $siswa->id,
+            'tagihable_type' => Siswa::class,
+            'status' => 'belum_bayar',
+            'total_tagihan' => 100000,
+            'net_amount' => 100000,
+            'paid_amount' => 0,
+        ]);
+
+        // Simulate two concurrent requests both loading the tagihan collection
+        // BEFORE either commits, as CheckoutController::wallet() does.
+        $staleTagihans = collect([$tagihan]);
+
+        // Request #1 succeeds: tagihan becomes lunas, wallet debited 100000.
+        $this->service->createWalletPayment($siswa, $staleTagihans);
+
+        $siswa->wallet->refresh();
+        $this->assertEquals(100000, $siswa->wallet->balance);
+
+        // Request #2 reuses the SAME now-stale Collection object (still showing
+        // paid_amount=0 in PHP memory) -- it must fail cleanly, not double-charge.
+        $this->expectException(PaymentException::class);
+
+        try {
+            $this->service->createWalletPayment($siswa, $staleTagihans);
+        } finally {
+            $siswa->wallet->refresh();
+            $this->assertEquals(100000, $siswa->wallet->balance, 'Wallet must not be debited a second time.');
+            $this->assertEquals(1, Pembayaran::where('siswa_id', $siswa->id)->count());
+            $tagihan->refresh();
+            $this->assertEquals('lunas', $tagihan->status);
+            $this->assertEquals(100000, $tagihan->paid_amount);
+        }
     }
 }

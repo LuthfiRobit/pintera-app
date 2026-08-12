@@ -11,7 +11,7 @@
                     <p class="font-display text-sm font-bold text-amber-800">Saldo tidak cukup untuk {{ $skipAlert['tagihan']->jenisTagihan->nama }}</p>
                     <p class="mt-1 text-sm text-amber-700">Kekurangan Rp{{ number_format($skipAlert['selisih'], 0, ',', '.') }} agar tagihan prioritas tertinggi ini bisa terbayar otomatis.</p>
                 </div>
-                <a href="{{ route('keuangan.checkout.create') }}" class="inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700">
+                <a href="{{ route('keuangan.tagihan.index') }}" class="inline-flex items-center justify-center rounded-xl bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700">
                     Top-up Rp{{ number_format($skipAlert['selisih'], 0, ',', '.') }} Sekarang
                 </a>
             </div>
@@ -23,7 +23,7 @@
             @if ($wallet?->va_number)
                 <p class="mt-2 text-sm text-gray-500">No. VA: <span class="font-mono">{{ $wallet->va_number }}</span></p>
             @endif
-            <a href="{{ route('keuangan.checkout.create') }}" class="mt-4 inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
+            <a href="{{ route('keuangan.tagihan.index') }}" class="mt-4 inline-flex items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
                 + Top Up
             </a>
         </div>

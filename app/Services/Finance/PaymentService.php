@@ -182,11 +182,27 @@ class PaymentService
     {
         $this->guardAgainstInvalidTagihan($tagihans);
 
-        return DB::transaction(function () use ($siswa, $tagihans) {
+        $tagihanIds = $tagihans->pluck('id');
+
+        return DB::transaction(function () use ($siswa, $tagihanIds) {
             $wallet = $siswa->wallet()->lockForUpdate()->first();
 
             if ($wallet === null) {
                 throw new PaymentException('Siswa tidak memiliki wallet.');
+            }
+
+            // Re-fetch the tagihan set fresh from the database now that the wallet
+            // row is locked, so a concurrent request that already paid these tagihan
+            // (and is now unblocked by that lock) doesn't operate on a stale,
+            // pre-payment copy of paid_amount/status. We intentionally do NOT
+            // lockForUpdate() the tagihan rows here -- PaymentAllocationService::allocate()
+            // already does its own row-level locking further down this flow.
+            $tagihans = Tagihan::whereIn('id', $tagihanIds)
+                ->whereIn('status', ['belum_bayar', 'sebagian'])
+                ->get();
+
+            if ($tagihans->count() !== $tagihanIds->count()) {
+                throw new PaymentException('Tagihan sudah berubah status, silakan coba lagi.');
             }
 
             $totalTagihan = $tagihans->reduce(

@@ -1,5 +1,5 @@
 <div x-show="activeTab === 'transfer'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
-    <form method="POST" action="{{ url('/keuangan/checkout/transfer') }}" enctype="multipart/form-data" class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
+    <form method="POST" action="{{ route('keuangan.checkout.transfer') }}" enctype="multipart/form-data" class="rounded-2xl border border-gray-200 bg-white p-6 space-y-4">
         @csrf
         @foreach ($tagihans as $tagihan)
             <input type="hidden" name="tagihan_ids[]" value="{{ $tagihan->id }}">

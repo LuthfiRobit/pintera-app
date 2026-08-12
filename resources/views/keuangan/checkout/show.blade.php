@@ -10,10 +10,16 @@
             expiredAt: {{ $pembayaran->briVirtualAccount?->expired_at?->timestamp ?? $pembayaran->briQrisPayment?->expired_at?->timestamp ?? 'null' }},
             remaining: '',
             expired: false,
+            pollIntervalId: null,
             tick() {
                 if (this.expiredAt === null) return;
                 const diff = this.expiredAt - Math.floor(Date.now() / 1000);
-                if (diff <= 0) { this.expired = true; this.remaining = '00:00'; return; }
+                if (diff <= 0) {
+                    this.expired = true;
+                    this.remaining = '00:00';
+                    if (this.pollIntervalId !== null) { clearInterval(this.pollIntervalId); this.pollIntervalId = null; }
+                    return;
+                }
                 const m = Math.floor(diff / 60).toString().padStart(2, '0');
                 const s = (diff % 60).toString().padStart(2, '0');
                 this.remaining = `${m}:${s}`;
@@ -21,10 +27,16 @@
             poll() {
                 fetch('{{ route('keuangan.checkout.status', $pembayaran) }}')
                     .then(r => r.json())
-                    .then(data => { this.status = data.status; });
+                    .then(data => {
+                        this.status = data.status;
+                        if (this.status === 'lunas' && this.pollIntervalId !== null) {
+                            clearInterval(this.pollIntervalId);
+                            this.pollIntervalId = null;
+                        }
+                    });
             }
          }"
-         x-init="tick(); setInterval(() => tick(), 1000); setInterval(() => poll(), 5000)">
+         x-init="tick(); setInterval(() => tick(), 1000); pollIntervalId = setInterval(() => poll(), 5000)">
 
         <template x-if="status === 'lunas'">
             <p class="text-sm font-semibold text-emerald-700">Pembayaran berhasil diterima. Terima kasih.</p>
@@ -48,7 +60,7 @@
         <template x-if="status !== 'lunas' && expired">
             <div>
                 <p class="text-sm font-semibold text-red-600">Kode pembayaran sudah kadaluarsa.</p>
-                <a href="{{ route('keuangan.checkout.create') }}" class="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white">
+                <a href="{{ route('keuangan.tagihan.index') }}" class="mt-4 inline-flex items-center justify-center rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white">
                     Buat Ulang
                 </a>
             </div>

@@ -90,7 +90,7 @@ it('rejects manual transfer checkout for a tagihan belonging to another parent\'
     ]);
 
     $response->assertSessionHasErrors('tagihan_ids');
-    $this->assertEquals(0, Pembayaran::where('siswa_id', $tagihanB->tagihable_id)->count());
+    $this->assertEquals(0, Pembayaran::count());
 });
 
 it('blocks a parent from polling the status of another parent\'s pembayaran', function () {

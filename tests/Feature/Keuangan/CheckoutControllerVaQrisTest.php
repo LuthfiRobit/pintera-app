@@ -76,6 +76,15 @@ it('does not create a second VA for the same tagihan while one is still waiting'
     expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(1);
 });
 
+it('does not create a second QRIS for the same tagihan while one is still waiting', function () {
+    [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
+
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
+
+    expect(Pembayaran::where('metode', 'qris')->count())->toBe(1);
+});
+
 it('creates a new VA when selection expands beyond an existing pending VA set', function () {
     [$user, , $siswa, $tagihanA] = actingAsOrangTuaForVaQris();
     $jenis = JenisTagihan::factory()->create();
