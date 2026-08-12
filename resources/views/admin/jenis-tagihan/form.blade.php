@@ -134,18 +134,22 @@
                                 <div>
                                     <x-input-label value="Tanggal Mulai" />
                                     <x-text-input type="date" name="tanggal_mulai" :value="old('tanggal_mulai', optional($jenisTagihan?->tanggal_mulai)->toDateString())" class="mt-1.5" />
+                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal jenis tagihan ini mulai aktif digenerate otomatis.</p>
                                 </div>
                                 <div>
                                     <x-input-label value="Tanggal Selesai (opsional)" />
                                     <x-text-input type="date" name="tanggal_selesai" :value="old('tanggal_selesai', optional($jenisTagihan?->tanggal_selesai)->toDateString())" class="mt-1.5" />
+                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Kosongkan jika tidak ada batas akhir.</p>
                                 </div>
                                 <div>
                                     <x-input-label value="Tanggal Generate (hari ke-)" />
                                     <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" />
+                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal setiap bulan saat tagihan otomatis dibuat (mis. isi 1 untuk tanggal 1 tiap bulan).</p>
                                 </div>
                                 <div>
                                     <x-input-label value="Hari Jatuh Tempo (setelah generate)" />
                                     <x-text-input type="number" min="0" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" />
+                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Jumlah hari setelah tanggal generate sampai batas waktu pembayaran.</p>
                                 </div>
                             </div>
                         </template>

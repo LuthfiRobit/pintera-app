@@ -73,3 +73,16 @@ it('shows the tahun ajaran alongside the kelas name in the sasaran kriteria opti
     expect($kelasList->pluck('nama')->unique()->all())->toBe(['7A']);
     expect($kelasList->pluck('tahunAjaran.nama')->sort()->values()->all())->toBe(['2025/2026', '2026/2027']);
 });
+
+it('explains what each mode otomatis field controls', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertOk();
+    $response->assertSee('Tanggal setiap bulan saat tagihan otomatis dibuat');
+    $response->assertSee('Jumlah hari setelah tanggal generate sampai batas waktu pembayaran');
+});
