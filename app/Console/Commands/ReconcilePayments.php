@@ -60,7 +60,9 @@ class ReconcilePayments extends Command
                 $statusResult = $this->gateway->checkStatus($va->va_number);
                 
                 if ($statusResult->status === 'PAID') {
-                    DB::transaction(function () use ($va) {
+                    $reconciledPembayaranId = null;
+
+                    DB::transaction(function () use ($va, &$reconciledPembayaranId) {
                         // Lock to avoid race condition with webhook
                         $lockedVa = BriVirtualAccount::where('id', $va->id)->lockForUpdate()->first();
                         
@@ -73,9 +75,18 @@ class ReconcilePayments extends Command
                                 $pembayaran->status = 'lunas';
                                 $pembayaran->save();
                                 $this->allocationService->allocate($pembayaran);
+                                $reconciledPembayaranId = $pembayaran->id;
                             }
                         }
                     });
+
+                    if ($reconciledPembayaranId !== null) {
+                        $reconciledPembayaran = Pembayaran::find($reconciledPembayaranId);
+                        if ($reconciledPembayaran !== null) {
+                            $this->allocationService->topupSisaJikaAda($reconciledPembayaran);
+                        }
+                    }
+
                     $this->line("Reconciled VA: {$va->va_number}");
                 }
             } catch (\Exception $e) {
@@ -94,7 +105,9 @@ class ReconcilePayments extends Command
                 $statusResult = $this->gateway->checkStatus($qris->qr_code); 
                 
                 if ($statusResult->status === 'PAID') {
-                    DB::transaction(function () use ($qris) {
+                    $reconciledPembayaranId = null;
+
+                    DB::transaction(function () use ($qris, &$reconciledPembayaranId) {
                         $lockedQris = BriQrisPayment::where('id', $qris->id)->lockForUpdate()->first();
                         
                         if ($lockedQris->status !== 'PAID') {
@@ -106,9 +119,18 @@ class ReconcilePayments extends Command
                                 $pembayaran->status = 'lunas';
                                 $pembayaran->save();
                                 $this->allocationService->allocate($pembayaran);
+                                $reconciledPembayaranId = $pembayaran->id;
                             }
                         }
                     });
+
+                    if ($reconciledPembayaranId !== null) {
+                        $reconciledPembayaran = Pembayaran::find($reconciledPembayaranId);
+                        if ($reconciledPembayaran !== null) {
+                            $this->allocationService->topupSisaJikaAda($reconciledPembayaran);
+                        }
+                    }
+
                     $this->line("Reconciled QRIS: {$qris->qr_code}");
                 }
             } catch (\Exception $e) {
@@ -123,21 +145,11 @@ class ReconcilePayments extends Command
         $failedTopups = Pembayaran::where('topup_status', 'failed')
             ->where('status', 'lunas')
             ->whereNotNull('siswa_id')
-            ->where('amount', '>', 0)
             ->get();
 
         foreach ($failedTopups as $pembayaran) {
-            try {
-                $wallet = Wallet::where('siswa_id', $pembayaran->siswa_id)->first();
-                if ($wallet) {
-                    $wallet->topup($pembayaran->amount, $pembayaran, 'Retry Failed Topup');
-                    $pembayaran->update(['topup_status' => 'completed']);
-                    $this->line("Retried failed topup for Pembayaran ID: {$pembayaran->id}");
-                }
-            } catch (\Exception $e) {
-                Log::error("Failed to retry topup for Pembayaran ID {$pembayaran->id}: " . $e->getMessage());
-                $this->error("Failed to retry topup for Pembayaran ID {$pembayaran->id}");
-            }
+            $this->allocationService->topupSisaJikaAda($pembayaran);
+            $this->line("Retried topup for Pembayaran ID: {$pembayaran->id}");
         }
     }
 }
