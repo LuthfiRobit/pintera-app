@@ -136,3 +136,131 @@ Output:
 
 See `git log -1` on branch `demo` for the exact hash of the fix-wave commit
 (message: `fix(keuangan): close kelas TenantScope gap, add total column, harden yayasan update, strengthen kwitansi/date-range test coverage`).
+
+## Fix round 2 (re-review findings)
+
+A re-review of fix round 1 (commit `6a79e6f`) found 3 remaining problems. All 3 fixed in commit `7f11048`.
+
+### Issue 1 — Riwayat list's "Total" column showed "Rp0" for pending transactions — Fixed
+
+`resources/views/keuangan/riwayat/index.blade.php`: the row-level `$totalAmount` computation summed
+`$rincianItems->sum('amount_allocated')` unconditionally. Since `pembayaran_tagihan` rows are only
+written at settlement time, any `menunggu_pembayaran`/`menunggu_verifikasi` row (VA/QRIS/transfer-manual
+still pending) had an empty `pembayaranTagihan` collection and showed "Rp0" instead of the real pending
+amount held in `Pembayaran.amount`.
+
+Fix: mirrored the exact fallback pattern already used in `resources/views/pdf/kwitansi.blade.php`'s
+total line:
+```php
+$totalAmount = $rincianItems->isNotEmpty() ? $rincianItems->sum('amount_allocated') : ($pembayaran->amount ?? 0);
+```
+
+New test: `tests/Feature/Keuangan/RiwayatControllerIndexTest.php` →
+`it('shows the pending amount for a menunggu_pembayaran transaction with no rincian yet')` — creates a
+`menunggu_pembayaran` `Pembayaran` with `amount => 250000` and no `PembayaranTagihan` rows, asserts
+`250.000` appears in the response. Confirmed this test fails against the pre-fix template (would show
+`0` instead) and passes after the one-line fix.
+
+### Issue 2 — Kwitansi content tests bypassed the HTTP layer and never exercised the TenantScope bug — Fixed
+
+`tests/Feature/Keuangan/KwitansiControllerTest.php`: the two tests added in fix round 1 called
+`view('pdf.kwitansi', [...])->render()` directly, building their own `$pembayaran`/`$siswa` view
+variables by hand. This meant `$this->actingAs()` was never invoked, so `TenantScope::apply()`
+short-circuited on `auth()->id()` being null and never actually filtered anything — the
+`withoutGlobalScope(TenantScope::class)` bypass this finding exists to protect was completely inert
+during the test. It also bypassed `RiwayatController::kwitansi()` entirely, so a future regression in
+the controller's `load()` call would not be caught.
+
+Fix: rewrote both tests to go through the real HTTP route (`$this->actingAs($user)->get(route('keuangan.riwayat.kwitansi', $pembayaran))`),
+matching the pattern of the file's other tests. Because dompdf's stream response is binary/FlateDecode-
+compressed, a plain `assertSee()`/`toContain()` on the raw response body cannot see rendered text (the
+PDF content streams are zlib-compressed, confirmed empirically — see red/green proof below). To still
+assert on the actual rendered *content* (not just "no exception"), the "kelas name" test now extracts
+and inflates each `stream...endstream` block in the PDF body with `gzuncompress()` and asserts the
+decompressed PDF content-stream text contains `7A Istimewa` (the test's `Kelas` name). The "logo" test
+keeps the plain `assertOk()` + non-empty-content-length sanity check, since it verifies a different
+(non-kelas, non-crashing) concern.
+
+**Red/green proof (temporary local-only change, not part of the committed diff):**
+
+1. Temporarily reverted the bypass in `app/Http/Controllers/Keuangan/RiwayatController.php`,
+   `kwitansi()`, from:
+   `'siswa.kelas' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)`
+   to plain `'siswa.kelas'` (no bypass).
+2. Ran `php artisan test tests/Feature/Keuangan/KwitansiControllerTest.php --filter="kelas name"`.
+   **RED** — failed:
+   ```
+   Failed asserting that ... [Encoding detection failed] contains "7A Istimewa" [ASCII].
+   ```
+   Root cause confirmed via the decompressed PDF stream: with the bypass removed, the acting orang_tua
+   user's `TenantScope` (which filters `Kelas` by `lembaga_id = $actingUser->lembaga_id`, and orang_tua
+   users have `lembaga_id = null`) filtered out the real `Kelas` row entirely, so the PDF rendered
+   `BT ... [(Kelas)] TJ ET` followed by `[(-)] TJ ET` instead of `7A Istimewa` — a silent wrong-data bug,
+   not a crash (which is why a bare `assertOk()` alone, as originally drafted, would NOT have caught
+   this — it had to be upgraded to inspect decompressed PDF content).
+3. Restored the bypass to its original form.
+4. Reran the same test. **GREEN** — passed, decompressed stream now contains `7A Istimewa`.
+5. Reran the full `KwitansiControllerTest.php` file with the bypass restored — all 6 tests pass.
+
+### Issue 3 — Malformed `dari`/`sampai` query values silently coerced instead of being validated — Fixed
+
+`app/Http/Controllers/Keuangan/RiwayatController.php`, `index()`: `dari` and `sampai` were read via
+raw `$request->query()` with no format validation, so `?dari=abc` reached the query as
+`created_at >= 'abc 00:00:00'`, which MySQL coerces rather than rejects, silently producing a
+wrong/empty result set.
+
+Fix: added request validation at the top of `index()`:
+```php
+$validated = $request->validate([
+    'dari' => ['nullable', 'date'],
+    'sampai' => ['nullable', 'date'],
+    'metode' => ['nullable', 'string'],
+]);
+
+$dari = $validated['dari'] ?? null;
+$sampai = $validated['sampai'] ?? null;
+$metode = $validated['metode'] ?? null;
+```
+A validation failure now redirects back with session errors (Laravel's default `$request->validate()`
+behavior), rather than proceeding with a garbage value.
+
+New test: `tests/Feature/Keuangan/RiwayatControllerIndexTest.php` →
+`it('rejects a malformed dari filter with a validation error instead of a silent query')` — requests
+`?dari=not-a-date`, asserts `assertSessionHasErrors('dari')`.
+
+### Full covering test suite
+
+Command:
+```
+php artisan test tests/Feature/Keuangan/RiwayatControllerIndexTest.php tests/Feature/Keuangan/KwitansiControllerTest.php
+```
+
+Output:
+```
+   PASS  Tests\Feature\Keuangan\RiwayatControllerIndexTest
+  ✓ it lists the active child payment history ordered newest first                                              8.67s
+  ✓ it filters by metode                                                                                        0.17s
+  ✓ it ignores an invalid date range instead of erroring                                                        0.11s
+  ✓ it shows the total amount for each transaction row                                                          0.11s
+  ✓ it shows the pending amount for a menunggu_pembayaran transaction with no rincian yet                       0.07s
+  ✓ it filters by a valid full date range including the end-of-day boundary                                     0.16s
+  ✓ it narrows results with a dari-only filter                                                                  0.14s
+  ✓ it rejects a malformed dari filter with a validation error instead of a silent query                        0.08s
+  ✓ it shows the kwitansi download link only for lunas rows                                                     0.10s
+
+   PASS  Tests\Feature\Keuangan\KwitansiControllerTest
+  ✓ it streams a pdf kwitansi for a lunas pembayaran                                                            0.17s
+  ✓ it returns 404 for a pembayaran that is not yet lunas                                                       0.08s
+  ✓ it blocks a parent from downloading another parent child's kwitansi                                         0.14s
+  ✓ it renders without a logo when yayasan logo is not set                                                      0.11s
+  ✓ it renders the kelas name, siswa name, and total amount in the kwitansi view via the real controller route  0.15s
+  ✓ it renders an img tag when yayasan logo is set, via the real controller route                               0.11s
+
+  Tests:    15 passed (34 assertions)
+  Duration: 10.53s
+```
+
+### Fix round 2 commit
+
+`7f11048` — `fix(keuangan): fix pending-payment Rp0 display, strengthen kwitansi kelas-scope test coverage, validate riwayat date filters`
+(parent: `6a79e6f`, the fix round 1 commit).
