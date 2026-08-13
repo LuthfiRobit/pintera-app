@@ -28,17 +28,47 @@
             </a>
         </div>
 
-        <div class="rounded-2xl border border-gray-200 bg-white p-6">
-            <p class="font-display text-sm font-bold text-gray-900">Notifikasi Terbaru</p>
+        <div
+            class="rounded-2xl border border-gray-200 bg-white p-6"
+            x-data="{
+                readIds: [],
+                unreadCount: {{ $notificationFeed->whereNull('read_at')->count() }},
+                async tandaiSatu(id) {
+                    if (this.readIds.includes(id)) return;
+                    this.readIds.push(id);
+                    this.unreadCount = Math.max(0, this.unreadCount - 1);
+                    await fetch(`{{ url('/keuangan/notifikasi') }}/${id}/baca`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                    });
+                },
+                async tandaiSemua() {
+                    this.readIds = @js($notificationFeed->pluck('id')->all());
+                    this.unreadCount = 0;
+                    await fetch('{{ route('keuangan.notifikasi.baca-semua') }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                    });
+                }
+            }"
+        >
+            <div class="flex items-center justify-between">
+                <p class="font-display text-sm font-bold text-gray-900">Notifikasi Terbaru</p>
+                <button type="button" x-show="unreadCount > 0" @click="tandaiSemua()" class="text-xs font-semibold text-brand-600 hover:text-brand-700" style="display: none;">Tandai semua terbaca</button>
+            </div>
             @if ($notificationFeed->isEmpty())
                 <p class="mt-3 text-sm text-gray-500">Belum ada notifikasi.</p>
             @else
                 <div class="mt-3 divide-y divide-gray-100">
                     @foreach ($notificationFeed as $notification)
-                        <div class="py-3">
+                        <button
+                            type="button"
+                            @click="tandaiSatu('{{ $notification->id }}')"
+                            class="w-full py-3 text-left transition hover:bg-gray-50"
+                        >
                             <p class="text-sm text-gray-800">{{ $notification->data['message'] ?? '-' }}</p>
                             <p class="mt-1 text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
-                        </div>
+                        </button>
                     @endforeach
                 </div>
             @endif
