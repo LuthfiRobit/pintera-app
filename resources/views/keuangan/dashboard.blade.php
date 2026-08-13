@@ -35,20 +35,23 @@
                 unreadCount: {{ $notificationFeed->whereNull('read_at')->count() }},
                 async tandaiSatu(id) {
                     if (this.readIds.includes(id)) return;
-                    this.readIds.push(id);
-                    this.unreadCount = Math.max(0, this.unreadCount - 1);
-                    await fetch(`{{ url('/keuangan/notifikasi') }}/${id}/baca`, {
+                    const response = await fetch(`{{ url('/notifikasi') }}/${id}/baca`, {
                         method: 'POST',
                         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
                     });
+                    if (!response.ok) return;
+                    this.readIds.push(id);
+                    const data = await response.json();
+                    this.unreadCount = data.unread_count;
                 },
                 async tandaiSemua() {
-                    this.readIds = @js($notificationFeed->pluck('id')->all());
-                    this.unreadCount = 0;
-                    await fetch('{{ route('keuangan.notifikasi.baca-semua') }}', {
+                    const response = await fetch('{{ route('notifikasi.baca-semua') }}', {
                         method: 'POST',
                         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
                     });
+                    if (!response.ok) return;
+                    this.readIds = @js($notificationFeed->pluck('id')->all());
+                    this.unreadCount = 0;
                 }
             }"
         >

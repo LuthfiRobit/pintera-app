@@ -2,41 +2,39 @@
 
 namespace App\Http\Controllers\Keuangan;
 
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\Auth;
 
 class NotifikasiController extends BaseController
 {
-    public function bacaSatu(Request $request, string $id)
+    public function bacaSatu(Request $request, string $id): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
 
-        // Cari di notifikasi User
-        $notification = $user->notifications()->where('id', $id)->first();
+        $notification = $user->notifications()->find($id)
+            ?? $user->orangTua?->notifications()->find($id);
 
-        // Jika tidak ketemu, cari di notifikasi OrangTua yang terhubung
-        if (! $notification && $user->orangTua !== null) {
-            $notification = $user->orangTua->notifications()->where('id', $id)->first();
-        }
-
-        abort_if(! $notification, 403);
+        abort_if($notification === null, 403);
 
         $notification->markAsRead();
 
-        return response()->json(['status' => 'ok']);
+        return response()->json(['unread_count' => $this->hitungUnread($user)]);
     }
 
-    public function bacaSemua(Request $request)
+    public function bacaSemua(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        $user = $request->user();
 
         $user->unreadNotifications->markAsRead();
+        $user->orangTua?->unreadNotifications->markAsRead();
 
-        if ($user->orangTua !== null) {
-            $user->orangTua->unreadNotifications->markAsRead();
-        }
+        return response()->json(['unread_count' => 0]);
+    }
 
-        return response()->json(['status' => 'ok']);
+    private function hitungUnread(User $user): int
+    {
+        return $user->unreadNotifications()->count() + ($user->orangTua?->unreadNotifications()->count() ?? 0);
     }
 }

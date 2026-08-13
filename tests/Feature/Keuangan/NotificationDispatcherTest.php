@@ -120,6 +120,7 @@ it('logs notification_logs.user_id using the OrangTua notifiable\'s user_id, not
 
     expect($log)->not->toBeNull();
     expect($log->user_id)->toBe($orangTua->user_id);
+    expect($log->user_id)->not->toBe($orangTua->id);
 });
 
 it('respects an OrangTua notifiable\'s linked User preference (channel_wa=false), not the "not a User" fallback', function () {

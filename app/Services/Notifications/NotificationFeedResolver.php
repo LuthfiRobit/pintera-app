@@ -1,5 +1,5 @@
 <?php
-// app/Services/Finance/NotificationFeedResolver.php
+// app/Services/Notifications/NotificationFeedResolver.php
 
 namespace App\Services\Notifications;
 

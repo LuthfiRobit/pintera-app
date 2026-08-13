@@ -20,6 +20,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/notification-preference', [ProfileController::class, 'updateNotificationPreference'])->name('profile.notification-preference.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/notifikasi/{id}/baca', [\App\Http\Controllers\Keuangan\NotifikasiController::class, 'bacaSatu'])->name('notifikasi.baca');
+    Route::post('/notifikasi/baca-semua', [\App\Http\Controllers\Keuangan\NotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
 });
 
 require __DIR__.'/auth.php';
@@ -28,8 +31,6 @@ require __DIR__.'/admin.php';
 Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.active.siswa'])
     ->prefix('keuangan')->name('keuangan.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Keuangan\DashboardController::class, 'index'])->name('dashboard');
-        Route::post('/notifikasi/{id}/baca', [\App\Http\Controllers\Keuangan\NotifikasiController::class, 'bacaSatu'])->name('notifikasi.baca');
-        Route::post('/notifikasi/baca-semua', [\App\Http\Controllers\Keuangan\NotifikasiController::class, 'bacaSemua'])->name('notifikasi.baca-semua');
         Route::get('/tagihan', [\App\Http\Controllers\Keuangan\TagihanController::class, 'index'])->name('tagihan.index');
         Route::get('/riwayat', [\App\Http\Controllers\Keuangan\RiwayatController::class, 'index'])->name('riwayat.index');
         Route::get('/riwayat/{pembayaran}/kwitansi', [\App\Http\Controllers\Keuangan\RiwayatController::class, 'kwitansi'])->name('riwayat.kwitansi');

@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;

@@ -7,7 +7,7 @@
     
     $notificationFeed = app(\App\Services\Notifications\NotificationFeedResolver::class)->resolve(Auth::user());
     $unreadCount = $notificationFeed->whereNull('read_at')->count();
-    
+
     $orangTua = Auth::user()->orangTua;
     $childOptions = $orangTua !== null
         ? $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->select('siswa.id', 'siswa.nama_lengkap')->orderBy('siswa.nama_lengkap')->get()
@@ -38,45 +38,39 @@
             <x-icon name="dark_mode" class="h-4 w-4" />
         </button>
 
-        <x-dropdown align="right" width="w-80">
-            <x-slot name="trigger">
-                <button type="button" class="relative flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Notifikasi">
-                    <x-icon name="notifications" class="h-4 w-4" />
-                    @if ($unreadCount > 0)
-                        <span class="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
-                    @endif
-                </button>
-            </x-slot>
+        <div x-data="{
+                unreadCount: {{ $unreadCount }},
+                readIds: [],
+                async tandaiSatu(id) {
+                    if (this.readIds.includes(id)) return;
+                    const response = await fetch(`{{ url('/notifikasi') }}/${id}/baca`, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                    });
+                    if (!response.ok) return;
+                    this.readIds.push(id);
+                    const data = await response.json();
+                    this.unreadCount = data.unread_count;
+                },
+                async tandaiSemua() {
+                    const response = await fetch('{{ route('notifikasi.baca-semua') }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                    });
+                    if (!response.ok) return;
+                    this.readIds = @js($notificationFeed->pluck('id')->all());
+                    this.unreadCount = 0;
+                }
+            }">
+            <x-dropdown align="right" width="w-80">
+                <x-slot name="trigger">
+                    <button type="button" class="relative flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Notifikasi">
+                        <x-icon name="notifications" class="h-4 w-4" />
+                        <span x-show="unreadCount > 0" x-text="unreadCount > 9 ? '9+' : unreadCount" class="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white" style="display: none;"></span>
+                    </button>
+                </x-slot>
 
-            <x-slot name="content">
-                <div x-data="{
-                        readIds: [],
-                        unreadCount: {{ $unreadCount }},
-                        async tandaiSatu(id) {
-                            if (this.readIds.includes(id)) return;
-                            this.readIds.push(id);
-                            this.unreadCount = Math.max(0, this.unreadCount - 1);
-                            let badge = document.querySelector('button[aria-label=\'Notifikasi\'] span');
-                            if (badge) {
-                                if (this.unreadCount === 0) badge.style.display = 'none';
-                                else badge.innerText = this.unreadCount > 9 ? '9+' : this.unreadCount;
-                            }
-                            await fetch(`{{ url('/keuangan/notifikasi') }}/${id}/baca`, {
-                                method: 'POST',
-                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
-                            });
-                        },
-                        async tandaiSemua() {
-                            this.readIds = @js($notificationFeed->pluck('id')->all());
-                            this.unreadCount = 0;
-                            let badge = document.querySelector('button[aria-label=\'Notifikasi\'] span');
-                            if (badge) badge.style.display = 'none';
-                            await fetch('{{ route('keuangan.notifikasi.baca-semua') }}', {
-                                method: 'POST',
-                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
-                            });
-                        }
-                    }">
+                <x-slot name="content">
                     <div class="flex items-center justify-between border-b border-gray-200 px-4 pb-3 pt-1">
                         <p class="font-display text-sm font-bold text-gray-900">Notifikasi</p>
                         <button type="button" x-show="unreadCount > 0" @click="tandaiSemua()" class="text-xs font-semibold text-brand-600 hover:text-brand-700" style="display: none;">Tandai semua terbaca</button>
@@ -101,9 +95,9 @@
                             @endforeach
                         </div>
                     @endif
-                </div>
-            </x-slot>
-        </x-dropdown>
+                </x-slot>
+            </x-dropdown>
+        </div>
 
         @if ($isYayasan)
             <div x-data="{ open: false }" class="relative">
