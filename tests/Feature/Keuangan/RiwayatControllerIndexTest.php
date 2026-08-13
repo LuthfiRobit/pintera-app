@@ -1,0 +1,102 @@
+<?php
+
+use App\Models\JenisTagihan;
+use App\Models\Lembaga;
+use App\Models\OrangTua;
+use App\Models\Pembayaran;
+use App\Models\PembayaranTagihan;
+use App\Models\Siswa;
+use App\Models\Tagihan;
+use App\Models\User;
+use App\Models\Yayasan;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+
+uses(RefreshDatabase::class);
+
+function actingAsOrangTuaForRiwayat(): array
+{
+    Permission::firstOrCreate(['name' => 'keuangan.akses', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $role->givePermissionTo('keuangan.akses');
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('orang_tua');
+    $orangTua = OrangTua::create([
+        'user_id' => $user->id, 'nama_lengkap' => 'Ortu Riwayat',
+        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009999',
+    ]);
+    $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    return [$user, $orangTua, $siswa];
+}
+
+function makeLunasPembayaran(Siswa $siswa, string $metode = 'wallet_saldo', ?\Carbon\Carbon $createdAt = null): Pembayaran
+{
+    $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bulanan']);
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'lunas', 'net_amount' => 100000, 'paid_amount' => 100000,
+    ]);
+
+    $pembayaran = Pembayaran::create([
+        'siswa_id' => $siswa->id, 'metode' => $metode, 'status' => 'lunas',
+        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+    ]);
+    if ($createdAt !== null) {
+        $pembayaran->created_at = $createdAt;
+        $pembayaran->save();
+    }
+
+    PembayaranTagihan::create([
+        'pembayaran_id' => $pembayaran->id, 'tagihan_id' => $tagihan->id, 'amount_allocated' => 100000,
+    ]);
+
+    return $pembayaran;
+}
+
+it('lists the active child payment history ordered newest first', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+
+    $older = makeLunasPembayaran($siswa, createdAt: now()->subDays(5));
+    $newer = makeLunasPembayaran($siswa, createdAt: now());
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('pembayarans', function ($pembayarans) use ($older, $newer) {
+        return $pembayarans->pluck('id')->all() === [$newer->id, $older->id];
+    });
+});
+
+it('filters by metode', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+
+    $wallet = makeLunasPembayaran($siswa, metode: 'wallet_saldo');
+    $va = makeLunasPembayaran($siswa, metode: 'va_bri');
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index', ['metode' => 'wallet_saldo']));
+
+    $response->assertOk();
+    $response->assertViewHas('pembayarans', function ($pembayarans) use ($wallet, $va) {
+        return $pembayarans->pluck('id')->all() === [$wallet->id] && ! $pembayarans->contains('id', $va->id);
+    });
+});
+
+it('ignores an invalid date range instead of erroring', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+    $pembayaran = makeLunasPembayaran($siswa);
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index', [
+        'dari' => now()->toDateString(),
+        'sampai' => now()->subDays(10)->toDateString(),
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('pembayarans', fn ($pembayarans) => $pembayarans->contains('id', $pembayaran->id));
+});
