@@ -74,4 +74,32 @@ class PaymentAllocationService
             }
         }
     }
+    public function topupSisaJikaAda(Pembayaran $pembayaran): void
+    {
+        if (! in_array($pembayaran->topup_status, ['pending', 'failed'], true)) {
+            return;
+        }
+
+        $porsiTagihan = $pembayaran->pembayaranTagihan()->sum('amount_allocated');
+        $porsiTopup = (float) $pembayaran->amount - (float) $porsiTagihan;
+
+        if ($porsiTopup <= 0) {
+            return;
+        }
+
+        $siswa = $pembayaran->siswa;
+        if (! $siswa || ! $siswa->wallet) {
+            Log::error("Gagal topup dari pembayaran {$pembayaran->id}: Wallet siswa tidak ditemukan.");
+            $pembayaran->update(['topup_status' => 'failed']);
+            return;
+        }
+
+        try {
+            $siswa->wallet->topup($porsiTopup, $pembayaran, "Top-up dari pembayaran {$pembayaran->metode} ({$pembayaran->id})");
+            $pembayaran->update(['topup_status' => 'completed']);
+        } catch (\Exception $e) {
+            Log::error("Gagal mengeksekusi topup dari pembayaran {$pembayaran->id}: ".$e->getMessage());
+            $pembayaran->update(['topup_status' => 'failed']);
+        }
+    }
 }
