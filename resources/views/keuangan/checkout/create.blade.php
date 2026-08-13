@@ -4,7 +4,7 @@
         <h2 class="font-display text-xl font-bold text-gray-900">Checkout Pembayaran</h2>
     </x-slot>
 
-    <div class="space-y-6" x-data="{ activeTab: 'va' }">
+    <div class="space-y-6" x-data="{ activeTab: 'va', topupAmount: '' }">
         <div class="rounded-2xl border border-gray-200 bg-white p-6">
             <p class="text-sm font-semibold text-gray-900">Tagihan Terpilih</p>
             @if ($tagihans->isEmpty())
@@ -23,6 +23,11 @@
                     <span>Rp{{ number_format($totalTagihan, 0, ',', '.') }}</span>
                 </div>
             @endif
+            <div class="mt-4" x-show="activeTab === 'va' || activeTab === 'qris'">
+                <label class="text-sm font-medium text-gray-700">Sekalian Top Up Wallet (opsional)</label>
+                <input type="number" min="0" step="1000" x-model="topupAmount" placeholder="0" class="mt-1 w-full rounded-xl border-gray-300 text-sm">
+                <p class="mt-1 text-xs text-gray-500">Nominal ini akan ditambahkan ke VA/QRIS yang dibuat dan otomatis masuk ke saldo wallet setelah pembayaran diterima.</p>
+            </div>
         </div>
 
         <div>

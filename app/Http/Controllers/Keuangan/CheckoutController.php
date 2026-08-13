@@ -59,6 +59,7 @@ class CheckoutController extends BaseController
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
         $requestedIds = (array) $request->input('tagihan_ids', []);
+        $topupAmount = (float) $request->input('topup_amount', 0);
         $tagihans = $this->resolveSelectedTagihan($activeSiswa, $requestedIds);
 
         if ($tagihans->isEmpty()) {
@@ -76,7 +77,11 @@ class CheckoutController extends BaseController
         }
 
         try {
-            $pembayaran = $this->paymentService->createVaPayment($activeSiswa, $tagihans);
+            if ($topupAmount > 0) {
+                $pembayaran = $this->paymentService->createVaPaymentWithTopup($activeSiswa, $tagihans, $topupAmount);
+            } else {
+                $pembayaran = $this->paymentService->createVaPayment($activeSiswa, $tagihans);
+            }
         } catch (PaymentException $e) {
             Log::error('Gagal membuat VA BRI: '.$e->getMessage());
             return back()->withErrors(['tagihan_ids' => 'Gagal membuat pembayaran, silakan coba lagi.']);
@@ -89,6 +94,7 @@ class CheckoutController extends BaseController
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
         $requestedIds = (array) $request->input('tagihan_ids', []);
+        $topupAmount = (float) $request->input('topup_amount', 0);
         $tagihans = $this->resolveSelectedTagihan($activeSiswa, $requestedIds);
 
         if ($tagihans->isEmpty()) {
@@ -106,7 +112,11 @@ class CheckoutController extends BaseController
         }
 
         try {
-            $pembayaran = $this->paymentService->createQrisPayment($activeSiswa, $tagihans);
+            if ($topupAmount > 0) {
+                $pembayaran = $this->paymentService->createQrisPaymentWithTopup($activeSiswa, $tagihans, $topupAmount);
+            } else {
+                $pembayaran = $this->paymentService->createQrisPayment($activeSiswa, $tagihans);
+            }
         } catch (PaymentException $e) {
             Log::error('Gagal membuat QRIS: '.$e->getMessage());
             return back()->withErrors(['tagihan_ids' => 'Gagal membuat pembayaran, silakan coba lagi.']);
@@ -198,7 +208,7 @@ class CheckoutController extends BaseController
 
         abort_unless(in_array($pembayaran->metode, ['va_bri', 'qris']), 404);
 
-        return view('keuangan.checkout.show', ['pembayaran' => $pembayaran->load(['briVirtualAccount', 'briQrisPayment'])]);
+        return view('keuangan.checkout.show', ['pembayaran' => $pembayaran->load(['briVirtualAccount', 'briQrisPayment', 'pembayaranTagihan'])]);
     }
 
     public function status(Request $request, Pembayaran $pembayaran)

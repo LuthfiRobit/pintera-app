@@ -53,6 +53,15 @@
                     <p class="mt-1 font-mono text-lg font-bold text-gray-900">{{ $pembayaran->briQrisPayment->qr_code }}</p>
                     <p class="mt-1 text-sm text-gray-500">Nominal: Rp{{ number_format($pembayaran->briQrisPayment->amount, 0, ',', '.') }}</p>
                 @endif
+                @if ($pembayaran->topup_status !== 'none')
+                    @php
+                        $porsiTagihan = $pembayaran->pembayaranTagihan->sum('amount_allocated');
+                        $porsiTopup = (float) $pembayaran->amount - $porsiTagihan;
+                    @endphp
+                    <div class="mt-3 rounded-xl border border-gray-100 bg-gray-50 p-3 text-xs text-gray-600">
+                        <p>Rincian: Tagihan Rp{{ number_format($porsiTagihan, 0, ',', '.') }} + Top Up Wallet Rp{{ number_format($porsiTopup, 0, ',', '.') }}</p>
+                    </div>
+                @endif
                 <p class="mt-4 text-sm text-gray-500">Sisa waktu: <span class="font-mono font-semibold" x-text="remaining"></span></p>
             </div>
         </template>
