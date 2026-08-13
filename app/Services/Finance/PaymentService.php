@@ -51,6 +51,35 @@ class PaymentService
     }
 
     /**
+     * Create VA payment for a collection of tagihan, bundled with a wallet top-up.
+     */
+    public function createVaPaymentWithTopup(Siswa $siswa, Collection $tagihans, float $topupAmount): Pembayaran
+    {
+        $this->guardAgainstInvalidTagihan($tagihans);
+
+        return DB::transaction(function () use ($siswa, $tagihans, $topupAmount) {
+            $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'va_bri', 'menunggu_pembayaran');
+            
+            $pembayaran->amount = $pembayaran->pembayaranTagihan()->sum('amount_allocated') + $topupAmount;
+            $pembayaran->topup_status = 'pending';
+            $pembayaran->save();
+            
+            $vaResult = $this->gateway->createVirtualAccount($pembayaran, 'BILL_DIRECT');
+            
+            BriVirtualAccount::create([
+                'pembayaran_id' => $pembayaran->id,
+                'va_type' => 'BILL_DIRECT',
+                'va_number' => $vaResult->vaNumber,
+                'amount' => $vaResult->amount,
+                'expired_at' => $vaResult->expiredAt,
+                'status' => 'WAITING',
+                'callback_payload' => $vaResult->payload,
+            ]);
+
+            return $pembayaran;
+        });
+    }
+    /**
      * Create QRIS payment.
      */
     public function createQrisPayment(Siswa $siswa, Collection $tagihans): Pembayaran
@@ -76,6 +105,35 @@ class PaymentService
         });
     }
 
+    /**
+     * Create QRIS payment bundled with a wallet top-up.
+     */
+    public function createQrisPaymentWithTopup(Siswa $siswa, Collection $tagihans, float $topupAmount): Pembayaran
+    {
+        $this->guardAgainstInvalidTagihan($tagihans);
+
+        return DB::transaction(function () use ($siswa, $tagihans, $topupAmount) {
+            $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'qris', 'menunggu_pembayaran');
+            
+            $pembayaran->amount = $pembayaran->pembayaranTagihan()->sum('amount_allocated') + $topupAmount;
+            $pembayaran->topup_status = 'pending';
+            $pembayaran->save();
+            
+            $qrisResult = $this->gateway->createQris($pembayaran, 'DIRECT');
+            
+            BriQrisPayment::create([
+                'pembayaran_id' => $pembayaran->id,
+                'qris_type' => 'DIRECT',
+                'amount' => $qrisResult->amount,
+                'qr_code' => $qrisResult->qrCodeData,
+                'expired_at' => $qrisResult->expiredAt,
+                'status' => 'WAITING',
+                'callback_payload' => $qrisResult->payload,
+            ]);
+
+            return $pembayaran;
+        });
+    }
     /**
      * Get or create permanent VA for a student's wallet.
      */
