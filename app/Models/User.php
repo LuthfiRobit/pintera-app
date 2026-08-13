@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\UserNotificationPreference;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -81,6 +82,11 @@ class User extends Authenticatable
     public function karyawan(): HasOne
     {
         return $this->hasOne(Karyawan::class);
+    }
+
+    public function notificationPreference(): HasOne
+    {
+        return $this->hasOne(UserNotificationPreference::class)->where('module', 'finance');
     }
 
     public function widestScopeLevel(): string

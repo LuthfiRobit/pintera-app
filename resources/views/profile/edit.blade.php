@@ -9,6 +9,12 @@
             @include('profile.partials.update-profile-information-form')
         </x-panel>
 
+        @if (Auth::user()->orangTua !== null)
+            <x-panel class="p-6">
+                @include('profile.partials.update-notification-preference-form', ['preference' => Auth::user()->notificationPreference])
+            </x-panel>
+        @endif
+
         <x-panel class="p-6">
             @include('profile.partials.update-password-form')
         </x-panel>

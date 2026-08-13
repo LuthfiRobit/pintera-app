@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\UserNotificationPreference;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -35,6 +36,27 @@ class ProfileController extends Controller
         $request->user()->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
+
+    /**
+     * Update the user's Finance notification channel preferences.
+     */
+    public function updateNotificationPreference(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'channel_wa' => ['sometimes', 'boolean'],
+            'channel_email' => ['sometimes', 'boolean'],
+        ]);
+
+        UserNotificationPreference::updateOrCreate(
+            ['user_id' => $request->user()->id, 'module' => 'finance'],
+            [
+                'channel_wa' => $request->boolean('channel_wa'),
+                'channel_email' => $request->boolean('channel_email'),
+            ]
+        );
+
+        return Redirect::route('profile.edit')->with('status', 'notification-preference-updated');
     }
 
     /**
