@@ -43,9 +43,10 @@ class BriWebhookController extends Controller
         }
 
         $walletTopupData = null; // Store data to execute topup outside transaction
+        $bundledTopupPembayaranId = null;
 
         try {
-            DB::transaction(function () use ($vaNumber, $qrisReference, $amountPaid, &$walletTopupData) {
+            DB::transaction(function () use ($vaNumber, $qrisReference, $amountPaid, &$walletTopupData, &$bundledTopupPembayaranId) {
                 if (!empty($vaNumber)) {
                     $va = BriVirtualAccount::where('va_number', $vaNumber)->lockForUpdate()->first();
                     if ($va) {
@@ -66,6 +67,9 @@ class BriWebhookController extends Controller
                                 $pembayaran->status = 'lunas';
                                 $pembayaran->save();
                                 $this->allocationService->allocate($pembayaran);
+                                if ($pembayaran->topup_status === 'pending') {
+                                    $bundledTopupPembayaranId = $pembayaran->id;
+                                }
                             }
                         } elseif ($va->va_type === 'WALLET_PERMANENT') {
                             $wallet = Wallet::lockForUpdate()->find($va->wallet_id);
@@ -107,6 +111,9 @@ class BriWebhookController extends Controller
                             $pembayaran->status = 'lunas';
                             $pembayaran->save();
                             $this->allocationService->allocate($pembayaran);
+                            if ($pembayaran->topup_status === 'pending') {
+                                $bundledTopupPembayaranId = $pembayaran->id;
+                            }
                         }
                         return;
                     }
@@ -114,6 +121,16 @@ class BriWebhookController extends Controller
 
                 throw new \Exception("Payment reference not found");
             });
+
+            // Resolve any bundled-payment top-up remainder outside the transaction,
+            // same as the WALLET_PERMANENT branch below -- Wallet::topup() must never
+            // run while the VA/QRIS/Pembayaran rows are still locked.
+            if ($bundledTopupPembayaranId !== null) {
+                $bundledPembayaran = Pembayaran::find($bundledTopupPembayaranId);
+                if ($bundledPembayaran !== null) {
+                    $this->allocationService->topupSisaJikaAda($bundledPembayaran);
+                }
+            }
 
             // Execute Wallet topup outside transaction
             if ($walletTopupData) {

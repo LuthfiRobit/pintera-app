@@ -302,4 +302,39 @@ class WebhookControllerTest extends TestCase
         expect($tagihan->paid_amount)->toEqual(0);
         expect($tagihan->status)->toBe('belum_bayar');
     }
+
+    public function test_webhook_processes_bundled_va_payment_and_executes_topup()
+    {
+        $mockGateway = Mockery::mock(PaymentGatewayInterface::class);
+        $mockGateway->shouldReceive('verifyCallbackSignature')->once()->andReturn(true);
+        $this->app->instance(PaymentGatewayInterface::class, $mockGateway);
+
+        $siswa = Siswa::factory()->create();
+        $tagihan = Tagihan::factory()->create([
+            'total_tagihan' => 100000, 'net_amount' => 100000, 'paid_amount' => 0, 'status' => 'belum_bayar'
+        ]);
+        $pembayaran = Pembayaran::factory()->create([
+            'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'menunggu_pembayaran',
+            'amount' => 150000, 'topup_status' => 'pending'
+        ]);
+        PembayaranTagihan::create([
+            'pembayaran_id' => $pembayaran->id, 'tagihan_id' => $tagihan->id, 'amount_allocated' => 100000
+        ]);
+        $va = BriVirtualAccount::factory()->create([
+            'pembayaran_id' => $pembayaran->id, 'va_type' => 'BILL_DIRECT', 'va_number' => '1234567890',
+            'amount' => 150000, 'status' => 'WAITING'
+        ]);
+
+        $saldoAwal = (float) $siswa->wallet->balance;
+
+        $response = $this->postJson('/webhook/bri/payment-notification', [
+            'BrivaNo' => '1234', 'CustCode' => '567890', 'Amount' => '150000.00', 'Status' => 'PAID',
+        ], ['BRI-Signature' => 'valid']);
+
+        $response->assertStatus(200);
+
+        expect((float) $siswa->wallet->fresh()->balance)->toBe($saldoAwal + 50000.0);
+        expect($pembayaran->fresh()->status)->toBe('lunas');
+        expect($pembayaran->fresh()->topup_status)->toBe('completed');
+    }
 }
