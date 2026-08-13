@@ -64,7 +64,14 @@
                             $rincianLabel = $rincianItems->isEmpty()
                                 ? '-'
                                 : ($rincianItems->first()->tagihan?->jenisTagihan?->nama ?? '-').($rincianItems->count() > 1 ? ' +'.($rincianItems->count() - 1).' lainnya' : '');
-                            $totalAmount = $rincianItems->isNotEmpty() ? $rincianItems->sum('amount_allocated') : ($pembayaran->amount ?? 0);
+                            if ($pembayaran->topup_status !== 'none') {
+                                $rincianLabel = $rincianItems->isEmpty()
+                                    ? 'Top Up Wallet'
+                                    : $rincianLabel.' + Top Up Wallet';
+                            }
+                            $totalAmount = $pembayaran->topup_status !== 'none'
+                                ? (float) ($pembayaran->amount ?? 0)
+                                : ($rincianItems->isNotEmpty() ? $rincianItems->sum('amount_allocated') : ($pembayaran->amount ?? 0));
                         @endphp
                         <div class="flex flex-wrap items-center justify-between gap-3 py-4">
                             <div>

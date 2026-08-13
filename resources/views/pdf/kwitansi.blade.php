@@ -57,9 +57,20 @@
             @empty
                 <tr><td>Rincian tidak tersedia</td><td style="text-align: right;">Rp{{ number_format($pembayaran->amount ?? 0, 0, ',', '.') }}</td></tr>
             @endforelse
+            @if ($pembayaran->topup_status !== 'none')
+                @php
+                    $porsiTopup = (float) $pembayaran->amount - $pembayaran->pembayaranTagihan->sum('amount_allocated');
+                @endphp
+                @if ($porsiTopup > 0)
+                    <tr>
+                        <td>Top Up Saldo Wallet</td>
+                        <td style="text-align: right;">Rp{{ number_format($porsiTopup, 0, ',', '.') }}</td>
+                    </tr>
+                @endif
+            @endif
             <tr class="total-row">
                 <td>Total</td>
-                <td style="text-align: right;">Rp{{ number_format($pembayaran->pembayaranTagihan->isNotEmpty() ? $pembayaran->pembayaranTagihan->sum('amount_allocated') : ($pembayaran->amount ?? 0), 0, ',', '.') }}</td>
+                <td style="text-align: right;">Rp{{ number_format($pembayaran->topup_status !== 'none' ? (float) ($pembayaran->amount ?? 0) : ($pembayaran->pembayaranTagihan->isNotEmpty() ? $pembayaran->pembayaranTagihan->sum('amount_allocated') : ($pembayaran->amount ?? 0)), 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>
