@@ -94,6 +94,32 @@ async function checkRiwayatKwitansi(page) {
   console.log('[riwayat] history page renders lunas row and kwitansi PDF link returns application/pdf: OK');
 }
 
+async function checkBundledTopupCheckout(page) {
+  await page.goto(`${BASE_URL}/keuangan/tagihan`);
+  const firstCheckbox = page.locator('input[type="checkbox"]').first();
+  await firstCheckbox.waitFor({ state: 'visible', timeout: 3000 });
+  await firstCheckbox.check();
+
+  const bayarButton = page.locator('a:has-text("Bayar Terpilih")');
+  await bayarButton.waitFor({ state: 'visible', timeout: 3000 });
+  await bayarButton.click();
+
+  await page.waitForURL(/\/keuangan\/checkout/, { timeout: 5000 });
+
+  await page.fill('input[type="number"]', '10000');
+
+  const vaTab = page.getByRole('button', { name: 'VA BRI', exact: true });
+  await vaTab.click();
+  const vaSubmit = page.locator('form[action*="checkout/va"] button[type="submit"]');
+  await vaSubmit.waitFor({ state: 'visible', timeout: 3000 });
+  await vaSubmit.click();
+
+  await page.waitForURL(/\/keuangan\/checkout\/\d+/, { timeout: 10000 });
+  const rincian = page.locator('text=Top Up Wallet');
+  await rincian.waitFor({ state: 'visible', timeout: 3000 });
+  console.log('[bundled-topup] VA checkout with topup_amount shows combined tagihan+topup breakdown: OK');
+}
+
 const args = process.argv.slice(2);
 const checkArg = args.find((a) => a.startsWith('--check='))?.split('=')[1] ?? 'all';
 
@@ -116,6 +142,14 @@ try {
   }
   if (checkArg === 'all' || checkArg === 'riwayat') {
     await checkRiwayatKwitansi(page);
+  }
+  if (checkArg === 'all' || checkArg === 'bundled-topup') {
+    try {
+      await checkBundledTopupCheckout(page);
+    } catch (e) {
+      await page.screenshot({ path: 'playwright-error.png' });
+      throw e;
+    }
   }
 } finally {
   await browser.close();

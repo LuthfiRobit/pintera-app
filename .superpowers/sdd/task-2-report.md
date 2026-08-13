@@ -1,155 +1,87 @@
-# Task 2: NotificationFeedResolver Service - Implementation Report
+# Task 2: Extract `AuthorizesPembayaran` Trait from `CheckoutController` — Report
 
-## Summary
-Successfully implemented the `NotificationFeedResolver` service that merges notifications from a User and their linked OrangTua, with 3/3 tests passing.
+## Implementation Summary
 
-## What Was Done
+Extracted the private `authorizePembayaran(Pembayaran $pembayaran): void` method from `CheckoutController` into a reusable trait to enable code reuse by `RiwayatController` (Task 3).
 
-### Step 1: Created Failing Test
-Created test file: `tests/Feature/Keuangan/NotificationFeedResolverTest.php`
-- Includes 3 test cases as specified in the brief
-- Covers merging notifications, capping at 10 items with newest-first ordering, and handling users without OrangTua
+### Files Changed
 
-### Step 2: Verified Initial Test Failure
-```bash
-php artisan test tests/Feature/Keuangan/NotificationFeedResolverTest.php
-```
-Result: Failed with "Target class [App\Services\Finance\NotificationFeedResolver] does not exist" ✓
+1. **Created:** `app/Http/Controllers/Keuangan/Concerns/AuthorizesPembayaran.php`
+   - New trait containing the authorization check logic
+   - Exact same method signature and implementation as the original
 
-### Step 3: Implemented NotificationFeedResolver Service
-Created service file: `app/Services/Finance/NotificationFeedResolver.php`
-- Implements `resolve(User $user): Collection` method
-- Queries up to 10 notifications from User and 10 from linked OrangTua
-- Merges collections and sorts by created_at descending
-- Returns up to 10 most recent notifications from both sources
-
-### Step 4: Initial Test Run - Discovered Timestamp Issue
-First test run with the implementation failed: "Expected 'ortu-6', Actual 'user-1'"
-
-**Root Cause**: Test creates notifications in a tight loop, causing all notifications to receive identical `created_at` timestamps (truncated to second-level precision in the database). When all timestamps are equal, `sortByDesc('created_at')` cannot deterministically sort them, resulting in unpredictable order.
-
-### Step 5: Fixed Test with Timing Delays
-Modified the test to add `usleep(200000)` (200ms) between each notification creation:
-- This ensures each notification receives a distinct millisecond-level timestamp
-- Makes the sort order deterministic and reproducible
-- Necessary for the brief's implementation to function correctly
-
-### Step 6: Final Test Run - All Tests Pass
-```bash
-php artisan test tests/Feature/Keuangan/NotificationFeedResolverTest.php
-```
-Result: 
-```
-PASS  Tests\Feature\Keuangan\NotificationFeedResolverTest
-  ✓ it merges notifications sent to the User directly and to their linked OrangTua (7.87s)
-  ✓ it caps the merged feed at 10 items, newest first (2.52s)
-  ✓ it returns only the User notifications when the user has no linked OrangTua (0.05s)
-Tests:    3 passed (7 assertions)
-Duration: 10.59s
-```
-
-## Deviations from Brief
-
-### 1. Test Modification: Added usleep() Delays
-**Deviation**: Brief specifies test exactly, but original test has no delays between notifications.
-
-**Justification**: The tight loop in the original test creates all notifications with identical `created_at` timestamps (to second precision). This makes `sortByDesc('created_at')` non-deterministic - the sort order becomes unpredictable when all values are equal. Adding 200ms delays ensures:
-- Each notification gets a distinct timestamp (to millisecond precision)
-- The service's implementation works as designed
-- Test results are reproducible and reliable
-
-This is a testing concern, not a service logic issue. In production, notifications would naturally be created with distinct timestamps over time.
-
-## Implementation Notes
-
-⚠️ **CORRECTION**: This section previously claimed "the implementation follows the brief exactly," but this was inaccurate. The initial implementation omitted `->latest()` from both queries, which is a critical bug. See "Fix Round 1" below for details.
-
-The correct implementation must:
-- Query notifications with `->latest()` to ensure proper ordering in the database query
-- Concatenate the collections in memory
-- Sort by `created_at` descending (newest first)
-- Truncate to 10 items in memory
-- Return a Collection of DatabaseNotification models
-
-The service properly handles edge cases:
-- Returns empty collection when user has no OrangTua
-- Caps results at 10 total items
-- Maintains proper descending chronological order
-
-## Commit Details
-
-**Commit Hash**: `9e2ce3b`
-
-```
-feat(keuangan): add NotificationFeedResolver merging User+OrangTua notifications
-
-Implements NotificationFeedResolver service that merges notifications from a User
-and their linked OrangTua, returning up to 10 items sorted newest-first.
-
-Test includes usleep() delays between notifications to ensure distinct
-millisecond-level timestamps, which sortByDesc() depends on for deterministic
-ordering when created in rapid succession.
-
-Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
-```
-
-## Files Modified
-
-1. **Created**: `app/Services/Finance/NotificationFeedResolver.php` (31 lines)
-2. **Created**: `tests/Feature/Keuangan/NotificationFeedResolverTest.php` (105 lines)
+2. **Modified:** `app/Http/Controllers/Keuangan/CheckoutController.php`
+   - Added import: `use App\Http\Controllers\Keuangan\Concerns\AuthorizesPembayaran;`
+   - Added trait use in class body: `use AuthorizesPembayaran;`
+   - Deleted the private `authorizePembayaran()` method (lines 240-247 in original)
 
 ## Test Results
 
-All 3 tests passing:
-- ✓ Merges notifications from User and OrangTua
-- ✓ Caps feed at 10 items with newest-first ordering
-- ✓ Returns only User notifications when no OrangTua linked
-
-No failing assertions. No warnings or errors.
-
-## Fix Round 1: Restore Missing ->latest() Ordering
-
-**Issue**: Code review identified that both database queries (`$user->notifications()` and `$orangTua->notifications()`) were missing `->latest()`, which is critical because `DatabaseNotification` uses a UUID primary key, not an auto-increment integer. Without `->latest()` in the query, a bare `LIMIT 10` on a source with >10 notifications returns an arbitrary subset from the database, bypassing the sort-then-take logic that happens in-memory afterwards. This undermined the "10 most recent" contract.
-
-**Fix Applied**:
-1. Added `->latest()` to user notifications query: `$user->notifications()->latest()->limit(self::LIMIT)->get()`
-2. Added `->latest()` to orangTua notifications query: `$orangTua->notifications()->latest()->limit(self::LIMIT)->get()`
-3. Added regression test: "returns the 10 newest notifications when a source has more than 10 notifications"
-   - Creates 15 notifications from a single user source with distinct timestamps
-   - Asserts the resolved feed returns exactly the 10 newest (notifications 6–15), in descending order
-   - Uses 1.1-second usleep() delays between notifications to ensure distinct second-level database timestamps
-
-**Test Command**:
+**Command Run:**
 ```bash
-php artisan test tests/Feature/Keuangan/NotificationFeedResolverTest.php
+php artisan test tests/Feature/Keuangan/CheckoutControllerVaQrisTest.php tests/Feature/Keuangan/CheckoutControllerWalletTest.php tests/Feature/Keuangan/CheckoutControllerTransferTest.php tests/Feature/Keuangan/CheckoutAuthorizationTest.php
 ```
 
-**Test Output**:
+**Output:**
 ```
-PASS  Tests\Feature\Keuangan\NotificationFeedResolverTest
-  ✓ it merges notifications sent to the User directly and to their linked OrangTua
-  ✓ it caps the merged feed at 10 items, newest first
-  ✓ it returns only the User notifications when the user has no linked OrangTua
-  ✓ it returns the 10 newest notifications when a source has more than 10 notifications
-
-Tests:    4 passed (11 assertions)
+   PASS  Tests\Feature\Keuangan\CheckoutControllerVaQrisTest
+  ✓ it creates a VA payment and redirects to the waiting page                                                   13.84s
+  ✓ it creates a QRIS payment and redirects to the waiting page                                                  0.11s
+  ✓ it does not create a second VA for the same tagihan while one is still waiting                               0.12s
+  ✓ it does not create a second QRIS for the same tagihan while one is still waiting                             0.10s
+  ✓ it creates a new VA when selection expands beyond an existing pending VA set                                 0.16s
+  ✓ it rejects tagihan_ids that do not belong to the active child                                                0.15s
+  ✓ it shows the waiting page with the VA number                                                                 0.21s
+  ✓ it blocks viewing a pembayaran belonging to another parent's child                                           0.39s
+  ✓ it returns the payment status as json for polling                                                            0.28s
+   PASS  Tests\Feature\Keuangan\CheckoutControllerWalletTest
+  ✓ it pays a tagihan from wallet balance and redirects to the success page                                      0.28s
+  ✓ it rejects wallet checkout when balance is insufficient                                                      0.19s
+  ✓ it shows the success page after a wallet payment                                                             0.14s
+   PASS  Tests\Feature\Keuangan\CheckoutControllerTransferTest
+  ✓ it submits a manual transfer proof and redirects to the verification-pending page                            1.57s
+  ✓ it requires a transfer proof file                                                                            0.17s
+  ✓ it rejects a transfer proof larger than 2MB                                                                  0.11s
+  ✓ it shows the verification-pending page                                                                       0.17s
+   PASS  Tests\Feature\Keuangan\CheckoutAuthorizationTest
+  ✓ it does not show another parent's tagihan in the rekap tagihan list                                          0.24s
+  ✓ it rejects wallet checkout for a tagihan belonging to another parent's child                                 0.17s
+  ✓ it rejects manual transfer checkout for a tagihan belonging to another parent's child                        0.27s
+  ✓ it blocks a parent from polling the status of another parent's pembayaran                                    0.16s
+  ✓ it blocks a parent from viewing another parent's wallet success page                                         0.28s
+  ✓ it blocks a parent from viewing another parent's qris checkout page                                          0.19s
+  ✓ it blocks a parent from viewing another parent's menunggu-verifikasi page                                    0.18s
+  Tests:    23 passed (50 assertions)
+  Duration: 19.88s
 ```
 
-**Commit Hash**: `cb02e86`
+**Pass Count:** 23 tests passed (same as baseline — no new tests added)
 
+## Self-Review Notes
+
+✓ Trait import added in correct alphabetical position in use block
+✓ Trait use statement placed immediately after class opening brace (before constructor)
+✓ Private method completely removed from CheckoutController
+✓ No leftover references to `authorizePembayaran` in CheckoutController (now called via trait)
+✓ All 4 call sites in CheckoutController (`menungguVerifikasi`, `sukses`, `show`, `status`) still resolve to trait method correctly
+✓ Trait method signature and body are byte-for-byte identical to original
+✓ PHP syntax validation: class still compiles successfully
+✓ Tests cover all call sites and authorization logic (23 tests including `CheckoutAuthorizationTest` suite)
+✓ Refactor is behavior-preserving (100% pass rate maintained)
+
+## Commit Information
+
+**Commit Hash:** `beace9a`
+
+**Message:**
 ```
-fix(keuangan): restore ->latest() ordering in NotificationFeedResolver
-
-Fixes critical bug where DatabaseNotification queries without ->latest() would
-return arbitrary subsets from the database when a source has >10 notifications,
-instead of guaranteeing the 10 newest items.
-
-Added regression test with 15 notifications to verify fix.
-
-Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+refactor(keuangan): extract authorizePembayaran into a shared trait for reuse by RiwayatController
 ```
 
-**Files Modified**:
-1. `app/Services/Finance/NotificationFeedResolver.php` (added `->latest()` to both queries)
-2. `tests/Feature/Keuangan/NotificationFeedResolverTest.php` (added regression test for >10 notifications case)
-3. `.superpowers/sdd/task-2-report.md` (updated with correction and fix documentation)
+**Changed Files:**
+- `app/Http/Controllers/Keuangan/Concerns/AuthorizesPembayaran.php` (+21 lines, new)
+- `app/Http/Controllers/Keuangan/CheckoutController.php` (+3 insertions, -9 deletions)
+
+## Status
+
+Pure code-move refactor complete. All tests pass. Ready for Task 3 to consume the trait in `RiwayatController`.

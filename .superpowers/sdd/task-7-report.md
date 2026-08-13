@@ -1,127 +1,184 @@
-# Task 7 Report: Cross-parent authorization regression suite
+# Task 7 Report: Playwright verification + scoped regression + full-suite gate
 
-## What was implemented
+Sub-project: Keuangan 6c (Riwayat Transaksi & Kwitansi PDF + Pengaturan Yayasan)
+Task type: verification-only. One real pre-existing bug (test-only, not
+production code) was found and fixed during verification: a global PHP
+function name collision that fatally crashed the full test suite.
 
-Created `tests/Feature/Keuangan/CheckoutAuthorizationTest.php` with 6 tests total:
+## Step 1: Tinker fixture (real dev DB)
 
-1. The 5 tests exactly as given in `.superpowers/sdd/task-7-brief.md` (verbatim `makeParentWithChild()` fixture + the 5 `it(...)` cases covering `TagihanController@index`, `checkout.wallet`, `checkout.transfer`, `checkout.status`, `checkout.sukses`).
-2. One additional test (per the parent agent's instruction, closing a gap flagged by Task 6's reviewer): `it('blocks a parent from viewing another parent\'s menunggu-verifikasi page')`. It reuses the same `makeParentWithChild()` fixture and the `Storage::fake('public')` + `UploadedFile::fake()->image(...)` pattern from `tests/Feature/Keuangan/CheckoutControllerTransferTest.php`. Parent A submits a manual-transfer checkout for their own tagihan (producing a `Pembayaran` with `metode = transfer_manual`), then Parent B calls `GET route('keuangan.checkout.menunggu-verifikasi', $pembayaranA)` and the test asserts `assertForbidden()`.
+Command run:
 
-## Was a gap found?
-
-**No production authorization gap was found.** `CheckoutController::menungguVerifikasi()` already calls `$this->authorizePembayaran($request, $pembayaran)` as its first line (app/Http/Controllers/Keuangan/CheckoutController.php:145), exactly like every other `Pembayaran`-loading action in the controller. The new test passed on the first run with no code changes.
-
-## Test-fixture issue found and fixed (not a production gap)
-
-The brief's first test (`it('does not show another parent\'s tagihan in the rekap tagihan list')`) failed on first run with:
-
-```
-ErrorException: Attempt to read property "nama" on null
-at tests/Feature/Keuangan/CheckoutAuthorizationTest.php:53
-$response->assertSee($tagihanA->jenisTagihan->nama);
-```
-
-**Root cause:** `JenisTagihan` carries `TenantScope`, which filters `WHERE lembaga_id = $actingUser->lembaga_id`. Parents (`orang_tua` role) are created with `lembaga_id: null` (per `makeParentWithChild()`, matching how parents are modeled — they're not tied to a lembaga directly, their children are). When the test itself accessed `$tagihanA->jenisTagihan` as a lazy relation *while still `actingAs($userA)`*, the scope applied `lembaga_id = null`, which doesn't match the `JenisTagihan` row's real (randomly-factory-assigned) `lembaga_id`, so the relation resolved to `null`.
-
-This is exactly the caveat the parent agent flagged in advance: `TagihanController@index` (app/Http/Controllers/Keuangan/TagihanController.php:26) already eager-loads `jenisTagihan` with `->withoutGlobalScope(TenantScope::class)` in the controller itself, so the **actual HTTP response correctly includes the jenis name** — `$response->assertOk()` passed fine. The failure was purely an artifact of the test reaching for the relation directly through a scoped Eloquent call, not a controller/production bug.
-
-**Fix (test-only):** replaced the direct relation access with an explicit scope-bypassing lookup, mirroring the controller's own pattern:
-
-```php
-$namaJenisA = JenisTagihan::withoutGlobalScope(TenantScope::class)->find($tagihanA->jenis_tagihan_id)->nama;
-$response->assertSee($namaJenisA);
+```bash
+php artisan tinker --execute="
+\$siswa = \App\Models\Siswa::whereHas('orangTua.user', fn(\$q) => \$q->where('email', 'ortu.demo@permatakraksaan.sch.id'))->first();
+\$jenis = \App\Models\JenisTagihan::first();
+\$tagihan = \App\Models\Tagihan::updateOrCreate(
+    ['tagihable_id' => \$siswa->id, 'tagihable_type' => \App\Models\Siswa::class, 'jenis_tagihan_id' => \$jenis->id, 'status' => 'lunas'],
+    ['total_tagihan' => 25000, 'net_amount' => 25000, 'paid_amount' => 25000, 'jatuh_tempo' => now()->subDays(3)]
+);
+\$pembayaran = \App\Models\Pembayaran::firstOrCreate(
+    ['siswa_id' => \$siswa->id, 'metode' => 'cash', 'status' => 'lunas'],
+    ['channel_reference' => (string) \Illuminate\Support\Str::uuid()]
+);
+\App\Models\PembayaranTagihan::firstOrCreate(
+    ['pembayaran_id' => \$pembayaran->id, 'tagihan_id' => \$tagihan->id],
+    ['amount_allocated' => 25000]
+);
+echo 'riwayat fixture ready, pembayaran id: '.\$pembayaran->id.PHP_EOL;
+"
 ```
 
-No production code was touched.
-
-## Test commands run
-
+Output:
 ```
-php artisan test tests/Feature/Keuangan/CheckoutAuthorizationTest.php
+riwayat fixture ready, pembayaran id: 14
 ```
 
-- First run: 5 passed, 1 failed (the `jenisTagihan` relation issue above).
-- After the test-only fix, re-run: **6 passed (10 assertions)**, ~9.4s.
+The demo-account lookup by student name worked directly (no fallback needed).
 
-No other test command was run (per instructions, only this file was run, and only in the foreground/synchronously).
+## Step 2: Playwright check added
 
-## Self-review notes
+Read `scripts/keuangan-6a-browser-check.mjs` in full first to match its
+existing login flow, `console.log` format, and dispatch-block pattern.
+Appended `checkRiwayatKwitansi(page)` (exact code from the brief, unmodified)
+and wired it into the dispatch block under flag `riwayat`. Also updated the
+top-of-file usage comment to list the new `riwayat` flag.
 
-- All 5 brief tests kept verbatim (fixture and assertions unchanged, aside from the one necessary relation-access fix described above — the assertion still checks the same thing, just via an unscoped read of the same data).
-- New 6th test follows the identical two-party `makeParentWithChild()` pattern, reuses `Storage::fake('public')` + `UploadedFile::fake()->image(...)` from `CheckoutControllerTransferTest.php`, and asserts `assertForbidden()` exactly like the brief's other cross-parent GET tests (`status`, `sukses`).
-- No production code was modified — `authorizePembayaran()` was already correctly wired into `menungguVerifikasi()` from Task 6.
-- Confirmed guard is `web` only (fixture uses `Role::firstOrCreate([...guard_name' => 'web'])`); no `PaymentService`, `AutoAllocationEngine`, `Wallet`, or BRI webhook files were touched; cicilan not referenced.
+## Step 3: Playwright check run (live dev server)
 
-## Commit
-
-Committed with message documenting that this is a pure regression-suite addition (no production fix needed):
-
-```
-test(keuangan): add two-party cross-parent authorization regression suite for 6b
+Command:
+```bash
+KEUANGAN_CHECK_BASE_URL=http://localhost:8000 node scripts/keuangan-6a-browser-check.mjs --check=riwayat
 ```
 
-(See `git log` for the exact commit hash — recorded in the STATUS reply.)
-
-## Fix round: strengthen vacuous assertions
-
-Following a task review, 2 of the 6 tests in `tests/Feature/Keuangan/CheckoutAuthorizationTest.php` were found to have assertions that would stay green even if the real authorization gap they're named for were reintroduced. Both were strengthened in place (no new test methods for these two), and one optional 7th test was added per the reviewer's Minor note.
-
-### Bug 1 fix — "does not show another parent's tagihan in the rekap tagihan list"
-
-**Before:** `assertDatabaseMissing('tagihan', ['id' => $tagihanB->id, 'tagihable_id' => $tagihanA->tagihable_id])` — checked whether tagihanB's DB row got reassigned to siswaA's FK, which no view/query-scoping leak in `TagihanController::index` could ever cause.
-
-**After:** captured `$namaJenisB` the same scope-bypassing way as `$namaJenisA`, and replaced the vacuous DB assertion with `$response->assertDontSee($namaJenisB)`, kept alongside the existing `$response->assertSee($namaJenisA)`. Also had to fix a latent test-fixture flaw exposed by this change: `JenisTagihan::factory()` hardcodes `nama => 'Biaya Pendaftaran'`, so both parents' tagihan had the identical jenis name and `assertDontSee` was trivially unsatisfiable regardless of scoping. Fixed by giving each fixture's `JenisTagihan` a label-distinct name: `'nama' => "Jenis Tagihan {$label}"` in `makeParentWithChild()`.
-
-**Red/green proof:** Temporarily removed the `->where('tagihable_type', ...)->where('tagihable_id', ...)` filter in `TagihanController::index` (app/Http/Controllers/Keuangan/TagihanController.php), replacing it with `Tagihan::query()->whereIn('status', ...)`. Re-ran the single test:
-
+Output:
 ```
-FAIL  Tests\Feature\Keuangan\CheckoutAuthorizationTest > it does not show another parent's tagihan...
-Not to contain: Jenis Tagihan B
-at tests/Feature/Keuangan/CheckoutAuthorizationTest.php:63
-Tests: 1 failed (3 assertions)
+[riwayat] history page renders lunas row and kwitansi PDF link returns application/pdf: OK
 ```
 
-Confirmed RED. Reverted the controller change exactly (`git diff --stat` on the file showed no residual diff after revert). Re-ran the full file: all 7 passed again (GREEN).
+## Step 4: Scoped regression suite
 
-### Bug 2 fix — "rejects wallet checkout for a tagihan belonging to another parent's child"
-
-**Before:** `assertEquals(0, Pembayaran::where('siswa_id', $tagihanB->tagihable_id)->count())` — wrong field. Traced `PaymentService::createWalletPayment()` → `createPembayaranRecord()` (app/Services/Finance/PaymentService.php:242-263): it stamps `Pembayaran.siswa_id` from the acting parent's own `$siswa` argument (siswaA), never from the tagihan being paid. A hypothetical regression that dropped the ownership check would produce a leaked `Pembayaran` with `siswa_id = siswaA->id`, not `tagihanB->tagihable_id`, so this assertion would stay green even with the real bug present.
-
-**After:**
-```php
-$this->assertEquals(0, Pembayaran::count());
-$this->assertEquals('belum_bayar', $tagihanB->fresh()->status);
-```
-Two independent discriminating signals: no payment record created at all, and tagihanB's own status untouched.
-
-**Red/green proof:** Temporarily removed the `->where('tagihable_type', ...)->where('tagihable_id', ...)` ownership filter in `CheckoutController::resolveSelectedTagihan()` (app/Http/Controllers/Keuangan/CheckoutController.php:173-180), leaving only the status/id filters. Re-ran the single test:
-
-```
-FAIL  Tests\Feature\Keuangan\CheckoutAuthorizationTest > it rejects wallet checkout for a tagihan belonging to...
-Failed asserting that 1 matches expected 0.
-at tests/Feature/Keuangan/CheckoutAuthorizationTest.php:77 ($this->assertEquals(0, Pembayaran::count());)
-Tests: 1 failed (1 assertions)
+Command:
+```bash
+php artisan test tests/Feature/Keuangan/ tests/Feature/Admin/YayasanSettingControllerTest.php tests/Unit/PermissionSeederTest.php tests/Unit/RoleSeederTest.php tests/Feature/RolePermissionSeederTest.php
 ```
 
-Confirmed RED (leaked Pembayaran with siswaA's own siswa_id was created, but was still caught by the count-based assertion — proving it's now discriminating where the old `siswa_id`-filtered assertion was not). Reverted the controller change exactly (`git diff --stat` on the file showed no residual diff after revert). Re-ran the full file: all 7 passed again (GREEN).
+Result: **220 passed (704 assertions)**, 0 failed. Duration 160.47s.
+(Full per-test listing captured in tool transcript; all suites — Keuangan
+feature tests, YayasanSettingControllerTest, PermissionSeederTest,
+RoleSeederTest, RolePermissionSeederTest — reported PASS.)
 
-### Optional 7th test added
+## Step 5: Full-suite gate
 
-Per the reviewer's Minor note, added `it('blocks a parent from viewing another parent's qris checkout page')`: Parent A submits `POST route('keuangan.checkout.qris')` for their own tagihan, producing a `Pembayaran` with `metode = 'qris'`; Parent B then `GET route('keuangan.checkout.show', $pembayaranA)` and the test asserts `assertForbidden()`. Mirrors the existing `status`/`sukses` two-party pattern; no unusual fixture setup was needed since `makeParentWithChild()` and the `checkout.qris` route already existed and `CheckoutController::show()` already calls `authorizePembayaran()` for both VA and QRIS pembayaran alike.
+### First full-suite attempt uncovered a real bug (not a flake)
 
-### Final test run
+The first `php artisan test` run fatally crashed before completing, with:
 
 ```
-php artisan test tests/Feature/Keuangan/CheckoutAuthorizationTest.php
-
-PASS  Tests\Feature\Keuangan\CheckoutAuthorizationTest
-✓ it does not show another parent's tagihan in the rekap tagihan list
-✓ it rejects wallet checkout for a tagihan belonging to another parent's child
-✓ it rejects manual transfer checkout for a tagihan belonging to another parent's child
-✓ it blocks a parent from polling the status of another parent's pembayaran
-✓ it blocks a parent from viewing another parent's wallet success page
-✓ it blocks a parent from viewing another parent's qris checkout page
-✓ it blocks a parent from viewing another parent's menunggu-verifikasi page
-
-Tests: 7 passed (12 assertions)
+Pest\Exceptions\FatalException
+Cannot redeclare actingAsYayasanSuperAdmin() (previously declared in
+D:\laragon\www\pintera-app\tests\Feature\Admin\KaryawanCrudTest.php:29)
+at tests\Feature\Admin\YayasanSettingControllerTest.php:13
 ```
+
+Root cause: `YayasanSettingControllerTest.php` (added in Task 5 of this
+sub-project) declared a global helper function `actingAsYayasanSuperAdmin()`
+with a different signature/behavior than an identically-named global
+function already present in `tests/Feature/Admin/KaryawanCrudTest.php`
+(pre-existing, unrelated to this sub-project). Pest loads all test files'
+top-level functions into one global namespace, so when both files are in
+the same suite run, the second declaration is a fatal PHP redeclaration
+error. This wasn't caught by the scoped run in Step 4 because that scope
+excludes `KaryawanCrudTest.php`.
+
+This is test-only code — it does not touch `PaymentService`,
+`PaymentAllocationService`, `AutoAllocationEngine`, or `Wallet` — so it was
+in scope to fix under "if any pre-existing test now fails, it's a real
+regression from this plan — fix before continuing" (a fatal crash blocking
+the whole suite is a more severe case of the same principle). Fix: renamed
+the Task 5 helper to `actingAsYayasanSettingSuperAdmin()` in
+`tests/Feature/Admin/YayasanSettingControllerTest.php` (all 4 call sites).
+Re-ran `php artisan test tests/Feature/Admin/YayasanSettingControllerTest.php`
+afterward: 5 passed (13 assertions), confirming the fix didn't change test
+semantics.
+
+### Full-suite run (after the fix), in isolation
+
+Confirmed via `tasklist //FI "IMAGENAME eq php.exe"` that no other test
+process was running (only the two `php artisan serve` dev-server PIDs were
+present) before starting, and again before the final run.
+
+The `php artisan test` run took longer than the 600s hard cap on a single
+foreground tool call and was auto-backgrounded by the harness twice. Per
+process-rule correction from the coordinator, the second background
+instance's output file was polled synchronously and repeatedly from the
+foreground (no new commands were themselves backgrounded by choice) until
+completion, then read in full.
+
+Command: `php artisan test`
+
+Final result line:
+```
+Tests:    6 failed, 1578 passed (4874 assertions)
+Duration: 752.32s
+```
+
+This exactly matches the documented 6-failure baseline count. The captured
+log lost most of the individual FAIL block detail due to terminal
+carriage-return redraw artifacts in the piped output capture, so the 6
+failures were independently re-confirmed by running the three known
+baseline classes directly in isolation:
+
+```bash
+php artisan test --filter="LembagaCrudTest|RoleBuilderTest|RoleFormAuditBannerTest"
+```
+
+Result: **6 failed, 31 passed (92 assertions)**, Duration 26.09s — the
+failures are exactly:
+- `Tests\Feature\Admin\LembagaCrudTest > it paginates the index at 10 per page` (1)
+- `Tests\Feature\Admin\RoleBuilderTest` (4):
+  - it returns a paginated, searchable, sortable JSON payload from the datatable endpoint
+  - it filters the datatable endpoint by search and scope
+  - it denies the datatable endpoint to a user without roles.view permission
+  - it renders the roles index page with the datatable mount point instead of a server-rendered table
+- `Tests\Feature\Admin\RoleFormAuditBannerTest > it renders the audit banner markup on the create-role page...` (1)
+
+This matches the documented pre-existing baseline (`LembagaCrudTest` x1,
+`RoleBuilderTest` x4, `RoleFormAuditBannerTest` x1 = 6 total) exactly.
+**No new regressions from any Sub-project 6c work.**
+
+## Step 6: Commit
+
+```bash
+git add scripts/keuangan-6a-browser-check.mjs tests/Feature/Admin/YayasanSettingControllerTest.php
+git commit -m "test(keuangan): add riwayat+kwitansi Playwright check, completing 6c verification
+
+Also fix a real pre-existing bug found during full-suite verification: a
+global function name collision between actingAsYayasanSuperAdmin() in
+YayasanSettingControllerTest.php (Task 5) and the identically-named,
+differently-behaved helper in KaryawanCrudTest.php, which fatally crashed
+the full php artisan test run. Renamed the Task 5 helper to
+actingAsYayasanSettingSuperAdmin()."
+```
+
+Commit hash: `3a8cf24e9ba0dad2102169193958fabb19a61053` (`3a8cf24`)
+Parent: `2de56a2` (test(keuangan): add two-party cross-parent authorization
+suite for riwayat/kwitansi — Task 6)
+
+Files changed: `scripts/keuangan-6a-browser-check.mjs`,
+`tests/Feature/Admin/YayasanSettingControllerTest.php` (2 files, 26
+insertions, 6 deletions).
+
+## Process note for future subagents
+
+The full `php artisan test` run in this repo takes ~750s (12.5 min), which
+exceeds the Bash tool's 600s hard per-call cap. The harness auto-backgrounds
+the command when this happens rather than the agent choosing to background
+it. The correct recovery (confirmed working here) is: verify via
+`tasklist //FI "IMAGENAME eq php.exe"` that the process is genuinely still
+running (not a stray/dead one), then poll its output file synchronously
+from a *new*, blocking foreground Bash call (a bounded loop checking for
+the `Duration:` line, re-issued if needed) rather than using an
+async/notify-based Monitor task — Monitor's completion notification does
+not reliably arrive as "waiting" in this environment and reads as an
+indefinite stall.
