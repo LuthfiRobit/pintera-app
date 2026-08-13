@@ -117,6 +117,40 @@ it('creates a second, distinct VA when re-submitting the same tagihan with a top
     expect((float) $secondPembayaran->amount)->toBe(150000.0);
 });
 
+it('does not redirect a plain resubmit into an existing bundled payment for the same tagihan', function () {
+    [$user, , $tagihan] = actingAsOrangTuaForBundledTopup();
+
+    $bundled = $this->actingAs($user)->post(route('keuangan.checkout.va'), [
+        'tagihan_ids' => [$tagihan->id],
+        'topup_amount' => 50000,
+    ]);
+
+    if ($bundled->exception) {
+        throw $bundled->exception;
+    }
+
+    $bundledPembayaran = Pembayaran::where('metode', 'va_bri')->firstOrFail();
+    expect($bundledPembayaran->topup_status)->toBe('pending');
+    expect((float) $bundledPembayaran->amount)->toBe(150000.0);
+
+    $plain = $this->actingAs($user)->post(route('keuangan.checkout.va'), [
+        'tagihan_ids' => [$tagihan->id],
+    ]);
+
+    if ($plain->exception) {
+        throw $plain->exception;
+    }
+
+    expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(2);
+
+    $plainPembayaran = Pembayaran::where('metode', 'va_bri')
+        ->where('id', '!=', $bundledPembayaran->id)
+        ->firstOrFail();
+
+    $plain->assertRedirect(route('keuangan.checkout.show', $plainPembayaran));
+    expect($plainPembayaran->topup_status)->toBe('none');
+});
+
 it('shows the checkout tab input for bundling a top-up', function () {
     [$user, , $tagihan] = actingAsOrangTuaForBundledTopup();
 

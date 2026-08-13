@@ -242,6 +242,7 @@ class CheckoutController extends BaseController
 
         $candidates = Pembayaran::where('metode', $metode)
             ->where('status', 'menunggu_pembayaran')
+            ->where('topup_status', 'none')
             ->whereHas('pembayaranTagihan', fn ($q) => $q->whereIn('tagihan_id', $requestedIds))
             ->whereHas($relation, fn ($q) => $q->where('expired_at', '>', now()))
             ->with('pembayaranTagihan')
