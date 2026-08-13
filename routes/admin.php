@@ -207,6 +207,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('pembayaran/data', [PembayaranController::class, 'data'])->name('pembayaran.data');
     Route::post('pembayaran/{pembayaran}/verifikasi', [PembayaranController::class, 'verifikasi'])->name('pembayaran.verifikasi');
 
+    Route::get('manual-payment', [ManualPaymentController::class, 'index'])->name('manual-payment.index');
     Route::post('manual-payment/{manualPaymentRequest}/approve', [ManualPaymentController::class, 'approve'])->name('manual-payment.approve');
     Route::post('manual-payment/{manualPaymentRequest}/reject', [ManualPaymentController::class, 'reject'])->name('manual-payment.reject');
 

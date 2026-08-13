@@ -17,9 +17,59 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+use Illuminate\Http\JsonResponse;
+use Illuminate\View\View;
+
 class ManualPaymentController extends BaseController
 {
     use AuthorizesRequests;
+
+    public function index(Request $request): View
+    {
+        $this->authorize('pembayaran.verifikasi');
+
+        $lembagaId = $this->lembagaId($request);
+
+        $query = ManualPaymentRequest::where('status', 'PENDING')
+            ->whereHas('pembayaran', function ($q) use ($lembagaId) {
+                $q->whereHas('siswa', fn ($q2) => $q2->where('lembaga_id', $lembagaId));
+            })
+            ->with(['pembayaran.siswa', 'pembayaran.pembayaranTagihan', 'requestedBy'])
+            ->latest('transfer_date');
+
+        if ($search = $request->input('search')) {
+            $query->whereHas('pembayaran.siswa', fn ($q) => $q->where('nama_lengkap', 'like', '%'.$search.'%'));
+        }
+
+        if ($dari = $request->input('dari')) {
+            $query->where('transfer_date', '>=', $dari);
+        }
+
+        if ($sampai = $request->input('sampai')) {
+            $query->where('transfer_date', '<=', $sampai);
+        }
+
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
+        $paginated = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.manual-payment._daftar', [
+                'requestList' => $paginated,
+                'perPage' => $perPage,
+            ]);
+        }
+
+        return view('admin.manual-payment.index', [
+            'requestList' => $paginated,
+            'perPage' => $perPage,
+            'totalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
+                ->whereHas('pembayaran.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+                ->count(),
+            'totalNominalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
+                ->whereHas('pembayaran.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+                ->sum('amount'),
+        ]);
+    }
 
     private function lembagaId(Request $request): ?int
     {
