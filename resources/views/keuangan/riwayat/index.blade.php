@@ -64,7 +64,7 @@
                             $rincianLabel = $rincianItems->isEmpty()
                                 ? '-'
                                 : ($rincianItems->first()->tagihan?->jenisTagihan?->nama ?? '-').($rincianItems->count() > 1 ? ' +'.($rincianItems->count() - 1).' lainnya' : '');
-                            $totalAmount = $rincianItems->sum('amount_allocated');
+                            $totalAmount = $rincianItems->isNotEmpty() ? $rincianItems->sum('amount_allocated') : ($pembayaran->amount ?? 0);
                         @endphp
                         <div class="flex flex-wrap items-center justify-between gap-3 py-4">
                             <div>

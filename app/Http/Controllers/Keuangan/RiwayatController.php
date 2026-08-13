@@ -22,9 +22,15 @@ class RiwayatController extends BaseController
             return view('keuangan.tanpa-anak');
         }
 
-        $dari = $request->query('dari');
-        $sampai = $request->query('sampai');
-        $metode = $request->query('metode');
+        $validated = $request->validate([
+            'dari' => ['nullable', 'date'],
+            'sampai' => ['nullable', 'date'],
+            'metode' => ['nullable', 'string'],
+        ]);
+
+        $dari = $validated['dari'] ?? null;
+        $sampai = $validated['sampai'] ?? null;
+        $metode = $validated['metode'] ?? null;
 
         $dateRangeValid = ! ($dari && $sampai && $dari > $sampai);
 

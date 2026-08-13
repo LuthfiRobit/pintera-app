@@ -112,6 +112,20 @@ it('shows the total amount for each transaction row', function () {
     $response->assertSee('100.000');
 });
 
+it('shows the pending amount for a menunggu_pembayaran transaction with no rincian yet', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+
+    Pembayaran::create([
+        'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'menunggu_pembayaran',
+        'channel_reference' => (string) \Illuminate\Support\Str::uuid(), 'amount' => 250000,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index'));
+
+    $response->assertOk();
+    $response->assertSee('250.000');
+});
+
 it('filters by a valid full date range including the end-of-day boundary', function () {
     [$user, , $siswa] = actingAsOrangTuaForRiwayat();
 
@@ -143,6 +157,15 @@ it('narrows results with a dari-only filter', function () {
     $response->assertViewHas('pembayarans', function ($pembayarans) use ($older, $newer) {
         return $pembayarans->pluck('id')->all() === [$newer->id] && ! $pembayarans->contains('id', $older->id);
     });
+});
+
+it('rejects a malformed dari filter with a validation error instead of a silent query', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+    makeLunasPembayaran($siswa);
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index', ['dari' => 'not-a-date']));
+
+    $response->assertSessionHasErrors('dari');
 });
 
 it('shows the kwitansi download link only for lunas rows', function () {
