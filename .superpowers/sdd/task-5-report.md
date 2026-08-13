@@ -1,172 +1,54 @@
-# Task 5 Report: Dashboard route, controller, skip-alert banner, views, sidebar entry
+# Task 5 Report: Admin Pengaturan Yayasan page
 
 ## Summary
 
-Implemented the parent-facing finance dashboard: `SkipAlertResolver` service, `Keuangan\DashboardController`,
-two Blade views (`keuangan.dashboard`, `keuangan.tanpa-anak`), the `keuangan.dashboard` route, and the sidebar
-nav entry, following `task-5-brief.md`. Two deviations from the brief's verbatim code were required to make the
-brief's own Step-1 tests pass (see **Deviations** below) — both were found via TDD, not introduced speculatively.
+Implemented the admin-facing "Pengaturan Yayasan" settings page: a single view/edit-toggle page (no tabs) for managing the one `Yayasan` record's profile fields and logo, gated by the `yayasan.kelola` permission.
 
 ## Files changed
 
-- Created `app/Services/Finance/SkipAlertResolver.php`
-- Created `app/Http/Controllers/Keuangan/DashboardController.php`
-- Created `resources/views/keuangan/dashboard.blade.php`
-- Created `resources/views/keuangan/tanpa-anak.blade.php`
-- Created `tests/Feature/Keuangan/DashboardControllerTest.php`
-- Modified `routes/web.php` (registered `keuangan.dashboard` route group, before `require __DIR__.'/spmb.php';`)
-- Modified `resources/views/layouts/sidebar.blade.php` (added "Dompet & Tagihan Saya" nav entry under Keuangan group)
+- **Created** `app/Http/Controllers/Admin/YayasanSettingController.php` — `edit()` and `update()` actions, each starting with `$this->authorize('yayasan.kelola')`.
+- **Created** `resources/views/admin/yayasan/edit.blade.php` — hero card + Alpine `mode: 'view'/'edit'` toggle, mirroring `admin/lembaga/edit.blade.php`'s pattern but without the tab structure (Yayasan has no sub-collections).
+- **Modified** `routes/admin.php` — added `GET /admin/pengaturan-yayasan` (`admin.yayasan.edit`) and `PUT /admin/pengaturan-yayasan` (`admin.yayasan.update`), inside the existing `admin`-prefixed/named group, right after the `lembaga` resource route.
+- **Modified** `resources/views/layouts/sidebar.blade.php` — added a `Pengaturan Yayasan` nav item to the "Data Induk" group, gated by `Auth::user()->can('yayasan.kelola')`, using the `landmark` Lucide icon (this sidebar's icon set is `lucide-*` dynamic components, distinct from the app's custom `<x-icon>` component).
+- **Created** `tests/Feature/Admin/YayasanSettingControllerTest.php` — the 5 tests from the brief, used verbatim.
 
-## Test-driven flow
+## Deviations from the brief's literal code (with reasoning)
 
-1. Wrote `tests/Feature/Keuangan/DashboardControllerTest.php` exactly as given in the brief (5 test cases).
-2. Ran it before any implementation existed:
-   `php artisan test tests/Feature/Keuangan/DashboardControllerTest.php`
-   → Result: **5 failed** — `RouteNotFoundException: Route [keuangan.dashboard] not defined.` (expected).
-3. Implemented `SkipAlertResolver`, `DashboardController`, both views, the route, and the sidebar entry verbatim
-   per the brief.
-4. Ran the test file again:
-   `php artisan test tests/Feature/Keuangan/DashboardControllerTest.php`
-   → Result: **3 passed, 2 failed**. Investigated both failures with a throwaway debug test (removed afterward)
-   rather than guessing:
-   - `it shows the skip-alert banner when balance cannot cover the highest-priority tagihan` — failed because the
-     verbatim `SkipAlertResolver` algorithm (copied from `AutoAllocationEngine::run()`) treats *any* partial
-     allocation (`amountToPay > 0`) as "allocated", so a single under-funded tagihan (saldo 50.000 vs tagihan
-     200.000) was marked allocated, never landing in the `$skipped` collection — the resolver returned `null`
-     and no banner rendered. See **Deviations** for the fix.
-   - `it shows the "tanpa anak" page...` — failed because the view's heading text
-     "Belum ada anak terdaftar" (capital B, as written in the brief's Step 5 code) does not contain the
-     case-sensitive substring the brief's own test asserts: `assertSee('belum ada anak terdaftar', false)`.
-5. Applied both fixes (below), reran:
-   `php artisan test tests/Feature/Keuangan/DashboardControllerTest.php`
-   → Result: **5 passed (10 assertions)**.
-6. Regression check — ran the whole `Keuangan` feature directory alone (not the full suite, per the
-   controller's instruction to avoid racing concurrent `php artisan test` runs against the same MySQL test DB):
-   `php artisan test tests/Feature/Keuangan/`
-   → Result: **140 passed (371 assertions)**, no regressions.
+1. **Added `use AuthorizesRequests;` trait to the controller.** The brief's controller code sample extends `Illuminate\Routing\Controller as BaseController` but omits the trait. The task's own context note says to mirror `LembagaController`'s exact pattern — and `LembagaController` explicitly does `use AuthorizesRequests;` alongside the same `extends BaseController`. The app's own base `App\Http\Controllers\Controller` is an empty abstract class with no traits, so `$this->authorize()` would not resolve without adding the trait. Confirmed by running the tests: this was necessary for the tests to pass at all (authorization checks are exercised by the "denies access" test).
+2. **Used the `apartment` icon instead of `account_balance`** for the hero-card fallback icon in `admin/yayasan/edit.blade.php`. `account_balance` is not a registered case in the app's custom `resources/views/components/icon.blade.php` component (that component has a fixed, hand-maintained `@switch` of SVGs, unlike the sidebar's Lucide-backed dynamic icons) — using an unknown name would silently fall through to the component's "unknown icon" placeholder glyph. `apartment` is an existing case in that component and is semantically close (building icon), consistent with how `admin/lembaga/edit.blade.php` uses the same icon for a similar institutional hero card.
+3. **Added `@php use Illuminate\Support\Facades\Storage; @endphp` at the top of the view.** The brief's view snippet references bare `Storage::disk(...)` but the codebase has no global facade aliasing configured (`config/app.php` has no `aliases` array in this Laravel 12 skeleton), and no other Blade view in the codebase references `Storage::` unqualified. Without the import, the bare class name would not resolve inside the view's compiled (unnamespaced) PHP. Verified the sidebar's `landmark` Lucide icon name is valid and unrelated to this custom-component icon set, so no similar fix was needed there.
 
-## Deviations from the brief's verbatim code, with justification
+No other deviations — routes, controller validation rules/logic, and view structure/fields all follow the brief verbatim.
 
-### 1. `SkipAlertResolver::resolve()` — allocation-walk semantics changed from "partial counts as allocated" to "full-or-skip"
+## Test commands run and results
 
-The brief's Step 3 code is a byte-for-byte copy of `AutoAllocationEngine::run()`'s walk: for each tagihan in
-priority order, `amountToPay = min($saldo, $sisaTagihan)`; if `amountToPay > 0` the tagihan is marked
-"allocated" (even if only partially paid) and removed from the candidate "skipped" list. This exactly mirrors
-production engine behavior (confirmed by reading `AutoAllocationEngine.php`), where `$skippedTagihan` only ever
-contains tagihan that received **zero** allocation.
-
-Under that definition, the brief's own Step-1 test 2 (single tagihan, `net_amount` 200.000, wallet balance
-50.000) can never produce a "skip": the tagihan receives a non-zero partial allocation (50.000) and is
-therefore "allocated", not "skipped" — `resolve()` returns `null`, and the test's `assertSee('150.000', false)`
-fails. This was confirmed directly: the join/where query correctly returns the one tagihan row, and the
-`isEmpty()`/`whereNotIn` filtering was the point of divergence, verified via a scratch debug test.
-
-Given `SkipAlertResolver`'s own docblock says it exists "used ONLY to compute what the banner should show" and
-the dashboard banner copy is "Saldo tidak cukup untuk {jenis} … Kekurangan Rp{selisih} agar tagihan ini bisa
-terbayar" (a full-coverage framing, not a partial-allocation framing), I changed the walk to a full-or-skip
-model instead of partial-allocation-counts-as-covered:
-
-```php
-foreach ($tagihans as $tagihan) {
-    $sisaTagihan = (float) $tagihan->net_amount - (float) $tagihan->paid_amount;
-
-    if ($saldo >= $sisaTagihan) {
-        $saldo -= $sisaTagihan;
-        continue;
-    }
-
-    $selisih = $sisaTagihan - $saldo;
-    // ... return ['tagihan' => ..., 'selisih' => $selisih];
-}
-return null;
+```
+php artisan test tests/Feature/Admin/YayasanSettingControllerTest.php
 ```
 
-This satisfies all three balance-related brief tests: test 1 (no tagihan, n/a), test 2 (50.000 vs 200.000 →
-selisih 150.000, banner shown), test 3 (500.000 fully covers 200.000 → no banner). It does **not** touch
-`AutoAllocationEngine` itself (per the plan's Global Constraint that 6a must not modify or invoke that engine's
-write path) — this is purely a read-only, display-only reinterpretation local to the new resolver class.
+- First run (before implementation): 5 failed — `Route [admin.yayasan.edit]` / `[admin.yayasan.update]` not defined. Confirmed the tests fail for the expected reason.
+- Second run (after implementation): **5 passed (13 assertions)**, 21.67s.
 
-I flag this explicitly because it is a real behavioral divergence from "replica of `AutoAllocationEngine::run()`'s
-... allocation walk" as the brief's docblock comment states, even though I left that docblock comment in place
-(it remains accurate for the *ordering* logic, just not the *allocated-vs-skipped* classification). If task 6b
-(or a later reviewer) expects byte-identical semantics with the real engine, this should be revisited —
-possibly by asking product/spec owner whether the banner should ever fire for partially-payable tagihan at all
-under the real engine's actual behavior (currently: it would not).
+Only this scoped test file was run, per instructions — the full suite was not run, and no test command was backgrounded.
 
-A related fix was needed in the same method: `$tagihan->load('jenisTagihan')` failed with "Attempt to read
-property 'nama' on null" because `JenisTagihan` uses the `BelongsToTenant` trait (global `TenantScope`), and the
-authenticated orang_tua user's `lembaga_id` is `null`, so the scoped `jenisTagihan()` relation silently returned
-nothing for a `JenisTagihan` row belonging to a different lembaga. Fixed by loading the relation with
-`->withoutGlobalScope(TenantScope::class)`, consistent with how the tagihan query itself already does this (and
-consistent with `ResolveActiveSiswa`'s established pattern of bypassing `TenantScope` for orang_tua cross-tenant
-reads).
+## Self-review notes
 
-### 2. `tanpa-anak.blade.php` — heading text lowercased
-
-Brief's Step 5 view has `<p ...>Belum ada anak terdaftar</p>` (capitalized). The brief's Step-1 test asserts
-`assertSee('belum ada anak terdaftar', false)` (all-lowercase, and `assertSee` is case-sensitive). Changed the
-rendered heading text to lowercase `belum ada anak terdaftar` to satisfy the test literally, since the brief's
-test is presumably authoritative for what real-world sub-project 6a QA / other tasks might assert against. This
-is a purely cosmetic change (Indonesian doesn't strictly require sentence-case headings) with no functional
-impact.
-
-No other deviations. Route registration, controller, sidebar entry, and the `dashboard.blade.php` wallet/VA/
-notification-feed rendering match the brief verbatim.
-
-## Manual browser verification
-
-No interactive browser/Playwright tool was available in this session's toolset (Windows/Laragon environment,
-no `chromium-cli` or MCP browser tool present). Instead, verification was done by driving the real running dev
-server (`http://localhost/pintera-app/public`, confirmed live and serving the actual Laravel app — note:
-`http://pintera-app.test/` on this machine currently serves an Apache directory listing of the repo root, not
-the app; the working vhost path is `http://localhost/pintera-app/public`) via `curl` with a cookie jar, exactly
-reproducing the login → navigate flow a human would do in a browser, against the real dev MySQL database.
-
-**Step A — admin side (child link check):**
-- Logged in as `superadmin@sistem.test` / `password` via `POST /login` → `302` redirect to `/dashboard` (success).
-- Fetched `/admin/orang-tua` (`200 OK`) and confirmed phone number `081234560001` — the exact `no_hp` seeded for
-  the demo parent in `OrangTuaKaryawanSeeder.php` (`'no_hp' => '081234560001'`, `'email' => 'ortu.demo@...'`) —
-  is present in the listing, confirming the orang tua record exists and is seeded. (The listing table doesn't
-  render email column, so matched by phone number instead, per the brief's suggested fallback.)
-- Did not need to re-run `OrangTuaKaryawanSeeder` — the record and its child link were already present (verified
-  conclusively in Step B below, since the dashboard rendered the wallet view, not the "tanpa anak" empty state).
-
-**Step B — parent-facing dashboard:**
-- Logged in as `ortu.demo@permatakraksaan.sch.id` / `password` via `POST /login` → `302` redirect to
-  `/dashboard` (success).
-- Fetched `GET /keuangan` → **`200 OK`**.
-- Response contained:
-  - `<h2>Dompet &amp; Tagihan — Eliana Putri</h2>` (proves `activeSiswa` resolved correctly to the linked child,
-    NOT the `tanpa-anak` empty state)
-  - `Saldo Wallet` label with balance `Rp500.000`
-  - `Notifikasi Terbaru` section header
-  - No skip-alert banner (no `Top-up Rp...` string found) — consistent with a fully-funded wallet
-  - No PHP exception/error markers (`Exception`, `Fatal error`, `Whoops` all absent; the only `error` substring
-    hits were Tailwind CSS class names like `bg-error-500`, not real errors)
-
-This confirms the dashboard renders correctly end-to-end against the real dev database for the demo account,
-including the tenant-scope fix in `SkipAlertResolver` (which would have thrown on any lembaga-scoped
-`jenisTagihan` lookup had it not been applied — though in this particular account's data there was no
-outstanding tagihan to trigger that code path, the automated test suite's skip-alert tests do exercise it and
-pass).
-
-I did not visually screenshot the page (no browser/screenshot tool available) — if a true visual check is
-required, recommend running `/run-skill-generator` to capture a Playwright-based verification skill for this
-project, as suggested by the `run` skill's fallback guidance.
+- Confirmed `yayasan.kelola` permission already exists in `database/seeders/PermissionSeeder.php` (seeded by Task 1), so no seeder changes were needed here.
+- Confirmed no new migration was needed — all fields referenced (`nama`, `npwp_yayasan`, `akta_pendirian_nomor`, `akta_pendirian_tanggal`, `sk_kemenkumham_nomor`, `alamat`, `telepon`, `email`, `website`, `logo`, `nama_ketua_pembina`, `nama_ketua_pengurus`) are already in `Yayasan::$fillable` and the `yayasan` migration.
+- Verified the old-logo-deletion logic only fires when a new file is actually uploaded (`$request->hasFile('logo')`), and only deletes if an old path existed, avoiding a `Storage::delete(null)` no-op-but-wasteful call.
+- Verified `logo` validation (`mimes:jpg,jpeg,png,svg|max:1024`) matches the global constraint exactly.
+- Verified `$this->authorize('yayasan.kelola')` is the literal first line of both `edit()` and `update()`, matching the established controller convention (not route middleware).
+- Verified the sidebar entry pattern (`can('yayasan.kelola') ? [...] : null` inside `array_filter([...])`) matches the surrounding array entries exactly.
+- No other test suites or files were touched.
 
 ## Commit
 
 ```
-77ee... feat(keuangan): add orang tua dashboard with wallet card and skip-alert banner
+feat(admin): add pengaturan yayasan page for full profile + logo management
 ```
-(see actual hash below, filled in after commit)
 
-## Test commands run (final)
+Files staged: `app/Http/Controllers/Admin/YayasanSettingController.php`, `resources/views/admin/yayasan/edit.blade.php`, `routes/admin.php`, `resources/views/layouts/sidebar.blade.php`, `tests/Feature/Admin/YayasanSettingControllerTest.php`.
 
-```
-php artisan test tests/Feature/Keuangan/DashboardControllerTest.php
-# Tests: 5 passed (10 assertions)
+(Pre-existing unrelated modifications to `.superpowers/sdd/final-review-fix-report.md` and `.superpowers/sdd/task-2-report.md`, present in the working tree before this task started, were left untouched and not included in this commit.)
 
-php artisan test tests/Feature/Keuangan/
-# Tests: 140 passed (371 assertions)
-```
+Commit hash: see final report reply.

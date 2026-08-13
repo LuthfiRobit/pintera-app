@@ -68,6 +68,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::resource('users', UserController::class)->except(['show', 'destroy']);
     Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::resource('lembaga', LembagaController::class)->except(['show', 'destroy']);
+    Route::get('pengaturan-yayasan', [\App\Http\Controllers\Admin\YayasanSettingController::class, 'edit'])->name('yayasan.edit');
+    Route::put('pengaturan-yayasan', [\App\Http\Controllers\Admin\YayasanSettingController::class, 'update'])->name('yayasan.update');
     Route::prefix('lembaga/{lembaga}')->name('lembaga.')->group(function () {
         Route::post('data-periodik', [LembagaDataPeriodikController::class, 'store'])->name('data-periodik.store');
         Route::put('data-periodik/{dataPeriodik}', [LembagaDataPeriodikController::class, 'update'])->name('data-periodik.update');
