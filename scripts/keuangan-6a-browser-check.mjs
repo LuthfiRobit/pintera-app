@@ -4,7 +4,7 @@
 // manual-book-screenshots.mjs, this clicks/asserts DOM state rather than only
 // capturing screenshots — needed because Alpine.js interactivity bugs (e.g. a
 // @js() escaping bug inside @click) do not show up in Pest HTTP tests.
-// Usage: node scripts/keuangan-6a-browser-check.mjs [--check=<bell|switcher|dashboard|tagihan-checkout|all>]
+// Usage: node scripts/keuangan-6a-browser-check.mjs [--check=<bell|switcher|dashboard|tagihan-checkout|riwayat|all>]
 
 import { chromium } from 'playwright';
 
@@ -77,6 +77,23 @@ async function checkTagihanAndWalletCheckout(page) {
   console.log('[tagihan+wallet] tagihan list -> checkout tabs -> wallet payment succeeded: OK');
 }
 
+async function checkRiwayatKwitansi(page) {
+  await page.goto(`${BASE_URL}/keuangan/riwayat`);
+  const lunasRow = page.locator('text=Lunas').first();
+  await lunasRow.waitFor({ state: 'visible', timeout: 3000 });
+
+  const kwitansiLink = page.locator('a:has-text("Unduh Kwitansi")').first();
+  await kwitansiLink.waitFor({ state: 'visible', timeout: 3000 });
+  const href = await kwitansiLink.getAttribute('href');
+
+  const response = await page.request.get(href);
+  const contentType = response.headers()['content-type'];
+  if (!contentType || !contentType.includes('application/pdf')) {
+    throw new Error(`Expected PDF content-type, got: ${contentType}`);
+  }
+  console.log('[riwayat] history page renders lunas row and kwitansi PDF link returns application/pdf: OK');
+}
+
 const args = process.argv.slice(2);
 const checkArg = args.find((a) => a.startsWith('--check='))?.split('=')[1] ?? 'all';
 
@@ -96,6 +113,9 @@ try {
   }
   if (checkArg === 'all' || checkArg === 'tagihan-checkout') {
     await checkTagihanAndWalletCheckout(page);
+  }
+  if (checkArg === 'all' || checkArg === 'riwayat') {
+    await checkRiwayatKwitansi(page);
   }
 } finally {
   await browser.close();

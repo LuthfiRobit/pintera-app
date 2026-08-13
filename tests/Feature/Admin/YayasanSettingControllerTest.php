@@ -10,7 +10,7 @@ use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
-function actingAsYayasanSuperAdmin(): array
+function actingAsYayasanSettingSuperAdmin(): array
 {
     Permission::firstOrCreate(['name' => 'yayasan.kelola', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
@@ -23,7 +23,7 @@ function actingAsYayasanSuperAdmin(): array
 }
 
 it('shows the yayasan settings form with existing data', function () {
-    [$user] = actingAsYayasanSuperAdmin();
+    [$user] = actingAsYayasanSettingSuperAdmin();
     $yayasan = Yayasan::factory()->create(['nama' => 'Yayasan Permata Kraksaan']);
 
     $response = $this->actingAs($user)->get(route('admin.yayasan.edit'));
@@ -33,7 +33,7 @@ it('shows the yayasan settings form with existing data', function () {
 });
 
 it('updates all yayasan fields', function () {
-    [$user] = actingAsYayasanSuperAdmin();
+    [$user] = actingAsYayasanSettingSuperAdmin();
     Yayasan::factory()->create();
 
     $response = $this->actingAs($user)->put(route('admin.yayasan.update'), [
@@ -56,7 +56,7 @@ it('updates all yayasan fields', function () {
 
 it('uploads a new logo and deletes the old one', function () {
     Storage::fake('public');
-    [$user] = actingAsYayasanSuperAdmin();
+    [$user] = actingAsYayasanSettingSuperAdmin();
     $oldPath = 'yayasan-logo/old.png';
     Storage::disk('public')->put($oldPath, 'dummy-old-content');
     $yayasan = Yayasan::factory()->create(['logo' => $oldPath]);
@@ -75,7 +75,7 @@ it('uploads a new logo and deletes the old one', function () {
 
 it('rejects a logo file that is too large', function () {
     Storage::fake('public');
-    [$user] = actingAsYayasanSuperAdmin();
+    [$user] = actingAsYayasanSettingSuperAdmin();
     Yayasan::factory()->create();
 
     $response = $this->actingAs($user)->put(route('admin.yayasan.update'), [
