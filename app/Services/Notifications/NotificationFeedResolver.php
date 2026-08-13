@@ -1,7 +1,7 @@
 <?php
 // app/Services/Finance/NotificationFeedResolver.php
 
-namespace App\Services\Finance;
+namespace App\Services\Notifications;
 
 use App\Models\User;
 use Illuminate\Support\Collection;

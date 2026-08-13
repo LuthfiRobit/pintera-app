@@ -3,7 +3,7 @@
 
 namespace App\Http\Controllers\Keuangan;
 
-use App\Services\Finance\NotificationFeedResolver;
+use App\Services\Notifications\NotificationFeedResolver;
 use App\Services\Finance\SkipAlertResolver;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;

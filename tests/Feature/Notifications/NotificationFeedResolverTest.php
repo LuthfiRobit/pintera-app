@@ -2,9 +2,10 @@
 // tests/Feature/Keuangan/NotificationFeedResolverTest.php
 
 use App\Models\OrangTua;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Notifications\Finance\FinanceNotification;
-use App\Services\Finance\NotificationFeedResolver;
+use App\Services\Notifications\NotificationFeedResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\Messages\MailMessage;
 

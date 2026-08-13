@@ -4,8 +4,10 @@
     $lembagaOptions = $isYayasan ? once(fn () => \App\Models\Lembaga::query()->select('id', 'nama')->orderBy('nama')->get()) : collect();
     $activeLembaga = $activeLembagaId ? $lembagaOptions->firstWhere('id', $activeLembagaId) : null;
     $sealLabel = $activeLembaga ? Str::of($activeLembaga->nama)->explode(' ')->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('') : 'YY';
-    $notificationFeed = app(\App\Services\Finance\NotificationFeedResolver::class)->resolve(Auth::user());
+    
+    $notificationFeed = app(\App\Services\Notifications\NotificationFeedResolver::class)->resolve(Auth::user());
     $unreadCount = $notificationFeed->whereNull('read_at')->count();
+    
     $orangTua = Auth::user()->orangTua;
     $childOptions = $orangTua !== null
         ? $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->select('siswa.id', 'siswa.nama_lengkap')->orderBy('siswa.nama_lengkap')->get()
