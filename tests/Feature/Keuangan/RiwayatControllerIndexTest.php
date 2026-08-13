@@ -100,3 +100,19 @@ it('ignores an invalid date range instead of erroring', function () {
     $response->assertOk();
     $response->assertViewHas('pembayarans', fn ($pembayarans) => $pembayarans->contains('id', $pembayaran->id));
 });
+
+it('shows the kwitansi download link only for lunas rows', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+
+    $lunas = makeLunasPembayaran($siswa);
+    $pending = Pembayaran::create([
+        'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'menunggu_pembayaran',
+        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index'));
+
+    $response->assertOk();
+    $response->assertSee(route('keuangan.riwayat.kwitansi', $lunas));
+    $response->assertDontSee(route('keuangan.riwayat.kwitansi', $pending));
+});

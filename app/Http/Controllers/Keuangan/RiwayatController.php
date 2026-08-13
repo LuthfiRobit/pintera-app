@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Keuangan;
 
 use App\Http\Controllers\Keuangan\Concerns\AuthorizesPembayaran;
 use App\Models\Pembayaran;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
@@ -42,5 +43,28 @@ class RiwayatController extends BaseController
             'sampai' => $sampai,
             'metode' => $metode,
         ]);
+    }
+
+    public function kwitansi(Request $request, Pembayaran $pembayaran)
+    {
+        $this->authorizePembayaran($pembayaran);
+
+        abort_unless($pembayaran->status === 'lunas', 404);
+
+        $pembayaran->load([
+            'pembayaranTagihan.tagihan.jenisTagihan' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+            'siswa' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+            'siswa.lembaga.yayasan',
+            'siswa.kelas',
+        ]);
+
+        $pdf = Pdf::loadView('pdf.kwitansi', [
+            'pembayaran' => $pembayaran,
+            'siswa' => $pembayaran->siswa,
+            'lembaga' => $pembayaran->siswa->lembaga,
+            'yayasan' => $pembayaran->siswa->lembaga->yayasan,
+        ]);
+
+        return $pdf->stream('kwitansi-'.$pembayaran->id.'.pdf');
     }
 }

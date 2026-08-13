@@ -73,12 +73,7 @@
                             <div class="flex items-center gap-3">
                                 <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                                 @if ($pembayaran->status === 'lunas')
-                                    {{-- literal url() here, not route(): the named route 'keuangan.riwayat.kwitansi'
-                                         is only registered in Task 4, which runs after this task — route() would
-                                         throw RouteNotFoundException at page-RENDER time (this exact situation
-                                         and fix already happened once in Sub-project 6b's Task 3/4 split; Task 4
-                                         of this plan switches this back to route() once the name exists). --}}
-                                    <a href="{{ url('/keuangan/riwayat/'.$pembayaran->id.'/kwitansi') }}" target="_blank" class="text-sm font-semibold text-brand-600 hover:text-brand-700">
+                                    <a href="{{ route('keuangan.riwayat.kwitansi', $pembayaran) }}" target="_blank" class="text-sm font-semibold text-brand-600 hover:text-brand-700">
                                         Unduh Kwitansi
                                     </a>
                                 @endif
