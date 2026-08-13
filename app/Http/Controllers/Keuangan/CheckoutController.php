@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Keuangan;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
+use App\Http\Controllers\Keuangan\Concerns\AuthorizesPembayaran;
 use App\Http\Requests\Keuangan\StoreManualTransferRequest;
 use App\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
@@ -18,6 +19,8 @@ use Illuminate\View\View;
 
 class CheckoutController extends BaseController
 {
+    use AuthorizesPembayaran;
+
     public function __construct(private readonly PaymentService $paymentService)
     {
     }
@@ -235,14 +238,5 @@ class CheckoutController extends BaseController
 
             return $candidateIds === $requestedIds;
         });
-    }
-
-    private function authorizePembayaran(Pembayaran $pembayaran): void
-    {
-        $orangTua = Auth::user()->orangTua;
-        $ownsChild = $orangTua !== null
-            && $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->whereKey($pembayaran->siswa_id)->exists();
-
-        abort_unless($ownsChild, 403);
     }
 }
