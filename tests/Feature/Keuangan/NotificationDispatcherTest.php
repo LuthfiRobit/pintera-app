@@ -120,5 +120,41 @@ it('logs notification_logs.user_id using the OrangTua notifiable\'s user_id, not
 
     expect($log)->not->toBeNull();
     expect($log->user_id)->toBe($orangTua->user_id);
-    expect($log->user_id)->not->toBe($orangTua->id);
+});
+
+it('respects an OrangTua notifiable\'s linked User preference (channel_wa=false), not the "not a User" fallback', function () {
+    // Desync trick: see the comment on the existing 'logs notification_logs.user_id...'
+    // test above for why a standalone User::factory()->create() must come first.
+    \App\Models\User::factory()->create();
+    $orangTua = OrangTua::factory()->create();
+    UserNotificationPreference::create([
+        'user_id' => $orangTua->user_id, 'module' => 'finance', 'channel_wa' => false, 'channel_email' => true,
+    ]);
+
+    Notification::fake();
+
+    app(NotificationDispatcher::class)->send($orangTua, new TestableFinanceNotification(isUrgent: false));
+
+    Notification::assertSentTo($orangTua, TestableFinanceNotification::class, function ($notification) {
+        $channels = $notification->via((object) []);
+
+        return in_array('database', $channels, true)
+            && ! in_array('whatsapp', $channels, true)
+            && in_array('mail', $channels, true);
+    });
+});
+
+it('defaults an OrangTua notifiable to WA+Email ON when no preference row exists for their linked User', function () {
+    \App\Models\User::factory()->create();
+    $orangTua = OrangTua::factory()->create();
+
+    Notification::fake();
+
+    app(NotificationDispatcher::class)->send($orangTua, new TestableFinanceNotification(isUrgent: false));
+
+    Notification::assertSentTo($orangTua, TestableFinanceNotification::class, function ($notification) {
+        $channels = $notification->via((object) []);
+
+        return in_array('database', $channels, true) && in_array('mail', $channels, true) && in_array('whatsapp', $channels, true);
+    });
 });

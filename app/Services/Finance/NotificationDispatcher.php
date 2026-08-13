@@ -3,6 +3,7 @@
 namespace App\Services\Finance;
 
 use App\Models\NotificationLog;
+use App\Models\OrangTua;
 use App\Models\UserNotificationPreference;
 use Illuminate\Notifications\Notification;
 
@@ -12,8 +13,14 @@ class NotificationDispatcher
     {
         $isUrgent = method_exists($notification, 'isUrgent') && $notification->isUrgent();
 
-        $preference = $notifiable instanceof \App\Models\User
-            ? UserNotificationPreference::where('user_id', $notifiable->id)->where('module', $module)->first()
+        $userId = match (true) {
+            $notifiable instanceof \App\Models\User => $notifiable->id,
+            $notifiable instanceof OrangTua => $notifiable->user_id,
+            default => null,
+        };
+
+        $preference = $userId !== null
+            ? UserNotificationPreference::where('user_id', $userId)->where('module', $module)->first()
             : null;
 
         $allowWa = $isUrgent || ($preference?->channel_wa ?? true);
