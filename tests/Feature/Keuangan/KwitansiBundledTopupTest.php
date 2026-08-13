@@ -51,3 +51,29 @@ it('shows a separate top-up line item on the kwitansi for a bundled payment', fu
     $content = $response->getContent();
     expect(strlen($content))->toBeGreaterThan(500);
 });
+
+it('includes a separate top-up line item in the rendered kwitansi template for a bundled payment', function () {
+    $siswa = Siswa::factory()->create();
+    $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bundling Kwitansi']);
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'lunas', 'net_amount' => 100000, 'paid_amount' => 100000,
+    ]);
+    $pembayaran = Pembayaran::create([
+        'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'lunas',
+        'amount' => 150000, 'topup_status' => 'completed',
+        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+    ]);
+    PembayaranTagihan::create(['pembayaran_id' => $pembayaran->id, 'tagihan_id' => $tagihan->id, 'amount_allocated' => 100000]);
+    $pembayaran->load(['pembayaranTagihan.tagihan.jenisTagihan', 'siswa.lembaga.yayasan', 'siswa.kelas']);
+
+    $html = view('pdf.kwitansi', [
+        'pembayaran' => $pembayaran,
+        'siswa' => $pembayaran->siswa,
+        'lembaga' => $pembayaran->siswa->lembaga,
+        'yayasan' => $pembayaran->siswa->lembaga->yayasan,
+    ])->render();
+
+    expect($html)->toContain('Top Up Saldo Wallet');
+    expect($html)->toContain('50.000');
+});

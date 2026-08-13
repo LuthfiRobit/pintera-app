@@ -71,9 +71,11 @@ class CheckoutController extends BaseController
                 ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas, silakan cek kembali.']);
         }
 
-        $existing = $this->findPendingPembayaranFor('va_bri', $tagihans);
-        if ($existing !== null) {
-            return redirect()->route('keuangan.checkout.show', $existing);
+        if ($topupAmount <= 0) {
+            $existing = $this->findPendingPembayaranFor('va_bri', $tagihans);
+            if ($existing !== null) {
+                return redirect()->route('keuangan.checkout.show', $existing);
+            }
         }
 
         try {
@@ -106,9 +108,11 @@ class CheckoutController extends BaseController
                 ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas, silakan cek kembali.']);
         }
 
-        $existing = $this->findPendingPembayaranFor('qris', $tagihans);
-        if ($existing !== null) {
-            return redirect()->route('keuangan.checkout.show', $existing);
+        if ($topupAmount <= 0) {
+            $existing = $this->findPendingPembayaranFor('qris', $tagihans);
+            if ($existing !== null) {
+                return redirect()->route('keuangan.checkout.show', $existing);
+            }
         }
 
         try {

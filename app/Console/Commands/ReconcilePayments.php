@@ -6,7 +6,6 @@ use App\Contracts\PaymentGatewayInterface;
 use App\Models\BriQrisPayment;
 use App\Models\BriVirtualAccount;
 use App\Models\Pembayaran;
-use App\Models\Wallet;
 use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -148,8 +147,13 @@ class ReconcilePayments extends Command
             ->get();
 
         foreach ($failedTopups as $pembayaran) {
-            $this->allocationService->topupSisaJikaAda($pembayaran);
-            $this->line("Retried topup for Pembayaran ID: {$pembayaran->id}");
+            try {
+                $this->allocationService->topupSisaJikaAda($pembayaran);
+                $this->line("Retried topup for Pembayaran ID: {$pembayaran->id}");
+            } catch (\Throwable $e) {
+                Log::error("Failed to retry topup for Pembayaran ID {$pembayaran->id}: " . $e->getMessage());
+                $this->error("Failed to retry topup for Pembayaran ID {$pembayaran->id}");
+            }
         }
     }
 }

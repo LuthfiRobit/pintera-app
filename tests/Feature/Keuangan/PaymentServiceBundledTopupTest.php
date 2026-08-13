@@ -46,3 +46,21 @@ it('creates a bundled QRIS payment by summing tagihan and topup amounts', functi
     expect($pembayaran->topup_status)->toBe('pending');
     expect($pembayaran->briQrisPayment)->not->toBeNull();
 });
+
+it('rejects a bundled VA request with zero or negative topup amount', function () {
+    config(['services.bri.gateway' => 'mock']);
+    [$siswa, $tagihans] = setupSiswaDanTagihanUntukTopup();
+
+    $this->expectException(\App\Exceptions\PaymentException::class);
+
+    app(PaymentService::class)->createVaPaymentWithTopup($siswa, $tagihans, 0.0);
+});
+
+it('rejects a bundled VA request with no tagihan selected', function () {
+    config(['services.bri.gateway' => 'mock']);
+    [$siswa] = setupSiswaDanTagihanUntukTopup();
+
+    $this->expectException(\App\Exceptions\PaymentException::class);
+
+    app(PaymentService::class)->createVaPaymentWithTopup($siswa, collect(), 50000.0);
+});

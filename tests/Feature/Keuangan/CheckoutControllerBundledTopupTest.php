@@ -85,6 +85,38 @@ it('creates a bundled QRIS payment when topup_amount is submitted', function () 
     expect($pembayaran->topup_status)->toBe('pending');
 });
 
+it('creates a second, distinct VA when re-submitting the same tagihan with a topup amount', function () {
+    [$user, , $tagihan] = actingAsOrangTuaForBundledTopup();
+
+    $first = $this->actingAs($user)->post(route('keuangan.checkout.va'), [
+        'tagihan_ids' => [$tagihan->id],
+    ]);
+    $first->assertRedirect();
+
+    $firstPembayaran = Pembayaran::where('metode', 'va_bri')->firstOrFail();
+    expect($firstPembayaran->topup_status)->toBe('none');
+
+    $second = $this->actingAs($user)->post(route('keuangan.checkout.va'), [
+        'tagihan_ids' => [$tagihan->id],
+        'topup_amount' => 50000,
+    ]);
+
+    if ($second->exception) {
+        throw $second->exception;
+    }
+
+    expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(2);
+
+    $secondPembayaran = Pembayaran::where('metode', 'va_bri')
+        ->where('id', '!=', $firstPembayaran->id)
+        ->firstOrFail();
+
+    $second->assertRedirect(route('keuangan.checkout.show', $secondPembayaran));
+    expect($secondPembayaran->id)->not->toBe($firstPembayaran->id);
+    expect($secondPembayaran->topup_status)->toBe('pending');
+    expect((float) $secondPembayaran->amount)->toBe(150000.0);
+});
+
 it('shows the checkout tab input for bundling a top-up', function () {
     [$user, , $tagihan] = actingAsOrangTuaForBundledTopup();
 

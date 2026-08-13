@@ -55,6 +55,10 @@ class PaymentService
      */
     public function createVaPaymentWithTopup(Siswa $siswa, Collection $tagihans, float $topupAmount): Pembayaran
     {
+        if ($topupAmount <= 0 || $tagihans->isEmpty()) {
+            throw new PaymentException('Top-up hanya bisa digabung dengan minimal satu tagihan dan nominal top-up harus lebih dari 0.');
+        }
+
         $this->guardAgainstInvalidTagihan($tagihans);
 
         return DB::transaction(function () use ($siswa, $tagihans, $topupAmount) {
@@ -110,6 +114,10 @@ class PaymentService
      */
     public function createQrisPaymentWithTopup(Siswa $siswa, Collection $tagihans, float $topupAmount): Pembayaran
     {
+        if ($topupAmount <= 0 || $tagihans->isEmpty()) {
+            throw new PaymentException('Top-up hanya bisa digabung dengan minimal satu tagihan dan nominal top-up harus lebih dari 0.');
+        }
+
         $this->guardAgainstInvalidTagihan($tagihans);
 
         return DB::transaction(function () use ($siswa, $tagihans, $topupAmount) {

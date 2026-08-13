@@ -40,6 +40,8 @@
                         <td class="px-4 py-3.5 text-xs text-gray-600">
                             @if ($req->pembayaran->topup_status !== 'none' && $req->pembayaran->pembayaranTagihan->isEmpty())
                                 <span class="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700">Top Up Wallet</span>
+                            @elseif ($req->pembayaran->topup_status !== 'none' && $req->pembayaran->pembayaranTagihan->isNotEmpty())
+                                <span class="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700">Tagihan + Top Up</span>
                             @else
                                 <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">Bayar Tagihan</span>
                             @endif

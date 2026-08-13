@@ -5,6 +5,7 @@ namespace App\Services\Finance;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Tagihan;
+use App\Models\Wallet;
 use App\Notifications\Finance\PembayaranBerhasilNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -84,20 +85,26 @@ class PaymentAllocationService
         $porsiTopup = (float) $pembayaran->amount - (float) $porsiTagihan;
 
         if ($porsiTopup <= 0) {
+            Log::warning("topupSisaJikaAda: sisa <= 0 untuk pembayaran id={$pembayaran->id}, tidak ada yang perlu di-topup.");
             return;
         }
 
-        $siswa = $pembayaran->siswa;
-        if (! $siswa || ! $siswa->wallet) {
+        // Siswa punya TenantScope global (BelongsToTenant) yang otomatis memfilter query
+        // berdasarkan tenant user yang sedang login -- kita cari wallet langsung by
+        // siswa_id, bukan lewat relasi $pembayaran->siswa->wallet, supaya tidak diam-diam
+        // bernilai null kalau proses ini berjalan dalam konteks tenant yang berbeda.
+        $wallet = Wallet::where('siswa_id', $pembayaran->siswa_id)->first();
+
+        if ($wallet === null) {
             Log::error("Gagal topup dari pembayaran {$pembayaran->id}: Wallet siswa tidak ditemukan.");
             $pembayaran->update(['topup_status' => 'failed']);
             return;
         }
 
         try {
-            $siswa->wallet->topup($porsiTopup, $pembayaran, "Top-up dari pembayaran {$pembayaran->metode} ({$pembayaran->id})");
+            $wallet->topup($porsiTopup, $pembayaran, "Top-up dari pembayaran {$pembayaran->metode} ({$pembayaran->id})");
             $pembayaran->update(['topup_status' => 'completed']);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error("Gagal mengeksekusi topup dari pembayaran {$pembayaran->id}: ".$e->getMessage());
             $pembayaran->update(['topup_status' => 'failed']);
         }
