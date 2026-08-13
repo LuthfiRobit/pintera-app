@@ -51,7 +51,7 @@
         <tbody>
             @forelse ($pembayaran->pembayaranTagihan as $item)
                 <tr>
-                    <td>{{ $item->tagihan->jenisTagihan->nama }}</td>
+                    <td>{{ $item->tagihan?->jenisTagihan?->nama ?? '-' }}</td>
                     <td style="text-align: right;">Rp{{ number_format($item->amount_allocated, 0, ',', '.') }}</td>
                 </tr>
             @empty
@@ -59,7 +59,7 @@
             @endforelse
             <tr class="total-row">
                 <td>Total</td>
-                <td style="text-align: right;">Rp{{ number_format($pembayaran->pembayaranTagihan->sum('amount_allocated') ?: ($pembayaran->amount ?? 0), 0, ',', '.') }}</td>
+                <td style="text-align: right;">Rp{{ number_format($pembayaran->pembayaranTagihan->isNotEmpty() ? $pembayaran->pembayaranTagihan->sum('amount_allocated') : ($pembayaran->amount ?? 0), 0, ',', '.') }}</td>
             </tr>
         </tbody>
     </table>

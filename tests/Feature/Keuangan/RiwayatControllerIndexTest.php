@@ -101,6 +101,50 @@ it('ignores an invalid date range instead of erroring', function () {
     $response->assertViewHas('pembayarans', fn ($pembayarans) => $pembayarans->contains('id', $pembayaran->id));
 });
 
+it('shows the total amount for each transaction row', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+
+    makeLunasPembayaran($siswa);
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index'));
+
+    $response->assertOk();
+    $response->assertSee('100.000');
+});
+
+it('filters by a valid full date range including the end-of-day boundary', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+
+    $inRange = makeLunasPembayaran($siswa, createdAt: now()->setTime(23, 59, 0));
+    $outOfRange = makeLunasPembayaran($siswa, createdAt: now()->addDays(5));
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index', [
+        'dari' => now()->toDateString(),
+        'sampai' => now()->toDateString(),
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('pembayarans', function ($pembayarans) use ($inRange, $outOfRange) {
+        return $pembayarans->pluck('id')->all() === [$inRange->id] && ! $pembayarans->contains('id', $outOfRange->id);
+    });
+});
+
+it('narrows results with a dari-only filter', function () {
+    [$user, , $siswa] = actingAsOrangTuaForRiwayat();
+
+    $older = makeLunasPembayaran($siswa, createdAt: now()->subDays(10));
+    $newer = makeLunasPembayaran($siswa, createdAt: now());
+
+    $response = $this->actingAs($user)->get(route('keuangan.riwayat.index', [
+        'dari' => now()->subDays(1)->toDateString(),
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('pembayarans', function ($pembayarans) use ($older, $newer) {
+        return $pembayarans->pluck('id')->all() === [$newer->id] && ! $pembayarans->contains('id', $older->id);
+    });
+});
+
 it('shows the kwitansi download link only for lunas rows', function () {
     [$user, , $siswa] = actingAsOrangTuaForRiwayat();
 

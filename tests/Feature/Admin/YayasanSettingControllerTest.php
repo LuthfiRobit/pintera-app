@@ -86,6 +86,16 @@ it('rejects a logo file that is too large', function () {
     $response->assertSessionHasErrors('logo');
 });
 
+it('returns 404 on update when no yayasan row exists', function () {
+    [$user] = actingAsYayasanSettingSuperAdmin();
+
+    $response = $this->actingAs($user)->put(route('admin.yayasan.update'), [
+        'nama' => 'Yayasan Tanpa Baris',
+    ]);
+
+    $response->assertNotFound();
+});
+
 it('denies access to a user without yayasan.kelola permission', function () {
     $user = User::factory()->create(['lembaga_id' => null]);
 

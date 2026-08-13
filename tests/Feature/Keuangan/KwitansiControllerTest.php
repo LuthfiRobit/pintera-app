@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\JenisTagihan;
+use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Pembayaran;
@@ -84,4 +85,51 @@ it('renders without a logo when yayasan logo is not set', function () {
     $response = $this->actingAs($user)->get(route('keuangan.riwayat.kwitansi', $pembayaran));
 
     $response->assertOk();
+});
+
+it('renders the kelas name, siswa name, and total amount in the kwitansi view', function () {
+    [, , $siswa, $pembayaran] = actingAsOrangTuaForKwitansi();
+    $kelas = Kelas::factory()->create(['lembaga_id' => $siswa->lembaga_id, 'nama' => '7A Istimewa']);
+    $siswa->update(['kelas_id' => $kelas->id]);
+
+    $pembayaran->load([
+        'pembayaranTagihan.tagihan.jenisTagihan' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+        'siswa' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+        'siswa.lembaga.yayasan',
+        'siswa.kelas' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+    ]);
+
+    $html = view('pdf.kwitansi', [
+        'pembayaran' => $pembayaran,
+        'siswa' => $pembayaran->siswa,
+        'lembaga' => $pembayaran->siswa->lembaga,
+        'yayasan' => $pembayaran->siswa->lembaga->yayasan,
+    ])->render();
+
+    expect($html)->toContain('7A Istimewa');
+    expect($html)->toContain('Anak Kwitansi');
+    expect($html)->toContain('100.000');
+});
+
+it('renders an img tag when yayasan logo is set', function () {
+    [, , $siswa, $pembayaran] = actingAsOrangTuaForKwitansi();
+    $yayasan = $siswa->lembaga->yayasan;
+    $yayasan->update(['logo' => 'yayasan-logo/test-logo.png']);
+
+    $pembayaran->load([
+        'pembayaranTagihan.tagihan.jenisTagihan' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+        'siswa' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+        'siswa.lembaga.yayasan',
+        'siswa.kelas' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
+    ]);
+
+    $html = view('pdf.kwitansi', [
+        'pembayaran' => $pembayaran,
+        'siswa' => $pembayaran->siswa,
+        'lembaga' => $pembayaran->siswa->lembaga,
+        'yayasan' => $pembayaran->siswa->lembaga->yayasan->fresh(),
+    ])->render();
+
+    expect($html)->toContain('<img');
+    expect($html)->toContain('yayasan-logo/test-logo.png');
 });

@@ -29,6 +29,8 @@ class YayasanSettingController extends BaseController
 
         $yayasan = Yayasan::first();
 
+        abort_if($yayasan === null, 404);
+
         $data = $request->validate([
             'nama' => ['required', 'string', 'max:255'],
             'npwp_yayasan' => ['nullable', 'string', 'max:255'],
@@ -44,17 +46,19 @@ class YayasanSettingController extends BaseController
             'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,svg', 'max:1024'],
         ]);
 
+        $oldLogo = null;
+
         if ($request->hasFile('logo')) {
             $oldLogo = $yayasan->logo;
 
             $data['logo'] = $request->file('logo')->store('yayasan-logo', 'public');
-
-            if ($oldLogo) {
-                Storage::disk('public')->delete($oldLogo);
-            }
         }
 
         $yayasan->update($data);
+
+        if ($oldLogo) {
+            Storage::disk('public')->delete($oldLogo);
+        }
 
         return redirect()->route('admin.yayasan.edit')->with('status', 'Data yayasan berhasil diperbarui.');
     }

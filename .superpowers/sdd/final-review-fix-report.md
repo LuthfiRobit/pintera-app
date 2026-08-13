@@ -1,112 +1,138 @@
-# Final Whole-Plan Review Fix Report — Keuangan Sub-project 05: Notifikasi
+# Final Review Fix Report — Keuangan Sub-project 6c
 
-Branch: `demo`, base HEAD before this work: `d02ce92`.
-Scope: fix Critical + Important + Minor findings from the final whole-branch review of Sub-project 05, in one combined commit.
+Consolidated fix pass for the final whole-branch code review of Keuangan Sub-project 6c
+(parent-facing riwayat transaksi + kwitansi PDF, admin pengaturan yayasan) on branch `demo`.
 
-## Fix 1 (CRITICAL) — Unguarded notification dispatch in `AutoAllocationEngine::run()`
+## Final review fix round
 
-**File**: `app/Services/Finance/AutoAllocationEngine.php`
+### Important findings
 
-Wrapped the `SaldoTidakCukupNotification` dispatch (post-`DB::transaction()`) in try/catch with `Log::error(...)`, matching the exact pattern already used in `ManualPaymentController::approve()`'s topup block and `PaymentAllocationService::allocate()`'s `afterCommit` block. Added `use Illuminate\Support\Facades\Log;`. Nothing else in the method (locking, transaction structure) was touched — this loop body is now also combined with Fix 3's "first skipped only" change (see below), since both touch the same few lines.
+**1. `siswa.kelas` eager-loaded without `TenantScope` bypass — Fixed**
+`app/Http/Controllers/Keuangan/RiwayatController.php`, `kwitansi()`: added
+`'siswa.kelas' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)` to the
+`load()` array, alongside the existing `siswa` and `pembayaranTagihan.tagihan.jenisTagihan` bypasses.
+New test: `tests/Feature/Keuangan/KwitansiControllerTest.php` →
+`it('renders the kelas name, siswa name, and total amount in the kwitansi view')` — renders
+`view('pdf.kwitansi', ...)` directly (bypassing the binary PDF stream) and asserts the rendered HTML
+contains the kelas name (`7A Istimewa`), siswa name (`Anak Kwitansi`), and total amount (`100.000`).
 
-Why this matters: `Wallet::topup()` calls `run()` uncaught (`app/Models/Wallet.php:71`). Before this fix, if `MailChannel` threw (it does not swallow exceptions the way `WhatsAppChannel` does — confirmed by reading `app/Notifications/Channels`), the exception would propagate out of `run()` → `topup()` → the caller. In `ManualPaymentController::approve()`'s topup branch (lines 99–105), that already-committed topup would get marked `topup_status = 'failed'` even though the money had landed. `ReconcilePayments::retryFailedTopups()` (`app/Console/Commands/ReconcilePayments.php:121-142`) would then re-call `topup()` on that same row later, crediting the wallet a second time — duplicate money. Now the notification failure is logged and swallowed, and `topup()`'s caller sees success.
+**2. Riwayat list omits the "Total" (amount) column — Fixed**
+`resources/views/keuangan/riwayat/index.blade.php`: added a total amount `<p>` computed from
+`$pembayaran->pembayaranTagihan->sum('amount_allocated')`, formatted as `Rp{{ number_format(...) }}`,
+placed next to the status badge in each row.
+New test: `tests/Feature/Keuangan/RiwayatControllerIndexTest.php` →
+`it('shows the total amount for each transaction row')` — asserts `100.000` appears in the response.
 
-## Fix 2 (IMPORTANT) — Same missing guard in `TagihanBillingGenerator` and `KirimDueReminderTagihan`
+**3. `YayasanSettingController::update()` has no null guard — Fixed**
+`app/Http/Controllers/Admin/YayasanSettingController.php`: added
+`abort_if($yayasan === null, 404);` immediately after `$yayasan = Yayasan::first();` in `update()`.
+New test: `tests/Feature/Admin/YayasanSettingControllerTest.php` →
+`it('returns 404 on update when no yayasan row exists')` — PUTs with no `Yayasan` row seeded, asserts 404.
 
-**Files**:
-- `app/Services/TagihanBillingGenerator.php` — wrapped the `TagihanDiterbitkanNotification` dispatch in `generateForSiswa()` (after `DB::transaction()` returns) in try/catch + `Log::error(...)`. Added `use Illuminate\Support\Facades\Log;`.
-- `app/Console/Commands/KirimDueReminderTagihan.php` — wrapped the `$dispatcher->send(...)` call inside the per-tagihan `foreach` loop in try/catch + `Log::error(...)`, with an explicit `continue` in the catch block so one bad recipient (e.g. a `MailChannel` throw) does not abort the whole run — the loop proceeds to the next tagihan. Added `use Illuminate\Support\Facades\Log;`.
+**4. Kwitansi tests never verified PDF content — Fixed**
+`tests/Feature/Keuangan/KwitansiControllerTest.php`: added two new tests using the direct-view-render
+approach (`view('pdf.kwitansi', [...])->render()`), since dompdf's HTTP response is a binary stream:
+- `it('renders the kelas name, siswa name, and total amount in the kwitansi view')` — normal fixture,
+  asserts siswa name, kelas name, and total amount all appear in the rendered HTML (also covers Finding 1).
+- `it('renders an img tag when yayasan logo is set')` — sets `$yayasan->logo` to a fake path
+  (`yayasan-logo/test-logo.png`, no real file on disk needed since only the template render is under
+  test, not dompdf's file-embedding I/O), asserts render doesn't throw and the HTML contains an
+  `<img` tag referencing that path.
 
-No other logic in either file was changed.
+**5. Date-range filtering: only invalid path tested, half-filled range misleading — Fixed**
+`app/Http/Controllers/Keuangan/RiwayatController.php`:
+- (a) Added `it('filters by a valid full date range including the end-of-day boundary')` to
+  `tests/Feature/Keuangan/RiwayatControllerIndexTest.php` — creates a payment at 23:59 on the `sampai`
+  date and one 5 days later, filters with `dari`/`sampai` both set to today, asserts only the in-range
+  payment is returned (exercises the `23:59:59` end-of-day suffix on the previously-untested valid path).
+- (b) Changed the controller to support one-sided date filters: `$dateRangeValid` now only rejects an
+  explicitly inverted range (`dari > sampai`); the query applies `created_at >= dari 00:00:00` and
+  `created_at <= sampai 23:59:59` independently via separate `when()` clauses, so either bound alone now
+  filters. Also introduced a `filterActive` view variable
+  (`$metode || ($dateRangeValid && ($dari || $sampai))`) passed to the view so the empty-state message
+  in `resources/views/keuangan/riwayat/index.blade.php` only claims "no results match this filter" when
+  a filter is actually in effect, instead of whenever `dari`/`sampai`/`metode` are merely present in the
+  querystring (which previously misfired on an ignored invalid range).
+  New test: `it('narrows results with a dari-only filter')` — asserts a `dari`-only filter actually
+  excludes an older payment instead of being silently ignored.
 
-## Fix 3 (IMPORTANT) — `SaldoTidakCukupNotification` over-fires
+### Minor findings
 
-**File**: `app/Services/Finance/AutoAllocationEngine.php`
+**6. Logo deleted before `update()` call — Fixed**
+`app/Http/Controllers/Admin/YayasanSettingController.php`: moved `Storage::disk('public')->delete($oldLogo)`
+to after a successful `$yayasan->update($data)` call, so a failed update no longer orphans the DB
+reference by deleting the file first. Existing test
+`it('uploads a new logo and deletes the old one')` still covers the happy path and passes.
 
-Re-read `.agents/specs/keuangan-05-notifikasi.md`:
-- Line 73 (event table): "Auto-Allocation Engine men-skip **tagihan prioritas tertinggi** karena saldo kurang" — singular, highest-priority only.
-- Lines 151–156 (Addendum A, "In-memory atau persist ke DB?"): explicitly confirms the design is **pure in-memory**, with no new table/column, and gives 3 reasons why persistence is unnecessary — `notification_logs` already gives an audit trail of every send attempt, and a separate "skipped_tagihan" idempotency table is called out by name as **YAGNI**. The spec does NOT mention any same-day idempotency requirement for this notification anywhere (unlike `DueReminderNotification`, where H-3/H-1 same-day dedup via `notification_logs` IS explicitly spec'd at line 94).
+**7. Skipped — svg upload support.** Spec-mandated (svg upload is explicitly required by the spec);
+actual risk is low given only the highest-privilege role (`yayasan_super_admin`) can upload. Left as-is
+per spec, no change made.
 
-Conclusion: the spec wants "first skipped tagihan only," not "first skipped + same-day idempotency." I implemented only the first-only fix, per the instructions' explicit permission to skip idempotency if the spec doesn't call for both.
+**8. Null-safety on `tagihan->jenisTagihan->nama` — Fixed**
+Both `resources/views/keuangan/riwayat/index.blade.php` and `resources/views/pdf/kwitansi.blade.php`
+changed to `$item->tagihan?->jenisTagihan?->nama ?? '-'` (and the equivalent in the riwayat list's
+`$rincianLabel` computation) to guard against a deleted/orphaned `tagihan`/`jenisTagihan` row.
 
-Changed the dispatch loop from iterating all of `$skippedTagihan` to taking only `$skippedTagihan->first()` (the collection is already priority-ordered upstream by the `orderBy('jenis_tagihan.priority_score', ...)` query that produced `$tagihans`), and dispatches once.
+**9. `?:` vs explicit emptiness check on kwitansi total — Fixed**
+`resources/views/pdf/kwitansi.blade.php`: total line changed from
+`sum('amount_allocated') ?: ($pembayaran->amount ?? 0)` to
+`$pembayaran->pembayaranTagihan->isNotEmpty() ? $pembayaran->pembayaranTagihan->sum('amount_allocated') : ($pembayaran->amount ?? 0)`,
+so a legitimate all-zero-allocation sum no longer incorrectly falls through to `$pembayaran->amount`.
 
-**Test update**: `tests/Feature/Keuangan/SaldoTidakCukupNotificationTest.php` — the existing "sends ... for a tagihan that gets fully skipped" test already only had ONE skipped tagihan in its scenario, so it needed no change and still passes. I added a NEW test, `'only sends SaldoTidakCukupNotification for the highest-priority skipped tagihan when multiple are skipped'`, with 3 tagihan where 2 get skipped — it asserts the notification fires for the higher-priority of the two skipped tagihan (not the lowest-priority one), and asserts `assertSentToTimes($orangTua, SaldoTidakCukupNotification::class, 1)` to lock in the "only once" behavior.
+**10. Skipped — no migration needed at current scale.** Reviewed and confirmed already correctly
+deferred per the plan; no change made.
 
-## Fix 4 (Minor) — `siswaLembagaId()` nullable parameter
+**11. Skipped — cosmetic icon omission.** Matches what the plan itself specified, not a real gap.
+Reviewed and accepted as-is; no change made.
 
-**File**: `app/Http/Controllers\Admin\ManualPaymentController.php`
+## New / updated tests
 
-Changed `private function siswaLembagaId(int $siswaId): ?int` to `private function siswaLembagaId(?int $siswaId): ?int`, returning `null` immediately when `$siswaId` is `null`. This lets `abort_unless($siswaLembagaId !== null && ...)` correctly 404 instead of hitting a `TypeError` for `Pembayaran` rows created by `AutoAllocationEngine` that have `wallet_id` set but no `siswa_id`.
+- `tests/Feature/Admin/YayasanSettingControllerTest.php`
+  - `it('returns 404 on update when no yayasan row exists')` (new)
+- `tests/Feature/Keuangan/KwitansiControllerTest.php`
+  - `it('renders the kelas name, siswa name, and total amount in the kwitansi view')` (new)
+  - `it('renders an img tag when yayasan logo is set')` (new)
+- `tests/Feature/Keuangan/RiwayatControllerIndexTest.php`
+  - `it('shows the total amount for each transaction row')` (new)
+  - `it('filters by a valid full date range including the end-of-day boundary')` (new)
+  - `it('narrows results with a dari-only filter')` (new)
 
-## Fix 5 (Minor) — Regression test for `logAttempt()` OrangTua-vs-User fix
+## Test command output
 
-**File**: `tests/Feature/Keuangan/NotificationDispatcherTest.php`
-
-Added `'logs notification_logs.user_id using the OrangTua notifiable's user_id, not its own id'`: creates a throwaway `OrangTua` first purely to push subsequent auto-increment ids out of alignment (so `id !== user_id` is guaranteed even on a fresh test DB where the first row of both tables could otherwise coincide at id 1), then a second `OrangTua`, asserts `$orangTua->id !== $orangTua->user_id`, dispatches via `NotificationDispatcher::send($orangTua, ...)`, and asserts the resulting `NotificationLog->user_id` equals `$orangTua->user_id`, not `$orangTua->id`.
-
-TDD sanity check (via `git show` on `logAttempt()`'s pre-Task-5 form and mentally substituting): the old code used `$notifiable->id` unconditionally for the log's `user_id` (or an equivalent shape that didn't special-case `OrangTua`), which would have written the `OrangTua`'s own PK instead of `user_id` — the new test's `expect($log->user_id)->toBe($orangTua->user_id)` would have failed against that old code (since `$orangTua->id !== $orangTua->user_id` by construction) and correctly fails to catch the bug if run against current code — confirmed it passes now (see test run below).
-
-## Fix 6 (Minor) — Deleted placeholder test
-
-**File**: `tests/Feature/Keuangan/PaymentServiceManualTopupTest.php`
-
-Deleted the `it('does not affect the existing createManualPayment bill-payment path', ...)` block entirely — its body was `expect(true)->toBeTrue()`, a no-op. Its own docblock already states the real regression coverage lives in `PaymentServiceTest.php`, which is run separately (and was run again below). File is otherwise untouched.
-
-## Fix 7 (Minor, cosmetic) — Import ordering in `routes/admin.php`
-
-**File**: `routes/admin.php`
-
-`use App\Http\Controllers\Admin\ManualPaymentController;` was between `OrangTuaController` and `PembayaranController` (out of order). Moved it to its correct alphabetical position, immediately before `MataPelajaranController` and after `LembagaController` ("Man" < "Mat" alphabetically). Note: a pre-existing, unrelated ordering issue was spotted nearby (`JenisTesMasterController` appearing after `KategoriKeringananController`) — left untouched, out of scope for this plan.
-
-## What was explicitly NOT touched (per instructions)
-
-- `PaymentAllocationService::allocate()`'s `paid_amount +=` double-counting on re-call — confirmed pre-existing/unrelated.
-- No "partial allocation" notification added.
-- Minor-1 (`TransferManualDisetujuiNotification` message wording) and Minor-2 (double notification on bill-payment approval) — left as product/UX decisions, not touched.
-
-## Test commands run and output
-
-All run individually in the foreground against MySQL `pintera_app_test`, one at a time, per instructions:
-
+Command:
 ```
-php artisan test tests/Feature/Keuangan/AutoAllocationEngineTest.php
-  Tests: 4 passed (21 assertions)
-
-php artisan test tests/Feature/Keuangan/SaldoTidakCukupNotificationTest.php
-  Tests: 4 passed (5 assertions)
-
-php artisan test tests/Feature/Keuangan/TagihanDiterbitkanNotificationTest.php tests/Feature/Keuangan/TagihanBillingGeneratorTest.php
-  Tests: 12 passed (38 assertions)
-
-php artisan test tests/Feature/Console/KirimDueReminderTagihanTest.php
-  Tests: 4 passed (7 assertions)
-
-php artisan test tests/Feature/Admin/ManualPaymentControllerTest.php
-  Tests: 8 passed (35 assertions)
+php artisan test tests/Feature/Keuangan/RiwayatControllerIndexTest.php tests/Feature/Keuangan/KwitansiControllerTest.php tests/Feature/Admin/YayasanSettingControllerTest.php
 ```
 
-Final full-surface run (whole plan's test surface together):
-
+Output:
 ```
-php artisan test tests/Feature/Keuangan/ tests/Feature/Admin/ManualPaymentControllerTest.php tests/Feature/Console/KirimDueReminderTagihanTest.php
-
-Tests:    135 passed (382 assertions)
-Duration: 38.34s
+   PASS  Tests\Feature\Keuangan\RiwayatControllerIndexTest
+  ✓ it lists the active child payment history ordered newest first                                               8.67s
+  ✓ it filters by metode                                                                                         0.16s
+  ✓ it ignores an invalid date range instead of erroring                                                         0.15s
+  ✓ it shows the total amount for each transaction row                                                           0.15s
+  ✓ it filters by a valid full date range including the end-of-day boundary                                      0.15s
+  ✓ it narrows results with a dari-only filter                                                                   0.17s
+  ✓ it shows the kwitansi download link only for lunas rows                                                      0.14s
+   PASS  Tests\Feature\Keuangan\KwitansiControllerTest
+  ✓ it streams a pdf kwitansi for a lunas pembayaran                                                             0.24s
+  ✓ it returns 404 for a pembayaran that is not yet lunas                                                        0.15s
+  ✓ it blocks a parent from downloading another parent child's kwitansi                                          0.15s
+  ✓ it renders without a logo when yayasan logo is not set                                                       0.14s
+  ✓ it renders the kelas name, siswa name, and total amount in the kwitansi view                                 0.11s
+  ✓ it renders an img tag when yayasan logo is set                                                               0.10s
+   PASS  Tests\Feature\Admin\YayasanSettingControllerTest
+  ✓ it shows the yayasan settings form with existing data                                                        0.09s
+  ✓ it updates all yayasan fields                                                                                0.06s
+  ✓ it uploads a new logo and deletes the old one                                                                0.07s
+  ✓ it rejects a logo file that is too large                                                                     0.08s
+  ✓ it returns 404 on update when no yayasan row exists                                                          0.06s
+  ✓ it denies access to a user without yayasan.kelola permission                                                 0.05s
+  Tests:    19 passed (40 assertions)
+  Duration: 11.09s
 ```
 
-Zero failures, zero regressions.
+## Commit
 
-## Deviations from instructions
-
-- **Fix 3 idempotency**: per the instructions' own conditional ("if the spec re-read reveals same-day idempotency is ALSO required ... implement both"), I re-read Addendum A and found it explicitly rules out persistence/idempotency infrastructure as YAGNI for this specific notification. I implemented first-only ONLY, no same-day idempotency layer. This is a deliberate application of the instructions' branch, not an omission.
-- No other deviations. All 7 fixes were applied as specified, at the exact call sites named, without touching surrounding logic.
-
-## Self-review
-
-- Fix 1 and Fix 3 both touch the same ~10 lines in `AutoAllocationEngine::run()`'s post-transaction block; I combined them into one coherent edit rather than two separate passes, since doing them separately would have meant writing then immediately rewriting the same lines. Structure and transaction/locking boundaries are unchanged, per the instruction not to touch that discipline.
-- Fix 2's `KirimDueReminderTagihan` catch block places `continue` explicitly rather than relying on falling through, to make the "don't abort the loop" intent unambiguous to a future reader, even though it's the last statement in the loop body either way.
-- Fix 4: confirmed via `AutoAllocationEngine::run()` that `Pembayaran::create()` there sets `wallet_id` but never `siswa_id`, which is the concrete (not hypothetical) source of nullable `siswa_id` rows this fix protects against.
-- Fix 5's test creates an extra throwaway `OrangTua` first specifically to avoid a flaky pass on a fresh DB where the first-ever `OrangTua` row could accidentally have `id === user_id` (both starting at 1), which would make the assertion `$orangTua->id !== $orangTua->user_id` fail for the wrong reason (data coincidence, not the code's actual correctness). This is a bit defensive but keeps the test deterministic regardless of run order/seed state.
-- All existing covering tests for touched files pass unchanged (except the intentionally-updated `SaldoTidakCukupNotificationTest.php`, whose existing test needed no edits and one new test was added, and `PaymentServiceManualTopupTest.php`, where one dead test was deleted).
-- Ran the full combined suite (135 tests, 382 assertions) as the final gate; all green.
+See `git log -1` on branch `demo` for the exact hash of the fix-wave commit
+(message: `fix(keuangan): close kelas TenantScope gap, add total column, harden yayasan update, strengthen kwitansi/date-range test coverage`).

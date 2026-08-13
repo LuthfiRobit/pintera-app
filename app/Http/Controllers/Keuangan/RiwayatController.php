@@ -26,10 +26,11 @@ class RiwayatController extends BaseController
         $sampai = $request->query('sampai');
         $metode = $request->query('metode');
 
-        $dateRangeValid = $dari && $sampai && $dari <= $sampai;
+        $dateRangeValid = ! ($dari && $sampai && $dari > $sampai);
 
         $pembayarans = Pembayaran::where('siswa_id', $activeSiswa->id)
-            ->when($dateRangeValid, fn ($q) => $q->whereBetween('created_at', [$dari.' 00:00:00', $sampai.' 23:59:59']))
+            ->when($dateRangeValid && $dari, fn ($q) => $q->where('created_at', '>=', $dari.' 00:00:00'))
+            ->when($dateRangeValid && $sampai, fn ($q) => $q->where('created_at', '<=', $sampai.' 23:59:59'))
             ->when($metode, fn ($q) => $q->where('metode', $metode))
             ->with(['pembayaranTagihan.tagihan.jenisTagihan' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)])
             ->orderByDesc('created_at')
@@ -42,6 +43,7 @@ class RiwayatController extends BaseController
             'dari' => $dari,
             'sampai' => $sampai,
             'metode' => $metode,
+            'filterActive' => $metode || ($dateRangeValid && ($dari || $sampai)),
         ]);
     }
 
@@ -55,7 +57,7 @@ class RiwayatController extends BaseController
             'pembayaranTagihan.tagihan.jenisTagihan' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
             'siswa' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
             'siswa.lembaga.yayasan',
-            'siswa.kelas',
+            'siswa.kelas' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class),
         ]);
 
         $pdf = Pdf::loadView('pdf.kwitansi', [

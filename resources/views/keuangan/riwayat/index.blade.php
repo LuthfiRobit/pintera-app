@@ -34,7 +34,7 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-6">
             @if ($pembayarans->isEmpty())
                 <p class="text-sm text-gray-500">
-                    @if ($dari || $sampai || $metode)
+                    @if ($filterActive)
                         Tidak ada transaksi yang cocok dengan filter ini.
                     @else
                         Belum ada riwayat transaksi.
@@ -63,7 +63,8 @@
                             $rincianItems = $pembayaran->pembayaranTagihan;
                             $rincianLabel = $rincianItems->isEmpty()
                                 ? '-'
-                                : $rincianItems->first()->tagihan->jenisTagihan->nama.($rincianItems->count() > 1 ? ' +'.($rincianItems->count() - 1).' lainnya' : '');
+                                : ($rincianItems->first()->tagihan?->jenisTagihan?->nama ?? '-').($rincianItems->count() > 1 ? ' +'.($rincianItems->count() - 1).' lainnya' : '');
+                            $totalAmount = $rincianItems->sum('amount_allocated');
                         @endphp
                         <div class="flex flex-wrap items-center justify-between gap-3 py-4">
                             <div>
@@ -71,6 +72,7 @@
                                 <p class="text-xs text-gray-500">{{ $pembayaran->created_at->translatedFormat('d M Y H:i') }} &middot; {{ $metodeLabel }}</p>
                             </div>
                             <div class="flex items-center gap-3">
+                                <p class="text-sm font-semibold text-gray-900">Rp{{ number_format($totalAmount, 0, ',', '.') }}</p>
                                 <span class="rounded-full border px-3 py-1 text-xs font-semibold {{ $statusBadge[0] }}">{{ $statusBadge[1] }}</span>
                                 @if ($pembayaran->status === 'lunas')
                                     <a href="{{ route('keuangan.riwayat.kwitansi', $pembayaran) }}" target="_blank" class="text-sm font-semibold text-brand-600 hover:text-brand-700">
