@@ -49,16 +49,14 @@
             </x-slot>
 
             <x-slot name="content">
-                <div
-                    class="flex items-center justify-between border-b border-gray-200 px-4 pb-3 pt-1"
-                    x-data="{
+                <div x-data="{
                         readIds: [],
                         unreadCount: {{ $unreadCount }},
                         async tandaiSatu(id) {
                             if (this.readIds.includes(id)) return;
                             this.readIds.push(id);
                             this.unreadCount = Math.max(0, this.unreadCount - 1);
-                            let badge = $el.closest('div.ml-auto').querySelector('button[aria-label=\'Notifikasi\'] span');
+                            let badge = document.querySelector('button[aria-label=\'Notifikasi\'] span');
                             if (badge) {
                                 if (this.unreadCount === 0) badge.style.display = 'none';
                                 else badge.innerText = this.unreadCount > 9 ? '9+' : this.unreadCount;
@@ -71,38 +69,39 @@
                         async tandaiSemua() {
                             this.readIds = @js($notificationFeed->pluck('id')->all());
                             this.unreadCount = 0;
-                            let badge = $el.closest('div.ml-auto').querySelector('button[aria-label=\'Notifikasi\'] span');
+                            let badge = document.querySelector('button[aria-label=\'Notifikasi\'] span');
                             if (badge) badge.style.display = 'none';
                             await fetch('{{ route('keuangan.notifikasi.baca-semua') }}', {
                                 method: 'POST',
                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
                             });
                         }
-                    }"
-                >
-                    <p class="font-display text-sm font-bold text-gray-900">Notifikasi</p>
-                    <button type="button" x-show="unreadCount > 0" @click="tandaiSemua()" class="text-xs font-semibold text-brand-600 hover:text-brand-700" style="display: none;">Tandai semua terbaca</button>
+                    }">
+                    <div class="flex items-center justify-between border-b border-gray-200 px-4 pb-3 pt-1">
+                        <p class="font-display text-sm font-bold text-gray-900">Notifikasi</p>
+                        <button type="button" x-show="unreadCount > 0" @click="tandaiSemua()" class="text-xs font-semibold text-brand-600 hover:text-brand-700" style="display: none;">Tandai semua terbaca</button>
+                    </div>
+                    @if ($notificationFeed->isEmpty())
+                        <div class="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                            <x-icon name="notifications" class="h-6 w-6 text-gray-300" />
+                            <p class="text-sm text-gray-500">Belum ada notifikasi.</p>
+                        </div>
+                    @else
+                        <div class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
+                            @foreach ($notificationFeed as $notification)
+                                <button
+                                    type="button"
+                                    @click="tandaiSatu('{{ $notification->id }}')"
+                                    :class="readIds.includes('{{ $notification->id }}') ? 'bg-white' : '{{ $notification->read_at === null ? 'bg-brand-50/40' : 'bg-white' }}'"
+                                    class="block w-full px-4 py-3 text-left transition hover:bg-gray-50"
+                                >
+                                    <p class="text-sm text-gray-800">{{ $notification->data['message'] ?? '-' }}</p>
+                                    <p class="mt-1 text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
-                @if ($notificationFeed->isEmpty())
-                    <div class="flex flex-col items-center gap-2 px-4 py-8 text-center">
-                        <x-icon name="notifications" class="h-6 w-6 text-gray-300" />
-                        <p class="text-sm text-gray-500">Belum ada notifikasi.</p>
-                    </div>
-                @else
-                    <div class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
-                        @foreach ($notificationFeed as $notification)
-                            <button
-                                type="button"
-                                @click="tandaiSatu('{{ $notification->id }}')"
-                                :class="readIds.includes('{{ $notification->id }}') ? 'bg-white' : '{{ $notification->read_at === null ? 'bg-brand-50/40' : 'bg-white' }}'"
-                                class="block w-full px-4 py-3 text-left transition hover:bg-gray-50"
-                            >
-                                <p class="text-sm text-gray-800">{{ $notification->data['message'] ?? '-' }}</p>
-                                <p class="mt-1 text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
-                            </button>
-                        @endforeach
-                    </div>
-                @endif
             </x-slot>
         </x-dropdown>
 

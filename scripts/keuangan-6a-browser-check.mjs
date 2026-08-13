@@ -120,6 +120,45 @@ async function checkBundledTopupCheckout(page) {
   console.log('[bundled-topup] VA checkout with topup_amount shows combined tagihan+topup breakdown: OK');
 }
 
+async function checkMarkAsRead(page) {
+  await page.goto(`${BASE_URL}/keuangan`);
+  const bellButton = page.locator('button[aria-label="Notifikasi"]');
+  await bellButton.waitFor({ state: 'visible', timeout: 3000 });
+  await bellButton.click();
+
+  const badge = page.locator('button[aria-label="Notifikasi"] span');
+  await badge.waitFor({ state: 'visible', timeout: 3000 });
+  const beforeCount = await badge.textContent();
+
+  const firstNotification = page.locator('button:has-text("Notifikasi uji coba mark-as-read")').first();
+  await firstNotification.waitFor({ state: 'visible', timeout: 3000 });
+  await firstNotification.click();
+
+  await page.waitForTimeout(500); // allow the fetch() call to complete
+  const badgeStillVisible = await badge.isVisible().catch(() => false);
+  if (badgeStillVisible) {
+    const afterCount = await badge.textContent();
+    if (afterCount === beforeCount) {
+      throw new Error(`Expected unread badge to decrease after marking a notification read, stayed at ${afterCount}`);
+    }
+  }
+  console.log('[mark-as-read] clicking a notification decreases the unread badge: OK');
+
+  await page.goto(`${BASE_URL}/profile`);
+  const waCheckbox = page.locator('input[name="channel_wa"]');
+  await waCheckbox.waitFor({ state: 'visible', timeout: 3000 });
+  await waCheckbox.uncheck();
+  await page.locator('button:has-text("Simpan Preferensi")').click();
+  await page.waitForURL(/\/profile/, { timeout: 5000 });
+  await page.reload();
+  await waCheckbox.waitFor({ state: 'visible', timeout: 3000 });
+  const isChecked = await waCheckbox.isChecked();
+  if (isChecked) {
+    throw new Error('Expected channel_wa checkbox to remain unchecked after reload');
+  }
+  console.log('[mark-as-read] notification preference (WA off) persists after save+reload: OK');
+}
+
 const args = process.argv.slice(2);
 const checkArg = args.find((a) => a.startsWith('--check='))?.split('=')[1] ?? 'all';
 
@@ -146,6 +185,14 @@ try {
   if (checkArg === 'all' || checkArg === 'bundled-topup') {
     try {
       await checkBundledTopupCheckout(page);
+    } catch (e) {
+      await page.screenshot({ path: 'playwright-error.png' });
+      throw e;
+    }
+  }
+  if (checkArg === 'all' || checkArg === 'mark-as-read') {
+    try {
+      await checkMarkAsRead(page);
     } catch (e) {
       await page.screenshot({ path: 'playwright-error.png' });
       throw e;
