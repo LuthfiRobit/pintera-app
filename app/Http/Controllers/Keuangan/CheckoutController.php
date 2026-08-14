@@ -212,7 +212,18 @@ class CheckoutController extends BaseController
 
         abort_unless(in_array($pembayaran->metode, ['va_bri', 'qris']), 404);
 
-        return view('keuangan.checkout.show', ['pembayaran' => $pembayaran->load(['briVirtualAccount', 'briQrisPayment', 'pembayaranTagihan'])]);
+        $pembayaran->load(['briVirtualAccount', 'briQrisPayment', 'pembayaranTagihan']);
+
+        $qrCodeDataUri = null;
+        if ($pembayaran->briQrisPayment) {
+            $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(180)->generate($pembayaran->briQrisPayment->qr_code);
+            $qrCodeDataUri = 'data:image/svg+xml;base64,'.base64_encode($svg);
+        }
+
+        return view('keuangan.checkout.show', [
+            'pembayaran' => $pembayaran,
+            'qrCodeDataUri' => $qrCodeDataUri,
+        ]);
     }
 
     public function status(Request $request, Pembayaran $pembayaran)

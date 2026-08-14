@@ -89,14 +89,15 @@
                                         <p class="text-[9px] font-semibold text-gray-400 uppercase">Nomor Virtual Account</p>
                                         <p class="font-mono text-lg font-bold text-gray-800 mt-0.5">{{ $pembayaran->briVirtualAccount->va_number }}</p>
                                     </div>
-                                    <button 
+                                    <button
                                         @click="
-                                            navigator.clipboard.writeText('{{ $pembayaran->briVirtualAccount->va_number }}'); 
-                                            $store.toast ? $store.toast.push('success', 'Nomor VA berhasil disalin!') : alert('Nomor VA berhasil disalin!');
-                                        " 
-                                        type="button" 
-                                        class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-150 transition"
+                                            navigator.clipboard.writeText('{{ $pembayaran->briVirtualAccount->va_number }}');
+                                            $store.toast.push('success', 'Nomor VA berhasil disalin!');
+                                        "
+                                        type="button"
+                                        class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
                                         title="Salin VA"
+                                        aria-label="Salin VA"
                                     >
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
@@ -117,8 +118,28 @@
                                 </div>
                                 {{-- Rendering QRIS Code dynamically as a real image --}}
                                 <div class="flex flex-col items-center justify-center p-4 bg-white border border-gray-100 rounded-2xl shadow-inner max-w-xs mx-auto">
-                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data={{ urlencode($pembayaran->briQrisPayment->qr_code) }}" alt="QRIS Code" class="h-40 w-40 object-contain">
+                                    <img src="{{ $qrCodeDataUri }}" alt="QRIS Code" class="h-40 w-40 object-contain">
                                     <span class="mt-2.5 text-[9px] uppercase font-bold text-gray-400 tracking-widest">Gunakan Aplikasi QRIS Anda</span>
+                                </div>
+                                <div class="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3 border border-gray-100">
+                                    <div class="min-w-0">
+                                        <p class="text-[9px] font-semibold text-gray-400 uppercase">Kode QRIS (jika QR tidak tampil)</p>
+                                        <code class="block font-mono text-[10px] font-bold text-gray-800 mt-0.5 truncate">{{ $pembayaran->briQrisPayment->qr_code }}</code>
+                                    </div>
+                                    <button
+                                        @click="
+                                            navigator.clipboard.writeText('{{ $pembayaran->briQrisPayment->qr_code }}');
+                                            $store.toast.push('success', 'Kode QRIS berhasil disalin!');
+                                        "
+                                        type="button"
+                                        class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition"
+                                        title="Salin Kode QRIS"
+                                        aria-label="Salin Kode QRIS"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        </svg>
+                                    </button>
                                 </div>
                                 <div class="flex justify-between text-xs py-1 border-t border-gray-50 pt-3">
                                     <span class="text-gray-400">Total Nominal QRIS:</span>
