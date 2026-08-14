@@ -3,6 +3,9 @@
 
 namespace App\Http\Controllers\Keuangan;
 
+use App\Models\Scopes\TenantScope;
+use App\Models\SystemSetting;
+use App\Models\Tagihan;
 use App\Services\Notifications\NotificationFeedResolver;
 use App\Services\Finance\SkipAlertResolver;
 use Illuminate\Http\Request;
@@ -29,11 +32,22 @@ class DashboardController extends BaseController
         $skipAlert = $this->skipAlertResolver->resolve($activeSiswa);
         $notificationFeed = $this->notificationFeedResolver->resolve($request->user());
 
+        $tagihans = Tagihan::where('tagihable_type', get_class($activeSiswa))
+            ->where('tagihable_id', $activeSiswa->id)
+            ->whereIn('status', ['belum_bayar', 'sebagian'])
+            ->with(['jenisTagihan' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+            ->orderBy('jatuh_tempo')
+            ->get();
+
+        $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, false);
+
         return view('keuangan.dashboard', [
             'activeSiswa' => $activeSiswa,
             'wallet' => $wallet,
             'skipAlert' => $skipAlert,
             'notificationFeed' => $notificationFeed,
+            'tagihans' => $tagihans,
+            'autoDebitEnabled' => $autoDebitEnabled,
         ]);
     }
 }
