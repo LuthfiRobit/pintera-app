@@ -33,3 +33,5 @@ Thumbs.db
 /docs/
 /.worktrees/
 /playwright-error.png
+/storage/app/bri/
+/bri-api.md
