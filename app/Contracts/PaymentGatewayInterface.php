@@ -25,7 +25,7 @@ interface PaymentGatewayInterface
     public function verifyCallbackSignature(string $payload, string $signature): bool;
 
     /**
-     * Check payment status by channel reference (VA number or QRIS ID).
+     * Check payment status by channel reference (VA number or QRIS reference).
      */
-    public function checkStatus(string $channelReference): PaymentStatusResult;
+    public function checkStatus(string $channelReference, string $type): PaymentStatusResult;
 }

@@ -29,7 +29,7 @@ class ReconciliationCommandTest extends TestCase
     {
         $mockGateway = Mockery::mock(PaymentGatewayInterface::class);
         $mockGateway->shouldReceive('checkStatus')
-                    ->with('1234567890')
+                    ->with('1234567890', 'va')
                     ->andReturn(new PaymentStatusResult('PAID', ['check' => true]));
         $this->app->instance(PaymentGatewayInterface::class, $mockGateway);
 

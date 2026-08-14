@@ -25,7 +25,7 @@ class BriSnapGateway implements PaymentGatewayInterface
         throw new \RuntimeException('BriSnapGateway not implemented: awaiting credentials');
     }
 
-    public function checkStatus(string $channelReference): PaymentStatusResult
+    public function checkStatus(string $channelReference, string $type): PaymentStatusResult
     {
         throw new \RuntimeException('BriSnapGateway not implemented: awaiting credentials');
     }

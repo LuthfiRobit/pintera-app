@@ -10,6 +10,7 @@ use App\Exceptions\PaymentException;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Wallet;
+use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\BriSnapGateway;
 use App\Services\Finance\Gateway\MockPaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -41,14 +42,14 @@ class GatewayImplementationTest extends TestCase
         $this->assertTrue($gateway->verifyCallbackSignature('any_payload', 'any_signature'));
 
         // 4. Check Status
-        $statusResult = $gateway->checkStatus('MOCK-VA-12345');
+        $statusResult = $gateway->checkStatus('MOCK-VA-12345', 'va');
         $this->assertInstanceOf(PaymentStatusResult::class, $statusResult);
         $this->assertEquals('PAID', $statusResult->status);
     }
 
     public function test_bri_snap_gateway_throws_not_implemented_exception()
     {
-        $gateway = new BriSnapGateway();
+        $gateway = new BriSnapGateway(BriSnapClient::fromConfig());
         $pembayaran = Pembayaran::factory()->create();
 
         $this->expectException(\RuntimeException::class);

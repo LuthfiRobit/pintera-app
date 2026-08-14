@@ -42,7 +42,7 @@ class MockPaymentGateway implements PaymentGatewayInterface
         return true;
     }
 
-    public function checkStatus(string $channelReference): PaymentStatusResult
+    public function checkStatus(string $channelReference, string $type): PaymentStatusResult
     {
         return new PaymentStatusResult('PAID', ['mock_response' => true]);
     }

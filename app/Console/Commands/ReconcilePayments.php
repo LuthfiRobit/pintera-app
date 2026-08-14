@@ -56,7 +56,7 @@ class ReconcilePayments extends Command
 
         foreach ($waitingVAs as $va) {
             try {
-                $statusResult = $this->gateway->checkStatus($va->va_number);
+                $statusResult = $this->gateway->checkStatus($va->va_number, 'va');
                 
                 if ($statusResult->status === 'PAID') {
                     $reconciledPembayaranId = null;
@@ -101,7 +101,7 @@ class ReconcilePayments extends Command
 
         foreach ($waitingQris as $qris) {
             try {
-                $statusResult = $this->gateway->checkStatus($qris->qr_code); 
+                $statusResult = $this->gateway->checkStatus($qris->qr_code, 'qris');
                 
                 if ($statusResult->status === 'PAID') {
                     $reconciledPembayaranId = null;
