@@ -67,12 +67,12 @@
                 <label class="mb-1.5 block text-xs font-semibold text-gray-500">Filter Status Tagihan</label>
                 <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
                     {{-- Tab: Semua --}}
-                    <button @click="activeFilter = 'semua'; selected = [];" type="button" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'" class="flex items-center gap-1.5 justify-center px-4 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap">
+                    <button @click="activeFilter = 'semua'; selected = [];" type="button" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200 shadow-sm' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'" class="flex items-center gap-1.5 justify-center px-4 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap">
                         <span>Semua Tagihan</span>
                         <span :class="activeFilter === 'semua' ? 'bg-brand-100/80 text-brand-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countSemua"></span>
                     </button>
                     {{-- Tab: Jatuh Tempo --}}
-                    <button @click="activeFilter = 'jatuh_tempo'; selected = [];" type="button" :class="activeFilter === 'jatuh_tempo' ? 'bg-red-50 font-semibold text-red-700 border-red-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'" class="flex items-center gap-1.5 justify-center px-4 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap">
+                    <button @click="activeFilter = 'jatuh_tempo'; selected = [];" type="button" :class="activeFilter === 'jatuh_tempo' ? 'bg-red-50 font-semibold text-red-700 border-red-200 shadow-sm' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'" class="flex items-center gap-1.5 justify-center px-4 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap">
                         <span>Jatuh Tempo (Menunggak)</span>
                         <span :class="activeFilter === 'jatuh_tempo' ? 'bg-red-100/80 text-red-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countJatuhTempo"></span>
                     </button>

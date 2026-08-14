@@ -180,7 +180,7 @@
                                             </div>
                                         @else
                                             <div class="relative group inline-block">
-                                                <button type="button" disabled class="inline-flex items-center justify-center p-2 rounded-xl border border-gray-150 text-gray-300 cursor-not-allowed bg-gray-50/50">
+                                                <button type="button" disabled class="inline-flex items-center justify-center p-2 rounded-xl border border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50/50">
                                                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                     </svg>

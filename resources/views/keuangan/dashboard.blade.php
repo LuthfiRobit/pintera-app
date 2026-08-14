@@ -88,17 +88,18 @@
                                 <p class="text-[10px] font-semibold text-gray-400 uppercase">Nomor Virtual Account</p>
                                 <p class="font-mono text-sm font-bold text-gray-800 mt-0.5">{{ $wallet->va_number }}</p>
                             </div>
-                            <button 
+                            <button
                                 @click="
-                                    navigator.clipboard.writeText('{{ $wallet->va_number }}'); 
-                                    $store.toast ? $store.toast.push('success', 'Nomor VA berhasil disalin!') : alert('Nomor VA berhasil disalin!');
-                                " 
-                                type="button" 
+                                    navigator.clipboard.writeText('{{ $wallet->va_number }}');
+                                    $store.toast.push('success', 'Nomor VA berhasil disalin!');
+                                "
+                                type="button"
                                 class="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition"
                                 title="Salin VA"
+                                aria-label="Salin VA"
                             >
                                 <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                 </svg>
                             </button>
                         </div>
@@ -279,12 +280,15 @@
             </div>
         </div>
         {{-- Modal Top Up Saldo --}}
-        <div x-show="showTopUpModal" 
-             class="fixed inset-0 z-50 overflow-y-auto" 
-             x-cloak 
+        <div x-show="showTopUpModal"
+             class="fixed inset-0 z-50 overflow-y-auto"
+             x-cloak
+             role="dialog"
+             aria-modal="true"
+             @keydown.escape.window="showTopUpModal = false"
              style="display: none;">
             {{-- Backdrop --}}
-            <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-xs transition-opacity" 
+            <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" 
                  x-show="showTopUpModal"
                  x-transition:enter="ease-out duration-300"
                  x-transition:enter-start="opacity-0"
@@ -332,16 +336,18 @@
                                     <p class="font-mono text-base font-bold text-gray-800 mt-1">{{ $wallet->va_number }}</p>
                                     <p class="text-[10px] text-gray-400 mt-1">Nama Pemilik: {{ $activeSiswa->nama_lengkap }}</p>
                                 </div>
-                                <button 
+                                <button
                                     @click="
-                                        navigator.clipboard.writeText('{{ $wallet->va_number }}'); 
-                                        $store.toast ? $store.toast.push('success', 'Nomor VA berhasil disalin!') : alert('Nomor VA berhasil disalin!');
-                                    " 
-                                    type="button" 
-                                    class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition shadow-xs"
+                                        navigator.clipboard.writeText('{{ $wallet->va_number }}');
+                                        $store.toast.push('success', 'Nomor VA berhasil disalin!');
+                                    "
+                                    type="button"
+                                    class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition shadow-sm"
+                                    title="Salin VA"
+                                    aria-label="Salin VA"
                                 >
                                     <svg class="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                                     </svg>
                                     <span>Salin VA</span>
                                 </button>
@@ -385,7 +391,7 @@
                     </div>
 
                     {{-- Footer --}}
-                    <div class="bg-gray-50/50 px-6 py-4 flex items-center justify-end border-t border-gray-150">
+                    <div class="bg-gray-50/50 px-6 py-4 flex items-center justify-end border-t border-gray-100">
                         <button @click="showTopUpModal = false" type="button" class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 transition">
                             Saya Mengerti
                         </button>
