@@ -17,9 +17,9 @@
         </div>
 
         <div>
-            <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Bukti Transfer (Gambar / PDF)</label>
+            <label for="transfer_proof" class="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1.5">Bukti Transfer (Gambar / PDF)</label>
             <div class="relative flex items-center justify-center rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 p-4 transition-colors hover:bg-gray-100/50 focus-within:border-brand-500">
-                <input type="file" name="transfer_proof" required accept="image/*,.pdf" class="absolute inset-0 h-full w-full opacity-0 cursor-pointer" @change="$el.nextElementSibling.innerText = $el.files[0] ? $el.files[0].name : 'Pilih file bukti transfer...'">
+                <input id="transfer_proof" type="file" name="transfer_proof" required accept="image/*,.pdf" class="absolute inset-0 h-full w-full opacity-0 cursor-pointer" @change="$el.nextElementSibling.innerText = $el.files[0] ? $el.files[0].name : 'Pilih file bukti transfer...'">
                 <p class="text-xs font-medium text-gray-500">Pilih file bukti transfer...</p>
             </div>
         </div>

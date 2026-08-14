@@ -85,6 +85,7 @@ it('rejects manual transfer checkout for a tagihan belonging to another parent\'
 
     $response = $this->actingAs($userA)->post(route('keuangan.checkout.transfer'), [
         'tagihan_ids' => [$tagihanB->id],
+        'bank_origin' => 'BCA',
         'transfer_date' => now()->toDateString(),
         'transfer_proof' => Illuminate\Http\UploadedFile::fake()->image('bukti.jpg'),
     ]);
@@ -134,6 +135,7 @@ it('blocks a parent from viewing another parent\'s menunggu-verifikasi page', fu
     [$userA, , , $tagihanA] = makeParentWithChild('A');
     $this->actingAs($userA)->post(route('keuangan.checkout.transfer'), [
         'tagihan_ids' => [$tagihanA->id],
+        'bank_origin' => 'BCA',
         'transfer_date' => now()->toDateString(),
         'transfer_proof' => Illuminate\Http\UploadedFile::fake()->image('bukti.jpg'),
     ]);

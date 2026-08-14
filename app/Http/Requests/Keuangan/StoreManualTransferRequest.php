@@ -17,7 +17,7 @@ class StoreManualTransferRequest extends FormRequest
         return [
             'tagihan_ids' => ['required', 'array', 'min:1'],
             'tagihan_ids.*' => ['integer'],
-            'bank_origin' => ['nullable', 'string', 'max:100'],
+            'bank_origin' => ['required', 'string', 'max:100'],
             'transfer_date' => ['required', 'date'],
             'transfer_proof' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ];

@@ -90,6 +90,7 @@ it('shows the verification-pending page', function () {
     [$user, , , $tagihan] = actingAsOrangTuaForTransfer();
     $this->actingAs($user)->post(route('keuangan.checkout.transfer'), [
         'tagihan_ids' => [$tagihan->id],
+        'bank_origin' => 'BCA',
         'transfer_date' => now()->toDateString(),
         'transfer_proof' => UploadedFile::fake()->image('bukti.jpg'),
     ]);
@@ -98,5 +99,5 @@ it('shows the verification-pending page', function () {
     $response = $this->actingAs($user)->get(route('keuangan.checkout.menunggu-verifikasi', $pembayaran));
 
     $response->assertOk();
-    $response->assertSee('menunggu verifikasi', false);
+    $response->assertSee('Menunggu Verifikasi', false);
 });
