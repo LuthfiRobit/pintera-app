@@ -1,16 +1,16 @@
 {{-- resources/views/keuangan/tagihan/index.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-0" x-data="{ selected: [] }">
+    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0" x-data="{ selected: [] }">
         
-        {{-- Header & Subtitle (Inline style matching kasus/index.blade.php) --}}
+        {{-- Header & Subtitle (Inline style matching admin/kasus/index.blade.php) --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Rekap Tagihan Aktif</h1>
                 <p class="text-xs text-gray-500 mt-0.5">Lihat rekap komponen biaya sekolah dan lunasi tagihan {{ $activeSiswa->nama_lengkap }} secara mandiri.</p>
             </div>
-            <div class="text-xs text-gray-400">
-                Keuangan <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-600">Tagihan</b>
-            </div>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> Keuangan <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Tagihan</b>
+            </p>
         </div>
 
         {{-- Billing Engine & Auto-debit Info --}}

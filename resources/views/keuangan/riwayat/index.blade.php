@@ -1,16 +1,16 @@
 {{-- resources/views/keuangan/riwayat/index.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-6 px-4 sm:px-0">
+    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0">
         
-        {{-- Header & Subtitle (Inline style matching kasus/index.blade.php) --}}
+        {{-- Header & Subtitle (Inline style matching admin/kasus/index.blade.php) --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Riwayat Transaksi</h1>
                 <p class="text-xs text-gray-500 mt-0.5">Pantau riwayat pembayaran tagihan sekolah, deposit wallet, dan debit otomatis {{ $activeSiswa->nama_lengkap }}.</p>
             </div>
-            <div class="text-xs text-gray-400">
-                Keuangan <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-600">Riwayat</b>
-            </div>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> Keuangan <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Riwayat</b>
+            </p>
         </div>
 
         {{-- Filter Bar --}}
