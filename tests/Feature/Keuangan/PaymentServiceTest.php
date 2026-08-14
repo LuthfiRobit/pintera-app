@@ -134,4 +134,39 @@ class PaymentServiceTest extends TestCase
         $this->assertEquals(50000, $tagihan->paid_amount);
         $this->assertEquals('lunas', $tagihan->status);
     }
+    public function test_create_qris_payment_saves_reference_no()
+    {
+        $siswa = Siswa::factory()->create();
+        $tagihan = Tagihan::factory()->create(['status' => 'belum_bayar', 'net_amount' => 10000]);
+
+        $mockGateway = \Mockery::mock(\App\Contracts\PaymentGatewayInterface::class);
+        $mockGateway->shouldReceive('createQris')
+            ->once()
+            ->andReturn(new \App\DTO\QrisResult('QR123', 10000, now()->addMinutes(15), ['referenceNo' => 'REF-001']));
+            
+        $this->app->instance(\App\Contracts\PaymentGatewayInterface::class, $mockGateway);
+
+        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]), 'DIRECT');
+
+        $this->assertEquals('qris', $pembayaran->metode);
+        $this->assertNotNull($pembayaran->briQrisPayment);
+        $this->assertEquals('REF-001', $pembayaran->briQrisPayment->reference_no);
+    }
+
+    public function test_create_qris_payment_handles_missing_reference_no()
+    {
+        $siswa = Siswa::factory()->create();
+        $tagihan = Tagihan::factory()->create(['status' => 'belum_bayar', 'net_amount' => 10000]);
+
+        $mockGateway = \Mockery::mock(\App\Contracts\PaymentGatewayInterface::class);
+        $mockGateway->shouldReceive('createQris')
+            ->once()
+            ->andReturn(new \App\DTO\QrisResult('QR123', 10000, now()->addMinutes(15), ['someOtherField' => 'val']));
+            
+        $this->app->instance(\App\Contracts\PaymentGatewayInterface::class, $mockGateway);
+
+        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]), 'DIRECT');
+
+        $this->assertNull($pembayaran->briQrisPayment->reference_no);
+    }
 }
