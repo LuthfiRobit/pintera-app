@@ -69,7 +69,7 @@ it('shows the auto-debit banner only when the setting is enabled for the lembaga
     $response = $this->actingAs($user)->get(route('keuangan.tagihan.index'));
 
     $response->assertOk();
-    $response->assertSee('Auto-debit aktif');
+    $response->assertSee('Sistem Auto-Debit Aktif');
 });
 
 it('denies access without keuangan.akses permission', function () {

@@ -82,5 +82,5 @@ it('shows the success page after a wallet payment', function () {
     $response = $this->actingAs($user)->get(route('keuangan.checkout.sukses', $pembayaran));
 
     $response->assertOk();
-    $response->assertSee('berhasil');
+    $response->assertSee('Pembayaran Selesai');
 });

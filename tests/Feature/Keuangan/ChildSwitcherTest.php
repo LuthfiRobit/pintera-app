@@ -88,7 +88,7 @@ it('shows the kontak utama child in both header and switcher label when kontak u
 
     $response->assertOk();
     // Dashboard header (middleware-resolved activeSiswa) shows kontak utama.
-    $response->assertSee('Dompet &amp; Tagihan — Zainal Kontak Utama', false);
+    $response->assertSee('lunasi tagihan aktif Zainal Kontak Utama', false);
     // Switcher chip label (topbar, driven by resolvedActiveSiswaId) also shows kontak utama.
     $response->assertSeeInOrder(['Pilih Profil Anak', 'Zainal Kontak Utama']);
 });
