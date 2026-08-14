@@ -19,9 +19,11 @@ class BriTestQris extends Command
         $gateway = new BriSnapGateway(app()->make(BriSnapClient::class));
 
         $pembayaran = new Pembayaran([
-            'id' => now()->timestamp, // Using timestamp as ID for testing
             'amount' => (float) $this->argument('amount'),
         ]);
+        // 'id' is not mass-assignable (see Pembayaran::$fillable), so it must be set
+        // directly here to produce a varying partnerReferenceNo on each sandbox run.
+        $pembayaran->id = now()->timestamp;
 
         $this->info('Generating QR...');
 

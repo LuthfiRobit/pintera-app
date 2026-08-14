@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Keuangan;
 
+use App\Exceptions\BriApiException;
 use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\BriSnapGateway;
 use App\Models\Pembayaran;
@@ -121,7 +122,39 @@ class BriSnapGatewayIntegrationTest extends TestCase
         $gateway = new BriSnapGateway($mockClient);
         
         $result = $gateway->checkStatus('REF999888', 'qris');
-        
+
         $this->assertEquals('FAILED', $result->status);
+    }
+
+    public function test_check_status_va_throws_not_implemented_exception()
+    {
+        $mockClient = Mockery::mock(BriSnapClient::class);
+
+        $gateway = new BriSnapGateway($mockClient);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('BriSnapGateway VA checkStatus not fully implemented yet');
+
+        $gateway->checkStatus('REF999888', 'va');
+    }
+
+    public function test_create_qris_propagates_bri_api_exception_from_client()
+    {
+        $mockClient = Mockery::mock(BriSnapClient::class);
+
+        $pembayaran = Pembayaran::factory()->create([
+            'amount' => 50000
+        ]);
+
+        $mockClient->shouldReceive('post')
+            ->once()
+            ->with('/snap/v1.1/qr/qr-mpm-generate', Mockery::type('array'))
+            ->andThrow(new BriApiException('5004700', 'General Error'));
+
+        $gateway = new BriSnapGateway($mockClient);
+
+        $this->expectException(BriApiException::class);
+
+        $gateway->createQris($pembayaran, 'DIRECT');
     }
 }

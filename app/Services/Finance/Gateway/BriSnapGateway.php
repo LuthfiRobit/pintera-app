@@ -23,6 +23,9 @@ class BriSnapGateway implements PaymentGatewayInterface
     public function createQris(Pembayaran $pembayaran, string $qrisType): QrisResult
     {
         $payload = [
+            // channel_reference is a 36-char UUID and BRI's docs contradict themselves on
+            // partnerReferenceNo's allowed length, so we use the numeric pembayaran id
+            // (zero-padded) to avoid that ambiguity entirely.
             'partnerReferenceNo' => str_pad((string) $pembayaran->id, 6, '0', STR_PAD_LEFT),
             'amount' => [
                 'value' => number_format($pembayaran->amount, 2, '.', ''),
@@ -34,17 +37,24 @@ class BriSnapGateway implements PaymentGatewayInterface
 
         $response = $this->client->post('/snap/v1.1/qr/qr-mpm-generate', $payload);
 
+        if (!isset($response['qrContent'])) {
+            throw new \App\Exceptions\BriApiException(
+                (string) ($response['responseCode'] ?? 'unknown'),
+                'BRI response missing qrContent field'
+            );
+        }
+
         return new QrisResult(
             $response['qrContent'],
             $pembayaran->amount,
             now()->addMinutes(15),
-            ['referenceNo' => $response['referenceNo'] ?? null]
+            $response
         );
     }
 
     public function verifyCallbackSignature(string $payload, string $signature): bool
     {
-        return false;
+        throw new \RuntimeException('BriSnapGateway VA not fully implemented yet');
     }
 
     public function checkStatus(string $channelReference, string $type): PaymentStatusResult
@@ -60,6 +70,8 @@ class BriSnapGateway implements PaymentGatewayInterface
 
             $response = $this->client->post('/snap/v1.1/qr/qr-mpm-query', $payload);
 
+            // Mapped to WAITING/PAID/FAILED to match the bri_qris_payments.status enum
+            // values, intentionally not the plan's raw PENDING/PAID binary.
             $status = 'WAITING';
             if (($response['latestTransactionStatus'] ?? '') === '00') {
                 $status = 'PAID';

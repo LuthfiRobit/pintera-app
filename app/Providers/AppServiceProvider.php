@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
                 return $app->make(HybridPaymentGateway::class);
             }
 
-            return new MockPaymentGateway();
+            return $app->make(MockPaymentGateway::class);
         });
     }
 

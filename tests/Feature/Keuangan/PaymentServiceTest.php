@@ -146,7 +146,7 @@ class PaymentServiceTest extends TestCase
             
         $this->app->instance(\App\Contracts\PaymentGatewayInterface::class, $mockGateway);
 
-        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]), 'DIRECT');
+        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 
         $this->assertEquals('qris', $pembayaran->metode);
         $this->assertNotNull($pembayaran->briQrisPayment);
@@ -165,7 +165,7 @@ class PaymentServiceTest extends TestCase
             
         $this->app->instance(\App\Contracts\PaymentGatewayInterface::class, $mockGateway);
 
-        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]), 'DIRECT');
+        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 
         $this->assertNull($pembayaran->briQrisPayment->reference_no);
     }

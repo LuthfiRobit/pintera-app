@@ -100,8 +100,12 @@ class ReconcilePayments extends Command
             ->get();
 
         foreach ($waitingQris as $qris) {
+            if ($qris->reference_no === null) {
+                continue;
+            }
+
             try {
-                $statusResult = $this->gateway->checkStatus($qris->qr_code, 'qris');
+                $statusResult = $this->gateway->checkStatus($qris->reference_no, 'qris');
                 
                 if ($statusResult->status === 'PAID') {
                     $reconciledPembayaranId = null;
