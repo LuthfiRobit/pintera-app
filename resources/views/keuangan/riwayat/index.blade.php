@@ -167,20 +167,29 @@
                                 @endphp
                                 <tr class="transition hover:bg-gray-50">
                                     <td class="sticky left-0 z-10 bg-white px-5 py-3">
-                                        <x-table-actions>
-                                            @if ($pembayaran->status === 'lunas')
-                                                <a href="{{ route('keuangan.riwayat.kwitansi', $pembayaran) }}" target="_blank" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
-                                                    <svg class="h-4 w-4 text-gray-550 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        @if ($pembayaran->status === 'lunas')
+                                            <div class="relative group inline-block">
+                                                <a href="{{ route('keuangan.riwayat.kwitansi', $pembayaran) }}" target="_blank" class="inline-flex items-center justify-center p-2 rounded-xl border border-gray-200 text-gray-500 hover:text-brand-600 hover:bg-brand-50 transition shadow-sm">
+                                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                                     </svg>
-                                                    Unduh Kwitansi
                                                 </a>
-                                            @else
-                                                <span class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-xs leading-5 text-gray-400">
-                                                    Belum ada aksi
+                                                <span class="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 pointer-events-none shadow-md">
+                                                    Unduh Kwitansi
                                                 </span>
-                                            @endif
-                                        </x-table-actions>
+                                            </div>
+                                        @else
+                                            <div class="relative group inline-block">
+                                                <button type="button" disabled class="inline-flex items-center justify-center p-2 rounded-xl border border-gray-150 text-gray-300 cursor-not-allowed bg-gray-50/50">
+                                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                </button>
+                                                <span class="absolute bottom-full left-1/2 z-20 mb-2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-[10px] font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100 pointer-events-none shadow-md">
+                                                    Kwitansi Belum Tersedia
+                                                </span>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td class="px-5 py-3.5 font-medium text-gray-900">
                                         {{ $rincianLabel }}
