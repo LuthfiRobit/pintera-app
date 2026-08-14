@@ -1090,7 +1090,7 @@ git commit -m "feat(bri): implement BriSnapGateway::createQris() and checkStatus
 - Consumes: `BriSnapGateway` (Task 5), `MockPaymentGateway` (existing).
 - Produces: `HybridPaymentGateway implements PaymentGatewayInterface`. Ini komponen TERAKHIR sebelum gateway bisa dipakai lewat `config('services.bri.gateway') = 'hybrid'` (tapi TIDAK di-flip ke `.env` sebagai bagian task ini — lihat Global Constraints).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `tests/Feature/Keuangan/HybridPaymentGatewayTest.php`:
 
@@ -1194,12 +1194,12 @@ class HybridPaymentGatewayTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `php artisan test tests/Feature/Keuangan/HybridPaymentGatewayTest.php`
 Expected: FAIL — `Class "App\Services\Finance\Gateway\HybridPaymentGateway" not found`.
 
-- [ ] **Step 3: Write `HybridPaymentGateway`**
+- [x] **Step 3: Write `HybridPaymentGateway`**
 
 Create `app/Services/Finance/Gateway/HybridPaymentGateway.php`:
 
@@ -1246,12 +1246,12 @@ class HybridPaymentGateway implements PaymentGatewayInterface
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `php artisan test tests/Feature/Keuangan/HybridPaymentGatewayTest.php`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Tambah opsi binding `'hybrid'` di `AppServiceProvider`**
+- [x] **Step 5: Tambah opsi binding `'hybrid'` di `AppServiceProvider`**
 
 `app/Providers/AppServiceProvider.php` — tambah `use App\Services\Finance\Gateway\HybridPaymentGateway;` di import, lalu ubah blok binding jadi:
 
@@ -1271,7 +1271,7 @@ Expected: PASS (5 tests)
         });
 ```
 
-- [ ] **Step 6: Tambah assertion `'hybrid'` di test binding existing**
+- [x] **Step 6: Tambah assertion `'hybrid'` di test binding existing**
 
 `tests/Feature/Keuangan/GatewayImplementationTest.php` — di `test_gateway_binding_in_service_provider_based_on_config()`, tambahkan setelah blok assertion `'snap'` (sebelum penutup method):
 
@@ -1284,7 +1284,7 @@ Expected: PASS (5 tests)
         $this->assertInstanceOf(\App\Services\Finance\Gateway\HybridPaymentGateway::class, $resolvedGatewayHybrid);
 ```
 
-- [ ] **Step 7: Run semua test terkait**
+- [x] **Step 7: Run semua test terkait**
 
 Run: `php artisan test tests/Feature/Keuangan/HybridPaymentGatewayTest.php tests/Feature/Keuangan/GatewayImplementationTest.php`
 Expected: PASS, semua hijau.
@@ -1293,7 +1293,7 @@ Run scope Keuangan penuh sekali lagi untuk memastikan binding baru tidak merusak
 Run: `php artisan test tests/Feature/Keuangan/`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Services/Finance/Gateway/HybridPaymentGateway.php \
@@ -1316,7 +1316,7 @@ git commit -m "feat(bri): add HybridPaymentGateway routing QRIS to BRI and VA to
 
 **Baca dulu sebelum menulis kode**: rujuk kembali `bri-api.md` section "B. Generate QR" dan "C. Inquiry Payment" (sama seperti Task 5, baris ±932–1117) — command ini sekadar wrapper CLI di atas `BriSnapGateway`, tidak ada logic protokol baru, tapi kalau responsnya aneh saat dites ke sandbox asli nanti, itu dokumen yang harus dicek lagi duluan sebelum menyalahkan kode.
 
-- [ ] **Step 1: Write the command**
+- [x] **Step 1: Write the command**
 
 Create `app/Console/Commands/BriTestQris.php`:
 
@@ -1385,12 +1385,12 @@ class BriTestQris extends Command
 }
 ```
 
-- [ ] **Step 2: Verifikasi command terdaftar**
+- [x] **Step 2: Verifikasi command terdaftar**
 
 Run: `php artisan list bri`
 Expected: muncul `bri:test-qris` dengan deskripsinya.
 
-- [ ] **Step 3: Jalankan sekali secara manual ke sandbox asli (bukan bagian test suite otomatis)**
+- [x] **Step 3: Jalankan sekali secara manual ke sandbox asli (bukan bagian test suite otomatis)**
 
 Prasyarat sebelum command ini bisa sukses penuh: `BRI_SNAP_PARTNER_ID`, `BRI_SNAP_CHANNEL_ID`, `BRI_SNAP_MERCHANT_ID`, `BRI_SNAP_TERMINAL_ID` di `.env` harus sudah terisi nilai asli dari portal BRI / konfirmasi BRI (lihat Task 2 Step 3 — masih kosong sampai user mengisinya).
 
@@ -1398,7 +1398,7 @@ Run: `php artisan bri:test-qris 15000`
 
 Expected (kalau semua kredensial & konfigurasi benar): output menampilkan `qrContent`, `referenceNo`, lalu `status: PENDING` (karena belum ada yang scan QR-nya) — bukan error. Kalau muncul error `responseCode`/`responseMessage`, itu petunjuk konkret apa yang salah (field kosong, X-PARTNER-ID salah, dll) — cocokkan dengan tabel "List of Error/Response Code" di `bri-api.md` section terkait untuk diagnosis.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/Console/Commands/BriTestQris.php
