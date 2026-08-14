@@ -43,9 +43,14 @@ class RiwayatController extends BaseController
             ->paginate(15)
             ->appends($request->query());
 
-        $totalLunasNominal = Pembayaran::where('siswa_id', $activeSiswa->id)->where('status', 'lunas')->sum('amount');
-        $totalMenungguCount = Pembayaran::where('siswa_id', $activeSiswa->id)->whereIn('status', ['menunggu_pembayaran', 'menunggu_verifikasi'])->count();
-        $totalTransaksiCount = Pembayaran::where('siswa_id', $activeSiswa->id)->count();
+        $statsQuery = fn () => Pembayaran::where('siswa_id', $activeSiswa->id)
+            ->when($dateRangeValid && $dari, fn ($q) => $q->where('created_at', '>=', $dari.' 00:00:00'))
+            ->when($dateRangeValid && $sampai, fn ($q) => $q->where('created_at', '<=', $sampai.' 23:59:59'))
+            ->when($metode, fn ($q) => $q->where('metode', $metode));
+
+        $totalLunasNominal = $statsQuery()->where('status', 'lunas')->sum('amount');
+        $totalMenungguCount = $statsQuery()->whereIn('status', ['menunggu_pembayaran', 'menunggu_verifikasi'])->count();
+        $totalTransaksiCount = $statsQuery()->count();
 
         return view('keuangan.riwayat.index', [
             'activeSiswa' => $activeSiswa,
