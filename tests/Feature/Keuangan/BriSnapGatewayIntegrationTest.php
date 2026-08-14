@@ -1,0 +1,127 @@
+<?php
+
+namespace Tests\Feature\Keuangan;
+
+use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
+use App\Services\Finance\Gateway\BriSnapGateway;
+use App\Models\Pembayaran;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
+use Tests\TestCase;
+
+class BriSnapGatewayIntegrationTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config([
+            'services.bri.merchant_id' => 'MERCHANT123',
+            'services.bri.terminal_id' => 'TERM123',
+        ]);
+    }
+
+    public function test_create_qris_returns_qris_result()
+    {
+        $mockClient = Mockery::mock(BriSnapClient::class);
+        
+        $pembayaran = Pembayaran::factory()->create([
+            'amount' => 50000
+        ]);
+
+        $expectedPayload = [
+            'partnerReferenceNo' => str_pad((string) $pembayaran->id, 6, '0', STR_PAD_LEFT),
+            'amount' => [
+                'value' => '50000.00',
+                'currency' => 'IDR'
+            ],
+            'merchantId' => 'MERCHANT123',
+            'terminalId' => 'TERM123',
+        ];
+
+        $mockClient->shouldReceive('post')
+            ->once()
+            ->with('/snap/v1.1/qr/qr-mpm-generate', $expectedPayload)
+            ->andReturn([
+                'responseCode' => '2004700',
+                'qrContent' => '000201010212...',
+                'referenceNo' => 'REF999888'
+            ]);
+
+        $gateway = new BriSnapGateway($mockClient);
+        
+        $result = $gateway->createQris($pembayaran, 'DIRECT');
+        
+        $this->assertEquals('000201010212...', $result->qrCodeData);
+        $this->assertEquals(50000, $result->amount);
+        $this->assertEquals('REF999888', $result->payload['referenceNo']);
+    }
+
+    public function test_check_status_qris_returns_paid()
+    {
+        $mockClient = Mockery::mock(BriSnapClient::class);
+        
+        $expectedPayload = [
+            'originalReferenceNo' => 'REF999888',
+            'serviceCode' => '47',
+            'additionalInfo' => [
+                'terminalId' => 'TERM123'
+            ]
+        ];
+
+        $mockClient->shouldReceive('post')
+            ->once()
+            ->with('/snap/v1.1/qr/qr-mpm-query', $expectedPayload)
+            ->andReturn([
+                'responseCode' => '2005100',
+                'latestTransactionStatus' => '00',
+                'amount' => [
+                    'value' => '50000.00'
+                ]
+            ]);
+
+        $gateway = new BriSnapGateway($mockClient);
+        
+        $result = $gateway->checkStatus('REF999888', 'qris');
+        
+        $this->assertEquals('PAID', $result->status);
+        $this->assertEquals('00', $result->payload['latestTransactionStatus']);
+    }
+
+    public function test_check_status_qris_returns_waiting()
+    {
+        $mockClient = Mockery::mock(BriSnapClient::class);
+        
+        $mockClient->shouldReceive('post')
+            ->once()
+            ->andReturn([
+                'responseCode' => '2005100',
+                'latestTransactionStatus' => '03',
+            ]);
+
+        $gateway = new BriSnapGateway($mockClient);
+        
+        $result = $gateway->checkStatus('REF999888', 'qris');
+        
+        $this->assertEquals('WAITING', $result->status);
+    }
+
+    public function test_check_status_qris_returns_failed()
+    {
+        $mockClient = Mockery::mock(BriSnapClient::class);
+        
+        $mockClient->shouldReceive('post')
+            ->once()
+            ->andReturn([
+                'responseCode' => '2005100',
+                'latestTransactionStatus' => '06',
+            ]);
+
+        $gateway = new BriSnapGateway($mockClient);
+        
+        $result = $gateway->checkStatus('REF999888', 'qris');
+        
+        $this->assertEquals('FAILED', $result->status);
+    }
+}

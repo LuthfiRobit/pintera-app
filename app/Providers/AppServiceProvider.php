@@ -14,6 +14,8 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\ServiceProvider;
+use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
+use App\Services\Finance\Gateway\HybridPaymentGateway;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,11 +24,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->singleton(BriSnapClient::class, fn () => BriSnapClient::fromConfig());
+
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
             $gatewayConfig = config('services.bri.gateway', 'mock');
             
             if ($gatewayConfig === 'snap') {
-                return new BriSnapGateway();
+                return $app->make(BriSnapGateway::class);
+            }
+
+            if ($gatewayConfig === 'hybrid') {
+                return $app->make(HybridPaymentGateway::class);
             }
 
             return new MockPaymentGateway();

@@ -49,11 +49,11 @@ class GatewayImplementationTest extends TestCase
 
     public function test_bri_snap_gateway_throws_not_implemented_exception()
     {
-        $gateway = new BriSnapGateway(BriSnapClient::fromConfig());
+        $gateway = new BriSnapGateway(\Mockery::mock(BriSnapClient::class));
         $pembayaran = Pembayaran::factory()->create();
 
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('BriSnapGateway not implemented: awaiting credentials');
+        $this->expectExceptionMessage('BriSnapGateway VA not fully implemented yet');
 
         $gateway->createVirtualAccount($pembayaran, 'WALLET_PERMANENT');
     }
@@ -73,5 +73,12 @@ class GatewayImplementationTest extends TestCase
         $this->app->forgetInstance(PaymentGatewayInterface::class);
         $resolvedGatewaySnap = app()->make(PaymentGatewayInterface::class);
         $this->assertInstanceOf(BriSnapGateway::class, $resolvedGatewaySnap);
+
+        // Setup config to use hybrid
+        Config::set('services.bri.gateway', 'hybrid');
+
+        $this->app->forgetInstance(PaymentGatewayInterface::class);
+        $resolvedGatewayHybrid = app()->make(PaymentGatewayInterface::class);
+        $this->assertInstanceOf(\App\Services\Finance\Gateway\HybridPaymentGateway::class, $resolvedGatewayHybrid);
     }
 }
