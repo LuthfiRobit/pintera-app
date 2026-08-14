@@ -1,6 +1,6 @@
 {{-- resources/views/keuangan/dashboard.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0" x-data="{ selected: [] }">
+    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0" x-data="{ selected: [], showTopUpModal: false }">
         
         {{-- Header & Subtitle (Inline style matching admin/kasus/index.blade.php) --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
@@ -77,9 +77,9 @@
                             <p class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Metode Top Up</p>
                             <p class="text-sm font-bold text-gray-700 mt-1">Virtual Account (VA)</p>
                         </div>
-                        <a href="{{ route('keuangan.tagihan.index') }}" class="inline-flex items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition">
+                        <button type="button" @click="showTopUpModal = true" class="inline-flex items-center justify-center gap-1 rounded-xl px-3 py-2 text-xs font-bold text-white bg-brand-600 hover:bg-brand-700 transition">
                             + Top Up Saldo
-                        </a>
+                        </button>
                     </div>
                     
                     @if ($wallet?->va_number)
@@ -276,6 +276,121 @@
                     @endif
                 </div>
 
+            </div>
+        </div>
+        {{-- Modal Top Up Saldo --}}
+        <div x-show="showTopUpModal" 
+             class="fixed inset-0 z-50 overflow-y-auto" 
+             x-cloak 
+             style="display: none;">
+            {{-- Backdrop --}}
+            <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-xs transition-opacity" 
+                 x-show="showTopUpModal"
+                 x-transition:enter="ease-out duration-300"
+                 x-transition:enter-start="opacity-0"
+                 x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200"
+                 x-transition:leave-start="opacity-100"
+                 x-transition:leave-end="opacity-0"
+                 @click="showTopUpModal = false">
+            </div>
+
+            {{-- Modal Content Wrapper --}}
+            <div class="flex min-h-full items-center justify-center p-4 text-center">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all w-full max-w-lg"
+                     x-show="showTopUpModal"
+                     x-transition:enter="ease-out duration-300"
+                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                     x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave="ease-in duration-200"
+                     x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                     x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                    
+                    {{-- Header --}}
+                    <div class="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
+                            <h3 class="font-display text-sm font-bold text-gray-900">Cara Top Up Saldo Wallet</h3>
+                        </div>
+                        <button @click="showTopUpModal = false" class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    {{-- Body --}}
+                    <div class="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                        @if ($wallet?->va_number)
+                            <div class="rounded-xl bg-gray-50 p-4 border border-gray-100 flex items-center justify-between">
+                                <div>
+                                    <p class="text-[9px] font-semibold text-gray-400 uppercase tracking-wider">Nomor Virtual Account (BRIVA) Anda</p>
+                                    <p class="font-mono text-base font-bold text-gray-800 mt-1">{{ $wallet->va_number }}</p>
+                                    <p class="text-[10px] text-gray-400 mt-1">Nama Pemilik: {{ $activeSiswa->nama_lengkap }}</p>
+                                </div>
+                                <button 
+                                    @click="
+                                        navigator.clipboard.writeText('{{ $wallet->va_number }}'); 
+                                        $store.toast ? $store.toast.push('success', 'Nomor VA berhasil disalin!') : alert('Nomor VA berhasil disalin!');
+                                    " 
+                                    type="button" 
+                                    class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 transition shadow-xs"
+                                >
+                                    <svg class="h-3.5 w-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 002-2h2a2 2 0 002-2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                                    </svg>
+                                    <span>Salin VA</span>
+                                </button>
+                            </div>
+                        @endif
+
+                        {{-- Instructions --}}
+                        <div class="space-y-4 text-xs sm:text-sm text-gray-600">
+                            {{-- BRIMo --}}
+                            <div class="space-y-2">
+                                <h4 class="font-bold text-gray-900 flex items-center gap-2">
+                                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-blue-50 text-blue-600 text-[10px] font-bold">1</span>
+                                    Melalui Aplikasi BRImo (Mobile Banking)
+                                </h4>
+                                <ol class="list-decimal pl-5 space-y-1 text-gray-500 text-[11px] leading-relaxed">
+                                    <li>Buka dan login ke aplikasi <b>BRImo</b>.</li>
+                                    <li>Pilih menu <b>BRIVA</b>.</li>
+                                    <li>Klik <b>Pembayaran Baru</b>.</li>
+                                    <li>Masukkan nomor <b>BRIVA tujuan</b> di atas.</li>
+                                    <li>Periksa detail nama dan tagihan, lalu masukkan nominal top up.</li>
+                                    <li>Masukkan <b>PIN</b> untuk konfirmasi.</li>
+                                </ol>
+                            </div>
+
+                            {{-- ATM --}}
+                            <div class="space-y-2">
+                                <h4 class="font-bold text-gray-900 flex items-center gap-2">
+                                    <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-blue-50 text-blue-600 text-[10px] font-bold">2</span>
+                                    Melalui ATM BRI
+                                </h4>
+                                <ol class="list-decimal pl-5 space-y-1 text-gray-500 text-[11px] leading-relaxed">
+                                    <li>Masukkan kartu debit dan <b>PIN ATM</b> Anda.</li>
+                                    <li>Pilih menu <b>Transaksi Lain</b>.</li>
+                                    <li>Pilih <b>Pembayaran</b>, lalu klik <b>Lainnya</b>.</li>
+                                    <li>Pilih <b>BRIVA</b>.</li>
+                                    <li>Masukkan nomor <b>BRIVA</b> di atas.</li>
+                                    <li>Periksa layar konfirmasi nama pemilik, lalu tekan <b>Ya</b>.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Footer --}}
+                    <div class="bg-gray-50/50 px-6 py-4 flex items-center justify-end border-t border-gray-150">
+                        <button @click="showTopUpModal = false" type="button" class="inline-flex items-center justify-center rounded-xl bg-brand-600 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 transition">
+                            Saya Mengerti
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
