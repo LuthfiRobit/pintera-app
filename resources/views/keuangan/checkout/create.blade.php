@@ -59,13 +59,13 @@
                     @endif
 
                     {{-- Top Up Wallet Integration --}}
-                    <div class="mt-4 pt-4 border-t border-gray-100 space-y-2" x-show="activeTab === 'va' || activeTab === 'qris'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
+                    <div class="mt-4 pt-4 border-t border-gray-100 space-y-2" x-show="activeTab === 'qris'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
                         <label class="text-xs font-semibold text-gray-500 uppercase tracking-wider block">Sekalian Top Up Wallet (Opsional)</label>
                         <div class="relative rounded-xl border border-gray-200 shadow-sm focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500">
                             <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-bold text-gray-400">Rp</span>
                             <input type="number" min="0" step="1000" x-model="topupAmount" placeholder="0" class="block w-full border-0 bg-transparent py-2.5 pl-8 pr-3 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0 font-mono">
                         </div>
-                        <p class="text-[10px] text-gray-400 leading-relaxed">Nominal ini akan digabungkan ke kode VA/QRIS dan otomatis dikreditkan ke saldo wallet setelah pembayaran lunas.</p>
+                        <p class="text-[10px] text-gray-400 leading-relaxed">Nominal ini akan digabungkan ke kode QRIS dan otomatis dikreditkan ke saldo wallet setelah pembayaran lunas.</p>
                     </div>
                 </div>
             </div>
