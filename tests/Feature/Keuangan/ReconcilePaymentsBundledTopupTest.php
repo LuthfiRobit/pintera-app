@@ -17,7 +17,7 @@ it('retries a failed bundled topup using the remainder, not the full amount (reg
         'status' => 'lunas', 'net_amount' => 100000, 'paid_amount' => 100000,
     ]);
     $pembayaran = Pembayaran::create([
-        'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'lunas',
+        'siswa_id' => $siswa->id, 'metode' => 'qris', 'status' => 'lunas',
         'amount' => 150000, 'topup_status' => 'failed',
         'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
     ]);

@@ -19,7 +19,7 @@ function buatPembayaranGabungan(Siswa $siswa, float $tagihanAmount, float $sisaT
     ]);
 
     $pembayaran = Pembayaran::create([
-        'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'lunas',
+        'siswa_id' => $siswa->id, 'metode' => 'qris', 'status' => 'lunas',
         'amount' => $tagihanAmount + $sisaTopup, 'topup_status' => $topupStatus,
         'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
     ]);

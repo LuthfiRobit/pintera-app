@@ -32,31 +32,6 @@ class PaymentServiceTest extends TestCase
         $this->service = app()->make(PaymentService::class);
     }
 
-    public function test_create_va_payment_success()
-    {
-        $siswa = Siswa::factory()->create();
-        
-        $jenisTagihan = JenisTagihan::factory()->create([
-            'va_expire_hours' => 24
-        ]);
-
-        $tagihan = Tagihan::factory()->create([
-            'status' => 'belum_bayar'
-        ]);
-        
-        TagihanItem::factory()->create([
-            'tagihan_id' => $tagihan->id,
-            'jenis_tagihan_id' => $jenisTagihan->id
-        ]);
-
-        $pembayaran = $this->service->createVaPayment($siswa, collect([$tagihan]));
-
-        $this->assertInstanceOf(Pembayaran::class, $pembayaran);
-        $this->assertEquals('va_bri', $pembayaran->metode);
-        $this->assertEquals('menunggu_pembayaran', $pembayaran->status);
-        $this->assertNotNull($pembayaran->briVirtualAccount);
-        $this->assertStringStartsWith('MOCK-VA-', $pembayaran->briVirtualAccount->va_number);
-    }
 
     public function test_cannot_create_payment_if_bill_cancelled()
     {
@@ -84,6 +59,24 @@ class PaymentServiceTest extends TestCase
         // Calling it again should return the exact same VA
         $va2 = $this->service->getOrCreatePermanentVa($siswa);
         $this->assertEquals($va1->id, $va2->id);
+    }
+
+    public function test_get_or_create_permanent_va_syncs_wallet_va_number()
+    {
+        $siswa = Siswa::factory()->create();
+
+        $this->assertNull($siswa->wallet->va_number);
+
+        $va = $this->service->getOrCreatePermanentVa($siswa);
+
+        $siswa->wallet->refresh();
+        $this->assertSame($va->va_number, $siswa->wallet->va_number);
+
+        // Panggil lagi -- harus tetap sinkron, tidak bikin VA baru
+        $vaKedua = $this->service->getOrCreatePermanentVa($siswa);
+        $this->assertSame($va->id, $vaKedua->id);
+        $siswa->wallet->refresh();
+        $this->assertSame($va->va_number, $siswa->wallet->va_number);
     }
 
     public function test_create_manual_payment()

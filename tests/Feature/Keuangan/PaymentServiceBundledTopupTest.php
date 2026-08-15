@@ -25,17 +25,6 @@ function setupSiswaDanTagihanUntukTopup(): array
     return [$siswa, collect([$tagihan])];
 }
 
-it('creates a bundled VA payment by summing tagihan and topup amounts', function () {
-    config(['services.bri.gateway' => 'mock']);
-    [$siswa, $tagihans] = setupSiswaDanTagihanUntukTopup();
-
-    $pembayaran = app(PaymentService::class)->createVaPaymentWithTopup($siswa, $tagihans, 50000);
-
-    expect((float) $pembayaran->amount)->toBe(150000.0);
-    expect($pembayaran->topup_status)->toBe('pending');
-    expect($pembayaran->briVirtualAccount)->not->toBeNull();
-});
-
 it('creates a bundled QRIS payment by summing tagihan and topup amounts', function () {
     config(['services.bri.gateway' => 'mock']);
     [$siswa, $tagihans] = setupSiswaDanTagihanUntukTopup();
@@ -45,22 +34,4 @@ it('creates a bundled QRIS payment by summing tagihan and topup amounts', functi
     expect((float) $pembayaran->amount)->toBe(120000.0);
     expect($pembayaran->topup_status)->toBe('pending');
     expect($pembayaran->briQrisPayment)->not->toBeNull();
-});
-
-it('rejects a bundled VA request with zero or negative topup amount', function () {
-    config(['services.bri.gateway' => 'mock']);
-    [$siswa, $tagihans] = setupSiswaDanTagihanUntukTopup();
-
-    $this->expectException(\App\Exceptions\PaymentException::class);
-
-    app(PaymentService::class)->createVaPaymentWithTopup($siswa, $tagihans, 0.0);
-});
-
-it('rejects a bundled VA request with no tagihan selected', function () {
-    config(['services.bri.gateway' => 'mock']);
-    [$siswa] = setupSiswaDanTagihanUntukTopup();
-
-    $this->expectException(\App\Exceptions\PaymentException::class);
-
-    app(PaymentService::class)->createVaPaymentWithTopup($siswa, collect(), 50000.0);
 });

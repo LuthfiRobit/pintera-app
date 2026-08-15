@@ -24,65 +24,7 @@ class PaymentService
     ) {
     }
 
-    /**
-     * Create VA payment for a collection of tagihan.
-     */
-    public function createVaPayment(Siswa $siswa, Collection $tagihans): Pembayaran
-    {
-        $this->guardAgainstInvalidTagihan($tagihans);
 
-        return DB::transaction(function () use ($siswa, $tagihans) {
-            $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'va_bri', 'menunggu_pembayaran');
-            
-            $vaResult = $this->gateway->createVirtualAccount($pembayaran, 'BILL_DIRECT');
-            
-            BriVirtualAccount::create([
-                'pembayaran_id' => $pembayaran->id,
-                'va_type' => 'BILL_DIRECT',
-                'va_number' => $vaResult->vaNumber,
-                'amount' => $vaResult->amount,
-                'expired_at' => $vaResult->expiredAt,
-                'status' => 'WAITING',
-                'callback_payload' => $vaResult->payload,
-            ]);
-
-            return $pembayaran;
-        });
-    }
-
-    /**
-     * Create VA payment for a collection of tagihan, bundled with a wallet top-up.
-     */
-    public function createVaPaymentWithTopup(Siswa $siswa, Collection $tagihans, float $topupAmount): Pembayaran
-    {
-        if ($topupAmount <= 0 || $tagihans->isEmpty()) {
-            throw new PaymentException('Top-up hanya bisa digabung dengan minimal satu tagihan dan nominal top-up harus lebih dari 0.');
-        }
-
-        $this->guardAgainstInvalidTagihan($tagihans);
-
-        return DB::transaction(function () use ($siswa, $tagihans, $topupAmount) {
-            $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'va_bri', 'menunggu_pembayaran');
-            
-            $pembayaran->amount = $pembayaran->pembayaranTagihan()->sum('amount_allocated') + $topupAmount;
-            $pembayaran->topup_status = 'pending';
-            $pembayaran->save();
-            
-            $vaResult = $this->gateway->createVirtualAccount($pembayaran, 'BILL_DIRECT');
-            
-            BriVirtualAccount::create([
-                'pembayaran_id' => $pembayaran->id,
-                'va_type' => 'BILL_DIRECT',
-                'va_number' => $vaResult->vaNumber,
-                'amount' => $vaResult->amount,
-                'expired_at' => $vaResult->expiredAt,
-                'status' => 'WAITING',
-                'callback_payload' => $vaResult->payload,
-            ]);
-
-            return $pembayaran;
-        });
-    }
     /**
      * Create QRIS payment.
      */
@@ -159,13 +101,13 @@ class PaymentService
             ->first();
 
         if ($existingVa) {
+            if ($wallet->va_number !== $existingVa->va_number) {
+                $wallet->update(['va_number' => $existingVa->va_number]);
+            }
+
             return $existingVa;
         }
 
-        // We create a dummy pembayaran to pass to the gateway, or gateway shouldn't need it?
-        // Actually, gateway interface requires Pembayaran, but for permanent VA we might not have a bill yet.
-        // Let's create an empty pending pembayaran for tracking permanent VA creation if required,
-        // or just use a dummy one.
         $dummyPembayaran = Pembayaran::create([
             'siswa_id' => $siswa->id,
             'metode' => 'va_bri',
@@ -175,7 +117,7 @@ class PaymentService
 
         $vaResult = $this->gateway->createVirtualAccount($dummyPembayaran, 'WALLET_PERMANENT');
 
-        return BriVirtualAccount::create([
+        $va = BriVirtualAccount::create([
             'pembayaran_id' => $dummyPembayaran->id,
             'wallet_id' => $wallet->id,
             'va_type' => 'WALLET_PERMANENT',
@@ -185,6 +127,10 @@ class PaymentService
             'status' => 'PERMANENT',
             'callback_payload' => $vaResult->payload,
         ]);
+
+        $wallet->update(['va_number' => $va->va_number]);
+
+        return $va;
     }
 
     /**
