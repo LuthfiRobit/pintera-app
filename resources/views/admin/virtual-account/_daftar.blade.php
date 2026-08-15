@@ -28,10 +28,10 @@
                     <tr class="transition hover:bg-gray-50/80">
                         <td class="sticky left-0 z-10 bg-white px-5 py-4 shadow-[1px_0_0_0_#f3f4f6]">
                             <x-table-actions>
-                                <x-dropdown-link href="#" @click.prevent="$dispatch('open-riwayat-modal', { siswaId: {{ $va->wallet->siswa_id }}, siswaNama: @js($va->wallet->siswa->nama_lengkap ?? '-') })">
+                                <x-dropdown-link href="#" @click.prevent="$dispatch('open-riwayat-modal', { siswaId: {{ $va->wallet->siswa_id }}, siswaNama: '{{ addslashes($va->wallet->siswa->nama_lengkap ?? '-') }}' })">
                                     Lihat Riwayat
                                 </x-dropdown-link>
-                                <x-dropdown-link href="#" @click.prevent="$dispatch('open-topup-modal', { siswaId: {{ $va->wallet->siswa_id }}, siswaNama: @js($va->wallet->siswa->nama_lengkap ?? '-'), vaNumber: @js($va->va_number), balance: {{ (float)$va->wallet->balance }} })">
+                                <x-dropdown-link href="#" @click.prevent="$dispatch('open-topup-modal', { siswaId: {{ $va->wallet->siswa_id }}, siswaNama: '{{ addslashes($va->wallet->siswa->nama_lengkap ?? '-') }}', vaNumber: '{{ addslashes($va->va_number) }}', balance: {{ (float) $va->wallet->balance }} })">
                                     Top-up Saldo
                                 </x-dropdown-link>
                             </x-table-actions>
