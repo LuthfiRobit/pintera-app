@@ -3,6 +3,7 @@
 
 namespace App\Http\Controllers\Keuangan;
 
+use App\Exceptions\PaymentException;
 use App\Models\Scopes\TenantScope;
 use App\Models\SystemSetting;
 use App\Models\Tagihan;
@@ -11,6 +12,7 @@ use App\Services\Finance\PaymentService;
 use App\Services\Finance\SkipAlertResolver;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
 class DashboardController extends BaseController
@@ -30,7 +32,13 @@ class DashboardController extends BaseController
             return view('keuangan.tanpa-anak');
         }
 
-        $this->paymentService->getOrCreatePermanentVa($activeSiswa);
+        try {
+            $this->paymentService->getOrCreatePermanentVa($activeSiswa);
+        } catch (PaymentException $e) {
+            Log::error('Gagal membuat VA BRI Permanen: '.$e->getMessage());
+            // Tidak ada VA untuk disinkronkan -- dashboard tetap dirender, $wallet
+            // di bawah kemungkinan null dan view sudah pakai null-safe operator.
+        }
 
         $wallet = $activeSiswa->wallet;
         $skipAlert = $this->skipAlertResolver->resolve($activeSiswa);

@@ -11,6 +11,7 @@ use App\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
 use App\Models\Tagihan;
 use App\Services\Finance\PaymentService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
@@ -62,7 +63,7 @@ class CheckoutController extends BaseController
         return redirect()->route('keuangan.checkout.va-info', ['tagihan_ids' => $requestedIds]);
     }
 
-    public function vaInfo(Request $request): View
+    public function vaInfo(Request $request): View|RedirectResponse
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
 

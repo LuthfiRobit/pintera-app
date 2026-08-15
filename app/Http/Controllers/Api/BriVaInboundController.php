@@ -112,7 +112,12 @@ class BriVaInboundController extends Controller
 
         $existingLog = BriInboundPaymentLog::where('payment_request_id', $paymentRequestId)->first();
         if ($existingLog) {
-            return $this->paymentSuccessResponse($vaNumber, $paymentRequestId, $existingLog->amount);
+            return $this->paymentSuccessResponse(
+                $vaNumber,
+                $paymentRequestId,
+                $existingLog->amount,
+                $this->resolveVirtualAccountName($vaNumber)
+            );
         }
 
         if ($amount <= 0) {
@@ -122,7 +127,7 @@ class BriVaInboundController extends Controller
             ], 404);
         }
 
-        $va = BriVirtualAccount::where('va_number', $vaNumber)->with('wallet')->first();
+        $va = BriVirtualAccount::where('va_number', $vaNumber)->with('wallet.siswa')->first();
 
         if (!$va || !$va->wallet) {
             return response()->json([
@@ -132,6 +137,7 @@ class BriVaInboundController extends Controller
         }
 
         $wallet = $va->wallet;
+        $virtualAccountName = $wallet->siswa?->nama_lengkap;
 
         $pembayaran = Pembayaran::create([
             'siswa_id' => $wallet->siswa_id,
@@ -151,11 +157,37 @@ class BriVaInboundController extends Controller
                 'pembayaran_id' => $pembayaran->id,
             ]);
         } catch (\Throwable $e) {
-            // Race: another request already logged this paymentRequestId first --
-            // safe to treat as a duplicate report (idempotent replay).
+            // Only treat this as a safe idempotent replay if a log row for this
+            // paymentRequestId genuinely exists now (a concurrent duplicate request
+            // won the race and inserted it first). If it does NOT exist, the insert
+            // failed for some other reason (connection issue, unrelated constraint
+            // violation, etc.) -- that is a real, unrecovered failure: the Pembayaran
+            // we just created has no ledger backing and no wallet credit, so delete
+            // the orphan, log it for investigation, and tell BRI to retry.
+            $isGenuineDuplicate = BriInboundPaymentLog::where('payment_request_id', $paymentRequestId)->exists();
+
             $pembayaran->delete();
 
-            return $this->paymentSuccessResponse($vaNumber, $paymentRequestId, $amount);
+            if ($isGenuineDuplicate) {
+                return $this->paymentSuccessResponse(
+                    $vaNumber,
+                    $paymentRequestId,
+                    $amount,
+                    $virtualAccountName
+                );
+            }
+
+            Log::error("Gagal menulis BriInboundPaymentLog (bukan duplikat) untuk VA {$vaNumber}: " . $e->getMessage(), [
+                'payment_request_id' => $paymentRequestId,
+                'va_number' => $vaNumber,
+                'amount' => $amount,
+                'exception' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'responseCode' => '5002500',
+                'responseMessage' => 'Internal Server Error',
+            ], 500);
         }
 
         try {
@@ -187,10 +219,17 @@ class BriVaInboundController extends Controller
             $pembayaran->update(['topup_status' => 'failed']);
         }
 
-        return $this->paymentSuccessResponse($vaNumber, $paymentRequestId, $amount);
+        return $this->paymentSuccessResponse($vaNumber, $paymentRequestId, $amount, $virtualAccountName);
     }
 
-    protected function paymentSuccessResponse(string $vaNumber, string $paymentRequestId, float $amount)
+    protected function resolveVirtualAccountName(string $vaNumber): ?string
+    {
+        $va = BriVirtualAccount::where('va_number', $vaNumber)->with('wallet.siswa')->first();
+
+        return $va?->wallet?->siswa?->nama_lengkap;
+    }
+
+    protected function paymentSuccessResponse(string $vaNumber, string $paymentRequestId, float $amount, ?string $virtualAccountName = null)
     {
         return response()->json([
             'responseCode' => '2002500',
@@ -199,6 +238,7 @@ class BriVaInboundController extends Controller
                 'partnerServiceId' => substr($vaNumber, 0, 8),
                 'customerNo' => substr($vaNumber, 8),
                 'virtualAccountNo' => $vaNumber,
+                'virtualAccountName' => $virtualAccountName,
                 'paymentRequestId' => $paymentRequestId,
                 'paidAmount' => [
                     'value' => number_format($amount, 2, '.', ''),
