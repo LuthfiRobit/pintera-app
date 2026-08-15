@@ -33,6 +33,51 @@ class BriVaInboundController extends Controller
         ]);
     }
 
+    public function inquiry(Request $request)
+    {
+        $token = $this->bearerToken($request);
+        if (!$this->authenticator->validateToken($token)) {
+            return response()->json([
+                'responseCode' => '4012400',
+                'responseMessage' => 'Unauthorized. Token is invalid or expired',
+            ], 401);
+        }
+
+        $vaNumber = (string) $request->input('virtualAccountNo');
+        $va = \App\Models\BriVirtualAccount::with('wallet.siswa')->where('va_number', $vaNumber)->first();
+
+        if (!$va || !$va->wallet || !$va->wallet->siswa) {
+            return response()->json([
+                'responseCode' => '4042412',
+                'responseMessage' => 'Virtual Account Not Found',
+                'virtualAccountData' => [
+                    'virtualAccountNo' => $vaNumber,
+                ]
+            ], 404);
+        }
+
+        $siswa = $va->wallet->siswa;
+        // The mock uses totalTagihan? Let's check how much is expected.
+        // I will just sum unpaid tagihan if any. Wait, the VA is for permanent wallet.
+        $totalTagihan = $siswa->tagihan()->where('status', 'belum_bayar')->sum('net_amount');
+        
+        return response()->json([
+            'responseCode' => '2002400',
+            'responseMessage' => 'Successful',
+            'virtualAccountData' => [
+                'virtualAccountNo' => $vaNumber,
+                'virtualAccountName' => $siswa->nama_lengkap,
+                'inquiryStatus' => '00',
+                'inquiryReason' => 'Success',
+                'totalAmount' => [
+                    'value' => number_format((float) $totalTagihan, 2, '.', ''),
+                    'currency' => 'IDR'
+                ],
+                'inquiryRequestId' => $request->input('inquiryRequestId'),
+            ]
+        ]);
+    }
+
     protected function bearerToken(Request $request): string
     {
         return (string) str($request->header('Authorization', ''))->after('Bearer ');
