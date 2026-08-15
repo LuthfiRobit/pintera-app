@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Exceptions\AutoAllocationFailedException;
 use App\Exceptions\InsufficientBalanceException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -68,7 +69,17 @@ class Wallet extends Model
         // Cek toggle auto debit dan jalankan engine jika aktif
         // (Di luar transaction agar lock wallet terlepas dulu saat proses alokasi berjalan)
         if (SystemSetting::getResolved('auto_debit_enabled', $this->siswa->lembaga_id, true)) {
-            app(AutoAllocationEngine::class)->run($this);
+            try {
+                app(AutoAllocationEngine::class)->run($this);
+            } catch (\Throwable $e) {
+                // The balance increment above has ALREADY committed at this point --
+                // wrap in a distinct exception type so callers can tell "balance was
+                // credited, only allocation failed" apart from "balance never credited".
+                throw new AutoAllocationFailedException(
+                    'AutoAllocationEngine::run() gagal setelah saldo wallet berhasil di-topup: '.$e->getMessage(),
+                    $e
+                );
+            }
         }
     }
 

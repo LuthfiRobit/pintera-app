@@ -169,8 +169,14 @@ class BriVaInboundPaymentTest extends TestCase
 
         $this->assertSame($saldoAwal + 60000, (float) $siswa->wallet->fresh()->balance);
 
+        // The wallet balance was ALREADY credited successfully before
+        // AutoAllocationEngine::run() threw (that increment commits inside
+        // Wallet::topup()'s own internal DB transaction). topup_status must
+        // reflect that the credit itself succeeded -- NOT 'failed' -- otherwise
+        // ReconcilePayments::retryFailedTopups() would re-select this Pembayaran
+        // and double-credit the wallet (see NEW-1 regression test below).
         $pembayaran = \App\Models\Pembayaran::where('channel_reference', 'PAY-AUTOALLOC-THROWS')->firstOrFail();
-        $this->assertSame('failed', $pembayaran->topup_status);
+        $this->assertSame('completed', $pembayaran->topup_status);
 
         // Replay with the same paymentRequestId -- must hit the idempotency check and
         // must NOT touch the wallet balance again.
@@ -182,5 +188,58 @@ class BriVaInboundPaymentTest extends TestCase
 
         $this->assertSame($saldoAwal + 60000, (float) $siswa->wallet->fresh()->balance);
         $this->assertSame(1, BriInboundPaymentLog::where('payment_request_id', 'PAY-AUTOALLOC-THROWS')->count());
+    }
+
+    /**
+     * NEW-1 regression test: after an auto-allocation failure inside payment(),
+     * the hourly ReconcilePayments::retryFailedTopups() scheduler must NOT
+     * re-select and re-credit this Pembayaran. Its topup_status must end up
+     * 'completed' (not 'failed'), which excludes it from the retry query
+     * (`Pembayaran::where('topup_status', 'failed')...`). Directly invoking
+     * PaymentAllocationService::topupSisaJikaAda() on it afterwards (which is
+     * exactly what retryFailedTopups() would call if it wrongly selected this
+     * row) must also be a safe no-op, as a defense-in-depth check.
+     */
+    public function test_reconcile_payments_does_not_double_credit_wallet_after_auto_allocation_failure()
+    {
+        $siswa = Siswa::factory()->create();
+        SystemSetting::create(['lembaga_id' => $siswa->lembaga_id, 'key' => 'auto_debit_enabled', 'value' => 'true']);
+        $va = app(PaymentService::class)->getOrCreatePermanentVa($siswa);
+        $saldoAwal = (float) $siswa->wallet->fresh()->balance;
+
+        $mockEngine = \Mockery::mock(\App\Services\Finance\AutoAllocationEngine::class);
+        $mockEngine->shouldReceive('run')->andThrow(new \RuntimeException('Simulated AutoAllocationEngine failure'));
+        $this->app->instance(\App\Services\Finance\AutoAllocationEngine::class, $mockEngine);
+
+        Log::shouldReceive('error')->atLeast()->once();
+
+        $payload = $this->payloadFor($va->va_number, 60000, 'PAY-RECONCILE-NO-DOUBLE-CREDIT');
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+            ->postJson('/snap/v1.0/transfer-va/payment', $payload);
+
+        $response->assertOk();
+
+        // Step 1: wallet credited exactly once by payment().
+        $afterPayment = (float) $siswa->wallet->fresh()->balance;
+        $this->assertSame($saldoAwal + 60000, $afterPayment);
+
+        $pembayaran = \App\Models\Pembayaran::where('channel_reference', 'PAY-RECONCILE-NO-DOUBLE-CREDIT')->firstOrFail();
+        $this->assertSame('completed', $pembayaran->topup_status);
+
+        // Step 2: the hourly reconciliation scheduler's query must exclude this
+        // Pembayaran entirely, because topup_status is 'completed', not 'failed'.
+        $selectedForRetry = \App\Models\Pembayaran::where('topup_status', 'failed')
+            ->where('status', 'lunas')
+            ->whereNotNull('siswa_id')
+            ->pluck('id');
+        $this->assertNotContains($pembayaran->id, $selectedForRetry->all());
+
+        // Step 3 (defense-in-depth): run the actual artisan command end-to-end.
+        $this->artisan('finance:reconcile-payments')->assertExitCode(0);
+
+        $afterReconcile = (float) $siswa->wallet->fresh()->balance;
+        $this->assertSame($afterPayment, $afterReconcile, 'Wallet must not be double-credited by the reconciliation scheduler.');
+        $this->assertSame($saldoAwal + 60000, $afterReconcile);
     }
 }

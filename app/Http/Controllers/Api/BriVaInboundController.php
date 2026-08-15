@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Contracts\BriInboundAuthenticatorInterface;
+use App\Exceptions\AutoAllocationFailedException;
 use App\Http\Controllers\Controller;
 use App\Models\BriInboundPaymentLog;
 use App\Models\BriVirtualAccount;
@@ -160,8 +161,24 @@ class BriVaInboundController extends Controller
         try {
             $wallet->topup($amount, $pembayaran, 'Top-up via VA BRI');
             $pembayaran->update(['topup_status' => 'completed']);
+        } catch (AutoAllocationFailedException $e) {
+            // The wallet balance itself WAS already credited successfully (that
+            // increment committed inside Wallet::topup()'s own DB transaction,
+            // before AutoAllocationEngine::run() ever ran) -- only the subsequent
+            // auto-allocation step failed. topup_status must reflect that the
+            // credit is done, otherwise ReconcilePayments::retryFailedTopups()
+            // would re-select this Pembayaran and double-credit the wallet.
+            Log::error("Auto-alokasi gagal setelah topup VA {$vaNumber} berhasil di-kredit (saldo AMAN, hanya alokasi yang gagal): " . $e->getMessage(), [
+                'payment_request_id' => $paymentRequestId,
+                'va_number' => $vaNumber,
+                'amount' => $amount,
+                'exception' => $e->getMessage(),
+            ]);
+            $pembayaran->update(['topup_status' => 'completed']);
         } catch (\Throwable $e) {
-            Log::error("Gagal proses auto-debit setelah topup VA {$vaNumber}: " . $e->getMessage(), [
+            // Genuine topup failure -- the balance was NOT credited (the internal
+            // transaction rolled back), so this really does need a retry.
+            Log::error("Gagal proses topup VA {$vaNumber}: " . $e->getMessage(), [
                 'payment_request_id' => $paymentRequestId,
                 'va_number' => $vaNumber,
                 'amount' => $amount,
