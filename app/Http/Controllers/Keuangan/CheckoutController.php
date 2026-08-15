@@ -57,33 +57,38 @@ class CheckoutController extends BaseController
 
     public function va(Request $request)
     {
+        $requestedIds = (array) $request->input('tagihan_ids', []);
+
+        return redirect()->route('keuangan.checkout.va-info', ['tagihan_ids' => $requestedIds]);
+    }
+
+    public function vaInfo(Request $request): View
+    {
         $activeSiswa = $request->attributes->get('activeSiswa');
 
         if ($activeSiswa === null) {
-            return back()->withErrors(['tagihan_ids' => 'Anak aktif tidak ditemukan.']);
+            return redirect()->route('keuangan.tagihan.index');
         }
 
+        $requestedIds = (array) $request->query('tagihan_ids', []);
+        $tagihans = $this->resolveSelectedTagihan($activeSiswa, $requestedIds);
+
+        $totalTagihan = $tagihans->reduce(
+            fn (float $carry, Tagihan $tagihan) => $carry + ($tagihan->net_amount - $tagihan->paid_amount),
+            0.0
+        );
+
         try {
-            $this->paymentService->getOrCreatePermanentVa($activeSiswa);
+            $va = $this->paymentService->getOrCreatePermanentVa($activeSiswa);
         } catch (PaymentException $e) {
             Log::error('Gagal membuat VA BRI Permanen: '.$e->getMessage());
             return back()->withErrors(['tagihan_ids' => 'Gagal mendapatkan VA, silakan coba lagi.']);
         }
 
-        return redirect()->route('keuangan.checkout.va-info');
-    }
-
-    public function vaInfo(Request $request)
-    {
-        $activeSiswa = $request->attributes->get('activeSiswa');
-        
-        if ($activeSiswa === null) {
-            return redirect()->route('keuangan.tagihan.index');
-        }
-
         return view('keuangan.checkout.va-info', [
-            'activeSiswa' => $activeSiswa,
-            'wallet' => $activeSiswa->wallet,
+            'va' => $va,
+            'totalTagihan' => $totalTagihan,
+            'tagihans' => $tagihans,
         ]);
     }
 
@@ -205,7 +210,7 @@ class CheckoutController extends BaseController
     {
         $this->authorizePembayaran($pembayaran);
 
-        abort_unless(in_array($pembayaran->metode, ['qris']), 404);
+        abort_unless($pembayaran->metode === 'qris', 404);
 
         $pembayaran->load(['briQrisPayment', 'pembayaranTagihan']);
 

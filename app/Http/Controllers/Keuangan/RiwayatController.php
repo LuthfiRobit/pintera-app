@@ -35,6 +35,7 @@ class RiwayatController extends BaseController
         $dateRangeValid = ! ($dari && $sampai && $dari > $sampai);
 
         $pembayarans = Pembayaran::where('siswa_id', $activeSiswa->id)
+            ->where(fn ($q) => $q->where('channel_reference', '!=', 'WALLET_PERMANENT')->orWhereNull('channel_reference'))
             ->when($dateRangeValid && $dari, fn ($q) => $q->where('created_at', '>=', $dari.' 00:00:00'))
             ->when($dateRangeValid && $sampai, fn ($q) => $q->where('created_at', '<=', $sampai.' 23:59:59'))
             ->when($metode, fn ($q) => $q->where('metode', $metode))
@@ -44,6 +45,7 @@ class RiwayatController extends BaseController
             ->appends($request->query());
 
         $statsQuery = fn () => Pembayaran::where('siswa_id', $activeSiswa->id)
+            ->where(fn ($q) => $q->where('channel_reference', '!=', 'WALLET_PERMANENT')->orWhereNull('channel_reference'))
             ->when($dateRangeValid && $dari, fn ($q) => $q->where('created_at', '>=', $dari.' 00:00:00'))
             ->when($dateRangeValid && $sampai, fn ($q) => $q->where('created_at', '<=', $sampai.' 23:59:59'))
             ->when($metode, fn ($q) => $q->where('metode', $metode));

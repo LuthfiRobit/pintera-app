@@ -49,7 +49,9 @@ it('gets or creates permanent VA and redirects to the va info page', function ()
     $response = $this->actingAs($user)->post(route('keuangan.checkout.va'));
 
     $response->assertRedirect(route('keuangan.checkout.va-info'));
-    // Make sure a permanent VA was created
+
+    // The VA is created lazily when the info page is actually visited.
+    $this->actingAs($user)->get(route('keuangan.checkout.va-info'));
     $siswa->refresh();
     expect($siswa->wallet->va_number)->not->toBeNull();
 });
@@ -67,6 +69,24 @@ it('creates a QRIS payment and redirects to the waiting page', function () {
 });
 
 
+
+it('does not create a second QRIS for the same tagihan while one is still waiting', function () {
+    [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
+
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
+
+    expect(Pembayaran::where('metode', 'qris')->count())->toBe(1);
+});
+
+it('va info page shows the va number and suggested amount', function () {
+    [$user, , $siswa, $tagihan] = actingAsOrangTuaForVaQris();
+
+    $response = $this->actingAs($user)->get(route('keuangan.checkout.va-info', ['tagihan_ids' => [$tagihan->id]]));
+
+    $response->assertOk();
+    $response->assertSee('120.000', false);
+});
 
 it('rejects tagihan_ids that do not belong to the active child', function () {
     [$user] = actingAsOrangTuaForVaQris();

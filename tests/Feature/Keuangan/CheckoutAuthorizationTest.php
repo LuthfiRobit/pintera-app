@@ -96,8 +96,8 @@ it('rejects manual transfer checkout for a tagihan belonging to another parent\'
 
 it('blocks a parent from polling the status of another parent\'s pembayaran', function () {
     [$userA, , , $tagihanA] = makeParentWithChild('A');
-    $this->actingAs($userA)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihanA->id]]);
-    $pembayaranA = Pembayaran::where('metode', 'va_bri')->firstOrFail();
+    $this->actingAs($userA)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihanA->id]]);
+    $pembayaranA = Pembayaran::where('metode', 'qris')->firstOrFail();
 
     [$userB] = makeParentWithChild('B');
 

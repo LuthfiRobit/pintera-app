@@ -59,9 +59,21 @@ it('does not leak lembaga B\'s wallet/tagihan data onto lembaga A parent\'s dash
 
     $siswaA = Siswa::factory()->create(['lembaga_id' => $lembagaA->id, 'nama_lengkap' => 'Anak Lembaga A']);
     $siswaA->wallet->update(['balance' => 999000, 'va_number' => '8808089999999999']);
+    \App\Models\BriVirtualAccount::create([
+        'wallet_id' => $siswaA->wallet->id,
+        'va_type' => 'WALLET_PERMANENT',
+        'va_number' => '8808089999999999',
+        'status' => 'PERMANENT',
+    ]);
 
     $siswaB = Siswa::factory()->create(['lembaga_id' => $lembagaB->id, 'nama_lengkap' => 'Anak Lembaga B']);
     $siswaB->wallet->update(['balance' => 111000, 'va_number' => '8808081111111111']);
+    \App\Models\BriVirtualAccount::create([
+        'wallet_id' => $siswaB->wallet->id,
+        'va_type' => 'WALLET_PERMANENT',
+        'va_number' => '8808081111111111',
+        'status' => 'PERMANENT',
+    ]);
 
     $userA = User::factory()->create(['lembaga_id' => null]);
     $userA->assignRole('orang_tua');

@@ -38,6 +38,12 @@ function actingAsOrangTuaForDashboard(): array
 it('shows the wallet balance and VA number on the dashboard', function () {
     [$user, , $siswa] = actingAsOrangTuaForDashboard();
     $siswa->wallet->update(['balance' => 250000, 'va_number' => '8808081234567890']);
+    \App\Models\BriVirtualAccount::create([
+        'wallet_id' => $siswa->wallet->id,
+        'va_type' => 'WALLET_PERMANENT',
+        'va_number' => '8808081234567890',
+        'status' => 'PERMANENT',
+    ]);
 
     $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
 

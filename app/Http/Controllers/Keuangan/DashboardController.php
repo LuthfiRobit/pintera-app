@@ -7,6 +7,7 @@ use App\Models\Scopes\TenantScope;
 use App\Models\SystemSetting;
 use App\Models\Tagihan;
 use App\Services\Notifications\NotificationFeedResolver;
+use App\Services\Finance\PaymentService;
 use App\Services\Finance\SkipAlertResolver;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -17,6 +18,7 @@ class DashboardController extends BaseController
     public function __construct(
         private readonly SkipAlertResolver $skipAlertResolver,
         private readonly NotificationFeedResolver $notificationFeedResolver,
+        private readonly PaymentService $paymentService,
     ) {
     }
 
@@ -27,6 +29,8 @@ class DashboardController extends BaseController
         if ($activeSiswa === null) {
             return view('keuangan.tanpa-anak');
         }
+
+        $this->paymentService->getOrCreatePermanentVa($activeSiswa);
 
         $wallet = $activeSiswa->wallet;
         $skipAlert = $this->skipAlertResolver->resolve($activeSiswa);

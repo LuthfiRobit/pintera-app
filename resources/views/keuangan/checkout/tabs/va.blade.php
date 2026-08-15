@@ -4,8 +4,6 @@
         @foreach ($tagihans as $tagihan)
             <input type="hidden" name="tagihan_ids[]" value="{{ $tagihan->id }}">
         @endforeach
-        <input type="hidden" name="topup_amount" x-bind:value="topupAmount">
-        
         <div class="flex items-start gap-3 rounded-xl bg-gray-50 p-4 border border-gray-100 text-xs sm:text-sm text-gray-600">
             <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-600 mt-0.5">
                 <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -14,7 +12,7 @@
             </span>
             <div>
                 <p class="font-semibold text-gray-800">Pembayaran Virtual Account BRI</p>
-                <p class="mt-1 leading-relaxed text-gray-500">Nomor Virtual Account unik akan dibuat setelah Anda mengklik tombol di bawah ini. Anda dapat melakukan pembayaran via ATM BRI, BRILink, BRImo, atau transfer dari bank lain.</p>
+                <p class="mt-1 leading-relaxed text-gray-500">Nomor Virtual Account BRI Anda tetap sama setiap saat. Anda dapat melakukan pembayaran via ATM BRI, BRILink, BRImo, atau transfer dari bank lain.</p>
             </div>
         </div>
 
