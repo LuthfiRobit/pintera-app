@@ -157,4 +157,25 @@ class BriSnapGatewayIntegrationTest extends TestCase
 
         $gateway->createQris($pembayaran, 'DIRECT');
     }
+
+    public function test_create_virtual_account_generates_local_va_number_without_http_call()
+    {
+        config(['services.bri.inbound.partner_service_id' => '77777777']);
+
+        $mockClient = Mockery::mock(BriSnapClient::class);
+        $mockClient->shouldNotReceive('post');
+        $mockClient->shouldNotReceive('get');
+
+        $gateway = new BriSnapGateway($mockClient);
+
+        $siswa = \App\Models\Siswa::factory()->create();
+        $pembayaran = Pembayaran::factory()->create(['siswa_id' => $siswa->id]);
+
+        $result = $gateway->createVirtualAccount($pembayaran, 'WALLET_PERMANENT');
+
+        $expectedCustomerNo = str_pad((string) $siswa->id, 20, '0', STR_PAD_LEFT);
+        $this->assertSame('77777777' . $expectedCustomerNo, $result->vaNumber);
+        $this->assertNull($result->amount);
+        $this->assertNull($result->expiredAt);
+    }
 }

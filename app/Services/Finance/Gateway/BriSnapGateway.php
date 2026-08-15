@@ -17,7 +17,14 @@ class BriSnapGateway implements PaymentGatewayInterface
 
     public function createVirtualAccount(Pembayaran $pembayaran, string $vaType): VirtualAccountResult
     {
-        throw new \RuntimeException('BriSnapGateway VA not fully implemented yet');
+        $partnerServiceId = str_pad((string) config('services.bri.inbound.partner_service_id'), 8, '0', STR_PAD_LEFT);
+        $customerNo = str_pad((string) $pembayaran->siswa_id, 20, '0', STR_PAD_LEFT);
+        $vaNumber = $partnerServiceId . $customerNo;
+
+        return new VirtualAccountResult($vaNumber, null, null, [
+            'partnerServiceId' => $partnerServiceId,
+            'customerNo' => $customerNo,
+        ]);
     }
 
     public function createQris(Pembayaran $pembayaran, string $qrisType): QrisResult
