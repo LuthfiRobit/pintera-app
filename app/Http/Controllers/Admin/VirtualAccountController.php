@@ -59,12 +59,35 @@ class VirtualAccountController extends BaseController
             ]);
         }
 
-        $kelasList = Kelas::where('lembaga_id', $lembagaId)->orderBy('nama')->get();
+        $totalVa = BriVirtualAccount::where('va_type', 'WALLET_PERMANENT')
+            ->whereHas('wallet.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+            ->count();
+
+        $totalSaldo = (float) BriVirtualAccount::where('va_type', 'WALLET_PERMANENT')
+            ->whereHas('wallet.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+            ->join('wallets', 'bri_virtual_accounts.wallet_id', '=', 'wallets.id')
+            ->sum('wallets.balance');
+
+        $totalBelumVa = Siswa::where('lembaga_id', $lembagaId)
+            ->where('status', StatusSiswa::Aktif->value)
+            ->whereDoesntHave('wallet.briVirtualAccounts', fn ($q) => $q->where('va_type', 'WALLET_PERMANENT'))
+            ->count();
+
+        $kelasList = Kelas::where('lembaga_id', $lembagaId)
+            ->with('tahunAjaran')
+            ->orderBy('nama')
+            ->get();
+
+        $kelasListGrouped = $kelasList->groupBy(fn ($k) => $k->tahunAjaran?->nama ?? 'Tanpa Tahun Ajaran');
 
         return view('admin.virtual-account.index', [
             'vaList' => $paginated,
             'perPage' => $perPage,
             'kelasList' => $kelasList,
+            'kelasListGrouped' => $kelasListGrouped,
+            'totalVa' => $totalVa,
+            'totalSaldo' => $totalSaldo,
+            'totalBelumVa' => $totalBelumVa,
         ]);
     }
 

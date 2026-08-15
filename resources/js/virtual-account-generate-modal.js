@@ -28,7 +28,9 @@ export function virtualAccountGenerateModal(config) {
                 });
 
                 if (!response.ok) {
-                    Alpine.store('toast').push('error', 'Gagal memuat daftar siswa.');
+                    if (Alpine.store('toast')) {
+                        Alpine.store('toast').push('error', 'Gagal memuat daftar siswa.');
+                    }
                     return;
                 }
 
@@ -36,7 +38,9 @@ export function virtualAccountGenerateModal(config) {
                 this.calonList = json.data;
                 this.selectedIds = this.selectedIds.filter((id) => this.calonList.some((s) => s.id === id));
             } catch (error) {
-                Alpine.store('toast').push('error', 'Gagal memuat daftar siswa.');
+                if (Alpine.store('toast')) {
+                    Alpine.store('toast').push('error', 'Gagal memuat daftar siswa.');
+                }
             }
         },
 
@@ -45,6 +49,20 @@ export function virtualAccountGenerateModal(config) {
                 this.selectedIds = this.selectedIds.filter((x) => x !== id);
             } else {
                 this.selectedIds.push(id);
+            }
+        },
+
+        isAllSelected() {
+            return this.calonList.length > 0 && this.calonList.every((s) => this.selectedIds.includes(s.id));
+        },
+
+        toggleSelectAll() {
+            if (this.isAllSelected()) {
+                const calonIds = this.calonList.map((s) => s.id);
+                this.selectedIds = this.selectedIds.filter((id) => !calonIds.includes(id));
+            } else {
+                const newIds = new Set([...this.selectedIds, ...this.calonList.map((s) => s.id)]);
+                this.selectedIds = Array.from(newIds);
             }
         },
     };
