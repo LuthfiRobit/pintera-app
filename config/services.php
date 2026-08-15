@@ -49,6 +49,11 @@ return [
         'channel_id' => env('BRI_SNAP_CHANNEL_ID'),
         'merchant_id' => env('BRI_SNAP_MERCHANT_ID'),
         'terminal_id' => env('BRI_SNAP_TERMINAL_ID'),
+        'inbound' => [
+            'client_id' => env('BRI_INBOUND_CLIENT_ID'),
+            'client_secret' => env('BRI_INBOUND_CLIENT_SECRET'),
+            'partner_service_id' => env('BRI_INBOUND_PARTNER_SERVICE_ID'),
+        ],
     ],
 
 ];

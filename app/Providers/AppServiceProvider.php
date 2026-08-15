@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\HybridPaymentGateway;
+use App\Contracts\BriInboundAuthenticatorInterface;
+use App\Services\Finance\BriInbound\SimpleBriInboundAuthenticator;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(BriInboundAuthenticatorInterface::class, SimpleBriInboundAuthenticator::class);
         $this->app->singleton(BriSnapClient::class, fn () => BriSnapClient::fromConfig());
 
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
