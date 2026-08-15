@@ -78,6 +78,59 @@ class BriVaInboundController extends Controller
         ]);
     }
 
+    public function payment(Request $request)
+    {
+        $token = $this->bearerToken($request);
+        if (!$this->authenticator->validateToken($token)) {
+            return response()->json([
+                'responseCode' => '4012500',
+                'responseMessage' => 'Unauthorized. Token is invalid or expired',
+            ], 401);
+        }
+
+        $vaNumber = (string) $request->input('virtualAccountNo');
+        $reqId = (string) $request->input('paymentRequestId');
+        $amountStr = (string) $request->input('paidAmount.value');
+        $amount = (float) $amountStr;
+
+        $va = \App\Models\BriVirtualAccount::with('wallet')->where('va_number', $vaNumber)->first();
+
+        if (!$va || !$va->wallet) {
+            return response()->json([
+                'responseCode' => '4042512',
+                'responseMessage' => 'Virtual Account Not Found',
+                'virtualAccountData' => [
+                    'virtualAccountNo' => $vaNumber,
+                ]
+            ], 404);
+        }
+
+        $log = \App\Models\BriInboundPaymentLog::where('payment_request_id', $reqId)->first();
+        if (!$log) {
+            try {
+                \App\Models\BriInboundPaymentLog::create([
+                    'payment_request_id' => $reqId,
+                    'va_number' => $vaNumber,
+                    'amount' => $amount,
+                ]);
+
+                // Auto topup di luar DB::transaction
+                $va->wallet->topup($amount);
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                // Idempotent: Request already handled concurrently
+            }
+        }
+
+        return response()->json([
+            'responseCode' => '2002500',
+            'responseMessage' => 'Successful',
+            'virtualAccountData' => [
+                'virtualAccountNo' => $vaNumber,
+                'paymentRequestId' => $reqId,
+            ]
+        ]);
+    }
+
     protected function bearerToken(Request $request): string
     {
         return (string) str($request->header('Authorization', ''))->after('Bearer ');

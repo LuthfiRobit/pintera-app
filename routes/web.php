@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/webhook/bri/payment-notification', [BriWebhookController::class, 'handlePaymentNotification']);
 Route::post('/snap/v1.0/access-token/b2b', [\App\Http\Controllers\Api\BriVaInboundController::class, 'token']);
 Route::post('/snap/v1.0/transfer-va/inquiry', [\App\Http\Controllers\Api\BriVaInboundController::class, 'inquiry']);
+Route::post('/snap/v1.0/transfer-va/payment', [\App\Http\Controllers\Api\BriVaInboundController::class, 'payment']);
 
 Route::get('/', function () {
     return view('welcome');
