@@ -41,6 +41,8 @@ import { orangTuaCari } from './orang-tua-cari';
 import { karyawanForm } from './karyawan-form';
 import { tomSelectSiswa } from './tom-select-siswa';
 import { triaseForm } from './triase-form';
+import { virtualAccountFilter } from './virtual-account-filter';
+import { virtualAccountGenerateModal } from './virtual-account-generate-modal';
 
 window.Alpine = Alpine;
 window.flatpickr = flatpickr;
@@ -87,5 +89,7 @@ Alpine.data('orangTuaCari', orangTuaCari);
 Alpine.data('karyawanForm', karyawanForm);
 Alpine.data('tomSelectSiswa', tomSelectSiswa);
 Alpine.data('triaseForm', triaseForm);
+Alpine.data('virtualAccountFilter', virtualAccountFilter);
+Alpine.data('virtualAccountGenerateModal', virtualAccountGenerateModal);
 
 Alpine.start();

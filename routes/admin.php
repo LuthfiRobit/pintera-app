@@ -49,6 +49,7 @@ use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TagihanController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\VirtualAccountController;
 use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\SesiPembelajaranController;
@@ -210,6 +211,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('manual-payment', [ManualPaymentController::class, 'index'])->name('manual-payment.index');
     Route::post('manual-payment/{manualPaymentRequest}/approve', [ManualPaymentController::class, 'approve'])->name('manual-payment.approve');
     Route::post('manual-payment/{manualPaymentRequest}/reject', [ManualPaymentController::class, 'reject'])->name('manual-payment.reject');
+
+    Route::get('virtual-account', [VirtualAccountController::class, 'index'])->name('virtual-account.index');
+    Route::get('virtual-account/{siswa}/riwayat', [VirtualAccountController::class, 'riwayat'])->name('virtual-account.riwayat');
+    Route::get('virtual-account/calon', [VirtualAccountController::class, 'calonGenerate'])->name('virtual-account.calon');
+    Route::post('virtual-account/generate', [VirtualAccountController::class, 'generate'])->name('virtual-account.generate');
+    Route::get('virtual-account/export', [VirtualAccountController::class, 'export'])->name('virtual-account.export');
 
     Route::get('pola-jam', [PolaJamController::class, 'index'])->name('pola-jam.index');
     Route::get('pola-jam/create', [PolaJamController::class, 'create'])->name('pola-jam.create');
