@@ -58,38 +58,33 @@ class CheckoutController extends BaseController
     public function va(Request $request)
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
-        $requestedIds = (array) $request->input('tagihan_ids', []);
-        $topupAmount = (float) $request->input('topup_amount', 0);
-        $tagihans = $this->resolveSelectedTagihan($activeSiswa, $requestedIds);
 
-        if ($tagihans->isEmpty()) {
-            return back()->withErrors(['tagihan_ids' => 'Tidak ada tagihan valid yang dipilih.']);
-        }
-
-        if ($tagihans->count() !== count(array_unique($requestedIds))) {
-            return redirect()->route('keuangan.tagihan.index')
-                ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas, silakan cek kembali.']);
-        }
-
-        if ($topupAmount <= 0) {
-            $existing = $this->findPendingPembayaranFor('va_bri', $tagihans);
-            if ($existing !== null) {
-                return redirect()->route('keuangan.checkout.show', $existing);
-            }
+        if ($activeSiswa === null) {
+            return back()->withErrors(['tagihan_ids' => 'Anak aktif tidak ditemukan.']);
         }
 
         try {
-            if ($topupAmount > 0) {
-                $pembayaran = $this->paymentService->createVaPaymentWithTopup($activeSiswa, $tagihans, $topupAmount);
-            } else {
-                $pembayaran = $this->paymentService->createVaPayment($activeSiswa, $tagihans);
-            }
+            $this->paymentService->getOrCreatePermanentVa($activeSiswa);
         } catch (PaymentException $e) {
-            Log::error('Gagal membuat VA BRI: '.$e->getMessage());
-            return back()->withErrors(['tagihan_ids' => 'Gagal membuat pembayaran, silakan coba lagi.']);
+            Log::error('Gagal membuat VA BRI Permanen: '.$e->getMessage());
+            return back()->withErrors(['tagihan_ids' => 'Gagal mendapatkan VA, silakan coba lagi.']);
         }
 
-        return redirect()->route('keuangan.checkout.show', $pembayaran);
+        return redirect()->route('keuangan.checkout.va-info');
+    }
+
+    public function vaInfo(Request $request)
+    {
+        $activeSiswa = $request->attributes->get('activeSiswa');
+        
+        if ($activeSiswa === null) {
+            return redirect()->route('keuangan.tagihan.index');
+        }
+
+        return view('keuangan.checkout.va-info', [
+            'activeSiswa' => $activeSiswa,
+            'wallet' => $activeSiswa->wallet,
+        ]);
     }
 
     public function qris(Request $request)
@@ -210,9 +205,9 @@ class CheckoutController extends BaseController
     {
         $this->authorizePembayaran($pembayaran);
 
-        abort_unless(in_array($pembayaran->metode, ['va_bri', 'qris']), 404);
+        abort_unless(in_array($pembayaran->metode, ['qris']), 404);
 
-        $pembayaran->load(['briVirtualAccount', 'briQrisPayment', 'pembayaranTagihan']);
+        $pembayaran->load(['briQrisPayment', 'pembayaranTagihan']);
 
         $qrCodeDataUri = null;
         if ($pembayaran->briQrisPayment) {

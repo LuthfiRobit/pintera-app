@@ -43,16 +43,15 @@ function actingAsOrangTuaForVaQris(): array
     return [$user, $orangTua, $siswa, $tagihan];
 }
 
-it('creates a VA payment and redirects to the waiting page', function () {
-    [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
+it('gets or creates permanent VA and redirects to the va info page', function () {
+    [$user, , $siswa] = actingAsOrangTuaForVaQris();
 
-    $response = $this->actingAs($user)->post(route('keuangan.checkout.va'), [
-        'tagihan_ids' => [$tagihan->id],
-    ]);
+    $response = $this->actingAs($user)->post(route('keuangan.checkout.va'));
 
-    $pembayaran = Pembayaran::where('metode', 'va_bri')->firstOrFail();
-    $response->assertRedirect(route('keuangan.checkout.show', $pembayaran));
-    expect($pembayaran->briVirtualAccount)->not->toBeNull();
+    $response->assertRedirect(route('keuangan.checkout.va-info'));
+    // Make sure a permanent VA was created
+    $siswa->refresh();
+    expect($siswa->wallet->va_number)->not->toBeNull();
 });
 
 it('creates a QRIS payment and redirects to the waiting page', function () {
@@ -67,45 +66,7 @@ it('creates a QRIS payment and redirects to the waiting page', function () {
     expect($pembayaran->briQrisPayment)->not->toBeNull();
 });
 
-it('does not create a second VA for the same tagihan while one is still waiting', function () {
-    [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
 
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihan->id]]);
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihan->id]]);
-
-    expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(1);
-});
-
-it('does not create a second QRIS for the same tagihan while one is still waiting', function () {
-    [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
-
-    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
-    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
-
-    expect(Pembayaran::where('metode', 'qris')->count())->toBe(1);
-});
-
-it('creates a new VA when selection expands beyond an existing pending VA set', function () {
-    [$user, , $siswa, $tagihanA] = actingAsOrangTuaForVaQris();
-    $jenis = JenisTagihan::factory()->create();
-    $tagihanB = Tagihan::factory()->create([
-        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
-        'status' => 'belum_bayar', 'net_amount' => 75000, 'paid_amount' => 0,
-    ]);
-
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihanA->id]]);
-    $firstVa = Pembayaran::where('metode', 'va_bri')->firstOrFail();
-
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), [
-        'tagihan_ids' => [$tagihanA->id, $tagihanB->id],
-    ]);
-
-    expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(2);
-
-    $secondVa = Pembayaran::where('metode', 'va_bri')->where('id', '!=', $firstVa->id)->firstOrFail();
-    $coveredTagihanIds = $secondVa->pembayaranTagihan()->pluck('tagihan_id')->sort()->values()->all();
-    expect($coveredTagihanIds)->toBe(collect([$tagihanA->id, $tagihanB->id])->sort()->values()->all());
-});
 
 it('rejects tagihan_ids that do not belong to the active child', function () {
     [$user] = actingAsOrangTuaForVaQris();
@@ -116,26 +77,26 @@ it('rejects tagihan_ids that do not belong to the active child', function () {
         'status' => 'belum_bayar', 'net_amount' => 999999, 'paid_amount' => 0,
     ]);
 
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$foreignTagihan->id]]);
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$foreignTagihan->id]]);
 
-    expect(Pembayaran::where('metode', 'va_bri')->count())->toBe(0);
+    expect(Pembayaran::where('metode', 'qris')->count())->toBe(0);
 });
 
-it('shows the waiting page with the VA number', function () {
+it('shows the waiting page with the QR code', function () {
     [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihan->id]]);
-    $pembayaran = Pembayaran::where('metode', 'va_bri')->firstOrFail();
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
+    $pembayaran = Pembayaran::where('metode', 'qris')->firstOrFail();
 
     $response = $this->actingAs($user)->get(route('keuangan.checkout.show', $pembayaran));
 
     $response->assertOk();
-    $response->assertSee($pembayaran->briVirtualAccount->va_number);
+    $response->assertSee($pembayaran->briQrisPayment->qr_code);
 });
 
 it('blocks viewing a pembayaran belonging to another parent\'s child', function () {
     [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihan->id]]);
-    $pembayaran = Pembayaran::where('metode', 'va_bri')->firstOrFail();
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
+    $pembayaran = Pembayaran::where('metode', 'qris')->firstOrFail();
 
     [$otherUser] = actingAsOrangTuaForVaQris();
 
@@ -146,8 +107,8 @@ it('blocks viewing a pembayaran belonging to another parent\'s child', function 
 
 it('returns the payment status as json for polling', function () {
     [$user, , , $tagihan] = actingAsOrangTuaForVaQris();
-    $this->actingAs($user)->post(route('keuangan.checkout.va'), ['tagihan_ids' => [$tagihan->id]]);
-    $pembayaran = Pembayaran::where('metode', 'va_bri')->firstOrFail();
+    $this->actingAs($user)->post(route('keuangan.checkout.qris'), ['tagihan_ids' => [$tagihan->id]]);
+    $pembayaran = Pembayaran::where('metode', 'qris')->firstOrFail();
 
     $response = $this->actingAs($user)->getJson(route('keuangan.checkout.status', $pembayaran));
 
