@@ -50,7 +50,7 @@ class RoleSeeder extends Seeder
                 $role->givePermissionTo([
                     'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
                     'tagihan.view', 'tagihan.buat-susulan',
-                    'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual',
+                    'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual', 'pembayaran.virtual-account',
                     'cicilan.kelola',
                     'spmb-pendaftaran.view',
                 ]);

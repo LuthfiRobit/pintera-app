@@ -20,7 +20,7 @@ it('seeds 6 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(105);
+    expect($superAdmin->permissions()->count())->toBe(106);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -48,12 +48,13 @@ it('gives kepala_sekolah the correct 9 permissions', function () {
     expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
 });
 
-it('gives admin_keuangan the correct 11 permissions', function () {
+it('gives admin_keuangan the correct 12 permissions', function () {
     (new RoleSeeder())->run();
 
     $adminKeuangan = Role::where('name', 'admin_keuangan')->first();
-    expect($adminKeuangan->permissions()->count())->toBe(11);
+    expect($adminKeuangan->permissions()->count())->toBe(12);
     expect($adminKeuangan->hasPermissionTo('cicilan.kelola'))->toBeTrue();
+    expect($adminKeuangan->hasPermissionTo('pembayaran.virtual-account'))->toBeTrue();
 });
 
 it('gives guru the presensi, asesmen, and komponen-penilaian-sendiri permissions', function () {
