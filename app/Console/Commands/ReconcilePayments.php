@@ -49,50 +49,7 @@ class ReconcilePayments extends Command
 
     protected function reconcileWaitingPayments()
     {
-        // Find WAITING VAs
-        $waitingVAs = BriVirtualAccount::where('status', 'WAITING')
-            ->whereNotNull('pembayaran_id')
-            ->get();
 
-        foreach ($waitingVAs as $va) {
-            try {
-                $statusResult = $this->gateway->checkStatus($va->va_number, 'va');
-                
-                if ($statusResult->status === 'PAID') {
-                    $reconciledPembayaranId = null;
-
-                    DB::transaction(function () use ($va, &$reconciledPembayaranId) {
-                        // Lock to avoid race condition with webhook
-                        $lockedVa = BriVirtualAccount::where('id', $va->id)->lockForUpdate()->first();
-                        
-                        if ($lockedVa->status !== 'PAID') {
-                            $lockedVa->status = 'PAID';
-                            $lockedVa->save();
-
-                            $pembayaran = Pembayaran::find($lockedVa->pembayaran_id);
-                            if ($pembayaran && $pembayaran->status !== 'lunas') {
-                                $pembayaran->status = 'lunas';
-                                $pembayaran->save();
-                                $this->allocationService->allocate($pembayaran);
-                                $reconciledPembayaranId = $pembayaran->id;
-                            }
-                        }
-                    });
-
-                    if ($reconciledPembayaranId !== null) {
-                        $reconciledPembayaran = Pembayaran::find($reconciledPembayaranId);
-                        if ($reconciledPembayaran !== null) {
-                            $this->allocationService->topupSisaJikaAda($reconciledPembayaran);
-                        }
-                    }
-
-                    $this->line("Reconciled VA: {$va->va_number}");
-                }
-            } catch (\Exception $e) {
-                Log::error("Failed to reconcile VA {$va->va_number}: " . $e->getMessage());
-                $this->error("Failed to reconcile VA {$va->va_number}");
-            }
-        }
 
         // We can do the same for QRIS if needed
         $waitingQris = BriQrisPayment::where('status', 'WAITING')
