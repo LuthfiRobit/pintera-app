@@ -82,3 +82,35 @@ it('retries a previously failed topup and marks it completed', function () {
     expect((float) $siswa->wallet->balance)->toBe($saldoAwal + 50000.0);
     expect($pembayaran->fresh()->topup_status)->toBe('completed');
 });
+
+it('credits the wallet exactly once, marking topup_status completed, when AutoAllocationEngine::run() throws on every repeated retryFailedTopups()-style re-run (round-3 double-credit regression)', function () {
+    $siswa = Siswa::factory()->create();
+    \App\Models\SystemSetting::create(['lembaga_id' => $siswa->lembaga_id, 'key' => 'auto_debit_enabled', 'value' => 'true']);
+    $pembayaran = buatPembayaranGabungan($siswa, tagihanAmount: 100000, sisaTopup: 50000);
+    $saldoAwal = (float) $siswa->wallet->balance;
+
+    $mockEngine = \Mockery::mock(\App\Services\Finance\AutoAllocationEngine::class);
+    $mockEngine->shouldReceive('run')->andThrow(new \RuntimeException('Simulated AutoAllocationEngine failure'));
+    app()->instance(\App\Services\Finance\AutoAllocationEngine::class, $mockEngine);
+
+    \Illuminate\Support\Facades\Log::shouldReceive('error')->atLeast()->once();
+
+    $service = app(PaymentAllocationService::class);
+
+    // First run: wallet balance is credited, but the subsequent auto-allocation
+    // step throws. topup_status must land on 'completed' (not 'failed'), so a
+    // real hourly ReconcilePayments::retryFailedTopups() run would never
+    // re-select this Pembayaran in the first place.
+    $service->topupSisaJikaAda($pembayaran);
+    $balanceAfterFirst = (float) $siswa->wallet->fresh()->balance;
+    expect($balanceAfterFirst)->toBe($saldoAwal + 50000.0);
+    expect($pembayaran->fresh()->topup_status)->toBe('completed');
+
+    // Simulate the scheduler running again (and again) against the same row --
+    // must be a safe no-op every time, not a repeated credit.
+    $service->topupSisaJikaAda($pembayaran->fresh());
+    $service->topupSisaJikaAda($pembayaran->fresh());
+
+    expect((float) $siswa->wallet->fresh()->balance)->toBe($balanceAfterFirst);
+    expect($pembayaran->fresh()->topup_status)->toBe('completed');
+});

@@ -195,10 +195,17 @@ class BriVaInboundPaymentTest extends TestCase
      * the hourly ReconcilePayments::retryFailedTopups() scheduler must NOT
      * re-select and re-credit this Pembayaran. Its topup_status must end up
      * 'completed' (not 'failed'), which excludes it from the retry query
-     * (`Pembayaran::where('topup_status', 'failed')...`). Directly invoking
-     * PaymentAllocationService::topupSisaJikaAda() on it afterwards (which is
-     * exactly what retryFailedTopups() would call if it wrongly selected this
-     * row) must also be a safe no-op, as a defense-in-depth check.
+     * (`Pembayaran::where('topup_status', 'failed')...`). This test runs the
+     * real `finance:reconcile-payments` artisan command end-to-end afterwards
+     * (which internally calls retryFailedTopups() -> topupSisaJikaAda() for any
+     * row it selects) and asserts the wallet balance is unchanged, as a
+     * defense-in-depth check. A more direct, isolated unit-level version of
+     * this same defense-in-depth check -- calling
+     * PaymentAllocationService::topupSisaJikaAda() and the ManualPaymentController
+     * approve() flow directly, repeatedly, with AutoAllocationEngine::run()
+     * mocked to throw -- lives in
+     * tests/Feature/Keuangan/PaymentAllocationServiceTopupRemainderTest.php and
+     * tests/Feature/Admin/ManualPaymentControllerTest.php.
      */
     public function test_reconcile_payments_does_not_double_credit_wallet_after_auto_allocation_failure()
     {

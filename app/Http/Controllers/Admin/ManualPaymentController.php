@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\AutoAllocationFailedException;
 use App\Models\ManualPaymentRequest;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
@@ -150,6 +151,15 @@ class ManualPaymentController extends BaseController
             if ($wallet !== null) {
                 try {
                     $wallet->topup((float) $pembayaran->amount, $pembayaran, 'Topup via transfer manual disetujui');
+                    $pembayaran->update(['topup_status' => 'completed']);
+                } catch (AutoAllocationFailedException $e) {
+                    // Saldo wallet SUDAH ter-kredit sukses (increment itu commit di dalam
+                    // transaction internal Wallet::topup(), sebelum AutoAllocationEngine::run()
+                    // dijalankan) -- hanya langkah auto-alokasi berikutnya yang gagal.
+                    // topup_status wajib mencerminkan bahwa kreditnya sudah selesai, kalau
+                    // tidak ReconcilePayments::retryFailedTopups() akan pilih ulang Pembayaran
+                    // ini dan mengkredit wallet dua kali.
+                    Log::error('Auto-alokasi gagal setelah topup manual payment berhasil di-kredit (saldo AMAN, hanya alokasi yang gagal): '.$e->getMessage());
                     $pembayaran->update(['topup_status' => 'completed']);
                 } catch (\Throwable $e) {
                     Log::error('Gagal topup dari manual payment approval: '.$e->getMessage());

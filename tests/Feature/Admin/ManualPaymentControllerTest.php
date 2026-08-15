@@ -97,6 +97,43 @@ it('approves a TOPUP manual request: calls Wallet::topup() outside the transacti
     expect((float) $siswa->wallet->fresh()->balance)->toBe($walletSaldoAwal + 200000.0);
 });
 
+it('marks a TOPUP manual request completed (not failed) when AutoAllocationEngine::run() throws after the wallet was already credited, and does not double-credit on a defense-in-depth retry (round-3 double-credit regression)', function () {
+    [$user, $lembaga] = buatAdminKeuanganUntukManualPayment();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    \App\Models\SystemSetting::create(['lembaga_id' => $lembaga->id, 'key' => 'auto_debit_enabled', 'value' => 'true']);
+    $walletSaldoAwal = (float) $siswa->wallet->balance;
+
+    $mockEngine = \Mockery::mock(\App\Services\Finance\AutoAllocationEngine::class);
+    $mockEngine->shouldReceive('run')->andThrow(new \RuntimeException('Simulated AutoAllocationEngine failure'));
+    app()->instance(\App\Services\Finance\AutoAllocationEngine::class, $mockEngine);
+
+    \Illuminate\Support\Facades\Log::shouldReceive('error')->atLeast()->once();
+
+    $pembayaran = app(\App\Services\Finance\PaymentService::class)->createManualTopupPayment($siswa, [
+        'amount' => 200000, 'requested_by' => $user->id, 'transfer_proof_path' => 'x.jpg', 'transfer_date' => now()->toDateString(),
+    ]);
+    $manualRequest = ManualPaymentRequest::where('pembayaran_id', $pembayaran->id)->first();
+
+    $response = $this->actingAs($user)->post(route('admin.manual-payment.approve', $manualRequest));
+
+    $response->assertRedirect();
+    $pembayaran->refresh();
+    // Balance was genuinely credited -- only the auto-allocation step failed --
+    // so topup_status must be 'completed', not 'failed', otherwise
+    // ReconcilePayments::retryFailedTopups() would re-select and re-credit it.
+    expect($pembayaran->topup_status)->toBe('completed');
+
+    $balanceAfterApprove = (float) $siswa->wallet->fresh()->balance;
+    expect($balanceAfterApprove)->toBe($walletSaldoAwal + 200000.0);
+
+    // Defense-in-depth: even if topupSisaJikaAda() were called again directly on
+    // this Pembayaran (what retryFailedTopups() would do if it wrongly selected
+    // it), it must be a safe no-op given topup_status is already 'completed'.
+    app(\App\Services\Finance\PaymentAllocationService::class)->topupSisaJikaAda($pembayaran->fresh());
+
+    expect((float) $siswa->wallet->fresh()->balance)->toBe($balanceAfterApprove);
+});
+
 it('blocks cross-tenant approve/reject: admin_keuangan in lembaga A cannot touch a manual payment request belonging to lembaga B', function () {
     [$userA, $lembagaA] = buatAdminKeuanganUntukManualPayment();
     $yayasanB = Yayasan::factory()->create();
