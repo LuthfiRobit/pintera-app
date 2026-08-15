@@ -33,6 +33,11 @@ class Wallet extends Model
         return $this->hasMany(WalletMutasi::class);
     }
 
+    public function briVirtualAccounts(): HasMany
+    {
+        return $this->hasMany(BriVirtualAccount::class);
+    }
+
     /**
      * Top-up saldo secara aman dengan lock for update.
      */
