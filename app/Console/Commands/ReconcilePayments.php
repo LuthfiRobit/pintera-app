@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Contracts\PaymentGatewayInterface;
 use App\Models\BriQrisPayment;
-use App\Models\BriVirtualAccount;
 use App\Models\Pembayaran;
 use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Console\Command;

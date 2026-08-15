@@ -7,6 +7,7 @@ use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\BriSnapGateway;
 use App\Models\Pembayaran;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Mockery;
 use Tests\TestCase;
 
@@ -162,11 +163,12 @@ class BriSnapGatewayIntegrationTest extends TestCase
     {
         config(['services.bri.inbound.partner_service_id' => '77777777']);
 
-        $mockClient = Mockery::mock(BriSnapClient::class);
-        $mockClient->shouldNotReceive('post');
-        $mockClient->shouldNotReceive('get');
+        Http::fake([
+            '*' => Http::response(['error' => 'should not be called'], 500),
+        ]);
 
-        $gateway = new BriSnapGateway($mockClient);
+        $client = BriSnapClient::fromConfig();
+        $gateway = new BriSnapGateway($client);
 
         $siswa = \App\Models\Siswa::factory()->create();
         $pembayaran = Pembayaran::factory()->create(['siswa_id' => $siswa->id]);
@@ -177,5 +179,7 @@ class BriSnapGatewayIntegrationTest extends TestCase
         $this->assertSame('77777777' . $expectedCustomerNo, $result->vaNumber);
         $this->assertNull($result->amount);
         $this->assertNull($result->expiredAt);
+
+        Http::assertNothingSent();
     }
 }

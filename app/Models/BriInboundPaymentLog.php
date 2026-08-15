@@ -2,16 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class BriInboundPaymentLog extends Model
 {
-    protected $fillable = [
-        'payment_request_id',
-        'va_number',
-        'amount',
-        'pembayaran_id',
+    use HasFactory;
+
+    protected $guarded = ['id'];
+
+    protected $casts = [
+        'amount' => 'decimal:2',
     ];
 
     public function pembayaran(): BelongsTo

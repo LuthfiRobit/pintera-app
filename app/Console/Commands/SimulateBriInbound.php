@@ -8,8 +8,11 @@ use Illuminate\Support\Str;
 
 class SimulateBriInbound extends Command
 {
-    protected $signature = 'bri:test-va-inbound {va_number} {amount}';
-    protected $description = 'Simulate an incoming BRI VA payment notification (for testing)';
+    protected $signature = 'bri:test-va-inbound {va_number} {amount=50000}';
+    protected $description = 'Simulate an incoming BRI VA payment notification (for testing). '
+        . 'Note: this dispatches via internal Laravel request handling (app()->handle()), not a real HTTP '
+        . 'call to config("app.url") — it can only catch router/middleware-level problems, not '
+        . 'webserver/TLS/reverse-proxy-level issues.';
 
     public function handle()
     {
