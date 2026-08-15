@@ -4,7 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Contracts\BriInboundAuthenticatorInterface;
 use App\Http\Controllers\Controller;
+use App\Models\BriInboundPaymentLog;
+use App\Models\BriVirtualAccount;
+use App\Models\Pembayaran;
+use App\Models\Siswa;
+use App\Models\Tagihan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BriVaInboundController extends Controller
 {
@@ -35,99 +41,154 @@ class BriVaInboundController extends Controller
 
     public function inquiry(Request $request)
     {
-        $token = $this->bearerToken($request);
-        if (!$this->authenticator->validateToken($token)) {
+        if (!$this->authenticator->validateToken($this->bearerToken($request))) {
             return response()->json([
                 'responseCode' => '4012400',
-                'responseMessage' => 'Unauthorized. Token is invalid or expired',
+                'responseMessage' => 'Unauthorized. Invalid Token (B2B)',
             ], 401);
         }
 
-        $vaNumber = (string) $request->input('virtualAccountNo');
-        $va = \App\Models\BriVirtualAccount::with('wallet.siswa')->where('va_number', $vaNumber)->first();
+        $vaNumber = trim((string) $request->input('virtualAccountNo'));
+
+        $va = BriVirtualAccount::where('va_number', $vaNumber)->with('wallet.siswa')->first();
 
         if (!$va || !$va->wallet || !$va->wallet->siswa) {
             return response()->json([
                 'responseCode' => '4042412',
-                'responseMessage' => 'Virtual Account Not Found',
-                'virtualAccountData' => [
-                    'virtualAccountNo' => $vaNumber,
-                ]
+                'responseMessage' => 'Invalid Bill/Virtual Account',
             ], 404);
         }
 
         $siswa = $va->wallet->siswa;
-        // The mock uses totalTagihan? Let's check how much is expected.
-        // I will just sum unpaid tagihan if any. Wait, the VA is for permanent wallet.
-        $totalTagihan = $siswa->tagihan()->where('status', 'belum_bayar')->sum('net_amount');
-        
+
+        $tagihanJatuhTempo = Tagihan::where('tagihable_type', Siswa::class)
+            ->where('tagihable_id', $siswa->id)
+            ->whereIn('status', ['belum_bayar', 'sebagian'])
+            ->orderBy('jatuh_tempo')
+            ->first();
+
+        $saranNominal = $tagihanJatuhTempo
+            ? (float) $tagihanJatuhTempo->net_amount - (float) $tagihanJatuhTempo->paid_amount
+            : 0.0;
+
         return response()->json([
             'responseCode' => '2002400',
             'responseMessage' => 'Successful',
             'virtualAccountData' => [
+                'partnerServiceId' => substr($vaNumber, 0, 8),
+                'customerNo' => substr($vaNumber, 8),
                 'virtualAccountNo' => $vaNumber,
                 'virtualAccountName' => $siswa->nama_lengkap,
-                'inquiryStatus' => '00',
-                'inquiryReason' => 'Success',
+                'inquiryRequestId' => (string) $request->input('inquiryRequestId'),
                 'totalAmount' => [
-                    'value' => number_format((float) $totalTagihan, 2, '.', ''),
-                    'currency' => 'IDR'
+                    'value' => number_format($saranNominal, 2, '.', ''),
+                    'currency' => 'IDR',
                 ],
-                'inquiryRequestId' => $request->input('inquiryRequestId'),
-            ]
+                'inquiryStatus' => '00',
+            ],
         ]);
     }
 
     public function payment(Request $request)
     {
-        $token = $this->bearerToken($request);
-        if (!$this->authenticator->validateToken($token)) {
+        if (!$this->authenticator->validateToken($this->bearerToken($request))) {
             return response()->json([
                 'responseCode' => '4012500',
-                'responseMessage' => 'Unauthorized. Token is invalid or expired',
+                'responseMessage' => 'Unauthorized. Invalid Token (B2B)',
             ], 401);
         }
 
-        $vaNumber = (string) $request->input('virtualAccountNo');
-        $reqId = (string) $request->input('paymentRequestId');
-        $amountStr = (string) $request->input('paidAmount.value');
-        $amount = (float) $amountStr;
+        $vaNumber = trim((string) $request->input('virtualAccountNo'));
+        $paymentRequestId = (string) $request->input('paymentRequestId');
+        $amount = (float) data_get($request->input('paidAmount'), 'value', 0);
 
-        $va = \App\Models\BriVirtualAccount::with('wallet')->where('va_number', $vaNumber)->first();
+        if ($vaNumber === '' || $paymentRequestId === '') {
+            return response()->json([
+                'responseCode' => '4002500',
+                'responseMessage' => 'Invalid Mandatory Field',
+            ], 400);
+        }
+
+        $existingLog = BriInboundPaymentLog::where('payment_request_id', $paymentRequestId)->first();
+        if ($existingLog) {
+            return $this->paymentSuccessResponse($vaNumber, $paymentRequestId, $existingLog->amount);
+        }
+
+        if ($amount <= 0) {
+            return response()->json([
+                'responseCode' => '4042513',
+                'responseMessage' => 'Invalid Amount',
+            ], 404);
+        }
+
+        $va = BriVirtualAccount::where('va_number', $vaNumber)->with('wallet')->first();
 
         if (!$va || !$va->wallet) {
             return response()->json([
                 'responseCode' => '4042512',
-                'responseMessage' => 'Virtual Account Not Found',
-                'virtualAccountData' => [
-                    'virtualAccountNo' => $vaNumber,
-                ]
+                'responseMessage' => 'Invalid Bill/Virtual Account',
             ], 404);
         }
 
-        $log = \App\Models\BriInboundPaymentLog::where('payment_request_id', $reqId)->first();
-        if (!$log) {
-            try {
-                \App\Models\BriInboundPaymentLog::create([
-                    'payment_request_id' => $reqId,
-                    'va_number' => $vaNumber,
-                    'amount' => $amount,
-                ]);
+        $wallet = $va->wallet;
 
-                // Auto topup di luar DB::transaction
-                $va->wallet->topup($amount);
-            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
-                // Idempotent: Request already handled concurrently
-            }
+        $pembayaran = Pembayaran::create([
+            'siswa_id' => $wallet->siswa_id,
+            'wallet_id' => $wallet->id,
+            'metode' => 'va_bri',
+            'amount' => $amount,
+            'status' => 'lunas',
+            'topup_status' => 'pending',
+            'channel_reference' => $paymentRequestId,
+        ]);
+
+        try {
+            BriInboundPaymentLog::create([
+                'payment_request_id' => $paymentRequestId,
+                'va_number' => $vaNumber,
+                'amount' => $amount,
+                'pembayaran_id' => $pembayaran->id,
+            ]);
+        } catch (\Throwable $e) {
+            // Race: another request already logged this paymentRequestId first --
+            // safe to treat as a duplicate report (idempotent replay).
+            $pembayaran->delete();
+
+            return $this->paymentSuccessResponse($vaNumber, $paymentRequestId, $amount);
         }
 
+        try {
+            $wallet->topup($amount, $pembayaran, 'Top-up via VA BRI');
+            $pembayaran->update(['topup_status' => 'completed']);
+        } catch (\Throwable $e) {
+            Log::error("Gagal proses auto-debit setelah topup VA {$vaNumber}: " . $e->getMessage(), [
+                'payment_request_id' => $paymentRequestId,
+                'va_number' => $vaNumber,
+                'amount' => $amount,
+                'exception' => $e->getMessage(),
+            ]);
+            $pembayaran->update(['topup_status' => 'failed']);
+        }
+
+        return $this->paymentSuccessResponse($vaNumber, $paymentRequestId, $amount);
+    }
+
+    protected function paymentSuccessResponse(string $vaNumber, string $paymentRequestId, float $amount)
+    {
         return response()->json([
             'responseCode' => '2002500',
             'responseMessage' => 'Successful',
             'virtualAccountData' => [
+                'partnerServiceId' => substr($vaNumber, 0, 8),
+                'customerNo' => substr($vaNumber, 8),
                 'virtualAccountNo' => $vaNumber,
-                'paymentRequestId' => $reqId,
-            ]
+                'paymentRequestId' => $paymentRequestId,
+                'paidAmount' => [
+                    'value' => number_format($amount, 2, '.', ''),
+                    'currency' => 'IDR',
+                ],
+                'paymentFlagStatus' => '00',
+            ],
         ]);
     }
 
