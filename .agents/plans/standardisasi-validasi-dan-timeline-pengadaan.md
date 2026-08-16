@@ -10,7 +10,7 @@
 3. `PengajuanPengadaan::timelineEvents()` mengagregasikan event (Submit, Approval Logs, Pencairan Kas, Pengunggahan LPJ, Audit Yayasan, dan Konversi Sarpras) ke dalam collection event terstandar.
 4. Blade templates mengintegrasikan `<x-input-error>`, feedback interaktif Alpine.js, dan komponen visual Timeline Audit Trail.
 
-**Tech Stack:** Laravel 11, Blade, Tailwind CSS, Alpine.js, Spatie Permission, PHPUnit / Pest.
+**Tech Stack:** Laravel 12, Blade, Tailwind CSS, Alpine.js, Spatie Permission, PHPUnit / Pest.
 
 ---
 
@@ -24,10 +24,10 @@
 - Consumes: `WorkflowStep`, `User`, `ApprovalRequest`
 - Produces: `ApproverResolverService::canUserApprove(WorkflowStep $step, User $user, ApprovalRequest $request): bool`
 
-- [ ] **Step 1: Write failing test / update test expectation for approvable lembaga matching**
-- [ ] **Step 2: Update `ApproverResolverService.php` to resolve target lembaga from approvable or requester**
-- [ ] **Step 3: Run tests to verify all pass**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Write failing test / update test expectation for approvable lembaga matching**
+- [x] **Step 2: Update `ApproverResolverService.php` to resolve target lembaga from approvable or requester**
+- [x] **Step 3: Run tests to verify all pass**
+- [x] **Step 4: Commit**
 
 ---
 
@@ -43,13 +43,13 @@
 **Interfaces:**
 - Produces: Validated payload and custom localized error messages across all Pengadaan actions.
 
-- [ ] **Step 1: Write failing validation test `PengadaanValidationTest.php`**
-- [ ] **Step 2: Add validation rules & messages in `StorePengajuanRequest.php`**
-- [ ] **Step 3: Add validation rules & messages in `StoreLpjRequest.php`**
-- [ ] **Step 4: Add validation rules & messages in `StoreDisbursementRequest.php`**
-- [ ] **Step 5: Add validation rules & messages in `ProcessApprovalRequest.php`**
-- [ ] **Step 6: Run `php artisan test --filter=PengadaanValidationTest` and verify all pass**
-- [ ] **Step 7: Commit**
+- [x] **Step 1: Write failing validation test `PengadaanValidationTest.php`**
+- [x] **Step 2: Add validation rules & messages in `StorePengajuanRequest.php`**
+- [x] **Step 3: Add validation rules & messages in `StoreLpjRequest.php`**
+- [x] **Step 4: Add validation rules & messages in `StoreDisbursementRequest.php`**
+- [x] **Step 5: Add validation rules & messages in `ProcessApprovalRequest.php`**
+- [x] **Step 6: Run `php artisan test --filter=PengadaanValidationTest` and verify all pass**
+- [x] **Step 7: Commit**
 
 ---
 
@@ -63,10 +63,10 @@
 - Produces: `PengajuanPengadaan::timelineEvents(): \Illuminate\Support\Collection`
   - Event structure: `['type', 'title', 'actor_name', 'actor_role', 'timestamp', 'badge_tone', 'status_label', 'notes', 'meta']`
 
-- [ ] **Step 1: Write failing unit test `TimelineEventsTest.php`**
-- [ ] **Step 2: Implement `timelineEvents()` method on `PengajuanPengadaan`**
-- [ ] **Step 3: Run `php artisan test --filter=TimelineEventsTest` and verify it passes**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Write failing unit test `TimelineEventsTest.php`**
+- [x] **Step 2: Implement `timelineEvents()` method on `PengajuanPengadaan`**
+- [x] **Step 3: Run `php artisan test --filter=TimelineEventsTest` and verify it passes**
+- [x] **Step 4: Commit**
 
 ---
 
@@ -82,12 +82,12 @@
 **Interfaces:**
 - Produces: Visual timeline card and `<x-input-error>` fields across all forms.
 
-- [ ] **Step 1: Update `create.blade.php` with Alpine.js item validation & `<x-input-error>` on all fields**
-- [ ] **Step 2: Update `show.blade.php` to render unified Timeline component from `$proposal->timelineEvents()`**
-- [ ] **Step 3: Update `lpj/create.blade.php` with `<x-input-error>` and receipt file validation**
-- [ ] **Step 4: Update `disbursement/index.blade.php` with modal validation & `<x-input-error>`**
-- [ ] **Step 5: Update `audit-lpj/show.blade.php` with review notes validation & timeline**
-- [ ] **Step 6: Commit**
+- [x] **Step 1: Update `create.blade.php` with Alpine.js item validation & `<x-input-error>` on all fields**
+- [x] **Step 2: Update `show.blade.php` to render unified Timeline component from `$proposal->timelineEvents()`**
+- [x] **Step 3: Update `lpj/create.blade.php` with `<x-input-error>` and receipt file validation**
+- [x] **Step 4: Update `disbursement/index.blade.php` with modal validation & `<x-input-error>`**
+- [x] **Step 5: Update `audit-lpj/show.blade.php` with review notes validation & timeline**
+- [x] **Step 6: Commit**
 
 ---
 
@@ -96,6 +96,6 @@
 **Files:**
 - Verify: Full test suite
 
-- [ ] **Step 1: Run all feature and unit tests for Pengadaan, Sarpras, and Workflow**
-- [ ] **Step 2: Verify zero lint/type errors**
-- [ ] **Step 3: Prepare handoff summary log in `.agents/logs/standardisasi-validasi-dan-timeline-pengadaan.md`**
+- [x] **Step 1: Run all feature and unit tests for Pengadaan, Sarpras, and Workflow**
+- [x] **Step 2: Verify zero lint/type errors**
+- [x] **Step 3: Prepare handoff summary log in `.agents/logs/standardisasi-validasi-dan-timeline-pengadaan.md`**
