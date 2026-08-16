@@ -41,7 +41,7 @@
   - `ProcessApprovalAction::execute(ApprovalRequest $request, User $user, ApprovalAction $action, ?string $notes = null): bool`
   - `ApproverResolverService::canUserApprove(WorkflowStep $step, User $user, ApprovalRequest $request): bool`
 
-- [ ] **Step 1: Write failing test for Universal Workflow Engine**
+- [x] **Step 1: Write failing test for Universal Workflow Engine**
 ```php
 namespace Tests\Unit\Domains\Workflow;
 
@@ -117,18 +117,18 @@ class WorkflowEngineTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Workflow/WorkflowEngineTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Enums, Migrations, Models, Resolvers, and Actions**
+- [x] **Step 3: Implement Enums, Migrations, Models, Resolvers, and Actions**
 Implement workflow files and run migration.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Workflow/WorkflowEngineTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Workflow/ database/migrations/ database/seeders/ tests/Unit/Domains/Workflow/
 git commit -m "feat(workflow): implement universal multi-scope dynamic approval workflow engine"
@@ -159,7 +159,7 @@ git commit -m "feat(workflow): implement universal multi-scope dynamic approval 
   - `PengajuanPengadaanItem::kategori()` (BelongsTo KategoriAset)
   - `PengajuanPengadaanItem::ruangan()` (BelongsTo Ruangan)
 
-- [ ] **Step 1: Write failing test for Pengadaan Models and Relationships**
+- [x] **Step 1: Write failing test for Pengadaan Models and Relationships**
 ```php
 namespace Tests\Unit\Domains\Pengadaan;
 
@@ -211,18 +211,18 @@ class PengadaanModelsTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Pengadaan/PengadaanModelsTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Models, Enums, Migrations, and Seeders**
+- [x] **Step 3: Implement Models, Enums, Migrations, and Seeders**
 Write models, migrations, seeders, and run `php artisan migrate`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Pengadaan/PengadaanModelsTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Pengadaan/ database/migrations/ database/seeders/ tests/Unit/Domains/Pengadaan/
 git commit -m "feat(pengadaan): implement Pengadaan and LPJ Eloquent models, enums, and migrations"
@@ -248,7 +248,7 @@ git commit -m "feat(pengadaan): implement Pengadaan and LPJ Eloquent models, enu
   - `ProcessProposalApprovalAction::execute(PengajuanPengadaan $proposal, User $user, ApprovalAction $action, array $itemDecisions = [], ?string $notes = null): void`
   - `RecordDisbursementAction::execute(PengajuanPengadaan $proposal, DisbursementData $data): void`
 
-- [ ] **Step 1: Write failing test for Proposal Creation, Approval, and Disbursement**
+- [x] **Step 1: Write failing test for Proposal Creation, Approval, and Disbursement**
 ```php
 namespace Tests\Unit\Domains\Pengadaan;
 
@@ -318,18 +318,18 @@ class PengajuanApprovalActionTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Pengadaan/PengajuanApprovalActionTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Actions and DTOs**
+- [x] **Step 3: Implement Actions and DTOs**
 Implement actions and helper classes.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Pengadaan/PengajuanApprovalActionTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Pengadaan/Actions/ app/Domains/Pengadaan/DataTransferObjects/ tests/Unit/Domains/Pengadaan/
 git commit -m "feat(pengadaan): implement Proposal submission, partial approval, and disbursement actions"
@@ -352,7 +352,7 @@ git commit -m "feat(pengadaan): implement Proposal submission, partial approval,
   - `VerifyLpjAction::execute(LpjPengadaan $lpj, bool $isApproved, ?string $notes = null): void`
   - `GenerateInventoryFromLpjAction::execute(LpjPengadaan $lpj, array $serialNumbers = []): Collection`
 
-- [ ] **Step 1: Write failing test for LPJ verification and auto inventory generation**
+- [x] **Step 1: Write failing test for LPJ verification and auto inventory generation**
 ```php
 namespace Tests\Unit\Domains\Pengadaan;
 
@@ -430,18 +430,18 @@ class LpjAndAutoInventoryActionTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Pengadaan/LpjAndAutoInventoryActionTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Actions and DTOs**
+- [x] **Step 3: Implement Actions and DTOs**
 Implement LPJ processing and inventory generation actions.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Pengadaan/LpjAndAutoInventoryActionTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Pengadaan/Actions/ app/Domains/Pengadaan/DataTransferObjects/ tests/Unit/Domains/Pengadaan/
 git commit -m "feat(pengadaan): implement LPJ submission, financial settlement, and auto-inventory conversion"
@@ -464,7 +464,7 @@ git commit -m "feat(pengadaan): implement LPJ submission, financial settlement, 
 - Modify: `routes/admin.php` (register `pengadaan.*` routes)
 - Test: `tests/Feature/Pengadaan/PengadaanControllerTest.php`
 
-- [ ] **Step 1: Write failing Feature test for Pengadaan Controllers**
+- [x] **Step 1: Write failing Feature test for Pengadaan Controllers**
 ```php
 namespace Tests\Feature\Pengadaan;
 
@@ -512,18 +512,18 @@ class PengadaanControllerTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Feature/Pengadaan/PengadaanControllerTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement FormRequests, Controllers, and Routes**
+- [x] **Step 3: Implement FormRequests, Controllers, and Routes**
 Write all requests, controllers, and routes.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Feature/Pengadaan/PengadaanControllerTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Http/Requests/Pengadaan/ app/Http/Controllers/ routes/admin.php tests/Feature/Pengadaan/
 git commit -m "feat(pengadaan): implement HTTP FormRequests, Controllers, and routes"
@@ -548,7 +548,7 @@ git commit -m "feat(pengadaan): implement HTTP FormRequests, Controllers, and ro
 - Modify: `resources/views/layouts/sidebar.blade.php` (tambahkan menu Pengadaan & LPJ)
 - Test: `tests/Feature/Pengadaan/PengadaanViewTest.php`
 
-- [ ] **Step 1: Write failing test for Blade Views Rendering**
+- [x] **Step 1: Write failing test for Blade Views Rendering**
 ```php
 namespace Tests\Feature\Pengadaan;
 
@@ -575,18 +575,18 @@ class PengadaanViewTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Feature/Pengadaan/PengadaanViewTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Blade Views, Stepper UI, Alpine Components, and Sidebar**
+- [x] **Step 3: Implement Blade Views, Stepper UI, Alpine Components, and Sidebar**
 Create all Blade views adhering to project design system standard (`dataTableFilter`, `<x-modal>`, `<x-confirm-dialog>`, `<x-badge>`, `<x-link-button>`).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Feature/Pengadaan/PengadaanViewTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add resources/views/ tests/Feature/Pengadaan/
 git commit -m "feat(pengadaan): implement Blade UI views, lifecycle stepper, LPJ forms, and sidebar navigation"
@@ -599,14 +599,14 @@ git commit -m "feat(pengadaan): implement Blade UI views, lifecycle stepper, LPJ
 **Files:**
 - Create: `.agents/logs/modul-pengadaan-dan-lpj.md`
 
-- [ ] **Step 1: Run Full Test Suite across Workflow, Pengadaan, and Sarpras**
+- [x] **Step 1: Run Full Test Suite across Workflow, Pengadaan, and Sarpras**
 Run: `php artisan test --filter=Workflow`, `php artisan test --filter=Pengadaan`, `php artisan test --filter=Sarpras`  
 Expected: All tests PASS (0 regressions).
 
-- [ ] **Step 2: Write Stage 7 Handoff Audit Log**
+- [x] **Step 2: Write Stage 7 Handoff Audit Log**
 Document summary of built features, technical decisions, and validation results at `.agents/logs/modul-pengadaan-dan-lpj.md`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 ```bash
 git add .agents/logs/modul-pengadaan-dan-lpj.md .agents/plans/modul-pengadaan-dan-lpj.md
 git commit -m "docs(pengadaan): write completion handoff log for Modul Pengadaan dan LPJ"
