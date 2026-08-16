@@ -24,6 +24,7 @@
         <table class="w-full text-sm">
             <thead>
                 <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                    <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
                     <th class="px-5 py-3">Tanggal</th>
                     <th class="px-5 py-3">Barang & Kode</th>
                     <th class="px-5 py-3">Dari Ruangan</th>
@@ -36,6 +37,16 @@
             <tbody class="divide-y divide-gray-100">
                 @forelse($mutasiList as $m)
                     <tr class="hover:bg-gray-50 transition">
+                        <td class="sticky left-0 z-10 bg-white px-5 py-3">
+                            <x-table-actions>
+                                <x-dropdown-link :href="route('admin.sarpras.aset.show', $m->aset_barang_id)">
+                                    <span class="inline-flex items-center gap-2.5">
+                                        <x-icon name="visibility" class="h-4 w-4 text-gray-500" />
+                                        Lihat Detail Aset
+                                    </span>
+                                </x-dropdown-link>
+                            </x-table-actions>
+                        </td>
                         <td class="px-5 py-3.5 text-gray-900 font-medium whitespace-nowrap">{{ $m->tanggal_mutasi->translatedFormat('d M Y') }}</td>
                         <td class="px-5 py-3.5">
                             <a href="{{ route('admin.sarpras.aset.show', $m->aset_barang_id) }}" class="font-semibold text-brand-600 hover:underline">
@@ -51,7 +62,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-5 py-10 text-center text-gray-500">
+                        <td colspan="8" class="px-5 py-10 text-center text-gray-500">
                             @if (request()->filled('search'))
                                 Tidak ada riwayat mutasi yang cocok dengan kata kunci pencarian.
                             @else
