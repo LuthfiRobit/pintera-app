@@ -35,7 +35,7 @@
                     </form>
                 @endif
 
-                @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Disbursed)
+                @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Disbursed && auth()->user()->can('pengadaan.lpj.submit'))
                     <x-link-button href="{{ route('admin.pengadaan.lpj.create', $proposal) }}">
                         <x-icon name="receipt_long" class="h-4 w-4 mr-1" /> Unggah LPJ Belanja
                     </x-link-button>

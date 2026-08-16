@@ -32,11 +32,11 @@
                                     </x-dropdown-link>
                                 @endif
 
-                                @if ($p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Disbursed)
+                                @if ($p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Disbursed && auth()->user()->can('pengadaan.lpj.submit'))
                                     <x-dropdown-link :href="route('admin.pengadaan.lpj.create', $p)">
                                         <span class="inline-flex items-center gap-2.5 text-emerald-600 font-semibold">
                                             <x-icon name="receipt_long" class="h-4 w-4 text-emerald-500" />
-                                            Isi LPJ Belanja
+                                             Isi LPJ Belanja
                                         </span>
                                     </x-dropdown-link>
                                 @endif
