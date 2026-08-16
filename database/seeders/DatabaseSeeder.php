@@ -75,6 +75,7 @@ class DatabaseSeeder extends Seeder
             NilaiSiswaSeeder::class,
             OrangTuaKaryawanSeeder::class,
             PendampinganSeeder::class,
+            KeuanganDemoSeeder::class,
             SarprasPermissionSeeder::class,
             PengadaanPermissionSeeder::class,
             WorkflowDefinitionSeeder::class,

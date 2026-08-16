@@ -38,7 +38,7 @@ class SarprasPengadaanDemoSeeder extends Seeder
     public function run(): void
     {
         $this->command?->info('Menyiapkan Permissions, Roles, dan Workflow...');
-        $this->call([
+        $this->callOnce([
             SarprasPermissionSeeder::class,
             PengadaanPermissionSeeder::class,
             WorkflowDefinitionSeeder::class,
@@ -49,13 +49,13 @@ class SarprasPengadaanDemoSeeder extends Seeder
             $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidikan Islam Permata']);
         }
 
-        $lembaga = Lembaga::first();
+        $lembaga = Lembaga::where('npsn', '20223344')->first() ?? Lembaga::first();
         if (! $lembaga) {
             $lembaga = Lembaga::create([
                 'yayasan_id' => $yayasan->id,
-                'nama' => 'SMP IT Permata Kraksaan',
+                'nama' => 'SMP IT PERMATA KRAKSAAN',
                 'jenjang' => 'SMP',
-                'npsn' => '20223399',
+                'npsn' => '20223344',
                 'status_aktif' => true,
             ]);
         }
