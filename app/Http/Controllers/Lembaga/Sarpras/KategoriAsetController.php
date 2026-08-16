@@ -26,8 +26,9 @@ class KategoriAsetController extends Controller
 
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $kategoriList = KategoriAset::query()
+        $query = KategoriAset::query()
             ->withCount('aset')
             ->where(function ($query) use ($lembagaId, $yayasanId) {
                 if ($lembagaId) {
@@ -42,10 +43,26 @@ class KategoriAsetController extends Controller
                         ->orWhere('kode_kategori', 'like', "%{$search}%");
                 });
             })
-            ->orderBy('nama_kategori')
-            ->paginate(15);
+            ->orderBy('nama_kategori');
 
-        return view('portals.lembaga.sarpras.kategori.index', compact('kategoriList'));
+        $kategoriList = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.lembaga.sarpras.kategori._daftar', [
+                'kategoriList' => $kategoriList,
+                'perPage' => $perPage,
+            ]);
+        }
+
+        $totalKategori = KategoriAset::where('lembaga_id', $lembagaId)->count();
+        $totalAset = \App\Domains\Sarpras\Models\AsetBarang::where('lembaga_id', $lembagaId)->count();
+
+        return view('portals.lembaga.sarpras.kategori.index', [
+            'kategoriList' => $kategoriList,
+            'perPage' => $perPage,
+            'totalKategori' => $totalKategori,
+            'totalAset' => $totalAset,
+        ]);
     }
 
     public function store(StoreKategoriAsetRequest $request): RedirectResponse
@@ -57,7 +74,7 @@ class KategoriAsetController extends Controller
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.kategori.index')
-            ->with('success', 'Kategori aset berhasil ditambahkan.');
+            ->with('status', 'Kategori aset berhasil ditambahkan.');
     }
 
     public function destroy(KategoriAset $kategori): RedirectResponse
@@ -65,12 +82,12 @@ class KategoriAsetController extends Controller
         $this->authorize('sarpras.kategori.manage');
 
         if ($kategori->aset()->exists()) {
-            return back()->with('error', 'Kategori tidak dapat dihapus karena masih digunakan oleh aset aktif.');
+            return back()->withErrors(['error' => 'Kategori tidak dapat dihapus karena masih digunakan oleh aset aktif.']);
         }
 
         $kategori->delete();
 
         return redirect()->route('admin.sarpras.kategori.index')
-            ->with('success', 'Kategori aset berhasil dihapus.');
+            ->with('status', 'Kategori aset berhasil dihapus.');
     }
 }
