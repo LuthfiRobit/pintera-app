@@ -109,6 +109,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Catatan Audit / Evaluasi</label>
                     <textarea name="catatan_verifikasi" rows="2" placeholder="Catatan keabsahan nota atau instruksi bila ada kekurangan bukti..." class="w-full rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                    <x-input-error :messages="$errors->get('catatan_verifikasi')" class="mt-1" />
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-2">

@@ -70,24 +70,29 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div class="sm:col-span-2">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Judul Pengajuan <span class="text-error-600">*</span></label>
-                        <input type="text" name="judul_pengajuan" required value="{{ old('judul_pengajuan') }}" placeholder="Contoh: Pengadaan 5 Unit Proyektor & Smart TV Lab" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="judul_pengajuan" required value="{{ old('judul_pengajuan') }}" placeholder="Contoh: Pengadaan 5 Unit Proyektor & Smart TV Lab" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 @error('judul_pengajuan') border-error-500 ring-error-500 @enderror">
+                        <x-input-error :messages="$errors->get('judul_pengajuan')" class="mt-1" />
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Tingkat Urgensi <span class="text-error-600">*</span></label>
-                        <select name="tingkat_urgensi" required class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="biasa" {{ old('tingkat_urgensi') == 'biasa' ? 'selected' : '' }}>Biasa / Rutin</option>
+                        <select name="tingkat_urgensi" required class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 @error('tingkat_urgensi') border-error-500 ring-error-500 @enderror">
+                            <option value="biasa" {{ old('tingkat_urgensi', 'biasa') == 'biasa' ? 'selected' : '' }}>Biasa / Rutin</option>
                             <option value="mendesak" {{ old('tingkat_urgensi') == 'mendesak' ? 'selected' : '' }}>Mendesak (Dibutuhkan Segera)</option>
                             <option value="kritis" {{ old('tingkat_urgensi') == 'kritis' ? 'selected' : '' }}>Kritis / Darurat</option>
                         </select>
+                        <x-input-error :messages="$errors->get('tingkat_urgensi')" class="mt-1" />
                     </div>
 
                     <div class="sm:col-span-3">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Latar Belakang / Justifikasi Kebutuhan</label>
-                        <textarea name="latar_belakang" rows="3" placeholder="Jelaskan alasan pengadaan dan urgensinya terhadap kegiatan belajar mengajar..." class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">{{ old('latar_belakang') }}</textarea>
+                        <textarea name="latar_belakang" rows="3" placeholder="Jelaskan alasan pengadaan dan urgensinya terhadap kegiatan belajar mengajar..." class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 @error('latar_belakang') border-error-500 ring-error-500 @enderror">{{ old('latar_belakang') }}</textarea>
+                        <x-input-error :messages="$errors->get('latar_belakang')" class="mt-1" />
                     </div>
                 </div>
             </div>
+
+            <x-input-error :messages="$errors->get('items')" class="mt-1" />
 
             {{-- Card 2: Rincian Barang yang Diajukan --}}
             <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">

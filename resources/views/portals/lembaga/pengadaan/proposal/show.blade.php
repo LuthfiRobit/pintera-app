@@ -205,32 +205,72 @@
             </div>
         @endif
 
-        {{-- Approval Logs Timeline --}}
-        @if ($proposal->approvalRequest && $proposal->approvalRequest->logs->isNotEmpty())
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
-                <h2 class="font-display text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Riwayat Catatan Persetujuan</h2>
-                <div class="space-y-3">
-                    @foreach ($proposal->approvalRequest->logs as $log)
-                        <div class="flex items-start gap-3 rounded-xl border border-gray-100 bg-gray-50/50 p-3 text-xs">
-                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 font-bold">
-                                <x-icon name="person" class="h-4 w-4" />
-                            </span>
-                            <div class="space-y-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-gray-900">{{ $log->user->name ?? 'Reviewer' }}</span>
-                                    <x-badge :tone="$log->action === \App\Domains\Workflow\Enums\ApprovalAction::Approve ? 'green' : ($log->action === \App\Domains\Workflow\Enums\ApprovalAction::Reject ? 'rose' : 'amber')">
-                                        {{ $log->action->label() }}
-                                    </x-badge>
-                                    <span class="text-[11px] text-gray-400">&bull; {{ $log->created_at->translatedFormat('d M Y H:i') }}</span>
-                                </div>
-                                @if ($log->notes)
-                                    <p class="text-gray-600 italic">"{{ $log->notes }}"</p>
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
+        {{-- Unified Audit Trail & Activity Timeline --}}
+        @php
+            $timelineEvents = $proposal->timelineEvents();
+        @endphp
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-5">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div>
+                    <h2 class="font-display text-sm font-bold text-gray-900">Riwayat Aktivitas & Audit Trail Pengadaan</h2>
+                    <p class="text-xs text-gray-500">Kronologi lengkap dari permohonan awal, persetujuan bertingkat, realisasi kas, hingga audit LPJ.</p>
                 </div>
+                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-600">
+                    {{ $timelineEvents->count() }} Peristiwa
+                </span>
             </div>
-        @endif
+
+            <div class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
+                @foreach ($timelineEvents as $event)
+                    <div class="relative flex items-start gap-4">
+                        {{-- Dot / Icon circle --}}
+                        <div class="absolute -left-6 flex h-6 w-6 items-center justify-center rounded-full ring-4 ring-white
+                            {{ match ($event['badge_tone']) {
+                                'blue' => 'bg-blue-600 text-white',
+                                'green' => 'bg-emerald-600 text-white',
+                                'rose' => 'bg-rose-600 text-white',
+                                'amber' => 'bg-amber-500 text-white',
+                                'indigo' => 'bg-indigo-600 text-white',
+                                'emerald' => 'bg-emerald-600 text-white',
+                                default => 'bg-gray-600 text-white'
+                            } }}">
+                            <x-icon :name="$event['icon'] ?? 'history'" class="h-3.5 w-3.5" />
+                        </div>
+
+                        {{-- Event Card --}}
+                        <div class="w-full rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 text-xs space-y-1.5 transition hover:bg-gray-50">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-gray-900">{{ $event['title'] }}</span>
+                                    <x-badge :tone="$event['badge_tone']">
+                                        {{ $event['status_label'] }}
+                                    </x-badge>
+                                </div>
+                                <time class="text-[11px] text-gray-400 font-mono">
+                                    {{ $event['timestamp'] ? \Carbon\Carbon::parse($event['timestamp'])->translatedFormat('d M Y, H:i') : '-' }}
+                                </time>
+                            </div>
+
+                            <div class="flex items-center gap-2 text-[11px] text-gray-500 font-medium">
+                                <x-icon name="person" class="h-3.5 w-3.5 text-gray-400" />
+                                <span>{{ $event['actor_name'] }}</span>
+                                <span class="text-gray-300">&bull;</span>
+                                <span class="text-gray-400">{{ $event['actor_role'] }}</span>
+                            </div>
+
+                            @if (!empty($event['description']))
+                                <p class="text-gray-600 leading-relaxed">{{ $event['description'] }}</p>
+                            @endif
+
+                            @if (!empty($event['notes']))
+                                <div class="rounded-lg border border-amber-200/80 bg-amber-50/50 p-2.5 text-amber-900 italic text-[11px]">
+                                    <span class="font-semibold not-italic text-amber-950">Catatan:</span> {{ $event['notes'] }}
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
     </div>
 </x-app-layout>

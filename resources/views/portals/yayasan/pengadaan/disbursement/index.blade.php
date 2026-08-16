@@ -127,21 +127,25 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Nominal Dana yang Dicairkan (Rp) <span class="text-error-600">*</span></label>
                     <input type="number" name="nominal_pencairan" :value="selectedProposal ? selectedProposal.total_estimasi : 0" required min="1" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                    <x-input-error :messages="$errors->get('nominal_pencairan')" class="mt-1" />
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Tanggal Pencairan <span class="text-error-600">*</span></label>
                     <input type="date" name="tanggal_pencairan" value="{{ date('Y-m-d') }}" required class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                    <x-input-error :messages="$errors->get('tanggal_pencairan')" class="mt-1" />
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Catatan / Rekening Kas</label>
                     <textarea name="catatan_pencairan" rows="2" placeholder="Contoh: Transfer via Rekening BSI Yayasan ke Bendahara SMP" class="w-full rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                    <x-input-error :messages="$errors->get('catatan_pencairan')" class="mt-1" />
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Bukti Transfer / Tanda Terima</label>
                     <input type="file" name="bukti_transfer" accept="image/*,application/pdf" class="text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-gray-100">
+                    <x-input-error :messages="$errors->get('bukti_transfer')" class="mt-1" />
                 </div>
 
                 <div class="flex items-center justify-end gap-3 pt-3">

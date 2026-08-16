@@ -124,6 +124,7 @@
                     <label class="block text-xs font-semibold text-gray-700">Upload Bukti Transfer / Setoran Pengembalian Sisa Kas ke Yayasan</label>
                     <input type="file" name="bukti_kembali_sisa" accept="image/*,application/pdf" class="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
                     <p class="text-[11px] text-gray-400">Lampirkan struk setor tunai atau bukti mutasi rekening bank pengembalian surplus dana.</p>
+                    <x-input-error :messages="$errors->get('bukti_kembali_sisa')" class="mt-1" />
                 </div>
             </div>
 
