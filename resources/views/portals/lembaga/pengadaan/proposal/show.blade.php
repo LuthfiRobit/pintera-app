@@ -26,6 +26,12 @@
                     <x-icon name="arrow_back" class="h-4 w-4 mr-1" /> Kembali
                 </x-link-button>
 
+                @if ($proposal->canBeApprovedBy(auth()->user()))
+                    <x-link-button href="{{ route('admin.pengadaan.inbox.review', $proposal) }}" class="bg-brand-600 text-white hover:bg-brand-700">
+                        <x-icon name="rate_review" class="h-4 w-4 mr-1" /> Review & Putuskan
+                    </x-link-button>
+                @endif
+
                 @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Draft)
                     <form action="{{ route('admin.pengadaan.proposal.submit', $proposal) }}" method="POST">
                         @csrf
@@ -48,6 +54,37 @@
                 @endif
             </div>
         </div>
+
+        {{-- Workflow Step Action Banner --}}
+        @if (in_array($proposal->status, [\App\Domains\Pengadaan\Enums\StatusPengajuan::Submitted, \App\Domains\Pengadaan\Enums\StatusPengajuan::InReview]))
+            @php
+                $currentStep = $proposal->approvalRequest?->currentStep;
+                $canApprove = $proposal->canBeApprovedBy(auth()->user());
+            @endphp
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 shadow-card {{ $canApprove ? 'border-brand-200 bg-brand-50/70' : 'border-amber-200 bg-amber-50/60' }}">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $canApprove ? 'bg-brand-600 text-white' : 'bg-amber-100 text-amber-700' }}">
+                        <x-icon name="{{ $canApprove ? 'rate_review' : 'hourglass_top' }}" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wider {{ $canApprove ? 'text-brand-700' : 'text-amber-800' }}">
+                            {{ $canApprove ? 'Persetujuan Diperlukan Dari Anda' : 'Sedang Dalam Proses Persetujuan' }}
+                        </p>
+                        <p class="text-sm font-semibold text-gray-900 mt-0.5">
+                            Langkah Aktif: {{ $currentStep->step_name ?? 'Verifikasi Proposal' }}
+                            @if ($currentStep)
+                                <span class="text-xs text-gray-500 font-normal">({{ ucwords(str_replace('_', ' ', $currentStep->approver_value)) }})</span>
+                            @endif
+                        </p>
+                    </div>
+                </div>
+                @if ($canApprove)
+                    <x-link-button href="{{ route('admin.pengadaan.inbox.review', $proposal) }}">
+                        <x-icon name="arrow_forward" class="h-4 w-4 mr-1" /> Proses Persetujuan Sekarang
+                    </x-link-button>
+                @endif
+            </div>
+        @endif
 
         {{-- Stepper Workflow Lifecycle --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card">

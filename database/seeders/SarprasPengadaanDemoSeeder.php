@@ -82,26 +82,35 @@ class SarprasPengadaanDemoSeeder extends Seeder
         );
         $bendaharaYayasan->assignRole($bendaharaYayasanRole);
 
-        $kepsek = User::where('email', 'kepsek@sistem.test')->first();
-        if ($kepsek) {
-            $kepsek->givePermissionTo([
-                'sarpras.gedung.view', 'sarpras.ruangan.view', 'sarpras.kategori.view', 'sarpras.aset.view', 'sarpras.mutasi.view',
-                'pengadaan.proposal.view', 'pengadaan.approval.internal',
-            ]);
-        }
+        $kepsekRole = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+        $kepsekRole->givePermissionTo([
+            'sarpras.gedung.view', 'sarpras.ruangan.view', 'sarpras.kategori.view', 'sarpras.aset.view', 'sarpras.mutasi.view',
+            'pengadaan.proposal.view', 'pengadaan.approval.internal',
+        ]);
 
-        $adm = User::where('email', 'adm@sistem.test')->first();
-        if ($adm) {
-            $adm->givePermissionTo([
-                'sarpras.gedung.view', 'sarpras.gedung.manage',
-                'sarpras.ruangan.view', 'sarpras.ruangan.manage',
-                'sarpras.kategori.view', 'sarpras.kategori.manage',
-                'sarpras.aset.view', 'sarpras.aset.manage',
-                'sarpras.mutasi.create', 'sarpras.mutasi.view', 'sarpras.kir.export',
-                'pengadaan.proposal.create', 'pengadaan.proposal.view', 'pengadaan.proposal.edit', 'pengadaan.proposal.delete',
-                'pengadaan.lpj.submit',
-            ]);
-        }
+        $kepsek = User::firstOrCreate(
+            ['email' => 'kepsek@sistem.test'],
+            ['name' => 'Dr. H. Ahmad Dahlan (Kepala Sekolah)', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
+        );
+        $kepsek->assignRole($kepsekRole);
+        $kepsek->givePermissionTo([
+            'sarpras.gedung.view', 'sarpras.ruangan.view', 'sarpras.kategori.view', 'sarpras.aset.view', 'sarpras.mutasi.view',
+            'pengadaan.proposal.view', 'pengadaan.approval.internal',
+        ]);
+
+        $adm = User::firstOrCreate(
+            ['email' => 'adm@sistem.test'],
+            ['name' => 'Admin Sarpras & Operasional', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
+        );
+        $adm->givePermissionTo([
+            'sarpras.gedung.view', 'sarpras.gedung.manage',
+            'sarpras.ruangan.view', 'sarpras.ruangan.manage',
+            'sarpras.kategori.view', 'sarpras.kategori.manage',
+            'sarpras.aset.view', 'sarpras.aset.manage',
+            'sarpras.mutasi.create', 'sarpras.mutasi.view', 'sarpras.kir.export',
+            'pengadaan.proposal.create', 'pengadaan.proposal.view', 'pengadaan.proposal.edit', 'pengadaan.proposal.delete',
+            'pengadaan.lpj.submit',
+        ]);
 
         $operatorUser = $adm ?? $superAdmin;
 
@@ -325,218 +334,50 @@ class SarprasPengadaanDemoSeeder extends Seeder
             ]
         );
 
-        $this->command?->info('Menyiapkan Variasi Siklus Hidup Pengadaan & LPJ...');
-
-        // 5. Proposal Pengadaan dalam Berbagai Tahapan untuk Pengujian Komprehensif
-        // Case 1: Status Draft (Usulan baru sedang disusun di sekolah)
-        if (! PengajuanPengadaan::where('nomor_pengajuan', 'PR/2026/08/DEMO-01')->exists()) {
-            $dto1 = new PengajuanPengadaanData(
+        $this->command?->info('Menyiapkan 1 Data Usulan Pengadaan Aktif (2 Item) Siap Review...');
+        
+        // 5. Proposal Pengadaan Aktif (1 Usulan dengan 2 Item Barang Siap Review Berjenjang)
+        $proposalDemo = PengajuanPengadaan::where('nomor_pengajuan', 'PR/2026/08/DEMO-01')->first();
+        if (! $proposalDemo) {
+            $dto = new PengajuanPengadaanData(
                 lembagaId: $lembaga->id,
                 yayasanId: $yayasan->id,
-                judulPengajuan: 'Pengadaan Sound System Portable & 2 Mic Wireless Aula',
-                latarBelakang: 'Kebutuhan kegiatan apel pagi santri dan kajian bulanan di Aula.',
-                tingkatUrgensi: TingkatUrgensi::Biasa,
-                items: [
-                    [
-                        'kategori_aset_id' => $katElk->id,
-                        'target_ruangan_id' => $rAula->id,
-                        'nama_barang' => 'Portable Wireless Amplifier Speaker 12 Inch',
-                        'merk' => 'Baretone',
-                        'spesifikasi' => 'Output 300W, Bluetooth, USB Player, Battery Powered',
-                        'qty' => 1,
-                        'satuan' => 'unit',
-                        'estimasi_harga_satuan' => 3800000,
-                        'tipe_pencatatan' => 'unit',
-                    ],
-                    [
-                        'kategori_aset_id' => $katElk->id,
-                        'target_ruangan_id' => $rAula->id,
-                        'nama_barang' => 'Microphone Wireless Dual Channel UHF',
-                        'merk' => 'Shure',
-                        'spesifikasi' => 'Dual Handheld Mic, Jangkauan 50m Anti-Interference',
-                        'qty' => 1,
-                        'satuan' => 'set',
-                        'estimasi_harga_satuan' => 1200000,
-                        'tipe_pencatatan' => 'unit',
-                    ]
-                ]
-            );
-            $p1 = app(CreatePengajuanAction::class)->execute($dto1, $operatorUser->id);
-            $p1->nomor_pengajuan = 'PR/2026/08/DEMO-01';
-            $p1->save();
-        }
-
-        // Case 2: Status Submitted / In Review (Menunggu persetujuan Yayasan)
-        if (! PengajuanPengadaan::where('nomor_pengajuan', 'PR/2026/08/DEMO-02')->exists()) {
-            $dto2 = new PengajuanPengadaanData(
-                lembagaId: $lembaga->id,
-                yayasanId: $yayasan->id,
-                judulPengajuan: 'Pengadaan 5 Unit PC All-in-One Lab Multimedia',
-                latarBelakang: 'Penambahan komputer server dan client untuk asesmen ANBK & lab coding.',
+                judulPengajuan: 'Pengadaan Laptop Lab Komputer & Kursi Belajar Siswa',
+                latarBelakang: 'Kebutuhan mendesak perangkat lab multimedia dan perabotan ruang kelas VII.',
                 tingkatUrgensi: TingkatUrgensi::Mendesak,
                 items: [
                     [
                         'kategori_aset_id' => $katElk->id,
                         'target_ruangan_id' => $rLabKom->id,
-                        'nama_barang' => 'PC All-in-One Lenovo IdeaCentre AIO 3',
-                        'merk' => 'Lenovo',
-                        'spesifikasi' => 'Core i5-12450H, RAM 16GB, SSD 512GB, 23.8 Inch IPS FHD',
-                        'qty' => 5,
+                        'nama_barang' => 'Laptop ASUS ExpertBook B1400',
+                        'merk' => 'ASUS',
+                        'spesifikasi' => 'Intel Core i5-1135G7, RAM 16GB, SSD 512GB',
+                        'qty' => 1,
                         'satuan' => 'unit',
-                        'estimasi_harga_satuan' => 8800000,
+                        'estimasi_harga_satuan' => 9500000,
                         'tipe_pencatatan' => 'unit',
-                    ]
-                ]
-            );
-            $p2 = app(CreatePengajuanAction::class)->execute($dto2, $operatorUser->id);
-            $p2->nomor_pengajuan = 'PR/2026/08/DEMO-02';
-            $p2->save();
-            app(SubmitPengajuanAction::class)->execute($p2);
-        }
-
-        // Case 3: Status Approved (Disetujui Yayasan, siap dicairkan kasir)
-        if (! PengajuanPengadaan::where('nomor_pengajuan', 'PR/2026/08/DEMO-03')->exists()) {
-            $dto3 = new PengajuanPengadaanData(
-                lembagaId: $lembaga->id,
-                yayasanId: $yayasan->id,
-                judulPengajuan: 'Pengadaan 2 Unit Lemari Arsip Besi 4 Pintu Kantor Guru',
-                latarBelakang: 'Penyimpanan berkas akreditasi dan raport fisik santri.',
-                tingkatUrgensi: TingkatUrgensi::Biasa,
-                items: [
+                    ],
                     [
                         'kategori_aset_id' => $katMeb->id,
-                        'target_ruangan_id' => $rKantorGuru->id,
-                        'nama_barang' => 'Lemari Arsip Besi Sliding Door',
-                        'merk' => 'VIP Steel',
-                        'spesifikasi' => 'Plat Baja 0.7mm, Kunci Central Lock, Anti Karat',
-                        'qty' => 2,
-                        'satuan' => 'unit',
-                        'estimasi_harga_satuan' => 2750000,
-                        'tipe_pencatatan' => 'unit',
-                    ]
-                ]
-            );
-            $p3 = app(CreatePengajuanAction::class)->execute($dto3, $operatorUser->id);
-            $p3->nomor_pengajuan = 'PR/2026/08/DEMO-03';
-            $p3->status = StatusPengajuan::Approved;
-            $p3->save();
-            foreach ($p3->items as $it) {
-                $it->status_item = StatusItemPengajuan::Approved;
-                $it->save();
-            }
-        }
-
-        // Case 4: Status Disbursed (Dana Cair Rp 9.000.000, siap diunggah LPJ oleh sekolah)
-        if (! PengajuanPengadaan::where('nomor_pengajuan', 'PR/2026/08/DEMO-04')->exists()) {
-            $dto4 = new PengajuanPengadaanData(
-                lembagaId: $lembaga->id,
-                yayasanId: $yayasan->id,
-                judulPengajuan: 'Pengadaan 2 Unit AC Split 1.5 PK Ruang Laboratorium',
-                latarBelakang: 'Pendingin ruangan server & lab komputer agar perangkat tidak overheat.',
-                tingkatUrgensi: TingkatUrgensi::Mendesak,
-                items: [
-                    [
-                        'kategori_aset_id' => $katElk->id,
-                        'target_ruangan_id' => $rLabKom->id,
-                        'nama_barang' => 'AC Split Daikin Flash Inverter 1.5 PK',
-                        'merk' => 'Daikin',
-                        'spesifikasi' => 'FTKQ35UVM4 + Pemasangan & Pipa Tembaga 5m',
-                        'qty' => 2,
-                        'satuan' => 'unit',
-                        'estimasi_harga_satuan' => 4500000,
-                        'tipe_pencatatan' => 'unit',
-                    ]
-                ]
-            );
-            $p4 = app(CreatePengajuanAction::class)->execute($dto4, $operatorUser->id);
-            $p4->nomor_pengajuan = 'PR/2026/08/DEMO-04';
-            $p4->status = StatusPengajuan::Approved;
-            $p4->save();
-            foreach ($p4->items as $it) {
-                $it->status_item = StatusItemPengajuan::Approved;
-                $it->save();
-            }
-
-            $disburseDto = new DisbursementData(
-                nominalCair: 9000000,
-                tanggalCair: '2026-08-10',
-                catatanPencairan: 'Transfer BSI Kas Yayasan No. Trx #TRX-20260810-099'
-            );
-            app(RecordDisbursementAction::class)->execute($p4, $disburseDto);
-        }
-
-        // Case 5: Status Completed (LPJ selesai diverifikasi, siap uji coba staging konversi aset)
-        if (! PengajuanPengadaan::where('nomor_pengajuan', 'PR/2026/08/DEMO-05')->exists()) {
-            $dto5 = new PengajuanPengadaanData(
-                lembagaId: $lembaga->id,
-                yayasanId: $yayasan->id,
-                judulPengajuan: 'Pengadaan 2 Unit Printer Epson L3210 & 20 Rim Kertas HVS',
-                latarBelakang: 'Kebutuhan cetak lembar kerja siswa dan administrasi ujian.',
-                tingkatUrgensi: TingkatUrgensi::Biasa,
-                items: [
-                    [
-                        'kategori_aset_id' => $katElk->id,
-                        'target_ruangan_id' => $rKantorGuru->id,
-                        'nama_barang' => 'Printer Epson EcoTank L3210 All-in-One',
-                        'merk' => 'Epson',
-                        'spesifikasi' => 'Print, Scan, Copy, Tinta Original 4 Warna',
-                        'qty' => 2,
-                        'satuan' => 'unit',
-                        'estimasi_harga_satuan' => 2300000,
-                        'tipe_pencatatan' => 'unit',
-                    ],
-                    [
-                        'kategori_aset_id' => $katKbm->id,
-                        'target_ruangan_id' => $rKantorGuru->id,
-                        'nama_barang' => 'Kertas HVS PaperOne A4 75gsm',
-                        'merk' => 'PaperOne',
-                        'spesifikasi' => 'Ukuran A4 210x297mm 75 gram, 500 lembar per rim',
-                        'qty' => 20,
-                        'satuan' => 'rim',
-                        'estimasi_harga_satuan' => 48000,
+                        'target_ruangan_id' => $rKelasA->id,
+                        'nama_barang' => 'Kursi Belajar Siswa Kayu Jati',
+                        'merk' => 'Custom Mebel',
+                        'spesifikasi' => 'Kayu Jati Kokoh Ergonomis',
+                        'qty' => 10,
+                        'satuan' => 'buah',
+                        'estimasi_harga_satuan' => 250000,
                         'tipe_pencatatan' => 'batch',
                     ]
                 ]
             );
-            $p5 = app(CreatePengajuanAction::class)->execute($dto5, $operatorUser->id);
-            $p5->nomor_pengajuan = 'PR/2026/08/DEMO-05';
-            $p5->status = StatusPengajuan::Approved;
-            $p5->save();
-            foreach ($p5->items as $it) {
-                $it->status_item = StatusItemPengajuan::Approved;
-                $it->save();
-            }
+            $p = app(CreatePengajuanAction::class)->execute($dto, $adm->id);
+            $p->nomor_pengajuan = 'PR/2026/08/DEMO-01';
+            $p->save();
 
-            $disburseDto5 = new DisbursementData(
-                nominalCair: 5560000, // 4.6jt + 960rb
-                tanggalCair: '2026-08-05',
-                catatanPencairan: 'Pencairan Kas Operasional Yayasan'
-            );
-            app(RecordDisbursementAction::class)->execute($p5, $disburseDto5);
-
-            $pItem1 = $p5->items()->where('tipe_pencatatan', TipePencatatanAset::Unit)->first();
-            $pItem2 = $p5->items()->where('tipe_pencatatan', TipePencatatanAset::Batch)->first();
-
-            $lpjData = new LpjPengadaanData(
-                items: [
-                    [
-                        'pengajuan_item_id' => $pItem1->id,
-                        'harga_satuan_riil' => 2250000,
-                        'total_riil' => 4500000,
-                    ],
-                    [
-                        'pengajuan_item_id' => $pItem2->id,
-                        'harga_satuan_riil' => 47000,
-                        'total_riil' => 940000,
-                    ]
-                ],
-                buktiKembaliSisaDanaPath: null
-            );
-
-            $lpj5 = app(SubmitLpjPengadaanAction::class)->execute($p5, $lpjData);
-            app(VerifyLpjAction::class)->execute($lpj5, $bendaharaYayasan->id, true, 'Nota Asli Gramedia & Faktur Valid. Sisa kas Rp 120.000 sudah dikembalikan ke kasir yayasan.');
+            // Submit proposal sehingga langsung masuk Step 1 (Menunggu Verifikasi Kepala Sekolah)
+            app(SubmitPengajuanAction::class)->execute($p);
         }
 
-        $this->command?->info('Data Demo Sarpras & Pengadaan berhasil disiapkan dengan aman!');
+        $this->command?->info('Data Demo Sarpras & Pengadaan (1 Proposal, 2 Item Siap Review) berhasil disiapkan!');
     }
 }

@@ -58,7 +58,11 @@ class ApprovalPengadaanController extends Controller
 
     public function review(PengajuanPengadaan $proposal): View
     {
-        $this->authorize('pengadaan.approval.yayasan');
+        $user = auth()->user();
+        if (! $user->can('pengadaan.approval.yayasan') && ! $user->can('pengadaan.approval.internal') && ! $user->hasRole(['super_admin', 'yayasan_super_admin'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk mereview pengajuan ini.');
+        }
+
         $proposal->load(['lembaga', 'pengaju', 'items.kategori', 'items.ruangan', 'approvalRequest.logs.user', 'approvalRequest.currentStep']);
 
         return view('portals.yayasan.pengadaan.inbox.review', compact('proposal'));
@@ -66,6 +70,11 @@ class ApprovalPengadaanController extends Controller
 
     public function decision(ProcessApprovalRequest $request, PengajuanPengadaan $proposal): RedirectResponse
     {
+        $user = $request->user();
+        if (! $user->can('pengadaan.approval.yayasan') && ! $user->can('pengadaan.approval.internal') && ! $user->hasRole(['super_admin', 'yayasan_super_admin'])) {
+            abort(403, 'Anda tidak memiliki hak akses untuk memberikan keputusan pengajuan ini.');
+        }
+
         $action = ApprovalAction::from($request->validated()['action']);
         $itemDecisions = $request->validated()['item_decisions'] ?? [];
         $notes = $request->validated()['notes'] ?? null;
@@ -79,10 +88,14 @@ class ApprovalPengadaanController extends Controller
         );
 
         $msg = match ($action) {
-            ApprovalAction::Approve => 'Proposal berhasil disetujui.',
+            ApprovalAction::Approve => 'Persetujuan langkah workflow berhasil diproses.',
             ApprovalAction::Reject => 'Proposal berhasil ditolak.',
             ApprovalAction::RequestRevision => 'Permintaan revisi berhasil dikirimkan ke pengaju.',
         };
+
+        if ($request->user()->widestScopeLevel() === 'lembaga') {
+            return redirect()->route('admin.pengadaan.proposal.show', $proposal)->with('success', $msg);
+        }
 
         return redirect()->route('admin.pengadaan.inbox.index')->with('success', $msg);
     }

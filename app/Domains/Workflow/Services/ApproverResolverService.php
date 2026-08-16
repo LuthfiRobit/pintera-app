@@ -11,6 +11,10 @@ class ApproverResolverService
 {
     public function canUserApprove(WorkflowStep $step, User $user, ApprovalRequest $request): bool
     {
+        if ($user->hasRole(['super_admin', 'yayasan_super_admin'])) {
+            return true;
+        }
+
         return match ($step->approver_type) {
             ApproverType::Role => $this->checkRoleApprover($step, $user, $request),
             ApproverType::SpecificUser => (int) $step->approver_value === (int) $user->id,

@@ -87,4 +87,23 @@ class PengajuanPengadaan extends Model
     {
         return $this->hasOne(LpjPengadaan::class, 'pengajuan_pengadaan_id');
     }
+
+    public function canBeApprovedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if (! in_array($this->status, [StatusPengajuan::Submitted, StatusPengajuan::InReview])) {
+            return false;
+        }
+
+        $approvalReq = $this->approvalRequest;
+        if (! $approvalReq || ! $approvalReq->currentStep) {
+            return false;
+        }
+
+        return app(\App\Domains\Workflow\Services\ApproverResolverService::class)
+            ->canUserApprove($approvalReq->currentStep, $user, $approvalReq);
+    }
 }
