@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-5xl space-y-4" x-data="{ openMutasi: false }">
+    <div class="mx-auto max-w-5xl space-y-4">
         {{-- Flash Messages --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
@@ -21,9 +21,9 @@
                 <x-link-button variant="secondary" href="{{ route('admin.sarpras.aset.index') }}">
                     <x-icon name="arrow_back" class="h-4 w-4" /> Kembali
                 </x-link-button>
-                <button type="button" @click="openMutasi = true" class="inline-flex items-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-purple-700 transition">
+                <x-primary-button type="button" x-data @click="$dispatch('open-modal', 'modal-mutasi-aset')">
                     <x-icon name="swap_horiz" class="h-4 w-4" /> Mutasi Ruangan
-                </button>
+                </x-primary-button>
                 <x-link-button href="{{ route('admin.sarpras.aset.edit', $aset) }}">
                     <x-icon name="edit" class="h-4 w-4" /> Edit
                 </x-link-button>
@@ -122,59 +122,61 @@
             </table>
         </div>
 
-        {{-- Modal Dialog Mutasi --}}
-        <div x-show="openMutasi" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4" style="display: none;" x-transition.opacity>
-            <div @click.away="openMutasi = false" class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4">
+        {{-- Standard Modal Dialog Mutasi --}}
+        <x-modal name="modal-mutasi-aset" maxWidth="lg" focusable>
+            <form action="{{ route('admin.sarpras.mutasi.store') }}" method="POST" class="p-6 space-y-4">
+                @csrf
+                <input type="hidden" name="aset_barang_id" value="{{ $aset->id }}">
+
                 <div class="flex items-center justify-between border-b border-gray-100 pb-3">
-                    <p class="font-display text-sm font-bold text-gray-900">Mutasi / Pindah Ruangan Aset</p>
-                    <button type="button" @click="openMutasi = false" class="text-gray-400 hover:text-gray-600 text-lg">&times;</button>
+                    <p class="font-display text-base font-bold text-gray-900">Mutasi / Pindah Ruangan Aset</p>
+                    <button type="button" x-on:click="$dispatch('close')" class="text-gray-400 hover:text-gray-600">
+                        <span class="text-lg">✕</span>
+                    </button>
                 </div>
 
-                <form action="{{ route('admin.sarpras.mutasi.store') }}" method="POST" class="space-y-4">
-                    @csrf
-                    <input type="hidden" name="aset_barang_id" value="{{ $aset->id }}">
+                <div class="rounded-xl bg-gray-50 p-3 text-xs text-gray-600 space-y-1">
+                    <p><strong>Lokasi Saat Ini:</strong> {{ $aset->ruangan->nama_ruangan ?? '-' }}</p>
+                    <p><strong>Stok Tersedia:</strong> {{ $aset->qty }} {{ $aset->satuan }}</p>
+                </div>
 
-                    <div class="rounded-xl bg-gray-50 p-3 text-xs text-gray-600 space-y-1">
-                        <p><strong>Lokasi Saat Ini:</strong> {{ $aset->ruangan->nama_ruangan ?? '-' }}</p>
-                        <p><strong>Stok Tersedia:</strong> {{ $aset->qty }} {{ $aset->satuan }}</p>
-                    </div>
+                <div>
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-700">Pindahkan Ke Ruangan <span class="text-rose-500">*</span></label>
+                    <select name="ruangan_tujuan_id" required class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">Pilih Ruangan Tujuan...</option>
+                        @foreach($ruanganOptions as $r)
+                            @if($r->id !== $aset->ruangan_id)
+                                <option value="{{ $r->id }}">{{ $r->nama_ruangan }} ({{ $r->gedung->nama_gedung ?? 'Gedung' }})</option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
 
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Pindahkan Ke Ruangan <span class="text-rose-500">*</span></label>
-                        <select name="ruangan_tujuan_id" required class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">Pilih Ruangan Tujuan...</option>
-                            @foreach($ruanganOptions as $r)
-                                @if($r->id !== $aset->ruangan_id)
-                                    <option value="{{ $r->id }}">{{ $r->nama_ruangan }} ({{ $r->gedung->nama_gedung ?? 'Gedung' }})</option>
-                                @endif
-                            @endforeach
-                        </select>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jumlah Dipindah <span class="text-rose-500">*</span></label>
+                        <input type="number" name="qty_pindah" value="{{ $aset->tipe_pencatatan->value === 'unit' ? 1 : $aset->qty }}" min="1" max="{{ $aset->qty }}" required class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                     </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jumlah Dipindah <span class="text-rose-500">*</span></label>
-                            <input type="number" name="qty_pindah" value="{{ $aset->tipe_pencatatan->value === 'unit' ? 1 : $aset->qty }}" min="1" max="{{ $aset->qty }}" required class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                        </div>
-                        <div>
-                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Tanggal Mutasi <span class="text-rose-500">*</span></label>
-                            <input type="date" name="tanggal_mutasi" value="{{ date('Y-m-d') }}" required class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                        </div>
-                    </div>
-
                     <div>
-                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Alasan Pemindahan <span class="text-rose-500">*</span></label>
-                        <textarea name="alasan_mutasi" rows="3" required placeholder="Contoh: Kebutuhan ujian komputer kelas 9..." class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500"></textarea>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Tanggal Mutasi <span class="text-rose-500">*</span></label>
+                        <input type="date" name="tanggal_mutasi" value="{{ date('Y-m-d') }}" required class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                     </div>
+                </div>
 
-                    <div class="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
-                        <button type="button" @click="openMutasi = false" class="rounded-lg border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50">Batal</button>
-                        <x-primary-button type="submit">
-                            Proses Mutasi
-                        </x-primary-button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                <div>
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-700">Alasan Pemindahan <span class="text-rose-500">*</span></label>
+                    <textarea name="alasan_mutasi" rows="3" required placeholder="Contoh: Kebutuhan ujian komputer kelas 9..." class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500"></textarea>
+                </div>
+
+                <div class="mt-6 flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                    <x-secondary-button x-on:click="$dispatch('close')">
+                        Batal
+                    </x-secondary-button>
+                    <x-primary-button type="submit">
+                        Proses Mutasi
+                    </x-primary-button>
+                </div>
+            </form>
+        </x-modal>
     </div>
 </x-app-layout>
