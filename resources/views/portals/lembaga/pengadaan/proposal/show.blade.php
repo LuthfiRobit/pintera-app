@@ -26,12 +26,6 @@
                     <x-icon name="arrow_back" class="h-4 w-4 mr-1" /> Kembali
                 </x-link-button>
 
-                @if ($proposal->canBeApprovedBy(auth()->user()))
-                    <x-link-button href="{{ route('admin.pengadaan.inbox.review', $proposal) }}" class="bg-brand-600 text-white hover:bg-brand-700">
-                        <x-icon name="rate_review" class="h-4 w-4 mr-1" /> Review & Putuskan
-                    </x-link-button>
-                @endif
-
                 @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Draft)
                     <form action="{{ route('admin.pengadaan.proposal.submit', $proposal) }}" method="POST">
                         @csrf
