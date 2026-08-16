@@ -63,6 +63,18 @@
             ]),
         ],
         [
+            'label' => 'Sarana & Prasarana',
+            'group_icon' => 'building',
+            'items' => array_filter([
+                Auth::user()->can('sarpras.gedung.view') ? ['route' => 'admin.sarpras.gedung.index', 'pattern' => 'admin.sarpras.gedung.*', 'label' => 'Gedung & Bangunan', 'icon' => 'building-2'] : null,
+                Auth::user()->can('sarpras.ruangan.view') ? ['route' => 'admin.sarpras.ruangan.index', 'pattern' => 'admin.sarpras.ruangan.*', 'label' => 'Ruangan & Fasilitas', 'icon' => 'door-open'] : null,
+                Auth::user()->can('sarpras.kategori.view') ? ['route' => 'admin.sarpras.kategori.index', 'pattern' => 'admin.sarpras.kategori.*', 'label' => 'Kategori Aset', 'icon' => 'tags'] : null,
+                Auth::user()->can('sarpras.aset.view') ? ['route' => 'admin.sarpras.aset.index', 'pattern' => 'admin.sarpras.aset.*', 'label' => 'Aset & Inventaris', 'icon' => 'package'] : null,
+                Auth::user()->can('sarpras.mutasi.view') ? ['route' => 'admin.sarpras.mutasi.index', 'pattern' => 'admin.sarpras.mutasi.*', 'label' => 'Riwayat Mutasi', 'icon' => 'arrow-left-right'] : null,
+                Auth::user()->can('sarpras.aset.view') && Auth::user()->widestScopeLevel() === 'yayasan' ? ['route' => 'admin.sarpras.rekap-global', 'pattern' => 'admin.sarpras.rekap-global', 'label' => 'Rekap Aset Yayasan', 'icon' => 'pie-chart'] : null,
+            ]),
+        ],
+        [
             'label' => 'Data Induk',
             'group_icon' => 'database',
             'items' => array_filter([
