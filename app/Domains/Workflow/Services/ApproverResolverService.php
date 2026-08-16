@@ -29,8 +29,8 @@ class ApproverResolverService
         }
 
         if ($step->scope_level === 'lembaga') {
-            $requesterLembagaId = $request->requester?->lembaga_id;
-            if ($requesterLembagaId && $user->lembaga_id && $requesterLembagaId !== $user->lembaga_id) {
+            $targetLembagaId = $request->approvable?->lembaga_id ?? $request->requester?->lembaga_id;
+            if ($targetLembagaId && $user->lembaga_id && (int) $targetLembagaId !== (int) $user->lembaga_id) {
                 return false;
             }
         }
