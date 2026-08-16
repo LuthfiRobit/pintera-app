@@ -39,7 +39,7 @@
   - `TenantContext::activeYayasanId(): ?int`
   - `TenantContext::isYayasanScope(): bool`
 
-- [ ] **Step 1: Write failing test for TenantContext**
+- [x] **Step 1: Write failing test for TenantContext**
 ```php
 namespace Tests\Unit\Domains\Shared;
 
@@ -64,18 +64,18 @@ class TenantContextTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Shared/TenantContextTest.php`  
 Expected: FAIL with class not found.
 
-- [ ] **Step 3: Implement TenantContext, Enums, and Migrations**
+- [x] **Step 3: Implement TenantContext, Enums, and Migrations**
 Implement `TenantContext`, `JenisRuangan`, `KondisiAset`, `TipePencatatanAset`, `SumberPerolehanAset`, and run `php artisan migrate`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Shared/TenantContextTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Shared/ app/Domains/Sarpras/Enums/ database/migrations/ tests/Unit/Domains/Shared/
 git commit -m "feat(sarpras): add shared tenant context, sarpras enums, and database migrations"
@@ -104,7 +104,7 @@ git commit -m "feat(sarpras): add shared tenant context, sarpras enums, and data
   - `Kelas::ruangan()` (BelongsTo Home Room)
   - `JadwalPelajaran::ruangan()` (BelongsTo)
 
-- [ ] **Step 1: Write failing test for Sarpras models and relationships**
+- [x] **Step 1: Write failing test for Sarpras models and relationships**
 ```php
 namespace Tests\Unit\Domains\Sarpras;
 
@@ -148,18 +148,18 @@ class SarprasModelsTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Sarpras/SarprasModelsTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Models and Seeder**
+- [x] **Step 3: Implement Models and Seeder**
 Write `Gedung`, `Ruangan`, `KategoriAset`, `AsetBarang`, `RiwayatMutasiAset`, update `Kelas` & `JadwalPelajaran`, and run `SarprasPermissionSeeder`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Sarpras/SarprasModelsTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Sarpras/Models/ app/Models/ database/seeders/ tests/Unit/Domains/Sarpras/
 git commit -m "feat(sarpras): implement Sarpras Eloquent models, relations, and permissions"
@@ -186,7 +186,7 @@ git commit -m "feat(sarpras): implement Sarpras Eloquent models, relations, and 
   - `CreateRuanganAction::execute(RuanganData $data): Ruangan`
   - `ValidateRoomClashAction::execute(int $ruanganId, string $hari, int $jamPelajaranId, int $tahunAjaranId, ?int $ignoreJadwalId = null): bool`
 
-- [ ] **Step 1: Write failing test for Room Clash Validation and Create Actions**
+- [x] **Step 1: Write failing test for Room Clash Validation and Create Actions**
 ```php
 namespace Tests\Unit\Domains\Sarpras;
 
@@ -221,18 +221,18 @@ class GedungRuanganActionTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Sarpras/GedungRuanganActionTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Actions & DTOs**
+- [x] **Step 3: Implement Actions & DTOs**
 Implement `GedungData`, `RuanganData`, `CreateGedungAction`, `UpdateGedungAction`, `CreateRuanganAction`, `UpdateRuanganAction`, `ValidateRoomClashAction`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Sarpras/GedungRuanganActionTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Sarpras/Actions/ app/Domains/Sarpras/DataTransferObjects/ tests/Unit/Domains/Sarpras/
 git commit -m "feat(sarpras): implement Gedung, Ruangan, and Room Clash validation actions"
@@ -258,7 +258,7 @@ git commit -m "feat(sarpras): implement Gedung, Ruangan, and Room Clash validati
   - `CreateAsetBarangAction::execute(AsetBarangData $data): AsetBarang`
   - `MutasiAsetRuanganAction::execute(MutasiAsetData $data): RiwayatMutasiAset`
 
-- [ ] **Step 1: Write failing test for Aset Creation & Location Mutation**
+- [x] **Step 1: Write failing test for Aset Creation & Location Mutation**
 ```php
 namespace Tests\Unit\Domains\Sarpras;
 
@@ -302,18 +302,18 @@ class AsetMutasiActionTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Unit/Domains/Sarpras/AsetMutasiActionTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Aset & Mutasi Actions**
+- [x] **Step 3: Implement Aset & Mutasi Actions**
 Implement `AsetBarangData`, `MutasiAsetData`, `CreateAsetBarangAction`, `UpdateAsetBarangAction`, `MutasiAsetRuanganAction` (mendukung transfer seluruh unit atau pemecahan batch qty).
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Unit/Domains/Sarpras/AsetMutasiActionTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Domains/Sarpras/Actions/ app/Domains/Sarpras/DataTransferObjects/ tests/Unit/Domains/Sarpras/
 git commit -m "feat(sarpras): implement Aset and Room Mutation actions with audit logging"
@@ -339,7 +339,7 @@ git commit -m "feat(sarpras): implement Aset and Room Mutation actions with audi
 - Test: `tests/Feature/Sarpras/GedungRuanganControllerTest.php`
 - Test: `tests/Feature/Sarpras/AsetControllerTest.php`
 
-- [ ] **Step 1: Write failing Feature test for Controllers**
+- [x] **Step 1: Write failing Feature test for Controllers**
 ```php
 namespace Tests\Feature\Sarpras;
 
@@ -370,18 +370,18 @@ class GedungRuanganControllerTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Feature/Sarpras/GedungRuanganControllerTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement FormRequests, Controllers, and Routes**
+- [x] **Step 3: Implement FormRequests, Controllers, and Routes**
 Write all requests, controllers, and register routes in `routes/admin.php`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Feature/Sarpras/GedungRuanganControllerTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add app/Http/Requests/Sarpras/ app/Http/Controllers/ routes/ tests/Feature/Sarpras/
 git commit -m "feat(sarpras): implement HTTP FormRequests, Controllers, and routes"
@@ -408,7 +408,7 @@ git commit -m "feat(sarpras): implement HTTP FormRequests, Controllers, and rout
 - Modify: `resources/views/layouts/sidebar.blade.php:120-170` (tambahkan navigasi menu Sarpras)
 - Test: `tests/Feature/Sarpras/KirPdfExportTest.php`
 
-- [ ] **Step 1: Write failing test for KIR PDF Generation**
+- [x] **Step 1: Write failing test for KIR PDF Generation**
 ```php
 namespace Tests\Feature\Sarpras;
 
@@ -438,18 +438,18 @@ class KirPdfExportTest extends TestCase
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 Run: `php artisan test tests/Feature/Sarpras/KirPdfExportTest.php`  
 Expected: FAIL.
 
-- [ ] **Step 3: Implement Blade Views, Alpine components, PDF template, and Sidebar Menu**
+- [x] **Step 3: Implement Blade Views, Alpine components, PDF template, and Sidebar Menu**
 Implement all Blade templates with clean modern UI, responsive tables, modal mutasi aset, and sidebar entry under `Sarpras`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 Run: `php artisan test tests/Feature/Sarpras/KirPdfExportTest.php`  
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add resources/views/ resources/js/ tests/Feature/Sarpras/
 git commit -m "feat(sarpras): implement Blade UI, Alpine.js components, KIR PDF export, and sidebar navigation"
@@ -462,18 +462,18 @@ git commit -m "feat(sarpras): implement Blade UI, Alpine.js components, KIR PDF 
 **Files:**
 - Create: `.agents/logs/master-sarpras-ruangan-dan-aset.md`
 
-- [ ] **Step 1: Run Full Test Suite across all Sarpras tests**
+- [x] **Step 1: Run Full Test Suite across all Sarpras tests**
 Run: `php artisan test --filter=Sarpras`  
 Expected: All tests PASS.
 
-- [ ] **Step 2: Verify Multi-Tenant & Anti-Clash Scenarios**
+- [x] **Step 2: Verify Multi-Tenant & Anti-Clash Scenarios**
 Run: `php artisan test --filter=Clash`  
 Expected: PASS.
 
-- [ ] **Step 3: Write Handoff Audit Log**
+- [x] **Step 3: Write Handoff Audit Log**
 Document summary of built features, technical decisions, and validation results at `.agents/logs/master-sarpras-ruangan-dan-aset.md`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add .agents/logs/master-sarpras-ruangan-dan-aset.md
 git commit -m "docs(sarpras): write completion handoff log for Master Sarpras"
