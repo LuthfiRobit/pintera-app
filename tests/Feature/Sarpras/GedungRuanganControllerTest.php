@@ -24,7 +24,7 @@ class GedungRuanganControllerTest extends TestCase
         $yayasan = Yayasan::create(['nama' => 'Yayasan']);
         $lembaga = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'SDIT', 'jenjang' => 'SD', 'npsn' => '123', 'status_aktif' => true]);
 
-        $role = Role::create(['name' => 'admin_sarpras', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+        $role = Role::firstOrCreate(['name' => 'admin_sarpras', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
         $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
         $user->assignRole($role);
         $user->givePermissionTo(['sarpras.gedung.view', 'sarpras.gedung.manage', 'sarpras.ruangan.view', 'sarpras.ruangan.manage']);

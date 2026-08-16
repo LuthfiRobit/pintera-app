@@ -29,7 +29,7 @@ class KirPdfExportTest extends TestCase
         $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidikan Utama']);
         $lembaga = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'SDIT Al-Hikmah', 'jenjang' => 'SD', 'npsn' => '123', 'status_aktif' => true]);
 
-        $role = Role::create(['name' => 'admin_sarpras', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+        $role = Role::firstOrCreate(['name' => 'admin_sarpras', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
         $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
         $user->assignRole($role);
         $user->givePermissionTo(['sarpras.kir.export', 'sarpras.ruangan.view']);
