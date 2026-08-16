@@ -13,7 +13,7 @@ class JadwalPelajaran extends Model
 
     protected $table = 'jadwal_pelajaran';
 
-    protected $fillable = ['kelas_id', 'jam_pelajaran_id', 'mata_pelajaran_id', 'guru_id', 'semester_id', 'lembaga_id'];
+    protected $fillable = ['kelas_id', 'jam_pelajaran_id', 'mata_pelajaran_id', 'guru_id', 'semester_id', 'lembaga_id', 'ruangan_id'];
 
     protected static function booted(): void
     {
@@ -24,6 +24,11 @@ class JadwalPelajaran extends Model
                     ->lembaga_id;
             }
         });
+    }
+
+    public function ruangan(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Sarpras\Models\Ruangan::class, 'ruangan_id');
     }
 
     public function lembaga(): BelongsTo

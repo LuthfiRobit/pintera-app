@@ -14,7 +14,12 @@ class Kelas extends Model
 
     protected $table = 'kelas';
 
-    protected $fillable = ['lembaga_id', 'tahun_ajaran_id', 'nama', 'tingkat', 'wali_kelas_guru_id', 'pola_jam_id'];
+    protected $fillable = ['lembaga_id', 'tahun_ajaran_id', 'nama', 'tingkat', 'wali_kelas_guru_id', 'pola_jam_id', 'ruangan_id'];
+
+    public function ruangan(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Sarpras\Models\Ruangan::class, 'ruangan_id');
+    }
 
     public function lembaga(): BelongsTo
     {
