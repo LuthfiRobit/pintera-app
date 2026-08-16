@@ -79,6 +79,31 @@ class Lembaga extends Model
         return $this->hasMany(LembagaDataPeriodik::class);
     }
 
+    public function gedung(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Sarpras\Models\Gedung::class);
+    }
+
+    public function ruangan(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Sarpras\Models\Ruangan::class);
+    }
+
+    public function kategoriAset(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Sarpras\Models\KategoriAset::class);
+    }
+
+    public function asetBarang(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Sarpras\Models\AsetBarang::class);
+    }
+
+    public function pengajuanPengadaan(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Pengadaan\Models\PengajuanPengadaan::class);
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()

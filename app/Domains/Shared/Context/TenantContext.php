@@ -57,9 +57,11 @@ class TenantContext implements TenantContextInterface
         if ($activeLembagaId) {
             $lembaga = \App\Models\Lembaga::find($activeLembagaId);
 
-            return $lembaga?->yayasan_id;
+            if ($lembaga?->yayasan_id) {
+                return $lembaga->yayasan_id;
+            }
         }
 
-        return null;
+        return \App\Models\Yayasan::first()?->id;
     }
 }

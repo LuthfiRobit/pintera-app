@@ -23,18 +23,35 @@ class AuditLpjController extends Controller
     {
         $this->authorize('pengadaan.lpj.verify');
 
-        $yayasanId = $this->tenantContext->activeYayasanId();
+        $yayasanId = $this->tenantContext->activeYayasanId() ?? \App\Models\Yayasan::first()?->id;
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = LpjPengadaan::query()
+        $baseQuery = LpjPengadaan::query()
             ->with(['proposal.lembaga', 'items.pengajuanItem'])
-            ->whereHas('proposal', fn ($q) => $q->where('yayasan_id', $yayasanId))
+            ->whereHas('proposal', fn ($q) => $q->where('yayasan_id', $yayasanId));
+
+        $totalMenungguAudit = (clone $baseQuery)->where('status_lpj', StatusLpj::Submitted)->count();
+        $totalTerverifikasi = (clone $baseQuery)->where('status_lpj', StatusLpj::Verified)->count();
+        $totalPerluRevisi = (clone $baseQuery)->where('status_lpj', StatusLpj::RevisionRequired)->count();
+
+        $query = (clone $baseQuery)
             ->when($request->status, fn ($q, $s) => $q->where('status_lpj', $s))
+            ->when($request->search, function ($q, $search) {
+                $q->whereHas('proposal', function ($p) use ($search) {
+                    $p->where('nomor_pengajuan', 'like', "%{$search}%")
+                        ->orWhere('judul_pengajuan', 'like', "%{$search}%")
+                        ->orWhereHas('lembaga', fn ($lem) => $lem->where('nama', 'like', "%{$search}%"));
+                });
+            })
             ->latest();
 
         $lpjList = $query->paginate($perPage)->withQueryString();
 
-        return view('portals.yayasan.pengadaan.audit-lpj.index', compact('lpjList'));
+        if ($request->ajax()) {
+            return view('portals.yayasan.pengadaan.audit-lpj._daftar', compact('lpjList'));
+        }
+
+        return view('portals.yayasan.pengadaan.audit-lpj.index', compact('lpjList', 'totalMenungguAudit', 'totalTerverifikasi', 'totalPerluRevisi', 'perPage'));
     }
 
     public function show(LpjPengadaan $lpj): View

@@ -135,7 +135,25 @@ class DashboardController extends BaseController
             ]);
         }
 
-        return view('admin.dashboard.lembaga', $this->lembagaViewData($user->lembaga_id, $user));
+        $lembagaId = $user->lembaga_id ?? session('active_lembaga_id') ?? Lembaga::first()?->id;
+
+        if ($lembagaId === null) {
+            return view('admin.dashboard.yayasan', [
+                'lembagaList' => collect(),
+                'ringkasanPerLembaga' => collect(),
+                'totalPendaftar' => 0,
+                'totalDiterima' => 0,
+                'totalRpTerkumpul' => 0,
+                'stats' => [
+                    'lembaga' => 0,
+                    'guru' => 0,
+                    'pengguna' => 0,
+                    'tahunAjaranAktif' => 0,
+                ],
+            ]);
+        }
+
+        return view('admin.dashboard.lembaga', $this->lembagaViewData((int) $lembagaId, $user));
     }
 
     private function lembagaViewData(int $lembagaId, User $user): array

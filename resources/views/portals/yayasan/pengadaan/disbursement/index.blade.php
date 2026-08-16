@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4" x-data="{ selectedProposal: null, modalOpen: false }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ selectedProposal: null }">
         {{-- Flash Messages --}}
         @if (session('success'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('success') }}</div>
@@ -19,69 +19,94 @@
             </p>
         </div>
 
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-gray-700">
-                    <thead class="border-b border-gray-200 bg-gray-50/75 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                        <tr>
-                            <th scope="col" class="px-6 py-4">Unit Sekolah</th>
-                            <th scope="col" class="px-6 py-4">Pengajuan</th>
-                            <th scope="col" class="px-6 py-4 text-right">Anggaran Disetujui</th>
-                            <th scope="col" class="px-6 py-4 text-center">Status Kas</th>
-                            <th scope="col" class="px-6 py-4 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 font-normal">
-                        @forelse ($proposals as $p)
-                            <tr class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-6 py-4 font-semibold text-gray-900">
-                                    {{ $p->lembaga->nama ?? 'Sekolah' }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-medium text-gray-900">{{ $p->judul_pengajuan }}</div>
-                                    <div class="text-xs text-gray-500 font-mono mt-0.5">{{ $p->nomor_pengajuan }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-right font-bold text-gray-900">
-                                    Rp {{ number_format($p->total_estimasi, 0, ',', '.') }}
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    @if ($p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Disbursed)
-                                        <x-badge tone="green">Sudah Dicairkan</x-badge>
-                                        <div class="text-[11px] text-gray-500 mt-0.5">Rp {{ number_format($p->nominal_pencairan, 0, ',', '.') }}</div>
-                                    @else
-                                        <x-badge tone="amber">Siap Dicairkan</x-badge>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    @if ($p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Approved)
-                                        <button
-                                            type="button"
-                                            @click="selectedProposal = @js($p); $dispatch('open-modal', 'modal-pencairan-kas')"
-                                            class="inline-flex items-center gap-1 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 shadow-sm"
-                                        >
-                                            <x-icon name="payments" class="h-4 w-4" /> Catat Pencairan
-                                        </button>
-                                    @else
-                                        <span class="text-xs text-gray-400">Tercatat ({{ $p->tanggal_pencairan?->format('d/m/y') }})</span>
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                                    <p class="font-medium text-gray-900">Belum ada proposal yang menunggu pencairan dana</p>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+        {{-- KPI Cards --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                        <x-icon name="pending_actions" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Siap Dicairkan</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalSiapCair ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Menunggu Kas</span>
             </div>
 
-            @if ($proposals->hasPages() || $proposals->total() > 0)
-                <div class="border-t border-gray-200 px-6 py-4">
-                    {{ $proposals->links('pagination.tailadmin') }}
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                        <x-icon name="check_circle" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Sudah Dicairkan</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalSudahCair ?? 0 }}</p>
+                    </div>
                 </div>
-            @endif
+                <span class="text-[11px] font-medium text-gray-400">Tercatat</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <x-icon name="payments" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Total Nominal Cair</p>
+                        <p class="font-display text-sm font-bold text-gray-900 leading-tight">Rp {{ number_format($totalNominalCair ?? 0, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Interactive Filter & AJAX Table Container --}}
+        <div
+            class="space-y-4"
+            x-data="dataTableFilter({
+                filters: {
+                    search: @js(request('search', '')),
+                    status: @js(request('status', ''))
+                },
+                perPage: @js($perPage ?? 20),
+                indexUrlBase: @js(route('admin.pengadaan.disbursement.index'))
+            })"
+        >
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                        Filter Pencairan
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                        <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Pengajuan</label>
+                        <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                            <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                            <input
+                                type="text" x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()"
+                                placeholder="Nomor proposal, judul usulan, nama unit..."
+                                class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
+                            >
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Status Pencairan</label>
+                        <select x-model="filters.status" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Status</option>
+                            <option value="approved">Siap Dicairkan</option>
+                            <option value="disbursed">Sudah Dicairkan</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div x-ref="tableContainer">
+                @include('portals.yayasan.pengadaan.disbursement._daftar')
+            </div>
         </div>
 
         {{-- Modal Pencairan Kas --}}

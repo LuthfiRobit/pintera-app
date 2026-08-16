@@ -22,16 +22,16 @@ class RekapAsetGlobalController extends Controller
     {
         $this->authorize('sarpras.aset.view');
 
-        $yayasanId = $this->tenantContext->activeYayasanId();
+        $yayasanId = $this->tenantContext->activeYayasanId() ?? \App\Models\Yayasan::first()?->id;
 
-        $lembagaList = Lembaga::where('yayasan_id', $yayasanId)->get();
+        $lembagaList = $yayasanId ? Lembaga::where('yayasan_id', $yayasanId)->get() : Lembaga::all();
 
-        $totalGedung = Gedung::where('yayasan_id', $yayasanId)->count();
-        $totalRuangan = Ruangan::where('yayasan_id', $yayasanId)->count();
-        $totalAset = AsetBarang::where('yayasan_id', $yayasanId)->sum('qty');
-        $totalNilaiAset = AsetBarang::where('yayasan_id', $yayasanId)->sum('harga_perolehan');
+        $totalGedung = $yayasanId ? Gedung::where('yayasan_id', $yayasanId)->count() : Gedung::count();
+        $totalRuangan = $yayasanId ? Ruangan::where('yayasan_id', $yayasanId)->count() : Ruangan::count();
+        $totalAset = $yayasanId ? AsetBarang::where('yayasan_id', $yayasanId)->sum('qty') : AsetBarang::sum('qty');
+        $totalNilaiAset = $yayasanId ? AsetBarang::where('yayasan_id', $yayasanId)->sum('harga_perolehan') : AsetBarang::sum('harga_perolehan');
 
-        $rekapPerLembaga = Lembaga::where('yayasan_id', $yayasanId)
+        $rekapPerLembaga = ($yayasanId ? Lembaga::where('yayasan_id', $yayasanId) : Lembaga::query())
             ->withCount(['gedung', 'ruangan'])
             ->get()
             ->map(function ($lem) {

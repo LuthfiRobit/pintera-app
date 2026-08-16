@@ -24,25 +24,36 @@ class DisbursementPengadaanController extends Controller
     {
         $this->authorize('pengadaan.disbursement.manage');
 
-        $yayasanId = $this->tenantContext->activeYayasanId();
+        $yayasanId = $this->tenantContext->activeYayasanId() ?? \App\Models\Yayasan::first()?->id;
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = PengajuanPengadaan::query()
+        $baseQuery = PengajuanPengadaan::query()
             ->with(['lembaga', 'items'])
             ->where('yayasan_id', $yayasanId)
-            ->whereIn('status', [StatusPengajuan::Approved, StatusPengajuan::Disbursed])
+            ->whereIn('status', [StatusPengajuan::Approved, StatusPengajuan::Disbursed]);
+
+        $totalSiapCair = (clone $baseQuery)->where('status', StatusPengajuan::Approved)->count();
+        $totalSudahCair = (clone $baseQuery)->where('status', StatusPengajuan::Disbursed)->count();
+        $totalNominalCair = (clone $baseQuery)->where('status', StatusPengajuan::Disbursed)->sum('nominal_pencairan');
+
+        $query = (clone $baseQuery)
             ->when($request->status, fn ($q, $s) => $q->where('status', $s))
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nomor_pengajuan', 'like', "%{$search}%")
-                        ->orWhere('judul_pengajuan', 'like', "%{$search}%");
+            ->when($request->search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('nomor_pengajuan', 'like', "%{$search}%")
+                        ->orWhere('judul_pengajuan', 'like', "%{$search}%")
+                        ->orWhereHas('lembaga', fn ($lem) => $lem->where('nama', 'like', "%{$search}%"));
                 });
             })
             ->latest();
 
         $proposals = $query->paginate($perPage)->withQueryString();
 
-        return view('portals.yayasan.pengadaan.disbursement.index', compact('proposals'));
+        if ($request->ajax()) {
+            return view('portals.yayasan.pengadaan.disbursement._daftar', compact('proposals'));
+        }
+
+        return view('portals.yayasan.pengadaan.disbursement.index', compact('proposals', 'totalSiapCair', 'totalSudahCair', 'totalNominalCair', 'perPage'));
     }
 
     public function store(StoreDisbursementRequest $request, PengajuanPengadaan $proposal): RedirectResponse

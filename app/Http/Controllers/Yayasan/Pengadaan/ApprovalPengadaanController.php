@@ -25,17 +25,24 @@ class ApprovalPengadaanController extends Controller
     {
         $this->authorize('pengadaan.approval.yayasan');
 
-        $yayasanId = $this->tenantContext->activeYayasanId();
+        $yayasanId = $this->tenantContext->activeYayasanId() ?? \App\Models\Yayasan::first()?->id;
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = PengajuanPengadaan::query()
+        $baseQuery = PengajuanPengadaan::query()
             ->with(['lembaga', 'items', 'approvalRequest.currentStep'])
             ->where('yayasan_id', $yayasanId)
-            ->whereIn('status', [StatusPengajuan::Submitted, StatusPengajuan::InReview])
-            ->when($request->search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('nomor_pengajuan', 'like', "%{$search}%")
-                        ->orWhere('judul_pengajuan', 'like', "%{$search}%");
+            ->whereIn('status', [StatusPengajuan::Submitted, StatusPengajuan::InReview]);
+
+        $totalPendingReview = (clone $baseQuery)->count();
+        $totalMendesak = (clone $baseQuery)->where('tingkat_urgensi', '!=', 'biasa')->count();
+        $totalNilaiPending = (clone $baseQuery)->sum('total_estimasi');
+
+        $query = (clone $baseQuery)
+            ->when($request->search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('nomor_pengajuan', 'like', "%{$search}%")
+                        ->orWhere('judul_pengajuan', 'like', "%{$search}%")
+                        ->orWhereHas('lembaga', fn ($lem) => $lem->where('nama', 'like', "%{$search}%"));
                 });
             })
             ->latest();
@@ -46,7 +53,7 @@ class ApprovalPengadaanController extends Controller
             return view('portals.yayasan.pengadaan.inbox._daftar', compact('proposals'));
         }
 
-        return view('portals.yayasan.pengadaan.inbox.index', compact('proposals'));
+        return view('portals.yayasan.pengadaan.inbox.index', compact('proposals', 'totalPendingReview', 'totalMendesak', 'totalNilaiPending', 'perPage'));
     }
 
     public function review(PengajuanPengadaan $proposal): View

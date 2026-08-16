@@ -30,19 +30,37 @@ class MutasiAsetController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $mutasiList = RiwayatMutasiAset::query()
+        $query = RiwayatMutasiAset::query()
             ->with(['asetBarang', 'ruanganAsal', 'ruanganTujuan', 'dilakukanOleh'])
-            ->whereHas('asetBarang', function ($query) use ($lembagaId, $yayasanId) {
+            ->whereHas('asetBarang', function ($q) use ($lembagaId, $yayasanId) {
                 if ($lembagaId) {
-                    $query->where('lembaga_id', $lembagaId);
+                    $q->where('lembaga_id', $lembagaId);
                 } elseif ($yayasanId) {
-                    $query->where('yayasan_id', $yayasanId);
+                    $q->where('yayasan_id', $yayasanId);
                 }
-            })
-            ->latest('tanggal_mutasi')
-            ->paginate(15);
+            });
 
-        return view('portals.lembaga.sarpras.aset.mutasi-index', compact('mutasiList'));
+        $totalMutasi = (clone $query)->count();
+        $mutasiBulanIni = (clone $query)->whereMonth('tanggal_mutasi', now()->month)->whereYear('tanggal_mutasi', now()->year)->count();
+
+        if ($request->filled('search')) {
+            $search = $request->string('search')->trim();
+            $query->where(function ($q) use ($search) {
+                $q->where('alasan_mutasi', 'like', "%{$search}%")
+                    ->orWhereHas('asetBarang', fn ($q2) => $q2->where('nama_barang', 'like', "%{$search}%")->orWhere('kode_inventaris', 'like', "%{$search}%"))
+                    ->orWhereHas('ruanganAsal', fn ($q2) => $q2->where('nama_ruangan', 'like', "%{$search}%"))
+                    ->orWhereHas('ruanganTujuan', fn ($q2) => $q2->where('nama_ruangan', 'like', "%{$search}%"));
+            });
+        }
+
+        $perPage = $request->integer('per_page', 20);
+        $mutasiList = $query->latest('tanggal_mutasi')->paginate($perPage)->withQueryString();
+
+        if ($request->ajax()) {
+            return view('portals.lembaga.sarpras.aset._daftar-mutasi', compact('mutasiList'));
+        }
+
+        return view('portals.lembaga.sarpras.aset.mutasi-index', compact('mutasiList', 'totalMutasi', 'mutasiBulanIni', 'perPage'));
     }
 
     public function store(StoreMutasiAsetRequest $request): RedirectResponse
