@@ -44,6 +44,8 @@ Telah selesai dibangun modul **Master Sarana & Prasarana (Sarpras)** secara penu
 
 6. **Frontend Blade Views & Cetak PDF KIR:**
    - 12 Blade views interaktif modern di `resources/views/portals/lembaga/sarpras/` dan `resources/views/portals/yayasan/sarpras/`.
+   - Implementasi standar UI/UX: Partial views `_daftar.blade.php`, Alpine.js `dataTableFilter` untuk AJAX live search & pagination, dan Tailwind badge/kpi cards.
+   - Standardisasi **Modal Konfirmasi Penghapusan** menggunakan komponen dialog global `<x-confirm-dialog />` (`confirmDialog(...)`).
    - Template PDF resmi Kartu Inventaris Ruangan (KIR) berbasis DomPDF (`resources/views/pdf/kartu-inventaris-ruangan.blade.php`).
    - Penambahan navigasi menu Sarpras pada Sidebar aplikasi (`resources/views/layouts/sidebar.blade.php`).
 
@@ -64,10 +66,11 @@ Telah selesai dibangun modul **Master Sarana & Prasarana (Sarpras)** secara penu
 
 ---
 
-## 3. Hal yang Perlu Direview Manusia / Claude
+## 3. Hal yang Perlu Direview Manusia / Claude (Pending Integrations)
 
-1. **Integrasi Form Pembuatan Jadwal Pelajaran:**
-   - Saat admin membuat jadwal pelajaran baru di menu Akademik, field dropdown `ruangan_id` kini sudah tersedia di database dan siap dihubungkan dengan memanggil `ValidateRoomClashAction`.
+1. **Wiring Dropdown Ruangan pada Form Jadwal Pelajaran (Akademik):**
+   - **Status Saat Ini:** Kolom `ruangan_id` di database, relasi Eloquent `JadwalPelajaran::ruangan()`, dan action `ValidateRoomClashAction` sudah dibuat dan teruji.
+   - **Pekerjaan Pending:** Form UI Jadwal Pelajaran (`admin.jadwal-pelajaran.create`, matrix roster) dan `JadwalPelajaranController::store()` belum dipasangi dropdown `<select name="ruangan_id">` dan belum memanggil `ValidateRoomClashAction`. Integrasi ini dijadwalkan pada task/tahap refactor jadwal akademik.
 2. **Roadmap Lanjutan (Pengadaan / E-Budgeting):**
    - Fondasi master data aset dan ruangan ini sudah 100% siap untuk diintegrasikan dengan modul **Pengajuan Pengadaan (Purchase Requisition) & LPJ**, di mana ketika LPJ disetujui, item belanja dapat langsung di-*convert* menjadi record `AsetBarang` baru di ruangan tujuan.
 
