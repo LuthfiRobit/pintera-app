@@ -69,10 +69,18 @@ class AsetBarangController extends Controller
         $kategoriOptions = KategoriAset::where('lembaga_id', $lembagaId)->orWhere('yayasan_id', $yayasanId)->get();
         $ruanganOptions = Ruangan::where('lembaga_id', $lembagaId)->orWhere('yayasan_id', $yayasanId)->get();
 
-        $totalItem = AsetBarang::where('lembaga_id', $lembagaId)->sum('qty');
-        $totalNilai = AsetBarang::where('lembaga_id', $lembagaId)->sum('harga_perolehan');
-        $totalBaik = AsetBarang::where('lembaga_id', $lembagaId)->where('kondisi', KondisiAset::Baik)->sum('qty');
-        $totalRusak = AsetBarang::where('lembaga_id', $lembagaId)->whereIn('kondisi', [KondisiAset::RusakRingan, KondisiAset::RusakBerat])->sum('qty');
+        $statsQuery = AsetBarang::where(function ($query) use ($lembagaId, $yayasanId) {
+            if ($lembagaId) {
+                $query->where('lembaga_id', $lembagaId);
+            } elseif ($yayasanId) {
+                $query->where('yayasan_id', $yayasanId);
+            }
+        });
+
+        $totalItem = (clone $statsQuery)->sum('qty');
+        $totalNilai = (clone $statsQuery)->sum('harga_perolehan');
+        $totalBaik = (clone $statsQuery)->where('kondisi', KondisiAset::Baik)->sum('qty');
+        $totalRusak = (clone $statsQuery)->whereIn('kondisi', [KondisiAset::RusakRingan, KondisiAset::RusakBerat])->sum('qty');
 
         return view('portals.lembaga.sarpras.aset.index', [
             'asetList' => $asetList,

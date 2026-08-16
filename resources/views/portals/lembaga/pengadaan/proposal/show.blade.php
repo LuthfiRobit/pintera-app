@@ -26,11 +26,26 @@
                     <x-icon name="arrow_back" class="h-4 w-4 mr-1" /> Kembali
                 </x-link-button>
 
-                @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Draft)
+                @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Draft && auth()->user()->can('pengadaan.proposal.edit'))
+                    <x-link-button variant="secondary" href="{{ route('admin.pengadaan.proposal.edit', $proposal) }}">
+                        <x-icon name="edit" class="h-4 w-4 mr-1" /> Edit Usulan
+                    </x-link-button>
                     <form action="{{ route('admin.pengadaan.proposal.submit', $proposal) }}" method="POST">
                         @csrf
                         <x-primary-button type="submit">
                             <x-icon name="send" class="h-4 w-4 mr-1" /> Ajukan Proposal
+                        </x-primary-button>
+                    </form>
+                @endif
+
+                @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::RevisionRequired && auth()->user()->can('pengadaan.proposal.edit'))
+                    <x-link-button href="{{ route('admin.pengadaan.proposal.edit', $proposal) }}">
+                        <x-icon name="edit" class="h-4 w-4 mr-1" /> Edit Usulan
+                    </x-link-button>
+                    <form action="{{ route('admin.pengadaan.proposal.submit', $proposal) }}" method="POST">
+                        @csrf
+                        <x-primary-button type="submit">
+                            <x-icon name="send" class="h-4 w-4 mr-1" /> Ajukan Ulang Usulan
                         </x-primary-button>
                     </form>
                 @endif
@@ -42,12 +57,45 @@
                 @endif
 
                 @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Completed && $proposal->lpj && $proposal->lpj->status_lpj === \App\Domains\Pengadaan\Enums\StatusLpj::Verified)
-                    <x-link-button href="{{ route('admin.pengadaan.lpj.staging-inventory', $proposal->lpj) }}">
-                        <x-icon name="inventory_2" class="h-4 w-4 mr-1" /> Konversi ke Sarpras
-                    </x-link-button>
+                    @php
+                        $allConverted = $proposal->lpj->items->isNotEmpty() && $proposal->lpj->items->every(fn($item) => $item->status_konversi_sarpras === 'converted');
+                    @endphp
+                    @if ($allConverted)
+                        <x-link-button variant="secondary" href="{{ route('admin.sarpras.aset.index') }}">
+                            <x-icon name="check_circle" class="h-4 w-4 mr-1 text-emerald-600" /> Lihat Aset di Sarpras
+                        </x-link-button>
+                    @elseif (auth()->user()->can('pengadaan.lpj.submit'))
+                        <x-link-button href="{{ route('admin.pengadaan.lpj.staging-inventory', $proposal->lpj) }}">
+                            <x-icon name="inventory_2" class="h-4 w-4 mr-1" /> Konversi ke Sarpras
+                        </x-link-button>
+                    @endif
                 @endif
             </div>
         </div>
+
+        {{-- Revision Callout Banner if Revision Required --}}
+        @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::RevisionRequired)
+            <div class="rounded-2xl border border-amber-300 bg-amber-50 p-5 shadow-card">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+                            <x-icon name="edit_note" class="h-5 w-5" />
+                        </span>
+                        <div class="space-y-1">
+                            <h2 class="font-display text-sm font-bold text-amber-900">Perhatian: Usulan Ini Memerlukan Perbaikan</h2>
+                            <p class="text-xs text-amber-800 leading-relaxed">
+                                Catatan Reviewer: <b>{{ $proposal->approvalRequest?->last_notes ?? 'Silakan sesuaikan item barang, spesifikasi, atau kuantitas sesuai instruksi reviewer.' }}</b>
+                            </p>
+                        </div>
+                    </div>
+                    @can('pengadaan.proposal.edit')
+                        <x-link-button href="{{ route('admin.pengadaan.proposal.edit', $proposal) }}">
+                            <x-icon name="edit" class="h-4 w-4 mr-1" /> Edit & Sesuaikan Usulan
+                        </x-link-button>
+                    @endcan
+                </div>
+            </div>
+        @endif
 
         {{-- Workflow Step Action Banner --}}
         @if (in_array($proposal->status, [\App\Domains\Pengadaan\Enums\StatusPengajuan::Submitted, \App\Domains\Pengadaan\Enums\StatusPengajuan::InReview]))
@@ -157,6 +205,17 @@
                                     <div class="font-bold text-gray-900">{{ $item->nama_barang }}</div>
                                     @if ($item->merk) <div class="text-gray-500 font-medium">Merk: {{ $item->merk }}</div> @endif
                                     @if ($item->spesifikasi) <div class="text-gray-400 mt-0.5 italic">{{ $item->spesifikasi }}</div> @endif
+                                    @if ($item->foto_referensi_path)
+                                        <div class="mt-1.5">
+                                            <button
+                                                type="button"
+                                                @click="$store.imagePreview.buka('{{ Storage::url($item->foto_referensi_path) }}', 'Foto Acuan - {{ $item->nama_barang }}')"
+                                                class="inline-flex items-center gap-1 text-[11px] font-medium text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded border border-brand-200 transition"
+                                            >
+                                                <x-icon name="image" class="h-3.5 w-3.5 text-brand-500" /> Lihat Foto/Brosur Acuan
+                                            </button>
+                                        </div>
+                                    @endif
                                     @if ($item->catatan_reviewer)
                                         <div class="mt-1 rounded bg-amber-50 px-2 py-1 text-[11px] text-amber-700 border border-amber-200">
                                             <b>Catatan Reviewer:</b> {{ $item->catatan_reviewer }}

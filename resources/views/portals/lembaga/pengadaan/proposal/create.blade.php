@@ -20,45 +20,7 @@
             action="{{ route('admin.pengadaan.proposal.store') }}"
             method="POST"
             enctype="multipart/form-data"
-            x-data="{
-                items: [
-                    {
-                        nama_barang: '',
-                        kategori_aset_id: '',
-                        target_ruangan_id: '',
-                        merk: '',
-                        spesifikasi: '',
-                        qty: 1,
-                        satuan: 'unit',
-                        estimasi_harga_satuan: 0,
-                        tipe_pencatatan: 'unit'
-                    }
-                ],
-                tambahItem() {
-                    this.items.push({
-                        nama_barang: '',
-                        kategori_aset_id: '',
-                        target_ruangan_id: '',
-                        merk: '',
-                        spesifikasi: '',
-                        qty: 1,
-                        satuan: 'unit',
-                        estimasi_harga_satuan: 0,
-                        tipe_pencatatan: 'unit'
-                    });
-                },
-                hapusItem(index) {
-                    if (this.items.length > 1) {
-                        this.items.splice(index, 1);
-                    }
-                },
-                hitungTotal() {
-                    return this.items.reduce((acc, item) => acc + ((Number(item.qty) || 0) * (Number(item.estimasi_harga_satuan) || 0)), 0);
-                },
-                formatRupiah(num) {
-                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
-                }
-            }"
+            x-data="proposalCreateForm()"
             class="space-y-6"
         >
             @csrf
@@ -212,4 +174,56 @@
             </div>
         </form>
     </div>
+
+    <script>
+        function proposalCreateForm() {
+            return {
+                items: [
+                    {
+                        nama_barang: '',
+                        kategori_aset_id: '',
+                        target_ruangan_id: '',
+                        merk: '',
+                        spesifikasi: '',
+                        qty: 1,
+                        satuan: 'unit',
+                        estimasi_harga_satuan: 0,
+                        tipe_pencatatan: 'unit'
+                    }
+                ],
+                tambahItem() {
+                    this.items.push({
+                        nama_barang: '',
+                        kategori_aset_id: '',
+                        target_ruangan_id: '',
+                        merk: '',
+                        spesifikasi: '',
+                        qty: 1,
+                        satuan: 'unit',
+                        estimasi_harga_satuan: 0,
+                        tipe_pencatatan: 'unit'
+                    });
+                },
+                hapusItem(index) {
+                    if (this.items.length <= 1) return;
+                    const nama = this.items[index].nama_barang || ('Barang #' + (index + 1));
+                    confirmDialog(
+                        'Hapus Baris Barang?',
+                        'Apakah Anda yakin ingin menghapus ' + nama + ' dari daftar usulan?',
+                        { confirmLabel: 'Ya, Hapus', isDanger: true }
+                    ).then(confirmed => {
+                        if (confirmed) {
+                            this.items.splice(index, 1);
+                        }
+                    });
+                },
+                hitungTotal() {
+                    return this.items.reduce((acc, item) => acc + ((Number(item.qty) || 0) * (Number(item.estimasi_harga_satuan) || 0)), 0);
+                },
+                formatRupiah(num) {
+                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+                }
+            };
+        }
+    </script>
 </x-app-layout>

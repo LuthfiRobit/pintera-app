@@ -42,9 +42,13 @@
             @if ($lpj->bukti_kembali_sisa_dana_path)
                 <div class="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/30 p-3 text-xs">
                     <span class="text-emerald-800 font-medium">Lampiran Bukti Setoran Pengembalian Sisa Kas:</span>
-                    <a href="{{ Storage::url($lpj->bukti_kembali_sisa_dana_path) }}" target="_blank" class="inline-flex items-center gap-1 font-bold text-emerald-700 hover:underline">
-                        <x-icon name="attach_file" class="h-4 w-4" /> Lihat Dokumen
-                    </a>
+                    <button
+                        type="button"
+                        @click="$store.imagePreview.buka('{{ Storage::url($lpj->bukti_kembali_sisa_dana_path) }}', 'Bukti Pengembalian Sisa Kas - {{ $lpj->proposal->nomor_pengajuan }}')"
+                        class="inline-flex items-center gap-1.5 font-bold text-emerald-700 hover:text-emerald-900 bg-emerald-100/70 hover:bg-emerald-200/80 px-2.5 py-1 rounded-lg transition"
+                    >
+                        <x-icon name="visibility" class="h-4 w-4" /> Lihat Dokumen
+                    </button>
                 </div>
             @endif
         </div>
@@ -75,9 +79,13 @@
                             <div class="rounded-lg bg-white border border-gray-200 p-3 flex items-center justify-between">
                                 <span class="text-gray-600">Scan Nota / Faktur:</span>
                                 @if ($item->foto_nota_path)
-                                    <a href="{{ Storage::url($item->foto_nota_path) }}" target="_blank" class="font-semibold text-brand-600 hover:underline inline-flex items-center gap-1">
-                                        <x-icon name="receipt" class="h-4 w-4" /> Buka Nota
-                                    </a>
+                                    <button
+                                        type="button"
+                                        @click="$store.imagePreview.buka('{{ Storage::url($item->foto_nota_path) }}', 'Scan Nota - {{ $pItem->nama_barang }}')"
+                                        class="font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 transition"
+                                    >
+                                        <x-icon name="receipt" class="h-4 w-4 text-brand-600" /> Buka Nota
+                                    </button>
                                 @else
                                     <span class="text-gray-400 italic">Tidak ada lampiran</span>
                                 @endif
@@ -86,9 +94,13 @@
                             <div class="rounded-lg bg-white border border-gray-200 p-3 flex items-center justify-between">
                                 <span class="text-gray-600">Foto Fisik Barang:</span>
                                 @if ($item->foto_fisik_barang_path)
-                                    <a href="{{ Storage::url($item->foto_fisik_barang_path) }}" target="_blank" class="font-semibold text-brand-600 hover:underline inline-flex items-center gap-1">
-                                        <x-icon name="image" class="h-4 w-4" /> Buka Foto
-                                    </a>
+                                    <button
+                                        type="button"
+                                        @click="$store.imagePreview.buka('{{ Storage::url($item->foto_fisik_barang_path) }}', 'Foto Fisik - {{ $pItem->nama_barang }}')"
+                                        class="font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg inline-flex items-center gap-1.5 transition"
+                                    >
+                                        <x-icon name="image" class="h-4 w-4 text-brand-600" /> Buka Foto
+                                    </button>
                                 @else
                                     <span class="text-gray-400 italic">Tidak ada lampiran</span>
                                 @endif

@@ -22,6 +22,7 @@
         >
             <x-toast />
             <x-confirm-dialog />
+            <x-image-preview-modal />
 
             @include('layouts.sidebar')
 

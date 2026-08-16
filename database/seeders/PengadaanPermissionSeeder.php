@@ -31,9 +31,18 @@ class PengadaanPermissionSeeder extends Seeder
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
         $superAdmin->givePermissionTo($permissions);
 
-        // Assign to Admin Sarpras Lembaga
+        // Assign to Admin Sarpras Lembaga & Admin Administrasi
         $adminSarpras = Role::firstOrCreate(['name' => 'admin_sarpras', 'guard_name' => 'web']);
         $adminSarpras->givePermissionTo([
+            'pengadaan.proposal.create',
+            'pengadaan.proposal.view',
+            'pengadaan.proposal.edit',
+            'pengadaan.proposal.delete',
+            'pengadaan.lpj.submit',
+        ]);
+
+        $adminAdm = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web']);
+        $adminAdm->givePermissionTo([
             'pengadaan.proposal.create',
             'pengadaan.proposal.view',
             'pengadaan.proposal.edit',

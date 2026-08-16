@@ -82,6 +82,17 @@
                                         Estimasi Satuan: Rp {{ number_format($item->estimasi_harga_satuan, 0, ',', '.') }} &bull;
                                         Ruangan: <b>{{ $item->ruangan->nama_ruangan ?? '-' }}</b>
                                     </p>
+                                    @if ($item->foto_referensi_path)
+                                        <div class="mt-1.5">
+                                            <button
+                                                type="button"
+                                                @click="$store.imagePreview.buka('{{ Storage::url($item->foto_referensi_path) }}', 'Foto Acuan - {{ $item->nama_barang }}')"
+                                                class="inline-flex items-center gap-1 text-[11px] font-medium text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-2 py-0.5 rounded border border-brand-200 transition"
+                                            >
+                                                <x-icon name="image" class="h-3.5 w-3.5 text-brand-500" /> Lihat Foto/Brosur Acuan
+                                            </button>
+                                        </div>
+                                    @endif
                                 </div>
                                 <div class="text-right">
                                     <span class="text-xs font-bold text-gray-900">Rp {{ number_format($item->total_estimasi, 0, ',', '.') }}</span>

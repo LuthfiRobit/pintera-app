@@ -23,11 +23,11 @@
                                     </span>
                                 </x-dropdown-link>
 
-                                @if ($p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Draft)
+                                @if (in_array($p->status, [\App\Domains\Pengadaan\Enums\StatusPengajuan::Draft, \App\Domains\Pengadaan\Enums\StatusPengajuan::RevisionRequired]) && auth()->user()->can('pengadaan.proposal.edit'))
                                     <x-dropdown-link :href="route('admin.pengadaan.proposal.edit', $p)">
-                                        <span class="inline-flex items-center gap-2.5">
+                                        <span class="inline-flex items-center gap-2.5 {{ $p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::RevisionRequired ? 'text-amber-600 font-semibold' : '' }}">
                                             <x-icon name="edit" class="h-4 w-4 text-gray-500" />
-                                            Edit Usulan
+                                            {{ $p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::RevisionRequired ? 'Perbaiki Usulan' : 'Edit Usulan' }}
                                         </span>
                                     </x-dropdown-link>
                                 @endif
@@ -42,12 +42,24 @@
                                 @endif
 
                                 @if ($p->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Completed && $p->lpj && $p->lpj->status_lpj === \App\Domains\Pengadaan\Enums\StatusLpj::Verified)
-                                    <x-dropdown-link :href="route('admin.pengadaan.lpj.staging-inventory', $p->lpj)">
-                                        <span class="inline-flex items-center gap-2.5 text-brand-600 font-semibold">
-                                            <x-icon name="inventory" class="h-4 w-4 text-brand-500" />
-                                            Konversi ke Sarpras
-                                        </span>
-                                    </x-dropdown-link>
+                                    @php
+                                        $allConverted = $p->lpj->items->isNotEmpty() && $p->lpj->items->every(fn($item) => $item->status_konversi_sarpras === 'converted');
+                                    @endphp
+                                    @if ($allConverted)
+                                        <x-dropdown-link :href="route('admin.sarpras.aset.index')">
+                                            <span class="inline-flex items-center gap-2.5 text-emerald-600 font-semibold">
+                                                <x-icon name="check_circle" class="h-4 w-4 text-emerald-500" />
+                                                Lihat di Sarpras
+                                            </span>
+                                        </x-dropdown-link>
+                                    @elseif (auth()->user()->can('pengadaan.lpj.submit'))
+                                        <x-dropdown-link :href="route('admin.pengadaan.lpj.staging-inventory', $p->lpj)">
+                                            <span class="inline-flex items-center gap-2.5 text-brand-600 font-semibold">
+                                                <x-icon name="inventory" class="h-4 w-4 text-brand-500" />
+                                                Konversi ke Sarpras
+                                            </span>
+                                        </x-dropdown-link>
+                                    @endif
                                 @endif
                             </x-table-actions>
                         </td>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Lembaga\Pengadaan;
 
 use App\Domains\Pengadaan\Actions\CreatePengajuanAction;
 use App\Domains\Pengadaan\Actions\SubmitPengajuanAction;
+use App\Domains\Pengadaan\Actions\UpdatePengajuanAction;
 use App\Domains\Pengadaan\Enums\StatusPengajuan;
 use App\Domains\Pengadaan\Enums\TingkatUrgensi;
 use App\Domains\Pengadaan\Models\PengajuanPengadaan;
@@ -12,6 +13,7 @@ use App\Domains\Sarpras\Models\Ruangan;
 use App\Domains\Shared\Context\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Pengadaan\StorePengajuanRequest;
+use App\Http\Requests\Pengadaan\UpdatePengajuanRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,6 +23,7 @@ class PengajuanPengadaanController extends Controller
     public function __construct(
         protected TenantContext $tenantContext,
         protected CreatePengajuanAction $createAction,
+        protected UpdatePengajuanAction $updateAction,
         protected SubmitPengajuanAction $submitAction,
     ) {
     }
@@ -129,6 +132,66 @@ class PengajuanPengadaanController extends Controller
         $proposal->load(['items.kategori', 'items.ruangan', 'approvalRequest.logs.user', 'approvalRequest.currentStep', 'lpj.items']);
 
         return view('portals.lembaga.pengadaan.proposal.show', compact('proposal'));
+    }
+
+    public function edit(PengajuanPengadaan $proposal): View
+    {
+        $this->authorize('pengadaan.proposal.edit');
+
+        if (! in_array($proposal->status, [StatusPengajuan::Draft, StatusPengajuan::RevisionRequired])) {
+            abort(403, 'Usulan ini tidak dalam status yang dapat diedit.');
+        }
+
+        $proposal->load(['items.kategori', 'items.ruangan', 'approvalRequest.logs']);
+
+        $lembagaId = $this->tenantContext->activeLembagaId();
+        $yayasanId = $this->tenantContext->activeYayasanId();
+
+        $kategoris = KategoriAset::where(function ($q) use ($lembagaId, $yayasanId) {
+            if ($lembagaId) $q->where('lembaga_id', $lembagaId);
+            elseif ($yayasanId) $q->where('yayasan_id', $yayasanId);
+        })->get();
+
+        $ruangans = Ruangan::where(function ($q) use ($lembagaId, $yayasanId) {
+            if ($lembagaId) $q->where('lembaga_id', $lembagaId);
+            elseif ($yayasanId) $q->where('yayasan_id', $yayasanId);
+        })->get();
+
+        return view('portals.lembaga.pengadaan.proposal.edit', compact('proposal', 'kategoris', 'ruangans'));
+    }
+
+    public function update(UpdatePengajuanRequest $request, PengajuanPengadaan $proposal): RedirectResponse
+    {
+        $yayasanId = $proposal->yayasan_id;
+        $lembagaId = $proposal->lembaga_id;
+
+        $items = $request->validated()['items'];
+        foreach ($items as $idx => $item) {
+            if ($request->hasFile("items.{$idx}.foto_referensi")) {
+                $items[$idx]['foto_referensi_path'] = $request->file("items.{$idx}.foto_referensi")->store('pengadaan/referensi', 'public');
+            }
+        }
+
+        $dto = $request->toDTO($yayasanId, $lembagaId);
+        $dto = new \App\Domains\Pengadaan\DataTransferObjects\PengajuanPengadaanData(
+            lembagaId: $dto->lembagaId,
+            yayasanId: $dto->yayasanId,
+            judulPengajuan: $dto->judulPengajuan,
+            latarBelakang: $dto->latarBelakang,
+            tingkatUrgensi: $dto->tingkatUrgensi,
+            items: $items
+        );
+
+        $this->updateAction->execute($proposal, $dto);
+
+        if ($request->boolean('submit_immediately')) {
+            $this->submitAction->execute($proposal);
+            return redirect()->route('admin.pengadaan.proposal.show', $proposal)
+                ->with('success', 'Proposal pengadaan berhasil diperbarui dan diajukan ulang untuk ditinjau.');
+        }
+
+        return redirect()->route('admin.pengadaan.proposal.show', $proposal)
+            ->with('success', 'Perubahan proposal pengadaan berhasil disimpan.');
     }
 
     public function submit(PengajuanPengadaan $proposal): RedirectResponse
