@@ -43,10 +43,15 @@
                                         Edit Gedung
                                     </span>
                                 </x-dropdown-link>
-                                <form action="{{ route('admin.sarpras.gedung.destroy', $gedung) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus gedung ini?')">
+                                <form
+                                    action="{{ route('admin.sarpras.gedung.destroy', $gedung) }}"
+                                    method="POST"
+                                    x-data
+                                    @submit.prevent="confirmDialog('Hapus Gedung?', @js('Apakah Anda yakin ingin menghapus gedung ' . $gedung->nama_gedung . '? Semua ruangan yang terkait harus sudah dipindahkan atau kosong.'), { confirmLabel: 'Ya, Hapus Gedung', isDanger: true }).then(confirmed => { if (confirmed) $el.submit() })"
+                                >
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2 text-left text-xs text-rose-600 hover:bg-rose-50">
+                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-50 transition">
                                         <x-icon name="delete" class="h-4 w-4 text-rose-500" />
                                         Hapus Gedung
                                     </button>

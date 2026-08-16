@@ -75,7 +75,13 @@
                                         <x-badge tone="blue">{{ $k->aset_count }} Item</x-badge>
                                     </td>
                                     <td class="px-5 py-3.5 text-right">
-                                        <form action="{{ route('admin.sarpras.kategori.destroy', $k) }}" method="POST" class="inline" onsubmit="return confirm('Hapus kategori ini?')">
+                                        <form
+                                            action="{{ route('admin.sarpras.kategori.destroy', $k) }}"
+                                            method="POST"
+                                            class="inline"
+                                            x-data
+                                            @submit.prevent="confirmDialog('Hapus Kategori Aset?', @js('Apakah Anda yakin ingin menghapus kategori ' . $k->nama_kategori . '?'), { confirmLabel: 'Ya, Hapus', isDanger: true }).then(confirmed => { if (confirmed) $el.submit() })"
+                                        >
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-xs font-semibold text-rose-600 hover:underline">Hapus</button>

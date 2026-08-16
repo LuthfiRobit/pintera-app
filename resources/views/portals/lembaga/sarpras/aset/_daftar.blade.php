@@ -50,10 +50,15 @@
                                         Edit Aset
                                     </span>
                                 </x-dropdown-link>
-                                <form action="{{ route('admin.sarpras.aset.destroy', $aset) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus aset ini?')">
+                                <form
+                                    action="{{ route('admin.sarpras.aset.destroy', $aset) }}"
+                                    method="POST"
+                                    x-data
+                                    @submit.prevent="confirmDialog('Hapus Aset Barang?', @js('Apakah Anda yakin ingin menghapus data aset ' . $aset->nama_barang . ' (' . $aset->kode_inventaris . ')?'), { confirmLabel: 'Ya, Hapus Aset', isDanger: true }).then(confirmed => { if (confirmed) $el.submit() })"
+                                >
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2 text-left text-xs text-rose-600 hover:bg-rose-50">
+                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-50 transition">
                                         <x-icon name="delete" class="h-4 w-4 text-rose-500" />
                                         Hapus Aset
                                     </button>
