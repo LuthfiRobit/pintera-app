@@ -28,8 +28,9 @@ class GedungController extends Controller
 
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $gedungList = Gedung::query()
+        $query = Gedung::query()
             ->withCount('ruangan')
             ->where(function ($query) use ($lembagaId, $yayasanId) {
                 if ($lembagaId) {
@@ -44,10 +45,28 @@ class GedungController extends Controller
                         ->orWhere('kode_gedung', 'like', "%{$search}%");
                 });
             })
-            ->orderBy('kode_gedung')
-            ->paginate(15);
+            ->orderBy('kode_gedung');
 
-        return view('portals.lembaga.sarpras.gedung.index', compact('gedungList'));
+        $gedungList = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.lembaga.sarpras.gedung._daftar', [
+                'gedungList' => $gedungList,
+                'perPage' => $perPage,
+            ]);
+        }
+
+        $totalGedung = Gedung::where('lembaga_id', $lembagaId)->count();
+        $totalLantai = (int) Gedung::where('lembaga_id', $lembagaId)->sum('jumlah_lantai');
+        $totalRuangan = \App\Domains\Sarpras\Models\Ruangan::where('lembaga_id', $lembagaId)->count();
+
+        return view('portals.lembaga.sarpras.gedung.index', [
+            'gedungList' => $gedungList,
+            'perPage' => $perPage,
+            'totalGedung' => $totalGedung,
+            'totalLantai' => $totalLantai,
+            'totalRuangan' => $totalRuangan,
+        ]);
     }
 
     public function create(): View
@@ -69,7 +88,7 @@ class GedungController extends Controller
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.gedung.index')
-            ->with('success', 'Gedung berhasil ditambahkan.');
+            ->with('status', 'Gedung berhasil ditambahkan.');
     }
 
     public function edit(Gedung $gedung): View
@@ -91,7 +110,7 @@ class GedungController extends Controller
         $this->updateAction->execute($gedung, $dto);
 
         return redirect()->route('admin.sarpras.gedung.index')
-            ->with('success', 'Data gedung berhasil diperbarui.');
+            ->with('status', 'Data gedung berhasil diperbarui.');
     }
 
     public function destroy(Gedung $gedung): RedirectResponse
@@ -99,12 +118,12 @@ class GedungController extends Controller
         $this->authorize('sarpras.gedung.manage');
 
         if ($gedung->ruangan()->exists()) {
-            return back()->with('error', 'Gedung tidak dapat dihapus karena masih memiliki ruangan aktif.');
+            return back()->withErrors(['error' => 'Gedung tidak dapat dihapus karena masih memiliki ruangan aktif.']);
         }
 
         $gedung->delete();
 
         return redirect()->route('admin.sarpras.gedung.index')
-            ->with('success', 'Gedung berhasil dihapus.');
+            ->with('status', 'Gedung berhasil dihapus.');
     }
 }

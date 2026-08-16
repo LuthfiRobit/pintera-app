@@ -1,119 +1,144 @@
 <x-app-layout>
-    <div class="mx-auto max-w-7xl space-y-6">
-        {{-- Flash Messages --}}
-        @if (session('success'))
-            <div class="rounded-xl bg-emerald-50 p-4 text-sm font-medium text-emerald-800 border border-emerald-200">
-                {{ session('success') }}
-            </div>
+    <div class="mx-auto max-w-6xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
         @endif
-        @if (session('error'))
-            <div class="rounded-xl bg-rose-50 p-4 text-sm font-medium text-rose-800 border border-rose-200">
-                {{ session('error') }}
-            </div>
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
         @endif
 
-        {{-- Header --}}
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="font-display text-xl font-bold text-gray-900">Master Ruangan & Fasilitas</h1>
-                <p class="text-xs text-gray-500 mt-1">Kelola direktori ruang kelas, laboratorium, kantor, dan fasilitas sekolah.</p>
+                <h1 class="font-display text-lg font-bold text-gray-900">Ruangan & Fasilitas</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola direktori ruang kelas teori, laboratorium, kantor, dan fasilitas bersama.</p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.sarpras.ruangan.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition">
-                    <x-icon name="add" class="h-4 w-4" />
-                    Tambah Ruangan
-                </a>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> Sarpras <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Ruangan</b>
+            </p>
+        </div>
+
+        {{-- KPI Cards --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <x-icon name="meeting_room" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Ruang</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalRuangan ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Unit</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <x-icon name="school" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Kelas Teori</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalKelas ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Rombel</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                        <x-icon name="science" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Laboratorium</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalLab ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Praktik</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                        <x-icon name="share" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-purple-600">Shared Facility</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalShared ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Bersama</span>
             </div>
         </div>
 
-        {{-- Table Container with Filters --}}
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div class="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
-                <form method="GET" action="{{ route('admin.sarpras.ruangan.index') }}" class="flex flex-wrap items-center gap-3 w-full">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode atau nama ruangan..." class="w-full sm:w-64 rounded-xl border border-gray-200 px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    
-                    <select name="gedung_id" class="rounded-xl border border-gray-200 px-3.5 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <option value="">Semua Gedung</option>
-                        @foreach($gedungOptions as $g)
-                            <option value="{{ $g->id }}" {{ request('gedung_id') == $g->id ? 'selected' : '' }}>{{ $g->nama_gedung }}</option>
-                        @endforeach
-                    </select>
-
-                    <button type="submit" class="rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 transition">Filter</button>
-                    @if(request()->hasAny(['search', 'gedung_id', 'jenis_ruangan']))
-                        <a href="{{ route('admin.sarpras.ruangan.index') }}" class="text-xs text-gray-500 hover:text-gray-700">Reset</a>
-                    @endif
-                </form>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-gray-600">
-                    <thead class="bg-gray-50/75 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-3.5">Kode</th>
-                            <th class="px-6 py-3.5">Nama Ruangan</th>
-                            <th class="px-6 py-3.5">Gedung / Lantai</th>
-                            <th class="px-6 py-3.5">Jenis Ruangan</th>
-                            <th class="px-6 py-3.5 text-center">Kapasitas</th>
-                            <th class="px-6 py-3.5 text-center">Total Aset</th>
-                            <th class="px-6 py-3.5 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 font-medium">
-                        @forelse($ruanganList as $ruangan)
-                            <tr class="hover:bg-gray-50/60 transition">
-                                <td class="px-6 py-4 font-mono font-bold text-gray-900">
-                                    <a href="{{ route('admin.sarpras.ruangan.show', $ruangan) }}" class="text-indigo-600 hover:underline">
-                                        {{ $ruangan->kode_ruangan }}
-                                    </a>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">{{ $ruangan->nama_ruangan }}</div>
-                                    @if($ruangan->is_shared)
-                                        <span class="inline-flex items-center rounded-full bg-purple-50 px-2 py-0.5 text-[10px] font-bold text-purple-700 mt-1">Shared Facility</span>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-gray-900">{{ $ruangan->gedung->nama_gedung ?? '-' }}</div>
-                                    <div class="text-[11px] text-gray-400">Lantai {{ $ruangan->lantai }}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-semibold text-gray-800">
-                                        {{ $ruangan->jenis_ruangan->label() }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">{{ $ruangan->kapasitas_siswa ? $ruangan->kapasitas_siswa . ' Siswa' : '-' }}</td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
-                                        {{ $ruangan->aset_count }} Item
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-right space-x-2">
-                                    <a href="{{ route('admin.sarpras.kir.show', $ruangan) }}" class="inline-flex items-center text-emerald-600 hover:text-emerald-900 font-semibold text-xs" title="Lihat Kartu Inventaris Ruangan">KIR</a>
-                                    <a href="{{ route('admin.sarpras.ruangan.edit', $ruangan) }}" class="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-semibold text-xs">Edit</a>
-                                    <form action="{{ route('admin.sarpras.ruangan.destroy', $ruangan) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus ruangan ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-rose-600 hover:text-rose-900 font-semibold text-xs">Hapus</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-12 text-center text-gray-400">
-                                    Belum ada data ruangan yang terdaftar.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if($ruanganList->hasPages())
-                <div class="p-4 border-t border-gray-100">
-                    {{ $ruanganList->links() }}
+        {{-- Interactive Filter & AJAX Table Container --}}
+        <div
+            class="space-y-4"
+            x-data="dataTableFilter({
+                filters: {
+                    search: @js(request('search', '')),
+                    gedung_id: @js(request('gedung_id', '')),
+                    jenis_ruangan: @js(request('jenis_ruangan', ''))
+                },
+                perPage: @js($perPage ?? 20),
+                indexUrlBase: @js(route('admin.sarpras.ruangan.index'))
+            })"
+        >
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                        Filter Data
+                    </p>
+                    <x-link-button href="{{ route('admin.sarpras.ruangan.create') }}">
+                        <span class="text-base leading-none">+</span> Tambah Ruangan
+                    </x-link-button>
                 </div>
-            @endif
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {{-- Search --}}
+                    <div>
+                        <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
+                        <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                            <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                            <input
+                                type="text" x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()"
+                                placeholder="Kode atau nama ruangan..."
+                                class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
+                            >
+                        </div>
+                    </div>
+
+                    {{-- Filter Gedung --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Gedung</label>
+                        <select x-model="filters.gedung_id" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Gedung</option>
+                            @foreach ($gedungOptions as $g)
+                                <option value="{{ $g->id }}">{{ $g->nama_gedung }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Filter Jenis Ruangan --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Jenis Ruangan</label>
+                        <select x-model="filters.jenis_ruangan" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Jenis</option>
+                            @foreach ($jenisOptions as $jenis)
+                                <option value="{{ $jenis->value }}">{{ $jenis->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div x-ref="tableContainer">
+                @include('portals.lembaga.sarpras.ruangan._daftar')
+            </div>
         </div>
     </div>
 </x-app-layout>

@@ -1,124 +1,160 @@
 <x-app-layout>
-    <div class="mx-auto max-w-7xl space-y-6">
-        {{-- Flash Messages --}}
-        @if (session('success'))
-            <div class="rounded-xl bg-emerald-50 p-4 text-sm font-medium text-emerald-800 border border-emerald-200">
-                {{ session('success') }}
-            </div>
+    <div class="mx-auto max-w-6xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
         @endif
-        @if (session('error'))
-            <div class="rounded-xl bg-rose-50 p-4 text-sm font-medium text-rose-800 border border-rose-200">
-                {{ session('error') }}
-            </div>
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
         @endif
 
-        {{-- Header --}}
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="font-display text-xl font-bold text-gray-900">Master Aset & Inventaris Barang</h1>
-                <p class="text-xs text-gray-500 mt-1">Daftar inventaris sarana prasarana sekolah (Metode Barcode & Kuantitas Ruangan).</p>
+                <h1 class="font-display text-lg font-bold text-gray-900">Aset & Inventaris Barang</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Pencatatan inventaris sarana prasarana sekolah (Metode Barcode Unik & Kuantitas Ruangan).</p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.sarpras.mutasi.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 transition">
-                    <x-icon name="swap_horiz" class="h-4 w-4" />
-                    Riwayat Mutasi
-                </a>
-                <a href="{{ route('admin.sarpras.aset.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition">
-                    <x-icon name="add" class="h-4 w-4" />
-                    Tambah Aset Baru
-                </a>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> Sarpras <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Aset</b>
+            </p>
+        </div>
+
+        {{-- KPI Cards --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <x-icon name="inventory_2" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Unit Barang</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ number_format($totalItem ?? 0, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Unit</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                        <x-icon name="payments" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Total Nilai Aset</p>
+                        <p class="font-display text-sm font-bold text-gray-900 leading-tight">Rp {{ number_format($totalNilai ?? 0, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                        <x-icon name="check_circle" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Kondisi Baik</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ number_format($totalBaik ?? 0, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Layak</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                        <x-icon name="build" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-rose-600">Perlu Perbaikan</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ number_format($totalRusak ?? 0, 0, ',', '.') }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Rusak</span>
             </div>
         </div>
 
-        {{-- Filter & Search Table --}}
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div class="p-4 border-b border-gray-100">
-                <form method="GET" action="{{ route('admin.sarpras.aset.index') }}" class="flex flex-wrap items-center gap-3">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama barang, kode, merk..." class="w-full sm:w-64 rounded-xl border border-gray-200 px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    
-                    <select name="kategori_id" class="rounded-xl border border-gray-200 px-3.5 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <option value="">Semua Kategori</option>
-                        @foreach($kategoriOptions as $k)
-                            <option value="{{ $k->id }}" {{ request('kategori_id') == $k->id ? 'selected' : '' }}>{{ $k->nama_kategori }}</option>
-                        @endforeach
-                    </select>
-
-                    <select name="ruangan_id" class="rounded-xl border border-gray-200 px-3.5 py-2 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <option value="">Semua Ruangan</option>
-                        @foreach($ruanganOptions as $r)
-                            <option value="{{ $r->id }}" {{ request('ruangan_id') == $r->id ? 'selected' : '' }}>{{ $r->nama_ruangan }}</option>
-                        @endforeach
-                    </select>
-
-                    <button type="submit" class="rounded-xl bg-gray-100 px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 transition">Filter</button>
-                    @if(request()->hasAny(['search', 'kategori_id', 'ruangan_id', 'kondisi']))
-                        <a href="{{ route('admin.sarpras.aset.index') }}" class="text-xs text-gray-500 hover:text-gray-700">Reset</a>
-                    @endif
-                </form>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-gray-600">
-                    <thead class="bg-gray-50/75 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-3.5">Kode Inventaris</th>
-                            <th class="px-6 py-3.5">Nama Barang & Merk</th>
-                            <th class="px-6 py-3.5">Kategori</th>
-                            <th class="px-6 py-3.5">Lokasi Ruangan</th>
-                            <th class="px-6 py-3.5 text-center">Jumlah</th>
-                            <th class="px-6 py-3.5 text-center">Kondisi</th>
-                            <th class="px-6 py-3.5 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 font-medium">
-                        @forelse($asetList as $aset)
-                            <tr class="hover:bg-gray-50/60 transition">
-                                <td class="px-6 py-4 font-mono font-bold text-gray-900">
-                                    <a href="{{ route('admin.sarpras.aset.show', $aset) }}" class="text-indigo-600 hover:underline">
-                                        {{ $aset->kode_inventaris }}
-                                    </a>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">{{ $aset->nama_barang }}</div>
-                                    @if($aset->merk)
-                                        <div class="text-[11px] text-gray-400">Merk: {{ $aset->merk }}</div>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4">{{ $aset->kategori->nama_kategori ?? '-' }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="text-gray-900">{{ $aset->ruangan->nama_ruangan ?? '-' }}</div>
-                                    <div class="text-[11px] text-gray-400">{{ $aset->ruangan->gedung->nama_gedung ?? '' }}</div>
-                                </td>
-                                <td class="px-6 py-4 text-center">{{ $aset->qty }} {{ $aset->satuan }}</td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold {{ $aset->kondisi->badgeColor() }}">
-                                        {{ $aset->kondisi->label() }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-right space-x-2">
-                                    <a href="{{ route('admin.sarpras.aset.show', $aset) }}" class="text-indigo-600 hover:underline font-semibold">Detail</a>
-                                    <a href="{{ route('admin.sarpras.aset.edit', $aset) }}" class="text-indigo-600 hover:underline font-semibold">Edit</a>
-                                    <form action="{{ route('admin.sarpras.aset.destroy', $aset) }}" method="POST" class="inline" onsubmit="return confirm('Hapus aset ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-rose-600 hover:text-rose-900 font-semibold">Hapus</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-12 text-center text-gray-400">Belum ada aset terdaftar.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if($asetList->hasPages())
-                <div class="p-4 border-t border-gray-100">
-                    {{ $asetList->links() }}
+        {{-- Interactive Filter & AJAX Table Container --}}
+        <div
+            class="space-y-4"
+            x-data="dataTableFilter({
+                filters: {
+                    search: @js(request('search', '')),
+                    kategori_id: @js(request('kategori_id', '')),
+                    ruangan_id: @js(request('ruangan_id', '')),
+                    kondisi: @js(request('kondisi', ''))
+                },
+                perPage: @js($perPage ?? 20),
+                indexUrlBase: @js(route('admin.sarpras.aset.index'))
+            })"
+        >
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                        Filter Data
+                    </p>
+                    <div class="flex items-center gap-2">
+                        <x-link-button variant="secondary" href="{{ route('admin.sarpras.mutasi.index') }}">
+                            <x-icon name="swap_horiz" class="h-4 w-4" /> Riwayat Mutasi
+                        </x-link-button>
+                        <x-link-button href="{{ route('admin.sarpras.aset.create') }}">
+                            <span class="text-base leading-none">+</span> Tambah Aset
+                        </x-link-button>
+                    </div>
                 </div>
-            @endif
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {{-- Search --}}
+                    <div>
+                        <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
+                        <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                            <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                            <input
+                                type="text" x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()"
+                                placeholder="Nama, kode, merk..."
+                                class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
+                            >
+                        </div>
+                    </div>
+
+                    {{-- Filter Kategori --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Kategori</label>
+                        <select x-model="filters.kategori_id" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Kategori</option>
+                            @foreach ($kategoriOptions as $k)
+                                <option value="{{ $k->id }}">{{ $k->nama_kategori }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Filter Ruangan --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Ruangan</label>
+                        <select x-model="filters.ruangan_id" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Ruangan</option>
+                            @foreach ($ruanganOptions as $r)
+                                <option value="{{ $r->id }}">{{ $r->nama_ruangan }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Filter Kondisi --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-500">Kondisi</label>
+                        <select x-model="filters.kondisi" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">Semua Kondisi</option>
+                            @foreach ($kondisiOptions as $kondisi)
+                                <option value="{{ $kondisi->value }}">{{ $kondisi->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div x-ref="tableContainer">
+                @include('portals.lembaga.sarpras.aset._daftar')
+            </div>
         </div>
     </div>
 </x-app-layout>

@@ -34,8 +34,9 @@ class AsetBarangController extends Controller
 
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $asetList = AsetBarang::query()
+        $query = AsetBarang::query()
             ->with(['kategori', 'ruangan.gedung'])
             ->where(function ($query) use ($lembagaId, $yayasanId) {
                 if ($lembagaId) {
@@ -54,13 +55,36 @@ class AsetBarangController extends Controller
                         ->orWhere('merk', 'like', "%{$search}%");
                 });
             })
-            ->latest()
-            ->paginate(15);
+            ->latest();
+
+        $asetList = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.lembaga.sarpras.aset._daftar', [
+                'asetList' => $asetList,
+                'perPage' => $perPage,
+            ]);
+        }
 
         $kategoriOptions = KategoriAset::where('lembaga_id', $lembagaId)->orWhere('yayasan_id', $yayasanId)->get();
         $ruanganOptions = Ruangan::where('lembaga_id', $lembagaId)->orWhere('yayasan_id', $yayasanId)->get();
 
-        return view('portals.lembaga.sarpras.aset.index', compact('asetList', 'kategoriOptions', 'ruanganOptions'));
+        $totalItem = AsetBarang::where('lembaga_id', $lembagaId)->sum('qty');
+        $totalNilai = AsetBarang::where('lembaga_id', $lembagaId)->sum('harga_perolehan');
+        $totalBaik = AsetBarang::where('lembaga_id', $lembagaId)->where('kondisi', KondisiAset::Baik)->sum('qty');
+        $totalRusak = AsetBarang::where('lembaga_id', $lembagaId)->whereIn('kondisi', [KondisiAset::RusakRingan, KondisiAset::RusakBerat])->sum('qty');
+
+        return view('portals.lembaga.sarpras.aset.index', [
+            'asetList' => $asetList,
+            'kategoriOptions' => $kategoriOptions,
+            'ruanganOptions' => $ruanganOptions,
+            'kondisiOptions' => KondisiAset::cases(),
+            'perPage' => $perPage,
+            'totalItem' => $totalItem,
+            'totalNilai' => $totalNilai,
+            'totalBaik' => $totalBaik,
+            'totalRusak' => $totalRusak,
+        ]);
     }
 
     public function create(): View
@@ -98,7 +122,7 @@ class AsetBarangController extends Controller
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.aset.index')
-            ->with('success', 'Aset barang berhasil ditambahkan.');
+            ->with('status', 'Aset barang berhasil ditambahkan.');
     }
 
     public function show(AsetBarang $aset): View
@@ -146,7 +170,7 @@ class AsetBarangController extends Controller
         $this->updateAction->execute($aset, $dto);
 
         return redirect()->route('admin.sarpras.aset.index')
-            ->with('success', 'Data aset barang berhasil diperbarui.');
+            ->with('status', 'Data aset barang berhasil diperbarui.');
     }
 
     public function destroy(AsetBarang $aset): RedirectResponse
@@ -160,6 +184,6 @@ class AsetBarangController extends Controller
         $aset->delete();
 
         return redirect()->route('admin.sarpras.aset.index')
-            ->with('success', 'Aset barang berhasil dihapus.');
+            ->with('status', 'Aset barang berhasil dihapus.');
     }
 }

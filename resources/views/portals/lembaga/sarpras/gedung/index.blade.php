@@ -1,98 +1,107 @@
 <x-app-layout>
-    <div class="mx-auto max-w-7xl space-y-6">
-        {{-- Flash Messages --}}
-        @if (session('success'))
-            <div class="rounded-xl bg-emerald-50 p-4 text-sm font-medium text-emerald-800 border border-emerald-200">
-                {{ session('success') }}
-            </div>
+    <div class="mx-auto max-w-6xl space-y-4">
+        {{-- Flash Messages & Toast Integrations --}}
+        @if (session('status'))
+            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
         @endif
-        @if (session('error'))
-            <div class="rounded-xl bg-rose-50 p-4 text-sm font-medium text-rose-800 border border-rose-200">
-                {{ session('error') }}
-            </div>
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
         @endif
 
-        {{-- Header & Breadcrumbs --}}
-        <div class="flex flex-wrap items-center justify-between gap-4">
+        {{-- Header & Breadcrumb --}}
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="font-display text-xl font-bold text-gray-900">Master Gedung & Bangunan</h1>
-                <p class="text-xs text-gray-500 mt-1">Kelola data gedung, jumlah lantai, dan status fasilitas fisik.</p>
+                <h1 class="font-display text-lg font-bold text-gray-900">Gedung & Bangunan</h1>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola data gedung, jumlah lantai, dan pemetaan fisik fasilitas sekolah.</p>
             </div>
-            <div class="flex items-center gap-3">
-                <a href="{{ route('admin.sarpras.gedung.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-indigo-700 transition">
-                    <x-icon name="add" class="h-4 w-4" />
-                    Tambah Gedung
-                </a>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> Sarpras <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Gedung</b>
+            </p>
+        </div>
+
+        {{-- KPI Cards --}}
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+                        <x-icon name="apartment" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Gedung</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalGedung ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Unit Sekolah</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                        <x-icon name="stairs" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-blue-600">Total Lantai</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalLantai ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Akumulasi</span>
+            </div>
+
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                        <x-icon name="meeting_room" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-emerald-600">Total Ruangan</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalRuangan ?? 0 }}</p>
+                    </div>
+                </div>
+                <span class="text-[11px] font-medium text-gray-400">Terdaftar</span>
             </div>
         </div>
 
-        {{-- Table Container --}}
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-            <div class="p-4 border-b border-gray-100 flex items-center justify-between gap-4">
-                <form method="GET" action="{{ route('admin.sarpras.gedung.index') }}" class="flex items-center gap-2 w-full max-w-sm">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode atau nama gedung..." class="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-xs text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <button type="submit" class="rounded-xl bg-gray-100 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-200 transition">Cari</button>
-                </form>
-            </div>
-
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs text-gray-600">
-                    <thead class="bg-gray-50/75 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
-                        <tr>
-                            <th class="px-6 py-3.5">Kode</th>
-                            <th class="px-6 py-3.5">Nama Gedung</th>
-                            <th class="px-6 py-3.5 text-center">Jumlah Lantai</th>
-                            <th class="px-6 py-3.5 text-center">Total Ruangan</th>
-                            <th class="px-6 py-3.5 text-center">Status</th>
-                            <th class="px-6 py-3.5 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 font-medium">
-                        @forelse($gedungList as $gedung)
-                            <tr class="hover:bg-gray-50/60 transition">
-                                <td class="px-6 py-4 font-mono font-bold text-gray-900">{{ $gedung->kode_gedung }}</td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">{{ $gedung->nama_gedung }}</div>
-                                    @if($gedung->deskripsi)
-                                        <div class="text-[11px] text-gray-400 mt-0.5">{{ $gedung->deskripsi }}</div>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-4 text-center">{{ $gedung->jumlah_lantai }} Lantai</td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700">
-                                        {{ $gedung->ruangan_count }} Ruangan
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold {{ $gedung->is_aktif ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600' }}">
-                                        {{ $gedung->is_aktif ? 'Aktif' : 'Nonaktif' }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-right space-x-2">
-                                    <a href="{{ route('admin.sarpras.gedung.edit', $gedung) }}" class="inline-flex items-center text-indigo-600 hover:text-indigo-900 font-semibold text-xs">Edit</a>
-                                    <form action="{{ route('admin.sarpras.gedung.destroy', $gedung) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus gedung ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-rose-600 hover:text-rose-900 font-semibold text-xs">Hapus</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-6 py-12 text-center text-gray-400">
-                                    Belum ada data gedung yang terdaftar.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if($gedungList->hasPages())
-                <div class="p-4 border-t border-gray-100">
-                    {{ $gedungList->links() }}
+        {{-- Interactive Filter & AJAX Table Container --}}
+        <div
+            class="space-y-4"
+            x-data="dataTableFilter({
+                filters: {
+                    search: @js(request('search', ''))
+                },
+                perPage: @js($perPage ?? 20),
+                indexUrlBase: @js(route('admin.sarpras.gedung.index'))
+            })"
+        >
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                        <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
+                        Filter Data
+                    </p>
+                    <x-link-button href="{{ route('admin.sarpras.gedung.create') }}">
+                        <span class="text-base leading-none">+</span> Tambah Gedung
+                    </x-link-button>
                 </div>
-            @endif
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    {{-- Search --}}
+                    <div>
+                        <label for="search" class="mb-1.5 block text-xs font-semibold text-gray-500">Cari</label>
+                        <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                            <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
+                            <input
+                                type="text" x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()"
+                                placeholder="Kode atau nama gedung..."
+                                class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
+                            >
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div x-ref="tableContainer">
+                @include('portals.lembaga.sarpras.gedung._daftar')
+            </div>
         </div>
     </div>
 </x-app-layout>

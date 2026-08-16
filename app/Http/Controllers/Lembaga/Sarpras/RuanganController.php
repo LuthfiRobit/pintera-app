@@ -31,9 +31,10 @@ class RuanganController extends Controller
 
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $ruanganList = Ruangan::query()
-            ->with(['gedung', 'penanggungJawab', 'aset'])
+        $query = Ruangan::query()
+            ->with(['gedung', 'penanggungJawab'])
             ->withCount('aset')
             ->where(function ($query) use ($lembagaId, $yayasanId) {
                 if ($lembagaId) {
@@ -53,12 +54,33 @@ class RuanganController extends Controller
                         ->orWhere('kode_ruangan', 'like', "%{$search}%");
                 });
             })
-            ->orderBy('kode_ruangan')
-            ->paginate(15);
+            ->orderBy('kode_ruangan');
+
+        $ruanganList = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.lembaga.sarpras.ruangan._daftar', [
+                'ruanganList' => $ruanganList,
+                'perPage' => $perPage,
+            ]);
+        }
 
         $gedungOptions = Gedung::where('lembaga_id', $lembagaId)->orWhere('yayasan_id', $yayasanId)->get();
+        $totalRuangan = Ruangan::where('lembaga_id', $lembagaId)->count();
+        $totalKelas = Ruangan::where('lembaga_id', $lembagaId)->where('jenis_ruangan', JenisRuangan::KelasTeori)->count();
+        $totalLab = Ruangan::where('lembaga_id', $lembagaId)->where('jenis_ruangan', JenisRuangan::Laboratorium)->count();
+        $totalShared = Ruangan::where('lembaga_id', $lembagaId)->where('is_shared', true)->count();
 
-        return view('portals.lembaga.sarpras.ruangan.index', compact('ruanganList', 'gedungOptions'));
+        return view('portals.lembaga.sarpras.ruangan.index', [
+            'ruanganList' => $ruanganList,
+            'gedungOptions' => $gedungOptions,
+            'jenisOptions' => JenisRuangan::cases(),
+            'perPage' => $perPage,
+            'totalRuangan' => $totalRuangan,
+            'totalKelas' => $totalKelas,
+            'totalLab' => $totalLab,
+            'totalShared' => $totalShared,
+        ]);
     }
 
     public function create(): View
@@ -89,7 +111,7 @@ class RuanganController extends Controller
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.ruangan.index')
-            ->with('success', 'Ruangan berhasil ditambahkan.');
+            ->with('status', 'Ruangan berhasil ditambahkan.');
     }
 
     public function show(Ruangan $ruangan): View
@@ -129,7 +151,7 @@ class RuanganController extends Controller
         $this->updateAction->execute($ruangan, $dto);
 
         return redirect()->route('admin.sarpras.ruangan.index')
-            ->with('success', 'Data ruangan berhasil diperbarui.');
+            ->with('status', 'Data ruangan berhasil diperbarui.');
     }
 
     public function destroy(Ruangan $ruangan): RedirectResponse
@@ -137,12 +159,12 @@ class RuanganController extends Controller
         $this->authorize('sarpras.ruangan.manage');
 
         if ($ruangan->aset()->exists()) {
-            return back()->with('error', 'Ruangan tidak dapat dihapus karena masih terdapat aset di dalamnya.');
+            return back()->withErrors(['error' => 'Ruangan tidak dapat dihapus karena masih terdapat aset di dalamnya.']);
         }
 
         $ruangan->delete();
 
         return redirect()->route('admin.sarpras.ruangan.index')
-            ->with('success', 'Ruangan berhasil dihapus.');
+            ->with('status', 'Ruangan berhasil dihapus.');
     }
 }
