@@ -60,7 +60,29 @@ Telah selesai diimplementasikan secara komprehensif sistem **Universal Dynamic A
 
 ---
 
-## 4. Hal yang Perlu Direview Manusia / Claude
+## 4. Hasil Pengujian & Verifikasi
+
+- **Workflow Unit Tests:** `1 passed (6 assertions)`
+- **Pengadaan Unit & Feature Tests:** `5 passed (28 assertions)`
+- **Sarpras Unit & Feature Tests (Regression Safety):** `11 passed (45 assertions)`
+- **Total Pengujian:** `17 passed (79 assertions)` &mdash; 0 failures, 0 regressions.
+
+---
+
+## 5. Perbaikan & Standardisasi Pasca Manual Testing
+
+1. **Fix `TypeError` pada Dashboard Super Admin:**  
+   Menangani akun yang tidak memiliki `lembaga_id` (seperti `superadmin@sistem.test` atau Yayasan) agar otomatis diarahkan ke view Yayasan tanpa memicu `Argument #1 ($lembagaId) must be of type int, null given`.
+2. **Fix `BadMethodCallException` pada Rekap Aset Yayasan:**  
+   Menambahkan method relasi `gedung()`, `ruangan()`, `kategoriAset()`, `asetBarang()`, dan `pengajuanPengadaan()` pada model `App\Models\Lembaga`.
+3. **Standardisasi KPI Cards & Table Partial di Seluruh Halaman:**  
+   Seluruh halaman Sarpras & Pengadaan (Mutasi, Pencairan Kas, Audit LPJ, Rekap Global, Kategori, Gedung, Ruangan, Aset) kini 100% menggunakan KPI cards seragam, AJAX filter container `dataTableFilter`, dan TailAdmin pagination.
+4. **Idempotent Demo Seeder:**  
+   Disediakan `SarprasPengadaanDemoSeeder` yang siap dijalankan berulang kali tanpa merusak master data yang sudah ada.
+
+---
+
+## 6. Hal yang Perlu Direview Manusia / Claude
 
 1. **Pengaturan Workflow Definition Tambahan:**  
    Super Admin dapat membuat template workflow baru di tabel `workflow_definitions` untuk kebutuhan form/pengajuan modul lain.
