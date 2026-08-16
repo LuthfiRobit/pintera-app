@@ -22,7 +22,7 @@ class EssentialUserSeeder extends Seeder
         );
         $superAdmin->assignRole('yayasan_super_admin');
 
-        $lembaga = Lembaga::first();
+        $lembaga = Lembaga::where('npsn', '20223344')->first() ?? Lembaga::first();
 
         if (! $lembaga) {
             $this->command?->warn('Belum ada Lembaga -- akun kepala_sekolah/admin_administrasi/admin_keuangan/guru dilewati.');
@@ -49,6 +49,7 @@ class EssentialUserSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
+            $user->update(['lembaga_id' => $lembaga->id]);
             $user->assignRole($data['role']);
         }
     }

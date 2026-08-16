@@ -92,6 +92,7 @@ class SarprasPengadaanDemoSeeder extends Seeder
             ['email' => 'kepsek@sistem.test'],
             ['name' => 'Dr. H. Ahmad Dahlan (Kepala Sekolah)', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
+        $kepsek->update(['lembaga_id' => $lembaga->id]);
         $kepsek->assignRole($kepsekRole);
         $kepsek->givePermissionTo([
             'sarpras.gedung.view', 'sarpras.ruangan.view', 'sarpras.kategori.view', 'sarpras.aset.view', 'sarpras.mutasi.view',
@@ -102,6 +103,8 @@ class SarprasPengadaanDemoSeeder extends Seeder
             ['email' => 'adm@sistem.test'],
             ['name' => 'Admin Sarpras & Operasional', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
+        $adm->update(['lembaga_id' => $lembaga->id]);
+        $adm->assignRole('admin_administrasi');
         $adm->givePermissionTo([
             'sarpras.gedung.view', 'sarpras.gedung.manage',
             'sarpras.ruangan.view', 'sarpras.ruangan.manage',
