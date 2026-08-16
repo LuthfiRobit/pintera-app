@@ -23,4 +23,13 @@ class ProcessApprovalRequest extends FormRequest
             'item_decisions.*.catatan' => ['nullable', 'string', 'max:500'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'action.required' => 'Keputusan tindakan persetujuan (Setujui, Tolak, atau Revisi) wajib dipilih.',
+            'notes.max' => 'Catatan keputusan maksimal 1000 karakter.',
+            'item_decisions.*.status.in' => 'Keputusan item harus approved atau rejected.',
+        ];
+    }
 }

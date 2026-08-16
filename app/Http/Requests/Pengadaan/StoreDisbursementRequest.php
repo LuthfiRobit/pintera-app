@@ -22,6 +22,18 @@ class StoreDisbursementRequest extends FormRequest
         ];
     }
 
+    public function messages(): array
+    {
+        return [
+            'nominal_pencairan.required' => 'Nominal pencairan dana kas wajib diisi.',
+            'nominal_pencairan.min' => 'Nominal pencairan minimal Rp 1.',
+            'tanggal_pencairan.required' => 'Tanggal pencairan wajib diisi.',
+            'tanggal_pencairan.date' => 'Format tanggal pencairan tidak valid.',
+            'bukti_transfer.mimes' => 'Bukti transfer/struk kas harus berformat JPG, PNG, atau PDF.',
+            'bukti_transfer.max' => 'Ukuran bukti pencairan maksimal 5MB.',
+        ];
+    }
+
     public function toDTO(?string $buktiTransferPath = null): DisbursementData
     {
         return DisbursementData::fromArray($this->validated(), $buktiTransferPath);
