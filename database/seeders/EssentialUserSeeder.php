@@ -5,6 +5,7 @@ namespace Database\Seeders;
 
 use App\Models\Lembaga;
 use App\Models\User;
+use App\Models\Yayasan;
 use Illuminate\Database\Seeder;
 
 class EssentialUserSeeder extends Seeder
@@ -16,6 +17,7 @@ class EssentialUserSeeder extends Seeder
             [
                 'name' => 'Admin Sistem',
                 'password' => 'password',
+                'yayasan_id' => Yayasan::first()?->id,
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]

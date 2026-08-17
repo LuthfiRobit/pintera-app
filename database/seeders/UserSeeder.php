@@ -10,18 +10,20 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $kbit = Lembaga::where('npsn', '20223311')->firstOrFail();
+
         if (! User::where('email', 'admin.yayasan@permatakraksaan.sch.id')->exists()) {
             $adminYayasan = User::create([
                 'name' => 'Ahmad Fauzi (Admin Yayasan)',
                 'email' => 'admin.yayasan@permatakraksaan.sch.id',
                 'password' => 'password',
+                'yayasan_id' => $kbit->yayasan_id,
                 'email_verified_at' => now(),
                 'is_active' => true,
             ]);
             $adminYayasan->assignRole('yayasan_super_admin');
         }
 
-        $kbit = Lembaga::where('npsn', '20223311')->firstOrFail();
         $tkit = Lembaga::where('npsn', '20223322')->firstOrFail();
         $sdit = Lembaga::where('npsn', '20223333')->firstOrFail();
         $smpit = Lembaga::where('npsn', '20223344')->firstOrFail();

@@ -28,6 +28,7 @@ class User extends Authenticatable
         'username',
         'password',
         'lembaga_id',
+        'yayasan_id',
         'is_active',
         'must_change_password',
         'email_verified_at',
@@ -61,6 +62,11 @@ class User extends Authenticatable
     public function lembaga(): BelongsTo
     {
         return $this->belongsTo(Lembaga::class);
+    }
+
+    public function yayasan(): BelongsTo
+    {
+        return $this->belongsTo(Yayasan::class);
     }
 
     public function guru(): HasOne

@@ -49,6 +49,10 @@ class TenantContext implements TenantContextInterface
             return null;
         }
 
+        if ($user->yayasan_id) {
+            return $user->yayasan_id;
+        }
+
         if ($user->lembaga && $user->lembaga->yayasan_id) {
             return $user->lembaga->yayasan_id;
         }

@@ -31,7 +31,7 @@ function buatYayasanSuperAdminDenganLembagaAktif(): array
     }
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $role->givePermissionTo(['jenis-tes.view', 'jenis-tes.create', 'jenis-tes.edit', 'jenis-tes.delete']);
-    $user = User::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $user->assignRole($role);
 
     test()->actingAs($user);

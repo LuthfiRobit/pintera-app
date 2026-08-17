@@ -81,7 +81,7 @@ it('lets a yayasan-scoped user filter the guru list down to one lembaga via the 
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
     ]);
 
-    $manager = User::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager->assignRole($role);
     $this->actingAs($manager);
 

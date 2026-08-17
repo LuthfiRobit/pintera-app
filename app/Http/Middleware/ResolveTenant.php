@@ -25,7 +25,7 @@ class ResolveTenant
 
             if ($value === 'all') {
                 session()->forget('active_lembaga_id');
-            } elseif (Lembaga::whereKey($value)->exists()) {
+            } elseif ($user->yayasan_id && Lembaga::whereKey($value)->where('yayasan_id', $user->yayasan_id)->exists()) {
                 session(['active_lembaga_id' => (int) $value]);
             }
         }

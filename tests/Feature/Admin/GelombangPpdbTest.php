@@ -102,7 +102,7 @@ it('redirects a yayasan-scoped user with no active lembaga selected away from th
     $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
 
-    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $yayasanUser->assignRole($yayasanRole);
 
     $this->actingAs($yayasanUser)->get(route('admin.gelombang-ppdb.create'))
@@ -119,7 +119,7 @@ it('shows the "pilih lembaga aktif" error banner on the index after the create r
     $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
 
-    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $yayasanUser->assignRole($yayasanRole);
 
     $this->actingAs($yayasanUser)->get(route('admin.gelombang-ppdb.create'));
@@ -137,7 +137,7 @@ it('rejects a store from a yayasan-scoped user with no active lembaga selected, 
     $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
 
-    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $yayasanUser->assignRole($yayasanRole);
 
     $this->actingAs($yayasanUser)->post(route('admin.gelombang-ppdb.store'), [
@@ -280,7 +280,7 @@ it('lets a yayasan-scoped user with an active lembaga selected via the switcher 
     $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $yayasanRole->givePermissionTo(['gelombang-ppdb.view', 'gelombang-ppdb.create', 'gelombang-ppdb.edit']);
 
-    $yayasanUser = User::factory()->create(['lembaga_id' => null]);
+    $yayasanUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $yayasanUser->assignRole($yayasanRole);
 
     // Switch to the target lembaga via the ResolveTenant middleware query param.

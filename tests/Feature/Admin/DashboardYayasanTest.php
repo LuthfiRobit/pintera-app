@@ -40,7 +40,7 @@ it('shows the lembaga dashboard, not the yayasan dashboard, once active_lembaga_
     $tahunAjaran = TahunAjaran::create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true]);
     $pendaftaran = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
-    $user = User::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $user->assignRole('yayasan_super_admin');
 
     $response = $this->actingAs($user)->get(route('dashboard', ['switch_lembaga' => $lembaga->id]));
@@ -53,7 +53,7 @@ it('shows the lembaga dashboard, not the yayasan dashboard, once active_lembaga_
 it('goes back to the yayasan dashboard once switch_lembaga=all is used', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $user = User::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $user->assignRole('yayasan_super_admin');
 
     $this->actingAs($user)->get(route('dashboard', ['switch_lembaga' => $lembaga->id]));
