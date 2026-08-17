@@ -82,8 +82,8 @@
                     </template>
                 </div>
 
-                {{-- Mata Pelajaran & Guru --}}
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {{-- Mata Pelajaran, Guru & Ruangan --}}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
                         <x-input-label value="Mata Pelajaran" />
                         <select name="mata_pelajaran_id" x-init="initModalMapelSelect($el)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
@@ -92,7 +92,7 @@
                                 <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
                             @endforeach
                         </select>
-                        <p class="mt-1 text-[11px] text-gray-400">Opsional untuk kelas PAUD/Tematik.</p>
+                        <p class="mt-1 text-[11px] text-gray-400">Opsional untuk PAUD/Tematik.</p>
                     </div>
 
                     <div>
@@ -101,6 +101,16 @@
                             <option value="" disabled>— Pilih Guru —</option>
                             @foreach ($guruList ?? [] as $guru)
                                 <option value="{{ $guru->id }}">{{ $guru->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <x-input-label value="Ruangan Sarpras" />
+                        <select name="ruangan_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">— Default Ruang Kelas —</option>
+                            @foreach ($ruanganList ?? [] as $ruangan)
+                                <option value="{{ $ruangan->id }}">{{ $ruangan->nama_ruangan }}</option>
                             @endforeach
                         </select>
                     </div>

@@ -27,7 +27,7 @@
                             Sesi / Jam
                         </th>
                         @foreach ($jamPelajaranPerHari as $group)
-                            <th scope="col" class="px-4 py-3.5 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-b border-r border-gray-200 last:border-r-0 min-w-[210px] bg-gray-50/90">
+                            <th scope="col" class="px-4 py-3.5 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-b border-r border-gray-200 last:border-r-0 min-w-[220px] bg-gray-50/90">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <x-icon name="calendar_today" class="h-4 w-4 text-brand-500" />
                                     <span>{{ $group['hari']->label() }}</span>
@@ -53,27 +53,42 @@
                                     @if ($slot)
                                         @php
                                             $jadwal = $jadwalByJam->get($slot->id);
+                                            $waktuMulai = substr($slot->jam_mulai, 0, 5);
+                                            $waktuSelesai = substr($slot->jam_selesai, 0, 5);
+                                            $ruanganNama = $jadwal?->ruangan?->nama_ruangan ?? ($kelas?->ruangan?->nama_ruangan ?? null);
                                         @endphp
                                         @if ($jadwal)
-                                            {{-- Executive Schedule Card (Terisi) --}}
-                                            <div class="group relative rounded-xl border border-gray-200/80 bg-white p-4 shadow-xs hover:shadow-md transition-all duration-200 hover:border-brand-300 flex flex-col justify-between h-full min-h-[125px]">
-                                                <div>
-                                                    <div class="flex items-center justify-between gap-1 mb-2.5">
-                                                        <span class="inline-flex items-center gap-1 rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-mono font-bold text-gray-700">
-                                                            <x-icon name="schedule" class="h-3.5 w-3.5 text-gray-400" />
-                                                            <span>{{ substr($slot->jam_mulai, 0, 5) }}–{{ substr($slot->jam_selesai, 0, 5) }}</span>
+                                            {{-- Executive Schedule Card (Terisi) Sesuai Referensi Gambar --}}
+                                            <div class="group relative rounded-2xl border border-gray-200/90 bg-white p-4 shadow-xs hover:shadow-md transition-all duration-200 hover:border-brand-300 flex flex-col justify-between h-full min-h-[140px]">
+                                                <div class="space-y-3">
+                                                    {{-- 1. Badge Waktu --}}
+                                                    <div>
+                                                        <span class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200/80 bg-white px-2.5 py-1 text-xs font-bold font-mono text-gray-900 shadow-2xs">
+                                                            <x-icon name="schedule" class="h-4 w-4 text-brand-500" />
+                                                            <span>{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
                                                         </span>
-                                                        <span class="text-[11px] font-semibold text-gray-400 truncate max-w-[90px]" title="{{ $slot->label }}">{{ $slot->label }}</span>
                                                     </div>
+
+                                                    {{-- 2. Mata Pelajaran --}}
                                                     <h4 class="font-display text-sm font-bold text-gray-900 leading-snug break-words group-hover:text-brand-600 transition-colors">
                                                         {{ $jadwal->mataPelajaran?->nama ?? '(tanpa mapel)' }}
                                                     </h4>
-                                                    <div class="mt-2.5 flex items-center gap-2 text-xs text-gray-600">
-                                                        <div class="h-6 w-6 rounded-full bg-brand-50 text-brand-600 flex items-center justify-center font-bold text-[11px] shrink-0 border border-brand-200 shadow-2xs">
-                                                            {{ substr($jadwal->guru->nama, 0, 1) }}
+
+                                                    {{-- 3. Guru Pengampu --}}
+                                                    <div class="flex items-center gap-2 text-xs text-gray-700">
+                                                        <div class="h-6 w-6 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center shrink-0 border border-gray-200">
+                                                            <x-icon name="person" class="h-3.5 w-3.5" />
                                                         </div>
-                                                        <span class="font-medium truncate text-gray-700" title="{{ $jadwal->guru->nama }}">{{ $jadwal->guru->nama }}</span>
+                                                        <span class="font-medium truncate" title="{{ $jadwal->guru->nama }}">{{ $jadwal->guru->nama }}</span>
                                                     </div>
+
+                                                    {{-- 4. Ruangan Sarpras --}}
+                                                    @if ($ruanganNama)
+                                                        <div class="flex items-center gap-2 text-xs text-brand-600">
+                                                            <x-icon name="meeting_room" class="h-4 w-4 text-brand-500 shrink-0" />
+                                                            <span class="font-medium truncate text-gray-700" title="{{ $ruanganNama }}">{{ $ruanganNama }}</span>
+                                                        </div>
+                                                    @endif
                                                 </div>
 
                                                 @can('jadwal-pelajaran.kelola')
@@ -96,26 +111,25 @@
                                         @else
                                             {{-- Empty Slot Dropzone --}}
                                             @can('jadwal-pelajaran.kelola')
-                                                <div @click="openCreateModal({ jam_ids: [{{ $slot->id }}] })" class="group flex flex-col items-center justify-center text-center rounded-xl border-2 border-dashed border-gray-200 hover:border-brand-400 bg-gray-50/40 hover:bg-brand-50/30 p-4 transition-all duration-200 cursor-pointer h-full min-h-[125px]">
-                                                    <span class="inline-flex items-center gap-1 text-[11px] font-mono text-gray-400 group-hover:text-brand-600 font-medium mb-2">
+                                                <div @click="openCreateModal({ jam_ids: [{{ $slot->id }}] })" class="group flex flex-col items-center justify-center text-center rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-400 bg-gray-50/40 hover:bg-brand-50/30 p-4 transition-all duration-200 cursor-pointer h-full min-h-[140px]">
+                                                    <span class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200/60 bg-white/80 px-2.5 py-1 text-xs font-mono font-bold text-gray-500 group-hover:text-brand-600 group-hover:border-brand-200 mb-2">
                                                         <x-icon name="schedule" class="h-3.5 w-3.5 opacity-60" />
-                                                        <span>{{ substr($slot->jam_mulai, 0, 5) }}–{{ substr($slot->jam_selesai, 0, 5) }}</span>
+                                                        <span>{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
                                                     </span>
-                                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-white shadow-xs border border-gray-200 group-hover:border-brand-300 group-hover:bg-brand-50 text-gray-400 group-hover:text-brand-600 transition-all mb-1.5 group-hover:scale-105">
+                                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-white shadow-xs border border-gray-200 group-hover:border-brand-300 group-hover:bg-brand-50 text-gray-400 group-hover:text-brand-600 transition-all mb-1 group-hover:scale-105">
                                                         <x-icon name="add" class="h-4 w-4" />
                                                     </span>
                                                     <span class="text-xs font-bold text-gray-400 group-hover:text-brand-700 transition-colors">+ Isi Jadwal</span>
-                                                    <span class="text-[10px] text-gray-400 mt-0.5">({{ $slot->label }})</span>
                                                 </div>
                                             @else
-                                                <div class="flex flex-col items-center justify-center text-center rounded-xl border border-dashed border-gray-200 bg-gray-50/20 p-4 h-full min-h-[125px] text-gray-400">
-                                                    <span class="text-xs font-medium">Kosong</span>
-                                                    <span class="text-[10px] mt-0.5">({{ $slot->label }})</span>
+                                                <div class="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/20 p-4 h-full min-h-[140px] text-gray-400">
+                                                    <span class="text-xs font-mono font-semibold text-gray-500">{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
+                                                    <span class="text-xs font-medium text-gray-400 mt-1">Kosong</span>
                                                 </div>
                                             @endcan
                                         @endif
                                     @else
-                                        <div class="h-full min-h-[125px] bg-gray-50/30 rounded-xl border border-dashed border-gray-100 flex items-center justify-center text-gray-300 text-xs">
+                                        <div class="h-full min-h-[140px] bg-gray-50/30 rounded-2xl border border-dashed border-gray-100 flex items-center justify-center text-gray-300 text-xs">
                                             —
                                         </div>
                                     @endif

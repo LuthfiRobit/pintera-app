@@ -94,7 +94,7 @@
 
                                                     <span class="hidden md:inline text-gray-300">&bull;</span>
 
-                                                    {{-- Mata Pelajaran & Guru --}}
+                                                    {{-- Mata Pelajaran & Guru & Ruangan --}}
                                                     <div class="flex flex-wrap items-center gap-2 md:gap-3">
                                                         <span class="text-sm font-bold text-gray-900">
                                                             {{ $jadwal->mataPelajaran?->nama ?? '(tanpa mapel)' }}
@@ -103,6 +103,12 @@
                                                             <x-icon name="person" class="h-3.5 w-3.5 text-gray-400" />
                                                             <span>Guru: <strong class="font-semibold text-gray-800">{{ $jadwal->guru->nama }}</strong></span>
                                                         </span>
+                                                        @if ($jadwal->ruangan)
+                                                            <span class="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 border border-brand-200/60">
+                                                                <x-icon name="meeting_room" class="h-3 w-3 text-brand-500" />
+                                                                <span>{{ $jadwal->ruangan->nama_ruangan }}</span>
+                                                            </span>
+                                                        @endif
                                                     </div>
                                                 </div>
 

@@ -73,7 +73,7 @@
                         <x-input-error :messages="$errors->get('jam_pelajaran_id')" class="mt-1.5" />
                     </div>
 
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div>
                             <x-input-label value="Mata Pelajaran" />
                             <select
@@ -105,6 +105,21 @@
                                 @endforeach
                             </select>
                             <x-input-error :messages="$errors->get('guru_id')" class="mt-1.5" />
+                        </div>
+
+                        <div>
+                            <x-input-label value="Ruangan Sarpras" />
+                            <select
+                                name="ruangan_id"
+                                class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                            >
+                                <option value="">— Default Ruang Kelas ({{ $kelas->ruangan?->nama_ruangan ?? 'Belum Diatur' }}) —</option>
+                                @foreach ($ruanganList ?? [] as $ruangan)
+                                    <option value="{{ $ruangan->id }}" @selected(old('ruangan_id', $jadwalPelajaran->ruangan_id ?? $kelas->ruangan_id) == $ruangan->id)>{{ $ruangan->nama_ruangan }} (Kapasitas: {{ $ruangan->kapasitas ?? '—' }})</option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1.5 text-xs text-gray-400">Pilih jika KBM menempati Lab/Bengkel khusus.</p>
+                            <x-input-error :messages="$errors->get('ruangan_id')" class="mt-1.5" />
                         </div>
                     </div>
                 </div>
