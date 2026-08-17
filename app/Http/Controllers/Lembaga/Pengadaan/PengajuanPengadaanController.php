@@ -129,6 +129,7 @@ class PengajuanPengadaanController extends Controller
     public function show(PengajuanPengadaan $proposal): View
     {
         $this->authorize('pengadaan.proposal.view');
+        $this->ensureCanAccessProposal($proposal);
         $proposal->load(['items.kategori', 'items.ruangan', 'approvalRequest.logs.user', 'approvalRequest.currentStep', 'lpj.items']);
 
         return view('portals.lembaga.pengadaan.proposal.show', compact('proposal'));
@@ -137,6 +138,7 @@ class PengajuanPengadaanController extends Controller
     public function edit(PengajuanPengadaan $proposal): View
     {
         $this->authorize('pengadaan.proposal.edit');
+        $this->ensureCanAccessProposal($proposal);
 
         if (! in_array($proposal->status, [StatusPengajuan::Draft, StatusPengajuan::RevisionRequired])) {
             abort(403, 'Usulan ini tidak dalam status yang dapat diedit.');
@@ -162,6 +164,8 @@ class PengajuanPengadaanController extends Controller
 
     public function update(UpdatePengajuanRequest $request, PengajuanPengadaan $proposal): RedirectResponse
     {
+        $this->ensureCanAccessProposal($proposal);
+
         $yayasanId = $proposal->yayasan_id;
         $lembagaId = $proposal->lembaga_id;
 
@@ -197,9 +201,21 @@ class PengajuanPengadaanController extends Controller
     public function submit(PengajuanPengadaan $proposal): RedirectResponse
     {
         $this->authorize('pengadaan.proposal.create');
+        $this->ensureCanAccessProposal($proposal);
         $this->submitAction->execute($proposal);
 
         return redirect()->route('admin.pengadaan.proposal.show', $proposal)
             ->with('success', 'Proposal pengadaan berhasil diajukan untuk ditinjau.');
+    }
+
+    private function ensureCanAccessProposal(PengajuanPengadaan $proposal): void
+    {
+        if ($this->tenantContext->isYayasanScope()) {
+            abort_unless($proposal->yayasan_id === $this->tenantContext->activeYayasanId(), 404);
+
+            return;
+        }
+
+        abort_unless($proposal->lembaga_id === $this->tenantContext->activeLembagaId(), 404);
     }
 }

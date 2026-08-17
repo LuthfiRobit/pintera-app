@@ -58,10 +58,8 @@ class ApprovalPengadaanController extends Controller
 
     public function review(PengajuanPengadaan $proposal): View
     {
-        $user = auth()->user();
-        if (! $user->can('pengadaan.approval.yayasan') && ! $user->can('pengadaan.approval.internal') && ! $user->hasRole(['super_admin', 'yayasan_super_admin'])) {
-            abort(403, 'Anda tidak memiliki hak akses untuk mereview pengajuan ini.');
-        }
+        $this->authorizeApprover('mereview');
+        abort_unless($proposal->yayasan_id === $this->tenantContext->activeYayasanId(), 404);
 
         $proposal->load(['lembaga', 'pengaju', 'items.kategori', 'items.ruangan', 'approvalRequest.logs.user', 'approvalRequest.currentStep']);
 
@@ -70,10 +68,8 @@ class ApprovalPengadaanController extends Controller
 
     public function decision(ProcessApprovalRequest $request, PengajuanPengadaan $proposal): RedirectResponse
     {
-        $user = $request->user();
-        if (! $user->can('pengadaan.approval.yayasan') && ! $user->can('pengadaan.approval.internal') && ! $user->hasRole(['super_admin', 'yayasan_super_admin'])) {
-            abort(403, 'Anda tidak memiliki hak akses untuk memberikan keputusan pengajuan ini.');
-        }
+        $this->authorizeApprover('memberikan keputusan');
+        abort_unless($proposal->yayasan_id === $this->tenantContext->activeYayasanId(), 404);
 
         $action = ApprovalAction::from($request->validated()['action']);
         $itemDecisions = $request->validated()['item_decisions'] ?? [];
@@ -98,5 +94,16 @@ class ApprovalPengadaanController extends Controller
         }
 
         return redirect()->route('admin.pengadaan.inbox.index')->with('success', $msg);
+    }
+
+    private function authorizeApprover(string $aksi): void
+    {
+        $user = auth()->user();
+
+        abort_unless(
+            $user->can('pengadaan.approval.yayasan') || $user->can('pengadaan.approval.internal') || $user->hasRole(['super_admin', 'yayasan_super_admin']),
+            403,
+            "Anda tidak memiliki hak akses untuk {$aksi} pengajuan ini."
+        );
     }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Lembaga\Sarpras;
 
 use App\Domains\Sarpras\Actions\CreateGedungAction;
 use App\Domains\Sarpras\Actions\UpdateGedungAction;
-use App\Domains\Sarpras\DataTransferObjects\GedungData;
 use App\Domains\Sarpras\Models\Gedung;
 use App\Domains\Shared\Context\TenantContext;
 use App\Http\Controllers\Controller;
@@ -84,7 +83,7 @@ class GedungController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $dto = GedungData::fromArray($request->validated(), $yayasanId, $lembagaId);
+        $dto = $request->toDTO($yayasanId, $lembagaId);
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.gedung.index')
@@ -106,7 +105,7 @@ class GedungController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $dto = GedungData::fromArray($request->validated(), $yayasanId, $lembagaId);
+        $dto = $request->toDTO($yayasanId, $lembagaId);
         $this->updateAction->execute($gedung, $dto);
 
         return redirect()->route('admin.sarpras.gedung.index')

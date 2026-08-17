@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Lembaga\Sarpras;
 
 use App\Domains\Sarpras\Actions\CreateKategoriAsetAction;
-use App\Domains\Sarpras\DataTransferObjects\KategoriAsetData;
 use App\Domains\Sarpras\Models\KategoriAset;
 use App\Domains\Shared\Context\TenantContext;
 use App\Http\Controllers\Controller;
@@ -70,7 +69,7 @@ class KategoriAsetController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $dto = KategoriAsetData::fromArray($request->validated(), $yayasanId, $lembagaId);
+        $dto = $request->toDTO($yayasanId, $lembagaId);
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.kategori.index')

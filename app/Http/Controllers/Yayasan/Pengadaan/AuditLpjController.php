@@ -57,6 +57,7 @@ class AuditLpjController extends Controller
     public function show(LpjPengadaan $lpj): View
     {
         $this->authorize('pengadaan.lpj.verify');
+        abort_unless($lpj->proposal->yayasan_id === $this->tenantContext->activeYayasanId(), 404);
         $lpj->load(['proposal.lembaga', 'items.pengajuanItem.kategori', 'items.pengajuanItem.ruangan', 'verifiedBy']);
 
         return view('portals.yayasan.pengadaan.audit-lpj.show', compact('lpj'));
@@ -65,6 +66,7 @@ class AuditLpjController extends Controller
     public function verify(Request $request, LpjPengadaan $lpj): RedirectResponse
     {
         $this->authorize('pengadaan.lpj.verify');
+        abort_unless($lpj->proposal->yayasan_id === $this->tenantContext->activeYayasanId(), 404);
 
         $request->validate([
             'is_approved' => ['required', 'boolean'],

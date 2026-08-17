@@ -18,6 +18,7 @@ use App\Models\JadwalPelajaran;
 use App\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
+use App\Models\Scopes\TenantScope;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -78,7 +79,8 @@ class JadwalPelajaranController extends BaseController
             : Guru::orderBy('nama')->get();
 
         $ruanganList = $targetLembagaId
-            ? Ruangan::where('is_aktif', true)
+            ? Ruangan::withoutGlobalScope(TenantScope::class)
+                ->where('is_aktif', true)
                 ->where(function ($q) use ($targetLembagaId) {
                     $q->where('lembaga_id', $targetLembagaId)
                       ->orWhere('is_shared', true);
@@ -150,7 +152,8 @@ class JadwalPelajaranController extends BaseController
 
         $mataPelajaranList = MataPelajaran::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
         $guruList = Guru::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
-        $ruanganList = Ruangan::where('is_aktif', true)
+        $ruanganList = Ruangan::withoutGlobalScope(TenantScope::class)
+            ->where('is_aktif', true)
             ->where(function ($q) use ($targetLembagaId) {
                 $q->where('lembaga_id', $targetLembagaId)
                   ->orWhere('is_shared', true);
@@ -282,7 +285,8 @@ class JadwalPelajaranController extends BaseController
 
         $mataPelajaranList = MataPelajaran::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
         $guruList = Guru::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
-        $ruanganList = Ruangan::where('is_aktif', true)
+        $ruanganList = Ruangan::withoutGlobalScope(TenantScope::class)
+            ->where('is_aktif', true)
             ->where(function ($q) use ($targetLembagaId) {
                 $q->where('lembaga_id', $targetLembagaId)
                   ->orWhere('is_shared', true);

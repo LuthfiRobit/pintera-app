@@ -3,6 +3,7 @@
 namespace App\Domains\Sarpras\Models;
 
 use App\Domains\Sarpras\Enums\JenisRuangan;
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
@@ -17,7 +18,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Ruangan extends Model
 {
-    use HasFactory, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $table = 'ruangan';
 

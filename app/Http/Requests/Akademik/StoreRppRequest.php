@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Akademik;
 
+use App\Domains\Akademik\DataTransferObjects\RppData;
+use App\Models\Kelas;
+use App\Models\Semester;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreRppRequest extends FormRequest
@@ -43,5 +46,24 @@ final class StoreRppRequest extends FormRequest
             'file.mimes' => 'Format berkas harus berupa PDF, DOC, atau DOCX.',
             'file.max' => 'Ukuran berkas maksimal adalah 10 Megabytes (MB).',
         ];
+    }
+
+    public function toDTO(int $guruId, Kelas $kelas, Semester $semester): RppData
+    {
+        $validated = $this->validated();
+
+        return new RppData(
+            yayasanId: $kelas->yayasan_id ?: $kelas->lembaga->yayasan_id,
+            lembagaId: $kelas->lembaga_id,
+            guruId: $guruId,
+            tahunAjaranId: $semester->tahun_ajaran_id,
+            semesterId: $semester->id,
+            kelasId: $kelas->id,
+            judulTopik: (string) $validated['judul_topik'],
+            alokasiWaktu: (string) $validated['alokasi_waktu'],
+            mataPelajaranId: ! empty($validated['mata_pelajaran_id']) ? (int) $validated['mata_pelajaran_id'] : null,
+            pertemuanKe: $validated['pertemuan_ke'] ?? null,
+            file: $this->file('file'),
+        );
     }
 }

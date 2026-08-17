@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Sarpras;
 
+use App\Domains\Sarpras\DataTransferObjects\AsetBarangData;
 use App\Domains\Sarpras\Enums\KondisiAset;
 use App\Domains\Sarpras\Enums\SumberPerolehanAset;
 use App\Domains\Sarpras\Enums\TipePencatatanAset;
@@ -33,5 +34,15 @@ class StoreAsetBarangRequest extends FormRequest
             'harga_perolehan' => ['nullable', 'numeric', 'min:0'],
             'foto' => ['nullable', 'image', 'max:2048'],
         ];
+    }
+
+    public function toDTO(int $yayasanId, ?int $lembagaId, ?string $fotoBarangPath = null): AsetBarangData
+    {
+        $validated = $this->validated();
+        if ($fotoBarangPath !== null) {
+            $validated['foto_barang_path'] = $fotoBarangPath;
+        }
+
+        return AsetBarangData::fromArray($validated, $yayasanId, $lembagaId);
     }
 }

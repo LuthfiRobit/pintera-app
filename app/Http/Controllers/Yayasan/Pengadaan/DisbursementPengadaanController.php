@@ -58,6 +58,9 @@ class DisbursementPengadaanController extends Controller
 
     public function store(StoreDisbursementRequest $request, PengajuanPengadaan $proposal): RedirectResponse
     {
+        $this->authorize('pengadaan.disbursement.manage');
+        abort_unless($proposal->yayasan_id === $this->tenantContext->activeYayasanId(), 404);
+
         $buktiPath = null;
         if ($request->hasFile('bukti_transfer')) {
             $buktiPath = $request->file('bukti_transfer')->store('pengadaan/pencairan', 'public');

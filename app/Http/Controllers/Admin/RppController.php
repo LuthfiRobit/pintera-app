@@ -6,10 +6,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domains\Akademik\Actions\Rpp\CreateRppAction;
 use App\Domains\Akademik\Actions\Rpp\DeleteRppAction;
+use App\Domains\Akademik\Actions\Rpp\ListRppAction;
 use App\Domains\Akademik\Actions\Rpp\SubmitRppAction;
 use App\Domains\Akademik\Actions\Rpp\UpdateRppAction;
 use App\Domains\Akademik\Actions\Rpp\VerifyRppAction;
-use App\Domains\Akademik\DataTransferObjects\RppData;
 use App\Domains\Akademik\Enums\StatusRpp;
 use App\Domains\Akademik\Models\Rpp;
 use App\Http\Requests\Akademik\StoreRppRequest;
@@ -40,7 +40,8 @@ class RppController extends BaseController
         private readonly UpdateRppAction $updateRppAction,
         private readonly SubmitRppAction $submitRppAction,
         private readonly VerifyRppAction $verifyRppAction,
-        private readonly DeleteRppAction $deleteRppAction
+        private readonly DeleteRppAction $deleteRppAction,
+        private readonly ListRppAction $listRppAction,
     ) {}
 
     public function index(Request $request): View
@@ -52,71 +53,34 @@ class RppController extends BaseController
         $perPage = (int) $request->query('per_page', 20);
         $search = $request->query('search');
 
-        $targetLembagaId = $user->active_lembaga_id 
-            ?: ($user->lembaga_id ?: null);
-
         $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
-        $tahunAjaranId = $request->query('tahun_ajaran_id') 
+        $tahunAjaranId = $request->query('tahun_ajaran_id')
             ?: ($tahunAjaranAktif?->id ?: TahunAjaran::orderByDesc('id')->value('id'));
         $semesterId = $request->query('semester_id');
         $kelasId = $request->query('kelas_id');
         $mapelId = $request->query('mata_pelajaran_id');
         $status = $request->query('status');
 
-        $baseQuery = Rpp::query();
-
-        if ($targetLembagaId) {
-            $baseQuery->where('lembaga_id', $targetLembagaId);
-        }
-
-        if ($tab === 'saya') {
-            $guru = Guru::where('user_id', $user->id)->first();
-            if ($guru) {
-                $baseQuery->where('guru_id', $guru->id);
-            }
-        } elseif ($tab === 'verifikasi') {
+        if ($tab === 'verifikasi') {
             $this->authorize('rpp.verify');
-            if ($status === null && ! $request->has('status')) {
-                $status = StatusRpp::Diajukan->value;
-            }
         }
 
-        // Statistik KPI ringkasan
-        $stats = [
-            'total' => (clone $baseQuery)->count(),
-            'draft' => (clone $baseQuery)->where('status', StatusRpp::Draft)->count(),
-            'diajukan' => (clone $baseQuery)->where('status', StatusRpp::Diajukan)->count(),
-            'disetujui' => (clone $baseQuery)->where('status', StatusRpp::Disetujui)->count(),
-            'perlu_revisi' => (clone $baseQuery)->where('status', StatusRpp::PerluRevisi)->count(),
-        ];
-
-        $query = (clone $baseQuery)->with(['guru', 'kelas', 'mataPelajaran', 'semester', 'tahunAjaran', 'verifiedBy']);
-
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('judul_topik', 'like', "%{$search}%")
-                  ->orWhere('file_name', 'like', "%{$search}%")
-                  ->orWhereHas('guru', fn ($g) => $g->where('nama', 'like', "%{$search}%"))
-                  ->orWhereHas('mataPelajaran', fn ($m) => $m->where('nama', 'like', "%{$search}%"));
-            });
-        }
-        if ($tahunAjaranId) {
-            $query->where('tahun_ajaran_id', $tahunAjaranId);
-        }
-        if ($semesterId) {
-            $query->where('semester_id', $semesterId);
-        }
-        if ($kelasId) {
-            $query->where('kelas_id', $kelasId);
-        }
-        if ($mapelId) {
-            $query->where('mata_pelajaran_id', $mapelId);
-        }
-        if ($status && in_array($status, array_column(StatusRpp::cases(), 'value'), true)) {
-            $query->where('status', $status);
-        }
-
-        $rppList = $query->orderByDesc('created_at')->paginate($perPage)->withQueryString();
+        [
+            'rppList' => $rppList,
+            'stats' => $stats,
+            'status' => $status,
+            'targetLembagaId' => $targetLembagaId,
+        ] = $this->listRppAction->execute(
+            user: $user,
+            tab: $tab,
+            search: $search,
+            tahunAjaranId: $tahunAjaranId ? (int) $tahunAjaranId : null,
+            semesterId: $semesterId ? (int) $semesterId : null,
+            kelasId: $kelasId ? (int) $kelasId : null,
+            mapelId: $mapelId ? (int) $mapelId : null,
+            status: $status,
+            perPage: $perPage,
+        );
 
         if ($request->ajax()) {
             return view('portals.lembaga.akademik.rpp._daftar', compact('rppList', 'tab', 'perPage'));
@@ -179,19 +143,7 @@ class RppController extends BaseController
             abort(422, 'Profil guru pengampu tidak ditemukan.');
         }
 
-        $dto = new RppData(
-            yayasanId: $kelas->yayasan_id ?: $kelas->lembaga->yayasan_id,
-            lembagaId: $kelas->lembaga_id,
-            guruId: (int) $guruId,
-            tahunAjaranId: $semester->tahun_ajaran_id,
-            semesterId: $semester->id,
-            kelasId: $kelas->id,
-            judulTopik: (string) $request->input('judul_topik'),
-            alokasiWaktu: (string) $request->input('alokasi_waktu'),
-            mataPelajaranId: $request->filled('mata_pelajaran_id') ? (int) $request->input('mata_pelajaran_id') : null,
-            pertemuanKe: $request->input('pertemuan_ke'),
-            file: $request->file('file')
-        );
+        $dto = $request->toDTO((int) $guruId, $kelas, $semester);
 
         try {
             $rpp = $this->createRppAction->execute($dto);
@@ -233,19 +185,7 @@ class RppController extends BaseController
     {
         $kelas = Kelas::findOrFail($request->input('kelas_id'));
 
-        $dto = new RppData(
-            yayasanId: $rpp->yayasan_id,
-            lembagaId: $rpp->lembaga_id,
-            guruId: $rpp->guru_id,
-            tahunAjaranId: $rpp->tahun_ajaran_id,
-            semesterId: $rpp->semester_id,
-            kelasId: $kelas->id,
-            judulTopik: (string) $request->input('judul_topik'),
-            alokasiWaktu: (string) $request->input('alokasi_waktu'),
-            mataPelajaranId: $request->filled('mata_pelajaran_id') ? (int) $request->input('mata_pelajaran_id') : null,
-            pertemuanKe: $request->input('pertemuan_ke'),
-            file: $request->file('file')
-        );
+        $dto = $request->toDTO($rpp, $kelas);
 
         try {
             $this->updateRppAction->execute($rpp, $dto);

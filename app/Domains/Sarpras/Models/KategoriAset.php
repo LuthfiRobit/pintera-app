@@ -2,6 +2,7 @@
 
 namespace App\Domains\Sarpras\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class KategoriAset extends Model
 {
-    use HasFactory, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $table = 'kategori_aset';
 

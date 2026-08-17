@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Akademik\Models;
 
 use App\Domains\Akademik\Enums\StatusRpp;
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -21,7 +22,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Rpp extends Model
 {
-    use HasFactory, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $table = 'rpp';
 

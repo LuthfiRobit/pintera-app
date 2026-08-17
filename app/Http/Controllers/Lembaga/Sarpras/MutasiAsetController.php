@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Lembaga\Sarpras;
 
 use App\Domains\Sarpras\Actions\MutasiAsetRuanganAction;
-use App\Domains\Sarpras\DataTransferObjects\MutasiAsetData;
 use App\Domains\Sarpras\Models\AsetBarang;
 use App\Domains\Sarpras\Models\RiwayatMutasiAset;
 use App\Domains\Sarpras\Models\Ruangan;
@@ -66,7 +65,7 @@ class MutasiAsetController extends Controller
     public function store(StoreMutasiAsetRequest $request): RedirectResponse
     {
         try {
-            $dto = MutasiAsetData::fromArray($request->validated(), $request->user()->id);
+            $dto = $request->toDTO($request->user()->id);
             $this->mutasiAction->execute($dto);
 
             return back()->with('success', 'Mutasi lokasi aset berhasil dicatat.');

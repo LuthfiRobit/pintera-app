@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Lembaga\Sarpras;
 
 use App\Domains\Sarpras\Actions\CreateAsetBarangAction;
 use App\Domains\Sarpras\Actions\UpdateAsetBarangAction;
-use App\Domains\Sarpras\DataTransferObjects\AsetBarangData;
 use App\Domains\Sarpras\Enums\KondisiAset;
 use App\Domains\Sarpras\Enums\SumberPerolehanAset;
 use App\Domains\Sarpras\Enums\TipePencatatanAset;
@@ -121,12 +120,8 @@ class AsetBarangController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $validated = $request->validated();
-        if ($request->hasFile('foto')) {
-            $validated['foto_barang_path'] = $request->file('foto')->store('sarpras/aset', 'public');
-        }
-
-        $dto = AsetBarangData::fromArray($validated, $yayasanId, $lembagaId);
+        $fotoPath = $request->hasFile('foto') ? $request->file('foto')->store('sarpras/aset', 'public') : null;
+        $dto = $request->toDTO($yayasanId, $lembagaId, $fotoPath);
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.aset.index')
@@ -166,15 +161,15 @@ class AsetBarangController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $validated = $request->validated();
+        $fotoPath = null;
         if ($request->hasFile('foto')) {
             if ($aset->foto_barang_path && Storage::disk('public')->exists($aset->foto_barang_path)) {
                 Storage::disk('public')->delete($aset->foto_barang_path);
             }
-            $validated['foto_barang_path'] = $request->file('foto')->store('sarpras/aset', 'public');
+            $fotoPath = $request->file('foto')->store('sarpras/aset', 'public');
         }
 
-        $dto = AsetBarangData::fromArray($validated, $yayasanId, $lembagaId);
+        $dto = $request->toDTO($yayasanId, $lembagaId, $fotoPath);
         $this->updateAction->execute($aset, $dto);
 
         return redirect()->route('admin.sarpras.aset.index')

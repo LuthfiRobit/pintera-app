@@ -280,3 +280,46 @@ it('berhasil mengunduh berkas fisik RPP', function () {
     $responseInline->assertOk();
     expect($responseInline->headers->get('Content-Disposition'))->toContain('inline');
 });
+
+it('mencegah user lembaga lain mengakses RPP milik lembaga lain via rute single-resource', function () {
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $this->yayasan->id]);
+    $userLembagaLain = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $userLembagaLain->givePermissionTo(['rpp.view', 'rpp.kelola', 'rpp.verify']);
+
+    $file = UploadedFile::fake()->create('rpp_rahasia.pdf', 200, 'application/pdf');
+    $path = $file->store("rpp/{$this->lembaga->id}", 'public');
+
+    $rpp = Rpp::create([
+        'yayasan_id' => $this->yayasan->id,
+        'lembaga_id' => $this->lembaga->id,
+        'guru_id' => $this->guru->id,
+        'tahun_ajaran_id' => $this->tahunAjaran->id,
+        'semester_id' => $this->semester->id,
+        'kelas_id' => $this->kelas->id,
+        'mata_pelajaran_id' => $this->mapel->id,
+        'judul_topik' => 'RPP Rahasia Lembaga 1',
+        'alokasi_waktu' => '2 JP',
+        'file_path' => $path,
+        'file_name' => 'rpp_rahasia.pdf',
+        'file_size_bytes' => 2048,
+        'mime_type' => 'application/pdf',
+        'status' => StatusRpp::Diajukan,
+    ]);
+
+    $this->actingAs($userLembagaLain)->get(route('admin.rpp.download', $rpp))->assertNotFound();
+
+    $this->actingAs($userLembagaLain)->put(route('admin.rpp.update', $rpp), [
+        'kelas_id' => $this->kelas->id,
+        'judul_topik' => 'Diubah Paksa',
+        'alokasi_waktu' => '2 JP',
+    ])->assertNotFound();
+
+    $this->actingAs($userLembagaLain)->post(route('admin.rpp.verify', $rpp), [
+        'status' => 'disetujui',
+    ])->assertNotFound();
+
+    $this->actingAs($userLembagaLain)->delete(route('admin.rpp.destroy', $rpp))->assertNotFound();
+
+    expect($rpp->fresh())->not->toBeNull()
+        ->and($rpp->fresh()->judul_topik)->toBe('RPP Rahasia Lembaga 1');
+});

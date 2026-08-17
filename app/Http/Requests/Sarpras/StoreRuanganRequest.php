@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Sarpras;
 
+use App\Domains\Sarpras\DataTransferObjects\RuanganData;
 use App\Domains\Sarpras\Enums\JenisRuangan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,5 +28,10 @@ class StoreRuanganRequest extends FormRequest
             'is_shared' => ['nullable', 'boolean'],
             'is_aktif' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function toDTO(int $yayasanId, ?int $lembagaId): RuanganData
+    {
+        return RuanganData::fromArray($this->validated(), $yayasanId, $lembagaId);
     }
 }

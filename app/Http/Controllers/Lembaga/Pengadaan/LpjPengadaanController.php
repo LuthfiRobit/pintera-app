@@ -78,6 +78,7 @@ class LpjPengadaanController extends Controller
     public function stagingInventory(LpjPengadaan $lpj): View
     {
         $this->authorize('pengadaan.lpj.submit');
+        abort_unless($lpj->proposal->lembaga_id === $this->tenantContext->activeLembagaId(), 404);
 
         if ($lpj->status_lpj !== StatusLpj::Verified) {
             abort(403, 'Inventarisasi hanya dapat dilakukan setelah LPJ diverifikasi.');
@@ -90,6 +91,8 @@ class LpjPengadaanController extends Controller
 
     public function convertInventory(ConfirmInventoryConversionRequest $request, LpjPengadaan $lpj): RedirectResponse
     {
+        abort_unless($lpj->proposal->lembaga_id === $this->tenantContext->activeLembagaId(), 404);
+
         $serialNumbers = $request->validated()['serial_numbers'] ?? [];
         $createdAssets = $this->generateInventoryAction->execute($lpj, $serialNumbers);
 

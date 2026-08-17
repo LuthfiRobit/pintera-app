@@ -5,6 +5,7 @@ namespace App\Domains\Sarpras\Models;
 use App\Domains\Sarpras\Enums\KondisiAset;
 use App\Domains\Sarpras\Enums\SumberPerolehanAset;
 use App\Domains\Sarpras\Enums\TipePencatatanAset;
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class AsetBarang extends Model
 {
-    use HasFactory, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $table = 'aset_barang';
 

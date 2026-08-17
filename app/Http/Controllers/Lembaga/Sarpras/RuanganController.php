@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Lembaga\Sarpras;
 
 use App\Domains\Sarpras\Actions\CreateRuanganAction;
 use App\Domains\Sarpras\Actions\UpdateRuanganAction;
-use App\Domains\Sarpras\DataTransferObjects\RuanganData;
 use App\Domains\Sarpras\Enums\JenisRuangan;
 use App\Domains\Sarpras\Models\Gedung;
 use App\Domains\Sarpras\Models\Ruangan;
@@ -12,6 +11,7 @@ use App\Domains\Shared\Context\TenantContext;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sarpras\StoreRuanganRequest;
 use App\Models\Guru;
+use App\Models\Scopes\TenantScope;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -33,7 +33,7 @@ class RuanganController extends Controller
         $yayasanId = $this->tenantContext->activeYayasanId();
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = Ruangan::query()
+        $query = Ruangan::withoutGlobalScope(TenantScope::class)
             ->with(['gedung', 'penanggungJawab'])
             ->withCount('aset')
             ->where(function ($query) use ($lembagaId, $yayasanId) {
@@ -107,7 +107,7 @@ class RuanganController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $dto = RuanganData::fromArray($request->validated(), $yayasanId, $lembagaId);
+        $dto = $request->toDTO($yayasanId, $lembagaId);
         $this->createAction->execute($dto);
 
         return redirect()->route('admin.sarpras.ruangan.index')
@@ -147,7 +147,7 @@ class RuanganController extends Controller
         $lembagaId = $this->tenantContext->activeLembagaId();
         $yayasanId = $this->tenantContext->activeYayasanId();
 
-        $dto = RuanganData::fromArray($request->validated(), $yayasanId, $lembagaId);
+        $dto = $request->toDTO($yayasanId, $lembagaId);
         $this->updateAction->execute($ruangan, $dto);
 
         return redirect()->route('admin.sarpras.ruangan.index')

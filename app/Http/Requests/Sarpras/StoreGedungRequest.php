@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Sarpras;
 
+use App\Domains\Sarpras\DataTransferObjects\GedungData;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreGedungRequest extends FormRequest
@@ -20,5 +21,10 @@ class StoreGedungRequest extends FormRequest
             'deskripsi' => ['nullable', 'string', 'max:1000'],
             'is_aktif' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function toDTO(int $yayasanId, ?int $lembagaId): GedungData
+    {
+        return GedungData::fromArray($this->validated(), $yayasanId, $lembagaId);
     }
 }
