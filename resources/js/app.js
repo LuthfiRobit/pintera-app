@@ -43,6 +43,7 @@ import { tomSelectSiswa } from './tom-select-siswa';
 import { triaseForm } from './triase-form';
 import { virtualAccountFilter } from './virtual-account-filter';
 import { virtualAccountGenerateModal } from './virtual-account-generate-modal';
+import { rppPageManager } from './rpp';
 
 window.Alpine = Alpine;
 window.flatpickr = flatpickr;
@@ -91,5 +92,6 @@ Alpine.data('tomSelectSiswa', tomSelectSiswa);
 Alpine.data('triaseForm', triaseForm);
 Alpine.data('virtualAccountFilter', virtualAccountFilter);
 Alpine.data('virtualAccountGenerateModal', virtualAccountGenerateModal);
+Alpine.data('rppPageManager', rppPageManager);
 
 Alpine.start();

@@ -61,6 +61,7 @@ class PermissionSeeder extends Seeder
             'jadwal-pelajaran.kelola',
             'kalender-akademik.view', 'kalender-akademik.kelola', 'kalender-akademik.kelola-nasional',
             'pengaturan-akademik.kelola',
+            'rpp.view', 'rpp.kelola', 'rpp.verify',
         ];
 
         foreach ($permissions as $name) {

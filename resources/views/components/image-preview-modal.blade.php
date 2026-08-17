@@ -149,11 +149,17 @@
             startX: 0,
             startY: 0,
 
-            buka(url, judul = '') {
+            buka(url, judul = '', isPdf = null) {
                 if (!url) return;
                 this.url = url;
                 this.judul = judul;
-                this.isPdf = url.toLowerCase().endsWith('.pdf') || url.toLowerCase().includes('.pdf?');
+                if (isPdf !== null) {
+                    this.isPdf = Boolean(isPdf);
+                } else {
+                    const u = url.toLowerCase();
+                    const j = (judul || '').toLowerCase();
+                    this.isPdf = u.endsWith('.pdf') || u.includes('.pdf?') || u.includes('inline=1') || u.includes('preview=1') || j.endsWith('.pdf');
+                }
                 this.zoom = 1;
                 this.rotation = 0;
                 this.posX = 0;

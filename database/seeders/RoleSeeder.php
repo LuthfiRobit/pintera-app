@@ -63,6 +63,7 @@ class RoleSeeder extends Seeder
                     'tagihan.view',
                     'komponen-penilaian.kelola', 'rapor.view',
                     'kenaikan-kelas.kelola',
+                    'rpp.view', 'rpp.verify',
                 ]);
             }
 
@@ -70,6 +71,7 @@ class RoleSeeder extends Seeder
                 $role->givePermissionTo([
                     'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola-sendiri',
                     'kasus.ajukan', 'kasus.view',
+                    'rpp.view', 'rpp.kelola',
                 ]);
             }
 
@@ -92,6 +94,7 @@ class RoleSeeder extends Seeder
                     'komponen-penilaian.kelola',
                     'rapor.view',
                     'kenaikan-kelas.kelola',
+                    'rpp.view', 'rpp.kelola', 'rpp.verify',
                 ]);
             }
 

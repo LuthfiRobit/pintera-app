@@ -17,8 +17,8 @@
 | No | Sub-Task | File Spec Sub-Task | File Plan Sub-Task | File Handoff Log | Status |
 |:---:|---|---|---|---|:---:|
 | **01** | **Fondasi & Jadwal Sarpras Anti-Bentrok** | [`.agents/specs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md) | [`.agents/plans/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md) | [`.agents/logs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md) | 🟢 **SELESAI (COMPLETED)** |
-| **02** | **Perangkat Ajar (RPP)** | `.agents/specs/akademik-02-rpp.md` | `.agents/plans/akademik-02-rpp.md` | `.agents/logs/akademik-02-rpp.md` | ⚪ PENDING (SIAP DIKERJAKAN) |
-| **03** | **Jurnal KBM & Presensi Adaptif** | `.agents/specs/akademik-03-jurnal-presensi.md` | `.agents/plans/akademik-03-jurnal-presensi.md` | `.agents/logs/akademik-03-jurnal-presensi.md` | ⚪ PENDING |
+| **02** | **Perangkat Ajar (RPP)** | [`.agents/specs/2026-08-17-1240-akademik-02-rpp.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-17-1240-akademik-02-rpp.md) | [`.agents/plans/2026-08-17-1240-akademik-02-rpp.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-17-1240-akademik-02-rpp.md) | [`.agents/logs/2026-08-17-1240-akademik-02-rpp.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-17-1240-akademik-02-rpp.md) | 🟢 **SELESAI (COMPLETED)** |
+| **03** | **Jurnal KBM & Presensi Adaptif** | `.agents/specs/akademik-03-jurnal-presensi.md` | `.agents/plans/akademik-03-jurnal-presensi.md` | `.agents/logs/akademik-03-jurnal-presensi.md` | ⚪ PENDING (SIAP DIKERJAKAN) |
 | **04** | **Adaptive E-Rapor Engine** | `.agents/specs/akademik-04-e-rapor.md` | `.agents/plans/akademik-04-e-rapor.md` | `.agents/logs/akademik-04-e-rapor.md` | ⚪ PENDING |
 
 ---
@@ -42,27 +42,27 @@ Rencana kerja ini mengimplementasikan spesifikasi arsitektur Modul Akademik dan 
 - [ ] **1.3. Integrasi UI Jadwal & Ruangan Sarpras:**
   - [ ] Pasang dropdown `ruangan_id` di `resources/views/admin/jadwal-pelajaran/create.blade.php` & `edit.blade.php` (otomatis terisi dari `kelas.ruangan_id`).
   - [ ] Refactor `Admin\JadwalPelajaranController` menjadi Thin Controller berbasis Action.
-- [ ] **1.4. Pengujian Otomatis Fase 1:**
-  - [ ] Buat test `Tests\Unit\Domains\Akademik\JadwalPelajaranActionTest`.
-  - [ ] Jalankan `php artisan test --filter=JadwalPelajaran` dan pastikan seluruh test lulus 100%.
+- [x] **1.4. Pengujian Otomatis Fase 1:**
+  - [x] Buat test `Tests\Feature\Akademik\JadwalSarprasCollisionTest`.
+  - [x] Jalankan `php artisan test --filter=JadwalSarprasCollisionTest` dan pastikan seluruh test lulus 100%.
 
 ---
 
 ### 📚 FASE 2: Manajemen Perangkat Mengajar (RPP / Modul Ajar)
-- [ ] **2.1. Skema Database & Model RPP:**
-  - [ ] Buat file migrasi `create_rpp_table.php` (`lembaga_id`, `guru_id`, `mata_pelajaran_id`, `kelas_id`, `semester_id`, `judul_topik`, `alokasi_waktu`, `file_path`, `status_verifikasi`, `catatan_revisi`, `diverifikasi_oleh`, `diverifikasi_pada`).
-  - [ ] Buat model `App\Domains\Akademik\Models\Rpp.php` dengan relasi `guru`, `mataPelajaran`, `kelas`, `semester`, dan trait `BelongsToTenant`.
-  - [ ] Buat enum `App\Domains\Akademik\Enums\StatusRpp.php` (`Draft`, `Diajukan`, `Disetujui`, `PerluRevisi`).
-- [ ] **2.2. DTO & Actions RPP:**
-  - [ ] Buat `RppData` readonly DTO.
-  - [ ] Buat `CreateRppAction`, `UpdateRppAction`, `SubmitRppAction`, dan `VerifyRppAction`.
-  - [ ] Buat FormRequest `StoreRppRequest`, `UpdateRppRequest`, dan `VerifyRppRequest`.
-- [ ] **2.3. Controller & View RPP:**
-  - [ ] Buat `App\Http\Controllers\Guru\Akademik\RppController.php` (Scope Guru: Upload berkas & ajukan).
-  - [ ] Buat `App\Http\Controllers\Lembaga\Akademik\RppApprovalController.php` (Scope Kurikulum: Review, revisi, & approve).
-  - [ ] Buat Blade views di `resources/views/portals/guru/akademik/rpp/` dan `resources/views/portals/lembaga/akademik/rpp/`.
-- [ ] **2.4. Pengujian Otomatis Fase 2:**
-  - [ ] Buat test `Tests\Feature\Akademik\RppLifecycleTest` (Siklus upload $\to$ submit $\to$ verify/revisi).
+- [x] **2.1. Skema Database & Model RPP:**
+  - [x] Buat file migrasi `create_rpp_table.php` (`lembaga_id`, `guru_id`, `mata_pelajaran_id`, `kelas_id`, `semester_id`, `judul_topik`, `alokasi_waktu`, `file_path`, `status`, `catatan_revisi`, `verified_by_user_id`, `verified_at`).
+  - [x] Buat model `App\Domains\Akademik\Models\Rpp.php` dengan relasi `guru`, `mataPelajaran`, `kelas`, `semester`, `tahunAjaran`, `verifiedBy`.
+  - [x] Buat enum `App\Domains\Akademik\Enums\StatusRpp.php` (`Draft`, `Diajukan`, `Disetujui`, `PerluRevisi`).
+- [x] **2.2. DTO & Actions RPP:**
+  - [x] Buat `RppData` readonly DTO.
+  - [x] Buat `CreateRppAction`, `UpdateRppAction`, `SubmitRppAction`, `VerifyRppAction`, `DeleteRppAction`.
+  - [x] Buat FormRequest `StoreRppRequest`, `UpdateRppRequest`, dan `VerifyRppRequest`.
+- [x] **2.3. Controller & View RPP Standar Portal Scope:**
+  - [x] Buat `App\Http\Controllers\Admin\RppController.php` dengan tab switcher `saya` (Guru) dan `verifikasi` (Waka Kurikulum).
+  - [x] Standardisasi view di `resources/views/portals/lembaga/akademik/rpp/` (`index`, `_daftar`, `_modal-form`, `_modal-verify`).
+  - [x] Integrasi native in-platform viewer via `<x-image-preview-modal />` & `$store.imagePreview` (identik pengadaan).
+- [x] **2.4. Pengujian Otomatis Fase 2:**
+  - [x] Buat test `Tests\Feature\Akademik\RppWorkflowTest` (8 tests passed, 33 assertions).
 
 ---
 

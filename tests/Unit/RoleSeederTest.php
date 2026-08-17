@@ -20,7 +20,7 @@ it('seeds 6 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(106);
+    expect($superAdmin->permissions()->count())->toBe(109);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -37,15 +37,17 @@ it('gives admin_administrasi the correct 20 SPMB-related permissions', function 
     expect($adminAdministrasi->hasPermissionTo('jalur-ppdb.create'))->toBeTrue();
 });
 
-it('gives kepala_sekolah the correct 9 permissions', function () {
+it('gives kepala_sekolah the correct 11 permissions', function () {
     (new RoleSeeder())->run();
 
     $kepalaSekolah = Role::where('name', 'kepala_sekolah')->first();
-    expect($kepalaSekolah->permissions()->count())->toBe(9);
+    expect($kepalaSekolah->permissions()->count())->toBe(11);
     expect($kepalaSekolah->hasPermissionTo('spmb-pendaftaran.tetapkan-keputusan'))->toBeTrue();
     expect($kepalaSekolah->hasPermissionTo('komponen-penilaian.kelola'))->toBeTrue();
     expect($kepalaSekolah->hasPermissionTo('rapor.view'))->toBeTrue();
     expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
+    expect($kepalaSekolah->hasPermissionTo('rpp.view'))->toBeTrue();
+    expect($kepalaSekolah->hasPermissionTo('rpp.verify'))->toBeTrue();
 });
 
 it('gives admin_keuangan the correct 12 permissions', function () {
@@ -61,10 +63,12 @@ it('gives guru the presensi, asesmen, and komponen-penilaian-sendiri permissions
     (new RoleSeeder())->run();
 
     $guru = Role::where('name', 'guru')->first();
-    expect($guru->permissions()->count())->toBe(5);
+    expect($guru->permissions()->count())->toBe(7);
     expect($guru->hasPermissionTo('presensi.isi'))->toBeTrue();
     expect($guru->hasPermissionTo('asesmen.kelola'))->toBeTrue();
     expect($guru->hasPermissionTo('komponen-penilaian.kelola-sendiri'))->toBeTrue();
+    expect($guru->hasPermissionTo('rpp.view'))->toBeTrue();
+    expect($guru->hasPermissionTo('rpp.kelola'))->toBeTrue();
 });
 
 it('is idempotent when run twice', function () {
@@ -102,7 +106,7 @@ it('seeds admin_akademik with the correct 30 academic-management permissions', f
     expect($adminAkademik)->not->toBeNull();
     expect($adminAkademik->scope_level)->toBe('lembaga');
     expect($adminAkademik->is_protected)->toBeFalse();
-    expect($adminAkademik->permissions()->count())->toBe(42);
+    expect($adminAkademik->permissions()->count())->toBe(45);
     expect($adminAkademik->hasPermissionTo('kelas.edit'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('siswa.import'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('jadwal-pelajaran.kelola'))->toBeTrue();
@@ -113,4 +117,7 @@ it('seeds admin_akademik with the correct 30 academic-management permissions', f
     expect($adminAkademik->hasPermissionTo('tahun-ajaran.activate'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('semester.create'))->toBeTrue();
     expect($adminAkademik->hasPermissionTo('semester.activate'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('rpp.view'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('rpp.kelola'))->toBeTrue();
+    expect($adminAkademik->hasPermissionTo('rpp.verify'))->toBeTrue();
 });

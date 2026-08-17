@@ -39,6 +39,7 @@ use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\RaporController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\RppController;
 use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
 use App\Http\Controllers\Admin\SiswaController;
@@ -239,6 +240,15 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::put('jadwal-pelajaran/{jadwalPelajaran}', [JadwalPelajaranController::class, 'update'])->name('jadwal-pelajaran.update');
     Route::delete('jadwal-pelajaran/{jadwalPelajaran}', [JadwalPelajaranController::class, 'destroy'])->name('jadwal-pelajaran.destroy');
     Route::post('jadwal-pelajaran/duplicate', [JadwalPelajaranController::class, 'duplicate'])->name('jadwal-pelajaran.duplicate');
+
+    // Perangkat Mengajar (RPP / Modul Ajar)
+    Route::get('rpp', [RppController::class, 'index'])->name('rpp.index');
+    Route::post('rpp', [RppController::class, 'store'])->name('rpp.store');
+    Route::get('rpp/{rpp}/download', [RppController::class, 'download'])->name('rpp.download');
+    Route::put('rpp/{rpp}', [RppController::class, 'update'])->name('rpp.update');
+    Route::delete('rpp/{rpp}', [RppController::class, 'destroy'])->name('rpp.destroy');
+    Route::post('rpp/{rpp}/submit', [RppController::class, 'submit'])->name('rpp.submit');
+    Route::post('rpp/{rpp}/verify', [RppController::class, 'verify'])->name('rpp.verify');
 
     Route::get('komponen-penilaian', [KomponenPenilaianController::class, 'index'])->name('komponen-penilaian.index');
     Route::get('komponen-penilaian/create', [KomponenPenilaianController::class, 'create'])->name('komponen-penilaian.create');
