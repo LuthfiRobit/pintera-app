@@ -54,6 +54,7 @@ use App\Http\Controllers\Admin\VirtualAccountController;
 use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\Akademik\JurnalKbmController;
+use App\Http\Controllers\Guru\Akademik\RekapKehadiranController;
 use App\Http\Controllers\KasusConsentController;
 use App\Http\Controllers\KasusController;
 use App\Http\Controllers\KasusEvaluasiController;
@@ -338,6 +339,7 @@ Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(fu
     Route::get('jurnal-kbm', [JurnalKbmController::class, 'index'])->name('jurnal-kbm.index');
     Route::get('jurnal-kbm/{sesi}', [JurnalKbmController::class, 'show'])->name('jurnal-kbm.show');
     Route::put('jurnal-kbm/{sesi}', [JurnalKbmController::class, 'update'])->name('jurnal-kbm.update');
+    Route::get('jurnal-kbm-rekap', [RekapKehadiranController::class, 'index'])->name('jurnal-kbm.rekap');
 
     Route::get('asesmen', [AsesmenController::class, 'index'])->name('asesmen.index');
     Route::get('asesmen/create', [AsesmenController::class, 'create'])->name('asesmen.create');
