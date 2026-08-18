@@ -3,9 +3,11 @@
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Models\Guru;
+use App\Models\JadwalPelajaran;
 use App\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
+use App\Models\MataPelajaran;
 use App\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
@@ -79,6 +81,26 @@ it('lets the wali kelas guru view and fill jurnal plus presensi for the tematik 
 
     expect($sesi->fresh()->materi)->toBe('Mengenal warna dan bentuk');
     expect($sesi->fresh()->presensi()->where('siswa_id', $siswa->id)->first()->status->value)->toBe('sakit');
+});
+
+it('shows scheduled mata pelajaran names as an informational badge on the tematik sesi, without linking it to mata_pelajaran_id', function () {
+    ['guruUser' => $guruUser, 'guru' => $guru, 'kelas' => $kelas] = siapkanGuruKelasTematik();
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'nama' => 'Bahasa (BHS)']);
+    JadwalPelajaran::create([
+        'kelas_id' => $kelas->id,
+        'jam_pelajaran_id' => JamPelajaran::where('pola_jam_id', $kelas->pola_jam_id)->where('hari', Hari::Rabu->value)->where('urutan', 1)->firstOrFail()->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'guru_id' => $guru->id,
+        'semester_id' => Semester::where('tahun_ajaran_id', $kelas->tahun_ajaran_id)->where('status_aktif', true)->firstOrFail()->id,
+    ]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
+
+    $response->assertOk();
+    $response->assertSee('Bahasa (BHS)');
+
+    $sesi = SesiPembelajaran::where('kelas_id', $kelas->id)->firstOrFail();
+    expect($sesi->mata_pelajaran_id)->toBeNull(); // display-only, data sesi tidak berubah
 });
 
 it('does not generate a tematik sesi when the wali kelas guru is on a libur day', function () {

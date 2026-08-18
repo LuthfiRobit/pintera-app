@@ -106,6 +106,11 @@
                                     <x-icon name="description" class="h-3 w-3" />
                                     {{ $sesi->mataPelajaran->nama }}
                                 </x-badge>
+                            @elseif (! empty($mapelTerjadwal[$sesi->kelas_id] ?? null))
+                                <x-badge tone="blue" class="gap-1">
+                                    <x-icon name="description" class="h-3 w-3" />
+                                    {{ $mapelTerjadwal[$sesi->kelas_id] }}
+                                </x-badge>
                             @else
                                 <x-badge tone="slate">
                                     (tanpa mapel)
