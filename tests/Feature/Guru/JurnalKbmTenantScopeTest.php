@@ -39,7 +39,7 @@ it('never lists a kelas from another lembaga even via a raw jadwal_pelajaran row
         'guru_id' => $guru->id, 'semester_id' => $semesterLain->id,
     ]);
 
-    $response = $this->actingAs($guruUser)->get(route('guru.sesi.index'));
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
 
     $response->assertOk();
     $response->assertDontSee($kelasLain->nama);
@@ -69,7 +69,7 @@ it('never lists a kelas from another lembaga when guru is wali_kelas_guru_id of 
     // Bypass the tenant scope when setting wali_kelas_guru_id on the foreign kelas
     Kelas::withoutGlobalScopes()->where('id', $kelasLain->id)->update(['wali_kelas_guru_id' => $guru->id]);
 
-    $response = $this->actingAs($guruUser)->get(route('guru.sesi.index'));
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
 
     $response->assertOk();
     $response->assertDontSee($kelasLain->nama);

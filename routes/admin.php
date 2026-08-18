@@ -53,7 +53,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VirtualAccountController;
 use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\Guru\AsesmenController;
-use App\Http\Controllers\Guru\SesiPembelajaranController;
+use App\Http\Controllers\Guru\Akademik\JurnalKbmController;
 use App\Http\Controllers\KasusConsentController;
 use App\Http\Controllers\KasusController;
 use App\Http\Controllers\KasusEvaluasiController;
@@ -335,9 +335,9 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
 });
 
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
-    Route::get('sesi', [SesiPembelajaranController::class, 'index'])->name('sesi.index');
-    Route::get('sesi/{sesi}', [SesiPembelajaranController::class, 'show'])->name('sesi.show');
-    Route::put('sesi/{sesi}', [SesiPembelajaranController::class, 'update'])->name('sesi.update');
+    Route::get('jurnal-kbm', [JurnalKbmController::class, 'index'])->name('jurnal-kbm.index');
+    Route::get('jurnal-kbm/{sesi}', [JurnalKbmController::class, 'show'])->name('jurnal-kbm.show');
+    Route::put('jurnal-kbm/{sesi}', [JurnalKbmController::class, 'update'])->name('jurnal-kbm.update');
 
     Route::get('asesmen', [AsesmenController::class, 'index'])->name('asesmen.index');
     Route::get('asesmen/create', [AsesmenController::class, 'create'])->name('asesmen.create');

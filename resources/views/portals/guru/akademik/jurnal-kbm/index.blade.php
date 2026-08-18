@@ -147,12 +147,12 @@
                     {{-- Actions --}}
                     <div class="shrink-0 w-full md:w-auto">
                         @if ($isDone)
-                            <x-link-button variant="ghost" href="{{ route('guru.sesi.show', $sesi) }}" class="w-full md:w-auto justify-center">
+                            <x-link-button variant="ghost" href="{{ route('guru.jurnal-kbm.show', $sesi) }}" class="w-full md:w-auto justify-center">
                                 <x-icon name="edit" class="h-4 w-4" />
                                 Edit Jurnal &amp; Presensi
                             </x-link-button>
                         @else
-                            <x-link-button href="{{ route('guru.sesi.show', $sesi) }}" class="w-full md:w-auto justify-center shadow-sm">
+                            <x-link-button href="{{ route('guru.jurnal-kbm.show', $sesi) }}" class="w-full md:w-auto justify-center shadow-sm">
                                 <x-icon name="edit" class="h-4 w-4" />
                                 Isi Jurnal &amp; Presensi
                             </x-link-button>

@@ -15,13 +15,13 @@
                 <p class="text-xs text-gray-500 mt-0.5">Sesi Pembelajaran Kelas {{ $sesi->kelas->nama }} &middot; {{ $sesi->mataPelajaran?->nama ?? '(tanpa mapel)' }}</p>
             </div>
             <p class="text-sm text-gray-500">
-                <a href="{{ route('guru.sesi.index') }}" class="font-semibold text-gray-700 hover:text-brand-600 transition-colors">Jurnal &amp; Presensi</a>
+                <a href="{{ route('guru.jurnal-kbm.index') }}" class="font-semibold text-gray-700 hover:text-brand-600 transition-colors">Jurnal &amp; Presensi</a>
                 <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Isi Sesi</b>
             </p>
         </div>
 
         {{-- Form Card --}}
-        <form method="POST" action="{{ route('guru.sesi.update', $sesi) }}">
+        <form method="POST" action="{{ route('guru.jurnal-kbm.update', $sesi) }}">
             @csrf
             @method('PUT')
 
@@ -126,7 +126,7 @@
 
                 {{-- Card Footer Action Bar --}}
                 <div class="flex items-center justify-end gap-3 rounded-b-2xl border-t border-gray-100 bg-gray-50 px-6 py-4">
-                    <a href="{{ route('guru.sesi.index') }}" class="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors duration-200 hover:bg-gray-200/50 hover:text-gray-900">
+                    <a href="{{ route('guru.jurnal-kbm.index') }}" class="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors duration-200 hover:bg-gray-200/50 hover:text-gray-900">
                         Batal
                     </a>
                     <x-primary-button type="submit" class="shadow-sm transition-all duration-200 active:scale-[0.98]">

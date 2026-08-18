@@ -48,13 +48,13 @@ function siapkanGuruDenganJadwalHariIni(): array
 }
 
 it('denies access without presensi.isi permission', function () {
-    $this->actingAs(User::factory()->create())->get(route('guru.sesi.index'))->assertForbidden();
+    $this->actingAs(User::factory()->create())->get(route('guru.jurnal-kbm.index'))->assertForbidden();
 });
 
 it('auto-generates and lists today\'s sesi belonging to the logged-in guru', function () {
     ['guruUser' => $guruUser] = siapkanGuruDenganJadwalHariIni();
 
-    $response = $this->actingAs($guruUser)->get(route('guru.sesi.index'));
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
 
     $response->assertOk();
     $response->assertViewHas('sesiList', fn ($list) => $list->count() === 1);
@@ -70,22 +70,22 @@ it('does not show a sesi belonging to a different guru', function () {
     $guruLainUser->assignRole($lainRole);
     Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'user_id' => $guruLainUser->id]);
 
-    $response = $this->actingAs($guruLainUser)->get(route('guru.sesi.index'));
+    $response = $this->actingAs($guruLainUser)->get(route('guru.jurnal-kbm.index'));
 
     $response->assertViewHas('sesiList', fn ($list) => $list->count() === 0);
 });
 
 it('saves jurnal materi and per-student presensi status', function () {
     ['guruUser' => $guruUser, 'siswa' => $siswa] = siapkanGuruDenganJadwalHariIni();
-    $this->actingAs($guruUser)->get(route('guru.sesi.index')); // triggers generation
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index')); // triggers generation
     $sesi = SesiPembelajaran::firstOrFail();
 
-    $this->actingAs($guruUser)->put(route('guru.sesi.update', $sesi), [
+    $this->actingAs($guruUser)->put(route('guru.jurnal-kbm.update', $sesi), [
         'materi' => 'Perkalian dan pembagian',
         'presensi' => [
             $siswa->id => 'izin',
         ],
-    ])->assertRedirect(route('guru.sesi.index'));
+    ])->assertRedirect(route('guru.jurnal-kbm.index'));
 
     expect($sesi->fresh()->materi)->toBe('Perkalian dan pembagian');
     expect($sesi->fresh()->presensi()->where('siswa_id', $siswa->id)->first()->status->value)->toBe('izin');
@@ -93,7 +93,7 @@ it('saves jurnal materi and per-student presensi status', function () {
 
 it('forbids a guru from updating a sesi that does not belong to them', function () {
     ['guruUser' => $guruUser, 'kelas' => $kelas] = siapkanGuruDenganJadwalHariIni();
-    $this->actingAs($guruUser)->get(route('guru.sesi.index')); // triggers generation
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index')); // triggers generation
     $sesi = SesiPembelajaran::firstOrFail();
 
     Permission::firstOrCreate(['name' => 'presensi.isi', 'guard_name' => 'web']);
@@ -103,7 +103,7 @@ it('forbids a guru from updating a sesi that does not belong to them', function 
     $guruLainUser->assignRole($lainRole);
     Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'user_id' => $guruLainUser->id]);
 
-    $this->actingAs($guruLainUser)->put(route('guru.sesi.update', $sesi), [
+    $this->actingAs($guruLainUser)->put(route('guru.jurnal-kbm.update', $sesi), [
         'materi' => 'Mencoba mengubah sesi orang lain',
         'presensi' => [],
     ])->assertForbidden();
