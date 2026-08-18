@@ -10,18 +10,22 @@ use Illuminate\Support\Facades\DB;
 class PresensiAggregationService
 {
     /**
-     * @return Collection<int, array{siswa_id:int,nama:string,hadir:int,izin:int,sakit:int,alpa:int,terlambat:int}>
+     * @return Collection<int, array{siswa_id:int,nis:?string,nama:string,hadir:int,izin:int,sakit:int,alpa:int,terlambat:int}>
      */
-    public function agregasiPerKelas(int $kelasId, Semester $semester): Collection
+    public function agregasiPerKelas(int $kelasId, ?Semester $semester = null): Collection
     {
         $siswaList = Siswa::where('kelas_id', $kelasId)->where('status', 'aktif')->orderBy('nama_lengkap')->get();
 
-        $counts = DB::table('presensi')
+        $query = DB::table('presensi')
             ->select('presensi.siswa_id', 'presensi.status', DB::raw('count(*) as total'))
             ->join('sesi_pembelajaran', 'sesi_pembelajaran.id', '=', 'presensi.sesi_pembelajaran_id')
-            ->where('sesi_pembelajaran.kelas_id', $kelasId)
-            ->whereBetween('sesi_pembelajaran.tanggal', [$semester->tanggal_mulai, $semester->tanggal_selesai])
-            ->groupBy('presensi.siswa_id', 'presensi.status')
+            ->where('sesi_pembelajaran.kelas_id', $kelasId);
+
+        if ($semester && $semester->tanggal_mulai && $semester->tanggal_selesai) {
+            $query->whereBetween('sesi_pembelajaran.tanggal', [$semester->tanggal_mulai, $semester->tanggal_selesai]);
+        }
+
+        $counts = $query->groupBy('presensi.siswa_id', 'presensi.status')
             ->get()
             ->groupBy('siswa_id');
 
@@ -30,6 +34,7 @@ class PresensiAggregationService
 
             return [
                 'siswa_id' => $siswa->id,
+                'nis' => $siswa->nis,
                 'nama' => $siswa->nama_lengkap,
                 'hadir' => (int) ($byStatus['hadir'] ?? 0),
                 'izin' => (int) ($byStatus['izin'] ?? 0),

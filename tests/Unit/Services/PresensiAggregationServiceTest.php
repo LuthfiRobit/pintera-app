@@ -29,9 +29,14 @@ function siapkanKelasUntukRekap(): array
     return compact('kelas', 'semester');
 }
 
-it('menghitung total hadir, izin, sakit, alpa, dan terlambat per siswa dalam rentang semester', function () {
+it('menghitung total hadir, izin, sakit, alpa, dan terlambat per siswa dalam rentang semester beserta NIS', function () {
     ['kelas' => $kelas, 'semester' => $semester] = siapkanKelasUntukRekap();
-    $siswa = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'aktif']);
+    $siswa = Siswa::factory()->create([
+        'lembaga_id' => $kelas->lembaga_id,
+        'kelas_id' => $kelas->id,
+        'status' => 'aktif',
+        'nis' => '2026001',
+    ]);
 
     $sesi1 = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => '2026-08-10']);
     $sesi2 = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => '2026-08-11']);
@@ -45,6 +50,7 @@ it('menghitung total hadir, izin, sakit, alpa, dan terlambat per siswa dalam ren
 
     $baris = $rekap->firstWhere('siswa_id', $siswa->id);
     expect($baris)->not->toBeNull()
+        ->and($baris['nis'])->toBe('2026001')
         ->and($baris['nama'])->toBe($siswa->nama_lengkap)
         ->and($baris['hadir'])->toBe(1)
         ->and($baris['izin'])->toBe(1)
@@ -64,6 +70,22 @@ it('mengecualikan presensi dari sesi di luar rentang tanggal semester', function
 
     $baris = $rekap->firstWhere('siswa_id', $siswa->id);
     expect($baris['hadir'])->toBe(0);
+});
+
+it('menghitung seluruh sesi tanpa batas semester jika parameter semester null', function () {
+    ['kelas' => $kelas] = siapkanKelasUntukRekap();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'aktif']);
+
+    $sesi1 = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => '2026-08-10']);
+    $sesi2 = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => '2027-02-15']);
+
+    Presensi::create(['sesi_pembelajaran_id' => $sesi1->id, 'siswa_id' => $siswa->id, 'status' => 'hadir']);
+    Presensi::create(['sesi_pembelajaran_id' => $sesi2->id, 'siswa_id' => $siswa->id, 'status' => 'hadir']);
+
+    $rekap = (new PresensiAggregationService())->agregasiPerKelas($kelas->id, null);
+
+    $baris = $rekap->firstWhere('siswa_id', $siswa->id);
+    expect($baris['hadir'])->toBe(2);
 });
 
 it('menyertakan siswa aktif tanpa presensi sama sekali dengan semua total nol', function () {
