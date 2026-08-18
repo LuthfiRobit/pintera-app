@@ -19,7 +19,7 @@
 | **01** | **Fondasi & Jadwal Sarpras Anti-Bentrok** | [`.agents/specs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md) | [`.agents/plans/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md) | [`.agents/logs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-17-1030-akademik-01-jadwal-dan-sarpras.md) | 🟢 **SELESAI (COMPLETED)** |
 | **02** | **Perangkat Ajar (RPP)** | [`.agents/specs/2026-08-17-1240-akademik-02-rpp.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-17-1240-akademik-02-rpp.md) | [`.agents/plans/2026-08-17-1240-akademik-02-rpp.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-17-1240-akademik-02-rpp.md) | [`.agents/logs/2026-08-17-1240-akademik-02-rpp.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-17-1240-akademik-02-rpp.md) | 🟢 **SELESAI (COMPLETED)** |
 | **03a** | **Migrasi Jurnal KBM & Presensi (Mode Sesi Mapel) ke Pola Domain Baru** | [`.agents/specs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md) | [`.agents/plans/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md) | [`.agents/logs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md) | 🟢 **SELESAI (COMPLETED)** |
-| **03b** | **Mode Tematik/Harian KB-TK-SD (baru, menyusul 03a)** | [`.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | `.agents/plans/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md` (belum dibuat) | `.agents/logs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md` (belum dibuat) | 🟡 SPEC DRAFT |
+| **03b** | **Mode Tematik/Harian KB-TK-SD (baru, menyusul 03a)** | [`.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | [`.agents/plans/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | [`.agents/logs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | 🟢 **SELESAI (COMPLETED)** |
 | **04** | **Adaptive E-Rapor Engine** | `.agents/specs/akademik-04-e-rapor.md` | `.agents/plans/akademik-04-e-rapor.md` | `.agents/logs/akademik-04-e-rapor.md` | ⚪ PENDING |
 
 ---
@@ -68,19 +68,20 @@ Rencana kerja ini mengimplementasikan spesifikasi arsitektur Modul Akademik dan 
 ---
 
 ### 📝 FASE 3: Jurnal KBM Adaptif & Presensi Siswa Multi-Jenjang
-- [ ] **3.1. Domain Service Agregasi Presensi:**
-  - [ ] Buat `App\Domains\Akademik\Services\PresensiAggregationService.php` (menghitung total hari Sakit, Izin, Alpa per siswa dalam 1 semester).
-- [ ] **3.2. Actions & DTO Jurnal KBM:**
-  - [ ] Buat `JurnalKbmData` & `PresensiSiswaData`.
-  - [ ] Buat `RecordJurnalKbmAction` & `RecordPresensiSiswaAction`.
-- [ ] **3.3. HTTP & UI Layer Adaptif (KB/TK/SD vs SMP/SMA/SMK):**
-  - [ ] Sempurnakan `Guru\SesiPembelajaranController` (atau `Guru\Akademik\JurnalKbmController`):
+- [x] **3.1. Domain Service Agregasi Presensi:**
+  - [x] Buat `App\Domains\Akademik\Services\PresensiAggregationService.php` (menghitung total hari Sakit, Izin, Alpa per siswa dalam 1 semester).
+- [x] **3.2. Actions & DTO Jurnal KBM:**
+  - [x] Buat `JurnalPresensiData` & `UpdateJurnalPresensiRequest`.
+  - [x] Buat `GenerateSesiHarianAction` & `RecordJurnalDanPresensiAction`.
+- [x] **3.3. HTTP & UI Layer Adaptif (KB/TK/SD vs SMP/SMA/SMK):**
+  - [x] Sempurnakan `Guru\SesiPembelajaranController` (atau `Guru\Akademik\JurnalKbmController`):
     - Mode Tematik / Guru Kelas (KB/TK/SD): Form Presensi Harian 1x + Jurnal Harian.
     - Mode Sesi Mapel (SMP/SMA/SMK): Form Jurnal Sesi Tatap Muka + Presensi Jam Pelajaran.
-  - [ ] Buat view rekap kehadiran semesteran untuk Wali Kelas.
-- [ ] **3.4. Pengujian Otomatis Fase 3:**
-  - [ ] Buat test `Tests\Unit\Domains\Akademik\PresensiAggregationServiceTest`.
-  - [ ] Buat test `Tests\Feature\Akademik\JurnalKbmAdaptiveTest`.
+  - [x] Buat view rekap kehadiran semesteran untuk Wali Kelas.
+- [x] **3.4. Pengujian Otomatis Fase 3:**
+  - [x] Buat test `Tests\Unit\Services\PresensiAggregationServiceTest`.
+  - [x] Buat test `Tests\Feature\Akademik\JurnalKbmAdaptiveTest`.
+
 
 ---
 
