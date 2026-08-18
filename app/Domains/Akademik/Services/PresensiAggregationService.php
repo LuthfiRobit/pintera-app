@@ -2,7 +2,6 @@
 
 namespace App\Domains\Akademik\Services;
 
-use App\Domains\Akademik\Models\Presensi;
 use App\Models\Semester;
 use App\Models\Siswa;
 use Illuminate\Support\Collection;

@@ -108,3 +108,49 @@ it('forbids a guru from updating a sesi that does not belong to them', function 
         'presensi' => [],
     ])->assertForbidden();
 });
+
+it('forbids a guru from updating a sesi that does not belong to them, even with a fully valid payload', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index')); // triggers generation
+    $sesi = SesiPembelajaran::firstOrFail();
+
+    Permission::firstOrCreate(['name' => 'presensi.isi', 'guard_name' => 'web']);
+    $lainRole = Role::firstOrCreate(['name' => 'guru_lain3', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $lainRole->givePermissionTo(['presensi.isi']);
+    $guruLainUser = User::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $guruLainUser->assignRole($lainRole);
+    Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'user_id' => $guruLainUser->id]);
+
+    $this->actingAs($guruLainUser)->put(route('guru.jurnal-kbm.update', $sesi), [
+        'materi' => 'Payload valid tapi bukan sesi milik guru ini',
+        'presensi' => [
+            $siswa->id => 'hadir',
+        ],
+    ])->assertForbidden();
+});
+
+it('shows the sesi detail to the guru who owns it', function () {
+    ['guruUser' => $guruUser] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index')); // triggers generation
+    $sesi = SesiPembelajaran::firstOrFail();
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.show', $sesi));
+
+    $response->assertOk();
+    $response->assertViewHas('sesi', fn ($viewSesi) => $viewSesi->is($sesi));
+});
+
+it('forbids a guru from viewing a sesi that does not belong to them', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index')); // triggers generation
+    $sesi = SesiPembelajaran::firstOrFail();
+
+    Permission::firstOrCreate(['name' => 'presensi.isi', 'guard_name' => 'web']);
+    $lainRole = Role::firstOrCreate(['name' => 'guru_lain4', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $lainRole->givePermissionTo(['presensi.isi']);
+    $guruLainUser = User::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $guruLainUser->assignRole($lainRole);
+    Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'user_id' => $guruLainUser->id]);
+
+    $this->actingAs($guruLainUser)->get(route('guru.jurnal-kbm.show', $sesi))->assertForbidden();
+});

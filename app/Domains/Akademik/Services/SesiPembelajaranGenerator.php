@@ -7,6 +7,7 @@ use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
+use App\Services\KalenderAkademikResolver;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -17,7 +18,7 @@ class SesiPembelajaranGenerator
      */
     public function generateUntukTanggal(Kelas $kelas, CarbonInterface $tanggal, int $semesterId): Collection
     {
-        $resolusi = (new \App\Services\KalenderAkademikResolver)->resolve($kelas->lembaga, $tanggal);
+        $resolusi = (new KalenderAkademikResolver)->resolve($kelas->lembaga, $tanggal);
 
         if ($resolusi['libur'] || $kelas->pola_jam_id === null) {
             return collect();
