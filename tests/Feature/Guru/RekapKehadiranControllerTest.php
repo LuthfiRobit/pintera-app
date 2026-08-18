@@ -104,3 +104,29 @@ it('does not show a kelas from another lembaga even if the guru id happens to ma
     $response->assertOk();
     $response->assertViewHas('kelas', fn ($kelas) => $kelas === null);
 });
+
+it('ignores a tahun_ajaran_id and semester_id belonging to another lembaga, leaking no cross-tenant data', function () {
+    ['guruUser' => $guruUser, 'yayasan' => $yayasan] = siapkanWaliKelasDenganSiswa();
+
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id, 'nama' => 'TA Rahasia Lembaga Lain']);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+    $kelasLain = Kelas::withoutGlobalScopes()->create([
+        'lembaga_id' => $lembagaLain->id,
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'nama' => 'Kelas Rahasia Lembaga Lain',
+    ]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.rekap', [
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'semester_id' => $semesterLain->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('tahunAjaranList', fn ($list) => ! $list->contains('id', $tahunAjaranLain->id));
+    $response->assertViewHas('semesterList', fn ($list) => $list->isEmpty());
+    $response->assertViewHas('kelasList', fn ($list) => $list->isEmpty());
+    $response->assertViewHas('kelas', fn ($kelas) => $kelas === null);
+    $response->assertDontSee($tahunAjaranLain->nama);
+    $response->assertDontSee($kelasLain->nama);
+});
