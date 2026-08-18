@@ -108,7 +108,7 @@ it('filters the index by status sekolah', function () {
     expect($response->viewData('lembaga')->pluck('nama')->all())->toBe(['Lembaga Negeri']);
 });
 
-it('paginates the index at 10 per page', function () {
+it('paginates the index at the requested per_page size', function () {
     Permission::firstOrCreate(['name' => 'lembaga.view', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $role->givePermissionTo(['lembaga.view']);
@@ -118,7 +118,7 @@ it('paginates the index at 10 per page', function () {
     $yayasan = Yayasan::factory()->create();
     Lembaga::factory()->count(12)->create(['yayasan_id' => $yayasan->id]);
 
-    $response = $this->actingAs($manager)->get(route('admin.lembaga.index'));
+    $response = $this->actingAs($manager)->get(route('admin.lembaga.index', ['per_page' => 10]));
 
     $response->assertOk();
     expect($response->viewData('lembaga'))->toHaveCount(10);

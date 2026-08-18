@@ -22,11 +22,14 @@ use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\WorkflowDefinitionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class PengajuanApprovalActionTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_submit_partial_approval_and_disbursement_lifecycle(): void
     {
         $this->seed(WorkflowDefinitionSeeder::class);

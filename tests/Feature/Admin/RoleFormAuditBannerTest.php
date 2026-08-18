@@ -17,6 +17,6 @@ it('renders the audit banner markup on the create-role page, ready to be populat
     $response->assertOk();
     $response->assertSee('auditMissingFromDatabase', false);
     $response->assertSee('auditUnusedInCode', false);
-    $response->assertSee('permission baru ditemukan di kode');
-    $response->assertSee('tidak dipakai di kode manapun');
+    $response->assertSee('hak akses baru ditemukan di kode sumber');
+    $response->assertSee('terdeteksi tidak dipakai');
 });

@@ -18,10 +18,13 @@ use App\Domains\Sarpras\Models\Ruangan;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PengadaanModelsTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_can_create_proposal_with_items_and_relations(): void
     {
         $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidikan']);

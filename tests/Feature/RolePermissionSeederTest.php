@@ -40,13 +40,14 @@ it('seeds the initial permissions', function () {
         'jadwal-pelajaran.kelola',
         'kalender-akademik.view', 'kalender-akademik.kelola', 'kalender-akademik.kelola-nasional',
         'pengaturan-akademik.kelola',
+        'rpp.view', 'rpp.kelola', 'rpp.verify',
     ];
 
     foreach ($expected as $name) {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(106);
+    expect(Permission::count())->toBe(109);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -55,7 +56,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(106);
+    expect($superAdmin->permissions()->count())->toBe(109);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -95,12 +96,13 @@ it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, inclu
         'tagihan.view',
         'komponen-penilaian.kelola', 'rapor.view',
         'kenaikan-kelas.kelola',
+        'rpp.view', 'rpp.verify',
     ];
 
     foreach ($expected as $name) {
         expect($kepalaSekolah->hasPermissionTo($name))->toBeTrue();
     }
-    expect($kepalaSekolah->permissions()->count())->toBe(9);
+    expect($kepalaSekolah->permissions()->count())->toBe(11);
 });
 
 it('gives admin_keuangan the jenis-tagihan and tagihan permissions by default', function () {
@@ -126,7 +128,7 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
 
     expect(Role::count())->toBe(10);
-    expect(Permission::count())->toBe(106);
+    expect(Permission::count())->toBe(109);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {

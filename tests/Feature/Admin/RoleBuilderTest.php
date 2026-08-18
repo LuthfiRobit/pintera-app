@@ -127,41 +127,48 @@ it('refuses to let a lembaga-scoped role-manager create a yayasan-scoped role', 
     expect(Role::where('name', 'sneaky_admin')->exists())->toBeFalse();
 });
 
-it('returns a paginated, searchable, sortable JSON payload from the datatable endpoint', function () {
+it('returns a paginated, searchable HTML fragment sorted alphabetically by name', function () {
     $admin = actingAsSuperAdmin();
     Role::create(['name' => 'zzz_role', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
     Role::create(['name' => 'aaa_role', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
 
-    $response = $this->actingAs($admin)->getJson(route('admin.roles.data', ['sort' => 'name', 'direction' => 'asc']));
+    $response = $this->actingAs($admin)->get(route('admin.roles.index'), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
 
     $response->assertOk();
-    $names = collect($response->json('data'))->pluck('name')->values();
-    expect($names->first())->toBe('aaa_role');
-    expect($response->json('meta.total'))->toBeGreaterThanOrEqual(3);
+    $aaaPos = strpos($response->getContent(), 'aaa_role');
+    $zzzPos = strpos($response->getContent(), 'zzz_role');
+    expect($aaaPos)->not->toBeFalse();
+    expect($aaaPos)->toBeLessThan($zzzPos);
 });
 
-it('filters the datatable endpoint by search and scope', function () {
+it('filters the index fragment by search and scope', function () {
     $admin = actingAsSuperAdmin();
     Role::create(['name' => 'admin_perpustakaan', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
     Role::create(['name' => 'admin_gudang', 'guard_name' => 'web', 'scope_level' => 'diri_sendiri']);
 
-    $response = $this->actingAs($admin)->getJson(route('admin.roles.data', ['search' => 'perpustakaan']));
-
+    $response = $this->actingAs($admin)->get(route('admin.roles.index', ['search' => 'perpustakaan']), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
     $response->assertOk();
-    $names = collect($response->json('data'))->pluck('name');
-    expect($names)->toContain('admin_perpustakaan');
-    expect($names)->not->toContain('admin_gudang');
+    $response->assertSee('admin_perpustakaan');
+    $response->assertDontSee('admin_gudang');
 
-    $response = $this->actingAs($admin)->getJson(route('admin.roles.data', ['scope' => 'diri_sendiri']));
-    $names = collect($response->json('data'))->pluck('name');
-    expect($names)->toContain('admin_gudang');
-    expect($names)->not->toContain('admin_perpustakaan');
+    $response = $this->actingAs($admin)->get(route('admin.roles.index', ['scope' => 'diri_sendiri']), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
+    $response->assertOk();
+    $response->assertSee('admin_gudang');
+    $response->assertDontSee('admin_perpustakaan');
 });
 
-it('denies the datatable endpoint to a user without roles.view permission', function () {
+it('denies the index fragment to a user without roles.view permission', function () {
     $user = User::factory()->create();
 
-    $this->actingAs($user)->getJson(route('admin.roles.data'))->assertForbidden();
+    $this->actingAs($user)->get(route('admin.roles.index'), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ])->assertForbidden();
 });
 
 it('returns the permission catalog grouped by module', function () {
@@ -248,13 +255,13 @@ it('returns a JSON 422 instead of a redirect when an AJAX delete targets a role 
     expect(Role::find($role->id))->not->toBeNull();
 });
 
-it('renders the roles index page with the datatable mount point instead of a server-rendered table', function () {
+it('renders the roles index page with the AJAX datatable-filter mount point instead of a server-rendered table', function () {
     $admin = actingAsSuperAdmin();
 
     $response = $this->actingAs($admin)->get(route('admin.roles.index'));
 
     $response->assertOk();
-    $response->assertSee('rolesTable(', false);
+    $response->assertSee('dataTableFilter(', false);
 });
 
 it('renders the create-role page with the permission-matrix mount point', function () {

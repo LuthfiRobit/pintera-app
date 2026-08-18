@@ -9,11 +9,14 @@ use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Domains\Workflow\Models\WorkflowDefinition;
 use App\Domains\Workflow\Models\WorkflowStep;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class WorkflowEngineTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_can_initialize_and_progress_through_multi_step_workflow(): void
     {
         $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
