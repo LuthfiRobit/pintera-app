@@ -23,7 +23,7 @@ function siapkanGuruDenganJadwalHariIni(): array
     Carbon::setTestNow(Carbon::parse('2026-08-19')); // a Wednesday
 
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan' => [0]]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SMP', 'hari_libur_mingguan' => [0]]);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);

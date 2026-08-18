@@ -79,4 +79,10 @@ class SesiPembelajaran extends Model
     {
         return $this->hasMany(Presensi::class);
     }
+
+    public function isTematik(): bool
+    {
+        return $this->jadwal_pelajaran_id === null;
+    }
 }
+
