@@ -21,7 +21,7 @@ function siapkanWaliKelasDenganSiswa(): array
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $semester = Semester::factory()->create([
         'tahun_ajaran_id' => $tahunAjaran->id,
         'status_aktif' => true,
@@ -38,27 +38,41 @@ function siapkanWaliKelasDenganSiswa(): array
         'tahun_ajaran_id' => $tahunAjaran->id,
         'wali_kelas_guru_id' => $guru->id,
     ]);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'status' => 'aktif']);
+    $siswa = Siswa::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelas->id,
+        'status' => 'aktif',
+        'nis' => '123456',
+    ]);
     $sesi = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()->toDateString()]);
     Presensi::create(['sesi_pembelajaran_id' => $sesi->id, 'siswa_id' => $siswa->id, 'status' => 'hadir']);
 
-    return compact('guruUser', 'guru', 'kelas', 'siswa', 'lembaga', 'yayasan');
+    return compact('guruUser', 'guru', 'kelas', 'siswa', 'lembaga', 'yayasan', 'tahunAjaran', 'semester');
 }
 
 it('denies access without presensi.isi permission', function () {
     $this->actingAs(User::factory()->create())->get(route('guru.jurnal-kbm.rekap'))->assertForbidden();
 });
 
-it('shows attendance recap for the kelas the guru is wali kelas of', function () {
-    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa] = siapkanWaliKelasDenganSiswa();
+it('shows attendance recap with NIS and filter options for the kelas the guru is wali kelas of', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'tahunAjaran' => $tahunAjaran, 'semester' => $semester] = siapkanWaliKelasDenganSiswa();
 
-    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.rekap', ['kelas_id' => $kelas->id]));
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.rekap', [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'semester_id' => $semester->id,
+        'kelas_id' => $kelas->id,
+    ]));
 
     $response->assertOk();
+    $response->assertViewHas('tahunAjaranList');
+    $response->assertViewHas('semesterList');
+    $response->assertViewHas('kelasList');
+    $response->assertSee('123456'); // NIS siswa
+    $response->assertSee($siswa->nama_lengkap);
     $response->assertViewHas('rekap', function ($rekap) use ($siswa) {
         $baris = $rekap->firstWhere('siswa_id', $siswa->id);
 
-        return $baris !== null && $baris['hadir'] === 1;
+        return $baris !== null && $baris['hadir'] === 1 && $baris['nis'] === '123456';
     });
 });
 
