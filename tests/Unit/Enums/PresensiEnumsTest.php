@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\StatusPresensi;
-use App\Enums\StatusSesiPembelajaran;
+use App\Domains\Akademik\Enums\StatusPresensi;
+use App\Domains\Akademik\Enums\StatusSesiPembelajaran;
 
 it('defines the expected StatusSesiPembelajaran cases', function () {
     expect(array_column(StatusSesiPembelajaran::cases(), 'value'))

@@ -3,6 +3,7 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\JamPelajaran;
@@ -10,7 +11,6 @@ use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
 use App\Models\PolaJam;
-use App\Models\SesiPembelajaran;
 use App\Models\TahunAjaran;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;

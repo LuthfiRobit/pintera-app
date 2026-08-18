@@ -1,10 +1,10 @@
 <?php
 
-use App\Enums\StatusSesiPembelajaran;
+use App\Domains\Akademik\Enums\StatusSesiPembelajaran;
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\SesiPembelajaran;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;

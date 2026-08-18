@@ -70,7 +70,7 @@
                                             <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $presensi->siswa->nama_lengkap }}</td>
                                             <td class="px-5 py-2.5">
                                                 <div class="flex flex-row flex-nowrap items-center gap-1.5">
-                                                    @foreach (\App\Enums\StatusPresensi::cases() as $status)
+                                                    @foreach (\App\Domains\Akademik\Enums\StatusPresensi::cases() as $status)
                                                         @php
                                                             $theme = match ($status->value) {
                                                                 'hadir' => [

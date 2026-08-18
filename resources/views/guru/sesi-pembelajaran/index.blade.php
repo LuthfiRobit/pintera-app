@@ -36,7 +36,7 @@
 
             {{-- Stat 2: Jurnal Terisi --}}
             @php
-                $terlaksanaCount = $sesiList->filter(fn($s) => $s->status === \App\Enums\StatusSesiPembelajaran::Terlaksana && $s->materi !== null)->count();
+                $terlaksanaCount = $sesiList->filter(fn($s) => $s->status === \App\Domains\Akademik\Enums\StatusSesiPembelajaran::Terlaksana && $s->materi !== null)->count();
                 $pendingCount = $sesiList->count() - $terlaksanaCount;
             @endphp
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
@@ -90,7 +90,7 @@
 
             @forelse ($sesiList as $sesi)
                 @php
-                    $isDone = $sesi->status === \App\Enums\StatusSesiPembelajaran::Terlaksana && $sesi->materi !== null;
+                    $isDone = $sesi->status === \App\Domains\Akademik\Enums\StatusSesiPembelajaran::Terlaksana && $sesi->materi !== null;
                 @endphp
                 <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition-all duration-200 hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5">
                     <div class="space-y-3 flex-1">

@@ -1,5 +1,7 @@
 <?php
 
+use App\Domains\Akademik\Models\SesiPembelajaran;
+use App\Domains\Akademik\Services\SesiPembelajaranGenerator;
 use App\Enums\Hari;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
@@ -9,11 +11,9 @@ use App\Models\Lembaga;
 use App\Models\MataPelajaran;
 use App\Models\PolaJam;
 use App\Models\Semester;
-use App\Models\SesiPembelajaran;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
-use App\Services\SesiPembelajaranGenerator;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

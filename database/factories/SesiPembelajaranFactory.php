@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Models\Guru;
 use App\Models\Kelas;
-use App\Models\SesiPembelajaran;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class SesiPembelajaranFactory extends Factory

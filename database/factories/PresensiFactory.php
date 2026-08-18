@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Presensi;
-use App\Models\SesiPembelajaran;
+use App\Domains\Akademik\Models\Presensi;
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

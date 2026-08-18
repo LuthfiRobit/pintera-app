@@ -1,9 +1,15 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
-use App\Enums\StatusSesiPembelajaran;
+use App\Domains\Akademik\Enums\StatusSesiPembelajaran;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Guru;
+use App\Models\JadwalPelajaran;
+use App\Models\Kelas;
+use App\Models\Lembaga;
+use App\Models\MataPelajaran;
+use Database\Factories\SesiPembelajaranFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,6 +32,11 @@ class SesiPembelajaran extends Model
             'tanggal' => 'date',
             'status' => StatusSesiPembelajaran::class,
         ];
+    }
+
+    protected static function newFactory(): SesiPembelajaranFactory
+    {
+        return SesiPembelajaranFactory::new();
     }
 
     protected static function booted(): void

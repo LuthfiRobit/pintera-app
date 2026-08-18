@@ -1,9 +1,9 @@
 <?php
 
+use App\Domains\Akademik\Models\Presensi;
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\Presensi;
-use App\Models\SesiPembelajaran;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;

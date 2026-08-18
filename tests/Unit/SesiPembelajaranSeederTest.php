@@ -1,8 +1,8 @@
 <?php
 
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\SesiPembelajaran;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
 use Database\Seeders\EssentialUserSeeder;

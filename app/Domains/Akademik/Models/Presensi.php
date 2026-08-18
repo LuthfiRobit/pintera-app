@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
-use App\Enums\StatusPresensi;
+use App\Domains\Akademik\Enums\StatusPresensi;
+use App\Models\Siswa;
+use Database\Factories\PresensiFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +22,11 @@ class Presensi extends Model
         return [
             'status' => StatusPresensi::class,
         ];
+    }
+
+    protected static function newFactory(): PresensiFactory
+    {
+        return PresensiFactory::new();
     }
 
     public function sesiPembelajaran(): BelongsTo

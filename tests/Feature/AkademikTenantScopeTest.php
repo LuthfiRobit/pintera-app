@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Models\Asesmen;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
@@ -10,7 +11,6 @@ use App\Models\MataPelajaran;
 use App\Models\NilaiSiswa;
 use App\Models\Role;
 use App\Models\Semester;
-use App\Models\SesiPembelajaran;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;

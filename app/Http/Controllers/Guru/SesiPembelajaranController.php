@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Guru;
 
+use App\Domains\Akademik\Models\SesiPembelajaran;
+use App\Domains\Akademik\Services\SesiPembelajaranGenerator;
 use App\Models\Kelas;
-use App\Models\SesiPembelajaran;
-use App\Services\SesiPembelajaranGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
