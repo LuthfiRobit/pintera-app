@@ -31,7 +31,7 @@ class PresensiAggregationService
 
             return [
                 'siswa_id' => $siswa->id,
-                'nama' => $siswa->nama,
+                'nama' => $siswa->nama_lengkap,
                 'hadir' => (int) ($byStatus['hadir'] ?? 0),
                 'izin' => (int) ($byStatus['izin'] ?? 0),
                 'sakit' => (int) ($byStatus['sakit'] ?? 0),

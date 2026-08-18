@@ -45,7 +45,7 @@ it('menghitung total hadir, izin, sakit, alpa, dan terlambat per siswa dalam ren
 
     $baris = $rekap->firstWhere('siswa_id', $siswa->id);
     expect($baris)->not->toBeNull()
-        ->and($baris['nama'])->toBe($siswa->nama)
+        ->and($baris['nama'])->toBe($siswa->nama_lengkap)
         ->and($baris['hadir'])->toBe(1)
         ->and($baris['izin'])->toBe(1)
         ->and($baris['alpa'])->toBe(1)
