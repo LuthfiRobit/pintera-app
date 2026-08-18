@@ -89,6 +89,11 @@ class Siswa extends Model
         });
     }
 
+    public function getNamaAttribute(): string
+    {
+        return $this->nama_lengkap;
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
