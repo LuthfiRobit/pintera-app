@@ -95,9 +95,13 @@ class JurnalKbmController extends BaseController
         $this->authorize('presensi.isi');
         $this->authorizeMilikGuru($sesi);
 
+        $sesi->loadMissing('kelas.tahunAjaran');
+        $mapelTerjadwal = $this->mapelTerjadwalUntukSesiTematik(collect([$sesi]), $sesi->tanggal);
+
         return view('portals.guru.akademik.jurnal-kbm.show', [
             'sesi' => $sesi,
             'presensiList' => $sesi->presensi()->with('siswa')->get(),
+            'mapelTerjadwal' => $mapelTerjadwal[$sesi->kelas_id] ?? null,
         ]);
     }
 

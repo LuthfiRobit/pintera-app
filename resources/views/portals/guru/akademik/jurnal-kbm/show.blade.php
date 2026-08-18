@@ -12,7 +12,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Isi Jurnal &amp; Presensi</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Sesi Pembelajaran Kelas {{ $sesi->kelas->nama }} &middot; {{ $sesi->mataPelajaran?->nama ?? '(tanpa mapel)' }}</p>
+                <p class="text-xs text-gray-500 mt-0.5">Sesi Pembelajaran Kelas {{ $sesi->kelas->nama }} &middot; {{ $sesi->mataPelajaran?->nama ?? $mapelTerjadwal ?? '(tanpa mapel)' }}</p>
             </div>
             <p class="text-sm text-gray-500">
                 <a href="{{ route('guru.jurnal-kbm.index') }}" class="font-semibold text-gray-700 hover:text-brand-600 transition-colors">Jurnal &amp; Presensi</a>

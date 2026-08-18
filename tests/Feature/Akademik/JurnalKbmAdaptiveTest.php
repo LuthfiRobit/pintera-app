@@ -101,6 +101,10 @@ it('shows scheduled mata pelajaran names as an informational badge on the temati
 
     $sesi = SesiPembelajaran::where('kelas_id', $kelas->id)->firstOrFail();
     expect($sesi->mata_pelajaran_id)->toBeNull(); // display-only, data sesi tidak berubah
+
+    $showResponse = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.show', $sesi));
+    $showResponse->assertOk();
+    $showResponse->assertSee('Bahasa (BHS)');
 });
 
 it('does not generate a tematik sesi when the wali kelas guru is on a libur day', function () {
