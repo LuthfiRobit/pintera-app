@@ -8,6 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateJurnalPresensiRequest extends FormRequest
 {
+    // Sole ownership enforcement point for the update route (mirrors, but is not
+    // called by, JurnalKbmController::authorizeMilikGuru(), which still guards show()).
     public function authorize(): bool
     {
         $sesi = $this->route('sesi');

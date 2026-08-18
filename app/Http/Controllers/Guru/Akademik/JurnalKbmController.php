@@ -54,7 +54,8 @@ class JurnalKbmController extends BaseController
     public function update(UpdateJurnalPresensiRequest $request, SesiPembelajaran $sesi): RedirectResponse
     {
         $this->authorize('presensi.isi');
-        $this->authorizeMilikGuru($sesi);
+        // Ownership check is already enforced by UpdateJurnalPresensiRequest::authorize(),
+        // which runs before this method body — no need to call authorizeMilikGuru() again here.
 
         $this->recordJurnalDanPresensiAction->execute($sesi, $request->toDTO());
 
