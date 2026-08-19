@@ -83,6 +83,7 @@ class KomponenPenilaianController extends BaseController
         return view('guru.komponen-penilaian.create', [
             'mataPelajaranList' => MataPelajaran::whereIn('id', $mapelIds)->orderBy('nama')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->with('tahunAjaran')->orderByDesc('id')->get(),
+            'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
 
@@ -126,6 +127,7 @@ class KomponenPenilaianController extends BaseController
         return view('guru.komponen-penilaian.edit', [
             'komponenPenilaian' => $komponenPenilaian->load(['mataPelajaran', 'semester.tahunAjaran']),
             'dipakai' => $dipakai,
+            'bentukPendidikan' => auth()->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
 

@@ -597,3 +597,22 @@ it('saves elemen_cp when submitted and leaves it null when omitted', function ()
     ]);
 });
 
+it('shows the elemen_cp select on the create form for a PAUD lembaga but not for an SD lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaPaud = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    $userPaud = actingAsKomponenManager($lembagaPaud);
+
+    $responsePaud = $this->actingAs($userPaud)->get(route('admin.komponen-penilaian.create'));
+    $responsePaud->assertOk();
+    $responsePaud->assertSee('name="elemen_cp"', false);
+    $responsePaud->assertSee('name="kktp_minimal"', false);
+
+    $lembagaSd = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $userSd = actingAsKomponenManager($lembagaSd);
+
+    $responseSd = $this->actingAs($userSd)->get(route('admin.komponen-penilaian.create'));
+    $responseSd->assertOk();
+    $responseSd->assertDontSee('name="elemen_cp"', false);
+    $responseSd->assertSee('name="kktp_minimal"', false);
+});
+

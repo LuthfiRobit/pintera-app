@@ -103,6 +103,40 @@
                     <x-input-error :messages="$errors->get('kktp')" class="mt-1" />
                 </div>
 
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                        <x-input-label value="Ambang KKTP Minimal (Opsional)" />
+                        <input
+                            type="number"
+                            name="kktp_minimal"
+                            value="{{ old('kktp_minimal', $komponenPenilaian->kktp_minimal) }}"
+                            min="0"
+                            max="100"
+                            placeholder="Contoh: 75"
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                        >
+                        <p class="mt-1 text-xs text-gray-400">Ambang skor numerik untuk narasi capaian otomatis (default 75 jika kosong).</p>
+                        <x-input-error :messages="$errors->get('kktp_minimal')" class="mt-1" />
+                    </div>
+
+                    @if (in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true))
+                        <div>
+                            <x-input-label value="Elemen Capaian Pembelajaran (PAUD)" />
+                            @php($elemenCpSaatIni = old('elemen_cp', $komponenPenilaian->elemen_cp?->value))
+                            <select
+                                name="elemen_cp"
+                                class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                            >
+                                <option value="">— Pilih Elemen CP —</option>
+                                <option value="nilai_agama_moral" @selected($elemenCpSaatIni === 'nilai_agama_moral')>Nilai Agama dan Budi Pekerti</option>
+                                <option value="jati_diri" @selected($elemenCpSaatIni === 'jati_diri')>Jati Diri</option>
+                                <option value="literasi_steam" @selected($elemenCpSaatIni === 'literasi_steam')>Literasi, STEAM, Seni, dan Budaya</option>
+                            </select>
+                            <x-input-error :messages="$errors->get('elemen_cp')" class="mt-1" />
+                        </div>
+                    @endif
+                </div>
+
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">
                     <x-primary-button type="submit">
                         Simpan Perubahan

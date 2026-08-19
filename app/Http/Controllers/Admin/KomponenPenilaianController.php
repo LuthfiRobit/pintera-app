@@ -95,6 +95,7 @@ class KomponenPenilaianController extends BaseController
             'tahunAjaranId' => $tahunAjaranId,
             'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
+            'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
 
@@ -140,6 +141,7 @@ class KomponenPenilaianController extends BaseController
             'dipakai' => $dipakai,
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
             'semesterList' => Semester::with('tahunAjaran')->orderByDesc('id')->get(),
+            'bentukPendidikan' => auth()->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
 
