@@ -139,7 +139,7 @@ Kedua step `ApproverType::Role` (BUKAN `DirectRelation` — hook `wali_kelas` ya
 1. **`SimpanCatatanWaliKelasAction::execute(CatatanWaliKelasData $data): CatatanWaliKelas`** — `updateOrCreate(['siswa_id' => ..., 'semester_id' => ...], [...])`. **Tidak ada penguncian di sini** — berbeda dari `NilaiSiswa` (lihat 2.7), `CatatanWaliKelas` TIDAK dikunci sub-task ini meskipun `PengajuanRapor`-nya sudah `Disetujui`. Master spec hanya menyebutkan "nilai terkunci permanen", tidak menyebut catatan wali kelas — penguncian catatan (kalau memang diperlukan) adalah keputusan terpisah untuk sub-task berikutnya, bukan diasumsikan di sini.
 
 2. **`SubmitPengajuanRaporAction::execute(Kelas $kelas, Semester $semester, User $user): PengajuanRapor`**:
-   - Validasi: setiap `Siswa` aktif di `$kelas` punya `CatatanWaliKelas` untuk `$semester` — kalau ada yang belum, `throw ValidationException::withMessages(['catatan_wali_kelas' => "Siswa berikut belum memiliki catatan wali kelas: {daftar nama}."])`.
+   - Validasi: setiap `Siswa` di `$kelas` (`$kelas->siswa()->get()`, tanpa filter status — lihat Asumsi) punya `CatatanWaliKelas` untuk `$semester` — kalau ada yang belum, `throw ValidationException::withMessages(['catatan_wali_kelas' => "Siswa berikut belum memiliki catatan wali kelas: {daftar nama}."])`.
    - `DB::transaction`: `PengajuanRapor::updateOrCreate(['kelas_id' => $kelas->id, 'semester_id' => $semester->id], ['status' => StatusPengajuanRapor::Diajukan, 'diajukan_oleh' => $user->id, 'diajukan_pada' => now()])`.
    - Kalau `$pengajuanRapor->approvalRequest` sudah ada (resubmit dari `Ditolak`) → reset `ApprovalRequest` yang sama: `current_step_id = $approvalRequest->workflowDefinition->firstStep()->id`, `status = ApprovalStatus::Pending`, `last_notes = null` — pola identik `Pengadaan\SubmitPengajuanAction`.
    - Kalau belum ada → `InitializeApprovalRequestAction::execute('RAPOR_SEMESTER', $pengajuanRapor, $user)`.
@@ -190,7 +190,7 @@ Tambah ke `database/seeders/PermissionSeeder.php`: `rapor.input-wali`, `rapor.aj
 
 ## 3. Asumsi
 
-- `Siswa` aktif di kelas = `Siswa::where('kelas_id', $kelas->id)->where('status', 'aktif')` (pola yang sudah dipakai `RaporCalculationService`/`CreateAsesmenAction` dari 04a) — siswa berstatus lulus/pindah/keluar tidak perlu `CatatanWaliKelas` untuk validasi kelengkapan submit.
+- **Koreksi setelah pengecekan kode nyata**: `RaporCalculationService`/`CreateAsesmenAction` (04a) TIDAK memfilter siswa berdasarkan `status` sama sekali — keduanya pakai `$kelas->siswa()` / `Siswa::where('kelas_id', ...)` polos, mengikutsertakan siswa berstatus lulus/pindah/keluar juga. Sub-task ini mengikuti presenden yang sama persis (`$kelas->siswa()->get()`, tanpa filter status) untuk validasi kelengkapan `CatatanWaliKelas` di `SubmitPengajuanRaporAction` — bukan `where('status', 'aktif')` seperti draf awal desain saya sebelumnya (asumsi itu keliru, sudah diverifikasi ulang terhadap kode sebenarnya).
 - Semester yang dipakai untuk validasi/kalkulasi adalah semester yang secara eksplisit di-passing ke Action (bukan auto-detect "semester aktif") — konsisten dengan `RaporCalculationService::hitungRekapKelas(Kelas $kelas, Semester $semester)` yang sudah ada.
 - `Kelas.wali_kelas_guru_id` tetap sumber kebenaran tunggal untuk "siapa Wali Kelas kelas ini" (sudah dipakai `RekapKehadiranController` dari 03a) — permission `rapor.input-wali`/`rapor.ajukan` di-guard di level pemanggil Action (controller di 04c nanti) via ownership check ini, BUKAN di dalam Action itu sendiri (Action tetap murni domain logic, tidak tahu soal HTTP/auth — pola sama seperti `SimpanNilaiSiswaAction` dari 04a yang juga tidak melakukan authorization sendiri).
 - Tidak ada migrasi data untuk `PengajuanRapor`/`CatatanWaliKelas` lama — tabel baru, tidak ada data existing untuk dipindahkan.
@@ -202,7 +202,7 @@ Tambah ke `database/seeders/PermissionSeeder.php`: `rapor.input-wali`, `rapor.aj
 - [ ] `PengajuanRapor::approvalRequest()` adalah `MorphOne` yang benar ke `ApprovalRequest` — dibuktikan test bisa membuat, mengambil, dan memproses `ApprovalRequest` lewat relasi ini.
 - [ ] `CapaianKompetensiGenerator::generateNarasi()` menghasilkan kalimat yang benar untuk kelima skenario di 2.10, termasuk fallback ambang 75 saat `kktp_minimal` NULL.
 - [ ] `WorkflowDefinitionSeeder` menambah `RAPOR_SEMESTER` (2 step) TANPA mengubah/menghapus `PENGADAAN_SARPRAS` yang sudah ada — dibuktikan test existing `WorkflowEngineTest`/`Pengadaan*Test` tetap hijau.
-- [ ] `SubmitPengajuanRaporAction` menolak submit kalau ada siswa aktif tanpa `CatatanWaliKelas`, dan mereset `ApprovalRequest` yang sama (bukan bikin baru) saat resubmit dari `Ditolak`.
+- [ ] `SubmitPengajuanRaporAction` menolak submit kalau ada siswa di kelas tanpa `CatatanWaliKelas` (tanpa filter status, lihat Asumsi), dan mereset `ApprovalRequest` yang sama (bukan bikin baru) saat resubmit dari `Ditolak`.
 - [ ] `VerifyPengajuanRaporAction`/`ApprovePengajuanRaporAction` mensinkronkan `PengajuanRapor.status` dengan benar untuk Approve maupun Reject di masing-masing tahap.
 - [ ] `SimpanNilaiSiswaAction` (04a) menolak simpan nilai untuk kelas+semester yang `PengajuanRapor`-nya `Disetujui`, TIDAK menolak untuk kelas+semester lain (regression 04a tetap hijau).
 - [ ] 4 field DTO/Action/FormRequest `KomponenPenilaian` (04a) menerima `kktp_minimal` opsional tanpa merusak test existing.
