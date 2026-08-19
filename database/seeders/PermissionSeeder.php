@@ -51,6 +51,7 @@ class PermissionSeeder extends Seeder
             'keuangan.akses',
             'yayasan.kelola',
             'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola', 'komponen-penilaian.kelola-sendiri', 'rapor.view',
+            'rapor.input-wali', 'rapor.ajukan', 'rapor.verify', 'rapor.approve',
             'kenaikan-kelas.kelola',
             'kelas.view', 'kelas.create', 'kelas.edit',
             'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',

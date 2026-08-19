@@ -61,7 +61,7 @@ class RoleSeeder extends Seeder
                     'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
                     'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
                     'tagihan.view',
-                    'komponen-penilaian.kelola', 'rapor.view',
+                    'komponen-penilaian.kelola', 'rapor.view', 'rapor.approve',
                     'kenaikan-kelas.kelola',
                     'rpp.view', 'rpp.verify',
                 ]);
@@ -69,7 +69,7 @@ class RoleSeeder extends Seeder
 
             if ($name === 'guru') {
                 $role->givePermissionTo([
-                    'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola-sendiri',
+                    'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola-sendiri', 'rapor.input-wali', 'rapor.ajukan',
                     'kasus.ajukan', 'kasus.view',
                     'rpp.view', 'rpp.kelola',
                 ]);
@@ -92,7 +92,7 @@ class RoleSeeder extends Seeder
                     'kalender-akademik.view', 'kalender-akademik.kelola',
                     'pengaturan-akademik.kelola',
                     'komponen-penilaian.kelola',
-                    'rapor.view',
+                    'rapor.view', 'rapor.verify',
                     'kenaikan-kelas.kelola',
                     'rpp.view', 'rpp.kelola', 'rpp.verify',
                 ]);
