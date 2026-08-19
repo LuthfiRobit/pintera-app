@@ -177,3 +177,16 @@ it('builds a judulDokumen mentioning the semester name and tahun ajaran', functi
     expect($data['judulDokumen'])->toContain($semester->nama);
     expect($data['judulDokumen'])->toContain($tahunAjaran->nama);
 });
+
+it('renders paud and sd blade templates successfully', function () {
+    ['siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
+    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semester);
+
+    $renderedPaud = view('pdf.rapor.paud', $data)->render();
+    expect($renderedPaud)->toContain('Capaian Pembelajaran');
+    expect($renderedPaud)->toContain($siswa->nama_lengkap);
+
+    $renderedSd = view('pdf.rapor.sd', $data)->render();
+    expect($renderedSd)->toContain('Nilai Akademik');
+    expect($renderedSd)->toContain($siswa->nama_lengkap);
+});
