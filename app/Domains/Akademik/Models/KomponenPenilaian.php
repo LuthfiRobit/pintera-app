@@ -19,7 +19,7 @@ class KomponenPenilaian extends Model
 
     protected $table = 'komponen_penilaian';
 
-    protected $fillable = ['mata_pelajaran_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp'];
+    protected $fillable = ['mata_pelajaran_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp', 'kktp_minimal'];
 
     protected static function newFactory(): KomponenPenilaianFactory
     {
