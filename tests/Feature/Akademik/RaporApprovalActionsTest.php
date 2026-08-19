@@ -103,3 +103,17 @@ it('rejects at the verify stage and records catatan_revisi, allowing resubmissio
     expect($diajukanUlang->status)->toBe(StatusPengajuanRapor::Diajukan);
     expect($diajukanUlang->id)->toBe($pengajuan->id);
 });
+
+it('rejects at the approve stage and records catatan_revisi, without touching disetujui fields', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['pengajuan' => $pengajuan, 'userWaka' => $userWaka, 'userKepsek' => $userKepsek] = siapkanPengajuanDiajukan();
+
+    $diverifikasi = (new VerifyPengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan, $userWaka, ApprovalAction::Approve);
+
+    $ditolak = (new ApprovePengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($diverifikasi, $userKepsek, ApprovalAction::Reject, 'Catatan wali kelas belum sesuai format');
+
+    expect($ditolak->status)->toBe(StatusPengajuanRapor::Ditolak);
+    expect($ditolak->catatan_revisi)->toBe('Catatan wali kelas belum sesuai format');
+    expect($ditolak->disetujui_oleh)->toBeNull();
+    expect($ditolak->disetujui_pada)->toBeNull();
+});
