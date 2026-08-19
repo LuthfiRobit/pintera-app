@@ -113,3 +113,54 @@ it('requires a semester_id query param to open the edit form', function () {
         ->get(route('guru.rapor.catatan.edit', ['siswa' => $siswa->id]))
         ->assertNotFound();
 });
+
+it('saves catatan wali kelas via update and redirects back to the index', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+
+    $response = $this->actingAs($guruUser)->put(route('guru.rapor.catatan.update', $siswa), [
+        'semester_id' => $semester->id,
+        'catatan_sikap' => 'Sopan dan santun.',
+        'ekstrakurikuler' => [['nama' => 'Pramuka', 'peran' => 'Anggota']],
+    ]);
+
+    $response->assertRedirect(route('guru.rapor.catatan.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+    $this->assertDatabaseHas('catatan_wali_kelas', [
+        'siswa_id' => $siswa->id,
+        'semester_id' => $semester->id,
+        'catatan_sikap' => 'Sopan dan santun.',
+    ]);
+});
+
+it('redirects to the next siswa edit page when next_siswa_id is submitted', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    $siswaKedua = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Budi Santoso']);
+
+    $response = $this->actingAs($guruUser)->put(route('guru.rapor.catatan.update', $siswa), [
+        'semester_id' => $semester->id,
+        'next_siswa_id' => $siswaKedua->id,
+    ]);
+
+    $response->assertRedirect(route('guru.rapor.catatan.edit', ['siswa' => $siswaKedua->id, 'semester_id' => $semester->id]));
+});
+
+it('rejects updating catatan for a siswa the guru is not wali kelas of', function () {
+    ['guruUser' => $guruUser, 'lembaga' => $lembaga, 'tahunAjaran' => $tahunAjaran, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLain->id]);
+
+    $this->actingAs($guruUser)
+        ->put(route('guru.rapor.catatan.update', $siswaLain), ['semester_id' => $semester->id])
+        ->assertForbidden();
+});
+
+it('generates a narasi draft via AJAX for a siswa with nilai', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    $mapel = \App\Models\MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'membaca lancar', 'kktp_minimal' => 75]);
+    \App\Domains\Akademik\Models\NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 88]);
+
+    $response = $this->actingAs($guruUser)->post(route('guru.rapor.catatan.generate-narasi', ['siswa' => $siswa->id, 'semester_id' => $semester->id]));
+    $response->assertOk();
+    $response->assertJson(['narasi' => 'Menunjukkan penguasaan sangat baik dalam membaca lancar.']);
+});
