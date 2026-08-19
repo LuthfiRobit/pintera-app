@@ -66,3 +66,21 @@ Membangun fondasi backend murni (*headless by design*) untuk **Adaptive E-Rapor 
 
 1. **Sub-Task 04c**: Implementasi UI 4 Role (`Guru/Wali Kelas`, `Waka Kurikulum`, `Kepala Sekolah`, `Admin Lembaga`).
 2. **Sub-Task 04d**: 4 Template PDF Resmi DomPDF Berbasis Jenjang (PAUD, SD, SMP/SMA, SMK).
+
+---
+
+## 5. Final Whole-Branch Review (setelah handoff, sesi terpisah)
+
+Setelah handoff ini diterima, dilakukan review independen (bukan oleh agent implementer) terhadap diff `26eb67a..d2d26d6` (base yang benar setelah 04a — catatan: baris "Base commit sebelum Task 1: `a250683`" di atas ternyata merujuk ke commit sebelum Sub-Task 03c, bukan sebelum 04a; scope diff aktual 04b tetap bersih, tidak ada file di luar cakupan spec).
+
+**Temuan Important (diperbaiki, commit `cee9521`):** `ApproverResolverService::checkRoleApprover` (kode shared engine pre-existing, tidak disentuh 04b) fail-open ketika relasi `$request->approvable`/`$request->requester` ikut ter-scope `null` oleh `TenantScope` — kalau instance `PengajuanRapor` lintas-lembaga diteruskan langsung ke `VerifyPengajuanRaporAction`/`ApprovePengajuanRaporAction` tanpa lewat lookup ter-scope (mis. dari command/job internal di masa depan), pengecekan lembaga di resolver ikut ter-skip dan approval bisa lolos lintas-tenant. Test `RaporApprovalTenantScopeTest` yang ada sebelumnya TIDAK membuktikan skenario ini (aktor & pengajuan yang diuji selalu satu lembaga).
+
+Diperbaiki dengan menambah guard eksplisit `$pengajuanRapor->lembaga_id === $user->lembaga_id` di awal kedua Action (defense-in-depth, tanpa mengubah shared engine), plus test baru yang membuktikan penolakan lintas-lembaga secara langsung.
+
+**Temuan Minor (diperbaiki, commit `fbad089`):** cabang reject di `ApprovePengajuanRaporAction` (Kepsek menolak di tahap final) belum pernah diuji — hanya reject di tahap Waka yang punya test. Ditambahkan test simetris.
+
+**Temuan Minor (dicatat, tidak diperbaiki — di luar scope, bukan bug):** field `catatan_revisi` (dan `diverifikasi_oleh`/`diverifikasi_pada`) dari siklus penolakan sebelumnya tidak dibersihkan otomatis saat resubmit — berpotensi membingungkan UI 04c kalau mengasumsikan `catatan_revisi` non-null selalu berarti "penolakan saat ini". Catatan untuk Sub-Task 04c: jangan asumsikan itu, cek `status` juga.
+
+Regression bundle terkait (`RaporApprovalTenantScopeTest`, `RaporApprovalActionsTest`, `SubmitPengajuanRaporActionTest`, `KomponenPenilaianCrudTest`, `KomponenPenilaianControllerTest`, `AsesmenControllerTest`, `RaporCalculationServiceTest`, `CapaianKompetensiGeneratorTest`) — semua **lulus** setelah fix (64 test, 0 gagal). Full suite tidak diulang penuh (perubahan scope kecil, murni defense-in-depth + test tambahan, tidak menyentuh kode di luar modul Rapor).
+
+**Commit fix wave:** `cee9521` (guard tenant), `fbad089` (test reject Kepsek).
