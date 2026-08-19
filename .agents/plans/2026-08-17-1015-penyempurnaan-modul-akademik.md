@@ -22,7 +22,9 @@
 | **03b** | **Mode Tematik/Harian KB-TK-SD (baru, menyusul 03a)** | [`.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | [`.agents/plans/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | [`.agents/logs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | 🟢 **SELESAI (COMPLETED)** |
 | **03c** | **Filter & NIS Rekap Kehadiran** (dikerjakan langsung oleh user, tanpa plan formal) | [`.agents/specs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md) | *(tidak ada — dikerjakan langsung tanpa plan formal)* | [`.agents/logs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md) | 🟢 **SELESAI (COMPLETED)** |
 | **04a** | **Migrasi Komponen Penilaian, Asesmen, Nilai Siswa & Rapor ke Domain Akademik** | [`.agents/specs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | [`.agents/plans/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | [`.agents/logs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | 🟢 **SELESAI (COMPLETED)** |
-| **04b** | **Adaptive E-Rapor Engine (narasi TP, approval workflow, PDF berjenjang)** | `.agents/specs/akademik-04b-e-rapor.md` | `.agents/plans/akademik-04b-e-rapor.md` | `.agents/logs/akademik-04b-e-rapor.md` | ⚪ PENDING |
+| **04b** | **Adaptive E-Rapor Engine: Backend & Approval Workflow** | [`.agents/specs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md) | [`.agents/plans/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md) | [`.agents/logs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md) | 🟢 **SELESAI (COMPLETED)** |
+| **04c** | **UI 4 Role (Guru/Wali Kelas/Waka/Kepsek)** | `.agents/specs/akademik-04c-rapor-ui.md` | `.agents/plans/akademik-04c-rapor-ui.md` | `.agents/logs/akademik-04c-rapor-ui.md` | ⚪ PENDING |
+| **04d** | **4 Template PDF Berjenjang** | `.agents/specs/akademik-04d-rapor-pdf.md` | `.agents/plans/akademik-04d-rapor-pdf.md` | `.agents/logs/akademik-04d-rapor-pdf.md` | ⚪ PENDING |
 
 > **Catatan untuk sesi berikutnya:** Sub-Task 04a menemukan (tidak diperbaiki, di luar scope) sebuah gap arsitektur pre-existing yang lebih luas dari 04a sendiri: `app/Models/Scopes/TenantScope.php` TIDAK punya filter level-yayasan sama sekali — aktor berscope yayasan dengan `session('active_lembaga_id')` kosong mendapat query TANPA FILTER APA PUN, bocor lintas SEMUA lembaga di sistem (bukan cuma lintas lembaga dalam satu yayasan). Contoh nyata: `RaporController::index()`'s `TahunAjaran::where('status_aktif', true)` lookup. Pola ini dikonfirmasi dipakai bersama oleh ~15 controller lain. Perlu masuk final whole-branch review untuk diputuskan prioritas & apakah butuh sub-task perbaikan tersendiri.
 
@@ -90,16 +92,16 @@ Rencana kerja ini mengimplementasikan spesifikasi arsitektur Modul Akademik dan 
 ---
 
 ### 🎓 FASE 4: E-Rapor Berjenjang & Digital PDF Report Card
-- [ ] **4.1. Skema Database & Model E-Rapor:**
-  - [ ] Buat migrasi `create_pengajuan_rapor_table.php` (`kelas_id`, `semester_id`, `status`, `diajukan_oleh`, `diverifikasi_oleh`, `disetujui_oleh`, `catatan_revisi`, `tanggal_rapor`).
-  - [ ] Buat migrasi `create_catatan_wali_kelas_table.php` (`siswa_id`, `semester_id`, `catatan_sikap`, `prestasi`, `keterangan_kenaikan`).
-  - [ ] Buat model `PengajuanRapor` dan `CatatanWaliKelas`.
-  - [ ] Buat enum `StatusPengajuanRapor` (`Draft`, `Diajukan`, `Diverifikasi`, `Disetujui`, `Ditolak`).
-- [ ] **4.2. Domain Services Rapor:**
-  - [ ] Buat `App\Domains\Akademik\Services\RaporCalculationService.php` (kalkulasi nilai akhir berbobot).
-  - [ ] Buat `App\Domains\Akademik\Services\CapaianKompetensiGenerator.php` (generator narasi otomatis TP tertinggi & terendah).
-- [ ] **4.3. Actions Pengajuan & Approval Rapor:**
-  - [ ] Buat `SubmitPengajuanRaporAction`, `VerifyPengajuanRaporAction`, `ApprovePengajuanRaporAction`, dan `SimpanCatatanWaliKelasAction`.
+- [x] **4.1. Skema Database & Model E-Rapor:**
+  - [x] Buat migrasi `create_pengajuan_rapor_table.php` (`kelas_id`, `semester_id`, `status`, `diajukan_oleh`, `diverifikasi_oleh`, `disetujui_oleh`, `catatan_revisi`, `tanggal_rapor`).
+  - [x] Buat migrasi `create_catatan_wali_kelas_table.php` (`siswa_id`, `semester_id`, `catatan_sikap`, `prestasi`, `keterangan_kenaikan`).
+  - [x] Buat model `PengajuanRapor` dan `CatatanWaliKelas`.
+  - [x] Buat enum `StatusPengajuanRapor` (`Draft`, `Diajukan`, `Diverifikasi`, `Disetujui`, `Ditolak`).
+- [x] **4.2. Domain Services Rapor:**
+  - [x] Buat `App\Domains\Akademik\Services\RaporCalculationService.php` (kalkulasi nilai akhir berbobot).
+  - [x] Buat `App\Domains\Akademik\Services\CapaianKompetensiGenerator.php` (generator narasi otomatis TP tertinggi & terendah).
+- [x] **4.3. Actions Pengajuan & Approval Rapor:**
+  - [x] Buat `SubmitPengajuanRaporAction`, `VerifyPengajuanRaporAction`, `ApprovePengajuanRaporAction`, dan `SimpanCatatanWaliKelasAction`.
 - [ ] **4.4. 4 Template PDF Resmi DomPDF Berbasis Jenjang:**
   - [ ] `resources/views/pdf/rapor/paud.blade.php` (Naratif 3 elemen CP).
   - [ ] `resources/views/pdf/rapor/sd.blade.php` (Nilai pokok/tematik + narasi TP + ekskul + absensi).
