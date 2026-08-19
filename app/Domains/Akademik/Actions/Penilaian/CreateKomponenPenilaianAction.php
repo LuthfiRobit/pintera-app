@@ -34,6 +34,7 @@ final class CreateKomponenPenilaianAction
             'bobot' => $data->bobot,
             'kktp' => $data->kktp,
             'kktp_minimal' => $data->kktpMinimal,
+            'elemen_cp' => $data->elemenCp,
         ]);
     }
 }

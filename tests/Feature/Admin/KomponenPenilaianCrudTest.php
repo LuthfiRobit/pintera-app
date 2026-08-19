@@ -562,3 +562,38 @@ it('rejects storing a new assessment component when total bobot exceeds 100 perc
     expect(KomponenPenilaian::where('kode', 'K-2')->exists())->toBeFalse();
 });
 
+it('saves elemen_cp when submitted and leaves it null when omitted', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'deskripsi' => 'TP dengan elemen CP',
+        'bobot' => 10,
+        'elemen_cp' => 'jati_diri',
+    ]);
+
+    $this->assertDatabaseHas('komponen_penilaian', [
+        'mata_pelajaran_id' => $mapel->id,
+        'deskripsi' => 'TP dengan elemen CP',
+        'elemen_cp' => 'jati_diri',
+    ]);
+
+    $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'deskripsi' => 'TP tanpa elemen CP',
+        'bobot' => 10,
+    ]);
+
+    $this->assertDatabaseHas('komponen_penilaian', [
+        'deskripsi' => 'TP tanpa elemen CP',
+        'elemen_cp' => null,
+    ]);
+});
+

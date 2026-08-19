@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Akademik\DataTransferObjects;
 
+use App\Domains\Akademik\Enums\ElemenCapaianPembelajaran;
+
 final readonly class KomponenPenilaianData
 {
     public function __construct(
@@ -14,6 +16,7 @@ final readonly class KomponenPenilaianData
         public int $bobot,
         public ?string $kktp,
         public ?int $kktpMinimal,
+        public ?ElemenCapaianPembelajaran $elemenCp,
     ) {
     }
 
@@ -27,6 +30,7 @@ final readonly class KomponenPenilaianData
             bobot: isset($data['bobot']) ? (int) $data['bobot'] : 10,
             kktp: $data['kktp'] ?? null,
             kktpMinimal: isset($data['kktp_minimal']) ? (int) $data['kktp_minimal'] : null,
+            elemenCp: isset($data['elemen_cp']) && $data['elemen_cp'] !== '' ? ElemenCapaianPembelajaran::from($data['elemen_cp']) : null,
         );
     }
 }

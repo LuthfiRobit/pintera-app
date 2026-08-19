@@ -2,6 +2,7 @@
 
 namespace App\Domains\Akademik\Models;
 
+use App\Domains\Akademik\Enums\ElemenCapaianPembelajaran;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
@@ -19,7 +20,14 @@ class KomponenPenilaian extends Model
 
     protected $table = 'komponen_penilaian';
 
-    protected $fillable = ['mata_pelajaran_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp', 'kktp_minimal'];
+    protected $fillable = ['mata_pelajaran_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp', 'kktp_minimal', 'elemen_cp'];
+
+    protected function casts(): array
+    {
+        return [
+            'elemen_cp' => ElemenCapaianPembelajaran::class,
+        ];
+    }
 
     protected static function newFactory(): KomponenPenilaianFactory
     {
