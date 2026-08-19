@@ -141,7 +141,7 @@ it('sums absensi and averages nilai across Ganjil+Genap when the pair exists', f
 
 it('keeps tahunan fields null in Genap when the Ganjil pair does not exist', function () {
     ['lembaga' => $lembaga, 'tahunAjaran' => $tahunAjaran, 'kelas' => $kelas, 'siswa' => $siswa] = siapkanSiswaLengkapUntukPdf();
-    $semesterGenapTanpaPasangan = Semester::factory()->create(['tahun_ajaran_id' => TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]), 'urutan' => 2]);
+    $semesterGenapTanpaPasangan = Semester::factory()->create(['tahun_ajaran_id' => TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]), 'urutan' => 2, 'nama' => 'Genap']);
 
     $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semesterGenapTanpaPasangan);
 
@@ -155,7 +155,7 @@ it('labels kelulusan for a Genap semester at the final tingkat of SD, not for a 
 
     $kelasAkhir = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'tingkat' => '6']);
     $siswaAkhir = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasAkhir->id, 'status' => 'aktif']);
-    $semesterGenap = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'urutan' => 2]);
+    $semesterGenap = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'urutan' => 2, 'nama' => 'Genap']);
 
     $dataAkhir = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswaAkhir, $semesterGenap);
     expect($dataAkhir['isTingkatAkhir'])->toBeTrue();
