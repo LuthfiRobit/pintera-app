@@ -189,4 +189,12 @@ it('renders paud and sd blade templates successfully', function () {
     $renderedSd = view('pdf.rapor.sd', $data)->render();
     expect($renderedSd)->toContain('Nilai Akademik');
     expect($renderedSd)->toContain($siswa->nama_lengkap);
+
+    $renderedSmpSma = view('pdf.rapor.smp-sma', $data)->render();
+    expect($renderedSmpSma)->toContain('Nilai Akademik');
+    expect($renderedSmpSma)->toContain($siswa->nama_lengkap);
+
+    $renderedSmk = view('pdf.rapor.smk', $data)->render();
+    expect($renderedSmk)->toContain('Keterangan PKL');
+    expect($renderedSmk)->toContain($siswa->nama_lengkap);
 });
