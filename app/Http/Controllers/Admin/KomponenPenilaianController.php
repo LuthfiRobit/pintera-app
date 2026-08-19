@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Actions\Penilaian\CreateKomponenPenilaianAction;
+use App\Domains\Akademik\Actions\Penilaian\DeleteKomponenPenilaianAction;
+use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Http\Requests\Akademik\StoreKomponenPenilaianRequest;
+use App\Http\Requests\Akademik\UpdateKomponenPenilaianRequest;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -11,11 +16,19 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class KomponenPenilaianController extends BaseController
 {
     use AuthorizesRequests;
+
+    public function __construct(
+        private readonly CreateKomponenPenilaianAction $createKomponenPenilaianAction,
+        private readonly UpdateKomponenPenilaianAction $updateKomponenPenilaianAction,
+        private readonly DeleteKomponenPenilaianAction $deleteKomponenPenilaianAction,
+    ) {
+    }
 
     public function index(Request $request): View|string
     {
@@ -85,40 +98,24 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse|JsonResponse
+    public function store(StoreKomponenPenilaianRequest $request): RedirectResponse|JsonResponse
     {
-        $this->authorize('komponen-penilaian.kelola');
-
-        $data = $request->validate([
-            'mata_pelajaran_id' => ['required', 'integer'],
-            'semester_id' => ['required', 'integer'],
-            'kode' => ['nullable', 'string', 'max:50'],
-            'deskripsi' => ['required', 'string'],
-            'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'kktp' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
         $semester = Semester::find($data['semester_id']);
-
         abort_if($mataPelajaran === null || $semester === null, 404);
         abort_if($mataPelajaran->lembaga_id !== $semester->lembaga_id, 404);
 
-        $data['bobot'] = $data['bobot'] ?? 10;
-        $existingSum = KomponenPenilaian::where('mata_pelajaran_id', $data['mata_pelajaran_id'])
-            ->where('semester_id', $data['semester_id'])
-            ->sum('bobot');
-
-        if (($existingSum + (int) $data['bobot']) > 100) {
-            $remaining = max(0, 100 - $existingSum);
-            $msg = "Total bobot melebihi 100%. Sisa bobot yang tersedia untuk mata pelajaran ini adalah {$remaining}%.";
+        try {
+            $this->createKomponenPenilaianAction->execute($request->toDTO());
+        } catch (ValidationException $e) {
+            $msg = collect($e->errors())->collapse()->first();
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
-            return back()->withInput()->withErrors(['bobot' => $msg]);
+            return back()->withInput()->withErrors($e->errors());
         }
-
-        KomponenPenilaian::create($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil disimpan.']);
@@ -146,60 +143,27 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-    public function update(Request $request, KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
+    public function update(UpdateKomponenPenilaianRequest $request, KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
     {
-        $this->authorize('komponen-penilaian.kelola');
-
-        $mataPelajaranSaatIni = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
-        if (! $mataPelajaranSaatIni) {
-            abort(404);
-        }
-
+        $data = $request->validated();
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
-        $rules = [
-            'kode' => ['nullable', 'string', 'max:50'],
-            'deskripsi' => ['required', 'string'],
-            'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'kktp' => ['nullable', 'string'],
-        ];
-        if (! $dipakai) {
-            $rules['mata_pelajaran_id'] = ['required', 'integer'];
-            $rules['semester_id'] = ['required', 'integer'];
-        }
-
-        $data = $request->validate($rules);
-
-        if (! $dipakai) {
+        if (! $dipakai && isset($data['mata_pelajaran_id'], $data['semester_id'])) {
             $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
             $semester = Semester::find($data['semester_id']);
             abort_if($mataPelajaran === null || $semester === null, 404);
             abort_if($mataPelajaran->lembaga_id !== $semester->lembaga_id, 404);
-
-            $komponenPenilaian->mata_pelajaran_id = $data['mata_pelajaran_id'];
-            $komponenPenilaian->semester_id = $data['semester_id'];
         }
 
-        $newBobot = $data['bobot'] ?? $komponenPenilaian->bobot;
-        $existingSum = KomponenPenilaian::where('mata_pelajaran_id', $komponenPenilaian->mata_pelajaran_id)
-            ->where('semester_id', $komponenPenilaian->semester_id)
-            ->where('id', '!=', $komponenPenilaian->id)
-            ->sum('bobot');
-
-        if (($existingSum + (int) $newBobot) > 100) {
-            $remaining = max(0, 100 - $existingSum);
-            $msg = "Total bobot melebihi 100%. Sisa bobot yang tersedia untuk mata pelajaran ini adalah {$remaining}%.";
+        try {
+            $this->updateKomponenPenilaianAction->execute($komponenPenilaian, $request->toDTO());
+        } catch (ValidationException $e) {
+            $msg = collect($e->errors())->collapse()->first();
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
-            return back()->withInput()->withErrors(['bobot' => $msg]);
+            return back()->withInput()->withErrors($e->errors());
         }
-
-        $komponenPenilaian->kode = $data['kode'] ?? null;
-        $komponenPenilaian->deskripsi = $data['deskripsi'];
-        $komponenPenilaian->bobot = $newBobot;
-        $komponenPenilaian->kktp = $data['kktp'] ?? null;
-        $komponenPenilaian->save();
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil diperbarui.']);
@@ -217,15 +181,15 @@ class KomponenPenilaianController extends BaseController
             abort(404);
         }
 
-        if ($komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists()) {
-            $msg = 'Komponen ini sudah dipakai pada asesmen atau nilai siswa — tidak bisa dihapus.';
+        try {
+            $this->deleteKomponenPenilaianAction->execute($komponenPenilaian);
+        } catch (ValidationException $e) {
+            $msg = collect($e->errors())->collapse()->first();
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
-            return back()->withErrors(['komponen_penilaian' => $msg]);
+            return back()->withErrors($e->errors());
         }
-
-        $komponenPenilaian->delete();
 
         if (request()->ajax() || request()->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil dihapus.']);

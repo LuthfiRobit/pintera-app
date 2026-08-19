@@ -3,7 +3,12 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Models\JadwalPelajaran;
+use App\Domains\Akademik\Actions\Penilaian\CreateKomponenPenilaianAction;
+use App\Domains\Akademik\Actions\Penilaian\DeleteKomponenPenilaianAction;
+use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Http\Requests\Akademik\StoreKomponenPenilaianSendiriRequest;
+use App\Http\Requests\Akademik\UpdateKomponenPenilaianSendiriRequest;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -12,11 +17,19 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class KomponenPenilaianController extends BaseController
 {
     use AuthorizesRequests;
+
+    public function __construct(
+        private readonly CreateKomponenPenilaianAction $createKomponenPenilaianAction,
+        private readonly UpdateKomponenPenilaianAction $updateKomponenPenilaianAction,
+        private readonly DeleteKomponenPenilaianAction $deleteKomponenPenilaianAction,
+    ) {
+    }
 
     public function index(Request $request): View|string
     {
@@ -73,22 +86,12 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse|JsonResponse
+    public function store(StoreKomponenPenilaianSendiriRequest $request): RedirectResponse|JsonResponse
     {
-        $this->authorize('komponen-penilaian.kelola-sendiri');
-
         $guru = $request->user()->guru;
         abort_if(! $guru, 403, 'Profil guru tidak ditemukan untuk akun ini.');
 
-        $data = $request->validate([
-            'mata_pelajaran_id' => ['required', 'integer'],
-            'semester_id' => ['required', 'integer'],
-            'kode' => ['nullable', 'string', 'max:50'],
-            'deskripsi' => ['required', 'string'],
-            'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'kktp' => ['nullable', 'string'],
-        ]);
-
+        $data = $request->validated();
         $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
             ->where('mata_pelajaran_id', $data['mata_pelajaran_id'])
             ->where('semester_id', $data['semester_id'])
@@ -96,21 +99,15 @@ class KomponenPenilaianController extends BaseController
 
         abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi mata pelajaran dan semester ini.');
 
-        $data['bobot'] = $data['bobot'] ?? 10;
-        $existingSum = KomponenPenilaian::where('mata_pelajaran_id', $data['mata_pelajaran_id'])
-            ->where('semester_id', $data['semester_id'])
-            ->sum('bobot');
-
-        if (($existingSum + (int) $data['bobot']) > 100) {
-            $remaining = max(0, 100 - $existingSum);
-            $msg = "Total bobot melebihi 100%. Sisa bobot yang tersedia untuk mata pelajaran ini adalah {$remaining}%.";
+        try {
+            $this->createKomponenPenilaianAction->execute($request->toDTO());
+        } catch (ValidationException $e) {
+            $msg = collect($e->errors())->collapse()->first();
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
-            return back()->withInput()->withErrors(['bobot' => $msg]);
+            return back()->withInput()->withErrors($e->errors());
         }
-
-        KomponenPenilaian::create($data);
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil disimpan.']);
@@ -132,38 +129,19 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-    public function update(Request $request, KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
+    public function update(UpdateKomponenPenilaianSendiriRequest $request, KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
     {
-        $this->authorize('komponen-penilaian.kelola-sendiri');
         $this->authorizeMengajarMapel($komponenPenilaian);
 
-        $data = $request->validate([
-            'kode' => ['nullable', 'string', 'max:50'],
-            'deskripsi' => ['required', 'string'],
-            'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
-            'kktp' => ['nullable', 'string'],
-        ]);
-
-        $newBobot = $data['bobot'] ?? $komponenPenilaian->bobot;
-        $existingSum = KomponenPenilaian::where('mata_pelajaran_id', $komponenPenilaian->mata_pelajaran_id)
-            ->where('semester_id', $komponenPenilaian->semester_id)
-            ->where('id', '!=', $komponenPenilaian->id)
-            ->sum('bobot');
-
-        if (($existingSum + (int) $newBobot) > 100) {
-            $remaining = max(0, 100 - $existingSum);
-            $msg = "Total bobot melebihi 100%. Sisa bobot yang tersedia untuk mata pelajaran ini adalah {$remaining}%.";
+        try {
+            $this->updateKomponenPenilaianAction->execute($komponenPenilaian, $request->toDTO());
+        } catch (ValidationException $e) {
+            $msg = collect($e->errors())->collapse()->first();
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
-            return back()->withInput()->withErrors(['bobot' => $msg]);
+            return back()->withInput()->withErrors($e->errors());
         }
-
-        $komponenPenilaian->kode = $data['kode'] ?? null;
-        $komponenPenilaian->deskripsi = $data['deskripsi'];
-        $komponenPenilaian->bobot = $newBobot;
-        $komponenPenilaian->kktp = $data['kktp'] ?? null;
-        $komponenPenilaian->save();
 
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil diperbarui.']);
@@ -177,15 +155,15 @@ class KomponenPenilaianController extends BaseController
         $this->authorize('komponen-penilaian.kelola-sendiri');
         $this->authorizeMengajarMapel($komponenPenilaian);
 
-        if ($komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists()) {
-            $msg = 'Komponen ini sudah dipakai pada asesmen atau nilai siswa — tidak bisa dihapus.';
+        try {
+            $this->deleteKomponenPenilaianAction->execute($komponenPenilaian);
+        } catch (ValidationException $e) {
+            $msg = collect($e->errors())->collapse()->first();
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
-            return back()->withErrors(['komponen_penilaian' => $msg]);
+            return back()->withErrors($e->errors());
         }
-
-        $komponenPenilaian->delete();
 
         if (request()->ajax() || request()->wantsJson()) {
             return response()->json(['status' => 'success', 'message' => 'Komponen penilaian (TP) berhasil dihapus.']);
