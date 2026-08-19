@@ -31,6 +31,7 @@ it('seeds the initial permissions', function () {
         'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual', 'pembayaran.virtual-account',
         'cicilan.kelola',
         'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola', 'rapor.view',
+        'rapor.input-wali', 'rapor.ajukan', 'rapor.verify', 'rapor.approve',
         'kenaikan-kelas.kelola',
         'kelas.view', 'kelas.create', 'kelas.edit',
         'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
@@ -47,7 +48,7 @@ it('seeds the initial permissions', function () {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(109);
+    expect(Permission::count())->toBe(113);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -56,7 +57,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(109);
+    expect($superAdmin->permissions()->count())->toBe(113);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -94,7 +95,7 @@ it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, inclu
         'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
         'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
         'tagihan.view',
-        'komponen-penilaian.kelola', 'rapor.view',
+        'komponen-penilaian.kelola', 'rapor.view', 'rapor.approve',
         'kenaikan-kelas.kelola',
         'rpp.view', 'rpp.verify',
     ];
@@ -102,7 +103,7 @@ it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, inclu
     foreach ($expected as $name) {
         expect($kepalaSekolah->hasPermissionTo($name))->toBeTrue();
     }
-    expect($kepalaSekolah->permissions()->count())->toBe(11);
+    expect($kepalaSekolah->permissions()->count())->toBe(12);
 });
 
 it('gives admin_keuangan the jenis-tagihan and tagihan permissions by default', function () {
@@ -128,7 +129,7 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
 
     expect(Role::count())->toBe(10);
-    expect(Permission::count())->toBe(109);
+    expect(Permission::count())->toBe(113);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {
