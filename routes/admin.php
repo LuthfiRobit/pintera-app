@@ -262,6 +262,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('rapor', [RaporController::class, 'index'])->name('rapor.index');
     Route::get('rapor/opsi', [RaporController::class, 'opsi'])->name('rapor.opsi');
     Route::get('rapor/cetak', [RaporController::class, 'cetak'])->name('rapor.cetak');
+    Route::get('rapor/persetujuan', [\App\Http\Controllers\Lembaga\Rapor\PersetujuanController::class, 'index'])->name('rapor.persetujuan.index');
+    Route::get('rapor/persetujuan/{pengajuanRapor}', [\App\Http\Controllers\Lembaga\Rapor\PersetujuanController::class, 'show'])->name('rapor.persetujuan.show');
 
     Route::get('kenaikan-kelas', [KenaikanKelasController::class, 'index'])->name('kenaikan-kelas.index');
     Route::post('kenaikan-kelas', [KenaikanKelasController::class, 'store'])->name('kenaikan-kelas.store');

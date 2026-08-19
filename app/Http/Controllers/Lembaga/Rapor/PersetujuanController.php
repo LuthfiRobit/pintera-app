@@ -1,0 +1,77 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Lembaga\Rapor;
+
+use App\Domains\Akademik\Actions\Rapor\ApprovePengajuanRaporAction;
+use App\Domains\Akademik\Actions\Rapor\VerifyPengajuanRaporAction;
+use App\Domains\Akademik\Enums\StatusPengajuanRapor;
+use App\Domains\Akademik\Models\CatatanWaliKelas;
+use App\Domains\Akademik\Models\PengajuanRapor;
+use App\Domains\Akademik\Services\RaporCalculationService;
+use App\Domains\Workflow\Enums\ApprovalAction;
+use App\Http\Requests\Akademik\ProcessRaporApprovalRequest;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Controller as BaseController;
+use Illuminate\View\View;
+
+class PersetujuanController extends BaseController
+{
+    use AuthorizesRequests;
+
+    public function __construct(
+        private readonly RaporCalculationService $raporCalculationService,
+        private readonly VerifyPengajuanRaporAction $verifyPengajuanRaporAction,
+        private readonly ApprovePengajuanRaporAction $approvePengajuanRaporAction,
+    ) {
+    }
+
+    public function index(Request $request): View|string
+    {
+        abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
+
+        $statusYangDicari = $this->statusUntukAktor($request);
+
+        $query = PengajuanRapor::where('status', $statusYangDicari)
+            ->with(['kelas.tahunAjaran', 'semester'])
+            ->when($request->search, function ($q, $search) {
+                $q->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
+            })
+            ->latest();
+
+        $pengajuanList = $query->get();
+
+        if ($request->ajax()) {
+            return view('portals.lembaga.rapor.persetujuan._daftar', compact('pengajuanList'))->render();
+        }
+
+        return view('portals.lembaga.rapor.persetujuan.index', compact('pengajuanList'));
+    }
+
+    public function show(PengajuanRapor $pengajuanRapor, Request $request): View
+    {
+        abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
+        abort_unless($pengajuanRapor->status === $this->statusUntukAktor($request), 404, 'Pengajuan ini bukan berada di tahap Anda.');
+
+        $pengajuanRapor->load(['kelas', 'semester', 'approvalRequest.logs.user', 'approvalRequest.currentStep']);
+
+        $rekap = $this->raporCalculationService->hitungRekapKelas($pengajuanRapor->kelas, $pengajuanRapor->semester);
+        $catatanList = CatatanWaliKelas::where('semester_id', $pengajuanRapor->semester_id)
+            ->whereIn('siswa_id', $rekap['siswaList']->pluck('id'))
+            ->get()
+            ->keyBy('siswa_id');
+
+        return view('portals.lembaga.rapor.persetujuan.show', array_merge([
+            'pengajuanRapor' => $pengajuanRapor,
+            'catatanList' => $catatanList,
+        ], $rekap));
+    }
+
+    private function statusUntukAktor(Request $request): StatusPengajuanRapor
+    {
+        return $request->user()->can('rapor.approve') ? StatusPengajuanRapor::Diverifikasi : StatusPengajuanRapor::Diajukan;
+    }
+}
