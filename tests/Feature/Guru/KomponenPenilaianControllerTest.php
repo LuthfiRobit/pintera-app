@@ -203,3 +203,25 @@ it('rejects storing a new assessment component when total bobot exceeds 100 perc
     expect(KomponenPenilaian::where('kode', 'G-2')->exists())->toBeFalse();
 });
 
+it('shows the elemen_cp select on the guru create form for a PAUD lembaga but not for an SD lembaga, with kktp_minimal always visible', function () {
+    $yayasan = Yayasan::factory()->create();
+
+    $lembagaPaud = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    $guruPaud = Guru::factory()->create(['lembaga_id' => $lembagaPaud->id]);
+    $userPaud = actingAsGuruKomponenPenilaian($guruPaud);
+
+    $responsePaud = $this->actingAs($userPaud)->get(route('guru.komponen-penilaian.create'));
+    $responsePaud->assertOk();
+    $responsePaud->assertSee('name="elemen_cp"', false);
+    $responsePaud->assertSee('name="kktp_minimal"', false);
+
+    $lembagaSd = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $guruSd = Guru::factory()->create(['lembaga_id' => $lembagaSd->id]);
+    $userSd = actingAsGuruKomponenPenilaian($guruSd);
+
+    $responseSd = $this->actingAs($userSd)->get(route('guru.komponen-penilaian.create'));
+    $responseSd->assertOk();
+    $responseSd->assertDontSee('name="elemen_cp"', false);
+    $responseSd->assertSee('name="kktp_minimal"', false);
+});
+

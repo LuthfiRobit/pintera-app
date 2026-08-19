@@ -191,3 +191,23 @@ it('rejects printing a siswa that does not belong to the pengajuan kelas', funct
         ->get(route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuan->id, 'siswa' => $siswaLain->id]))
         ->assertNotFound();
 });
+
+it('is tenant-scoped: printing a PengajuanRapor from another lembaga 404s via route model binding', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka] = siapkanAktorPersetujuan();
+
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id, 'kelas_id' => $kelasLain->id]);
+    $pengajuanLain = PengajuanRapor::withoutGlobalScopes()->create([
+        'lembaga_id' => $lembagaLain->id, 'kelas_id' => $kelasLain->id, 'semester_id' => $semesterLain->id,
+        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Diajukan,
+    ]);
+
+    $this->actingAs($userWaka)
+        ->get(route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuanLain->id, 'siswa' => $siswaLain->id]))
+        ->assertNotFound();
+});
