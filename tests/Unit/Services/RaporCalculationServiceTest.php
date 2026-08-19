@@ -74,3 +74,24 @@ it('returns empty structure when kelas has no asesmen in the semester', function
     expect($rekap['classAvg'])->toBeNull();
     expect($rekap['highestScore'])->toBeNull();
 });
+
+it('returns no data when kelas and semester belong to different lembaga, even when called directly with a mismatched pair', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+    $kelasA = Kelas::factory()->create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $tahunAjaranA->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    Asesmen::factory()->create(['kelas_id' => $kelasA->id, 'mata_pelajaran_id' => $mapelA->id, 'semester_id' => $semesterA->id]);
+
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+
+    $service = new RaporCalculationService();
+    $rekap = $service->hitungRekapKelas($kelasA, $semesterB);
+
+    expect($rekap['mapelList'])->toBeEmpty();
+    expect($rekap['rekapNilai'])->toBeEmpty();
+});
