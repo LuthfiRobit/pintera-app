@@ -5,7 +5,7 @@
 - **Master Plan File:** `.agents/plans/2026-08-17-1015-penyempurnaan-modul-akademik.md`
 - **Master Handoff Log:** `.agents/logs/2026-08-17-1015-penyempurnaan-modul-akademik.md`
 - **Tanggal & Waktu:** 17 Agustus 2026, 10:15 WIB
-- **Status Master:** 🟡 IN PROGRESS (Sedang mengerjakan Sub-Task 01)
+- **Status Master:** 🟡 IN PROGRESS (Sub-Task 01, 02, 03a, 03b, 03c, 04a SELESAI — menunggu brainstorm Sub-Task 04b)
 
 ---
 
@@ -21,7 +21,10 @@
 | **03a** | **Migrasi Jurnal KBM & Presensi (Mode Sesi Mapel) ke Pola Domain Baru** | [`.agents/specs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md) | [`.agents/plans/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md) | [`.agents/logs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-18-1651-akademik-03a-migrasi-jurnal-presensi.md) | 🟢 **SELESAI (COMPLETED)** |
 | **03b** | **Mode Tematik/Harian KB-TK-SD (baru, menyusul 03a)** | [`.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | [`.agents/plans/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | [`.agents/logs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-18-2200-akademik-03b-mode-tematik-kbtksd.md) | 🟢 **SELESAI (COMPLETED)** |
 | **03c** | **Filter & NIS Rekap Kehadiran** (dikerjakan langsung oleh user, tanpa plan formal) | [`.agents/specs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md) | *(tidak ada — dikerjakan langsung tanpa plan formal)* | [`.agents/logs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-0545-akademik-03c-filter-dan-nis-rekap-kehadiran.md) | 🟢 **SELESAI (COMPLETED)** |
-| **04** | **Adaptive E-Rapor Engine** | `.agents/specs/akademik-04-e-rapor.md` | `.agents/plans/akademik-04-e-rapor.md` | `.agents/logs/akademik-04-e-rapor.md` | ⚪ PENDING |
+| **04a** | **Migrasi Komponen Penilaian, Asesmen, Nilai Siswa & Rapor ke Domain Akademik** | [`.agents/specs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | [`.agents/plans/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | [`.agents/logs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | 🟢 **SELESAI (COMPLETED)** |
+| **04b** | **Adaptive E-Rapor Engine (narasi TP, approval workflow, PDF berjenjang)** | `.agents/specs/akademik-04b-e-rapor.md` | `.agents/plans/akademik-04b-e-rapor.md` | `.agents/logs/akademik-04b-e-rapor.md` | ⚪ PENDING |
+
+> **Catatan untuk sesi berikutnya:** Sub-Task 04a menemukan (tidak diperbaiki, di luar scope) sebuah gap arsitektur pre-existing yang lebih luas dari 04a sendiri: `app/Models/Scopes/TenantScope.php` TIDAK punya filter level-yayasan sama sekali — aktor berscope yayasan dengan `session('active_lembaga_id')` kosong mendapat query TANPA FILTER APA PUN, bocor lintas SEMUA lembaga di sistem (bukan cuma lintas lembaga dalam satu yayasan). Contoh nyata: `RaporController::index()`'s `TahunAjaran::where('status_aktif', true)` lookup. Pola ini dikonfirmasi dipakai bersama oleh ~15 controller lain. Perlu masuk final whole-branch review untuk diputuskan prioritas & apakah butuh sub-task perbaikan tersendiri.
 
 ---
 
