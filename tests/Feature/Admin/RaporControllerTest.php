@@ -258,6 +258,32 @@ it('shows the cetak rekap nilai link pointing at the cetak route when there are 
     $response->assertSee(e(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id])), false);
 });
 
+it('does not mix a kelas and semester from different lembaga within the same yayasan on the index recap', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $kelasA = Kelas::factory()->create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $tahunAjaranA->id]);
+
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'admin_yayasan_rapor', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+    $manager = User::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $manager->assignRole($role);
+
+    $response = $this->actingAs($manager)->get(route('admin.rapor.index', [
+        'kelas_id' => $kelasA->id,
+        'semester_id' => $semesterB->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('rekapNilai', fn ($rekap) => $rekap === []);
+});
+
 it('calculates rapor grade using weighted component averages instead of unweighted simple averages', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
