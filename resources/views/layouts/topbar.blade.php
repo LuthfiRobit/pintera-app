@@ -1,7 +1,9 @@
 @php
     $isYayasan = Auth::user()->widestScopeLevel() === 'yayasan';
     $activeLembagaId = session('active_lembaga_id');
-    $lembagaOptions = $isYayasan ? once(fn () => \App\Models\Lembaga::query()->select('id', 'nama')->orderBy('nama')->get()) : collect();
+    $lembagaOptions = $isYayasan ? once(fn () => \App\Models\Lembaga::query()
+        ->when(Auth::user()->yayasan_id, fn ($q) => $q->where('yayasan_id', Auth::user()->yayasan_id))
+        ->select('id', 'nama')->orderBy('nama')->get()) : collect();
     $activeLembaga = $activeLembagaId ? $lembagaOptions->firstWhere('id', $activeLembagaId) : null;
     $sealLabel = $activeLembaga ? Str::of($activeLembaga->nama)->explode(' ')->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('') : 'YY';
     

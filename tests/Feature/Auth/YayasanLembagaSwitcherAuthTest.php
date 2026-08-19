@@ -16,6 +16,7 @@ it('keeps a yayasan-scoped user authenticated on later requests after switching 
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create([
         'lembaga_id' => null,
+        'yayasan_id' => $yayasan->id,
         'email' => 'yayasan@example.test',
         'password' => bcrypt('password'),
     ]);
@@ -37,6 +38,7 @@ it('keeps a yayasan-scoped user authenticated on later requests after switching 
     // Simulate clicking the lembaga switcher: hits ResolveTenant middleware, sets session.
     app('auth')->forgetGuards();
     $this->get('/dashboard?switch_lembaga='.$lembaga->id)->assertOk();
+    expect(session('active_lembaga_id'))->toBe($lembaga->id);
 
     // The bug: once active_lembaga_id is set, TenantScope would filter every subsequent User
     // query (including the guard's own re-hydration of the CURRENTLY authenticated user) by
@@ -51,6 +53,7 @@ it('allows a yayasan-scoped user to log in fresh even while a stale active_lemba
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create([
         'lembaga_id' => null,
+        'yayasan_id' => $yayasan->id,
         'email' => 'yayasan@example.test',
         'password' => bcrypt('password'),
     ]);
@@ -61,6 +64,7 @@ it('allows a yayasan-scoped user to log in fresh even while a stale active_lemba
 
     app('auth')->forgetGuards();
     $this->get('/dashboard?switch_lembaga='.$lembaga->id)->assertOk();
+    expect(session('active_lembaga_id'))->toBe($lembaga->id);
 
     // Logout does not clear active_lembaga_id from the session today, so it lingers into the
     // next login attempt exactly as it would in a real browser tab.

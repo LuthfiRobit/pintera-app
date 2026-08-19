@@ -104,6 +104,7 @@ class UserController extends BaseController
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'lembaga_id' => $lembagaId,
+            'yayasan_id' => $selectedRole->scope_level === 'yayasan' ? $request->user()->yayasan_id : null,
         ]);
 
         $user->assignRole($data['role']);
@@ -142,7 +143,11 @@ class UserController extends BaseController
             return back()->withErrors(['role' => 'Anda tidak dapat memberikan role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
         }
 
-        $user->update(['name' => $data['name'], 'email' => $data['email']]);
+        $user->update([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'yayasan_id' => $selectedRole->scope_level === 'yayasan' ? $request->user()->yayasan_id : null,
+        ]);
         $user->syncRoles([$data['role']]);
 
         return redirect()->route('admin.users.index')->with('status', 'Akun staff berhasil diperbarui.');

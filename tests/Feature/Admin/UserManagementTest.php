@@ -175,6 +175,70 @@ it('404s on edit, update, and toggle-active for a siswa-role user, since siswa a
     expect($fresh->hasRole('siswa'))->toBeTrue();
 });
 
+it('sets yayasan_id on a newly created yayasan-scoped staff account, inherited from the acting manager', function () {
+    $yayasan = Yayasan::factory()->create();
+    foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Admin Yayasan Baru',
+        'email' => 'adminyayasanbaru@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'yayasan_super_admin',
+    ])->assertRedirect(route('admin.users.index'));
+
+    $created = User::withoutGlobalScopes()->where('email', 'adminyayasanbaru@example.test')->first();
+    expect($created->yayasan_id)->toBe($yayasan->id);
+});
+
+it('leaves yayasan_id null when creating a lembaga-scoped staff account', function () {
+    $manager = actingAsUserManager();
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Kepala Sekolah Dua',
+        'email' => 'kepsek2@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'lembaga_id' => $lembaga->id,
+        'role' => 'kepala_sekolah',
+    ]);
+
+    $created = User::withoutGlobalScopes()->where('email', 'kepsek2@example.test')->first();
+    expect($created->yayasan_id)->toBeNull();
+});
+
+it('sets yayasan_id when updating a staff account to a yayasan-scoped role', function () {
+    $yayasan = Yayasan::factory()->create();
+    foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $yayasanRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $yayasanRole->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($yayasanRole);
+
+    Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $staff = User::factory()->create(['name' => 'Calon Admin Yayasan', 'email' => 'calonadminyayasan@example.test']);
+    $staff->assignRole('kepala_sekolah');
+
+    $this->actingAs($manager)->put(route('admin.users.update', $staff), [
+        'name' => 'Calon Admin Yayasan',
+        'email' => 'calonadminyayasan@example.test',
+        'role' => 'yayasan_super_admin',
+    ])->assertRedirect(route('admin.users.index'));
+
+    expect($staff->fresh()->yayasan_id)->toBe($yayasan->id);
+});
+
 it('refuses to let a lembaga-scoped manager assign a yayasan-scoped role to a new user', function () {
     foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
