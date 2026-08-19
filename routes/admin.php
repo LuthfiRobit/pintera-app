@@ -55,6 +55,7 @@ use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\Akademik\JurnalKbmController;
 use App\Http\Controllers\Guru\Akademik\RekapKehadiranController;
+use App\Http\Controllers\Guru\RaporController as GuruRaporController;
 use App\Http\Controllers\KasusConsentController;
 use App\Http\Controllers\KasusController;
 use App\Http\Controllers\KasusEvaluasiController;
@@ -353,4 +354,10 @@ Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(fu
     Route::get('komponen-penilaian/{komponenPenilaian}/edit', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'edit'])->name('komponen-penilaian.edit');
     Route::put('komponen-penilaian/{komponenPenilaian}', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'update'])->name('komponen-penilaian.update');
     Route::delete('komponen-penilaian/{komponenPenilaian}', [App\Http\Controllers\Guru\KomponenPenilaianController::class, 'destroy'])->name('komponen-penilaian.destroy');
+
+    Route::get('rapor', [GuruRaporController::class, 'index'])->name('rapor.catatan.index');
+    Route::get('rapor/siswa/{siswa}', [GuruRaporController::class, 'edit'])->name('rapor.catatan.edit');
+    Route::put('rapor/siswa/{siswa}', [GuruRaporController::class, 'update'])->name('rapor.catatan.update');
+    Route::post('rapor/generate-narasi/{siswa}', [GuruRaporController::class, 'generateNarasi'])->name('rapor.catatan.generate-narasi');
+    Route::post('rapor/ajukan', [GuruRaporController::class, 'ajukan'])->name('rapor.pengajuan.submit');
 });
