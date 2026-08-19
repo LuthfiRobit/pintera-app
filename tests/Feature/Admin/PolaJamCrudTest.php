@@ -354,10 +354,11 @@ it('rejects assigning a pola jam to a different lembaga\'s kelas for a yayasan-s
     }
     $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_assign_mix_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->syncPermissions(['pola-jam.view', 'kelas.edit']);
-    $manager = User::factory()->create(['lembaga_id' => null]);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
     $manager->assignRole($role);
-    // No active_lembaga_id in session — this yayasan-scoped user can see both lembaga A and B,
-    // so the tenant scope alone would let this cross-lembaga assignment through.
+    // No active_lembaga_id in session — this yayasan-scoped user can see both lembaga A and B
+    // (both belong to $yayasan), so the tenant scope alone would let this cross-lembaga
+    // assignment through.
 
     $polaA = PolaJam::factory()->create(['lembaga_id' => $lembagaA->id]);
     $kelasB = Kelas::factory()->create(['lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $tahunAjaranB->id]);

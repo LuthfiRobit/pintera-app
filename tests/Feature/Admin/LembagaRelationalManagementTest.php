@@ -21,7 +21,7 @@ beforeEach(function () {
     $this->yayasan = Yayasan::factory()->create();
     $this->lembaga = Lembaga::factory()->create(['yayasan_id' => $this->yayasan->id]);
     
-    $this->manager = User::factory()->create(['lembaga_id' => $this->lembaga->id]);
+    $this->manager = User::factory()->create(['yayasan_id' => $this->yayasan->id]);
     $this->manager->assignRole($this->role);
 });
 

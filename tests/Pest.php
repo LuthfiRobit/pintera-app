@@ -136,13 +136,17 @@ function actingAsOrangTuaManager(): User
 // the manager it creates has no `lembaga_id`. Siswa uses the BelongsToTenant trait /
 // TenantScope, which filters every query by the acting user's lembaga_id — so with a null
 // lembaga_id, route-model-binding on {siswa} never resolves (404) regardless of controller
-// logic. Widening the manager to a 'yayasan'-scoped role bypasses the per-lembaga filter
-// (TenantScope only constrains yayasan-level users when `active_lembaga_id` is set in
-// session), which also lets this manager link the same orang tua across siswa in different
-// lembaga. Use this helper (instead of `actingAsOrangTuaManager()`) for any test hitting a
-// {siswa}-bound route where cross-lembaga behavior for a yayasan-level user is intended —
-// it does NOT exercise tenant isolation for an ordinary lembaga-scoped admin; see the
-// dedicated tenant-isolation test in SiswaOrangTuaLinkingTest.php for that case.
+// logic. Widening the manager to a 'yayasan'-scoped role, WITH a `yayasan_id` set (a
+// correctly-provisioned yayasan-scope account always has one — see UserController::store()),
+// lets this manager cross-link the same orang tua across siswa in different lembaga UNDER
+// THAT SAME YAYASAN (TenantScope now scopes an empty active_lembaga_id session down to the
+// actor's own yayasan, not left unfiltered). Use this helper (instead of
+// `actingAsOrangTuaManager()`) for any test hitting a {siswa}-bound route where cross-lembaga
+// behavior for a yayasan-level user is intended — it does NOT exercise tenant isolation for
+// an ordinary lembaga-scoped admin; see the dedicated tenant-isolation test in
+// SiswaOrangTuaLinkingTest.php for that case. Callers MUST create any {siswa} this manager
+// needs to reach under a Lembaga belonging to `$manager->yayasan_id` (see
+// `buatSiswaUntukTautan()` in SiswaOrangTuaLinkingTest.php).
 function actingAsSiswaOrangTuaManager(): User
 {
     $manager = actingAsOrangTuaManager();
@@ -150,6 +154,7 @@ function actingAsSiswaOrangTuaManager(): User
         ['name' => 'yayasan_admin_ortu_link', 'guard_name' => 'web'],
         ['scope_level' => 'yayasan']
     );
+    $manager->update(['yayasan_id' => \App\Models\Yayasan::factory()->create()->id]);
     $manager->assignRole($yayasanRole);
 
     return $manager;

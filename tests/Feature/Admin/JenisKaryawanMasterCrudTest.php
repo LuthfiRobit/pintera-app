@@ -3,13 +3,15 @@
 
 use App\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
+use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
 function actingAsJenisKaryawanManager(): User
 {
-    $manager = User::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     foreach (['jenis-karyawan-master.view', 'jenis-karyawan-master.create', 'jenis-karyawan-master.edit', 'jenis-karyawan-master.delete'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
@@ -81,7 +83,8 @@ it('updates a jenis karyawan', function () {
 it('blocks deleting a jenis karyawan that is still in use by a karyawan', function () {
     $manager = actingAsJenisKaryawanManager();
     $jenis = JenisKaryawanMaster::factory()->create();
-    Karyawan::factory()->create(['jenis_karyawan_id' => $jenis->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    Karyawan::factory()->create(['jenis_karyawan_id' => $jenis->id, 'lembaga_id' => $lembaga->id]);
 
     $this->actingAs($manager)->deleteJson(route('admin.jenis-karyawan-master.destroy', $jenis))
         ->assertStatus(422);

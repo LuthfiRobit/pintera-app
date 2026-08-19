@@ -15,7 +15,7 @@ function actingAsSuperAdmin(): User
     );
     $role->givePermissionTo(['roles.view', 'roles.create', 'roles.edit', 'roles.delete']);
 
-    $user = User::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => \App\Models\Yayasan::factory()->create()->id]);
     $user->assignRole($role);
 
     return $user;
@@ -100,7 +100,7 @@ it('refuses to delete a protected role', function () {
 it('refuses to delete a role that still has assigned users', function () {
     $admin = actingAsSuperAdmin();
     $role = Role::create(['name' => 'in-use', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
-    User::factory()->create()->assignRole($role);
+    User::factory()->create(['yayasan_id' => $admin->yayasan_id])->assignRole($role);
 
     $this->actingAs($admin)->delete(route('admin.roles.destroy', $role))
         ->assertRedirect()
@@ -246,7 +246,7 @@ it('deletes a role via AJAX and returns JSON instead of redirecting', function (
 it('returns a JSON 422 instead of a redirect when an AJAX delete targets a role still in use', function () {
     $admin = actingAsSuperAdmin();
     $role = Role::create(['name' => 'ajax-in-use', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
-    User::factory()->create()->assignRole($role);
+    User::factory()->create(['yayasan_id' => $admin->yayasan_id])->assignRole($role);
 
     $response = $this->actingAs($admin)->deleteJson(route('admin.roles.destroy', $role));
 

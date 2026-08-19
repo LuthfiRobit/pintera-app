@@ -7,10 +7,10 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
-function buatSiswaUntukTautan(): Siswa
+function buatSiswaUntukTautan(?int $yayasanId = null): Siswa
 {
-    $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $yayasanId ??= Yayasan::factory()->create()->id;
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasanId]);
 
     return Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
 }
@@ -21,8 +21,13 @@ function buatSiswaUntukTautan(): Siswa
 
 it('finds an existing orang tua by nik via the cari endpoint', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
-    $orangTua = OrangTua::factory()->create(['nik' => '3201234567895555']);
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
+    $lembagaSama = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    // The cari() endpoint's lookup goes through User::where('username', $nik) first (username
+    // stores the NIK) - User is tenant-scoped, so the underlying account must belong to a
+    // Lembaga under the acting manager's own yayasan to be visible, even though OrangTua
+    // itself is intentionally cross-tenant.
+    $orangTua = OrangTua::factory()->create(['nik' => '3201234567895555', 'user_id' => User::factory()->create(['lembaga_id' => $lembagaSama->id])->id]);
 
     $response = $this->actingAs($manager)->getJson(route('admin.siswa.orang-tua.cari', $siswa).'?nik=3201234567895555');
 
@@ -34,7 +39,7 @@ it('finds an existing orang tua by nik via the cari endpoint', function () {
 
 it('returns found=false when no orang tua is registered under that nik', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
 
     $response = $this->actingAs($manager)->getJson(route('admin.siswa.orang-tua.cari', $siswa).'?nik=9999999999999999');
 
@@ -43,7 +48,7 @@ it('returns found=false when no orang tua is registered under that nik', functio
 
 it('links an existing orang tua to a siswa by orang_tua_id', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
     $orangTua = OrangTua::factory()->create();
 
     $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswa), [
@@ -60,7 +65,7 @@ it('links an existing orang tua to a siswa by orang_tua_id', function () {
 
 it('creates a new orang tua and links it in one submit when orang_tua_id is absent', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
 
     $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswa), [
         'hubungan' => 'ayah',
@@ -77,7 +82,7 @@ it('creates a new orang tua and links it in one submit when orang_tua_id is abse
 
 it('rejects linking with a nik that is already registered instead of silently creating a duplicate', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
     $existing = OrangTua::factory()->create(['nik' => '3201234567897777']);
 
     $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswa), [
@@ -92,7 +97,7 @@ it('rejects linking with a nik that is already registered instead of silently cr
 
 it('sets is_kontak_utama exclusively when linking a second orang tua as the new main contact', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
     $first = OrangTua::factory()->create();
     $siswa->orangTua()->attach($first->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
     $second = OrangTua::factory()->create();
@@ -115,8 +120,8 @@ it('sets is_kontak_utama exclusively when linking a second orang tua as the new 
 // below for the tenant-isolation case.
 it('allows the same orang tua to link to a siswa in a different lembaga', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswaA = buatSiswaUntukTautan();
-    $siswaB = buatSiswaUntukTautan();
+    $siswaA = buatSiswaUntukTautan($manager->yayasan_id);
+    $siswaB = buatSiswaUntukTautan($manager->yayasan_id);
     $orangTua = OrangTua::factory()->create();
 
     $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswaA), [
@@ -131,7 +136,7 @@ it('allows the same orang tua to link to a siswa in a different lembaga', functi
 
 it('sets a different orang tua as the exclusive kontak utama', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
     $first = OrangTua::factory()->create();
     $second = OrangTua::factory()->create();
     $siswa->orangTua()->attach($first->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
@@ -148,7 +153,7 @@ it('sets a different orang tua as the exclusive kontak utama', function () {
 
 it('rejects setting kontak utama for an orang tua not linked to the siswa', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
     $unlinked = OrangTua::factory()->create();
 
     $this->actingAs($manager)
@@ -158,8 +163,11 @@ it('rejects setting kontak utama for an orang tua not linked to the siswa', func
 
 it('unlinks an orang tua from a siswa without deleting the orang tua profile or user', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
-    $orangTua = OrangTua::factory()->create();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
+    $lembagaSama = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    // User::find() below is tenant-scoped, so the linked account must belong to a Lembaga
+    // under the acting manager's own yayasan to still be visible after unlinking.
+    $orangTua = OrangTua::factory()->create(['user_id' => User::factory()->create(['lembaga_id' => $lembagaSama->id])->id]);
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
     $this->actingAs($manager)
@@ -196,10 +204,11 @@ it('requires siswa.edit in addition to orang-tua permissions on nested siswa/ora
         ['scope_level' => 'yayasan']
     );
     $role->givePermissionTo(['orang-tua.create', 'orang-tua.edit']);
-    $user = User::factory()->create();
+    $yayasan = Yayasan::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $user->assignRole($role);
 
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($yayasan->id);
     $orangTua = OrangTua::factory()->create();
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
@@ -222,8 +231,9 @@ it('requires siswa.edit in addition to orang-tua permissions on nested siswa/ora
 
 it('returns a distinct message when linking a nik that belongs to a non-parent user', function () {
     $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan();
-    User::factory()->create(['username' => '3201234567899999']);
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
+    $lembagaSama = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    User::factory()->create(['username' => '3201234567899999', 'lembaga_id' => $lembagaSama->id]);
 
     $response = $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswa), [
         'hubungan' => 'ayah',
@@ -240,7 +250,7 @@ it('shows the linked orang tua list and a search box on the siswa edit page', fu
     $manager = actingAsSiswaOrangTuaManager();
     Permission::firstOrCreate(['name' => 'siswa.edit', 'guard_name' => 'web']);
     $manager->givePermissionTo('siswa.edit');
-    $siswa = buatSiswaUntukTautan();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
     $orangTua = OrangTua::factory()->create(['nama_lengkap' => 'Ibu Tertaut']);
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
 

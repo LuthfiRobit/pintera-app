@@ -87,6 +87,7 @@ it('rejects a lembaga admin trying to create a pool karyawan', function () {
 it('lets yayasan_super_admin create a pool karyawan', function () {
     $admin = actingAsYayasanSuperAdmin();
     $yayasan = Yayasan::factory()->create();
+    $admin->update(['yayasan_id' => $yayasan->id]);
     $jenis = JenisKaryawanMaster::factory()->create();
 
     $this->actingAs($admin)->post(route('admin.karyawan.store'), [

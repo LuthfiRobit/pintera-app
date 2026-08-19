@@ -25,6 +25,7 @@ class AkunKaryawanGenerator
                 'username' => $nik,
                 'password' => Hash::make($nik),
                 'lembaga_id' => $lembagaId,
+                'yayasan_id' => $lembagaId === null ? $yayasanId : null,
                 'email_verified_at' => null,
                 'is_active' => true,
                 'must_change_password' => true,

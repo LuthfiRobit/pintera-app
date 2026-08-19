@@ -313,9 +313,12 @@ it('rejects a jadwal that mixes entities from different lembaga even for a yayas
     Permission::firstOrCreate(['name' => 'jadwal-pelajaran.kelola', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'yayasan_jadwal_mix_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->syncPermissions(['jadwal-pelajaran.kelola']);
-    $manager = User::factory()->create(['lembaga_id' => null]);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
     $manager->assignRole($role);
-    // No active_lembaga_id in session — this yayasan-scoped user can see both lembaga A and B.
+    // No active_lembaga_id in session — this yayasan-scoped user can see both lembaga A and B
+    // (TenantScope now scopes an empty active_lembaga_id session down to the actor's own
+    // yayasan, not left unfiltered — both lembaga A and B belong to $yayasan, so both remain
+    // visible; a genuinely different yayasan would not be).
 
     $this->actingAs($manager)->post(route('admin.jadwal-pelajaran.store'), [
         'kelas_id' => $kelasA->id,

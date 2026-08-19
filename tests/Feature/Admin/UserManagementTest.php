@@ -17,7 +17,11 @@ function actingAsUserManager(): User
     );
     $role->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
 
-    $user = User::factory()->create();
+    // A correctly-provisioned yayasan-scope account always has yayasan_id set (see
+    // UserController::store()) - TenantScope now scopes an empty active_lembaga_id session
+    // down to the actor's own yayasan (fail-closed otherwise), so tests needing the manager
+    // to see a $staff row must create that row under a Lembaga belonging to this SAME yayasan.
+    $user = User::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     $user->assignRole($role);
 
     return $user;
@@ -94,7 +98,8 @@ it('requires a lembaga when creating a user with a lembaga-scoped role', functio
 
 it('deactivates a staff account so it can no longer log in', function () {
     $manager = actingAsUserManager();
-    $staff = User::factory()->create(['is_active' => true]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    $staff = User::factory()->create(['is_active' => true, 'lembaga_id' => $lembaga->id]);
 
     $this->actingAs($manager)->patch(route('admin.users.toggle-active', $staff))
         ->assertRedirect(route('admin.users.index'));
@@ -106,7 +111,8 @@ it('lets a user manager update an existing staff account\'s name and email', fun
     $manager = actingAsUserManager();
     Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
 
-    $staff = User::factory()->create(['name' => 'Old Name', 'email' => 'oldemail@example.test']);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    $staff = User::factory()->create(['name' => 'Old Name', 'email' => 'oldemail@example.test', 'lembaga_id' => $lembaga->id]);
     $staff->assignRole('kepala_sekolah');
 
     $this->actingAs($manager)->put(route('admin.users.update', $staff), [
@@ -125,24 +131,27 @@ it('denies access to admin.users.edit for a user without users.edit permission',
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
     $role->givePermissionTo(['users.view']);
 
-    $viewer = User::factory()->create();
+    $yayasan = Yayasan::factory()->create();
+    $viewer = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $viewer->assignRole($role);
 
-    $staff = User::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $staff = User::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $this->actingAs($viewer)->get(route('admin.users.edit', $staff))->assertForbidden();
 });
 
 it('excludes siswa accounts from the staff Pengguna list', function () {
     $manager = actingAsUserManager();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
 
     Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
 
-    $siswaUser = User::factory()->create(['username' => 'siswa.excluded', 'email' => 'siswa.excluded@example.test']);
+    $siswaUser = User::factory()->create(['username' => 'siswa.excluded', 'email' => 'siswa.excluded@example.test', 'lembaga_id' => $lembaga->id]);
     $siswaUser->assignRole('siswa');
 
-    $staffUser = User::factory()->create(['username' => 'staff.included', 'email' => 'staff.included@example.test']);
+    $staffUser = User::factory()->create(['username' => 'staff.included', 'email' => 'staff.included@example.test', 'lembaga_id' => $lembaga->id]);
     $staffUser->assignRole('admin_administrasi');
 
     $response = $this->actingAs($manager)->get(route('admin.users.index'));
@@ -227,7 +236,8 @@ it('sets yayasan_id when updating a staff account to a yayasan-scoped role', fun
     $manager->assignRole($yayasanRole);
 
     Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $staff = User::factory()->create(['name' => 'Calon Admin Yayasan', 'email' => 'calonadminyayasan@example.test']);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $staff = User::factory()->create(['name' => 'Calon Admin Yayasan', 'email' => 'calonadminyayasan@example.test', 'lembaga_id' => $lembaga->id]);
     $staff->assignRole('kepala_sekolah');
 
     $this->actingAs($manager)->put(route('admin.users.update', $staff), [
