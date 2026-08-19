@@ -70,6 +70,26 @@ class PersetujuanController extends BaseController
         ], $rekap));
     }
 
+    public function decision(ProcessRaporApprovalRequest $request, PengajuanRapor $pengajuanRapor): RedirectResponse
+    {
+        abort_unless($pengajuanRapor->status === $this->statusUntukAktor($request), 404, 'Pengajuan ini bukan berada di tahap Anda.');
+
+        $action = ApprovalAction::from($request->validated('action'));
+        $catatan = $request->validated('catatan');
+
+        if ($request->user()->can('rapor.approve')) {
+            $this->approvePengajuanRaporAction->execute($pengajuanRapor, $request->user(), $action, $catatan);
+        } else {
+            $this->verifyPengajuanRaporAction->execute($pengajuanRapor, $request->user(), $action, $catatan);
+        }
+
+        $pesan = $action === ApprovalAction::Approve
+            ? 'Keputusan berhasil disimpan.'
+            : 'Pengajuan berhasil ditolak. Wali kelas dapat mengajukan ulang setelah revisi.';
+
+        return redirect()->route('admin.rapor.persetujuan.index')->with('success', $pesan);
+    }
+
     private function statusUntukAktor(Request $request): StatusPengajuanRapor
     {
         return $request->user()->can('rapor.approve') ? StatusPengajuanRapor::Diverifikasi : StatusPengajuanRapor::Diajukan;

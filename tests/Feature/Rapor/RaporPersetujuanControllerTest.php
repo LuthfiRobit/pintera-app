@@ -100,3 +100,64 @@ it('is tenant-scoped: PengajuanRapor from another lembaga 404s via route model b
 
     $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.show', $pengajuanLain))->assertNotFound();
 });
+
+it('lets Waka approve, advancing status to Diverifikasi', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userWaka)->post(route('admin.rapor.persetujuan.decision', $pengajuan), [
+        'action' => 'APPROVE', 'catatan' => 'Lengkap dan sudah sesuai.',
+    ]);
+
+    $response->assertRedirect(route('admin.rapor.persetujuan.index'));
+    $this->assertDatabaseHas('pengajuan_rapor', [
+        'id' => $pengajuan->id,
+        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Diverifikasi->value,
+    ]);
+});
+
+it('lets Waka reject, setting status to Ditolak with catatan_revisi', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $this->actingAs($userWaka)->post(route('admin.rapor.persetujuan.decision', $pengajuan), [
+        'action' => 'REJECT', 'catatan' => 'Nilai belum lengkap.',
+    ]);
+
+    $this->assertDatabaseHas('pengajuan_rapor', [
+        'id' => $pengajuan->id,
+        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Ditolak->value,
+        'catatan_revisi' => 'Nilai belum lengkap.',
+    ]);
+});
+
+it('lets Kepsek approve a Diverifikasi pengajuan, advancing status to Disetujui', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'userKepsek' => $userKepsek, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+    (new VerifyPengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan, $userWaka, ApprovalAction::Approve);
+
+    $this->actingAs($userKepsek)->post(route('admin.rapor.persetujuan.decision', $pengajuan->fresh()), ['action' => 'APPROVE']);
+
+    $this->assertDatabaseHas('pengajuan_rapor', [
+        'id' => $pengajuan->id,
+        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui->value,
+    ]);
+});
+
+it('rejects REQUEST_REVISION as an invalid action value with a 422', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $this->actingAs($userWaka)
+        ->post(route('admin.rapor.persetujuan.decision', $pengajuan), ['action' => 'REQUEST_REVISION'])
+        ->assertSessionHasErrors('action');
+});
+
+it('rejects a decision from the wrong step (Kepsek trying to decide before Waka verifies)', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userKepsek' => $userKepsek, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $this->actingAs($userKepsek)
+        ->post(route('admin.rapor.persetujuan.decision', $pengajuan), ['action' => 'APPROVE'])
+        ->assertNotFound();
+});
