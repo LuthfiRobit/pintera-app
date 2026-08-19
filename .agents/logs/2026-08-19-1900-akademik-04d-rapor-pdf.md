@@ -60,4 +60,12 @@
 1. **Pre-existing TenantScope Gap (dari 04a):** Query tanpa filter yayasan ketika `session('active_lembaga_id')` kosong pada aktor yayasan masih tercatat sebagai open finding untuk audit arsitektur menyeluruh berikutnya.
 2. **PKL & UKK Numerik SMK:** Format SMK saat ini memuat tabel deskriptif PKL (`pkl_info`). Nilai numerik terpisah & portofolio UKK berada di luar scope sesuai kesepakatan spec §1.
 
+## Final Whole-Sub-Task Review (sesi terpisah, setelah handoff)
+
+Dilakukan review independen terhadap diff penuh `f2d1818..68b31d6`, memverifikasi 9 area berisiko tertinggi langsung terhadap kode aktual: aritmatika Ganjil/Genap (`absensiTahunan`/`nilaiRataRataTahunan`, termasuk memverifikasi test benar-benar meng-override tanggal `SemesterFactory` yang secara default identik antar-instance), sumber nama tanda tangan (aktor sistem, bukan data profil registrasi), mapping tingkat akhir (SD=6/SMP=9/SMA-SMK=12), asimetri otorisasi `cetak()` (Waka/Kepsek boleh cetak draft kapan saja, TIDAK digerbang step seperti `show()`/`decision()`), kebenaran gating semua 4 template terhadap `$isGenap`, backward-compatibility UI `elemen_cp`/`kktp_minimal`, penggunaan DomPDF, dan keabsahan fix `d9d51d6` (unique constraint `['tahun_ajaran_id','nama']` pada `SemesterFactory` — dikonfirmasi nyata dan bukan tambalan superfisial).
+
+**Tidak ditemukan bug fungsional.** Ditemukan 2 celah cakupan test (bukan bug kode — keduanya berasal dari plan 04d yang tidak lengkap menulis test-nya untuk sisi Guru): test conditional-rendering `elemen_cp`/`kktp_minimal` belum ada di `Guru\KomponenPenilaianControllerTest` (hanya Admin), dan test cross-tenant 404 belum ada untuk `PersetujuanController::cetak()` (hanya `show()`). Keduanya ditambahkan (`edda4d7`) dan LULUS TANPA perubahan kode aplikasi — membuktikan implementasi sudah benar sejak awal, murni menutup gap dokumentasi test.
+
+**Verdict: siap merge, modul E-Rapor Engine (04a-04d) SELESAI SEPENUHNYA dengan cakupan test lengkap.**
+
 **Seluruh 4 Sub-Task modul Adaptive E-Rapor Engine (04a, 04b, 04c, 04d) telah SELESAI SEPENUHNYA.**
