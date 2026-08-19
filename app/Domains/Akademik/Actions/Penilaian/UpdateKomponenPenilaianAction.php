@@ -39,6 +39,7 @@ final class UpdateKomponenPenilaianAction
         $komponen->deskripsi = $data->deskripsi;
         $komponen->bobot = $newBobot;
         $komponen->kktp = $data->kktp;
+        $komponen->kktp_minimal = $data->kktpMinimal;
         $komponen->save();
 
         return $komponen;

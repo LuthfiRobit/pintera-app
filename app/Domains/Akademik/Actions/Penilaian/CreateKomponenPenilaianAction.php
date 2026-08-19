@@ -33,6 +33,7 @@ final class CreateKomponenPenilaianAction
             'deskripsi' => $data->deskripsi,
             'bobot' => $data->bobot,
             'kktp' => $data->kktp,
+            'kktp_minimal' => $data->kktpMinimal,
         ]);
     }
 }

@@ -24,6 +24,7 @@ final class UpdateKomponenPenilaianSendiriRequest extends FormRequest
             'deskripsi' => ['required', 'string'],
             'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
             'kktp' => ['nullable', 'string'],
+            'kktp_minimal' => ['nullable', 'integer', 'min:0', 'max:100'],
         ];
     }
 

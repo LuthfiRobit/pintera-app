@@ -13,6 +13,7 @@ final readonly class UpdateKomponenPenilaianData
         public string $deskripsi,
         public ?int $bobot,
         public ?string $kktp,
+        public ?int $kktpMinimal,
     ) {
     }
 
@@ -25,6 +26,7 @@ final readonly class UpdateKomponenPenilaianData
             deskripsi: $data['deskripsi'],
             bobot: isset($data['bobot']) ? (int) $data['bobot'] : null,
             kktp: $data['kktp'] ?? null,
+            kktpMinimal: isset($data['kktp_minimal']) ? (int) $data['kktp_minimal'] : null,
         );
     }
 }
