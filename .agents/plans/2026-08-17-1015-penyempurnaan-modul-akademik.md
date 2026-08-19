@@ -5,7 +5,7 @@
 - **Master Plan File:** `.agents/plans/2026-08-17-1015-penyempurnaan-modul-akademik.md`
 - **Master Handoff Log:** `.agents/logs/2026-08-17-1015-penyempurnaan-modul-akademik.md`
 - **Tanggal & Waktu:** 17 Agustus 2026, 10:15 WIB
-- **Status Master:** 🟡 IN PROGRESS (Sub-Task 01, 02, 03a, 03b, 03c, 04a, 04b, 04c SELESAI — Sub-Task 04d belum dimulai)
+- **Status Master:** 🟢 SELESAI SEMUA SUB-TASK (01, 02, 03a, 03b, 03c, 04a, 04b, 04c, 04d) — modul Adaptive E-Rapor Engine lengkap end-to-end.
 
 ---
 
@@ -24,7 +24,7 @@
 | **04a** | **Migrasi Komponen Penilaian, Asesmen, Nilai Siswa & Rapor ke Domain Akademik** | [`.agents/specs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | [`.agents/plans/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | [`.agents/logs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-1015-akademik-04a-migrasi-komponen-penilaian-rapor.md) | 🟢 **SELESAI (COMPLETED)** |
 | **04b** | **Adaptive E-Rapor Engine: Backend & Approval Workflow** | [`.agents/specs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md) | [`.agents/plans/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md) | [`.agents/logs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-1530-akademik-04b-rapor-workflow-backend.md) | 🟢 **SELESAI (COMPLETED)** |
 | **04c** | **UI 4 Role (Guru/Wali Kelas/Waka/Kepsek)** | [`.agents/specs/2026-08-19-1600-akademik-04c-rapor-ui.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-1600-akademik-04c-rapor-ui.md) | [`.agents/plans/2026-08-19-1600-akademik-04c-rapor-ui.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-19-1600-akademik-04c-rapor-ui.md) | [`.agents/logs/2026-08-19-1600-akademik-04c-rapor-ui.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-1600-akademik-04c-rapor-ui.md) | 🟢 **SELESAI (COMPLETED)** |
-| **04d** | **4 Template PDF Berjenjang** | `.agents/specs/akademik-04d-rapor-pdf.md` | `.agents/plans/akademik-04d-rapor-pdf.md` | `.agents/logs/akademik-04d-rapor-pdf.md` | ⚪ PENDING |
+| **04d** | **4 Template PDF Berjenjang** | [`.agents/specs/2026-08-19-1900-akademik-04d-rapor-pdf.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-19-1900-akademik-04d-rapor-pdf.md) | [`.agents/plans/2026-08-19-1900-akademik-04d-rapor-pdf.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-19-1900-akademik-04d-rapor-pdf.md) | [`.agents/logs/2026-08-19-1900-akademik-04d-rapor-pdf.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-19-1900-akademik-04d-rapor-pdf.md) | 🟢 **SELESAI (COMPLETED)** |
 
 > **Catatan untuk sesi berikutnya:** Sub-Task 04a menemukan (tidak diperbaiki, di luar scope) sebuah gap arsitektur pre-existing yang lebih luas dari 04a sendiri: `app/Models/Scopes/TenantScope.php` TIDAK punya filter level-yayasan sama sekali — aktor berscope yayasan dengan `session('active_lembaga_id')` kosong mendapat query TANPA FILTER APA PUN, bocor lintas SEMUA lembaga di sistem (bukan cuma lintas lembaga dalam satu yayasan). Contoh nyata: `RaporController::index()`'s `TahunAjaran::where('status_aktif', true)` lookup. Pola ini dikonfirmasi dipakai bersama oleh ~15 controller lain. Perlu masuk final whole-branch review untuk diputuskan prioritas & apakah butuh sub-task perbaikan tersendiri.
 
@@ -102,17 +102,17 @@ Rencana kerja ini mengimplementasikan spesifikasi arsitektur Modul Akademik dan 
   - [x] Buat `App\Domains\Akademik\Services\CapaianKompetensiGenerator.php` (generator narasi otomatis TP tertinggi & terendah).
 - [x] **4.3. Actions Pengajuan & Approval Rapor:**
   - [x] Buat `SubmitPengajuanRaporAction`, `VerifyPengajuanRaporAction`, `ApprovePengajuanRaporAction`, dan `SimpanCatatanWaliKelasAction`.
-- [ ] **4.4. 4 Template PDF Resmi DomPDF Berbasis Jenjang:**
-  - [ ] `resources/views/pdf/rapor/paud.blade.php` (Naratif 3 elemen CP).
-  - [ ] `resources/views/pdf/rapor/sd.blade.php` (Nilai pokok/tematik + narasi TP + ekskul + absensi).
-  - [ ] `resources/views/pdf/rapor/smp-sma.blade.php` (Nilai umum & peminatan + narasi TP + ekskul + absensi).
-  - [ ] `resources/views/pdf/rapor/smk.blade.php` (Nilai umum & kejuruan + nilai PKL Industri + UKK).
-- [ ] **4.5. Controller & UI E-Rapor Berjenjang:**
-  - [ ] Portal Guru/Wali Kelas (`Guru\Akademik\RaporWaliKelasController`): Input catatan sikap, ekskul, review narasi TP, & ajukan.
-  - [ ] Portal Lembaga/Kurikulum (`Lembaga\Akademik\RaporController`): Verifikasi Kurikulum & Approval Kepala Sekolah (Kunci Nilai) & Cetak PDF.
-- [ ] **4.6. Pengujian Otomatis Fase 4:**
-  - [ ] Buat test `Tests\Feature\Akademik\RaporBerjenjangWorkflowTest`.
-  - [ ] Buat test `Tests\Feature\Akademik\RaporPdfGenerationTest`.
+- [x] **4.4. 4 Template PDF Resmi DomPDF Berbasis Jenjang:**
+  - [x] `resources/views/pdf/rapor/paud.blade.php` (Naratif 3 elemen CP).
+  - [x] `resources/views/pdf/rapor/sd.blade.php` (Nilai pokok/tematik + narasi TP + ekskul + absensi).
+  - [x] `resources/views/pdf/rapor/smp-sma.blade.php` (Nilai umum & peminatan + narasi TP + ekskul + absensi).
+  - [x] `resources/views/pdf/rapor/smk.blade.php` (Nilai umum & kejuruan + nilai PKL Industri + UKK).
+- [x] **4.5. Controller & UI E-Rapor Berjenjang:**
+  - [x] Portal Guru/Wali Kelas (`Guru\RaporController`): Input catatan sikap, ekskul, antropometri/PKL, review narasi TP, ajukan, & cetak PDF.
+  - [x] Portal Lembaga/Kurikulum (`Lembaga\Rapor\PersetujuanController`): Verifikasi Kurikulum & Approval Kepala Sekolah (Kunci Nilai) & Cetak PDF.
+- [x] **4.6. Pengujian Otomatis Fase 4:**
+  - [x] Buat test `Tests\Feature\Akademik\RaporBerjenjangWorkflowTest` & unit services.
+  - [x] Buat test `Tests\Feature\Akademik\RaporPdfDataBuilderTest`, `Guru\RaporControllerTest`, `RaporPersetujuanControllerTest`.
 
 ---
 
