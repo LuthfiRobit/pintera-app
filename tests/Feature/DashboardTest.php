@@ -26,7 +26,7 @@ it('shows the yayasan dashboard with a lembaga switcher to a yayasan-scoped user
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Pintera Switcher']);
 
-    $user = User::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $user->assignRole('yayasan_super_admin');
 
     $response = $this->actingAs($user)->get('/dashboard');
@@ -34,6 +34,26 @@ it('shows the yayasan dashboard with a lembaga switcher to a yayasan-scoped user
     $response->assertOk();
     $response->assertSee('SD Pintera Switcher');
     $response->assertSee('switch_lembaga='.$lembaga->id, false);
+});
+
+it('does not show a lembaga belonging to another yayasan on the yayasan dashboard', function () {
+    Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    Lembaga::factory()->create(['yayasan_id' => $yayasanSaya->id, 'nama' => 'SMP Milik Saya']);
+    Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id, 'nama' => 'SMA Yayasan Lain']);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasanSaya->id]);
+    $user->assignRole('yayasan_super_admin');
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    // Regression test for the DashboardController cross-yayasan stats leak: Lembaga::all()
+    // was previously unfiltered, so a yayasan admin's landing dashboard showed institution
+    // names, SPMB/keuangan aggregates, and system-wide counts from every other yayasan too.
+    $response->assertOk();
+    $response->assertSee('SMP Milik Saya');
+    $response->assertDontSee('SMA Yayasan Lain');
 });
 
 it('shows the generic staff dashboard without a switcher to a lembaga-scoped user', function () {

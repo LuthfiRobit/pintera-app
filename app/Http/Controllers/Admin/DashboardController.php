@@ -92,13 +92,13 @@ class DashboardController extends BaseController
                 return view('admin.dashboard.lembaga', $this->lembagaViewData((int) $lembagaAktifId, $user));
             }
 
-            // Lembaga::all(), not filtered by any yayasan_id on $user: the User model has
-            // no yayasan_id column (only lembaga_id) — a yayasan-scoped user is identified
-            // purely by an assigned role with scope_level='yayasan', not by any FK to a
-            // specific Yayasan row. This matches the pre-existing behavior of this exact
-            // branch before this task (also unfiltered Lembaga::all()) — do not invent a
-            // yayasan_id relationship on User to "fix" this; that would be a schema change
-            // outside this plan's scope.
+            // Lembaga model doesn't use BelongsToTenant/TenantScope at all, so it must be
+            // filtered explicitly here by the acting user's own yayasan_id - a real column
+            // on User since 2026-08-17, populated for every correctly-provisioned
+            // yayasan-scope account (see UserController::store()/AkunKaryawanGenerator).
+            // where('yayasan_id', null) naturally yields zero rows when the actor's own
+            // yayasan_id is unset (Lembaga.yayasan_id is NOT NULL) - fail-closed, matching
+            // the same philosophy as the TenantScope fix this mirrors.
             // Deliberate trade-off vs. the design spec's "single groupBy('lembaga_id')
             // query" wording: this calls DashboardStatsService once per lembaga instead,
             // so the yayasan view reuses the exact same aggregation methods as the lembaga
@@ -107,7 +107,7 @@ class DashboardController extends BaseController
             // wording but require a second, parallel implementation of the same metrics.
             // Negligible at pilot scale (a yayasan has a handful of lembaga); revisit if a
             // yayasan ever grows to dozens.
-            $lembagaList = Lembaga::all();
+            $lembagaList = Lembaga::where('yayasan_id', $user->yayasan_id)->get();
             $ringkasanPerLembaga = $lembagaList->map(function (Lembaga $lembaga) use ($user) {
                 return [
                     'lembaga' => $lembaga,
@@ -127,7 +127,11 @@ class DashboardController extends BaseController
                 'totalDiterima' => $ringkasanPerLembaga->sum(fn ($r) => $r['spmb']['diterima']),
                 'totalRpTerkumpul' => $ringkasanPerLembaga->sum(fn ($r) => $r['keuangan']['rpTerkumpul']),
                 'stats' => [
-                    'lembaga' => Lembaga::count(),
+                    // Guru/User/TahunAjaran are all BelongsToTenant models - TenantScope
+                    // itself already restricts these to the acting user's own yayasan when
+                    // active_lembaga_id is unset. Lembaga is not tenant-scoped, so it needs
+                    // the same explicit yayasan_id filter as $lembagaList above.
+                    'lembaga' => Lembaga::where('yayasan_id', $user->yayasan_id)->count(),
                     'guru' => Guru::count(),
                     'pengguna' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->count(),
                     'tahunAjaranAktif' => TahunAjaran::where('status_aktif', true)->count(),
