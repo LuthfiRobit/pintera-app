@@ -145,6 +145,11 @@ class KomponenPenilaianController extends BaseController
 
     public function update(UpdateKomponenPenilaianRequest $request, KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
     {
+        $mataPelajaranSaatIni = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
+        if (! $mataPelajaranSaatIni) {
+            abort(404);
+        }
+
         $data = $request->validated();
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
