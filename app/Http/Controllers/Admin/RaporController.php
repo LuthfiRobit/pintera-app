@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Domains\Akademik\Models\Asesmen;
-use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Services\RaporCalculationService;
 use App\Models\Kelas;
 use App\Models\Semester;
-use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -20,6 +18,11 @@ use Illuminate\View\View;
 class RaporController extends BaseController
 {
     use AuthorizesRequests;
+
+    public function __construct(
+        private readonly RaporCalculationService $raporCalculationService,
+    ) {
+    }
 
     public function index(Request $request): View|string
     {
@@ -52,7 +55,9 @@ class RaporController extends BaseController
         $selectedKelas = $kelasId ? Kelas::find($kelasId) : null;
         $selectedSemester = $semesterId ? Semester::find($semesterId) : null;
 
-        $rekap = $this->hitungRekap($selectedKelas, $selectedSemester);
+        $rekap = ($selectedKelas && $selectedSemester)
+            ? $this->raporCalculationService->hitungRekapKelas($selectedKelas, $selectedSemester)
+            : $this->rekapKosong();
 
         if ($request->ajax()) {
             return view('admin.rapor._hasil', array_merge([
@@ -101,7 +106,7 @@ class RaporController extends BaseController
         abort_if($selectedSemester === null, 404);
         abort_if($selectedSemester->tahun_ajaran_id !== $selectedKelas->tahun_ajaran_id, 404);
 
-        $rekap = $this->hitungRekap($selectedKelas, $selectedSemester);
+        $rekap = $this->raporCalculationService->hitungRekapKelas($selectedKelas, $selectedSemester);
 
         $pdf = Pdf::loadView('pdf.rekap-rapor', array_merge([
             'selectedKelas' => $selectedKelas,
@@ -111,62 +116,17 @@ class RaporController extends BaseController
         return $pdf->stream('rekap-rapor-'.Str::slug($selectedKelas->nama).'.pdf');
     }
 
-    private function hitungRekap(?Kelas $kelas, ?Semester $semester): array
+    /**
+     * @return array{siswaList: \Illuminate\Support\Collection, mapelList: \Illuminate\Support\Collection, rekapNilai: array<int, array<int, float|null>>, classAvg: float|null, highestScore: float|null}
+     */
+    private function rekapKosong(): array
     {
-        if (! $kelas || ! $semester) {
-            return [
-                'siswaList' => collect(),
-                'mapelList' => collect(),
-                'rekapNilai' => [],
-                'classAvg' => null,
-                'highestScore' => null,
-            ];
-        }
-
-        $siswaList = Siswa::where('kelas_id', $kelas->id)->orderBy('nama_lengkap')->get();
-
-        $asesmenList = Asesmen::where('kelas_id', $kelas->id)
-            ->where('semester_id', $semester->id)
-            ->with('mataPelajaran')
-            ->get();
-
-        $mapelList = $asesmenList->pluck('mataPelajaran')->unique('id')->sortBy('nama');
-        $allNilai = NilaiSiswa::whereIn('asesmen_id', $asesmenList->pluck('id'))
-            ->with('komponenPenilaian')
-            ->get();
-
-        $rekapNilai = [];
-        foreach ($siswaList as $siswa) {
-            $rekapNilai[$siswa->id] = [];
-            foreach ($mapelList as $mapel) {
-                $mapelAsesmenIds = $asesmenList->where('mata_pelajaran_id', $mapel->id)->pluck('id');
-                $scores = $allNilai->whereIn('asesmen_id', $mapelAsesmenIds)
-                    ->where('siswa_id', $siswa->id)
-                    ->whereNotNull('nilai_angka');
-
-                if ($scores->count() > 0) {
-                    $totalWeight = 0;
-                    $weightedSum = 0;
-                    foreach ($scores as $item) {
-                        $w = $item->komponenPenilaian && $item->komponenPenilaian->bobot > 0 ? (int) $item->komponenPenilaian->bobot : 1;
-                        $weightedSum += ($item->nilai_angka * $w);
-                        $totalWeight += $w;
-                    }
-                    $rekapNilai[$siswa->id][$mapel->id] = $totalWeight > 0 ? round($weightedSum / $totalWeight, 1) : null;
-                } else {
-                    $rekapNilai[$siswa->id][$mapel->id] = null;
-                }
-            }
-        }
-
-        $allScores = collect($rekapNilai)->flatMap(fn ($m) => collect($m)->filter(fn ($v) => $v !== null));
-
         return [
-            'siswaList' => $siswaList,
-            'mapelList' => $mapelList,
-            'rekapNilai' => $rekapNilai,
-            'classAvg' => $allScores->count() > 0 ? round($allScores->avg(), 1) : null,
-            'highestScore' => $allScores->count() > 0 ? $allScores->max() : null,
+            'siswaList' => collect(),
+            'mapelList' => collect(),
+            'rekapNilai' => [],
+            'classAvg' => null,
+            'highestScore' => null,
         ];
     }
 }
