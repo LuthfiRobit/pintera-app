@@ -8,13 +8,17 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('seeds exactly 109 permissions', function () {
+it('seeds exactly 113 permissions', function () {
     (new PermissionSeeder())->run();
 
-    expect(Permission::count())->toBe(109);
+    expect(Permission::count())->toBe(113);
     expect(Permission::where('name', 'roles.view')->exists())->toBeTrue();
     expect(Permission::where('name', 'cicilan.kelola')->exists())->toBeTrue();
     expect(Permission::where('name', 'pembayaran.virtual-account')->exists())->toBeTrue();
+    expect(Permission::where('name', 'rapor.input-wali')->exists())->toBeTrue();
+    expect(Permission::where('name', 'rapor.ajukan')->exists())->toBeTrue();
+    expect(Permission::where('name', 'rapor.verify')->exists())->toBeTrue();
+    expect(Permission::where('name', 'rapor.approve')->exists())->toBeTrue();
 });
 
 it('seeds the kalender-akademik.kelola-nasional permission row', function () {
@@ -33,7 +37,7 @@ it('is idempotent when run twice', function () {
     (new PermissionSeeder())->run();
     (new PermissionSeeder())->run();
 
-    expect(Permission::count())->toBe(109);
+    expect(Permission::count())->toBe(113);
 });
 
 it('removes orphaned legacy flat-name permissions on re-seed', function () {
