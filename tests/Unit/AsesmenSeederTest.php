@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Asesmen;
+use App\Domains\Akademik\Models\Asesmen;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\TahunAjaran;

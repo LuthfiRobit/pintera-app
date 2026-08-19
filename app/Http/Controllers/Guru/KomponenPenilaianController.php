@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Guru;
 
 use App\Models\JadwalPelajaran;
-use App\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;

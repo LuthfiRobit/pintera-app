@@ -1,8 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Lembaga;
+use App\Models\MataPelajaran;
+use App\Models\Semester;
+use Database\Factories\KomponenPenilaianFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,6 +20,11 @@ class KomponenPenilaian extends Model
     protected $table = 'komponen_penilaian';
 
     protected $fillable = ['mata_pelajaran_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp'];
+
+    protected static function newFactory(): KomponenPenilaianFactory
+    {
+        return KomponenPenilaianFactory::new();
+    }
 
     protected static function booted(): void
     {

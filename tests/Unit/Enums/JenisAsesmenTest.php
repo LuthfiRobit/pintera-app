@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\JenisAsesmen;
+use App\Domains\Akademik\Enums\JenisAsesmen;
 
 it('defines all 6 cases from the design spec', function () {
     expect(array_column(JenisAsesmen::cases(), 'value'))->toBe([

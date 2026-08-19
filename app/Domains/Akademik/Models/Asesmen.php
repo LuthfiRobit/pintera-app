@@ -1,9 +1,15 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
-use App\Enums\JenisAsesmen;
+use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Guru;
+use App\Models\Kelas;
+use App\Models\Lembaga;
+use App\Models\MataPelajaran;
+use App\Models\Semester;
+use Database\Factories\AsesmenFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,6 +37,11 @@ class Asesmen extends Model
         'jenis' => JenisAsesmen::class,
         'tanggal' => 'date',
     ];
+
+    protected static function newFactory(): AsesmenFactory
+    {
+        return AsesmenFactory::new();
+    }
 
     protected static function booted(): void
     {

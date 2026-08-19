@@ -3,11 +3,11 @@
 
 namespace Database\Seeders;
 
-use App\Enums\JenisAsesmen;
-use App\Models\Asesmen;
+use App\Domains\Akademik\Enums\JenisAsesmen;
+use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Models\Guru;
 use App\Models\Kelas;
-use App\Models\KomponenPenilaian;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
 use App\Models\Semester;

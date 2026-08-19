@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Enums\JenisAsesmen;
-use App\Models\Asesmen;
+use App\Domains\Akademik\Enums\JenisAsesmen;
+use App\Domains\Akademik\Models\Asesmen;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;

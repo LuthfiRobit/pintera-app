@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\Asesmen;
+use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\NilaiSiswa;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;

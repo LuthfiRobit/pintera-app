@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Lembaga;
+use App\Models\Siswa;
+use Database\Factories\NilaiSiswaFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +31,11 @@ class NilaiSiswa extends Model
         return [
             'nilai_angka' => 'integer',
         ];
+    }
+
+    protected static function newFactory(): NilaiSiswaFactory
+    {
+        return NilaiSiswaFactory::new();
     }
 
     protected static function booted(): void

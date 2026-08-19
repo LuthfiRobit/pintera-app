@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\Asesmen;
-use App\Models\KomponenPenilaian;
-use App\Models\NilaiSiswa;
+use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

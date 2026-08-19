@@ -1,15 +1,15 @@
 <?php
 
-use App\Enums\JenisAsesmen;
-use App\Models\Asesmen;
+use App\Domains\Akademik\Enums\JenisAsesmen;
+use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\JamPelajaran;
 use App\Models\Kelas;
-use App\Models\KomponenPenilaian;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
-use App\Models\NilaiSiswa;
 use App\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;

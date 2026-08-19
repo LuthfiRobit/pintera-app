@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
 use App\Models\Semester;
