@@ -43,6 +43,13 @@ it('never resolves a PengajuanRapor belonging to another lembaga by id, so its A
     // Route-model-binding style lookup (tenant-scoped via BelongsToTenant): PengajuanRapor milik
     // lembaga lain tidak boleh bisa di-resolve oleh aktor lembaga sendiri.
     expect(PengajuanRapor::find($pengajuanLain->id))->toBeNull();
+
+    // Kalau instance PengajuanRapor lembaga lain tetap diteruskan langsung ke Action (bukan
+    // lewat find(), misal lewat command/job internal), Action wajib menolak berdasarkan
+    // lembaga_id-nya sendiri - jangan hanya bergantung pada ApproverResolverService, yang
+    // fail-open ketika relasi approvable/requester ikut ter-scope null oleh TenantScope.
+    expect(fn () => (new VerifyPengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuanLain, $userWakaSaya, ApprovalAction::Approve))
+        ->toThrow(ValidationException::class);
 });
 
 it('rejects verify/approve when the acting user role does not match the current workflow step approver, even with a valid ApprovalRequest', function () {
