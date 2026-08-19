@@ -11,17 +11,21 @@ use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
+use App\Domains\Akademik\Services\RaporPdfDataBuilder;
 use App\Http\Requests\Akademik\StoreCatatanWaliKelasRequest;
 use App\Http\Requests\Akademik\SubmitPengajuanRaporRequest;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class RaporController extends BaseController
@@ -34,6 +38,7 @@ class RaporController extends BaseController
         private readonly SimpanCatatanWaliKelasAction $simpanCatatanWaliKelasAction,
         private readonly SubmitPengajuanRaporAction $submitPengajuanRaporAction,
         private readonly GenerateNarasiPerkembanganAction $generateNarasiPerkembanganAction,
+        private readonly RaporPdfDataBuilder $raporPdfDataBuilder,
     ) {
     }
 
@@ -203,5 +208,24 @@ class RaporController extends BaseController
         return redirect()
             ->route('guru.rapor.catatan.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id])
             ->with('success', 'Rapor kelas berhasil diajukan untuk verifikasi Waka Kurikulum.');
+    }
+
+    public function cetak(Siswa $siswa, Request $request): Response
+    {
+        $this->authorize('rapor.input-wali');
+
+        $guru = $request->user()->guru;
+        abort_if($guru === null, 403);
+        abort_unless($siswa->kelas && $siswa->kelas->wali_kelas_guru_id === $guru->id, 403);
+
+        $semester = Semester::find((int) $request->query('semester_id'));
+        abort_if($semester === null, 404);
+
+        $data = $this->raporPdfDataBuilder->build($siswa, $semester);
+        $template = $this->raporPdfDataBuilder->templateUntukJenjang($siswa->kelas->lembaga->bentuk_pendidikan);
+
+        $pdf = Pdf::loadView($template, $data);
+
+        return $pdf->stream('rapor-'.Str::slug($siswa->nama_lengkap).'.pdf');
     }
 }

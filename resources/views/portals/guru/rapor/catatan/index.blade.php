@@ -89,6 +89,10 @@
                                         <a href="{{ route('guru.rapor.catatan.edit', ['siswa' => $siswa->id, 'semester_id' => $semester->id]) }}" class="font-semibold text-brand-600 hover:underline">
                                             Isi Catatan
                                         </a>
+                                        <span class="text-gray-300 mx-1">|</span>
+                                        <a href="{{ route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semester->id]) }}" target="_blank" class="font-semibold text-gray-500 hover:underline">
+                                            Cetak PDF
+                                        </a>
                                     </td>
                                 </tr>
                             @empty

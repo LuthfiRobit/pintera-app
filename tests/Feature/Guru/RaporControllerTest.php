@@ -202,3 +202,22 @@ it('rejects submitting a pengajuan for a kelas the guru is not wali kelas of', f
         ->post(route('guru.rapor.pengajuan.submit'), ['kelas_id' => $kelasLain->id, 'semester_id' => $semester->id])
         ->assertForbidden();
 });
+
+it('streams a pdf for a siswa the guru is wali kelas of', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toContain('application/pdf');
+});
+
+it('rejects printing a pdf for a siswa the guru is not wali kelas of', function () {
+    ['guruUser' => $guruUser, 'lembaga' => $lembaga, 'tahunAjaran' => $tahunAjaran, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLain->id]);
+
+    $this->actingAs($guruUser)
+        ->get(route('guru.rapor.cetak', ['siswa' => $siswaLain->id, 'semester_id' => $semester->id]))
+        ->assertForbidden();
+});
