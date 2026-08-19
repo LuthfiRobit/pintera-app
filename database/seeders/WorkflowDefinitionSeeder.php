@@ -42,5 +42,37 @@ class WorkflowDefinitionSeeder extends Seeder
                 'is_final_step' => true,
             ]
         );
+
+        // 2. Workflow Persetujuan Rapor Semester
+        $rapor = WorkflowDefinition::updateOrCreate(
+            ['code' => 'RAPOR_SEMESTER'],
+            [
+                'nama_workflow' => 'Persetujuan Rapor Semester',
+                'deskripsi' => 'Alur verifikasi Waka Kurikulum dan persetujuan akhir Kepala Sekolah untuk pengajuan rapor per kelas per semester.',
+                'is_active' => true,
+            ]
+        );
+
+        WorkflowStep::updateOrCreate(
+            ['workflow_definition_id' => $rapor->id, 'step_number' => 1],
+            [
+                'step_name' => 'Verifikasi Waka Kurikulum',
+                'approver_type' => ApproverType::Role,
+                'approver_value' => 'admin_akademik',
+                'scope_level' => 'lembaga',
+                'is_final_step' => false,
+            ]
+        );
+
+        WorkflowStep::updateOrCreate(
+            ['workflow_definition_id' => $rapor->id, 'step_number' => 2],
+            [
+                'step_name' => 'Persetujuan Akhir Kepala Sekolah',
+                'approver_type' => ApproverType::Role,
+                'approver_value' => 'kepala_sekolah',
+                'scope_level' => 'lembaga',
+                'is_final_step' => true,
+            ]
+        );
     }
 }
