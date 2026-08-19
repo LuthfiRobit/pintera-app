@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers\Guru;
 
+use App\Domains\Akademik\Actions\Penilaian\CreateAsesmenAction;
+use App\Domains\Akademik\Actions\Penilaian\SimpanNilaiSiswaAction;
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Http\Requests\Akademik\StoreAsesmenRequest;
+use App\Http\Requests\Akademik\UpdateNilaiSiswaRequest;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
@@ -14,12 +18,17 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AsesmenController extends BaseController
 {
     use AuthorizesRequests;
+
+    public function __construct(
+        private readonly CreateAsesmenAction $createAsesmenAction,
+        private readonly SimpanNilaiSiswaAction $simpanNilaiSiswaAction,
+    ) {
+    }
 
     public function index(Request $request): View
     {
@@ -60,27 +69,12 @@ class AsesmenController extends BaseController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreAsesmenRequest $request): RedirectResponse
     {
-        $this->authorize('asesmen.kelola');
-
         $guru = $request->user()->guru;
-        abort_if(!$guru, 403, 'Profil guru tidak ditemukan.');
+        abort_if(! $guru, 403, 'Profil guru tidak ditemukan.');
 
-        $data = $request->validate([
-            'kelas_id' => ['required', 'integer'],
-            'mata_pelajaran_id' => ['required', 'integer'],
-            'semester_id' => ['required', 'integer'],
-            'jenis' => ['required', 'in:sumatif_lingkup_materi,sumatif_akhir_semester,sumatif_akhir_jenjang'],
-            'judul' => ['required', 'string', 'max:255'],
-            'tanggal' => ['required', 'date'],
-            'komponen_id' => ['required', 'array', 'min:1'],
-            'komponen_id.*' => ['integer'],
-        ], [
-            'komponen_id.required' => 'Pilih minimal satu Tujuan Pembelajaran.',
-            'komponen_id.min' => 'Pilih minimal satu Tujuan Pembelajaran.',
-        ]);
-
+        $data = $request->validated();
         $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
             ->where('kelas_id', $data['kelas_id'])
             ->where('mata_pelajaran_id', $data['mata_pelajaran_id'])
@@ -89,39 +83,7 @@ class AsesmenController extends BaseController
 
         abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi kelas dan mata pelajaran ini.');
 
-        $komponenIds = !empty($data['komponen_id'])
-            ? KomponenPenilaian::whereIn('id', $data['komponen_id'])->where('mata_pelajaran_id', $data['mata_pelajaran_id'])->pluck('id')
-            : collect();
-
-        $asesmen = DB::transaction(function () use ($guru, $data, $komponenIds) {
-            $asesmen = Asesmen::create([
-                'guru_id' => $guru->id,
-                'kelas_id' => $data['kelas_id'],
-                'mata_pelajaran_id' => $data['mata_pelajaran_id'],
-                'semester_id' => $data['semester_id'],
-                'jenis' => JenisAsesmen::from($data['jenis']),
-                'judul' => $data['judul'],
-                'tanggal' => $data['tanggal'],
-            ]);
-
-            if ($komponenIds->isNotEmpty()) {
-                $asesmen->komponenPenilaian()->attach($komponenIds);
-            }
-
-            // Populate initial empty NilaiSiswa rows for all enrolled students, per komponen
-            $siswaList = $asesmen->kelas->siswa()->get();
-            foreach ($siswaList as $siswa) {
-                foreach ($komponenIds as $komponenId) {
-                    NilaiSiswa::firstOrCreate([
-                        'asesmen_id' => $asesmen->id,
-                        'siswa_id' => $siswa->id,
-                        'komponen_penilaian_id' => $komponenId,
-                    ]);
-                }
-            }
-
-            return $asesmen;
-        });
+        $asesmen = $this->createAsesmenAction->execute($guru, $request->toDTO());
 
         return redirect()->route('guru.asesmen.show', $asesmen)->with('status', 'Asesmen berhasil dibuat. Silakan masukkan nilai peserta didik.');
     }
@@ -172,41 +134,11 @@ class AsesmenController extends BaseController
         ]);
     }
 
-    public function updateNilai(Request $request, Asesmen $asesmen): RedirectResponse
+    public function updateNilai(UpdateNilaiSiswaRequest $request, Asesmen $asesmen): RedirectResponse
     {
-        $this->authorize('asesmen.kelola');
         $this->authorizeMilikGuru($asesmen);
 
-        $komponenIds = $asesmen->komponenPenilaian()->pluck('komponen_penilaian.id');
-        $siswaIds = $asesmen->kelas->siswa()->pluck('id');
-
-        $data = $request->validate([
-            'nilai' => ['required', 'array'],
-            'nilai.*.*.nilai_angka' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'nilai.*.*.catatan' => ['nullable', 'string'],
-        ]);
-
-        DB::transaction(function () use ($asesmen, $data, $komponenIds, $siswaIds) {
-            foreach ($data['nilai'] as $siswaId => $perKomponen) {
-                if (!$siswaIds->contains((int) $siswaId)) {
-                    continue;
-                }
-
-                foreach ($perKomponen as $komponenId => $values) {
-                    if (!$komponenIds->contains((int) $komponenId)) {
-                        continue;
-                    }
-
-                    NilaiSiswa::updateOrCreate(
-                        ['asesmen_id' => $asesmen->id, 'siswa_id' => $siswaId, 'komponen_penilaian_id' => $komponenId],
-                        [
-                            'nilai_angka' => isset($values['nilai_angka']) && $values['nilai_angka'] !== '' ? (int) $values['nilai_angka'] : null,
-                            'catatan' => $values['catatan'] ?? null,
-                        ]
-                    );
-                }
-            }
-        });
+        $this->simpanNilaiSiswaAction->execute($asesmen, $request->toDTO());
 
         return redirect()->route('guru.asesmen.show', $asesmen)->with('status', 'Nilai dan catatan asesmen berhasil disimpan.');
     }
