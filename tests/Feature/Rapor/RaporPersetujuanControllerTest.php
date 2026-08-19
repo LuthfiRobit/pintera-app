@@ -161,3 +161,33 @@ it('rejects a decision from the wrong step (Kepsek trying to decide before Waka 
         ->post(route('admin.rapor.persetujuan.decision', $pengajuan), ['action' => 'APPROVE'])
         ->assertNotFound();
 });
+
+it('streams a pdf for Waka without requiring the step-matching guard', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan, 'siswa' => $siswa] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuan->id, 'siswa' => $siswa->id]));
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toContain('application/pdf');
+});
+
+it('streams a pdf for Kepsek even before the pengajuan reaches their step', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userKepsek' => $userKepsek, 'pengajuan' => $pengajuan, 'siswa' => $siswa] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userKepsek)->get(route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuan->id, 'siswa' => $siswa->id]));
+
+    $response->assertOk();
+});
+
+it('rejects printing a siswa that does not belong to the pengajuan kelas', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan, 'lembaga' => $lembaga] = siapkanAktorPersetujuan();
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id])]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLain->id]);
+
+    $this->actingAs($userWaka)
+        ->get(route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuan->id, 'siswa' => $siswaLain->id]))
+        ->assertNotFound();
+});

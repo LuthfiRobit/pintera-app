@@ -10,12 +10,17 @@ use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
 use App\Domains\Akademik\Services\RaporCalculationService;
+use App\Domains\Akademik\Services\RaporPdfDataBuilder;
 use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Http\Requests\Akademik\ProcessRaporApprovalRequest;
+use App\Models\Siswa;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PersetujuanController extends BaseController
@@ -26,6 +31,7 @@ class PersetujuanController extends BaseController
         private readonly RaporCalculationService $raporCalculationService,
         private readonly VerifyPengajuanRaporAction $verifyPengajuanRaporAction,
         private readonly ApprovePengajuanRaporAction $approvePengajuanRaporAction,
+        private readonly RaporPdfDataBuilder $raporPdfDataBuilder,
     ) {
     }
 
@@ -68,6 +74,19 @@ class PersetujuanController extends BaseController
             'pengajuanRapor' => $pengajuanRapor,
             'catatanList' => $catatanList,
         ], $rekap));
+    }
+
+    public function cetak(PengajuanRapor $pengajuanRapor, Siswa $siswa, Request $request): Response
+    {
+        abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
+        abort_unless($siswa->kelas_id === $pengajuanRapor->kelas_id, 404);
+
+        $data = $this->raporPdfDataBuilder->build($siswa, $pengajuanRapor->semester);
+        $template = $this->raporPdfDataBuilder->templateUntukJenjang($pengajuanRapor->kelas->lembaga->bentuk_pendidikan);
+
+        $pdf = Pdf::loadView($template, $data);
+
+        return $pdf->stream('rapor-'.Str::slug($siswa->nama_lengkap).'.pdf');
     }
 
     public function decision(ProcessRaporApprovalRequest $request, PengajuanRapor $pengajuanRapor): RedirectResponse

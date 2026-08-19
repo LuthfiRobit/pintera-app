@@ -52,7 +52,12 @@
             @foreach ($siswaList as $siswa)
                 @php($catatan = $catatanList->get($siswa->id))
                 <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
-                    <p class="font-semibold text-gray-900 mb-2">{{ $siswa->nama_lengkap }}</p>
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="font-semibold text-gray-900">{{ $siswa->nama_lengkap }}</p>
+                        <a href="{{ route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuanRapor->id, 'siswa' => $siswa->id]) }}" target="_blank" class="text-xs font-semibold text-brand-600 hover:underline">
+                            Cetak PDF
+                        </a>
+                    </div>
                     @if ($catatan)
                         <dl class="grid grid-cols-1 gap-2 text-xs text-gray-600 sm:grid-cols-2">
                             <div><dt class="font-semibold text-gray-500">Catatan Sikap</dt><dd>{{ $catatan->catatan_sikap ?: '—' }}</dd></div>
