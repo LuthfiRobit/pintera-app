@@ -14,6 +14,7 @@ use Spatie\Permission\Models\Permission;
 
 function siapkanWaliKelasUntukRapor(string $bentukPendidikan = 'SD'): array
 {
+    (new \Database\Seeders\WorkflowDefinitionSeeder())->run();
     Permission::firstOrCreate(['name' => 'rapor.input-wali', 'guard_name' => 'web']);
     Permission::firstOrCreate(['name' => 'rapor.ajukan', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'guru_wali_rapor', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
@@ -163,4 +164,41 @@ it('generates a narasi draft via AJAX for a siswa with nilai', function () {
     $response = $this->actingAs($guruUser)->post(route('guru.rapor.catatan.generate-narasi', ['siswa' => $siswa->id, 'semester_id' => $semester->id]));
     $response->assertOk();
     $response->assertJson(['narasi' => 'Menunjukkan penguasaan sangat baik dalam membaca lancar.']);
+});
+
+it('submits the pengajuan rapor when every siswa has a CatatanWaliKelas', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    CatatanWaliKelas::factory()->create(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]);
+
+    $response = $this->actingAs($guruUser)->post(route('guru.rapor.pengajuan.submit'), [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+    ]);
+
+    $response->assertRedirect(route('guru.rapor.catatan.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+    $this->assertDatabaseHas('pengajuan_rapor', [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Diajukan->value,
+    ]);
+});
+
+it('redirects back with errors when a siswa is missing a CatatanWaliKelas on submit', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+
+    $response = $this->actingAs($guruUser)->post(route('guru.rapor.pengajuan.submit'), [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+    ]);
+
+    $response->assertSessionHasErrors('catatan_wali_kelas');
+});
+
+it('rejects submitting a pengajuan for a kelas the guru is not wali kelas of', function () {
+    ['guruUser' => $guruUser, 'lembaga' => $lembaga, 'tahunAjaran' => $tahunAjaran, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+
+    $this->actingAs($guruUser)
+        ->post(route('guru.rapor.pengajuan.submit'), ['kelas_id' => $kelasLain->id, 'semester_id' => $semester->id])
+        ->assertForbidden();
 });
