@@ -120,10 +120,10 @@ Rencana kerja ini mengimplementasikan spesifikasi arsitektur Modul Akademik dan 
 - [x] **5.1. Pendaftaran Rute Modular:** (2026-08-20, lihat `.agents/specs/2026-08-20-fase-5-1-restrukturisasi-rute-modular-design.md` dan `.agents/plans/2026-08-20-fase-5-1-restrukturisasi-rute-modular.md`)
   - [x] Split per MODUL domain (bukan per scope aktor seperti draft awal) — `routes/admin.php` jadi loader 13 file di `routes/admin/`, plus `routes/kasus.php` dan `routes/guru.php` dipisah keluar dari admin.php.
   - [x] Tidak perlu alias backward-compat — zero rename nama route/URI, diverifikasi lewat diff `php artisan route:list` di tiap task.
-- [ ] **5.2. Auto-Discovery Permissions Sync:**
-  - [ ] Jalankan `php artisan permissions:sync` dan pastikan seluruh permission akademik baru terdaftar rapi.
-- [ ] **5.3. Full Regression Test Suite:**
-  - [ ] Jalankan `php artisan test` secara menyeluruh dan pastikan 100% test lulus hijau tanpa kegagalan.
+- [x] **5.2. Auto-Discovery Permissions Sync:** (2026-08-20)
+  - [x] `php artisan permissions:sync` dijalankan setelah FASE 5.1 — tidak ada permission baru yang perlu dibuat (restrukturisasi rute tidak menambah `authorize()` baru), sesuai ekspektasi. Satu entri stale (`pola-jam.kelola`) terdeteksi tapi itu murni artefak tabel `permissions` di DB lokal (dev DB belum di-reseed sejak fix `2e58e80`), bukan masalah kode — seeder sudah benar. 4 permission mati lain sudah dikonfirmasi sengaja dibiarkan sejak RBAC v2.
+- [x] **5.3. Full Regression Test Suite:** (2026-08-20)
+  - [x] `php artisan test` — **1861 passed, 0 failed** (dijalankan di FASE 5.1 Task 15, setelah seluruh restrukturisasi rute selesai; tidak ada perubahan kode sejak itu sampai `permissions:sync` di 5.2, jadi hasil ini tetap berlaku untuk 5.3).
 
 ---
 
