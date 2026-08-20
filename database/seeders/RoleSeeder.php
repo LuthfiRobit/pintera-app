@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
 
 class RoleSeeder extends Seeder
 {
@@ -21,6 +20,8 @@ class RoleSeeder extends Seeder
             'orang_tua' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
             'karyawan_pool' => ['scope_level' => 'yayasan', 'is_protected' => false],
             'karyawan_lembaga' => ['scope_level' => 'lembaga', 'is_protected' => false],
+            'bendahara_yayasan' => ['scope_level' => 'yayasan', 'is_protected' => false],
+            'admin_sarpras' => ['scope_level' => 'yayasan', 'is_protected' => false],
         ];
 
         foreach ($roles as $name => $attributes) {
@@ -28,10 +29,6 @@ class RoleSeeder extends Seeder
                 ['name' => $name, 'guard_name' => 'web'],
                 $attributes
             );
-
-            if ($name === 'yayasan_super_admin') {
-                $role->syncPermissions(Permission::pluck('name')->all());
-            }
 
             if ($name === 'admin_administrasi') {
                 $role->givePermissionTo([

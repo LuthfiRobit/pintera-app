@@ -76,10 +76,9 @@ class DatabaseSeeder extends Seeder
             OrangTuaKaryawanSeeder::class,
             PendampinganSeeder::class,
             KeuanganDemoSeeder::class,
-            SarprasPermissionSeeder::class,
-            PengadaanPermissionSeeder::class,
             WorkflowDefinitionSeeder::class,
             SarprasPengadaanDemoSeeder::class,
+            RolePermissionAssignmentSeeder::class,
         ]);
     }
 }

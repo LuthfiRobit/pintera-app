@@ -28,8 +28,6 @@ it('does not use any permission in controllers, requests, policies, or blade vie
 
     $registered = array_keys($scanner->scanSeederRegistrations([
         'database/seeders/PermissionSeeder.php',
-        'database/seeders/PengadaanPermissionSeeder.php',
-        'database/seeders/SarprasPermissionSeeder.php',
     ]));
 
     $rusak = array_values(array_diff($used, $registered, $allowlistTemuanLama));

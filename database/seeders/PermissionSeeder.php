@@ -62,6 +62,19 @@ class PermissionSeeder extends Seeder
             'jadwal-pelajaran.kelola',
             'kalender-akademik.view', 'kalender-akademik.kelola', 'kalender-akademik.kelola-nasional',
             'pengaturan-akademik.kelola',
+            // Sarpras (dipindah dari SarprasPermissionSeeder.php, dihapus — lihat Task 1 §3 spec)
+            'sarpras.gedung.view', 'sarpras.gedung.manage',
+            'sarpras.ruangan.view', 'sarpras.ruangan.manage',
+            'sarpras.kategori.view', 'sarpras.kategori.manage',
+            'sarpras.aset.view', 'sarpras.aset.manage',
+            'sarpras.mutasi.create', 'sarpras.mutasi.view',
+            'sarpras.kir.export',
+            // Pengadaan (dipindah dari PengadaanPermissionSeeder.php, dihapus — lihat Task 1 §3 spec)
+            'pengadaan.proposal.create', 'pengadaan.proposal.view', 'pengadaan.proposal.edit', 'pengadaan.proposal.delete',
+            'pengadaan.approval.internal', 'pengadaan.approval.yayasan',
+            'pengadaan.disbursement.manage',
+            'pengadaan.lpj.submit', 'pengadaan.lpj.verify',
+            'workflow.config.manage',
             'rpp.view', 'rpp.kelola', 'rpp.verify',
         ];
 

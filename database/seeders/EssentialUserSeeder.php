@@ -38,6 +38,7 @@ class EssentialUserSeeder extends Seeder
             'keuangan@sistem.test' => ['name' => 'Admin Keuangan (Contoh)', 'role' => 'admin_keuangan'],
             'akademik@sistem.test' => ['name' => 'Admin Akademik (Contoh)', 'role' => 'admin_akademik'],
             'guru@sistem.test' => ['name' => 'Guru (Contoh)', 'role' => 'guru'],
+            'sarpras@sistem.test' => ['name' => 'Admin Sarpras (Contoh)', 'role' => 'admin_sarpras'],
         ];
 
         foreach ($akunLembagaScoped as $email => $data) {

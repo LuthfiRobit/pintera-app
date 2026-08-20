@@ -10,8 +10,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\PengadaanPermissionSeeder;
-use Database\Seeders\SarprasPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -39,7 +38,7 @@ class CrossTenantIsolationTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed([SarprasPermissionSeeder::class, PengadaanPermissionSeeder::class]);
+        $this->seed(PermissionSeeder::class);
 
         $this->yayasanA = Yayasan::create(['nama' => 'Yayasan Permata']);
         $yayasanB = Yayasan::create(['nama' => 'Yayasan Cendekia']);

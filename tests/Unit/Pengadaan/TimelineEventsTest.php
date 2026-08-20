@@ -14,8 +14,7 @@ use App\Domains\Workflow\Models\WorkflowStep;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\PengadaanPermissionSeeder;
-use Database\Seeders\SarprasPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,8 +26,7 @@ class TimelineEventsTest extends TestCase
     public function test_timeline_aggregates_all_lifecycle_events_in_order(): void
     {
         $this->seed([
-            SarprasPermissionSeeder::class,
-            PengadaanPermissionSeeder::class,
+            PermissionSeeder::class,
             WorkflowDefinitionSeeder::class,
         ]);
 

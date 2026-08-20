@@ -6,7 +6,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\SarprasPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -16,7 +16,7 @@ class RekapAsetGlobalTest extends TestCase
 
     public function test_superadmin_can_access_dashboard_and_rekap_aset_global(): void
     {
-        $this->seed(SarprasPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidikan']);
         $lembaga = Lembaga::create([

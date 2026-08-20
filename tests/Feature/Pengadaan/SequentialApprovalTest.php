@@ -13,8 +13,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\PengadaanPermissionSeeder;
-use Database\Seeders\SarprasPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,8 +25,7 @@ class SequentialApprovalTest extends TestCase
     public function test_sequential_approval_from_kepsek_to_bendahara_yayasan(): void
     {
         $this->seed([
-            SarprasPermissionSeeder::class,
-            PengadaanPermissionSeeder::class,
+            PermissionSeeder::class,
             WorkflowDefinitionSeeder::class,
         ]);
 

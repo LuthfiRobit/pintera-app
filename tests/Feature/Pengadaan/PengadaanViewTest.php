@@ -8,7 +8,7 @@ use App\Domains\Pengadaan\Models\PengajuanPengadaan;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\PengadaanPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,7 +19,7 @@ class PengadaanViewTest extends TestCase
 
     public function test_can_render_pengadaan_index_page(): void
     {
-        $this->seed([WorkflowDefinitionSeeder::class, PengadaanPermissionSeeder::class]);
+        $this->seed([WorkflowDefinitionSeeder::class, PermissionSeeder::class]);
 
         $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidikan']);
         $lembaga = Lembaga::create([

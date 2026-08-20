@@ -9,7 +9,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\SarprasPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,7 +19,7 @@ class GedungRuanganControllerTest extends TestCase
 
     public function test_admin_sarpras_can_create_gedung_and_ruangan(): void
     {
-        $this->seed(SarprasPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         $yayasan = Yayasan::create(['nama' => 'Yayasan']);
         $lembaga = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'SDIT', 'jenjang' => 'SD', 'npsn' => '123', 'status_aktif' => true]);

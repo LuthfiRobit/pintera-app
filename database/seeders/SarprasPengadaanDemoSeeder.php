@@ -39,8 +39,6 @@ class SarprasPengadaanDemoSeeder extends Seeder
     {
         $this->command?->info('Menyiapkan Permissions, Roles, dan Workflow...');
         $this->callOnce([
-            SarprasPermissionSeeder::class,
-            PengadaanPermissionSeeder::class,
             WorkflowDefinitionSeeder::class,
         ]);
 

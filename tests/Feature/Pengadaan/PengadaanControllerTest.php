@@ -9,7 +9,7 @@ use App\Domains\Sarpras\Models\Ruangan;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\PengadaanPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,7 +20,7 @@ class PengadaanControllerTest extends TestCase
 
     public function test_admin_lembaga_can_create_proposal_and_submit(): void
     {
-        $this->seed([WorkflowDefinitionSeeder::class, PengadaanPermissionSeeder::class]);
+        $this->seed([WorkflowDefinitionSeeder::class, PermissionSeeder::class]);
 
         $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidik']);
         $lembaga = Lembaga::create([

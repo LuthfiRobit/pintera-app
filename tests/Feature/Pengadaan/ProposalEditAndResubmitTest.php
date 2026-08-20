@@ -20,8 +20,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\PengadaanPermissionSeeder;
-use Database\Seeders\SarprasPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -42,8 +41,7 @@ class ProposalEditAndResubmitTest extends TestCase
         parent::setUp();
 
         $this->seed([
-            SarprasPermissionSeeder::class,
-            PengadaanPermissionSeeder::class,
+            PermissionSeeder::class,
             WorkflowDefinitionSeeder::class,
         ]);
 

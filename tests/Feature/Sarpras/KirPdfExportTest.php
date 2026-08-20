@@ -14,7 +14,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
-use Database\Seeders\SarprasPermissionSeeder;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,7 +24,7 @@ class KirPdfExportTest extends TestCase
 
     public function test_can_stream_kir_pdf_for_room(): void
     {
-        $this->seed(SarprasPermissionSeeder::class);
+        $this->seed(PermissionSeeder::class);
 
         $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidikan Utama']);
         $lembaga = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'SDIT Al-Hikmah', 'jenjang' => 'SD', 'npsn' => '123', 'status_aktif' => true]);
