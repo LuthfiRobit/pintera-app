@@ -1,14 +1,17 @@
 <?php
-// app/Http/Controllers/KasusTugasSubmissionController.php
 
 namespace App\Http\Controllers;
 
+use App\Domains\Kasus\Actions\Submission\ReviewSubmissionAction;
+use App\Domains\Kasus\Actions\Submission\SubmitBuktiTugasAction;
+use App\Domains\Kasus\DataTransferObjects\ReviewSubmissionData;
+use App\Domains\Kasus\DataTransferObjects\SubmitBuktiTugasData;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusConsent;
 use App\Domains\Kasus\Models\KasusTugas;
 use App\Domains\Kasus\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Policies\KasusPolicy;
 use App\Models\Scopes\TenantScope;
-use App\Notifications\SubmissionRevisiNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +23,7 @@ class KasusTugasSubmissionController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function store(Request $request, Kasus $kasus, KasusTugas $kasusTugas): RedirectResponse
+    public function store(Request $request, Kasus $kasus, KasusTugas $kasusTugas, SubmitBuktiTugasAction $action): RedirectResponse
     {
         $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
@@ -50,48 +53,38 @@ class KasusTugasSubmissionController extends BaseController
             ? $request->file('lampiran')->store('kasus-tugas-lampiran', 'local')
             : null;
 
-        KasusTugasSubmission::create([
-            'tugas_id' => $kasusTugas->id,
-            'siswa_id' => $isSiswaTerkait ? $siswa->id : null,
-            'orang_tua_id' => $isSiswaTerkait ? null : $user->orangTua->id,
-            'teks' => $data['teks'] ?? null,
-            'lampiran' => $lampiranPath,
-        ]);
+        $action->execute(
+            $kasusTugas,
+            new SubmitBuktiTugasData(teks: $data['teks'] ?? null, lampiranPath: $lampiranPath),
+            isSiswaTerkait: $isSiswaTerkait,
+            siswaId: $siswa->id,
+            orangTuaId: $isSiswaTerkait ? null : $user->orangTua->id,
+        );
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Bukti pengerjaan berhasil dikirim.');
     }
 
-    public function review(Request $request, Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission): RedirectResponse
+    public function review(Request $request, Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission, ReviewSubmissionAction $action): RedirectResponse
     {
         $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
         abort_if($kasusTugasSubmission->tugas_id !== $kasusTugas->id, 404);
-        $this->assertKonselorPemegangKasus($kasus);
+        $this->authorize('kelolaSesiTugas', $kasus);
 
         $data = $request->validate([
             'status_review' => ['required', 'in:diterima,revisi_diminta'],
             'catatan_revisi' => ['required_if:status_review,revisi_diminta', 'nullable', 'string'],
         ]);
 
-        $kasusTugasSubmission->update([
-            'status_review' => $data['status_review'],
-            'catatan_revisi' => $data['catatan_revisi'] ?? null,
-        ]);
-
-        if ($data['status_review'] === 'revisi_diminta') {
-            $kasusTugas->update(['status' => 'revisi']);
-
-            $notifiable = $kasusTugasSubmission->siswa_id !== null
-                ? $kasusTugasSubmission->siswa()->withoutGlobalScope(TenantScope::class)->first()
-                    ?->user()->withoutGlobalScope(TenantScope::class)->first()
-                : $kasusTugasSubmission->orangTua;
-            $notifiable?->notify(new SubmissionRevisiNotification($kasusTugasSubmission));
-        }
+        $action->execute($kasusTugas, $kasusTugasSubmission, new ReviewSubmissionData(
+            statusReview: $data['status_review'],
+            catatanRevisi: $data['catatan_revisi'] ?? null,
+        ));
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Review submission berhasil disimpan.');
     }
 
-    public function download(Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission): StreamedResponse
+    public function download(Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission, KasusPolicy $policy): StreamedResponse
     {
         $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
@@ -102,28 +95,8 @@ class KasusTugasSubmissionController extends BaseController
         $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
         abort_if($siswa === null, 404);
 
-        $isSubmitter = ($kasusTugasSubmission->siswa_id !== null && $kasusTugasSubmission->siswa_id === $user->siswa?->id)
-            || ($kasusTugasSubmission->orang_tua_id !== null && $kasusTugasSubmission->orang_tua_id === $user->orangTua?->id);
-        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
-        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
-            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
-        $isKontakUtama = $user->orangTua !== null
-            && $siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
-        $isTriaseAdmin = $user->can('kasus.triase')
-            && ($user->widestScopeLevel() === 'yayasan' || $kasus->lembaga_id === $user->lembaga_id);
-
-        abort_if(! $isSubmitter && ! $isKonselor && ! $isKontakUtama && ! $isTriaseAdmin, 404);
+        abort_if(! $policy->downloadLampiran($user, $kasus, $kasusTugasSubmission, $siswa), 404);
 
         return Storage::disk('local')->download($kasusTugasSubmission->lampiran);
-    }
-
-    private function assertKonselorPemegangKasus(Kasus $kasus): void
-    {
-        $user = auth()->user();
-        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
-        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
-            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
-
-        abort_unless($isKonselor, 403);
     }
 }

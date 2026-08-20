@@ -12,10 +12,41 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use App\Domains\Kasus\Enums\StatusKasus;
+use App\Models\Guru;
+use App\Models\Siswa;
 use Spatie\Permission\Models\Permission;
 
-function buatKasusDenganTugasDanKontakUtama(Lembaga $lembaga): array
-{
+if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
+    function buatKasusDitugaskanKeGuruBk(Lembaga $lembaga): array
+    {
+        $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+        $konselorUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $role->givePermissionTo(['kasus.view']);
+        $konselorUser->assignRole('guru');
+        $guruBk = Guru::withoutGlobalScopes()->create([
+            'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
+            'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
+            'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
+            'status_aktif' => 'aktif',
+        ]);
+
+        $kasus = Kasus::create([
+            'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+            'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+            'status' => StatusKasus::Ditugaskan, 'konselor_guru_id' => $guruBk->id,
+        ]);
+
+        return [$kasus, $konselorUser, $siswa];
+    }
+}
+
+if (! function_exists('buatKasusDenganTugasDanKontakUtama')) {
+    function buatKasusDenganTugasDanKontakUtama(Lembaga $lembaga): array
+    {
     [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBk($lembaga);
 
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
@@ -43,6 +74,7 @@ function buatKasusDenganTugasDanKontakUtama(Lembaga $lembaga): array
     KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media']);
 
     return [$kasus, $tugas, $siswaUser, $orangTuaUser];
+    }
 }
 
 it('lets siswa submit text-only evidence before media consent is approved', function () {

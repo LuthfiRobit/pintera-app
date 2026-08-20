@@ -9,8 +9,37 @@ use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use App\Domains\Kasus\Enums\StatusKasus;
+use App\Models\Guru;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
+
+if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
+    function buatKasusDitugaskanKeGuruBk(Lembaga $lembaga): array
+    {
+        $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+        $konselorUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $role->givePermissionTo(['kasus.view']);
+        $konselorUser->assignRole('guru');
+        $guruBk = Guru::withoutGlobalScopes()->create([
+            'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
+            'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
+            'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
+            'status_aktif' => 'aktif',
+        ]);
+
+        $kasus = Kasus::create([
+            'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+            'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+            'status' => StatusKasus::Ditugaskan, 'konselor_guru_id' => $guruBk->id,
+        ]);
+
+        return [$kasus, $konselorUser, $siswa];
+    }
+}
 
 it('marks a submission revisi_diminta with a catatan and moves tugas status to revisi', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
