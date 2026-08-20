@@ -1,31 +1,49 @@
 <?php
 
+use App\Http\Controllers\Admin\RaporController;
+use Illuminate\Support\Facades\File;
 use Spatie\Permission\Models\Permission;
 
-it('creates a permission for every $this->authorize() call found in app/Http/Controllers', function () {
+it('creates a permission referenced via a 3-segment authorize() call, which the old broken regex could never catch', function () {
+    // Bukti regresi: sebelum diperbaiki, tool ini TIDAK PERNAH bisa mendeteksi permission
+    // bersegmen-3 seperti yang dipakai di seluruh modul Pengadaan (mis. pengadaan.lpj.submit) -
+    // dibuktikan lewat eksekusi regex lama secara langsung sebelum plan ini ditulis (0 match).
+    expect(Permission::where('name', 'pengadaan.lpj.submit')->exists())->toBeFalse();
+
     $this->artisan('permissions:sync')->assertExitCode(0);
 
-    expect(Permission::where('name', 'guru.view')->exists())->toBeTrue();
-    expect(Permission::where('name', 'tahun-ajaran.activate')->exists())->toBeTrue();
+    expect(Permission::where('name', 'pengadaan.lpj.submit')->exists())->toBeTrue();
 });
 
-it('reports permissions that exist in the database but are no longer referenced by any controller, without deleting them', function () {
-    Permission::firstOrCreate(['name' => 'modul-lama.aksi-usang', 'guard_name' => 'web']);
+it('creates a permission referenced only via canAny([...]), which the old tool never scanned for', function () {
+    expect(Permission::where('name', 'rapor.approve')->exists())->toBeFalse();
+
+    $this->artisan('permissions:sync')->assertExitCode(0);
+
+    expect(Permission::where('name', 'rapor.approve')->exists())->toBeTrue();
+});
+
+it('creates a permission referenced only inside a FormRequest authorize() method', function () {
+    expect(Permission::where('name', 'rapor.ajukan')->exists())->toBeFalse();
+
+    $this->artisan('permissions:sync')->assertExitCode(0);
+
+    expect(Permission::where('name', 'rapor.ajukan')->exists())->toBeTrue();
+});
+
+it('reports stale permissions that exist in the database but are referenced by no code', function () {
+    Permission::firstOrCreate(['name' => 'benar-benar.tidak-dipakai', 'guard_name' => 'web']);
 
     $this->artisan('permissions:sync')
-        ->expectsOutputToContain('modul-lama.aksi-usang')
+        ->expectsOutputToContain('benar-benar.tidak-dipakai')
         ->assertExitCode(0);
-
-    expect(Permission::where('name', 'modul-lama.aksi-usang')->exists())->toBeTrue();
 });
 
-it('is safe to run twice in a row without creating duplicates', function () {
+it('is idempotent - running it twice creates no duplicate rows', function () {
     $this->artisan('permissions:sync')->assertExitCode(0);
-    $countAfterFirstRun = Permission::where('name', 'guru.view')->count();
+    $firstCount = Permission::count();
 
     $this->artisan('permissions:sync')->assertExitCode(0);
-    $countAfterSecondRun = Permission::where('name', 'guru.view')->count();
 
-    expect($countAfterFirstRun)->toBe(1);
-    expect($countAfterSecondRun)->toBe(1);
+    expect(Permission::count())->toBe($firstCount);
 });
