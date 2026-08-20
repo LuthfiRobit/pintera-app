@@ -1,13 +1,11 @@
 <?php
-// app/Http/Controllers/KasusTugasBatchPreviewController.php
 
 namespace App\Http\Controllers;
 
-use App\Domains\Kasus\Enums\StatusKasus;
-use App\Http\Controllers\Concerns\AssertsKonselorPemegangKasus;
-use App\Http\Requests\PreviewKasusTugasBatchRequest;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Services\TugasBatchGenerator;
+use App\Domains\Kasus\Enums\StatusKasus;
+use App\Http\Requests\PreviewKasusTugasBatchRequest;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -16,12 +14,11 @@ use Illuminate\Routing\Controller as BaseController;
 class KasusTugasBatchPreviewController extends BaseController
 {
     use AuthorizesRequests;
-    use AssertsKonselorPemegangKasus;
 
     public function preview(PreviewKasusTugasBatchRequest $request, Kasus $kasus, TugasBatchGenerator $generator): JsonResponse
     {
         $this->authorize('kasus.view');
-        $this->assertKonselorPemegangKasus($kasus);
+        $this->authorize('kelolaSesiTugas', $kasus);
         abort_if($kasus->trashed(), 404);
         abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
 
