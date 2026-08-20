@@ -64,7 +64,7 @@
             </div>
 
             <div x-ref="daftarKomponen">
-                @include('admin.komponen-penilaian._daftar')
+                @include('portals.lembaga.akademik.komponen-penilaian._daftar')
             </div>
         </div>
     </div>

@@ -24,7 +24,7 @@ class KenaikanKelasController extends BaseController
         $tahunAjaranId = $request->query('tahun_ajaran_id');
         $tahunAjaranTujuanId = $request->query('tahun_ajaran_tujuan_id');
 
-        return view('admin.kenaikan-kelas.index', [
+        return view('portals.lembaga.akademik.kenaikan-kelas.index', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
             'kelasLamaList' => $tahunAjaranId
                 ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->withCount('siswa')->orderBy('nama')->get()

@@ -29,7 +29,7 @@ class PengaturanAkademikController extends BaseController
         $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
         $lembaga = Lembaga::findOrFail($lembagaId);
 
-        return view('admin.pengaturan.akademik', [
+        return view('portals.lembaga.akademik.pengaturan.akademik', [
             'lembaga' => $lembaga,
             'entriList' => KalenderAkademik::where(fn ($q) => $q->whereNull('lembaga_id')->orWhere('lembaga_id', $lembagaId))
                 ->orderBy('tanggal')

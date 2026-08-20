@@ -107,7 +107,7 @@ it('shows the acting lembaga-scoped user\'s own hari_libur_mingguan and kalender
 
     $view = app(PengaturanAkademikController::class)->index($request);
 
-    expect($view->name())->toBe('admin.pengaturan.akademik');
+    expect($view->name())->toBe('portals.lembaga.akademik.pengaturan.akademik');
 
     $viewLembaga = $view->getData()['lembaga'];
     expect($viewLembaga->id)->toBe($lembaga->id);
@@ -128,7 +128,7 @@ it('renders the pengaturan akademik page for an authorized user', function () {
     $this->actingAs($manager)
         ->get(route('admin.pengaturan.akademik.index'))
         ->assertOk()
-        ->assertViewIs('admin.pengaturan.akademik');
+        ->assertViewIs('portals.lembaga.akademik.pengaturan.akademik');
 });
 
 it('exposes bolehKelolaHariAktif as false for a user without pengaturan-akademik.kelola', function () {

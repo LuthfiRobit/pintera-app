@@ -60,13 +60,13 @@ class RaporController extends BaseController
             : $this->rekapKosong();
 
         if ($request->ajax()) {
-            return view('admin.rapor._hasil', array_merge([
+            return view('portals.lembaga.akademik.rapor._hasil', array_merge([
                 'selectedKelas' => $selectedKelas,
                 'selectedSemester' => $selectedSemester,
             ], $rekap))->render();
         }
 
-        return view('admin.rapor.index', array_merge([
+        return view('portals.lembaga.akademik.rapor.index', array_merge([
             'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'kelasList' => $kelasList,

@@ -26,7 +26,7 @@ class PolaJamController extends BaseController
     {
         $this->authorize('pola-jam.view');
 
-        return view('admin.pola-jam.index', [
+        return view('portals.lembaga.akademik.pola-jam.index', [
             'polaJamList' => PolaJam::with(['jamPelajaran', 'lembaga', 'kelas.tahunAjaran'])->orderBy('nama')->get(),
             'kelasList' => Kelas::with(['tahunAjaran', 'polaJam'])->orderBy('nama')->get(),
         ]);
@@ -36,7 +36,7 @@ class PolaJamController extends BaseController
     {
         $this->authorize('pola-jam.create');
 
-        return view('admin.pola-jam.create');
+        return view('portals.lembaga.akademik.pola-jam.create');
     }
 
     public function store(Request $request, CreatePolaJamAction $action): RedirectResponse
@@ -65,7 +65,7 @@ class PolaJamController extends BaseController
     {
         $this->authorize('pola-jam.edit');
 
-        return view('admin.pola-jam.edit', ['polaJam' => $polaJam]);
+        return view('portals.lembaga.akademik.pola-jam.edit', ['polaJam' => $polaJam]);
     }
 
     public function update(Request $request, PolaJam $polaJam, UpdatePolaJamAction $action): RedirectResponse

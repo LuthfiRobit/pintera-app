@@ -72,7 +72,7 @@ class JamPelajaranController extends BaseController
             abort(404);
         }
 
-        return view('admin.jam-pelajaran.edit', ['jamPelajaran' => $jamPelajaran]);
+        return view('portals.lembaga.akademik.jam-pelajaran.edit', ['jamPelajaran' => $jamPelajaran]);
     }
 
     public function update(Request $request, JamPelajaran $jamPelajaran, UpdateJamPelajaranAction $action): RedirectResponse

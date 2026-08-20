@@ -59,7 +59,7 @@
             </div>
 
             <div x-ref="hasilRapor">
-                @include('admin.rapor._hasil')
+                @include('portals.lembaga.akademik.rapor._hasil')
             </div>
         </div>
     </div>

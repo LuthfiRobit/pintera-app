@@ -34,7 +34,7 @@
         @endif
 
         <div x-ref="daftarKomponen">
-            @include('guru.komponen-penilaian._daftar')
+            @include('portals.guru.akademik.komponen-penilaian._daftar')
         </div>
     </div>
 </x-app-layout>

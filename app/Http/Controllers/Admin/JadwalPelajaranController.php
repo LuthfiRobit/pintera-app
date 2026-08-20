@@ -90,7 +90,7 @@ class JadwalPelajaranController extends BaseController
             : Ruangan::where('is_aktif', true)->orderBy('nama_ruangan')->get();
 
         if ($request->ajax()) {
-            return view('admin.jadwal-pelajaran._daftar', [
+            return view('portals.lembaga.akademik.jadwal-pelajaran._daftar', [
                 'jadwalList' => $jadwalList,
                 'hariAktif' => $hariAktif,
                 'kelasId' => $kelasId,
@@ -105,7 +105,7 @@ class JadwalPelajaranController extends BaseController
             ])->render();
         }
 
-        return view('admin.jadwal-pelajaran.index', [
+        return view('portals.lembaga.akademik.jadwal-pelajaran.index', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'kelasList' => $kelasList,
@@ -161,7 +161,7 @@ class JadwalPelajaranController extends BaseController
             ->orderBy('nama_ruangan')
             ->get();
 
-        return view('admin.jadwal-pelajaran.create', [
+        return view('portals.lembaga.akademik.jadwal-pelajaran.create', [
             'kelas' => $kelas,
             'semesterId' => $semesterId,
             'semester' => $semester,
@@ -294,7 +294,7 @@ class JadwalPelajaranController extends BaseController
             ->orderBy('nama_ruangan')
             ->get();
 
-        return view('admin.jadwal-pelajaran.edit', [
+        return view('portals.lembaga.akademik.jadwal-pelajaran.edit', [
             'jadwalPelajaran' => $jadwalPelajaran,
             'kelas' => $kelas,
             'semester' => $semester,

@@ -40,7 +40,7 @@ class AsesmenController extends BaseController
             ? Asesmen::where('guru_id', $guru->id)->with(['kelas', 'mataPelajaran', 'semester'])->orderByDesc('tanggal')->get()
             : collect();
 
-        return view('guru.asesmen.index', [
+        return view('portals.guru.akademik.asesmen.index', [
             'asesmenList' => $asesmenList,
         ]);
     }
@@ -60,7 +60,7 @@ class AsesmenController extends BaseController
         $mapelIds = $jadwalList->pluck('mata_pelajaran_id')->filter()->unique();
         $semesterIds = $jadwalList->pluck('semester_id')->unique();
 
-        return view('guru.asesmen.create', [
+        return view('portals.guru.akademik.asesmen.create', [
             'kelasList' => Kelas::whereIn('id', $kelasIds)->orderBy('nama')->get(),
             'mataPelajaranList' => MataPelajaran::whereIn('id', $mapelIds)->orderBy('nama')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->orderByDesc('id')->get(),
@@ -126,7 +126,7 @@ class AsesmenController extends BaseController
             ->get()
             ->keyBy(fn ($n) => $n->siswa_id.'-'.$n->komponen_penilaian_id);
 
-        return view('guru.asesmen.show', [
+        return view('portals.guru.akademik.asesmen.show', [
             'asesmen' => $asesmen->load(['kelas', 'mataPelajaran', 'semester']),
             'komponenList' => $komponenList,
             'siswaList' => $siswaList,

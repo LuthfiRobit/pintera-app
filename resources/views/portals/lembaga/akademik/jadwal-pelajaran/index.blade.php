@@ -90,7 +90,7 @@
 
             {{-- 2. Daftar Jadwal Pelajaran per Hari --}}
             <div x-ref="daftarJadwal">
-                @include('admin.jadwal-pelajaran._daftar')
+                @include('portals.lembaga.akademik.jadwal-pelajaran._daftar')
             </div>
         </div>
     </div>

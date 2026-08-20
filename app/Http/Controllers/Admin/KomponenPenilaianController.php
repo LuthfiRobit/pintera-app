@@ -52,10 +52,10 @@ class KomponenPenilaianController extends BaseController
             ->get();
 
         if ($request->ajax()) {
-            return view('admin.komponen-penilaian._daftar', ['komponenList' => $komponenList])->render();
+            return view('portals.lembaga.akademik.komponen-penilaian._daftar', ['komponenList' => $komponenList])->render();
         }
 
-        return view('admin.komponen-penilaian.index', [
+        return view('portals.lembaga.akademik.komponen-penilaian.index', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
@@ -90,7 +90,7 @@ class KomponenPenilaianController extends BaseController
             $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
         }
 
-        return view('admin.komponen-penilaian.create', [
+        return view('portals.lembaga.akademik.komponen-penilaian.create', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
@@ -136,7 +136,7 @@ class KomponenPenilaianController extends BaseController
 
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
-        return view('admin.komponen-penilaian.edit', [
+        return view('portals.lembaga.akademik.komponen-penilaian.edit', [
             'komponenPenilaian' => $komponenPenilaian->load(['mataPelajaran', 'semester.tahunAjaran']),
             'dipakai' => $dipakai,
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),

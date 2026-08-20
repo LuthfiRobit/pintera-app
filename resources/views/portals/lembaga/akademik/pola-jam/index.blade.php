@@ -361,8 +361,8 @@
         </div>
 
         {{-- Include SPA Modal Partials --}}
-        @include('admin.pola-jam._modal-pola')
-        @include('admin.pola-jam._modal-edit-slot')
-        @include('admin.pola-jam._modal-assign-kelas')
+        @include('portals.lembaga.akademik.pola-jam._modal-pola')
+        @include('portals.lembaga.akademik.pola-jam._modal-edit-slot')
+        @include('portals.lembaga.akademik.pola-jam._modal-assign-kelas')
     </div>
 </x-app-layout>

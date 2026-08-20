@@ -35,7 +35,7 @@
 
         {{-- Tampilan Matriks Mingguan --}}
         <div x-show="viewMode === 'matrix'" x-transition:enter="transition ease-out duration-200 opacity-0 transform translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0">
-            @include('admin.jadwal-pelajaran._matrix-roster')
+            @include('portals.lembaga.akademik.jadwal-pelajaran._matrix-roster')
         </div>
 
         {{-- Tampilan Daftar Klasik --}}
@@ -133,8 +133,8 @@
             </div>
         </div>
 
-        @include('admin.jadwal-pelajaran._modal-form')
-        @include('admin.jadwal-pelajaran._modal-duplicate')
+        @include('portals.lembaga.akademik.jadwal-pelajaran._modal-form')
+        @include('portals.lembaga.akademik.jadwal-pelajaran._modal-duplicate')
     </div>
 @else
     <div class="rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
