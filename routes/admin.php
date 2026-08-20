@@ -6,7 +6,6 @@ use App\Http\Controllers\Admin\KasusTerhapusController;
 use App\Http\Controllers\Admin\KenaikanKelasController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
 use App\Http\Controllers\Admin\RaporController;
-use App\Http\Controllers\Admin\RppController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\Akademik\JurnalKbmController;
 use App\Http\Controllers\Guru\Akademik\RekapKehadiranController;
@@ -30,15 +29,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     require base_path('routes/admin/siswa.php');
     require base_path('routes/admin/spmb.php');
     require base_path('routes/admin/keuangan.php');
-
-    // Perangkat Mengajar (RPP / Modul Ajar)
-    Route::get('rpp', [RppController::class, 'index'])->name('rpp.index');
-    Route::post('rpp', [RppController::class, 'store'])->name('rpp.store');
-    Route::get('rpp/{rpp}/download', [RppController::class, 'download'])->name('rpp.download');
-    Route::put('rpp/{rpp}', [RppController::class, 'update'])->name('rpp.update');
-    Route::delete('rpp/{rpp}', [RppController::class, 'destroy'])->name('rpp.destroy');
-    Route::post('rpp/{rpp}/submit', [RppController::class, 'submit'])->name('rpp.submit');
-    Route::post('rpp/{rpp}/verify', [RppController::class, 'verify'])->name('rpp.verify');
+    require base_path('routes/admin/rpp.php');
 
     Route::get('komponen-penilaian', [KomponenPenilaianController::class, 'index'])->name('komponen-penilaian.index');
     Route::get('komponen-penilaian/create', [KomponenPenilaianController::class, 'create'])->name('komponen-penilaian.create');
