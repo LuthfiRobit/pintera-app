@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\Hari;
-use App\Models\JamPelajaran;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

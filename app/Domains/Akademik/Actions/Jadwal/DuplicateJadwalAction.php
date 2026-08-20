@@ -6,7 +6,7 @@ namespace App\Domains\Akademik\Actions\Jadwal;
 
 use App\Domains\Akademik\DataTransferObjects\JadwalPelajaranData;
 use App\Models\JadwalPelajaran;
-use App\Models\JamPelajaran;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Semester;
 use Illuminate\Support\Facades\DB;

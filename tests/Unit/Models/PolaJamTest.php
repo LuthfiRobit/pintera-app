@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Lembaga;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

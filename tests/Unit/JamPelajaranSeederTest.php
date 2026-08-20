@@ -1,9 +1,9 @@
 <?php
 // tests/Unit/JamPelajaranSeederTest.php
 
-use App\Models\JamPelajaran;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Lembaga;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Yayasan;
 use Database\Seeders\JamPelajaranSeeder;
 use Database\Seeders\LembagaSeeder;

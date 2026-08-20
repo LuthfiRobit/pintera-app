@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
 use App\Enums\Hari;
+use App\Models\JadwalPelajaran;
+use Database\Factories\JamPelajaranFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class JamPelajaran extends Model
 {
     use HasFactory;
+
+    protected static function newFactory(): JamPelajaranFactory
+    {
+        return JamPelajaranFactory::new();
+    }
 
     protected $table = 'jam_pelajaran';
 

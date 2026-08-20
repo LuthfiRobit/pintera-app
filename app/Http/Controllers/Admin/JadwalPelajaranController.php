@@ -15,7 +15,7 @@ use App\Http\Requests\Akademik\StoreJadwalPelajaranRequest;
 use App\Http\Requests\Akademik\UpdateJadwalPelajaranRequest;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Models\JamPelajaran;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\MataPelajaran;
 use App\Models\Scopes\TenantScope;

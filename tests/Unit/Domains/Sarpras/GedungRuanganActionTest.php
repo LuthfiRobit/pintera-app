@@ -17,7 +17,7 @@ use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use App\Models\User;
@@ -142,7 +142,7 @@ class GedungRuanganActionTest extends TestCase
         ]);
 
         $pola = PolaJam::create(['lembaga_id' => $lembaga->id, 'nama' => 'Reguler']);
-        $jam = \App\Models\JamPelajaran::create([
+        $jam = \App\Domains\Akademik\Models\JamPelajaran::create([
             'pola_jam_id' => $pola->id,
             'label' => 'Jam 1',
             'jam_mulai' => '07:30',

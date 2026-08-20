@@ -16,7 +16,7 @@ use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;

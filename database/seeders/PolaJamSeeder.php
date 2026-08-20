@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Lembaga;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use Illuminate\Database\Seeder;
 
 class PolaJamSeeder extends Seeder

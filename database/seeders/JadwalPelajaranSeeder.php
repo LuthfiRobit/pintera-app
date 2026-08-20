@@ -5,11 +5,11 @@ namespace Database\Seeders;
 
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Models\JamPelajaran;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\MataPelajaran;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Database\Seeder;

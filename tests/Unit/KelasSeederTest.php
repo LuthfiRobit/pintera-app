@@ -4,7 +4,7 @@
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
 use Database\Seeders\EssentialUserSeeder;

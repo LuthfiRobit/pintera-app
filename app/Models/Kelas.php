@@ -33,7 +33,7 @@ class Kelas extends Model
 
     public function polaJam(): BelongsTo
     {
-        return $this->belongsTo(PolaJam::class);
+        return $this->belongsTo(\App\Domains\Akademik\Models\PolaJam::class);
     }
 
     public function waliKelas(): BelongsTo

@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Enums\Hari;
-use App\Models\JamPelajaran;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class JamPelajaranFactory extends Factory

@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Kelas;
+use App\Models\Lembaga;
+use Database\Factories\PolaJamFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +14,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class PolaJam extends Model
 {
     use HasFactory, BelongsToTenant;
+
+    protected static function newFactory(): PolaJamFactory
+    {
+        return PolaJamFactory::new();
+    }
 
     protected $table = 'pola_jam';
 

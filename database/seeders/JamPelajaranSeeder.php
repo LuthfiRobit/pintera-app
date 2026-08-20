@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\JamPelajaran;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Lembaga;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use Illuminate\Database\Seeder;
 
 class JamPelajaranSeeder extends Seeder

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Lembaga;
-use App\Models\PolaJam;
+use App\Domains\Akademik\Models\PolaJam;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class PolaJamFactory extends Factory
