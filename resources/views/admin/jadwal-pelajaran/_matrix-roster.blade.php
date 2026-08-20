@@ -3,7 +3,7 @@
         <x-icon name="schedule" class="mx-auto h-10 w-10 text-gray-300 mb-2" />
         <p class="text-sm font-semibold text-gray-700">Belum Ada Pola Jam untuk Kelas Ini</p>
         <p class="text-xs text-gray-500 mt-1">Anda perlu mengatur struktur slot jam pelajaran dan hari aktif terlebih dahulu.</p>
-        @can('pola-jam.kelola')
+        @can('pola-jam.view')
             <div class="mt-4">
                 <a href="{{ route('admin.pola-jam.index') }}" class="inline-flex items-center gap-1.5 rounded-xl bg-brand-50 px-4 py-2 text-xs font-bold text-brand-700 hover:bg-brand-100 transition-colors">
                     <span>Atur Pola Jam Sekarang</span>
