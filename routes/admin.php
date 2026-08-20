@@ -1,8 +1,5 @@
 <?php
 
-use App\Http\Controllers\Admin\KasusAksesLogController;
-use App\Http\Controllers\Admin\KasusController as AdminKasusController;
-use App\Http\Controllers\Admin\KasusTerhapusController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\Akademik\JurnalKbmController;
 use App\Http\Controllers\Guru\Akademik\RekapKehadiranController;
@@ -28,14 +25,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     require base_path('routes/admin/keuangan.php');
     require base_path('routes/admin/rpp.php');
     require base_path('routes/admin/penilaian-rapor.php');
-
-    Route::get('kasus', [AdminKasusController::class, 'index'])->name('kasus.index');
-    Route::get('kasus/{kasus}/triase', [AdminKasusController::class, 'triase'])->name('kasus.triase');
-    Route::post('kasus/{kasus}/assign-konselor', [AdminKasusController::class, 'assignKonselor'])->name('kasus.assign-konselor');
-    Route::delete('kasus/{kasus}', [AdminKasusController::class, 'destroy'])->name('kasus.destroy');
-    Route::post('kasus/{kasus}/pulihkan', [AdminKasusController::class, 'restore'])->name('kasus.restore');
-    Route::get('kasus-log-akses', [KasusAksesLogController::class, 'index'])->name('kasus.log-akses');
-    Route::get('kasus-terhapus', [KasusTerhapusController::class, 'index'])->name('kasus.terhapus');
+    require base_path('routes/admin/kasus-admin.php');
 
     // Sarana & Prasarana (Sarpras)
     Route::prefix('sarpras')->name('sarpras.')->group(function () {
