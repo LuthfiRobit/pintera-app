@@ -35,7 +35,7 @@ class KasusController extends BaseController
             StatusKasus::Eskalasi,
         ], true))->count();
 
-        return view('kasus.index', [
+        return view('portals.kasus.index', [
             'kasusList' => $kasusList,
             'totalKasus' => $totalKasus,
             'totalBerjalan' => $totalBerjalan,
@@ -54,7 +54,7 @@ class KasusController extends BaseController
             ? ($user->orangTua?->siswa()->withoutGlobalScope(TenantScope::class)->orderBy('nama_lengkap')->get() ?? collect())
             : Siswa::orderBy('nama_lengkap')->get();
 
-        return view('kasus.create', ['siswaList' => $siswaList]);
+        return view('portals.kasus.create', ['siswaList' => $siswaList]);
     }
 
     public function store(Request $request, AjukanKasusAction $action): RedirectResponse
@@ -135,7 +135,7 @@ class KasusController extends BaseController
 
         $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
 
-        return view('kasus.show', [
+        return view('portals.kasus.show', [
             'kasus' => $kasus,
             'isKontakUtama' => $user->orangTua !== null
                 && $siswa->orangTua()->where('orang_tua_id', $user->orangTua->id)->wherePivot('is_kontak_utama', true)->exists(),

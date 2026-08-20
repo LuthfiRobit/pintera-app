@@ -28,7 +28,7 @@ class KasusController extends BaseController
         $totalSemua = Kasus::count();
         $totalProses = Kasus::whereIn('status', [StatusKasus::MenungguConsent, StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi])->count();
 
-        return view('admin.kasus.index', [
+        return view('portals.lembaga.kasus.index', [
             'kasusList' => $kasusList,
             'totalMenunggu' => $kasusList->count(),
             'totalProses' => $totalProses,
@@ -48,7 +48,7 @@ class KasusController extends BaseController
 
         $kandidat = $resolver->kandidatUntuk($siswa);
 
-        return view('admin.kasus.triase', ['kasus' => $kasus, 'kandidat' => $kandidat]);
+        return view('portals.lembaga.kasus.triase', ['kasus' => $kasus, 'kandidat' => $kandidat]);
     }
 
     public function assignKonselor(Request $request, Kasus $kasus, KonselorAllocationResolver $resolver, AssignKonselorAction $action): RedirectResponse

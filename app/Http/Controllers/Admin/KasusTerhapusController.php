@@ -44,7 +44,7 @@ class KasusTerhapusController extends BaseController
             ->paginate($perPage)
             ->withQueryString();
 
-        return view('admin.kasus.terhapus', [
+        return view('portals.lembaga.kasus.terhapus', [
             'kasusList' => $kasusList,
             'totalTerhapus' => $totalTerhapus,
             'dihapusBulanIni' => $dihapusBulanIni,

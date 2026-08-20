@@ -113,21 +113,21 @@
         <div class="mt-6">
             {{-- Tab Partials Inclusions --}}
             <div x-show="activeTab === 'info'" x-transition:enter="transition ease-out duration-200">
-                @include('kasus.partials._tab-info')
+                @include('portals.kasus.partials._tab-info')
             </div>
 
             @if ($isKonselor || $isSiswaTerkait || $isKontakUtama || $isTriaseAdmin)
                 <div x-show="activeTab === 'sesi'" style="display: none;" x-transition:enter="transition ease-out duration-200">
-                    @include('kasus.partials._tab-sesi')
+                    @include('portals.kasus.partials._tab-sesi')
                 </div>
                 <div x-show="activeTab === 'tugas'" style="display: none;" x-transition:enter="transition ease-out duration-200">
-                    @include('kasus.partials._tab-tugas')
+                    @include('portals.kasus.partials._tab-tugas')
                 </div>
             @endif
 
             @if ($isKonselor || $isTriaseAdmin)
                 <div x-show="activeTab === 'evaluasi'" style="display: none;" x-transition:enter="transition ease-out duration-200">
-                    @include('kasus.partials._tab-evaluasi')
+                    @include('portals.kasus.partials._tab-evaluasi')
                 </div>
             @endif
         </div>

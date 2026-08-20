@@ -63,7 +63,7 @@ class KasusAksesLogController extends BaseController
             ->get()
             ->keyBy('id');
 
-        return view('admin.kasus.akses-log', [
+        return view('portals.lembaga.kasus.akses-log', [
             'logs' => $logs, 
             'causers' => $causers,
             'totalAkses' => $totalAkses,
