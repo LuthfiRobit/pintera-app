@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DataTransferObjects;
+namespace App\Domains\Kasus\DataTransferObjects;
 
 use App\Models\Guru;
 use App\Models\Karyawan;

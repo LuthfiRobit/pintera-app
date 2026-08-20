@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Siswa;

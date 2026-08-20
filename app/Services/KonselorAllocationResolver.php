@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\DataTransferObjects\KonselorKandidat;
+use App\Domains\Kasus\DataTransferObjects\KonselorKandidat;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Models\Siswa;

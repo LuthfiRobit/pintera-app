@@ -71,7 +71,7 @@ it('returns 200 when judul and instruksi are absent from the payload (Finding 3 
 it('403s a POST to preview against an already-selesai kasus (guards match store, Finding 5)', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
-    $kasus->update(['status' => \App\Enums\StatusKasus::Selesai]);
+    $kasus->update(['status' => \App\Domains\Kasus\Enums\StatusKasus::Selesai]);
 
     $this->actingAs($konselorUser)->postJson(route('kasus.tugas.preview', $kasus), [
         'frekuensi' => 'sekali', 'tanggal_mulai' => '2026-08-01', 'tanggal_selesai' => '2026-08-01',

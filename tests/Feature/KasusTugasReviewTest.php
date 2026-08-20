@@ -114,7 +114,7 @@ it('notifies the siswa on revisi_diminta even when a yayasan-scoped konselor has
     $kasus = Kasus::create([
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
-        'status' => \App\Enums\StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+        'status' => \App\Domains\Kasus\Enums\StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
     ]);
     $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id, 'status' => 'dikerjakan']);
     $submission = KasusTugasSubmission::factory()->create(['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id]);

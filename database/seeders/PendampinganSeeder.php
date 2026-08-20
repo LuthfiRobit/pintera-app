@@ -3,9 +3,9 @@
 
 namespace Database\Seeders;
 
-use App\Enums\StatusKasus;
-use App\Enums\StatusKasusSesi;
-use App\Enums\StatusKasusTugas;
+use App\Domains\Kasus\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasusSesi;
+use App\Domains\Kasus\Enums\StatusKasusTugas;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Domains\Kasus\Models\Kasus;

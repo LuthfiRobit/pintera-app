@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/KasusKonselorAksesTest.php
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Domains\Kasus\Models\Kasus;

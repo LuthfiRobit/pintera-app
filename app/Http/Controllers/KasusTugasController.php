@@ -3,7 +3,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Http\Controllers\Concerns\AssertsKonselorPemegangKasus;
 use App\Http\Requests\StoreKasusTugasBatchRequest;
 use App\Domains\Kasus\Models\Kasus;

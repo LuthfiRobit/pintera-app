@@ -2,7 +2,7 @@
 
 namespace App\Domains\Kasus\Models;
 
-use App\Enums\StatusKasusSesi;
+use App\Domains\Kasus\Enums\StatusKasusSesi;
 use Database\Factories\KasusSesiFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

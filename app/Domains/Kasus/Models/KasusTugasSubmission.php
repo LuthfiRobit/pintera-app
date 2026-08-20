@@ -35,8 +35,8 @@ class KasusTugasSubmission extends Model
         static::created(function (KasusTugasSubmission $submission) {
             $tugas = $submission->tugas;
 
-            if ($tugas->status === \App\Enums\StatusKasusTugas::Ditugaskan) {
-                $tugas->update(['status' => \App\Enums\StatusKasusTugas::Dikerjakan]);
+            if ($tugas->status === \App\Domains\Kasus\Enums\StatusKasusTugas::Ditugaskan) {
+                $tugas->update(['status' => \App\Domains\Kasus\Enums\StatusKasusTugas::Dikerjakan]);
             }
         });
     }

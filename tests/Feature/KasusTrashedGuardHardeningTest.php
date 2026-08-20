@@ -5,7 +5,7 @@
 // and admin restore() must explicitly reject a trashed kasus, rather than relying on the
 // current state machine (status stays 'selesai' after soft-delete) to block them by accident.
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;

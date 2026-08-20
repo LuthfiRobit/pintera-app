@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusConsent;
 use App\Models\Scopes\TenantScope;

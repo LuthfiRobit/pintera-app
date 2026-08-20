@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Enums;
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use PHPUnit\Framework\TestCase;
 
 class StatusKasusTest extends TestCase

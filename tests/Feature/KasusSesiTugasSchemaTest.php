@@ -1,8 +1,8 @@
 <?php
 // tests/Feature/KasusSesiTugasSchemaTest.php
 
-use App\Enums\StatusKasusSesi;
-use App\Enums\StatusKasusTugas;
+use App\Domains\Kasus\Enums\StatusKasusSesi;
+use App\Domains\Kasus\Enums\StatusKasusTugas;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusTugas;
 use App\Domains\Kasus\Models\KasusTugasSubmission;

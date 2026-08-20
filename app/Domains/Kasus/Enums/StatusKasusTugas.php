@@ -1,7 +1,6 @@
 <?php
-// app/Enums/StatusKasusTugas.php
 
-namespace App\Enums;
+namespace App\Domains\Kasus\Enums;
 
 enum StatusKasusTugas: string
 {

@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/KasusAutoBerjalanTest.php
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;

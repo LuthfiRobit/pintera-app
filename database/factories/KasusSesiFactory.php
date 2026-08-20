@@ -3,7 +3,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\StatusKasusSesi;
+use App\Domains\Kasus\Enums\StatusKasusSesi;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusSesi;
 use Illuminate\Database\Eloquent\Factories\Factory;

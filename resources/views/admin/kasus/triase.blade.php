@@ -129,7 +129,7 @@
                         @foreach ($kandidat as $index => $item)
                             @php
                                 $activeCount = \App\Domains\Kasus\Models\Kasus::where($item->tipe === 'guru' ? 'konselor_guru_id' : 'konselor_karyawan_id', $item->model->id)
-                                    ->whereIn('status', [\App\Enums\StatusKasus::MenungguConsent, \App\Enums\StatusKasus::Ditugaskan, \App\Enums\StatusKasus::Berjalan, \App\Enums\StatusKasus::Eskalasi])
+                                    ->whereIn('status', [\App\Domains\Kasus\Enums\StatusKasus::MenungguConsent, \App\Domains\Kasus\Enums\StatusKasus::Ditugaskan, \App\Domains\Kasus\Enums\StatusKasus::Berjalan, \App\Domains\Kasus\Enums\StatusKasus::Eskalasi])
                                     ->count();
                                 $maxCount = $item->model->kapasitas_kasus_aktif;
                                 $isFull = ($maxCount && $activeCount >= $maxCount);

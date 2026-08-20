@@ -2,7 +2,7 @@
 
 namespace App\Domains\Kasus\Models;
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Guru;
 use App\Models\Karyawan;

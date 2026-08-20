@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/KasusEvaluasiTest.php
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Models\Guru;
 use App\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;

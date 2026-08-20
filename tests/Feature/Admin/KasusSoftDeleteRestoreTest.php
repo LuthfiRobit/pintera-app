@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Admin/KasusSoftDeleteRestoreTest.php
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusConsent;
 use App\Domains\Kasus\Models\KasusEvaluasi;

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\StatusKasus;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusConsent;
 use App\Domains\Kasus\Models\KasusTugas;
