@@ -1,6 +1,6 @@
-# FASE 5.1: Restrukturisasi Rute Modular Implementation Plan
+﻿# FASE 5.1: Restrukturisasi Rute Modular Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Pecah `routes/admin.php` (368 baris, campur ~15 domain dalam satu file) menjadi file-file kecil per modul, tanpa mengubah satu pun nama route, URI, urutan pendaftaran relatif, atau middleware.
 
@@ -10,12 +10,12 @@
 
 ## Global Constraints
 
-- **Tidak ada perubahan** nama route, URI, urutan pendaftaran relatif dalam satu modul, atau middleware. Setiap task murni memindahkan teks `Route::` yang sudah ada — tidak menulis logic baru.
-- Verifikasi wajib tiap task: `php artisan route:list` (FULL, bukan filtered) sebelum vs sesudah harus identik — setiap baris (URI, method, name, action, middleware) sama persis, cuma boleh beda urutan tampil.
+- **Tidak ada perubahan** nama route, URI, urutan pendaftaran relatif dalam satu modul, atau middleware. Setiap task murni memindahkan teks `Route::` yang sudah ada â€” tidak menulis logic baru.
+- Verifikasi wajib tiap task: `php artisan route:list` (FULL, bukan filtered) sebelum vs sesudah harus identik â€” setiap baris (URI, method, name, action, middleware) sama persis, cuma boleh beda urutan tampil.
 - Full test suite (`php artisan test`) HANYA dijalankan sekali, di Task 15 (task terakhir), dan hanya setelah user diberi kesempatan approve seperti pola RBAC v2 sebelumnya. Task 1-14 tidak menjalankan full suite.
 - Baseline full suite saat ini (sebelum plan ini): **1861 passed, 0 failed**.
-- Cari blok kode yang disebut di tiap task dengan **pencarian teks (exact string match)**, bukan nomor baris — nomor baris di `routes/admin.php` bergeser setiap task selesai karena baris sebelumnya sudah dipindah/dihapus oleh task lain.
-- Setiap file route baru TIDAK dibungkus middleware/prefix/name tambahan untuk level `admin` — itu sudah diwariskan dari `Route::group` di `routes/admin.php`. Sub-grouping yang SUDAH ADA di source asli (mis. `Route::prefix('sarpras')->name('sarpras.')->group(...)`) dipindah apa adanya, tidak dihapus.
+- Cari blok kode yang disebut di tiap task dengan **pencarian teks (exact string match)**, bukan nomor baris â€” nomor baris di `routes/admin.php` bergeser setiap task selesai karena baris sebelumnya sudah dipindah/dihapus oleh task lain.
+- Setiap file route baru TIDAK dibungkus middleware/prefix/name tambahan untuk level `admin` â€” itu sudah diwariskan dari `Route::group` di `routes/admin.php`. Sub-grouping yang SUDAH ADA di source asli (mis. `Route::prefix('sarpras')->name('sarpras.')->group(...)`) dipindah apa adanya, tidak dihapus.
 
 ---
 
@@ -23,11 +23,11 @@
 
 Sumber tunggal semua pemindahan adalah `routes/admin.php` versi commit `a7ce013` (branch `rbac-v2`). File itu berisi 3 grup fisik:
 
-1. `Route::middleware(['auth','verified'])->prefix('admin')->name('admin.')->group(function () { ... })` — grup utama, isi 246 baris tempat 13 modul di bawah ini diambil.
-2. `Route::bind('kasus', ...)` + `Route::middleware(['auth','verified'])->prefix('kasus')->name('kasus.')->group(...)` — di LUAR grup admin, dipindah utuh ke `routes/kasus.php` (Task 13).
-3. `Route::middleware(['auth','verified'])->prefix('guru')->name('guru.')->group(...)` — di LUAR grup admin, dipindah utuh ke `routes/guru.php` (Task 14).
+1. `Route::middleware(['auth','verified'])->prefix('admin')->name('admin.')->group(function () { ... })` â€” grup utama, isi 246 baris tempat 13 modul di bawah ini diambil.
+2. `Route::bind('kasus', ...)` + `Route::middleware(['auth','verified'])->prefix('kasus')->name('kasus.')->group(...)` â€” di LUAR grup admin, dipindah utuh ke `routes/kasus.php` (Task 13).
+3. `Route::middleware(['auth','verified'])->prefix('guru')->name('guru.')->group(...)` â€” di LUAR grup admin, dipindah utuh ke `routes/guru.php` (Task 14).
 
-Pola tiap task modul (Task 1-12): buat file baru di `routes/admin/<nama>.php` berisi potongan `Route::` yang dipindah (plus `use` import untuk controller yang dipakai lewat nama pendek di blok itu), lalu di `routes/admin.php` HAPUS blok itu dan sisipkan SATU baris `require base_path('routes/admin/<nama>.php');` di lokasi blok PERTAMA yang diambil (kalau modul tersebar di beberapa blok tidak berdekatan, blok kedua dst cukup dihapus tanpa sisipan apa pun — require sudah mewakili seluruh isi modul).
+Pola tiap task modul (Task 1-12): buat file baru di `routes/admin/<nama>.php` berisi potongan `Route::` yang dipindah (plus `use` import untuk controller yang dipakai lewat nama pendek di blok itu), lalu di `routes/admin.php` HAPUS blok itu dan sisipkan SATU baris `require base_path('routes/admin/<nama>.php');` di lokasi blok PERTAMA yang diambil (kalau modul tersebar di beberapa blok tidak berdekatan, blok kedua dst cukup dihapus tanpa sisipan apa pun â€” require sudah mewakili seluruh isi modul).
 
 ---
 
@@ -42,7 +42,7 @@ Pola tiap task modul (Task 1-12): buat file baru di `routes/admin/<nama>.php` be
 - Consumes: tidak ada (task independen pertama)
 - Produces: pola `require base_path('routes/admin/<nama>.php');` yang dipakai identik oleh semua task modul lain
 
-- [ ] **Step 1: Buat `routes/admin/roles.php`**
+- [x] **Step 1: Buat `routes/admin/roles.php`**
 
 ```php
 <?php
@@ -57,7 +57,7 @@ Route::resource('users', UserController::class)->except(['show', 'destroy']);
 Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
 ```
 
-- [ ] **Step 2: Buat `routes/admin/whatsapp-template.php`**
+- [x] **Step 2: Buat `routes/admin/whatsapp-template.php`**
 
 ```php
 <?php
@@ -69,11 +69,11 @@ Route::get('whatsapp-template', [WhatsAppTemplateController::class, 'index'])->n
 Route::put('whatsapp-template/{whatsappTemplate}', [WhatsAppTemplateController::class, 'update'])->name('whatsapp-template.update');
 ```
 
-- [ ] **Step 3: Simpan snapshot `route:list` sebelum edit**
+- [x] **Step 3: Simpan snapshot `route:list` sebelum edit**
 
 Run: `php artisan route:list > /tmp/before-task1.txt`
 
-- [ ] **Step 4: Di `routes/admin.php`, cari blok persis ini dan HAPUS (ganti dengan baris `require`)**
+- [x] **Step 4: Di `routes/admin.php`, cari blok persis ini dan HAPUS (ganti dengan baris `require`)**
 
 Cari:
 ```php
@@ -88,7 +88,7 @@ Ganti dengan:
     require base_path('routes/admin/roles.php');
 ```
 
-- [ ] **Step 5: Di `routes/admin.php`, cari blok persis ini dan HAPUS (ganti dengan baris `require`)**
+- [x] **Step 5: Di `routes/admin.php`, cari blok persis ini dan HAPUS (ganti dengan baris `require`)**
 
 Cari:
 ```php
@@ -101,18 +101,18 @@ Ganti dengan:
     require base_path('routes/admin/whatsapp-template.php');
 ```
 
-- [ ] **Step 6: Hapus `use` statement yang sudah tidak dipakai lagi di `routes/admin.php`**
+- [x] **Step 6: Hapus `use` statement yang sudah tidak dipakai lagi di `routes/admin.php`**
 
-Hapus baris `use App\Http\Controllers\Admin\RoleController;`, `use App\Http\Controllers\Admin\UserController;`, dan `use App\Http\Controllers\Admin\WhatsAppTemplateController;` dari bagian atas `routes/admin.php` — TAPI HANYA jika class itu tidak dipakai lagi di sisa file (cek dengan grep, karena beberapa controller dipakai di lebih dari satu tempat, lihat catatan `TagihanController` di Task 6/7).
+Hapus baris `use App\Http\Controllers\Admin\RoleController;`, `use App\Http\Controllers\Admin\UserController;`, dan `use App\Http\Controllers\Admin\WhatsAppTemplateController;` dari bagian atas `routes/admin.php` â€” TAPI HANYA jika class itu tidak dipakai lagi di sisa file (cek dengan grep, karena beberapa controller dipakai di lebih dari satu tempat, lihat catatan `TagihanController` di Task 6/7).
 
-Run: `grep -c "RoleController\|UserController::class\|WhatsAppTemplateController" routes/admin.php` — pastikan hasilnya 0 sebelum menghapus use statement-nya (di luar baris `use` itu sendiri).
+Run: `grep -c "RoleController\|UserController::class\|WhatsAppTemplateController" routes/admin.php` â€” pastikan hasilnya 0 sebelum menghapus use statement-nya (di luar baris `use` itu sendiri).
 
-- [ ] **Step 7: Verifikasi route:list identik**
+- [x] **Step 7: Verifikasi route:list identik**
 
 Run: `php artisan route:list > /tmp/after-task1.txt && diff /tmp/before-task1.txt /tmp/after-task1.txt`
-Expected: tidak ada output (file identik, boleh beda urutan baris — kalau ada perbedaan urutan, gunakan `diff <(sort /tmp/before-task1.txt) <(sort /tmp/after-task1.txt)` untuk memastikan isinya sama, cuma urutan tampil beda).
+Expected: tidak ada output (file identik, boleh beda urutan baris â€” kalau ada perbedaan urutan, gunakan `diff <(sort /tmp/before-task1.txt) <(sort /tmp/after-task1.txt)` untuk memastikan isinya sama, cuma urutan tampil beda).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add routes/admin.php routes/admin/roles.php routes/admin/whatsapp-template.php
@@ -128,10 +128,10 @@ git commit -m "refactor(routes): ekstrak modul roles & whatsapp-template ke rout
 - Modify: `routes/admin.php`
 
 **Interfaces:**
-- Consumes: pola dari Task 1 (buat file → hapus blok di admin.php → sisip require → verifikasi route:list → commit)
+- Consumes: pola dari Task 1 (buat file â†’ hapus blok di admin.php â†’ sisip require â†’ verifikasi route:list â†’ commit)
 - Produces: tidak ada yang dikonsumsi task lain (modul independen)
 
-- [ ] **Step 1: Buat `routes/admin/lembaga.php`**
+- [x] **Step 1: Buat `routes/admin/lembaga.php`**
 
 ```php
 <?php
@@ -165,11 +165,11 @@ Route::prefix('lembaga/{lembaga}')->name('lembaga.')->group(function () {
 });
 ```
 
-- [ ] **Step 2: Snapshot `route:list` sebelum edit**
+- [x] **Step 2: Snapshot `route:list` sebelum edit**
 
 Run: `php artisan route:list > /tmp/before-task2.txt`
 
-- [ ] **Step 3: Di `routes/admin.php`, cari blok berikut dan ganti dengan `require base_path('routes/admin/lembaga.php');`**
+- [x] **Step 3: Di `routes/admin.php`, cari blok berikut dan ganti dengan `require base_path('routes/admin/lembaga.php');`**
 
 Cari (persis dari `Route::resource('lembaga'...` sampai penutup `});` grup `lembaga/{lembaga}`):
 ```php
@@ -193,16 +193,16 @@ Cari (persis dari `Route::resource('lembaga'...` sampai penutup `});` grup `lemb
 
 Ganti dengan: `require base_path('routes/admin/lembaga.php');`
 
-(Catatan: cek juga baris `layanan-khusus` di antara `ekstrakurikuler` dan `program-inklusi` pada file asli — sertakan dalam blok yang dihapus, sudah tercakup di file baru Step 1.)
+(Catatan: cek juga baris `layanan-khusus` di antara `ekstrakurikuler` dan `program-inklusi` pada file asli â€” sertakan dalam blok yang dihapus, sudah tercakup di file baru Step 1.)
 
-- [ ] **Step 4: Hapus `use` statement lembaga yang sudah tidak dipakai di `routes/admin.php`** (cek dulu dengan grep seperti Task 1 Step 6, khususnya `LembagaController` — hanya hapus kalau grep hasilnya 0 pemakaian tersisa)
+- [x] **Step 4: Hapus `use` statement lembaga yang sudah tidak dipakai di `routes/admin.php`** (cek dulu dengan grep seperti Task 1 Step 6, khususnya `LembagaController` â€” hanya hapus kalau grep hasilnya 0 pemakaian tersisa)
 
-- [ ] **Step 5: Verifikasi**
+- [x] **Step 5: Verifikasi**
 
 Run: `php artisan route:list > /tmp/after-task2.txt && diff <(sort /tmp/before-task2.txt) <(sort /tmp/after-task2.txt)`
 Expected: no output.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/admin.php routes/admin/lembaga.php
@@ -221,7 +221,7 @@ git commit -m "refactor(routes): ekstrak modul lembaga ke routes/admin/"
 - Consumes: pola Task 1-2
 - Produces: tidak ada yang dikonsumsi task lain
 
-- [ ] **Step 1: Buat `routes/admin/guru-data.php`**
+- [x] **Step 1: Buat `routes/admin/guru-data.php`**
 
 ```php
 <?php
@@ -258,9 +258,9 @@ Route::put('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterCo
 Route::delete('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterController::class, 'destroy'])->name('jenis-karyawan-master.destroy');
 ```
 
-- [ ] **Step 2: Snapshot route:list, hapus blok yang sama persis di `routes/admin.php` (dari `Route::resource('guru'...` sampai baris `jenis-karyawan-master` destroy), ganti dengan `require base_path('routes/admin/guru-data.php');`, hapus use statement yang sudah tidak terpakai, verifikasi diff kosong, commit.**
+- [x] **Step 2: Snapshot route:list, hapus blok yang sama persis di `routes/admin.php` (dari `Route::resource('guru'...` sampai baris `jenis-karyawan-master` destroy), ganti dengan `require base_path('routes/admin/guru-data.php');`, hapus use statement yang sudah tidak terpakai, verifikasi diff kosong, commit.**
 
-Ikuti pola Step 2-6 dari Task 2 (snapshot → cari-hapus-ganti → bersihkan use → diff → commit), dengan pesan commit: `"refactor(routes): ekstrak modul guru-data ke routes/admin/"`.
+Ikuti pola Step 2-6 dari Task 2 (snapshot â†’ cari-hapus-ganti â†’ bersihkan use â†’ diff â†’ commit), dengan pesan commit: `"refactor(routes): ekstrak modul guru-data ke routes/admin/"`.
 
 ---
 
@@ -276,7 +276,7 @@ Ikuti pola Step 2-6 dari Task 2 (snapshot → cari-hapus-ganti → bersihkan use
 
 Modul ini TERSEBAR di 4 blok tidak berdekatan di source asli (mata-pelajaran+kelas, lalu kalender-akademik+pengaturan-akademik, lalu tahun-ajaran+semester, lalu pola-jam+jam-pelajaran+jadwal-pelajaran). Ikuti Konteks Umum: blok PERTAMA diganti `require`, blok ke-2/3/4 cukup DIHAPUS (tanpa require lagi).
 
-- [ ] **Step 1: Buat `routes/admin/akademik-master.php`** (gabungan ke-4 blok, urutan dipertahankan sesuai source)
+- [x] **Step 1: Buat `routes/admin/akademik-master.php`** (gabungan ke-4 blok, urutan dipertahankan sesuai source)
 
 ```php
 <?php
@@ -333,9 +333,9 @@ Route::delete('jadwal-pelajaran/{jadwalPelajaran}', [JadwalPelajaranController::
 Route::post('jadwal-pelajaran/duplicate', [JadwalPelajaranController::class, 'duplicate'])->name('jadwal-pelajaran.duplicate');
 ```
 
-- [ ] **Step 2: Snapshot route:list sebelum edit**
+- [x] **Step 2: Snapshot route:list sebelum edit**
 
-- [ ] **Step 3: Di `routes/admin.php`, cari blok 1 (mata-pelajaran + kelas) dan ganti dengan require**
+- [x] **Step 3: Di `routes/admin.php`, cari blok 1 (mata-pelajaran + kelas) dan ganti dengan require**
 
 Cari:
 ```php
@@ -344,7 +344,7 @@ Cari:
 ```
 Ganti dengan: `    require base_path('routes/admin/akademik-master.php');`
 
-- [ ] **Step 4: Di `routes/admin.php`, cari blok 2 (kalender-akademik + pengaturan-akademik) dan HAPUS (tanpa pengganti)**
+- [x] **Step 4: Di `routes/admin.php`, cari blok 2 (kalender-akademik + pengaturan-akademik) dan HAPUS (tanpa pengganti)**
 
 Cari dan hapus seluruhnya:
 ```php
@@ -355,7 +355,7 @@ Cari dan hapus seluruhnya:
     Route::put('pengaturan/akademik/hari-aktif', [PengaturanAkademikController::class, 'updateHariAktif'])->name('pengaturan.akademik.hari-aktif');
 ```
 
-- [ ] **Step 5: Di `routes/admin.php`, cari blok 3 (tahun-ajaran + semester) dan HAPUS**
+- [x] **Step 5: Di `routes/admin.php`, cari blok 3 (tahun-ajaran + semester) dan HAPUS**
 
 Cari dan hapus seluruhnya:
 ```php
@@ -369,7 +369,7 @@ Cari dan hapus seluruhnya:
     Route::patch('semester/{semester}/activate', [SemesterController::class, 'activate'])->name('semester.activate');
 ```
 
-- [ ] **Step 6: Di `routes/admin.php`, cari blok 4 (pola-jam + jam-pelajaran + jadwal-pelajaran) dan HAPUS**
+- [x] **Step 6: Di `routes/admin.php`, cari blok 4 (pola-jam + jam-pelajaran + jadwal-pelajaran) dan HAPUS**
 
 Cari dan hapus seluruhnya:
 ```php
@@ -396,7 +396,7 @@ Cari dan hapus seluruhnya:
     Route::post('jadwal-pelajaran/duplicate', [JadwalPelajaranController::class, 'duplicate'])->name('jadwal-pelajaran.duplicate');
 ```
 
-- [ ] **Step 7: Bersihkan `use` statement yang tidak terpakai lagi (grep dulu seperti task sebelumnya), verifikasi diff route:list kosong, commit** dengan pesan `"refactor(routes): ekstrak modul akademik-master ke routes/admin/"`.
+- [x] **Step 7: Bersihkan `use` statement yang tidak terpakai lagi (grep dulu seperti task sebelumnya), verifikasi diff route:list kosong, commit** dengan pesan `"refactor(routes): ekstrak modul akademik-master ke routes/admin/"`.
 
 ---
 
@@ -406,7 +406,7 @@ Cari dan hapus seluruhnya:
 - Create: `routes/admin/siswa.php`
 - Modify: `routes/admin.php`
 
-- [ ] **Step 1: Buat `routes/admin/siswa.php`**
+- [x] **Step 1: Buat `routes/admin/siswa.php`**
 
 ```php
 <?php
@@ -440,7 +440,7 @@ Route::post('siswa-import/preview', [SiswaImportController::class, 'preview'])->
 Route::post('siswa-import/confirm', [SiswaImportController::class, 'confirm'])->name('siswa.import.confirm');
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok berikut (satu blok berdekatan mencakup siswa+orang-tua+karyawan, kemudian blok kedua siswa-spmb-daftar+siswa-import beberapa baris di bawahnya) dan tangani seperti Task 4 (blok pertama → require, blok kedua → hapus tanpa pengganti):**
+- [x] **Step 2: Di `routes/admin.php`, cari blok berikut (satu blok berdekatan mencakup siswa+orang-tua+karyawan, kemudian blok kedua siswa-spmb-daftar+siswa-import beberapa baris di bawahnya) dan tangani seperti Task 4 (blok pertama â†’ require, blok kedua â†’ hapus tanpa pengganti):**
 
 Blok 1 (ganti dengan `require base_path('routes/admin/siswa.php');`):
 ```php
@@ -459,7 +459,7 @@ Blok 1 (ganti dengan `require base_path('routes/admin/siswa.php');`):
     Route::patch('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');
 ```
 
-Blok 2 (HAPUS, tanpa pengganti — sudah tercakup di require blok 1):
+Blok 2 (HAPUS, tanpa pengganti â€” sudah tercakup di require blok 1):
 ```php
     Route::get('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'index'])->name('siswa.spmb-daftar.index');
     Route::post('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'store'])->name('siswa.spmb-daftar.store');
@@ -469,7 +469,7 @@ Blok 2 (HAPUS, tanpa pengganti — sudah tercakup di require blok 1):
     Route::post('siswa-import/confirm', [SiswaImportController::class, 'confirm'])->name('siswa.import.confirm');
 ```
 
-- [ ] **Step 3: Bersihkan `use` tidak terpakai, verifikasi route:list diff kosong (snapshot before/after seperti task sebelumnya), commit** dengan pesan `"refactor(routes): ekstrak modul siswa ke routes/admin/"`.
+- [x] **Step 3: Bersihkan `use` tidak terpakai, verifikasi route:list diff kosong (snapshot before/after seperti task sebelumnya), commit** dengan pesan `"refactor(routes): ekstrak modul siswa ke routes/admin/"`.
 
 ---
 
@@ -479,9 +479,9 @@ Blok 2 (HAPUS, tanpa pengganti — sudah tercakup di require blok 1):
 - Create: `routes/admin/spmb.php`
 - Modify: `routes/admin.php`
 
-**Catatan penting:** `TagihanController` dipakai DI SINI (baris `tagihan-susulan`, `use`-import) DAN di Task 7 (`routes/admin/keuangan.php`). Jangan hapus `use App\Http\Controllers\Admin\TagihanController;` dari `routes/admin.php` di task ini kalau Task 7 belum jalan — grep dulu, baru hapus kalau sudah 0 pemakaian tersisa di `routes/admin.php`.
+**Catatan penting:** `TagihanController` dipakai DI SINI (baris `tagihan-susulan`, `use`-import) DAN di Task 7 (`routes/admin/keuangan.php`). Jangan hapus `use App\Http\Controllers\Admin\TagihanController;` dari `routes/admin.php` di task ini kalau Task 7 belum jalan â€” grep dulu, baru hapus kalau sudah 0 pemakaian tersisa di `routes/admin.php`.
 
-- [ ] **Step 1: Buat `routes/admin/spmb.php`**
+- [x] **Step 1: Buat `routes/admin/spmb.php`**
 
 ```php
 <?php
@@ -532,9 +532,9 @@ Route::get('sk-ppdb/create', [SkPpdbController::class, 'create'])->name('sk-ppdb
 Route::post('sk-ppdb', [SkPpdbController::class, 'store'])->name('sk-ppdb.store');
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok persis dari `Route::get('jenis-tes'...` sampai `Route::post('sk-ppdb'...` (satu blok berdekatan) dan ganti dengan `require base_path('routes/admin/spmb.php');`**
+- [x] **Step 2: Di `routes/admin.php`, cari blok persis dari `Route::get('jenis-tes'...` sampai `Route::post('sk-ppdb'...` (satu blok berdekatan) dan ganti dengan `require base_path('routes/admin/spmb.php');`**
 
-- [ ] **Step 3: Snapshot before/after route:list, diff harus kosong, commit** dengan pesan `"refactor(routes): ekstrak modul spmb ke routes/admin/"`.
+- [x] **Step 3: Snapshot before/after route:list, diff harus kosong, commit** dengan pesan `"refactor(routes): ekstrak modul spmb ke routes/admin/"`.
 
 ---
 
@@ -544,9 +544,9 @@ Route::post('sk-ppdb', [SkPpdbController::class, 'store'])->name('sk-ppdb.store'
 - Create: `routes/admin/keuangan.php`
 - Modify: `routes/admin.php`
 
-**Catatan:** setelah task ini, `TagihanController` sudah dipakai di 2 file baru (`spmb.php` dari Task 6 dan `keuangan.php` di sini) — TIDAK ADA MASALAH, `use` statement boleh muncul di kedua file secara independen (PHP tidak melarang import yang sama di file berbeda). Task ini yang berhak menghapus `use App\Http\Controllers\Admin\TagihanController;` dari `routes/admin.php` (karena setelah Task 6+7, pemakaiannya di `admin.php` sudah 0).
+**Catatan:** setelah task ini, `TagihanController` sudah dipakai di 2 file baru (`spmb.php` dari Task 6 dan `keuangan.php` di sini) â€” TIDAK ADA MASALAH, `use` statement boleh muncul di kedua file secara independen (PHP tidak melarang import yang sama di file berbeda). Task ini yang berhak menghapus `use App\Http\Controllers\Admin\TagihanController;` dari `routes/admin.php` (karena setelah Task 6+7, pemakaiannya di `admin.php` sudah 0).
 
-- [ ] **Step 1: Buat `routes/admin/keuangan.php`**
+- [x] **Step 1: Buat `routes/admin/keuangan.php`**
 
 ```php
 <?php
@@ -597,9 +597,9 @@ Route::post('virtual-account/generate', [VirtualAccountController::class, 'gener
 Route::get('virtual-account/export', [VirtualAccountController::class, 'export'])->name('virtual-account.export');
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok persis dari `Route::get('jenis-tagihan/create'...` sampai `Route::get('virtual-account/export'...` dan ganti dengan `require base_path('routes/admin/keuangan.php');`**
+- [x] **Step 2: Di `routes/admin.php`, cari blok persis dari `Route::get('jenis-tagihan/create'...` sampai `Route::get('virtual-account/export'...` dan ganti dengan `require base_path('routes/admin/keuangan.php');`**
 
-- [ ] **Step 3: Bersihkan `use` (termasuk `TagihanController` sekarang, cek grep = 0), snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul keuangan ke routes/admin/"`.
+- [x] **Step 3: Bersihkan `use` (termasuk `TagihanController` sekarang, cek grep = 0), snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul keuangan ke routes/admin/"`.
 
 ---
 
@@ -609,7 +609,7 @@ Route::get('virtual-account/export', [VirtualAccountController::class, 'export']
 - Create: `routes/admin/rpp.php`
 - Modify: `routes/admin.php`
 
-- [ ] **Step 1: Buat `routes/admin/rpp.php`**
+- [x] **Step 1: Buat `routes/admin/rpp.php`**
 
 ```php
 <?php
@@ -627,7 +627,7 @@ Route::post('rpp/{rpp}/submit', [RppController::class, 'submit'])->name('rpp.sub
 Route::post('rpp/{rpp}/verify', [RppController::class, 'verify'])->name('rpp.verify');
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok (termasuk komentarnya) dan ganti dengan `require base_path('routes/admin/rpp.php');`**
+- [x] **Step 2: Di `routes/admin.php`, cari blok (termasuk komentarnya) dan ganti dengan `require base_path('routes/admin/rpp.php');`**
 
 Cari:
 ```php
@@ -641,7 +641,7 @@ Cari:
     Route::post('rpp/{rpp}/verify', [RppController::class, 'verify'])->name('rpp.verify');
 ```
 
-- [ ] **Step 3: Bersihkan use, snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul rpp ke routes/admin/"`.
+- [x] **Step 3: Bersihkan use, snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul rpp ke routes/admin/"`.
 
 ---
 
@@ -651,7 +651,7 @@ Cari:
 - Create: `routes/admin/penilaian-rapor.php`
 - Modify: `routes/admin.php`
 
-- [ ] **Step 1: Buat `routes/admin/penilaian-rapor.php`**
+- [x] **Step 1: Buat `routes/admin/penilaian-rapor.php`**
 
 ```php
 <?php
@@ -680,9 +680,9 @@ Route::get('kenaikan-kelas', [KenaikanKelasController::class, 'index'])->name('k
 Route::post('kenaikan-kelas', [KenaikanKelasController::class, 'store'])->name('kenaikan-kelas.store');
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok persis di atas dan ganti dengan `require base_path('routes/admin/penilaian-rapor.php');`**
+- [x] **Step 2: Di `routes/admin.php`, cari blok persis di atas dan ganti dengan `require base_path('routes/admin/penilaian-rapor.php');`**
 
-- [ ] **Step 3: Bersihkan use, snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul penilaian-rapor ke routes/admin/"`.
+- [x] **Step 3: Bersihkan use, snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul penilaian-rapor ke routes/admin/"`.
 
 ---
 
@@ -692,9 +692,9 @@ Route::post('kenaikan-kelas', [KenaikanKelasController::class, 'store'])->name('
 - Create: `routes/admin/kasus-admin.php`
 - Modify: `routes/admin.php`
 
-**Catatan:** ini BEDA dari `routes/kasus.php` (Task 13) — file ini berisi rute `admin.kasus.*` (manajemen kasus oleh admin: index, triase, assign-konselor, destroy, restore, log-akses, terhapus), tetap di bawah prefix `/admin`.
+**Catatan:** ini BEDA dari `routes/kasus.php` (Task 13) â€” file ini berisi rute `admin.kasus.*` (manajemen kasus oleh admin: index, triase, assign-konselor, destroy, restore, log-akses, terhapus), tetap di bawah prefix `/admin`.
 
-- [ ] **Step 1: Buat `routes/admin/kasus-admin.php`**
+- [x] **Step 1: Buat `routes/admin/kasus-admin.php`**
 
 ```php
 <?php
@@ -713,9 +713,9 @@ Route::get('kasus-log-akses', [KasusAksesLogController::class, 'index'])->name('
 Route::get('kasus-terhapus', [KasusTerhapusController::class, 'index'])->name('kasus.terhapus');
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok persis di atas (dengan komentar `// Sarana & Prasarana (Sarpras)` di baris SETELAHnya — jangan ikut terhapus, itu milik Task 11) dan ganti dengan `require base_path('routes/admin/kasus-admin.php');`**
+- [x] **Step 2: Di `routes/admin.php`, cari blok persis di atas (dengan komentar `// Sarana & Prasarana (Sarpras)` di baris SETELAHnya â€” jangan ikut terhapus, itu milik Task 11) dan ganti dengan `require base_path('routes/admin/kasus-admin.php');`**
 
-- [ ] **Step 3: Bersihkan use, snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul kasus-admin ke routes/admin/"`.
+- [x] **Step 3: Bersihkan use, snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul kasus-admin ke routes/admin/"`.
 
 ---
 
@@ -725,7 +725,7 @@ Route::get('kasus-terhapus', [KasusTerhapusController::class, 'index'])->name('k
 - Create: `routes/admin/sarpras.php`
 - Modify: `routes/admin.php`
 
-- [ ] **Step 1: Buat `routes/admin/sarpras.php`**
+- [x] **Step 1: Buat `routes/admin/sarpras.php`**
 
 ```php
 <?php
@@ -746,11 +746,11 @@ Route::prefix('sarpras')->name('sarpras.')->group(function () {
 });
 ```
 
-(Tidak perlu `use` tambahan — semua controller sudah dipanggil pakai FQCN inline di source asli.)
+(Tidak perlu `use` tambahan â€” semua controller sudah dipanggil pakai FQCN inline di source asli.)
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok persis di atas (termasuk komentar `// Sarana & Prasarana (Sarpras)`) dan ganti dengan `require base_path('routes/admin/sarpras.php');`**
+- [x] **Step 2: Di `routes/admin.php`, cari blok persis di atas (termasuk komentar `// Sarana & Prasarana (Sarpras)`) dan ganti dengan `require base_path('routes/admin/sarpras.php');`**
 
-- [ ] **Step 3: Snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul sarpras ke routes/admin/"`.
+- [x] **Step 3: Snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul sarpras ke routes/admin/"`.
 
 ---
 
@@ -760,7 +760,7 @@ Route::prefix('sarpras')->name('sarpras.')->group(function () {
 - Create: `routes/admin/pengadaan.php`
 - Modify: `routes/admin.php`
 
-- [ ] **Step 1: Buat `routes/admin/pengadaan.php`**
+- [x] **Step 1: Buat `routes/admin/pengadaan.php`**
 
 ```php
 <?php
@@ -789,11 +789,11 @@ Route::prefix('pengadaan')->name('pengadaan.')->group(function () {
 });
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, cari blok persis di atas (termasuk komentar `// Pengadaan & LPJ Sarpras`) dan ganti dengan `require base_path('routes/admin/pengadaan.php');`**
+- [x] **Step 2: Di `routes/admin.php`, cari blok persis di atas (termasuk komentar `// Pengadaan & LPJ Sarpras`) dan ganti dengan `require base_path('routes/admin/pengadaan.php');`**
 
-Setelah task ini, isi `Route::group` utama di `routes/admin.php` seharusnya HANYA berisi 13 baris `require`, sesuai spec §3.2. Verifikasi manual: buka `routes/admin.php`, pastikan tidak ada baris `Route::` lain tersisa di dalam grup utama selain 13 `require`.
+Setelah task ini, isi `Route::group` utama di `routes/admin.php` seharusnya HANYA berisi 13 baris `require`, sesuai spec Â§3.2. Verifikasi manual: buka `routes/admin.php`, pastikan tidak ada baris `Route::` lain tersisa di dalam grup utama selain 13 `require`.
 
-- [ ] **Step 3: Snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul pengadaan ke routes/admin/, admin.php kini murni loader"`.
+- [x] **Step 3: Snapshot before/after route:list, diff kosong, commit** dengan pesan `"refactor(routes): ekstrak modul pengadaan ke routes/admin/, admin.php kini murni loader"`.
 
 ---
 
@@ -808,7 +808,7 @@ Setelah task ini, isi `Route::group` utama di `routes/admin.php` seharusnya HANY
 - Consumes: tidak ada
 - Produces: pola `require __DIR__.'/kasus.php';` yang jadi acuan Task 14
 
-- [ ] **Step 1: Buat `routes/kasus.php`**
+- [x] **Step 1: Buat `routes/kasus.php`**
 
 ```php
 <?php
@@ -850,7 +850,7 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
 });
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, HAPUS seluruh blok berikut** (komentar + `Route::bind` + grup `kasus.*` lengkap — ini berada SETELAH penutup `});` grup admin utama, BUKAN di dalamnya):
+- [x] **Step 2: Di `routes/admin.php`, HAPUS seluruh blok berikut** (komentar + `Route::bind` + grup `kasus.*` lengkap â€” ini berada SETELAH penutup `});` grup admin utama, BUKAN di dalamnya):
 
 ```php
 // Orang tua accounts have no lembaga_id of their own, so implicit route-model binding's
@@ -881,9 +881,9 @@ Route::middleware(['auth', 'verified'])->prefix('kasus')->name('kasus.')->group(
 });
 ```
 
-- [ ] **Step 3: Hapus `use` yang sudah tidak dipakai (`KasusConsentController`, `KasusController` (unaliased), `KasusEvaluasiController`, `KasusSesiController`, `KasusTugasBatchPreviewController`, `KasusTugasController`, `KasusTugasSubmissionController`) dari `routes/admin.php`** — HATI-HATI jangan hapus `use App\Http\Controllers\Admin\KasusController as AdminKasusController;` (beda class, dipakai `routes/admin/kasus-admin.php` dari Task 10, sudah dihapus dari admin.php di task itu — cek dulu dengan grep, kemungkinan baris ini sudah tidak ada lagi di admin.php setelah Task 10).
+- [x] **Step 3: Hapus `use` yang sudah tidak dipakai (`KasusConsentController`, `KasusController` (unaliased), `KasusEvaluasiController`, `KasusSesiController`, `KasusTugasBatchPreviewController`, `KasusTugasController`, `KasusTugasSubmissionController`) dari `routes/admin.php`** â€” HATI-HATI jangan hapus `use App\Http\Controllers\Admin\KasusController as AdminKasusController;` (beda class, dipakai `routes/admin/kasus-admin.php` dari Task 10, sudah dihapus dari admin.php di task itu â€” cek dulu dengan grep, kemungkinan baris ini sudah tidak ada lagi di admin.php setelah Task 10).
 
-- [ ] **Step 4: Tambahkan require di `routes/web.php`**
+- [x] **Step 4: Tambahkan require di `routes/web.php`**
 
 Cari di `routes/web.php`:
 ```php
@@ -898,9 +898,9 @@ require __DIR__.'/admin.php';
 require __DIR__.'/kasus.php';
 ```
 
-- [ ] **Step 5: Snapshot before/after `php artisan route:list` (FULL, bukan cuma path admin — karena kasus.* pindah keluar dari file admin.php tapi TETAP terdaftar via web.php), diff harus kosong**
+- [x] **Step 5: Snapshot before/after `php artisan route:list` (FULL, bukan cuma path admin â€” karena kasus.* pindah keluar dari file admin.php tapi TETAP terdaftar via web.php), diff harus kosong**
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/admin.php routes/kasus.php routes/web.php
@@ -916,9 +916,9 @@ git commit -m "refactor(routes): pisahkan grup kasus.* ke routes/kasus.php (buka
 - Modify: `routes/admin.php` (hapus blok yang dipindah)
 - Modify: `routes/web.php` (tambah require)
 
-**Catatan:** `routes/guru.php` ini portal guru (jurnal-kbm, asesmen, komponen-penilaian versi guru, catatan rapor guru) — beda dari `routes/admin/guru-data.php` (Task 3, CRUD data kepegawaian guru oleh admin).
+**Catatan:** `routes/guru.php` ini portal guru (jurnal-kbm, asesmen, komponen-penilaian versi guru, catatan rapor guru) â€” beda dari `routes/admin/guru-data.php` (Task 3, CRUD data kepegawaian guru oleh admin).
 
-- [ ] **Step 1: Buat `routes/guru.php`**
+- [x] **Step 1: Buat `routes/guru.php`**
 
 ```php
 <?php
@@ -957,7 +957,7 @@ Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(fu
 });
 ```
 
-- [ ] **Step 2: Di `routes/admin.php`, HAPUS seluruh blok grup `guru.*` ini** (berada SETELAH grup `kasus.*` yang sudah dipindah di Task 13 — kalau Task 13 sudah jalan, blok ini langsung berada di akhir file setelah penutup grup admin):
+- [x] **Step 2: Di `routes/admin.php`, HAPUS seluruh blok grup `guru.*` ini** (berada SETELAH grup `kasus.*` yang sudah dipindah di Task 13 â€” kalau Task 13 sudah jalan, blok ini langsung berada di akhir file setelah penutup grup admin):
 
 ```php
 Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(function () {
@@ -988,11 +988,11 @@ Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(fu
 });
 ```
 
-Setelah task ini, `routes/admin.php` seharusnya HANYA berisi: tag `<?php`, `use App\Http\Controllers\...` (kalau masih ada sisa yang genuinely dipakai — cek), `use Illuminate\Support\Facades\Route;`, dan satu `Route::group` berisi 13 `require`. Bandingkan dengan bentuk target di spec §3.2.
+Setelah task ini, `routes/admin.php` seharusnya HANYA berisi: tag `<?php`, `use App\Http\Controllers\...` (kalau masih ada sisa yang genuinely dipakai â€” cek), `use Illuminate\Support\Facades\Route;`, dan satu `Route::group` berisi 13 `require`. Bandingkan dengan bentuk target di spec Â§3.2.
 
-- [ ] **Step 3: Hapus `use` yang sudah tidak dipakai (`AsesmenController`, `JurnalKbmController`, `RekapKehadiranController`, `GuruRaporController`) dari `routes/admin.php`**
+- [x] **Step 3: Hapus `use` yang sudah tidak dipakai (`AsesmenController`, `JurnalKbmController`, `RekapKehadiranController`, `GuruRaporController`) dari `routes/admin.php`**
 
-- [ ] **Step 4: Tambahkan require di `routes/web.php`**
+- [x] **Step 4: Tambahkan require di `routes/web.php`**
 
 Cari:
 ```php
@@ -1009,9 +1009,9 @@ require __DIR__.'/kasus.php';
 require __DIR__.'/guru.php';
 ```
 
-- [ ] **Step 5: Snapshot before/after `php artisan route:list` FULL, diff harus kosong**
+- [x] **Step 5: Snapshot before/after `php artisan route:list` FULL, diff harus kosong**
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/admin.php routes/guru.php routes/web.php
@@ -1026,42 +1026,43 @@ git commit -m "refactor(routes): pisahkan portal guru ke routes/guru.php (bukan 
 - Modify: `.agents/plans/2026-08-17-1015-penyempurnaan-modul-akademik.md` (checklist FASE 5.1)
 - Create: `.agents/logs/2026-08-20-fase-5-1-restrukturisasi-rute-modular.md`
 
-- [ ] **Step 1: Verifikasi struktur akhir `routes/admin.php` sesuai spec §3.2**
+- [x] **Step 1: Verifikasi struktur akhir `routes/admin.php` sesuai spec Â§3.2**
 
-Run: `cat routes/admin.php` — pastikan isinya persis pola loader (middleware/prefix/name wrapper + 13 baris `require`), tidak ada `Route::` lain tersisa di dalam grup, tidak ada `use` yang sudah tak terpakai (grep tiap class di `use` terhadap sisa isi file).
+Run: `cat routes/admin.php` â€” pastikan isinya persis pola loader (middleware/prefix/name wrapper + 13 baris `require`), tidak ada `Route::` lain tersisa di dalam grup, tidak ada `use` yang sudah tak terpakai (grep tiap class di `use` terhadap sisa isi file).
 
-- [ ] **Step 2: Snapshot `route:list` FULL sekali lagi terhadap baseline sebelum Task 1 dimulai (kalau implementer menyimpan snapshot awal itu; kalau tidak, checkout commit sebelum Task 1 di worktree terpisah untuk snapshot pembanding), pastikan identik**
+- [x] **Step 2: Snapshot `route:list` FULL sekali lagi terhadap baseline sebelum Task 1 dimulai (kalau implementer menyimpan snapshot awal itu; kalau tidak, checkout commit sebelum Task 1 di worktree terpisah untuk snapshot pembanding), pastikan identik**
 
-- [ ] **Step 3: Minta persetujuan user untuk menjalankan full suite** (ikuti pola RBAC v2: tanyakan dulu, jangan otomatis jalan)
+- [x] **Step 3: Minta persetujuan user untuk menjalankan full suite** (ikuti pola RBAC v2: tanyakan dulu, jangan otomatis jalan)
 
-- [ ] **Step 4: Jalankan full suite setelah disetujui**
+- [x] **Step 4: Jalankan full suite setelah disetujui**
 
 Run: `php artisan test`
-Expected: semua test tetap PASS, jumlah sama dengan baseline sebelum plan ini (1861 passed, 0 failed) — TIDAK BOLEH ada test yang gagal, karena tidak ada logic yang berubah.
+Expected: semua test tetap PASS, jumlah sama dengan baseline sebelum plan ini (1861 passed, 0 failed) â€” TIDAK BOLEH ada test yang gagal, karena tidak ada logic yang berubah.
 
-- [ ] **Step 5: Update checklist FASE 5.1 di master plan**
+- [x] **Step 5: Update checklist FASE 5.1 di master plan**
 
 Di `.agents/plans/2026-08-17-1015-penyempurnaan-modul-akademik.md`, ganti baris:
 ```markdown
-- [ ] **5.1. Pendaftaran Rute Modular:**
-  - [ ] Susun berkas rute modular `routes/lembaga.php`, `routes/guru.php`, `routes/siswa.php`, `routes/orang-tua.php`, dan `routes/yayasan.php`.
-  - [ ] Pertahankan route alias untuk backward compatibility.
+- [x] **5.1. Pendaftaran Rute Modular:**
+  - [x] Susun berkas rute modular `routes/lembaga.php`, `routes/guru.php`, `routes/siswa.php`, `routes/orang-tua.php`, dan `routes/yayasan.php`.
+  - [x] Pertahankan route alias untuk backward compatibility.
 ```
 
 Menjadi:
 ```markdown
 - [x] **5.1. Pendaftaran Rute Modular:** (2026-08-20, lihat `.agents/specs/2026-08-20-fase-5-1-restrukturisasi-rute-modular-design.md` dan `.agents/plans/2026-08-20-fase-5-1-restrukturisasi-rute-modular.md`)
-  - [x] Split per MODUL domain (bukan per scope aktor seperti draft awal) — `routes/admin.php` jadi loader 13 file di `routes/admin/`, plus `routes/kasus.php` dan `routes/guru.php` dipisah keluar dari admin.php.
-  - [x] Tidak perlu alias backward-compat — zero rename nama route/URI, diverifikasi lewat diff `php artisan route:list` di tiap task.
+  - [x] Split per MODUL domain (bukan per scope aktor seperti draft awal) â€” `routes/admin.php` jadi loader 13 file di `routes/admin/`, plus `routes/kasus.php` dan `routes/guru.php` dipisah keluar dari admin.php.
+  - [x] Tidak perlu alias backward-compat â€” zero rename nama route/URI, diverifikasi lewat diff `php artisan route:list` di tiap task.
 ```
 
-- [ ] **Step 6: Tulis handoff log ke `.agents/logs/2026-08-20-fase-5-1-restrukturisasi-rute-modular.md`**
+- [x] **Step 6: Tulis handoff log ke `.agents/logs/2026-08-20-fase-5-1-restrukturisasi-rute-modular.md`**
 
 Isi minimal: ringkasan tugas, daftar 14 file baru yang dibuat, hasil verifikasi route:list (identik) per task, hasil full suite akhir, dan konfirmasi tidak ada perubahan nama route/URI/middleware.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add .agents/plans/2026-08-17-1015-penyempurnaan-modul-akademik.md .agents/logs/2026-08-20-fase-5-1-restrukturisasi-rute-modular.md
 git commit -m "docs(routes): tutup FASE 5.1 - update checklist master plan & handoff log"
 ```
+
