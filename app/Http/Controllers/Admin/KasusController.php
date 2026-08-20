@@ -2,18 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Domains\Kasus\Enums\StatusKasus;
+use App\Domains\Kasus\Actions\Manajemen\AssignKonselorAction;
+use App\Domains\Kasus\Actions\Manajemen\DestroyKasusAction;
+use App\Domains\Kasus\Actions\Manajemen\RestoreKasusAction;
+use App\Domains\Kasus\DataTransferObjects\AssignKonselorData;
 use App\Domains\Kasus\Models\Kasus;
-use App\Domains\Kasus\Models\KasusConsent;
-use App\Domains\Kasus\Models\KasusTugas;
-use App\Models\Scopes\TenantScope;
-use App\Notifications\KonselorDipilihNotification;
 use App\Domains\Kasus\Services\KonselorAllocationResolver;
+use App\Domains\Kasus\Enums\StatusKasus;
+use App\Models\Scopes\TenantScope;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class KasusController extends BaseController
@@ -51,7 +51,7 @@ class KasusController extends BaseController
         return view('admin.kasus.triase', ['kasus' => $kasus, 'kandidat' => $kandidat]);
     }
 
-    public function assignKonselor(Request $request, Kasus $kasus, KonselorAllocationResolver $resolver): RedirectResponse
+    public function assignKonselor(Request $request, Kasus $kasus, KonselorAllocationResolver $resolver, AssignKonselorAction $action): RedirectResponse
     {
         $this->authorize('kasus.triase');
         $this->authorizeLembaga($kasus);
@@ -75,61 +75,34 @@ class KasusController extends BaseController
 
         abort_unless(in_array((int) $data['konselor_id'], $kandidatIds, true), 422, 'Konselor yang dipilih tidak valid.');
 
-        DB::transaction(function () use ($data, $kasus) {
-            $kasus->update([
-                'tingkat_urgensi' => $data['tingkat_urgensi'],
-                'status' => StatusKasus::MenungguConsent,
-                'konselor_guru_id' => $data['konselor_tipe'] === 'guru' ? $data['konselor_id'] : null,
-                'konselor_karyawan_id' => $data['konselor_tipe'] === 'karyawan' ? $data['konselor_id'] : null,
-            ]);
-
-            KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan']);
-            KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media']);
-        });
-
-        $kontakUtama = $siswa->orangTua()->wherePivot('is_kontak_utama', true)->first();
-        $kontakUtama?->notify(new KonselorDipilihNotification($kasus));
+        $action->execute($kasus, $siswa, new AssignKonselorData(
+            tingkatUrgensi: $data['tingkat_urgensi'],
+            konselorTipe: $data['konselor_tipe'],
+            konselorId: (int) $data['konselor_id'],
+        ));
 
         return redirect()->route('admin.kasus.index')->with('status', 'Konselor berhasil ditugaskan, menunggu persetujuan orang tua.');
     }
 
-    public function destroy(Kasus $kasus): RedirectResponse
+    public function destroy(Kasus $kasus, DestroyKasusAction $action): RedirectResponse
     {
         $this->authorize('kasus.hapus');
         $this->authorizeLembaga($kasus);
 
         abort_unless($kasus->status === StatusKasus::Selesai, 422, 'Hanya kasus berstatus Selesai yang dapat dihapus.');
 
-        DB::transaction(function () use ($kasus) {
-            foreach ($kasus->tugas as $tugas) {
-                $tugas->submissions()->delete();
-            }
-            $kasus->sesi()->delete();
-            $kasus->tugas()->delete();
-            $kasus->evaluasi()->delete();
-            $kasus->consents()->delete();
-            $kasus->delete();
-        });
+        $action->execute($kasus);
 
         return redirect()->route('admin.kasus.index')->with('status', 'Kasus berhasil dihapus.');
     }
 
-    public function restore(Kasus $kasus): RedirectResponse
+    public function restore(Kasus $kasus, RestoreKasusAction $action): RedirectResponse
     {
         $this->authorize('kasus.pulihkan');
         $this->authorizeLembaga($kasus);
         abort_unless($kasus->trashed(), 404);
 
-        DB::transaction(function () use ($kasus) {
-            $kasus->restore();
-            $kasus->sesi()->withTrashed()->restore();
-            KasusTugas::withTrashed()->where('kasus_id', $kasus->id)->get()->each(function (KasusTugas $tugas) {
-                $tugas->submissions()->withTrashed()->restore();
-                $tugas->restore();
-            });
-            $kasus->evaluasi()->withTrashed()->restore();
-            $kasus->consents()->withTrashed()->restore();
-        });
+        $action->execute($kasus);
 
         return redirect()->route('admin.kasus.terhapus')->with('status', 'Kasus berhasil dipulihkan.');
     }
