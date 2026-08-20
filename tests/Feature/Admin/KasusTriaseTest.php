@@ -16,18 +16,20 @@ use App\Notifications\KonselorDipilihNotification;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
-function actingAsKasusTriaseManager(Lembaga $lembaga): User
-{
-    foreach (['kasus.view', 'kasus.triase'] as $permission) {
-        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+if (! function_exists('actingAsKasusTriaseManager')) {
+    function actingAsKasusTriaseManager(Lembaga $lembaga): User
+    {
+        foreach (['kasus.view', 'kasus.triase'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+        $role->givePermissionTo(['kasus.view', 'kasus.triase']);
+
+        $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $manager->assignRole($role);
+
+        return $manager;
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo(['kasus.view', 'kasus.triase']);
-
-    $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $manager->assignRole($role);
-
-    return $manager;
 }
 
 it('assigns a guru_bk konselor from the resolver, moves status to menunggu_consent, and creates two consent rows', function () {

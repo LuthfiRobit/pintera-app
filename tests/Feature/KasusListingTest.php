@@ -7,8 +7,70 @@ use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\Yayasan;
+use App\Models\OrangTua;
+use App\Models\User;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+
+if (! function_exists('actingAsGuruPengaju')) {
+    function actingAsGuruPengaju(Lembaga $lembaga): array
+    {
+        foreach (['kasus.ajukan', 'kasus.view'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
+
+        $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $user->assignRole('guru');
+        $guru = Guru::create([
+            'user_id' => $user->id, 'lembaga_id' => $lembaga->id,
+            'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Pengaju',
+            'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+            'email' => 'guru.pengaju@example.test',
+        ]);
+
+        return [$user, $guru];
+    }
+}
+
+if (! function_exists('actingAsOrangTuaPengaju')) {
+    function actingAsOrangTuaPengaju(Siswa $siswa): array
+    {
+        foreach (['kasus.ajukan', 'kasus.view'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
+
+        $user = User::factory()->create(['lembaga_id' => null]);
+        $user->assignRole('orang_tua');
+        $orangTua = OrangTua::create([
+            'user_id' => $user->id, 'nama_lengkap' => 'Orang Tua Pengaju',
+            'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
+            'email' => 'ortu.pengaju@example.test',
+        ]);
+        $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+        return [$user, $orangTua];
+    }
+}
+
+if (! function_exists('actingAsKasusTriaseManager')) {
+    function actingAsKasusTriaseManager(Lembaga $lembaga): User
+    {
+        foreach (['kasus.view', 'kasus.triase'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+        $role->givePermissionTo(['kasus.view', 'kasus.triase']);
+
+        $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $manager->assignRole($role);
+
+        return $manager;
+    }
+}
 
 it('shows a guru only the kasus they submitted, not another guru\'s', function () {
     $yayasan = Yayasan::factory()->create();

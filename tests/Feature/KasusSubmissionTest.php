@@ -17,44 +17,48 @@ use App\Notifications\KasusDiajukanNotification;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
-function actingAsGuruPengaju(Lembaga $lembaga): array
-{
-    foreach (['kasus.ajukan', 'kasus.view'] as $permission) {
-        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+if (! function_exists('actingAsGuruPengaju')) {
+    function actingAsGuruPengaju(Lembaga $lembaga): array
+    {
+        foreach (['kasus.ajukan', 'kasus.view'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
+
+        $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $user->assignRole('guru');
+        $guru = Guru::create([
+            'user_id' => $user->id, 'lembaga_id' => $lembaga->id,
+            'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Pengaju',
+            'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
+            'email' => 'guru.pengaju@example.test',
+        ]);
+
+        return [$user, $guru];
     }
-    $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
-
-    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('guru');
-    $guru = Guru::create([
-        'user_id' => $user->id, 'lembaga_id' => $lembaga->id,
-        'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Pengaju',
-        'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
-        'email' => 'guru.pengaju@example.test',
-    ]);
-
-    return [$user, $guru];
 }
 
-function actingAsOrangTuaPengaju(Siswa $siswa): array
-{
-    foreach (['kasus.ajukan', 'kasus.view'] as $permission) {
-        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+if (! function_exists('actingAsOrangTuaPengaju')) {
+    function actingAsOrangTuaPengaju(Siswa $siswa): array
+    {
+        foreach (['kasus.ajukan', 'kasus.view'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
+
+        $user = User::factory()->create(['lembaga_id' => null]);
+        $user->assignRole('orang_tua');
+        $orangTua = OrangTua::create([
+            'user_id' => $user->id, 'nama_lengkap' => 'Orang Tua Pengaju',
+            'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
+            'email' => 'ortu.pengaju@example.test',
+        ]);
+        $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+        return [$user, $orangTua];
     }
-    $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
-
-    $user = User::factory()->create(['lembaga_id' => null]);
-    $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
-        'user_id' => $user->id, 'nama_lengkap' => 'Orang Tua Pengaju',
-        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
-        'email' => 'ortu.pengaju@example.test',
-    ]);
-    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
-
-    return [$user, $orangTua];
 }
 
 it('shows the create form with the orang tua\'s linked children in the siswa dropdown', function () {
