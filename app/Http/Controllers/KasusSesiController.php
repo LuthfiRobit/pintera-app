@@ -1,27 +1,27 @@
 <?php
-// app/Http/Controllers/KasusSesiController.php
 
 namespace App\Http\Controllers;
 
-use App\Domains\Kasus\Enums\StatusKasus;
+use App\Domains\Kasus\Actions\Sesi\JadwalkanSesiAction;
+use App\Domains\Kasus\Actions\Sesi\UpdateStatusSesiAction;
+use App\Domains\Kasus\DataTransferObjects\JadwalkanSesiData;
+use App\Domains\Kasus\DataTransferObjects\UpdateStatusSesiData;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusSesi;
-use App\Models\Scopes\TenantScope;
-use App\Notifications\SesiDijadwalkanNotification;
+use App\Domains\Kasus\Enums\StatusKasus;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\DB;
 
 class KasusSesiController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function store(Request $request, Kasus $kasus): RedirectResponse
+    public function store(Request $request, Kasus $kasus, JadwalkanSesiAction $action): RedirectResponse
     {
         $this->authorize('kasus.view');
-        $this->assertKonselorPemegangKasus($kasus);
+        $this->authorize('kelolaSesiTugas', $kasus);
         abort_if($kasus->trashed(), 404);
         abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
 
@@ -32,40 +32,15 @@ class KasusSesiController extends BaseController
             'sesi.*.lokasi_mode' => ['required', 'string', 'max:255'],
         ]);
 
-        $created = DB::transaction(function () use ($data, $kasus) {
-            $rows = collect($data['sesi'])->map(fn ($row) => KasusSesi::create([
-                'kasus_id' => $kasus->id,
-                'dijadwalkan_pada' => $row['dijadwalkan_pada'],
-                'peserta' => $row['peserta'],
-                'lokasi_mode' => $row['lokasi_mode'],
-            ]));
-
-            if ($kasus->status->value === 'ditugaskan') {
-                $kasus->update(['status' => 'berjalan']);
-            }
-
-            return $rows;
-        });
-
-        $siswa = $kasus->siswa()->withoutGlobalScope(TenantScope::class)->first();
-
-        foreach ($created as $sesi) {
-            if (in_array($sesi->peserta, ['siswa', 'keduanya'], true)) {
-                $siswa?->user()->withoutGlobalScope(TenantScope::class)->first()?->notify(new SesiDijadwalkanNotification($sesi));
-            }
-            if (in_array($sesi->peserta, ['orang_tua', 'keduanya'], true)) {
-                $kontakUtama = $siswa?->orangTua()->wherePivot('is_kontak_utama', true)->first();
-                $kontakUtama?->notify(new SesiDijadwalkanNotification($sesi));
-            }
-        }
+        $action->execute($kasus, new JadwalkanSesiData(sesi: $data['sesi']));
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Sesi berhasil dijadwalkan.');
     }
 
-    public function updateStatus(Request $request, Kasus $kasus, KasusSesi $kasusSesi): RedirectResponse
+    public function updateStatus(Request $request, Kasus $kasus, KasusSesi $kasusSesi, UpdateStatusSesiAction $action): RedirectResponse
     {
         $this->authorize('kasus.view');
-        $this->assertKonselorPemegangKasus($kasus);
+        $this->authorize('kelolaSesiTugas', $kasus);
         abort_if($kasusSesi->kasus_id !== $kasus->id, 404);
         abort_if($kasusSesi->status->value !== 'terjadwal', 403);
 
@@ -75,22 +50,12 @@ class KasusSesiController extends BaseController
             'alasan_batal' => ['required_if:status,batal', 'nullable', 'string'],
         ]);
 
-        $kasusSesi->update([
-            'status' => $data['status'],
-            'catatan_internal' => $data['catatan_internal'] ?? $kasusSesi->catatan_internal,
-            'alasan_batal' => $data['alasan_batal'] ?? null,
-        ]);
+        $action->execute($kasusSesi, new UpdateStatusSesiData(
+            status: $data['status'],
+            catatanInternal: $data['catatan_internal'] ?? null,
+            alasanBatal: $data['alasan_batal'] ?? null,
+        ));
 
         return redirect()->route('kasus.show', $kasus)->with('status', 'Status sesi berhasil diperbarui.');
-    }
-
-    private function assertKonselorPemegangKasus(Kasus $kasus): void
-    {
-        $user = auth()->user();
-        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
-        $isKonselor = ($kasus->konselor_guru_id !== null && $kasus->konselor_guru_id === $user->guru?->id)
-            || ($kasus->konselor_karyawan_id !== null && $kasus->konselor_karyawan_id === $karyawanId);
-
-        abort_unless($isKonselor, 403);
     }
 }
