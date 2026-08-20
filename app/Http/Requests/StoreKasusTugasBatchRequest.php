@@ -3,7 +3,7 @@
 
 namespace App\Http\Requests;
 
-use App\Services\TugasBatchGenerator;
+use App\Domains\Kasus\Services\TugasBatchGenerator;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

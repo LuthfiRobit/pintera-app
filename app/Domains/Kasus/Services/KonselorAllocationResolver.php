@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Domains\Kasus\Services;
 
 use App\Domains\Kasus\DataTransferObjects\KonselorKandidat;
 use App\Models\Guru;

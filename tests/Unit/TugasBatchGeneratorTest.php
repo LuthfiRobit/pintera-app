@@ -1,7 +1,7 @@
 <?php
 // tests/Unit/TugasBatchGeneratorTest.php
 
-use App\Services\TugasBatchGenerator;
+use App\Domains\Kasus\Services\TugasBatchGenerator;
 use Carbon\Carbon;
 
 beforeEach(function () {

@@ -11,7 +11,7 @@ use App\Domains\Kasus\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\TugasBatchDibuatNotification;
 use App\Notifications\TugasSelesaiNotification;
-use App\Services\TugasBatchGenerator;
+use App\Domains\Kasus\Services\TugasBatchGenerator;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;

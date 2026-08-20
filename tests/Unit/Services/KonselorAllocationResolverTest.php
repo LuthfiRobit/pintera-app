@@ -8,7 +8,7 @@ use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
-use App\Services\KonselorAllocationResolver;
+use App\Domains\Kasus\Services\KonselorAllocationResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

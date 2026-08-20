@@ -1,7 +1,7 @@
 <?php
 // app/Services/TugasBatchGenerator.php
 
-namespace App\Services;
+namespace App\Domains\Kasus\Services;
 
 use Carbon\Carbon;
 use Illuminate\Support\Collection;

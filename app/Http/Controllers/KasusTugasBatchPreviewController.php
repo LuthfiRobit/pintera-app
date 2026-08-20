@@ -7,7 +7,7 @@ use App\Domains\Kasus\Enums\StatusKasus;
 use App\Http\Controllers\Concerns\AssertsKonselorPemegangKasus;
 use App\Http\Requests\PreviewKasusTugasBatchRequest;
 use App\Domains\Kasus\Models\Kasus;
-use App\Services\TugasBatchGenerator;
+use App\Domains\Kasus\Services\TugasBatchGenerator;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;

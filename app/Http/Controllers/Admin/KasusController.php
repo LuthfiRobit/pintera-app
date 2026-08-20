@@ -8,7 +8,7 @@ use App\Domains\Kasus\Models\KasusConsent;
 use App\Domains\Kasus\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\KonselorDipilihNotification;
-use App\Services\KonselorAllocationResolver;
+use App\Domains\Kasus\Services\KonselorAllocationResolver;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
