@@ -2,13 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Kelas;
+use App\Domains\Akademik\Actions\PolaJam\AssignKelasToPolaJamAction;
+use App\Domains\Akademik\Actions\PolaJam\CreatePolaJamAction;
+use App\Domains\Akademik\Actions\PolaJam\DeletePolaJamAction;
+use App\Domains\Akademik\Actions\PolaJam\DuplicatePolaJamAction;
+use App\Domains\Akademik\Actions\PolaJam\UpdatePolaJamAction;
+use App\Domains\Akademik\DataTransferObjects\AssignKelasData;
+use App\Domains\Akademik\DataTransferObjects\PolaJamData;
 use App\Domains\Akademik\Models\PolaJam;
+use App\Models\Kelas;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class PolaJamController extends BaseController
@@ -32,7 +39,7 @@ class PolaJamController extends BaseController
         return view('admin.pola-jam.create');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, CreatePolaJamAction $action): RedirectResponse
     {
         $this->authorize('pola-jam.create');
 
@@ -40,17 +47,16 @@ class PolaJamController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
         ]);
 
+        $lembagaId = null;
         if ($request->user()->widestScopeLevel() === 'yayasan') {
             $lembagaId = session('active_lembaga_id');
 
             if ($lembagaId === null) {
                 return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat pola jam.'])->withInput();
             }
-
-            $data['lembaga_id'] = $lembagaId;
         }
 
-        PolaJam::create($data);
+        $action->execute(new PolaJamData(nama: $data['nama'], lembagaId: $lembagaId));
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dibuat.');
     }
@@ -62,7 +68,7 @@ class PolaJamController extends BaseController
         return view('admin.pola-jam.edit', ['polaJam' => $polaJam]);
     }
 
-    public function update(Request $request, PolaJam $polaJam): RedirectResponse
+    public function update(Request $request, PolaJam $polaJam, UpdatePolaJamAction $action): RedirectResponse
     {
         $this->authorize('pola-jam.edit');
 
@@ -70,29 +76,25 @@ class PolaJamController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
         ]);
 
-        $polaJam->update($data);
+        $action->execute($polaJam, new PolaJamData(nama: $data['nama'], lembagaId: $polaJam->lembaga_id));
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil diperbarui.');
     }
 
-    public function destroy(PolaJam $polaJam): RedirectResponse
+    public function destroy(PolaJam $polaJam, DeletePolaJamAction $action): RedirectResponse
     {
         $this->authorize('pola-jam.delete');
 
-        if ($polaJam->kelas()->exists()) {
-            return back()->withErrors(['pola_jam' => 'Pola jam ini masih dipakai oleh satu atau lebih kelas — lepaskan dulu sebelum menghapus.']);
+        try {
+            $action->execute($polaJam);
+        } catch (ValidationException $e) {
+            return back()->withErrors(['pola_jam' => $e->validator->errors()->first('pola_jam')]);
         }
-
-        if ($polaJam->jamPelajaran()->whereHas('jadwalPelajaran')->exists()) {
-            return back()->withErrors(['pola_jam' => 'Pola jam ini memiliki jam pelajaran yang sudah dipakai di Jadwal Pelajaran — hapus jadwalnya dulu sebelum menghapus pola jam ini.']);
-        }
-
-        $polaJam->delete();
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dihapus.');
     }
 
-    public function assignKelas(Request $request, PolaJam $polaJam): RedirectResponse
+    public function assignKelas(Request $request, PolaJam $polaJam, AssignKelasToPolaJamAction $action): RedirectResponse
     {
         $this->authorize('kelas.edit');
 
@@ -100,49 +102,21 @@ class PolaJamController extends BaseController
             'kelas_ids' => ['nullable', 'array'],
             'kelas_ids.*' => ['integer'],
         ]);
-        $kelasIds = $data['kelas_ids'] ?? [];
 
-        $kelasTerpilih = Kelas::whereIn('id', $kelasIds)->get();
-
-        if ($kelasTerpilih->count() !== count($kelasIds)) {
-            return back()->withErrors(['kelas_ids' => 'Salah satu kelas yang dipilih tidak ditemukan.']);
+        try {
+            $action->execute($polaJam, new AssignKelasData(kelasIds: $data['kelas_ids'] ?? []));
+        } catch (ValidationException $e) {
+            return back()->withErrors(['kelas_ids' => $e->validator->errors()->first('kelas_ids')]);
         }
-
-        foreach ($kelasTerpilih as $kelas) {
-            if ($kelas->lembaga_id !== $polaJam->lembaga_id) {
-                return back()->withErrors(['kelas_ids' => 'Kelas dan pola jam harus berasal dari lembaga yang sama.']);
-            }
-        }
-
-        Kelas::where('pola_jam_id', $polaJam->id)->whereNotIn('id', $kelasIds)->update(['pola_jam_id' => null]);
-        Kelas::whereIn('id', $kelasIds)->update(['pola_jam_id' => $polaJam->id]);
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Tautan kelas untuk pola jam ini berhasil disimpan.');
     }
 
-    public function duplicate(PolaJam $polaJam): RedirectResponse
+    public function duplicate(PolaJam $polaJam, DuplicatePolaJamAction $action): RedirectResponse
     {
         $this->authorize('pola-jam.create');
 
-        $count = DB::transaction(function () use ($polaJam) {
-            $newPola = PolaJam::create([
-                'nama' => $polaJam->nama . ' (Salinan)',
-                'lembaga_id' => $polaJam->lembaga_id,
-            ]);
-
-            foreach ($polaJam->jamPelajaran as $slot) {
-                $newPola->jamPelajaran()->create([
-                    'hari' => $slot->hari->value,
-                    'urutan' => $slot->urutan,
-                    'jam_mulai' => $slot->jam_mulai,
-                    'jam_selesai' => $slot->jam_selesai,
-                    'label' => $slot->label,
-                    'is_pelajaran' => $slot->is_pelajaran,
-                ]);
-            }
-
-            return $polaJam->jamPelajaran->count();
-        });
+        [$newPola, $count] = $action->execute($polaJam);
 
         return redirect()->route('admin.pola-jam.index')->with('status', "Pola jam \"{$polaJam->nama}\" beserta {$count} slot jam berhasil diduplikasi.");
     }
