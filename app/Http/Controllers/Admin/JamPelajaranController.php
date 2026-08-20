@@ -2,20 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\Hari;
+use App\Domains\Akademik\Actions\PolaJam\CreateJamPelajaranAction;
+use App\Domains\Akademik\Actions\PolaJam\DeleteJamPelajaranAction;
+use App\Domains\Akademik\Actions\PolaJam\UpdateJamPelajaranAction;
+use App\Domains\Akademik\DataTransferObjects\JamPelajaranData;
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\PolaJam;
+use App\Enums\Hari;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class JamPelajaranController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, CreateJamPelajaranAction $action): RedirectResponse
     {
         $this->authorize('jam-pelajaran.create');
 
@@ -35,28 +40,25 @@ class JamPelajaranController extends BaseController
             abort(404);
         }
 
-        $berhasil = [];
-        $dilewati = [];
+        $result = $action->execute(new JamPelajaranData(
+            polaJamId: $data['pola_jam_id'],
+            hari: $data['hari'],
+            urutan: $data['urutan'],
+            label: $data['label'],
+            jamMulai: $data['jam_mulai'],
+            jamSelesai: $data['jam_selesai'],
+            isPelajaran: $data['is_pelajaran'],
+        ));
 
-        foreach ($data['hari'] as $hari) {
-            if ($this->tabrakanSlot($data['pola_jam_id'], $hari, $data['urutan'])) {
-                $dilewati[] = $hari;
-                continue;
-            }
-
-            JamPelajaran::create([...$data, 'hari' => $hari]);
-            $berhasil[] = $hari;
-        }
-
-        if (empty($berhasil)) {
+        if (empty($result['berhasil'])) {
             return back()->withErrors([
                 'hari' => 'Semua hari yang dipilih (' . $this->formatDaftarHari($data['hari']) . ') sudah punya slot di urutan ini — tidak ada yang ditambahkan.',
             ])->withInput();
         }
 
-        $status = 'Slot berhasil ditambahkan untuk ' . $this->formatDaftarHari($berhasil) . '.';
-        if (! empty($dilewati)) {
-            $status .= ' ' . $this->formatDaftarHari($dilewati) . ' dilewati karena urutan ini sudah dipakai.';
+        $status = 'Slot berhasil ditambahkan untuk ' . $this->formatDaftarHari($result['berhasil']) . '.';
+        if (! empty($result['dilewati'])) {
+            $status .= ' ' . $this->formatDaftarHari($result['dilewati']) . ' dilewati karena urutan ini sudah dipakai.';
         }
 
         return redirect()->route('admin.pola-jam.index')->with('status', $status);
@@ -73,7 +75,7 @@ class JamPelajaranController extends BaseController
         return view('admin.jam-pelajaran.edit', ['jamPelajaran' => $jamPelajaran]);
     }
 
-    public function update(Request $request, JamPelajaran $jamPelajaran): RedirectResponse
+    public function update(Request $request, JamPelajaran $jamPelajaran, UpdateJamPelajaranAction $action): RedirectResponse
     {
         $this->authorize('jam-pelajaran.edit');
 
@@ -93,39 +95,26 @@ class JamPelajaranController extends BaseController
         $hari = $data['hari'] ?? $jamPelajaran->hari->value;
         $urutan = $data['urutan'] ?? $jamPelajaran->urutan;
 
-        if ($this->tabrakanSlot($jamPelajaran->pola_jam_id, $hari, $urutan, $jamPelajaran->id)) {
-            return back()->withErrors(['urutan' => 'Urutan ini sudah dipakai pada hari yang sama di pola jam ini.'])->withInput();
+        try {
+            $action->execute($jamPelajaran, $hari, $urutan, $data['label'], $data['jam_mulai'], $data['jam_selesai'], $data['is_pelajaran']);
+        } catch (ValidationException $e) {
+            return back()->withErrors(['urutan' => $e->validator->errors()->first('urutan')])->withInput();
         }
-
-        $jamPelajaran->update([...$data, 'hari' => $hari, 'urutan' => $urutan]);
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Jam pelajaran berhasil diperbarui.');
     }
 
-    public function destroy(JamPelajaran $jamPelajaran): RedirectResponse
+    public function destroy(JamPelajaran $jamPelajaran, DeleteJamPelajaranAction $action): RedirectResponse
     {
         $this->authorize('jam-pelajaran.delete');
 
-        if (! PolaJam::find($jamPelajaran->pola_jam_id)) {
-            abort(404);
+        try {
+            $action->execute($jamPelajaran);
+        } catch (ValidationException $e) {
+            return back()->withErrors(['jam_pelajaran' => $e->validator->errors()->first('jam_pelajaran')]);
         }
-
-        if ($jamPelajaran->jadwalPelajaran()->exists()) {
-            return back()->withErrors(['jam_pelajaran' => 'Slot ini masih dipakai di Jadwal Pelajaran — hapus jadwalnya dulu sebelum menghapus slot ini.']);
-        }
-
-        $jamPelajaran->delete();
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Jam pelajaran berhasil dihapus.');
-    }
-
-    private function tabrakanSlot(int $polaJamId, string $hari, int $urutan, ?int $kecualiId = null): bool
-    {
-        return JamPelajaran::where('pola_jam_id', $polaJamId)
-            ->where('hari', $hari)
-            ->where('urutan', $urutan)
-            ->when($kecualiId, fn ($q) => $q->where('id', '!=', $kecualiId))
-            ->exists();
     }
 
     private function formatDaftarHari(array $nilaiHari): string
