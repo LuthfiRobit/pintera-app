@@ -3,7 +3,7 @@
 - **Document ID / Slug:** `2026-08-20-1800-master-refactor-domain-pattern`
 - **Tanggal & Waktu:** 20 Agustus 2026, 18:00 WIB
 - **Branch:** `rbac-v2`
-- **Status Master:** 🟡 BELUM DIMULAI — dokumen ini adalah rencana, sub-task pertama belum di-brainstorming
+- **Status Master:** 🟢 1 Sub-Task Selesai (Kasus), 4 Grup Tersisa
 
 ---
 
@@ -111,7 +111,7 @@ Proyek refactor ini TIDAK menghentikan kebutuhan fitur baru. Kalau di tengah pro
 
 | No | Sub-Task | File Spec | File Plan | File Handoff Log | Status |
 |:---:|---|---|---|---|:---:|
-| *(kosong — belum ada sub-task yang resmi jadi spec)* | | | | | |
+| 1 | Migrasi Domain Kasus | [`.agents/specs/2026-08-20-2000-kasus-domain-migrasi.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-20-2000-kasus-domain-migrasi.md) | [`.agents/plans/2026-08-20-2000-kasus-domain-migrasi.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-20-2000-kasus-domain-migrasi.md) | [`.agents/logs/2026-08-20-2000-kasus-domain-migrasi.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-20-2000-kasus-domain-migrasi.md) | 🟢 SELESAI |
 
 > Isi tabel ini setiap kali satu sub-task selesai brainstorming (spec ditulis) — jangan tunggu sampai implementasi selesai untuk mendaftarkannya, supaya sesi lain yang membuka dokumen ini tahu ada pekerjaan yang sedang berjalan.
 
