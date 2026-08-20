@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Domains\Akademik\Services;
 
 use App\Enums\TipeKalenderAkademik;
 use App\Domains\Akademik\Models\KalenderAkademik;

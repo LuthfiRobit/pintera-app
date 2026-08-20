@@ -4,7 +4,7 @@ use App\Enums\TipeKalenderAkademik;
 use App\Domains\Akademik\Models\KalenderAkademik;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
-use App\Services\KalenderAkademikResolver;
+use App\Domains\Akademik\Services\KalenderAkademikResolver;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

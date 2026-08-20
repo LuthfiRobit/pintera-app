@@ -6,7 +6,6 @@ use App\Domains\Akademik\Models\Presensi;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Models\Kelas;
-use App\Services\KalenderAkademikResolver;
 use Carbon\CarbonInterface;
 
 class SesiTematikGenerator
