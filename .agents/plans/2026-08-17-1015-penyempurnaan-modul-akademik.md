@@ -123,7 +123,7 @@ Rencana kerja ini mengimplementasikan spesifikasi arsitektur Modul Akademik dan 
 - [x] **5.2. Auto-Discovery Permissions Sync:** (2026-08-20)
   - [x] `php artisan permissions:sync` dijalankan setelah FASE 5.1 — tidak ada permission baru yang perlu dibuat (restrukturisasi rute tidak menambah `authorize()` baru), sesuai ekspektasi. Satu entri stale (`pola-jam.kelola`) terdeteksi tapi itu murni artefak tabel `permissions` di DB lokal (dev DB belum di-reseed sejak fix `2e58e80`), bukan masalah kode — seeder sudah benar. 4 permission mati lain sudah dikonfirmasi sengaja dibiarkan sejak RBAC v2.
 - [x] **5.3. Full Regression Test Suite:** (2026-08-20)
-  - [x] `php artisan test` — **1861 passed, 0 failed** (dijalankan di FASE 5.1 Task 15, setelah seluruh restrukturisasi rute selesai; tidak ada perubahan kode sejak itu sampai `permissions:sync` di 5.2, jadi hasil ini tetap berlaku untuk 5.3).
+  - [x] `php artisan test` — **1861 passed, 0 failed** (5721 assertions, 480.83s), dijalankan ULANG setelah 5.2 (`permissions:sync`) selesai, bukan reuse hasil FASE 5.1 Task 15.
 
 ---
 
