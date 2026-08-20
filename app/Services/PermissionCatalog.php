@@ -44,7 +44,7 @@ class PermissionCatalog
         'pengaturan-akademik' => 'Pengaturan Akademik',
         'pola-jam' => 'Pola Jam',
         'presensi' => 'Presensi & Jurnal KBM',
-        'rapor' => 'Laporan Penilaian',
+        'rapor' => 'Rapor',
         'rpp' => 'Perangkat Ajar (RPP)',
         'sarpras' => 'Sarana & Prasarana',
         'whatsapp-template' => 'Template WhatsApp',
