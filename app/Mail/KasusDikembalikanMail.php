@@ -3,7 +3,7 @@
 
 namespace App\Mail;
 
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;

@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 use App\Enums\StatusKasus;
 use App\Http\Controllers\Concerns\AssertsKonselorPemegangKasus;
 use App\Http\Requests\PreviewKasusTugasBatchRequest;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Services\TugasBatchGenerator;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;

@@ -4,8 +4,8 @@
 namespace Database\Factories;
 
 use App\Enums\StatusKasusTugas;
-use App\Models\Kasus;
-use App\Models\KasusTugas;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusTugas;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 

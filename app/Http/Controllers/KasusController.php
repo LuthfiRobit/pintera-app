@@ -5,7 +5,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use App\Notifications\KasusDiajukanNotification;

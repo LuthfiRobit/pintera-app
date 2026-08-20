@@ -4,7 +4,7 @@
 namespace App\Notifications;
 
 use App\Mail\TugasSelesaiMail;
-use App\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugas;
 use Illuminate\Notifications\Notification;
 
 class TugasSelesaiNotification extends Notification

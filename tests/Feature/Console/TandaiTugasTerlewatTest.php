@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Kasus;
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\Yayasan;
@@ -32,7 +32,7 @@ it('marks tugas with no submissions past batas_selesai_pada as terlewat', functi
     expect($tugasBelumJatuhTempo->refresh()->status->value)->toBe('ditugaskan');
     expect($tugasSudahAdaSubmission->refresh()->status->value)->toBe('dikerjakan');
 
-    expect(\Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\KasusTugas::class)
+    expect(\Spatie\Activitylog\Models\Activity::where('subject_type', \App\Domains\Kasus\Models\KasusTugas::class)
         ->where('subject_id', $tugasTanpaSubmission->id)
         ->where('event', 'updated')
         ->exists())->toBeTrue();

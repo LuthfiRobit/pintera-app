@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Guru;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;

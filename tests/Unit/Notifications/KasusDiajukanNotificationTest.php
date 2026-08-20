@@ -3,7 +3,7 @@
 
 use App\Mail\KasusDiajukanMail;
 use App\Models\Guru;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\Yayasan;

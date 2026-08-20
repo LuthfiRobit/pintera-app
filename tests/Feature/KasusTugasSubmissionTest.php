@@ -1,10 +1,10 @@
 <?php
 // tests/Feature/KasusTugasSubmissionTest.php
 
-use App\Models\Kasus;
-use App\Models\KasusConsent;
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusConsent;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;

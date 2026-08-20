@@ -1,8 +1,10 @@
 <?php
-// app/Models/KasusTugasSubmission.php
 
-namespace App\Models;
+namespace App\Domains\Kasus\Models;
 
+use App\Models\OrangTua;
+use App\Models\Siswa;
+use Database\Factories\KasusTugasSubmissionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +13,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class KasusTugasSubmission extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected static function newFactory(): KasusTugasSubmissionFactory
+    {
+        return KasusTugasSubmissionFactory::new();
+    }
 
     protected $table = 'kasus_tugas_submission';
 

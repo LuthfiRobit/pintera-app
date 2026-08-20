@@ -3,8 +3,8 @@
 
 namespace Database\Factories;
 
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class KasusTugasSubmissionFactory extends Factory

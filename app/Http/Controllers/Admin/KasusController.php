@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
-use App\Models\KasusConsent;
-use App\Models\KasusTugas;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusConsent;
+use App\Domains\Kasus\Models\KasusTugas;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\KonselorDipilihNotification;
 use App\Services\KonselorAllocationResolver;

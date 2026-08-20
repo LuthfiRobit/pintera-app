@@ -1,9 +1,14 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Kasus\Models;
 
 use App\Enums\StatusKasus;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Guru;
+use App\Models\Karyawan;
+use App\Models\OrangTua;
+use App\Models\Siswa;
+use Database\Factories\KasusFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +20,11 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Kasus extends Model
 {
     use HasFactory, BelongsToTenant, LogsActivity, SoftDeletes;
+
+    protected static function newFactory(): KasusFactory
+    {
+        return KasusFactory::new();
+    }
 
     protected $table = 'kasus';
 

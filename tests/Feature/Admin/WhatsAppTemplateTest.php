@@ -97,11 +97,11 @@ it('uses an admin-edited reminder_sesi_h1 template body for the next reminder se
     ]);
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
 
-    $kasus = \App\Models\Kasus::create([
+    $kasus = \App\Domains\Kasus\Models\Kasus::create([
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
     ]);
-    \App\Models\KasusSesi::factory()->create([
+    \App\Domains\Kasus\Models\KasusSesi::factory()->create([
         'kasus_id' => $kasus->id, 'peserta' => 'orang_tua',
         'dijadwalkan_pada' => now()->addDay()->setTime(9, 0), 'status' => 'terjadwal',
         'lokasi_mode' => 'Ruang BK',

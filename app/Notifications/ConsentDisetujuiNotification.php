@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Mail\ConsentDisetujuiMail;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use Illuminate\Notifications\Notification;
 
 class ConsentDisetujuiNotification extends Notification

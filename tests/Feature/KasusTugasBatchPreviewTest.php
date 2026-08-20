@@ -15,7 +15,7 @@ it('returns a JSON preview without creating any kasus_tugas row', function () {
 
     $response->assertOk();
     $response->assertJson(['frekuensi_akhir' => 'harian', 'jumlah_baris' => 5]);
-    expect(\App\Models\KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
+    expect(\App\Domains\Kasus\Models\KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(0);
 });
 
 it('returns the exact same row dates the real submit would create', function () {
@@ -29,7 +29,7 @@ it('returns the exact same row dates the real submit would create', function () 
     $preview = $this->actingAs($konselorUser)->postJson(route('kasus.tugas.preview', $kasus), $payload);
     $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), $payload);
 
-    $barisAsli = \App\Models\KasusTugas::where('kasus_id', $kasus->id)->orderBy('batch_urutan')->pluck('mulai_pada')->map->toDateString()->all();
+    $barisAsli = \App\Domains\Kasus\Models\KasusTugas::where('kasus_id', $kasus->id)->orderBy('batch_urutan')->pluck('mulai_pada')->map->toDateString()->all();
     $barisPreview = collect($preview->json('baris'))->pluck('mulai_pada')->all();
 
     expect($barisPreview)->toBe($barisAsli);

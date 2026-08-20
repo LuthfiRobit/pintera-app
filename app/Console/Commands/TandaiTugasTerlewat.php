@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugas;
 use Illuminate\Console\Command;
 
 class TandaiTugasTerlewat extends Command

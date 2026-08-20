@@ -4,8 +4,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
-use App\Models\KasusSesi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusSesi;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\SesiDijadwalkanNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;

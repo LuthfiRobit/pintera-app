@@ -3,15 +3,15 @@
 
 use App\Enums\StatusKasusSesi;
 use App\Enums\StatusKasusTugas;
-use App\Models\Kasus;
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use App\Models\Karyawan;
 use App\Models\Siswa;
 use App\Models\User;
 
 it('creates a kasus_sesi row with expected defaults', function () {
-    $sesi = \App\Models\KasusSesi::factory()->create();
+    $sesi = \App\Domains\Kasus\Models\KasusSesi::factory()->create();
 
     expect($sesi->status)->toBe(StatusKasusSesi::Terjadwal);
     expect($sesi->kasus)->toBeInstanceOf(Kasus::class);

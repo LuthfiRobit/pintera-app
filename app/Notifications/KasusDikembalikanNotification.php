@@ -4,7 +4,7 @@
 namespace App\Notifications;
 
 use App\Mail\KasusDikembalikanMail;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use Illuminate\Notifications\Notification;
 
 class KasusDikembalikanNotification extends Notification

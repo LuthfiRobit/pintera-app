@@ -3,7 +3,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;

@@ -4,7 +4,7 @@
 namespace App\Notifications;
 
 use App\Mail\SesiReminderMail;
-use App\Models\KasusSesi;
+use App\Domains\Kasus\Models\KasusSesi;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Notifications\Notification;
 

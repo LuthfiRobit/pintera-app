@@ -2,12 +2,12 @@
 // tests/Feature/Admin/KasusSoftDeleteRestoreTest.php
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
-use App\Models\KasusConsent;
-use App\Models\KasusEvaluasi;
-use App\Models\KasusSesi;
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusConsent;
+use App\Domains\Kasus\Models\KasusEvaluasi;
+use App\Domains\Kasus\Models\KasusSesi;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;

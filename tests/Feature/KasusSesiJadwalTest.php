@@ -3,8 +3,8 @@
 
 use App\Enums\StatusKasus;
 use App\Models\Guru;
-use App\Models\Kasus;
-use App\Models\KasusSesi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusSesi;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\Siswa;

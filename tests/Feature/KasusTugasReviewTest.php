@@ -1,9 +1,9 @@
 <?php
 // tests/Feature/KasusTugasReviewTest.php
 
-use App\Models\Kasus;
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\Siswa;

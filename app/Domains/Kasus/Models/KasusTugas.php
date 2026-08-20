@@ -1,9 +1,9 @@
 <?php
-// app/Models/KasusTugas.php
 
-namespace App\Models;
+namespace App\Domains\Kasus\Models;
 
 use App\Enums\StatusKasusTugas;
+use Database\Factories\KasusTugasFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +15,11 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class KasusTugas extends Model
 {
     use HasFactory, LogsActivity, SoftDeletes;
+
+    protected static function newFactory(): KasusTugasFactory
+    {
+        return KasusTugasFactory::new();
+    }
 
     protected $table = 'kasus_tugas';
 

@@ -1,8 +1,8 @@
 <?php
 // tests/Feature/KasusTugasBatchViewTest.php
 
-use App\Models\Kasus;
-use App\Models\KasusTugas;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusTugas;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 use Illuminate\Support\Str;

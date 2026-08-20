@@ -3,8 +3,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Kasus;
-use App\Models\KasusEvaluasi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusEvaluasi;
 use App\Models\Scopes\TenantScope;
 use App\Models\User;
 use App\Notifications\KasusDikembalikanNotification;

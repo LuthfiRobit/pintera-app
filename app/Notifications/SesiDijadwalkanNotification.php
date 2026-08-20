@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Mail\SesiDijadwalkanMail;
-use App\Models\KasusSesi;
+use App\Domains\Kasus\Models\KasusSesi;
 use Illuminate\Notifications\Notification;
 
 class SesiDijadwalkanNotification extends Notification

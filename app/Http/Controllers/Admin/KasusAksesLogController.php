@@ -25,7 +25,7 @@ class KasusAksesLogController extends BaseController
             ->where('log_name', 'akses_klinis')
             ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->whereHasMorph(
                 'subject',
-                [\App\Models\Kasus::class],
+                [\App\Domains\Kasus\Models\Kasus::class],
                 fn ($subQuery) => $subQuery->withoutGlobalScopes()->withTrashed()->where('lembaga_id', $user->lembaga_id)
             ));
 
@@ -38,7 +38,7 @@ class KasusAksesLogController extends BaseController
         if (!empty($search)) {
             $baseQuery->where(function ($q) use ($search) {
                 // Pencarian berdasarkan nama siswa di Kasus
-                $q->whereHasMorph('subject', [\App\Models\Kasus::class], function ($subQuery) use ($search) {
+                $q->whereHasMorph('subject', [\App\Domains\Kasus\Models\Kasus::class], function ($subQuery) use ($search) {
                     $subQuery->withoutGlobalScopes()->withTrashed()->whereHas('siswa', function ($siswaQuery) use ($search) {
                         $siswaQuery->withoutGlobalScopes()->where('nama_lengkap', 'like', '%' . $search . '%');
                     });

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Route;
 // isSubmitter/isKontakUtama/kasus.triase authorization logic ever runs. Bind explicitly,
 // bypassing the tenant scope; real authorization stays inside each controller action.
 Route::bind('kasus', function ($value) {
-    return \App\Models\Kasus::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+    return \App\Domains\Kasus\Models\Kasus::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
         ->withTrashed()
         ->findOrFail($value);
 });

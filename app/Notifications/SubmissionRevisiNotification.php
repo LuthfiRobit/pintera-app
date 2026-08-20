@@ -4,7 +4,7 @@
 namespace App\Notifications;
 
 use App\Mail\SubmissionRevisiMail;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use Illuminate\Notifications\Notification;
 
 class SubmissionRevisiNotification extends Notification

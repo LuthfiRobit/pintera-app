@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Mail\KonselorDipilihMail;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Notifications\Notification;
 

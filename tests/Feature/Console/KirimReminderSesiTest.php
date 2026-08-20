@@ -2,8 +2,8 @@
 // tests/Feature/Console/KirimReminderSesiTest.php
 
 use App\Models\Guru;
-use App\Models\Kasus;
-use App\Models\KasusSesi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusSesi;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;

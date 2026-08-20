@@ -1,9 +1,9 @@
 <?php
-// app/Models/KasusSesi.php
 
-namespace App\Models;
+namespace App\Domains\Kasus\Models;
 
 use App\Enums\StatusKasusSesi;
+use Database\Factories\KasusSesiFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +14,11 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class KasusSesi extends Model
 {
     use HasFactory, LogsActivity, SoftDeletes;
+
+    protected static function newFactory(): KasusSesiFactory
+    {
+        return KasusSesiFactory::new();
+    }
 
     protected $table = 'kasus_sesi';
 

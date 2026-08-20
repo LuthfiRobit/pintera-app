@@ -3,10 +3,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Kasus;
-use App\Models\KasusConsent;
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusConsent;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\SubmissionRevisiNotification;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;

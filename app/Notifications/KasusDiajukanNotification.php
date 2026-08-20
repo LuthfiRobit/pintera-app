@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Mail\KasusDiajukanMail;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use Illuminate\Notifications\Notification;
 
 class KasusDiajukanNotification extends Notification

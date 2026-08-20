@@ -3,7 +3,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\Scopes\TenantScope;
 
 trait AssertsKonselorPemegangKasus

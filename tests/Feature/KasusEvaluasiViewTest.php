@@ -1,8 +1,8 @@
 <?php
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
-use App\Models\KasusEvaluasi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusEvaluasi;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\Siswa;

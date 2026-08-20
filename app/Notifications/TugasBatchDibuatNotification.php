@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 class TugasBatchDibuatNotification extends Notification
 {
     /**
-     * @param  Collection<int, \App\Models\KasusTugas>  $barisTugas
+     * @param  Collection<int, \App\Domains\Kasus\Models\KasusTugas>  $barisTugas
      */
     public function __construct(public Collection $barisTugas)
     {

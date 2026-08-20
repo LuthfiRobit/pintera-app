@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Kasus;
-use App\Models\KasusEvaluasi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusEvaluasi;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

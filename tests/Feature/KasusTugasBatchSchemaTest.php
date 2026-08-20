@@ -1,9 +1,9 @@
 <?php
 // tests/Feature/KasusTugasBatchSchemaTest.php
 
-use App\Models\Kasus;
-use App\Models\KasusTugas;
-use App\Models\KasusTugasSubmission;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Kasus\Models\KasusTugasSubmission;
 
 it('stores batch_id, batch_urutan, and batch_total on kasus_tugas', function () {
     $kasus = Kasus::factory()->create();

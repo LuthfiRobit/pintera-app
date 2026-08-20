@@ -2,8 +2,8 @@
 // tests/Feature/KasusSchemaTest.php
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
-use App\Models\KasusConsent;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusConsent;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;

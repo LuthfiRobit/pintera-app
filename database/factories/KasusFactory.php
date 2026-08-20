@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Factories\Factory;

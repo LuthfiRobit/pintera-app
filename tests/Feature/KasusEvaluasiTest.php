@@ -5,8 +5,8 @@ use App\Enums\StatusKasus;
 use App\Models\Guru;
 use App\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
-use App\Models\Kasus;
-use App\Models\KasusEvaluasi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusEvaluasi;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;
@@ -329,8 +329,8 @@ it('lets the konselor keep scheduling sesi and giving tugas while the kasus is e
         'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(3)->toDateString(),
     ])->assertRedirect(route('kasus.show', $kasus));
 
-    expect(\App\Models\KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(1);
-    expect(\App\Models\KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(1);
+    expect(\App\Domains\Kasus\Models\KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(1);
+    expect(\App\Domains\Kasus\Models\KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(1);
     expect($kasus->refresh()->status)->toBe(StatusKasus::Eskalasi);
 });
 
@@ -342,7 +342,7 @@ it('records an activitylog entry when a konselor evaluates a berjalan kasus with
         'catatan' => 'Butuh keterlibatan admin.', 'keputusan' => 'eskalasi',
     ])->assertRedirect(route('kasus.show', $kasus));
 
-    expect(\Spatie\Activitylog\Models\Activity::where('subject_type', \App\Models\Kasus::class)
+    expect(\Spatie\Activitylog\Models\Activity::where('subject_type', \App\Domains\Kasus\Models\Kasus::class)
         ->where('subject_id', $kasus->id)
         ->where('event', 'updated')
         ->exists())->toBeTrue();

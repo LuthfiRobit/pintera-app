@@ -4,8 +4,8 @@
 namespace Database\Factories;
 
 use App\Enums\StatusKasusSesi;
-use App\Models\Kasus;
-use App\Models\KasusSesi;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusSesi;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class KasusSesiFactory extends Factory

@@ -3,7 +3,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\KasusSesi;
+use App\Domains\Kasus\Models\KasusSesi;
 use App\Models\Scopes\TenantScope;
 use App\Notifications\SesiReminderNotification;
 use Illuminate\Console\Command;

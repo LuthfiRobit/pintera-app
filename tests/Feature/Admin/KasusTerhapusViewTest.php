@@ -2,7 +2,7 @@
 // tests/Feature/Admin/KasusTerhapusViewTest.php
 
 use App\Enums\StatusKasus;
-use App\Models\Kasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\User;
