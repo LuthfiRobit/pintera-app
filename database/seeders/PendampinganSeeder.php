@@ -157,10 +157,10 @@ class PendampinganSeeder extends Seeder
         }
 
         Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'diajukan_oleh_guru_id' => $gurubk->id, 'status' => StatusKasus::Diajukan],
+            ['siswa_id' => $siswa->id, 'diajukan_oleh_guru_id' => $gurubk->id, 'kategori_masalah' => 'Perilaku'],
             [
                 'lembaga_id'           => $smpit->id,
-                'kategori_masalah'     => 'Perilaku',
+                'status'               => StatusKasus::Diajukan,
                 'deskripsi'            => 'Siswa sering tidak mengumpulkan tugas dan terlihat menarik diri dari pergaulan teman sebaya. Guru wali kelas sudah berkomunikasi tapi perlu penanganan lebih lanjut.',
                 'tingkat_urgensi'      => 'sedang',
             ]
@@ -178,11 +178,11 @@ class PendampinganSeeder extends Seeder
         }
 
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'status' => StatusKasus::MenungguConsent],
+            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Sosial-Emosional'],
             [
                 'lembaga_id'              => $smpit->id,
                 'diajukan_oleh_guru_id'   => $gurubk->id,
-                'kategori_masalah'        => 'Sosial-Emosional',
+                'status'                  => StatusKasus::MenungguConsent,
                 'deskripsi'               => 'Siswa menunjukkan tanda-tanda kecemasan berlebih saat ujian dan menghindari interaksi dengan guru.',
                 'tingkat_urgensi'         => 'tinggi',
                 'konselor_karyawan_id'    => $psikolog?->id,
@@ -207,13 +207,12 @@ class PendampinganSeeder extends Seeder
         }
 
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Ditugaskan],
+            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Akademik', 'tingkat_urgensi' => 'rendah'],
             [
                 'lembaga_id'            => $smpit->id,
                 'diajukan_oleh_guru_id' => $gurubk->id,
-                'kategori_masalah'      => 'Akademik',
+                'status'                => StatusKasus::Ditugaskan,
                 'deskripsi'             => 'Performa akademik menurun drastis dalam 2 bulan terakhir. Nilai rata-rata turun dari 80 ke 62. Perlu asesmen penyebab.',
-                'tingkat_urgensi'       => 'rendah',
                 'konselor_guru_id'      => $gurubk->id,
             ]
         );
@@ -240,13 +239,12 @@ class PendampinganSeeder extends Seeder
         }
 
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Berjalan],
+            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Perilaku', 'tingkat_urgensi' => 'tinggi'],
             [
                 'lembaga_id'            => $smpit->id,
                 'diajukan_oleh_guru_id' => $gurubk->id,
-                'kategori_masalah'      => 'Perilaku',
+                'status'                => StatusKasus::Berjalan,
                 'deskripsi'             => 'Siswa menunjukkan agresi verbal di kelas, sudah terjadi 3 insiden dalam sebulan.',
-                'tingkat_urgensi'       => 'tinggi',
                 'konselor_guru_id'      => $gurubk->id,
             ]
         );
@@ -330,12 +328,12 @@ class PendampinganSeeder extends Seeder
         }
 
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Eskalasi],
+            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Kesehatan Mental'],
             [
                 'lembaga_id'              => $smpit->id,
                 'diajukan_oleh_guru_id'   => null,
                 'diajukan_oleh_orang_tua_id' => $this->resolveOrangTuaKontakUtama($siswa)?->id,
-                'kategori_masalah'        => 'Kesehatan Mental',
+                'status'                  => StatusKasus::Eskalasi,
                 'deskripsi'               => 'Orang tua melaporkan anak menolak makan dan tidak tidur selama beberapa hari. Ada indikasi depresi ringan.',
                 'tingkat_urgensi'         => 'tinggi',
                 'konselor_karyawan_id'    => $psikolog->id,
@@ -383,13 +381,12 @@ class PendampinganSeeder extends Seeder
         }
 
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Selesai],
+            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Akademik', 'tingkat_urgensi' => 'sedang'],
             [
                 'lembaga_id'            => $smpit->id,
                 'diajukan_oleh_guru_id' => $gurubk->id,
-                'kategori_masalah'      => 'Akademik',
+                'status'                => StatusKasus::Selesai,
                 'deskripsi'             => 'Siswa mengalami kesulitan konsentrasi dan sering absen. Sudah ditangani 6 sesi.',
-                'tingkat_urgensi'       => 'sedang',
                 'konselor_guru_id'      => $gurubk->id,
             ]
         );
@@ -458,10 +455,11 @@ class PendampinganSeeder extends Seeder
     private function buatKasusRinganSmp(Siswa $siswa, Lembaga $smpit, Guru $gurubk): void
     {
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Selesai, 'kategori_masalah' => 'Kepercayaan Diri'],
+            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Kepercayaan Diri'],
             [
                 'lembaga_id'            => $smpit->id,
                 'diajukan_oleh_guru_id' => $gurubk->id,
+                'status'                => StatusKasus::Selesai,
                 'deskripsi'             => 'Siswa terlihat gugup dan menghindar setiap kali diminta presentasi di depan kelas, meski persiapannya sudah baik.',
                 'tingkat_urgensi'       => 'rendah',
                 'konselor_guru_id'      => $gurubk->id,
@@ -527,10 +525,10 @@ class PendampinganSeeder extends Seeder
     private function buatKasusRinganKb(Siswa $siswa, Lembaga $kbit, Guru $guruKb): void
     {
         Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'diajukan_oleh_guru_id' => $guruKb->id, 'status' => StatusKasus::Diajukan],
+            ['siswa_id' => $siswa->id, 'diajukan_oleh_guru_id' => $guruKb->id, 'kategori_masalah' => 'Kebiasaan Makan'],
             [
                 'lembaga_id'       => $kbit->id,
-                'kategori_masalah' => 'Kebiasaan Makan',
+                'status'           => StatusKasus::Diajukan,
                 'deskripsi'        => 'Ananda selalu menolak sayur saat makan bersama di kelas dan hanya mau makan nasi putih. Mohon saran pendampingan sederhana untuk orang tua di rumah.',
                 'tingkat_urgensi'  => 'rendah',
             ]
@@ -547,11 +545,11 @@ class PendampinganSeeder extends Seeder
     private function buatKasusRinganTk(Siswa $siswa, Lembaga $tkit, OrangTua $orangTuaTk, ?Karyawan $psikolog): void
     {
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'diajukan_oleh_orang_tua_id' => $orangTuaTk->id, 'status' => StatusKasus::MenungguConsent],
+            ['siswa_id' => $siswa->id, 'diajukan_oleh_orang_tua_id' => $orangTuaTk->id, 'kategori_masalah' => 'Adaptasi Sekolah'],
             [
                 'lembaga_id'           => $tkit->id,
                 'diajukan_oleh_guru_id' => null,
-                'kategori_masalah'     => 'Adaptasi Sekolah',
+                'status'               => StatusKasus::MenungguConsent,
                 'deskripsi'            => 'Ananda masih menangis dan sulit dilepas setiap kali diantar ke sekolah, sudah berlangsung 2 minggu sejak masuk TK.',
                 'tingkat_urgensi'      => 'rendah',
                 'konselor_karyawan_id' => $psikolog?->id,
@@ -571,10 +569,11 @@ class PendampinganSeeder extends Seeder
     private function buatKasusRinganSd(Siswa $siswa, Lembaga $sdit, Guru $guruSd): void
     {
         $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'status' => StatusKasus::Berjalan, 'kategori_masalah' => 'Konsentrasi Belajar'],
+            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Konsentrasi Belajar'],
             [
                 'lembaga_id'            => $sdit->id,
                 'diajukan_oleh_guru_id' => $guruSd->id,
+                'status'                => StatusKasus::Berjalan,
                 'deskripsi'             => 'Ananda mudah teralihkan dan sulit duduk tenang selama 10-15 menit saat pelajaran berlangsung.',
                 'tingkat_urgensi'       => 'rendah',
                 'konselor_guru_id'      => $guruSd->id,
