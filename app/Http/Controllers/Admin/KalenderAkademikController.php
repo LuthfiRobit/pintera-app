@@ -2,18 +2,23 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Actions\Kalender\CreateKalenderAkademikAction;
+use App\Domains\Akademik\Actions\Kalender\DeleteKalenderAkademikAction;
+use App\Domains\Akademik\Actions\Kalender\UpdateKalenderAkademikAction;
+use App\Domains\Akademik\DataTransferObjects\KalenderAkademikData;
 use App\Domains\Akademik\Models\KalenderAkademik;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\ValidationException;
 
 class KalenderAkademikController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function store(Request $request): RedirectResponse|JsonResponse
+    public function store(Request $request, CreateKalenderAkademikAction $action): RedirectResponse|JsonResponse
     {
         $this->authorize('kalender-akademik.kelola');
 
@@ -37,29 +42,31 @@ class KalenderAkademikController extends BaseController
         }
 
         $lembagaId = $nasional ? null : ($request->user()->lembaga_id ?? session('active_lembaga_id'));
-        $tanggalSelesai = $data['tanggal_selesai'] ?? $data['tanggal'];
 
-        if ($this->tumpangTindih($lembagaId, $data['tanggal'], $tanggalSelesai)) {
-            return $this->errorResponse($request, 'Rentang tanggal ini tumpang tindih dengan entri lain pada cakupan yang sama.', 'tanggal');
+        try {
+            $entri = $action->execute(
+                new KalenderAkademikData(
+                    tanggal: $data['tanggal'],
+                    tanggalSelesai: $data['tanggal_selesai'] ?? null,
+                    nama: $data['nama'],
+                    tipe: $data['tipe'],
+                    keterangan: $data['keterangan'] ?? null,
+                    berlakuNasional: $nasional,
+                ),
+                $lembagaId
+            );
+        } catch (ValidationException $e) {
+            return $this->errorResponse($request, $e->validator->errors()->first('tanggal'), 'tanggal');
         }
 
-        $entri = KalenderAkademik::create([
-            'lembaga_id' => $lembagaId,
-            'tanggal' => $data['tanggal'],
-            'tanggal_selesai' => $tanggalSelesai,
-            'nama' => $data['nama'],
-            'tipe' => $data['tipe'],
-            'keterangan' => $data['keterangan'] ?? null,
-        ]);
-
         if ($request->wantsJson()) {
-            return response()->json(['data' => $entri->fresh()], 201);
+            return response()->json(['data' => $entri], 201);
         }
 
         return redirect()->route('admin.pengaturan.akademik.index')->with('status', 'Entri kalender berhasil disimpan.');
     }
 
-    public function update(Request $request, KalenderAkademik $kalenderAkademik): RedirectResponse|JsonResponse
+    public function update(Request $request, KalenderAkademik $kalenderAkademik, UpdateKalenderAkademikAction $action): RedirectResponse|JsonResponse
     {
         $this->authorize('kalender-akademik.kelola');
 
@@ -78,16 +85,26 @@ class KalenderAkademikController extends BaseController
             'keterangan' => ['nullable', 'string'],
         ]);
 
-        $kalenderAkademik->update($data);
+        $kalenderAkademik = $action->execute(
+            $kalenderAkademik,
+            new KalenderAkademikData(
+                tanggal: $kalenderAkademik->tanggal->toDateString(),
+                tanggalSelesai: $kalenderAkademik->tanggal_selesai?->toDateString(),
+                nama: $data['nama'],
+                tipe: $data['tipe'],
+                keterangan: $data['keterangan'] ?? null,
+                berlakuNasional: $kalenderAkademik->lembaga_id === null,
+            )
+        );
 
         if ($request->wantsJson()) {
-            return response()->json(['data' => $kalenderAkademik->fresh()]);
+            return response()->json(['data' => $kalenderAkademik]);
         }
 
         return redirect()->route('admin.pengaturan.akademik.index')->with('status', 'Entri kalender berhasil diperbarui.');
     }
 
-    public function destroy(Request $request, KalenderAkademik $kalenderAkademik): RedirectResponse|JsonResponse
+    public function destroy(Request $request, KalenderAkademik $kalenderAkademik, DeleteKalenderAkademikAction $action): RedirectResponse|JsonResponse
     {
         $this->authorize('kalender-akademik.kelola');
 
@@ -100,35 +117,13 @@ class KalenderAkademikController extends BaseController
             $this->authorize('kalender-akademik.kelola-nasional');
         }
 
-        $kalenderAkademik->delete();
+        $action->execute($kalenderAkademik);
 
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Entri kalender berhasil dihapus.']);
         }
 
         return redirect()->route('admin.pengaturan.akademik.index')->with('status', 'Entri kalender berhasil dihapus.');
-    }
-
-    /**
-     * Detects whether [$mulai, $selesai] overlaps an existing entry in the
-     * same scope (same lembaga_id, or both national when $lembagaId is
-     * null). Mirrors KalenderAkademikResolver::cocokRentang's handling of a
-     * null tanggal_selesai: such a row is a single-day entry whose
-     * *effective* end date is its own `tanggal`, not an open-ended/unbounded
-     * range. Treating "tanggal_selesai IS NULL" as unconditionally
-     * overlapping (i.e. ORing it in without also checking the existing
-     * row's `tanggal` against $mulai) produces false positives for any new
-     * range that starts after such a single-day entry.
-     */
-    private function tumpangTindih(?int $lembagaId, string $mulai, string $selesai, ?int $kecualiId = null): bool
-    {
-        return KalenderAkademik::where(fn ($q) => $lembagaId === null ? $q->whereNull('lembaga_id') : $q->where('lembaga_id', $lembagaId))
-            ->when($kecualiId, fn ($q) => $q->where('id', '!=', $kecualiId))
-            ->where('tanggal', '<=', $selesai)
-            ->where(fn ($q) => $q->where('tanggal_selesai', '>=', $mulai)
-                ->orWhere(fn ($q2) => $q2->whereNull('tanggal_selesai')->where('tanggal', '>=', $mulai))
-            )
-            ->exists();
     }
 
     private function errorResponse(Request $request, string $message, string $field): RedirectResponse|JsonResponse

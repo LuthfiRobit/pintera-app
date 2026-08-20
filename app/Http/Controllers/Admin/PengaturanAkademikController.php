@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Actions\Kalender\UpdateHariAktifLembagaAction;
+use App\Domains\Akademik\DataTransferObjects\HariAktifLembagaData;
 use App\Domains\Akademik\Models\KalenderAkademik;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -37,7 +39,7 @@ class PengaturanAkademikController extends BaseController
         ]);
     }
 
-    public function updateHariAktif(Request $request): JsonResponse
+    public function updateHariAktif(Request $request, UpdateHariAktifLembagaAction $action): JsonResponse
     {
         $this->authorize('pengaturan-akademik.kelola');
 
@@ -56,9 +58,8 @@ class PengaturanAkademikController extends BaseController
         $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
         $lembaga = Lembaga::findOrFail($lembagaId);
 
-        $hariLibur = array_values(array_diff(range(0, 6), $data['hari_aktif']));
-        $lembaga->update(['hari_libur_mingguan' => $hariLibur]);
+        $lembaga = $action->execute($lembaga, new HariAktifLembagaData(hariAktif: $data['hari_aktif']));
 
-        return response()->json(['data' => ['hari_libur_mingguan' => $lembaga->fresh()->hari_libur_mingguan]]);
+        return response()->json(['data' => ['hari_libur_mingguan' => $lembaga->hari_libur_mingguan]]);
     }
 }
