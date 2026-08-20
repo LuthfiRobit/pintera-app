@@ -3,40 +3,31 @@
 use App\Http\Controllers\Admin\DokumenSyaratController;
 use App\Http\Controllers\Admin\FormulirFieldController;
 use App\Http\Controllers\Admin\GelombangPpdbController;
-use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JalurPpdbController;
-use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTagihanMonitoringController;
 use App\Http\Controllers\Admin\KategoriKeringananController;
 use App\Http\Controllers\Admin\JenisTesMasterController;
-use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KaryawanController;
 use App\Http\Controllers\Admin\KasusAksesLogController;
 use App\Http\Controllers\Admin\KasusController as AdminKasusController;
 use App\Http\Controllers\Admin\KasusTerhapusController;
-use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\KenaikanKelasController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
 use App\Http\Controllers\Admin\ManualPaymentController;
-use App\Http\Controllers\Admin\MataPelajaranController;
 use App\Http\Controllers\Admin\OrangTuaController;
 use App\Http\Controllers\Admin\PembayaranController;
 use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\PendaftaranSiswaController;
-use App\Http\Controllers\Admin\PengaturanAkademikController;
-use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\RaporController;
 use App\Http\Controllers\Admin\RppController;
 use App\Http\Controllers\Admin\SeleksiController;
-use App\Http\Controllers\Admin\SemesterController;
 use App\Http\Controllers\Admin\SiswaController;
 use App\Http\Controllers\Admin\SiswaImportController;
 use App\Http\Controllers\Admin\SiswaOrangTuaController;
 use App\Http\Controllers\Admin\SkPpdbController;
 use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TagihanController;
-use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Admin\VirtualAccountController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\Akademik\JurnalKbmController;
@@ -57,8 +48,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     require base_path('routes/admin/lembaga.php');
     require base_path('routes/admin/guru-data.php');
     require base_path('routes/admin/whatsapp-template.php');
-    Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
-    Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
+    require base_path('routes/admin/akademik-master.php');
     Route::post('siswa/generate-akun-massal', [SiswaController::class, 'generateAkunMassal'])->name('siswa.generate-akun-massal');
     Route::post('siswa/{siswa}/generate-akun', [SiswaController::class, 'generateAkun'])->name('siswa.generate-akun');
     Route::resource('siswa', SiswaController::class)->except(['show', 'destroy']);
@@ -72,26 +62,12 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::patch('karyawan/{karyawan}/status', [KaryawanController::class, 'updateStatus'])->name('karyawan.update-status');
     Route::patch('siswa/{siswa}/status', [SiswaController::class, 'updateStatus'])->name('siswa.update-status');
     Route::patch('siswa/{siswa}/reset-password', [SiswaController::class, 'resetPassword'])->name('siswa.reset-password');
-    Route::post('kalender-akademik', [KalenderAkademikController::class, 'store'])->name('kalender-akademik.store');
-    Route::put('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'update'])->name('kalender-akademik.update');
-    Route::delete('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'destroy'])->name('kalender-akademik.destroy');
-    Route::get('pengaturan/akademik', [PengaturanAkademikController::class, 'index'])->name('pengaturan.akademik.index');
-    Route::put('pengaturan/akademik/hari-aktif', [PengaturanAkademikController::class, 'updateHariAktif'])->name('pengaturan.akademik.hari-aktif');
     Route::get('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'index'])->name('siswa.spmb-daftar.index');
     Route::post('siswa-spmb-daftar', [PendaftaranSiswaController::class, 'store'])->name('siswa.spmb-daftar.store');
     Route::get('siswa-import', [SiswaImportController::class, 'index'])->name('siswa.import.index');
     Route::get('siswa-import/template', [SiswaImportController::class, 'template'])->name('siswa.import.template');
     Route::post('siswa-import/preview', [SiswaImportController::class, 'preview'])->name('siswa.import.preview');
     Route::post('siswa-import/confirm', [SiswaImportController::class, 'confirm'])->name('siswa.import.confirm');
-
-    Route::get('tahun-ajaran', [TahunAjaranController::class, 'index'])->name('tahun-ajaran.index');
-    Route::get('tahun-ajaran/create', [TahunAjaranController::class, 'create'])->name('tahun-ajaran.create');
-    Route::post('tahun-ajaran', [TahunAjaranController::class, 'store'])->name('tahun-ajaran.store');
-    Route::put('tahun-ajaran/{tahunAjaran}', [TahunAjaranController::class, 'update'])->name('tahun-ajaran.update');
-    Route::patch('tahun-ajaran/{tahunAjaran}/activate', [TahunAjaranController::class, 'activate'])->name('tahun-ajaran.activate');
-
-    Route::post('semester', [SemesterController::class, 'store'])->name('semester.store');
-    Route::patch('semester/{semester}/activate', [SemesterController::class, 'activate'])->name('semester.activate');
 
     Route::get('jenis-tes', [JenisTesMasterController::class, 'index'])->name('jenis-tes.index');
     Route::post('jenis-tes', [JenisTesMasterController::class, 'store'])->name('jenis-tes.store');
@@ -161,28 +137,6 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('virtual-account/calon', [VirtualAccountController::class, 'calonGenerate'])->name('virtual-account.calon');
     Route::post('virtual-account/generate', [VirtualAccountController::class, 'generate'])->name('virtual-account.generate');
     Route::get('virtual-account/export', [VirtualAccountController::class, 'export'])->name('virtual-account.export');
-
-    Route::get('pola-jam', [PolaJamController::class, 'index'])->name('pola-jam.index');
-    Route::get('pola-jam/create', [PolaJamController::class, 'create'])->name('pola-jam.create');
-    Route::post('pola-jam', [PolaJamController::class, 'store'])->name('pola-jam.store');
-    Route::get('pola-jam/{polaJam}/edit', [PolaJamController::class, 'edit'])->name('pola-jam.edit');
-    Route::put('pola-jam/{polaJam}', [PolaJamController::class, 'update'])->name('pola-jam.update');
-    Route::delete('pola-jam/{polaJam}', [PolaJamController::class, 'destroy'])->name('pola-jam.destroy');
-    Route::put('pola-jam/{polaJam}/assign-kelas', [PolaJamController::class, 'assignKelas'])->name('pola-jam.assign-kelas');
-    Route::post('pola-jam/{polaJam}/duplicate', [PolaJamController::class, 'duplicate'])->name('pola-jam.duplicate');
-    Route::post('jam-pelajaran', [JamPelajaranController::class, 'store'])->name('jam-pelajaran.store');
-    Route::get('jam-pelajaran/{jamPelajaran}/edit', [JamPelajaranController::class, 'edit'])->name('jam-pelajaran.edit');
-    Route::put('jam-pelajaran/{jamPelajaran}', [JamPelajaranController::class, 'update'])->name('jam-pelajaran.update');
-    Route::delete('jam-pelajaran/{jamPelajaran}', [JamPelajaranController::class, 'destroy'])->name('jam-pelajaran.destroy');
-
-    Route::get('jadwal-pelajaran', [JadwalPelajaranController::class, 'index'])->name('jadwal-pelajaran.index');
-    Route::get('jadwal-pelajaran/opsi', [JadwalPelajaranController::class, 'opsi'])->name('jadwal-pelajaran.opsi');
-    Route::get('jadwal-pelajaran/create', [JadwalPelajaranController::class, 'create'])->name('jadwal-pelajaran.create');
-    Route::post('jadwal-pelajaran', [JadwalPelajaranController::class, 'store'])->name('jadwal-pelajaran.store');
-    Route::get('jadwal-pelajaran/{jadwalPelajaran}/edit', [JadwalPelajaranController::class, 'edit'])->name('jadwal-pelajaran.edit');
-    Route::put('jadwal-pelajaran/{jadwalPelajaran}', [JadwalPelajaranController::class, 'update'])->name('jadwal-pelajaran.update');
-    Route::delete('jadwal-pelajaran/{jadwalPelajaran}', [JadwalPelajaranController::class, 'destroy'])->name('jadwal-pelajaran.destroy');
-    Route::post('jadwal-pelajaran/duplicate', [JadwalPelajaranController::class, 'duplicate'])->name('jadwal-pelajaran.duplicate');
 
     // Perangkat Mengajar (RPP / Modul Ajar)
     Route::get('rpp', [RppController::class, 'index'])->name('rpp.index');
