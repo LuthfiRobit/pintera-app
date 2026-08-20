@@ -1,13 +1,8 @@
 <?php
 
-use App\Http\Controllers\Admin\DokumenSyaratController;
-use App\Http\Controllers\Admin\FormulirFieldController;
-use App\Http\Controllers\Admin\GelombangPpdbController;
-use App\Http\Controllers\Admin\JalurPpdbController;
 use App\Http\Controllers\Admin\JenisTagihanController;
 use App\Http\Controllers\Admin\JenisTagihanMonitoringController;
 use App\Http\Controllers\Admin\KategoriKeringananController;
-use App\Http\Controllers\Admin\JenisTesMasterController;
 use App\Http\Controllers\Admin\KasusAksesLogController;
 use App\Http\Controllers\Admin\KasusController as AdminKasusController;
 use App\Http\Controllers\Admin\KasusTerhapusController;
@@ -15,12 +10,8 @@ use App\Http\Controllers\Admin\KenaikanKelasController;
 use App\Http\Controllers\Admin\KomponenPenilaianController;
 use App\Http\Controllers\Admin\ManualPaymentController;
 use App\Http\Controllers\Admin\PembayaranController;
-use App\Http\Controllers\Admin\PendaftaranAdminController;
 use App\Http\Controllers\Admin\RaporController;
 use App\Http\Controllers\Admin\RppController;
-use App\Http\Controllers\Admin\SeleksiController;
-use App\Http\Controllers\Admin\SkPpdbController;
-use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TagihanController;
 use App\Http\Controllers\Admin\VirtualAccountController;
 use App\Http\Controllers\Guru\AsesmenController;
@@ -44,39 +35,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     require base_path('routes/admin/whatsapp-template.php');
     require base_path('routes/admin/akademik-master.php');
     require base_path('routes/admin/siswa.php');
-
-    Route::get('jenis-tes', [JenisTesMasterController::class, 'index'])->name('jenis-tes.index');
-    Route::post('jenis-tes', [JenisTesMasterController::class, 'store'])->name('jenis-tes.store');
-    Route::put('jenis-tes/{jenisTes}', [JenisTesMasterController::class, 'update'])->name('jenis-tes.update');
-    Route::delete('jenis-tes/{jenisTes}', [JenisTesMasterController::class, 'destroy'])->name('jenis-tes.destroy');
-
-    Route::resource('gelombang-ppdb', GelombangPpdbController::class)->except(['show', 'destroy']);
-
-    Route::resource('jalur-ppdb', JalurPpdbController::class)->except(['show', 'destroy']);
-
-    Route::post('formulir-field', [FormulirFieldController::class, 'store'])->name('formulir-field.store');
-    Route::delete('formulir-field/{formulirField}', [FormulirFieldController::class, 'destroy'])->name('formulir-field.destroy');
-
-    Route::post('dokumen-syarat', [DokumenSyaratController::class, 'store'])->name('dokumen-syarat.store');
-    Route::delete('dokumen-syarat/{dokumenSyarat}', [DokumenSyaratController::class, 'destroy'])->name('dokumen-syarat.destroy');
-
-    Route::post('seleksi', [SeleksiController::class, 'store'])->name('seleksi.store');
-    Route::delete('seleksi/{seleksi}', [SeleksiController::class, 'destroy'])->name('seleksi.destroy');
-
-    Route::post('spmb-konfigurasi/duplikasi', [SpmbKonfigurasiController::class, 'duplikasi'])->name('spmb-konfigurasi.duplikasi');
-
-    Route::get('spmb-pendaftaran', [PendaftaranAdminController::class, 'index'])->name('spmb-pendaftaran.index');
-    Route::get('spmb-pendaftaran/data', [PendaftaranAdminController::class, 'data'])->name('spmb-pendaftaran.data');
-    Route::get('spmb-pendaftaran/{pendaftaran}', [PendaftaranAdminController::class, 'show'])->name('spmb-pendaftaran.show');
-    Route::post('spmb-pendaftaran/{pendaftaran}/dokumen/{dokumen}', [PendaftaranAdminController::class, 'verifikasiDokumen'])->name('spmb-pendaftaran.verifikasi-dokumen');
-    Route::post('spmb-pendaftaran/{pendaftaran}/nilai', [PendaftaranAdminController::class, 'simpanNilai'])->name('spmb-pendaftaran.nilai');
-    Route::post('spmb-pendaftaran/{pendaftaran}/keputusan', [PendaftaranAdminController::class, 'tetapkanKeputusan'])->name('spmb-pendaftaran.keputusan');
-    Route::post('spmb-pendaftaran/{pendaftaran}/tagihan-susulan', [TagihanController::class, 'buatSusulan'])->name('tagihan.susulan');
-    Route::get('spmb-pendaftaran-nilai-massal', [PendaftaranAdminController::class, 'nilaiMassal'])->name('spmb-pendaftaran.nilai-massal');
-    Route::post('spmb-pendaftaran-nilai-massal', [PendaftaranAdminController::class, 'simpanNilaiMassal'])->name('spmb-pendaftaran.nilai-massal.store');
-
-    Route::get('sk-ppdb/create', [SkPpdbController::class, 'create'])->name('sk-ppdb.create');
-    Route::post('sk-ppdb', [SkPpdbController::class, 'store'])->name('sk-ppdb.store');
+    require base_path('routes/admin/spmb.php');
 
     Route::get('jenis-tagihan/create', [JenisTagihanController::class, 'create'])->name('jenis-tagihan.create');
     Route::get('jenis-tagihan', [JenisTagihanController::class, 'index'])->name('jenis-tagihan.index');
