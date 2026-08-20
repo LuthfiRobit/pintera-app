@@ -37,7 +37,7 @@ Dokumen ini melanjutkan program yang sama untuk 5 grup sidebar yang tersisa.
 
 | Grup Sidebar | Jumlah Controller | Total Baris Kode | Domain Ada? |
 |---|---:|---:|---|
-| Pendampingan (Kasus) | 4 | 483 | ❌ Tidak ada |
+| Pendampingan (Kasus) | 10 | 1042 | ❌ Tidak ada |
 | Akses & Peran | 2 | 381 | ❌ Tidak ada |
 | SPMB | 4 | 737 | ❌ Tidak ada |
 | Keuangan | 8 | 1386 | ❌ Tidak ada |
@@ -90,7 +90,7 @@ Detail controller per grup ada di riwayat percakapan sesi 2026-08-20 (bisa direk
 
 | Urutan | Grup | Alasan |
 |---|---|---|
-| 1 | **Pendampingan (Kasus)** | Paling kecil (4 controller, 483 baris) & paling mandiri (blast radius rendah — tidak jadi fondasi modul lain). Business logic-nya (state machine kasus, consent, triase konselor) genuinely layak jadi domain, bukan CRUD polos. |
+| 1 | **Pendampingan (Kasus)** | Koreksi 2026-08-20: cakupan sebenarnya 10 controller, 1042 baris (bukan 4/483 seperti perkiraan awal — 6 controller sub-workflow consent/sesi/tugas/submission/evaluasi tidak muncul di sidebar tapi bagian dari `routes/kasus.php`). Tetap prioritas 1 karena paling mandiri (blast radius rendah — tidak jadi fondasi modul lain) dan business logic-nya (state machine kasus, consent, triase konselor) genuinely layak jadi domain, bukan CRUD polos — bukan lagi karena "paling kecil". |
 | 2 | **SPMB** | Ukuran sedang (4 controller, 737 baris). Workflow verifikasi & keputusan berjenjang, mirip pola approval yang sudah terbukti di domain Pengadaan — referensi desain sudah ada. |
 | 3 | **Keuangan** | Paling bernilai kalau selesai (billing, VA, manual payment, cicilan — uang sungguhan), tapi juga paling berisiko (8 controller, 1386 baris). Lebih aman dikerjakan setelah ada 1-2 domain baru lain sebagai pemanasan pola. |
 | 4 | **Data Induk** | Paling besar (12 controller, 1775 baris) tapi nilai arsitektural migrasi RENDAH — isinya mayoritas fondasi/master data yang dipakai modul lain (mirip kenapa `Lembaga`/`Kelas`/`Siswa` sengaja tidak dipindah). Prioritas rendah meski ukurannya besar. |
