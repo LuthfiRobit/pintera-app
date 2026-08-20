@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 require __DIR__.'/admin.php';
+require __DIR__.'/kasus.php';
 
 Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.active.siswa'])
     ->prefix('keuangan')->name('keuangan.')->group(function () {
