@@ -38,7 +38,6 @@ use App\Http\Controllers\Admin\PendaftaranSiswaController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\RaporController;
-use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\RppController;
 use App\Http\Controllers\Admin\SeleksiController;
 use App\Http\Controllers\Admin\SemesterController;
@@ -49,9 +48,7 @@ use App\Http\Controllers\Admin\SkPpdbController;
 use App\Http\Controllers\Admin\SpmbKonfigurasiController;
 use App\Http\Controllers\Admin\TagihanController;
 use App\Http\Controllers\Admin\TahunAjaranController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\VirtualAccountController;
-use App\Http\Controllers\Admin\WhatsAppTemplateController;
 use App\Http\Controllers\Guru\AsesmenController;
 use App\Http\Controllers\Guru\Akademik\JurnalKbmController;
 use App\Http\Controllers\Guru\Akademik\RekapKehadiranController;
@@ -67,10 +64,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
 
-    Route::get('roles/permissions-catalog', [RoleController::class, 'permissionsCatalog'])->name('roles.permissions-catalog');
-    Route::resource('roles', RoleController::class)->except(['show']);
-    Route::resource('users', UserController::class)->except(['show', 'destroy']);
-    Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
+    require base_path('routes/admin/roles.php');
     Route::resource('lembaga', LembagaController::class)->except(['show', 'destroy']);
     Route::get('pengaturan-yayasan', [\App\Http\Controllers\Admin\YayasanSettingController::class, 'edit'])->name('yayasan.edit');
     Route::put('pengaturan-yayasan', [\App\Http\Controllers\Admin\YayasanSettingController::class, 'update'])->name('yayasan.update');
@@ -114,8 +108,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::put('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterController::class, 'update'])->name('jenis-karyawan-master.update');
     Route::delete('jenis-karyawan-master/{jenisKaryawanMaster}', [JenisKaryawanMasterController::class, 'destroy'])->name('jenis-karyawan-master.destroy');
 
-    Route::get('whatsapp-template', [WhatsAppTemplateController::class, 'index'])->name('whatsapp-template.index');
-    Route::put('whatsapp-template/{whatsappTemplate}', [WhatsAppTemplateController::class, 'update'])->name('whatsapp-template.update');
+    require base_path('routes/admin/whatsapp-template.php');
     Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
     Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
     Route::post('siswa/generate-akun-massal', [SiswaController::class, 'generateAkunMassal'])->name('siswa.generate-akun-massal');
