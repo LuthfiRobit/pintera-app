@@ -37,6 +37,12 @@ class SarprasPengadaanDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn(static::class.': dilewati, hanya boleh jalan di environment local/testing.');
+
+            return;
+        }
+
         $this->command?->info('Menyiapkan Permissions, Roles, dan Workflow...');
         $this->callOnce([
             WorkflowDefinitionSeeder::class,

@@ -12,6 +12,12 @@ class EssentialUserSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn(static::class.': dilewati, hanya boleh jalan di environment local/testing.');
+
+            return;
+        }
+
         $superAdmin = User::firstOrCreate(
             ['email' => 'superadmin@sistem.test'],
             [

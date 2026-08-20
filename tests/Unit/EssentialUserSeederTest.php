@@ -28,7 +28,7 @@ it('creates only the superadmin account when no lembaga exists yet', function ()
     expect(User::where('email', 'kepsek@sistem.test')->exists())->toBeFalse();
 });
 
-it('creates all 6 essential accounts when a lembaga exists, attaching the lembaga-scoped ones to it', function () {
+it('creates all 7 essential accounts when a lembaga exists, attaching the lembaga-scoped ones to it', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
 
@@ -52,6 +52,10 @@ it('creates all 6 essential accounts when a lembaga exists, attaching the lembag
     $akademik = User::where('email', 'akademik@sistem.test')->first();
     expect($akademik->hasRole('admin_akademik'))->toBeTrue();
     expect($akademik->lembaga_id)->toBe($lembaga->id);
+
+    $sarpras = User::where('email', 'sarpras@sistem.test')->first();
+    expect($sarpras->hasRole('admin_sarpras'))->toBeTrue();
+    expect($sarpras->lembaga_id)->toBe($lembaga->id);
 });
 
 it('is idempotent when run twice', function () {
@@ -60,5 +64,5 @@ it('is idempotent when run twice', function () {
     (new EssentialUserSeeder())->run();
     (new EssentialUserSeeder())->run();
 
-    expect(User::count())->toBe(6);
+    expect(User::count())->toBe(7);
 });

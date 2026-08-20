@@ -14,6 +14,12 @@ class SiswaSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn(static::class.': dilewati, hanya boleh jalan di environment local/testing.');
+
+            return;
+        }
+
         foreach (Lembaga::all() as $lembaga) {
             $aktif = TahunAjaran::where('lembaga_id', $lembaga->id)->where('status_aktif', true)->first();
 

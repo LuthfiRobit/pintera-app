@@ -19,6 +19,12 @@ class OrangTuaKaryawanSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn(static::class.': dilewati, hanya boleh jalan di environment local/testing.');
+
+            return;
+        }
+
         $kbit    = Lembaga::where('npsn', '20223311')->firstOrFail();
         $tkit    = Lembaga::where('npsn', '20223322')->firstOrFail();
         $sdit    = Lembaga::where('npsn', '20223333')->firstOrFail();

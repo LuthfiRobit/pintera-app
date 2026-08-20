@@ -10,6 +10,12 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn(static::class.': dilewati, hanya boleh jalan di environment local/testing.');
+
+            return;
+        }
+
         $kbit = Lembaga::where('npsn', '20223311')->firstOrFail();
 
         if (! User::where('email', 'admin.yayasan@permatakraksaan.sch.id')->exists()) {

@@ -12,6 +12,12 @@ class AkunPendaftarSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn(static::class.': dilewati, hanya boleh jalan di environment local/testing.');
+
+            return;
+        }
+
         $emailPerNpsn = [
             '20223311' => ['email' => 'pendaftar.kbit@example.test', 'nama' => 'Wali KBIT (Contoh)'],
             '20223322' => ['email' => 'pendaftar.tkit@example.test', 'nama' => 'Wali TKIT (Contoh)'],
