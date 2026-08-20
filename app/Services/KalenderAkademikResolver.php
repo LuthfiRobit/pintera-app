@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TipeKalenderAkademik;
-use App\Models\KalenderAkademik;
+use App\Domains\Akademik\Models\KalenderAkademik;
 use App\Models\Lembaga;
 use Carbon\CarbonInterface;
 

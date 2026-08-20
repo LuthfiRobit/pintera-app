@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Enums\TipeKalenderAkademik;
-use App\Models\KalenderAkademik;
+use App\Domains\Akademik\Models\KalenderAkademik;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class KalenderAkademikFactory extends Factory

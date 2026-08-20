@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\KalenderAkademik;
+use App\Domains\Akademik\Models\KalenderAkademik;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;

@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
 use App\Enums\TipeKalenderAkademik;
+use App\Models\Lembaga;
+use Database\Factories\KalenderAkademikFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class KalenderAkademik extends Model
 {
     use HasFactory;
+
+    protected static function newFactory(): KalenderAkademikFactory
+    {
+        return KalenderAkademikFactory::new();
+    }
 
     protected $table = 'kalender_akademik';
 
