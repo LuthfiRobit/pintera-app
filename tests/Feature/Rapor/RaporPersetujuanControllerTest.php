@@ -16,8 +16,13 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Spatie\Permission\Models\Permission;
+
+beforeEach(function () {
+    (new RoleSeeder())->run();
+});
 
 function siapkanAktorPersetujuan(): array
 {

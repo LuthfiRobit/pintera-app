@@ -15,6 +15,7 @@ use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -27,6 +28,7 @@ class TimelineEventsTest extends TestCase
     {
         $this->seed([
             PermissionSeeder::class,
+            RoleSeeder::class,
             WorkflowDefinitionSeeder::class,
         ]);
 

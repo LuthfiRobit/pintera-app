@@ -14,6 +14,8 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RolePermissionAssignmentSeeder;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -26,6 +28,8 @@ class SequentialApprovalTest extends TestCase
     {
         $this->seed([
             PermissionSeeder::class,
+            RoleSeeder::class,
+            RolePermissionAssignmentSeeder::class,
             WorkflowDefinitionSeeder::class,
         ]);
 

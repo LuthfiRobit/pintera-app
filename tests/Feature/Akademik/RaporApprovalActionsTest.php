@@ -20,9 +20,14 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
+
+beforeEach(function () {
+    (new RoleSeeder())->run();
+});
 
 function siapkanPengajuanDiajukan(): array
 {

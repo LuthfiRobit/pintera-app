@@ -14,6 +14,7 @@ use Spatie\Permission\Models\Permission;
 
 function siapkanWaliKelasUntukRapor(string $bentukPendidikan = 'SD'): array
 {
+    (new \Database\Seeders\RoleSeeder())->run();
     (new \Database\Seeders\WorkflowDefinitionSeeder())->run();
     Permission::firstOrCreate(['name' => 'rapor.input-wali', 'guard_name' => 'web']);
     Permission::firstOrCreate(['name' => 'rapor.ajukan', 'guard_name' => 'web']);

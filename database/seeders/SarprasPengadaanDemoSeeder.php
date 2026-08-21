@@ -27,11 +27,9 @@ use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Domains\Workflow\Models\WorkflowDefinition;
 use App\Models\Lembaga;
-use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
 
 class SarprasPengadaanDemoSeeder extends Seeder
 {
@@ -64,44 +62,26 @@ class SarprasPengadaanDemoSeeder extends Seeder
             ]);
         }
 
-        // Setup User Accounts & Permissions
+        // Setup User Accounts — role & permission sudah lengkap dari
+        // RolePermissionAssignmentSeeder (lihat database/seeders/RolePermissionAssignmentSeeder.php),
+        // file ini HANYA membuat/memakai akun, tidak lagi mengulang assignment role/permission.
         $superAdmin = User::firstOrCreate(
             ['email' => 'superadmin@sistem.test'],
             ['name' => 'Admin Sistem', 'password' => 'password', 'is_active' => true]
         );
-        $superAdmin->givePermissionTo(Permission::all());
-
-        $bendaharaYayasanRole = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
-        $bendaharaYayasanRole->givePermissionTo([
-            'pengadaan.proposal.view',
-            'pengadaan.approval.yayasan',
-            'pengadaan.disbursement.manage',
-            'pengadaan.lpj.verify',
-            'sarpras.aset.view',
-        ]);
 
         $bendaharaYayasan = User::firstOrCreate(
             ['email' => 'bendahara.yayasan@sistem.test'],
-            ['name' => 'Ustadz Farid (Bendahara Yayasan)', 'password' => 'password', 'is_active' => true]
+            ['name' => 'Farid', 'password' => 'password', 'is_active' => true]
         );
-        $bendaharaYayasan->assignRole($bendaharaYayasanRole);
-
-        $kepsekRole = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-        $kepsekRole->givePermissionTo([
-            'sarpras.gedung.view', 'sarpras.ruangan.view', 'sarpras.kategori.view', 'sarpras.aset.view', 'sarpras.mutasi.view',
-            'pengadaan.proposal.view', 'pengadaan.approval.internal',
-        ]);
+        $bendaharaYayasan->assignRole('bendahara_yayasan');
 
         $kepsek = User::firstOrCreate(
             ['email' => 'kepsek@sistem.test'],
             ['name' => 'Dr. H. Ahmad Dahlan (Kepala Sekolah)', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
         $kepsek->update(['lembaga_id' => $lembaga->id]);
-        $kepsek->assignRole($kepsekRole);
-        $kepsek->givePermissionTo([
-            'sarpras.gedung.view', 'sarpras.ruangan.view', 'sarpras.kategori.view', 'sarpras.aset.view', 'sarpras.mutasi.view',
-            'pengadaan.proposal.view', 'pengadaan.approval.internal',
-        ]);
+        $kepsek->assignRole('kepala_sekolah');
 
         $adm = User::firstOrCreate(
             ['email' => 'adm@sistem.test'],
@@ -109,15 +89,6 @@ class SarprasPengadaanDemoSeeder extends Seeder
         );
         $adm->update(['lembaga_id' => $lembaga->id]);
         $adm->assignRole('admin_administrasi');
-        $adm->givePermissionTo([
-            'sarpras.gedung.view', 'sarpras.gedung.manage',
-            'sarpras.ruangan.view', 'sarpras.ruangan.manage',
-            'sarpras.kategori.view', 'sarpras.kategori.manage',
-            'sarpras.aset.view', 'sarpras.aset.manage',
-            'sarpras.mutasi.create', 'sarpras.mutasi.view', 'sarpras.kir.export',
-            'pengadaan.proposal.create', 'pengadaan.proposal.view', 'pengadaan.proposal.edit', 'pengadaan.proposal.delete',
-            'pengadaan.lpj.submit',
-        ]);
 
         $operatorUser = $adm ?? $superAdmin;
 

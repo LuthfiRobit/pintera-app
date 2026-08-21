@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Domains\Workflow\Enums\ApproverType;
 use App\Domains\Workflow\Models\WorkflowDefinition;
 use App\Domains\Workflow\Models\WorkflowStep;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
 
 class WorkflowDefinitionSeeder extends Seeder
@@ -21,6 +22,7 @@ class WorkflowDefinitionSeeder extends Seeder
             ]
         );
 
+        $this->assertRoleExists('kepala_sekolah');
         WorkflowStep::updateOrCreate(
             ['workflow_definition_id' => $pengadaan->id, 'step_number' => 1],
             [
@@ -32,6 +34,7 @@ class WorkflowDefinitionSeeder extends Seeder
             ]
         );
 
+        $this->assertRoleExists('bendahara_yayasan');
         WorkflowStep::updateOrCreate(
             ['workflow_definition_id' => $pengadaan->id, 'step_number' => 2],
             [
@@ -53,6 +56,7 @@ class WorkflowDefinitionSeeder extends Seeder
             ]
         );
 
+        $this->assertRoleExists('admin_akademik');
         WorkflowStep::updateOrCreate(
             ['workflow_definition_id' => $rapor->id, 'step_number' => 1],
             [
@@ -64,6 +68,7 @@ class WorkflowDefinitionSeeder extends Seeder
             ]
         );
 
+        $this->assertRoleExists('kepala_sekolah');
         WorkflowStep::updateOrCreate(
             ['workflow_definition_id' => $rapor->id, 'step_number' => 2],
             [
@@ -73,6 +78,15 @@ class WorkflowDefinitionSeeder extends Seeder
                 'scope_level' => 'lembaga',
                 'is_final_step' => true,
             ]
+        );
+    }
+
+    private function assertRoleExists(string $roleName): void
+    {
+        abort_unless(
+            Role::where('name', $roleName)->exists(),
+            500,
+            "WorkflowDefinitionSeeder: role '{$roleName}' tidak ditemukan — cek RoleSeeder."
         );
     }
 }

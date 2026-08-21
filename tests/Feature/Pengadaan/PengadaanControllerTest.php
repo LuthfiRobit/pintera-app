@@ -10,6 +10,8 @@ use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RolePermissionAssignmentSeeder;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -20,7 +22,12 @@ class PengadaanControllerTest extends TestCase
 
     public function test_admin_lembaga_can_create_proposal_and_submit(): void
     {
-        $this->seed([WorkflowDefinitionSeeder::class, PermissionSeeder::class]);
+        $this->seed([
+            PermissionSeeder::class,
+            RoleSeeder::class,
+            RolePermissionAssignmentSeeder::class,
+            WorkflowDefinitionSeeder::class,
+        ]);
 
         $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidik']);
         $lembaga = Lembaga::create([

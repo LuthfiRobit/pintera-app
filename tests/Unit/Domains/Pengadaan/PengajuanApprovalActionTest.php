@@ -21,6 +21,8 @@ use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -32,7 +34,7 @@ class PengajuanApprovalActionTest extends TestCase
 
     public function test_submit_partial_approval_and_disbursement_lifecycle(): void
     {
-        $this->seed(WorkflowDefinitionSeeder::class);
+        $this->seed([PermissionSeeder::class, RoleSeeder::class, WorkflowDefinitionSeeder::class]);
 
         $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
         $roleYayasan = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web']);

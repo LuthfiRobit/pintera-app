@@ -38,6 +38,7 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 
 function siapkanSiswaLengkapUntukPdf(): array
@@ -60,7 +61,7 @@ function siapkanSiswaLengkapUntukPdf(): array
 }
 
 it('builds a complete data array for a siswa with nilai, catatan, and approval', function () {
-    $this->seed(WorkflowDefinitionSeeder::class);
+    $this->seed([RoleSeeder::class, WorkflowDefinitionSeeder::class]);
     ['kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
 
     $roleWaka = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web']);

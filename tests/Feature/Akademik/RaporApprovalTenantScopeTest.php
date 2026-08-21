@@ -16,12 +16,13 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
 it('never resolves a PengajuanRapor belonging to another lembaga by id, so its ApprovalRequest is unreachable cross-tenant', function () {
-    $this->seed(WorkflowDefinitionSeeder::class);
+    $this->seed([RolePermissionSeeder::class, WorkflowDefinitionSeeder::class]);
 
     $yayasan = Yayasan::factory()->create();
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -53,7 +54,7 @@ it('never resolves a PengajuanRapor belonging to another lembaga by id, so its A
 });
 
 it('rejects verify/approve when the acting user role does not match the current workflow step approver, even with a valid ApprovalRequest', function () {
-    $this->seed(WorkflowDefinitionSeeder::class);
+    $this->seed([RolePermissionSeeder::class, WorkflowDefinitionSeeder::class]);
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

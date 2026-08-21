@@ -12,6 +12,7 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 
 function siapkanKelasDenganSiswa(int $jumlahSiswa = 2): array
@@ -24,10 +25,10 @@ function siapkanKelasDenganSiswa(int $jumlahSiswa = 2): array
     $siswaList = Siswa::factory()->count($jumlahSiswa)->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
 
-    return compact('lembaga', 'semester', 'kelas', 'siswaList', 'user');
+    return compact('yayasan', 'lembaga', 'tahunAjaran', 'semester', 'kelas', 'siswaList', 'user');
 }
 
-it('rejects submission when not every siswa in the kelas has a CatatanWaliKelas', function () {
+it('throws when at least one siswa in the kelas has no CatatanWaliKelas yet', function () {
     ['semester' => $semester, 'kelas' => $kelas, 'siswaList' => $siswaList, 'user' => $user] = siapkanKelasDenganSiswa(2);
 
     (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray([
@@ -41,7 +42,7 @@ it('rejects submission when not every siswa in the kelas has a CatatanWaliKelas'
 });
 
 it('creates a PengajuanRapor and initializes an ApprovalRequest when every siswa has a CatatanWaliKelas', function () {
-    $this->seed(WorkflowDefinitionSeeder::class);
+    $this->seed([RoleSeeder::class, WorkflowDefinitionSeeder::class]);
     ['semester' => $semester, 'kelas' => $kelas, 'siswaList' => $siswaList, 'user' => $user] = siapkanKelasDenganSiswa(2);
 
     foreach ($siswaList as $siswa) {
@@ -60,7 +61,7 @@ it('creates a PengajuanRapor and initializes an ApprovalRequest when every siswa
 });
 
 it('resets the same ApprovalRequest to its first step on resubmission after rejection, instead of creating a new one', function () {
-    $this->seed(WorkflowDefinitionSeeder::class);
+    $this->seed([RoleSeeder::class, WorkflowDefinitionSeeder::class]);
     ['semester' => $semester, 'kelas' => $kelas, 'siswaList' => $siswaList, 'user' => $user] = siapkanKelasDenganSiswa(1);
     (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswaList[0]->id, 'semester_id' => $semester->id]));
 
