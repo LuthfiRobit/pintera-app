@@ -48,14 +48,14 @@ class SarprasPengadaanDemoSeeder extends Seeder
 
         $yayasan = Yayasan::first();
         if (! $yayasan) {
-            $yayasan = Yayasan::create(['nama' => 'Yayasan Pendidikan Islam Permata']);
+            $yayasan = Yayasan::create(['nama' => 'Yayasan Pintera']);
         }
 
         $lembaga = Lembaga::where('npsn', '20223344')->first() ?? Lembaga::first();
         if (! $lembaga) {
             $lembaga = Lembaga::create([
                 'yayasan_id' => $yayasan->id,
-                'nama' => 'SMP IT PERMATA KRAKSAAN',
+                'nama' => 'SMPIT PINTERA',
                 'jenjang' => 'SMP',
                 'npsn' => '20223344',
                 'status_aktif' => true,

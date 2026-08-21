@@ -135,8 +135,13 @@ class KeuanganDemoSeeder extends Seeder
             return null;
         }
 
-        $prefix = strtolower(preg_replace('/PRM$/', '', $lembaga->kode_lembaga));
+        $kode = match ($lembaga->bentuk_pendidikan) {
+            'KB' => 'kb',
+            'TK' => 'tk',
+            'SD' => 'sd',
+            default => 'smp',
+        };
 
-        return User::where('email', "keuangan.{$prefix}@permatakraksaan.sch.id")->first();
+        return User::where('email', "keuangan.{$kode}@demo.test")->first();
     }
 }
