@@ -62,9 +62,9 @@ class UserSeeder extends Seeder
             ['name' => 'Lukman, S.Kom.', 'email' => 'adm.sd@demo.test', 'role' => 'admin_administrasi'],
             ['name' => 'Hasan, S.E.', 'email' => 'keuangan.sd@demo.test', 'role' => 'admin_keuangan'],
         ], [
-            ['name' => 'Hendra Gunawan, S.Pd.', 'email' => 'hendra.gunawan@permata.sch.id'],
-            ['name' => 'Maya Anggraini, S.Pd.', 'email' => 'maya.anggraini@permata.sch.id'],
-            ['name' => 'Taufik Hidayat, S.Pd.', 'email' => 'taufik.hidayat@permata.sch.id'],
+            ['name' => 'Hendra Gunawan, S.Pd.', 'email' => 'hendra.gunawan@demo.test'],
+            ['name' => 'Maya Anggraini, S.Pd.', 'email' => 'maya.anggraini@demo.test'],
+            ['name' => 'Taufik Hidayat, S.Pd.', 'email' => 'taufik.hidayat@demo.test'],
         ]);
 
         // SMPIT
@@ -73,9 +73,9 @@ class UserSeeder extends Seeder
             ['name' => 'Dewi Lestari, S.Pd.', 'email' => 'adm.smp@demo.test', 'role' => 'admin_administrasi'],
             ['name' => 'Nur Aisyah, S.Pd.', 'email' => 'keuangan.smp@demo.test', 'role' => 'admin_keuangan'],
         ], [
-            ['name' => 'Budi Santoso, S.Pd.', 'email' => 'budi.santoso@permata.sch.id'],
-            ['name' => 'Siti Rahmawati, S.Pd.', 'email' => 'siti.rahmawati@permata.sch.id'],
-            ['name' => 'Andi Wijaya, S.Pd.I.', 'email' => 'andi.wijaya@permata.sch.id'],
+            ['name' => 'Budi Santoso, S.Pd.', 'email' => 'budi.santoso@demo.test'],
+            ['name' => 'Siti Rahmawati, S.Pd.', 'email' => 'siti.rahmawati@demo.test'],
+            ['name' => 'Andi Wijaya, S.Pd.I.', 'email' => 'andi.wijaya@demo.test'],
         ]);
     }
 

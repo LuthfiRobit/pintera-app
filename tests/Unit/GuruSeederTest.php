@@ -32,7 +32,7 @@ it('seeds Guru profiles across all K-9 institutions', function () {
     }
 
     $smp = Lembaga::where('npsn', '20223344')->first();
-    $user = User::where('email', 'budi.santoso@permata.sch.id')->first();
+    $user = User::where('email', 'budi.santoso@demo.test')->first();
     $guru = Guru::where('user_id', $user->id)->first();
 
     expect($guru)->not->toBeNull();

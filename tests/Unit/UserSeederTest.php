@@ -49,11 +49,11 @@ it('seeds the yayasan admin and per-lembaga staff across all 4 K-9 institutions'
     expect($keuanganKb->hasRole('admin_keuangan'))->toBeTrue();
     expect($keuanganKb->lembaga_id)->toBe($kbit->id);
 
-    $guruSmp = User::where('email', 'budi.santoso@permata.sch.id')->first();
+    $guruSmp = User::where('email', 'budi.santoso@demo.test')->first();
     expect($guruSmp->hasRole('guru'))->toBeTrue();
     expect($guruSmp->lembaga_id)->toBe($smpit->id);
 
-    $guruSd = User::where('email', 'hendra.gunawan@permata.sch.id')->first();
+    $guruSd = User::where('email', 'hendra.gunawan@demo.test')->first();
     expect($guruSd->hasRole('guru'))->toBeTrue();
     expect($guruSd->lembaga_id)->toBe($sdit->id);
 });

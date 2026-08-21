@@ -28,7 +28,7 @@ beforeEach(function () {
 it('seeds education history for a guru with a known S1 record', function () {
     (new RiwayatPendidikanGuruSeeder())->run();
 
-    $user = User::where('email', 'budi.santoso@permata.sch.id')->first();
+    $user = User::where('email', 'budi.santoso@demo.test')->first();
     $guru = Guru::where('user_id', $user->id)->first();
 
     $riwayat = RiwayatPendidikanGuru::where('guru_id', $guru->id)->where('jenjang_pendidikan', 'S1')->first();
@@ -40,7 +40,7 @@ it('seeds education history for a guru with a known S1 record', function () {
 it('seeds a guru with two education records (S1 and S2)', function () {
     (new RiwayatPendidikanGuruSeeder())->run();
 
-    $user = User::where('email', 'hendra.gunawan@permata.sch.id')->first();
+    $user = User::where('email', 'hendra.gunawan@demo.test')->first();
     $guru = Guru::where('user_id', $user->id)->first();
 
     expect(RiwayatPendidikanGuru::where('guru_id', $guru->id)->count())->toBe(2);

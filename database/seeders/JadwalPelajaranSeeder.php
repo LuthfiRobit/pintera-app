@@ -51,8 +51,8 @@ class JadwalPelajaranSeeder extends Seeder
         $mapelMatematika = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
         $mapelIPA = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Ilmu Pengetahuan Alam (IPA)')->first();
 
-        $guruBudi = Guru::where('email', 'budi.santoso@permata.sch.id')->first();
-        $guruSiti = Guru::where('email', 'siti.rahmawati@permata.sch.id')->first();
+        $guruBudi = Guru::where('email', 'budi.santoso@demo.test')->first();
+        $guruSiti = Guru::where('email', 'siti.rahmawati@demo.test')->first();
 
         if (! $kelasA || ! $kelasB || ! $mapelMatematika || ! $mapelIPA || ! $guruBudi || ! $guruSiti) {
             return;

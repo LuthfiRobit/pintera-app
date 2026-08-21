@@ -48,8 +48,8 @@ class AsesmenSeeder extends Seeder
 
         $mtk = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
         $ipa = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Ilmu Pengetahuan Alam (IPA)')->first();
-        $guruBudi = Guru::where('email', 'budi.santoso@permata.sch.id')->first();
-        $guruSiti = Guru::where('email', 'siti.rahmawati@permata.sch.id')->first();
+        $guruBudi = Guru::where('email', 'budi.santoso@demo.test')->first();
+        $guruSiti = Guru::where('email', 'siti.rahmawati@demo.test')->first();
 
         if ($mtk && $guruBudi) {
             $tpMtk1 = KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('kode', 'TP.1.1')->first();

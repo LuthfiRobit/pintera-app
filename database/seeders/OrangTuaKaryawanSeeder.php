@@ -54,7 +54,7 @@ class OrangTuaKaryawanSeeder extends Seeder
     private function seedGuruBk(Lembaga $smpit): void
     {
         // Jadikan Budi Santoso sebagai Guru BK SMPIT
-        $user = User::where('email', 'budi.santoso@permata.sch.id')->first();
+        $user = User::where('email', 'budi.santoso@demo.test')->first();
         if (! $user) {
             return;
         }

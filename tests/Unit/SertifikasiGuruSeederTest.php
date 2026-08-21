@@ -28,11 +28,11 @@ beforeEach(function () {
 it('seeds certification only for guru who have one, leaving others without', function () {
     (new SertifikasiGuruSeeder())->run();
 
-    $bersertifikat = User::where('email', 'budi.santoso@permata.sch.id')->first();
+    $bersertifikat = User::where('email', 'budi.santoso@demo.test')->first();
     $guruBersertifikat = Guru::where('user_id', $bersertifikat->id)->first();
     expect(SertifikasiGuru::where('guru_id', $guruBersertifikat->id)->exists())->toBeTrue();
 
-    $tanpaSertifikat = User::where('email', 'siti.rahmawati@permata.sch.id')->first();
+    $tanpaSertifikat = User::where('email', 'siti.rahmawati@demo.test')->first();
     $guruTanpaSertifikat = Guru::where('user_id', $tanpaSertifikat->id)->first();
     expect(SertifikasiGuru::where('guru_id', $guruTanpaSertifikat->id)->exists())->toBeFalse();
 });

@@ -57,8 +57,8 @@ class SesiPembelajaranSeeder extends Seeder
             $jadwalMatematikaA = JadwalPelajaran::where('kelas_id', $kelasA->id)->where('jam_pelajaran_id', $jam1Kemarin->id)->first();
             $jadwalIpaA = JadwalPelajaran::where('kelas_id', $kelasA->id)->where('jam_pelajaran_id', $jam4Kemarin->id)->first();
 
-            $guruBudi = Guru::where('email', 'budi.santoso@permata.sch.id')->first();
-            $guruSiti = Guru::where('email', 'siti.rahmawati@permata.sch.id')->first();
+            $guruBudi = Guru::where('email', 'budi.santoso@demo.test')->first();
+            $guruSiti = Guru::where('email', 'siti.rahmawati@demo.test')->first();
             $mapelMatematika = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
             $mapelIPA = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Ilmu Pengetahuan Alam (IPA)')->first();
 
