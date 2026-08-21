@@ -39,7 +39,7 @@ class PendampinganSeeder extends Seeder
 
         $gurubk     = $this->resolveGuruBk($smpit);
         $psikolog   = $this->resolveKaryawanPool();
-        $adminUser  = User::where('email', 'adm.smpit@permatakraksaan.sch.id')->first();
+        $adminUser  = User::where('email', 'adm.smp@demo.test')->first();
         $siswas     = Siswa::where('lembaga_id', $smpit->id)->take(10)->get();
 
         if ($siswas->count() < 5) {

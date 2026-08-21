@@ -19,7 +19,7 @@ class EssentialUserSeeder extends Seeder
         }
 
         $superAdmin = User::firstOrCreate(
-            ['email' => 'superadmin@sistem.test'],
+            ['email' => 'superadmin@demo.test'],
             [
                 'name' => 'Admin Sistem',
                 'password' => 'password',
@@ -39,12 +39,12 @@ class EssentialUserSeeder extends Seeder
         }
 
         $akunLembagaScoped = [
-            'kepsek@sistem.test' => ['name' => 'Kepala Sekolah (Contoh)', 'role' => 'kepala_sekolah'],
-            'adm@sistem.test' => ['name' => 'Admin Administrasi (Contoh)', 'role' => 'admin_administrasi'],
-            'keuangan@sistem.test' => ['name' => 'Admin Keuangan (Contoh)', 'role' => 'admin_keuangan'],
-            'akademik@sistem.test' => ['name' => 'Admin Akademik (Contoh)', 'role' => 'admin_akademik'],
-            'guru@sistem.test' => ['name' => 'Guru (Contoh)', 'role' => 'guru'],
-            'sarpras@sistem.test' => ['name' => 'Admin Sarpras (Contoh)', 'role' => 'admin_sarpras'],
+            'kepsek.kb@demo.test' => ['name' => 'Kepala Sekolah (Contoh)', 'role' => 'kepala_sekolah'],
+            'adm.kb@demo.test' => ['name' => 'Admin Administrasi (Contoh)', 'role' => 'admin_administrasi'],
+            'keuangan.kb@demo.test' => ['name' => 'Admin Keuangan (Contoh)', 'role' => 'admin_keuangan'],
+            'kurikulum.kb@demo.test' => ['name' => 'Admin Akademik (Contoh)', 'role' => 'admin_akademik'],
+            'guru.kb1@demo.test' => ['name' => 'Guru (Contoh)', 'role' => 'guru'],
+            'sarpras.kb@demo.test' => ['name' => 'Admin Sarpras (Contoh)', 'role' => 'admin_sarpras'],
         ];
 
         foreach ($akunLembagaScoped as $email => $data) {

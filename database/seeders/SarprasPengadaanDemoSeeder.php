@@ -66,25 +66,25 @@ class SarprasPengadaanDemoSeeder extends Seeder
         // RolePermissionAssignmentSeeder (lihat database/seeders/RolePermissionAssignmentSeeder.php),
         // file ini HANYA membuat/memakai akun, tidak lagi mengulang assignment role/permission.
         $superAdmin = User::firstOrCreate(
-            ['email' => 'superadmin@sistem.test'],
+            ['email' => 'superadmin@demo.test'],
             ['name' => 'Admin Sistem', 'password' => 'password', 'is_active' => true]
         );
 
         $bendaharaYayasan = User::firstOrCreate(
-            ['email' => 'bendahara.yayasan@sistem.test'],
+            ['email' => 'keuangan.yayasan@demo.test'],
             ['name' => 'Farid', 'password' => 'password', 'is_active' => true]
         );
         $bendaharaYayasan->assignRole('bendahara_yayasan');
 
         $kepsek = User::firstOrCreate(
-            ['email' => 'kepsek@sistem.test'],
+            ['email' => 'kepsek.kb@demo.test'],
             ['name' => 'Dr. H. Ahmad Dahlan (Kepala Sekolah)', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
         $kepsek->update(['lembaga_id' => $lembaga->id]);
         $kepsek->assignRole('kepala_sekolah');
 
         $adm = User::firstOrCreate(
-            ['email' => 'adm@sistem.test'],
+            ['email' => 'adm.kb@demo.test'],
             ['name' => 'Admin Sarpras & Operasional', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
         $adm->update(['lembaga_id' => $lembaga->id]);

@@ -19,21 +19,21 @@ class GuruSeeder extends Seeder
 
         $this->seedGuru($kbit, [
             [
-                'email' => 'guru.kbit1@permatakraksaan.sch.id', 'name' => 'Ustadzah Fatimah, S.Psi.',
+                'email' => 'guru.kb1@demo.test', 'name' => 'Ustadzah Fatimah, S.Psi.',
                 'nik' => '3273011101850011', 'nuptk' => '3234567890123411', 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Probolinggo', 'tanggal_lahir' => '1989-05-12',
                 'no_hp' => '081234567811', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
                 'golongan_pangkat' => null, 'tmt_tugas' => '2018-07-01', 'tmt_pns' => null,
             ],
             [
-                'email' => 'guru.kbit2@permatakraksaan.sch.id', 'name' => 'Ustadzah Zahra, S.Pd.',
+                'email' => 'guru.kb2@demo.test', 'name' => 'Ustadzah Zahra, S.Pd.',
                 'nik' => '3273011202860012', 'nuptk' => '3234567890123412', 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Probolinggo', 'tanggal_lahir' => '1990-08-15',
                 'no_hp' => '081234567812', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
                 'golongan_pangkat' => null, 'tmt_tugas' => '2019-07-01', 'tmt_pns' => null,
             ],
             [
-                'email' => 'guru.kbit3@permatakraksaan.sch.id', 'name' => 'Ustadzah Rini, S.Pd.',
+                'email' => 'guru.kb3@demo.test', 'name' => 'Ustadzah Rini, S.Pd.',
                 'nik' => '3273011303870013', 'nuptk' => null, 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Surabaja', 'tanggal_lahir' => '1992-03-20',
                 'no_hp' => '081234567813', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'Honorer',
@@ -43,21 +43,21 @@ class GuruSeeder extends Seeder
 
         $this->seedGuru($tkit, [
             [
-                'email' => 'guru.tkit1@permatakraksaan.sch.id', 'name' => 'Ustadzah Dewi, S.Pd.I.',
+                'email' => 'guru.tk1@demo.test', 'name' => 'Ustadzah Dewi, S.Pd.I.',
                 'nik' => '3273012101850021', 'nuptk' => '4234567890123421', 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Malang', 'tanggal_lahir' => '1988-04-10',
                 'no_hp' => '081234567821', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
                 'golongan_pangkat' => null, 'tmt_tugas' => '2017-07-01', 'tmt_pns' => null,
             ],
             [
-                'email' => 'guru.tkit2@permatakraksaan.sch.id', 'name' => 'Ustadzah Latifah, S.Pd.',
+                'email' => 'guru.tk2@demo.test', 'name' => 'Ustadzah Latifah, S.Pd.',
                 'nik' => '3273012202860022', 'nuptk' => '4234567890123422', 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Pasuruan', 'tanggal_lahir' => '1991-09-11',
                 'no_hp' => '081234567822', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
                 'golongan_pangkat' => null, 'tmt_tugas' => '2018-07-01', 'tmt_pns' => null,
             ],
             [
-                'email' => 'guru.tkit3@permatakraksaan.sch.id', 'name' => 'Ustadzah Amel, S.Psi.',
+                'email' => 'guru.tk3@demo.test', 'name' => 'Ustadzah Amel, S.Psi.',
                 'nik' => '3273012303870023', 'nuptk' => null, 'nip' => null,
                 'jenis_kelamin' => 'P', 'tempat_lahir' => 'Jember', 'tanggal_lahir' => '1993-11-25',
                 'no_hp' => '081234567823', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'Honorer',

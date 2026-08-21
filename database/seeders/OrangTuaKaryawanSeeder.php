@@ -79,7 +79,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         $user = User::create([
             'name'                 => 'Dr. Rahma Aulia, M.Psi.',
-            'email'                => 'psikolog.pool@permatakraksaan.sch.id',
+            'email'                => 'psikolog.pool@demo.test',
             'username'             => $nik,
             'password'             => Hash::make($nik),
             'lembaga_id'           => null, // pool = lintas lembaga
@@ -139,7 +139,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             ],
             [
                 'nik'          => '0000019904880054',
-                'nama_lengkap' => 'Ibu Nurhayati',
+                'nama_lengkap' => 'Ibu Nurul Hidayati',
                 'no_hp'        => '081234560054',
                 'email'        => null,
                 'hubungan'     => 'ibu',
@@ -148,49 +148,43 @@ class OrangTuaKaryawanSeeder extends Seeder
         ];
 
         foreach ($data as $item) {
-            $this->createOrangTua($item, $siswas);
-        }
-
-        // Akun demo orang tua (password = "password", mudah dipakai login)
-        $this->seedOrangTuaDemo($smpit);
-    }
-
-    private function createOrangTua(array $item, $siswas): void
-    {
-        if (User::where('username', $item['nik'])->exists()) {
-            $existing = OrangTua::where('nik', $item['nik'])->first();
-            if ($existing && isset($siswas[$item['siswa_idx']])) {
-                $this->tautkanOrangTuaSiswa($existing, $siswas[$item['siswa_idx']], $item['hubungan'], true);
+            if (User::where('username', $item['nik'])->exists()) {
+                continue;
             }
-            return;
+
+            $siswa = $siswas[$item['siswa_idx']] ?? null;
+            if (! $siswa) {
+                continue;
+            }
+
+            $user = User::create([
+                'name'                 => $item['nama_lengkap'],
+                'email'                => $item['email'],
+                'username'             => $item['nik'],
+                'password'             => Hash::make($item['nik']),
+                'lembaga_id'           => null,
+                'email_verified_at'    => now(),
+                'is_active'            => true,
+                'must_change_password' => true,
+            ]);
+            $user->assignRole('orang_tua');
+
+            $orangTua = OrangTua::create([
+                'user_id'      => $user->id,
+                'nama_lengkap' => $item['nama_lengkap'],
+                'nik'          => $item['nik'],
+                'no_hp'        => $item['no_hp'],
+                'email'        => $item['email'],
+            ]);
+
+            $this->tautkanOrangTuaSiswa($orangTua, $siswa, $item['hubungan'], true);
         }
 
-        $user = User::create([
-            'name'                 => $item['nama_lengkap'],
-            'email'                => $item['email'],
-            'username'             => $item['nik'],
-            'password'             => Hash::make($item['nik']),
-            'lembaga_id'           => null,
-            'email_verified_at'    => now(),
-            'is_active'            => true,
-            'must_change_password' => true,
-        ]);
-        $user->assignRole('orang_tua');
-
-        $orangTua = OrangTua::create([
-            'user_id'      => $user->id,
-            'nama_lengkap' => $item['nama_lengkap'],
-            'nik'          => $item['nik'],
-            'no_hp'        => $item['no_hp'],
-            'email'        => $item['email'],
-        ]);
-
-        if (isset($siswas[$item['siswa_idx']])) {
-            $this->tautkanOrangTuaSiswa($orangTua, $siswas[$item['siswa_idx']], $item['hubungan'], true);
-        }
+        // 1 Akun Orang Tua Demo untuk Login (password: 'password')
+        $this->seedOrangTuaDemoLogin($smpit);
     }
 
-    private function seedOrangTuaDemo(Lembaga $smpit): void
+    private function seedOrangTuaDemoLogin(Lembaga $smpit): void
     {
         $nik = '0000019901850001';
 
@@ -205,7 +199,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         $user = User::create([
             'name'                 => 'Ibu Eliana (Demo Login)',
-            'email'                => 'ortu.demo@permatakraksaan.sch.id',
+            'email'                => 'ortu@demo.test',
             'username'             => $nik,
             'password'             => Hash::make('password'),
             'lembaga_id'           => null,
@@ -220,7 +214,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             'nama_lengkap' => 'Ibu Eliana (Demo Login)',
             'nik'          => $nik,
             'no_hp'        => '081234560001',
-            'email'        => 'ortu.demo@permatakraksaan.sch.id',
+            'email'        => 'ortu@demo.test',
         ]);
 
         $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ibu', true);
@@ -243,7 +237,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         $user = User::create([
             'name'                 => 'Ibu Wulan (Demo Login KB)',
-            'email'                => 'ortu.kb.demo@permatakraksaan.sch.id',
+            'email'                => 'ortu.kb@demo.test',
             'username'             => $nik,
             'password'             => Hash::make('password'),
             'lembaga_id'           => null,
@@ -258,7 +252,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             'nama_lengkap' => 'Ibu Wulan (Demo Login KB)',
             'nik'          => $nik,
             'no_hp'        => '081234560002',
-            'email'        => 'ortu.kb.demo@permatakraksaan.sch.id',
+            'email'        => 'ortu.kb@demo.test',
         ]);
 
         $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ibu', true);
@@ -279,7 +273,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         $user = User::create([
             'name'                 => 'Bp. Hendra (Demo Login TK)',
-            'email'                => 'ortu.tk.demo@permatakraksaan.sch.id',
+            'email'                => 'ortu.tk@demo.test',
             'username'             => $nik,
             'password'             => Hash::make('password'),
             'lembaga_id'           => null,
@@ -294,7 +288,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             'nama_lengkap' => 'Bp. Hendra (Demo Login TK)',
             'nik'          => $nik,
             'no_hp'        => '081234560003',
-            'email'        => 'ortu.tk.demo@permatakraksaan.sch.id',
+            'email'        => 'ortu.tk@demo.test',
         ]);
 
         $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ayah', true);

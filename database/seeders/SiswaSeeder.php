@@ -137,13 +137,13 @@ class SiswaSeeder extends Seeder
         }
 
         $emailMap = [
-            '20223311' => 'siswa.kbit@permatakraksaan.sch.id',
-            '20223322' => 'siswa.tkit@permatakraksaan.sch.id',
-            '20223333' => 'siswa.sdit@permatakraksaan.sch.id',
-            '20223344' => 'siswa.smpit@permatakraksaan.sch.id',
+            '20223311' => 'siswa.kb@demo.test',
+            '20223322' => 'siswa.tk@demo.test',
+            '20223333' => 'siswa.sd@demo.test',
+            '20223344' => 'siswa.smp@demo.test',
         ];
 
-        $email = $emailMap[$lembaga->npsn] ?? "siswa.{$lembaga->id}@permatakraksaan.sch.id";
+        $email = $emailMap[$lembaga->npsn] ?? "siswa.{$lembaga->id}@demo.test";
 
         $user = User::firstOrCreate(
             ['email' => $email],
