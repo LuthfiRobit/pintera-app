@@ -139,7 +139,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             ],
             [
                 'nik'          => '0000019904880054',
-                'nama_lengkap' => 'Ibu Nurul Hidayati',
+                'nama_lengkap' => 'Ibu Nurhayati',
                 'no_hp'        => '081234560054',
                 'email'        => null,
                 'hubungan'     => 'ibu',
@@ -148,11 +148,16 @@ class OrangTuaKaryawanSeeder extends Seeder
         ];
 
         foreach ($data as $item) {
+            $siswa = $siswas[$item['siswa_idx']] ?? null;
+
             if (User::where('username', $item['nik'])->exists()) {
+                $existing = OrangTua::where('nik', $item['nik'])->first();
+                if ($existing && $siswa) {
+                    $this->tautkanOrangTuaSiswa($existing, $siswa, $item['hubungan'], true);
+                }
                 continue;
             }
 
-            $siswa = $siswas[$item['siswa_idx']] ?? null;
             if (! $siswa) {
                 continue;
             }

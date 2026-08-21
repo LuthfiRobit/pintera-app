@@ -77,14 +77,14 @@ class SarprasPengadaanDemoSeeder extends Seeder
         $bendaharaYayasan->assignRole('bendahara_yayasan');
 
         $kepsek = User::firstOrCreate(
-            ['email' => 'kepsek.kb@demo.test'],
+            ['email' => 'kepsek.smp@demo.test'],
             ['name' => 'Dr. H. Ahmad Dahlan (Kepala Sekolah)', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
         $kepsek->update(['lembaga_id' => $lembaga->id]);
         $kepsek->assignRole('kepala_sekolah');
 
         $adm = User::firstOrCreate(
-            ['email' => 'adm.kb@demo.test'],
+            ['email' => 'adm.smp@demo.test'],
             ['name' => 'Admin Sarpras & Operasional', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
         $adm->update(['lembaga_id' => $lembaga->id]);
