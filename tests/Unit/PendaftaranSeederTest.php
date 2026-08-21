@@ -46,19 +46,19 @@ it('links each pendaftaran to the correct calon murid and lembaga, with decision
     foreach (Lembaga::all() as $lembaga) {
         $staf = User::where('lembaga_id', $lembaga->id)->first();
 
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
         expect($diterima)->not->toBeNull();
         expect($diterima->calonMurid->nama_lengkap)->toBe('Calon Diterima ('.$lembaga->nama.')');
         expect($diterima->status)->toBe('diterima');
         expect($diterima->ditetapkan_oleh_user_id)->toBe($staf->id);
 
-        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
+        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@demo.test')->first();
         expect($ditolak->status)->toBe('ditolak');
 
-        $menunggu = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.menunggu@example.test')->first();
+        $menunggu = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.menunggu@demo.test')->first();
         expect($menunggu->status)->toBe('menunggu_verifikasi');
 
-        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
         expect($cicilanDemo->status)->toBe('diterima');
         expect($cicilanDemo->kode_pendaftaran)->toBe('REG-PEMBAYARAN-DEMO-'.$lembaga->id);
     }
@@ -70,8 +70,8 @@ it('does not mix up the same scenario email between different institutions', fun
     $smp = Lembaga::where('npsn', '20223344')->first();
     $sdit = Lembaga::where('npsn', '20223333')->first();
 
-    $pendaftaranSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $pendaftaranSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $pendaftaranSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
+    $pendaftaranSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
 
     expect($pendaftaranSmp->id)->not->toBe($pendaftaranSdit->id);
     expect($pendaftaranSmp->calon_murid_id)->not->toBe($pendaftaranSdit->calon_murid_id);

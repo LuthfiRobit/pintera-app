@@ -36,31 +36,31 @@ class UserSeeder extends Seeder
 
         // KBIT
         $this->seedStaf($kbit, [
-            ['name' => 'Ustadzah Aisyah, S.Psi.', 'email' => 'kepsek.kb@demo.test', 'role' => 'kepala_sekolah'],
-            ['name' => 'Ustadzah Nurul, S.Pd.', 'email' => 'adm.kb@demo.test', 'role' => 'admin_administrasi'],
-            ['name' => 'Ustadzah Halimah, S.E.', 'email' => 'keuangan.kb@demo.test', 'role' => 'admin_keuangan'],
+            ['name' => 'Aisyah, S.Psi.', 'email' => 'kepsek.kb@demo.test', 'role' => 'kepala_sekolah'],
+            ['name' => 'Nurul, S.Pd.', 'email' => 'adm.kb@demo.test', 'role' => 'admin_administrasi'],
+            ['name' => 'Halimah, S.E.', 'email' => 'keuangan.kb@demo.test', 'role' => 'admin_keuangan'],
         ], [
-            ['name' => 'Ustadzah Fatimah, S.Psi.', 'email' => 'guru.kb1@demo.test'],
-            ['name' => 'Ustadzah Zahra, S.Pd.', 'email' => 'guru.kb2@demo.test'],
-            ['name' => 'Ustadzah Rini, S.Pd.', 'email' => 'guru.kb3@demo.test'],
+            ['name' => 'Fatimah, S.Psi.', 'email' => 'guru.kb1@demo.test'],
+            ['name' => 'Zahra, S.Pd.', 'email' => 'guru.kb2@demo.test'],
+            ['name' => 'Rini, S.Pd.', 'email' => 'guru.kb3@demo.test'],
         ]);
 
         // TKIT
         $this->seedStaf($tkit, [
-            ['name' => 'Ustadzah Maryam, S.Pd.I.', 'email' => 'kepsek.tk@demo.test', 'role' => 'kepala_sekolah'],
-            ['name' => 'Ustadzah Indria, S.Pd.', 'email' => 'adm.tk@demo.test', 'role' => 'admin_administrasi'],
-            ['name' => 'Ustadzah Khadijah, S.E.', 'email' => 'keuangan.tk@demo.test', 'role' => 'admin_keuangan'],
+            ['name' => 'Maryam, S.Pd.I.', 'email' => 'kepsek.tk@demo.test', 'role' => 'kepala_sekolah'],
+            ['name' => 'Indria, S.Pd.', 'email' => 'adm.tk@demo.test', 'role' => 'admin_administrasi'],
+            ['name' => 'Khadijah, S.E.', 'email' => 'keuangan.tk@demo.test', 'role' => 'admin_keuangan'],
         ], [
-            ['name' => 'Ustadzah Dewi, S.Pd.I.', 'email' => 'guru.tk1@demo.test'],
-            ['name' => 'Ustadzah Latifah, S.Pd.', 'email' => 'guru.tk2@demo.test'],
-            ['name' => 'Ustadzah Amel, S.Psi.', 'email' => 'guru.tk3@demo.test'],
+            ['name' => 'Dewi, S.Pd.I.', 'email' => 'guru.tk1@demo.test'],
+            ['name' => 'Latifah, S.Pd.', 'email' => 'guru.tk2@demo.test'],
+            ['name' => 'Amel, S.Psi.', 'email' => 'guru.tk3@demo.test'],
         ]);
 
         // SDIT
         $this->seedStaf($sdit, [
-            ['name' => 'Ustadz Abdullah, M.Pd.', 'email' => 'kepsek.sd@demo.test', 'role' => 'kepala_sekolah'],
-            ['name' => 'Ustadz Lukman, S.Kom.', 'email' => 'adm.sd@demo.test', 'role' => 'admin_administrasi'],
-            ['name' => 'Ustadz Hasan, S.E.', 'email' => 'keuangan.sd@demo.test', 'role' => 'admin_keuangan'],
+            ['name' => 'Abdullah, M.Pd.', 'email' => 'kepsek.sd@demo.test', 'role' => 'kepala_sekolah'],
+            ['name' => 'Lukman, S.Kom.', 'email' => 'adm.sd@demo.test', 'role' => 'admin_administrasi'],
+            ['name' => 'Hasan, S.E.', 'email' => 'keuangan.sd@demo.test', 'role' => 'admin_keuangan'],
         ], [
             ['name' => 'Hendra Gunawan, S.Pd.', 'email' => 'hendra.gunawan@permata.sch.id'],
             ['name' => 'Maya Anggraini, S.Pd.', 'email' => 'maya.anggraini@permata.sch.id'],
@@ -69,7 +69,7 @@ class UserSeeder extends Seeder
 
         // SMPIT
         $this->seedStaf($smpit, [
-            ['name' => 'Ustadz Bambang Suryadi, M.Pd.', 'email' => 'kepsek.smp@demo.test', 'role' => 'kepala_sekolah'],
+            ['name' => 'Bambang Suryadi, M.Pd.', 'email' => 'kepsek.smp@demo.test', 'role' => 'kepala_sekolah'],
             ['name' => 'Dewi Lestari, S.Pd.', 'email' => 'adm.smp@demo.test', 'role' => 'admin_administrasi'],
             ['name' => 'Nur Aisyah, S.Pd.', 'email' => 'keuangan.smp@demo.test', 'role' => 'admin_keuangan'],
         ], [
@@ -92,6 +92,7 @@ class UserSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
+            $user->update(['name' => $data['name'], 'lembaga_id' => $lembaga->id]);
             $user->assignRole($data['role']);
         }
 
@@ -106,6 +107,7 @@ class UserSeeder extends Seeder
                     'is_active' => true,
                 ]
             );
+            $user->update(['name' => $data['name'], 'lembaga_id' => $lembaga->id]);
             $user->assignRole('guru');
         }
     }
