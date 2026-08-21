@@ -8,10 +8,10 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('seeds exactly 113 permissions', function () {
+it('seeds exactly 134 permissions', function () {
     (new PermissionSeeder())->run();
 
-    expect(Permission::count())->toBe(113);
+    expect(Permission::count())->toBe(134);
     expect(Permission::where('name', 'roles.view')->exists())->toBeTrue();
     expect(Permission::where('name', 'cicilan.kelola')->exists())->toBeTrue();
     expect(Permission::where('name', 'pembayaran.virtual-account')->exists())->toBeTrue();
@@ -37,7 +37,7 @@ it('is idempotent when run twice', function () {
     (new PermissionSeeder())->run();
     (new PermissionSeeder())->run();
 
-    expect(Permission::count())->toBe(113);
+    expect(Permission::count())->toBe(134);
 });
 
 it('removes orphaned legacy flat-name permissions on re-seed', function () {

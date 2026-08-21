@@ -4,11 +4,16 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
 
 class RoleSeeder extends Seeder
 {
     public function run(): void
     {
+        if (Permission::count() === 0) {
+            (new PermissionSeeder())->run();
+        }
+
         $roles = [
             'yayasan_super_admin' => ['scope_level' => 'yayasan', 'is_protected' => true],
             'kepala_sekolah' => ['scope_level' => 'lembaga', 'is_protected' => false],
@@ -29,6 +34,10 @@ class RoleSeeder extends Seeder
                 ['name' => $name, 'guard_name' => 'web'],
                 $attributes
             );
+
+            if ($name === 'yayasan_super_admin') {
+                $role->givePermissionTo(Permission::all());
+            }
 
             if ($name === 'admin_administrasi') {
                 $role->givePermissionTo([
