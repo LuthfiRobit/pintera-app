@@ -19,8 +19,19 @@ class SertifikasiGuruSeeder extends Seeder
         ];
 
         foreach ($data as $email => $sertifikasi) {
-            $user = User::where('email', $email)->firstOrFail();
-            $guru = Guru::where('user_id', $user->id)->firstOrFail();
+            $user = User::where('email', $email)->first();
+
+            if (! $user) {
+                $this->command?->warn("SertifikasiGuruSeeder: user {$email} tidak ditemukan (UserSeeder mungkin dilewati di env non-local/testing), dilewati.");
+
+                continue;
+            }
+
+            $guru = Guru::where('user_id', $user->id)->first();
+
+            if (! $guru) {
+                continue;
+            }
 
             SertifikasiGuru::firstOrCreate(
                 ['guru_id' => $guru->id, 'jenis_sertifikasi' => $sertifikasi['jenis_sertifikasi']],

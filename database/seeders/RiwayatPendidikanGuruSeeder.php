@@ -35,8 +35,19 @@ class RiwayatPendidikanGuruSeeder extends Seeder
         ];
 
         foreach ($data as $email => $riwayatList) {
-            $user = User::where('email', $email)->firstOrFail();
-            $guru = Guru::where('user_id', $user->id)->firstOrFail();
+            $user = User::where('email', $email)->first();
+
+            if (! $user) {
+                $this->command?->warn("RiwayatPendidikanGuruSeeder: user {$email} tidak ditemukan (UserSeeder mungkin dilewati di env non-local/testing), dilewati.");
+
+                continue;
+            }
+
+            $guru = Guru::where('user_id', $user->id)->first();
+
+            if (! $guru) {
+                continue;
+            }
 
             foreach ($riwayatList as $riwayat) {
                 RiwayatPendidikanGuru::firstOrCreate(

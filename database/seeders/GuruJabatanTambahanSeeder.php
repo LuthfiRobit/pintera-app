@@ -21,8 +21,20 @@ class GuruJabatanTambahanSeeder extends Seeder
         ];
 
         foreach ($data as $email => $info) {
-            $user = User::where('email', $email)->firstOrFail();
-            $guru = Guru::where('user_id', $user->id)->firstOrFail();
+            $user = User::where('email', $email)->first();
+
+            if (! $user) {
+                $this->command?->warn("GuruJabatanTambahanSeeder: user {$email} tidak ditemukan (UserSeeder mungkin dilewati di env non-local/testing), dilewati.");
+
+                continue;
+            }
+
+            $guru = Guru::where('user_id', $user->id)->first();
+
+            if (! $guru) {
+                continue;
+            }
+
             $jabatan = JabatanTambahanMaster::where('nama', $info['jabatan'])->firstOrFail();
 
             GuruJabatanTambahan::firstOrCreate(

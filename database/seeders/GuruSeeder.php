@@ -117,7 +117,13 @@ class GuruSeeder extends Seeder
     private function seedGuru(Lembaga $lembaga, array $guruList): void
     {
         foreach ($guruList as $data) {
-            $user = User::where('email', $data['email'])->firstOrFail();
+            $user = User::where('email', $data['email'])->first();
+
+            if (! $user) {
+                $this->command?->warn("GuruSeeder: user {$data['email']} tidak ditemukan (UserSeeder mungkin dilewati di env non-local/testing), dilewati.");
+
+                continue;
+            }
 
             Guru::firstOrCreate(
                 ['user_id' => $user->id],
