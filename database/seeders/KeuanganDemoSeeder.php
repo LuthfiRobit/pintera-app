@@ -36,7 +36,7 @@ class KeuanganDemoSeeder extends Seeder
             $user = User::where('username', $demo['nik'])->first();
 
             if (! $user || ! $user->orangTua) {
-                $this->command?->warn("Lewati: user demo {$demo['email']} tidak ditemukan (jalankan DatabaseSeeder dulu).");
+                $this->command?->warn("Lewati: user demo {$demo['email']} (NIK {$demo['nik']}) tidak ditemukan (OrangTuaKaryawanSeeder mungkin dilewati di env non-local/testing).");
 
                 continue;
             }

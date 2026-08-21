@@ -2,6 +2,7 @@
 
 use App\Models\SkPpdb;
 use App\Models\User;
+use Database\Seeders\RolePermissionAssignmentSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -10,6 +11,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     (new RolePermissionSeeder)->run();
+    (new RolePermissionAssignmentSeeder)->run();
 });
 
 it('generates a PDF, creates a sk_ppdb row, and links every finalized pendaftaran to it', function () {
