@@ -19,6 +19,11 @@ class SesiPembelajaranSeeder extends Seeder
 {
     public function run(): void
     {
+        // Memakai "kemarin" (bukan tanggal tetap) supaya sesi selalu terlihat baru saat
+        // di-demo. Efek samping: reseed di HARI KALENDER YANG BERBEDA akan menambah baris
+        // baru (bukan menimpa baris lama), karena kombinasi key firstOrCreate di bawah
+        // menyertakan tanggal — ini bukan bug, murni karakteristik data yang bertambah
+        // seiring waktu kalau seeder dijalankan ulang di hari berbeda-beda.
         $kemarin = Carbon::yesterday();
         $hariKemarinName = strtolower($kemarin->locale('id')->dayName);
 

@@ -2,6 +2,7 @@
 
 use App\Models\Role;
 use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RolePermissionAssignmentSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -91,6 +92,14 @@ it('grants kalender-akademik.kelola-nasional to yayasan_super_admin via bulk per
 
     $adminAkademik = Role::where('name', 'admin_akademik')->firstOrFail();
     expect($adminAkademik->hasPermissionTo('kalender-akademik.kelola-nasional'))->toBeFalse();
+});
+
+it('also gets the full permission set re-synced by RolePermissionAssignmentSeeder at the end of the full seed chain', function () {
+    (new RoleSeeder())->run();
+    (new RolePermissionAssignmentSeeder())->run();
+
+    $superAdmin = Role::where('name', 'yayasan_super_admin')->firstOrFail();
+    expect($superAdmin->permissions()->count())->toBe(Permission::count());
 });
 
 it('grants kenaikan-kelas.kelola to kepala_sekolah after permissions sync and role seeding', function () {

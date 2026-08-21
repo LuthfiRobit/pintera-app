@@ -71,7 +71,7 @@ class OrangTuaKaryawanSeeder extends Seeder
     {
         $jenisKaryawan = JenisKaryawanMaster::where('nama', 'Psikolog')->firstOrFail();
 
-        $nik = '3273019901900099';
+        $nik = '0000019901900099';
 
         if (User::where('username', $nik)->exists()) {
             return;
@@ -114,7 +114,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         $data = [
             [
-                'nik'          => '3273019901850051',
+                'nik'          => '0000019901850051',
                 'nama_lengkap' => 'Drs. Ahmad Pratama',
                 'no_hp'        => '081234560051',
                 'email'        => null,
@@ -122,7 +122,7 @@ class OrangTuaKaryawanSeeder extends Seeder
                 'siswa_idx'    => 0,
             ],
             [
-                'nik'          => '3273019902860052',
+                'nik'          => '0000019902860052',
                 'nama_lengkap' => 'Ibu Sari Dewi',
                 'no_hp'        => '081234560052',
                 'email'        => null,
@@ -130,7 +130,7 @@ class OrangTuaKaryawanSeeder extends Seeder
                 'siswa_idx'    => 1,
             ],
             [
-                'nik'          => '3273019903870053',
+                'nik'          => '0000019903870053',
                 'nama_lengkap' => 'Bp. Rizky Hidayat',
                 'no_hp'        => '081234560053',
                 'email'        => null,
@@ -138,7 +138,7 @@ class OrangTuaKaryawanSeeder extends Seeder
                 'siswa_idx'    => 2,
             ],
             [
-                'nik'          => '3273019904880054',
+                'nik'          => '0000019904880054',
                 'nama_lengkap' => 'Ibu Nurhayati',
                 'no_hp'        => '081234560054',
                 'email'        => null,
@@ -192,7 +192,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
     private function seedOrangTuaDemo(Lembaga $smpit): void
     {
-        $nik = '3273019901850001';
+        $nik = '0000019901850001';
 
         if (User::where('username', $nik)->exists()) {
             return;
@@ -230,7 +230,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
     private function seedOrangTuaDemoKb(Lembaga $kbit): void
     {
-        $nik = '3273019901850002';
+        $nik = '0000019901850002';
 
         if (User::where('username', $nik)->exists()) {
             return;
@@ -266,7 +266,7 @@ class OrangTuaKaryawanSeeder extends Seeder
 
     private function seedOrangTuaDemoTk(Lembaga $tkit): void
     {
-        $nik = '3273019901850003';
+        $nik = '0000019901850003';
 
         if (User::where('username', $nik)->exists()) {
             return;
@@ -311,7 +311,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             return;
         }
 
-        $nik = '3273019905890055';
+        $nik = '0000019905890055';
 
         if (User::where('username', $nik)->exists()) {
             return;

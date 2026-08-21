@@ -31,7 +31,7 @@ class CalonMuridSeeder extends Seeder
             ['nama_lengkap' => $namaDasar.' ('.$lembaga->nama.')'],
             [
                 'yayasan_id' => $lembaga->yayasan_id,
-                'nik' => (string) random_int(3200000000000000, 3299999999999999),
+                'nik' => '0000'.str_pad((string) random_int(0, 999999999999), 12, '0', STR_PAD_LEFT),
                 'jenis_kelamin' => $jenisKelamin,
                 'tempat_lahir' => 'Bandung',
                 'tanggal_lahir' => now()->subYears($umur)->toDateString(),

@@ -15,21 +15,19 @@ use Illuminate\Database\Seeder;
 /**
  * Data demo untuk mencoba Modul Keuangan lewat browser secara end-to-end.
  *
- * Standalone -- TIDAK dipanggil dari DatabaseSeeder::run(), supaya tidak
- * mengubah jumlah baris yang diasumsikan test/seeder lain. Jalankan manual:
- *   php artisan db:seed --class=KeuanganDemoSeeder
- *
- * Butuh DatabaseSeeder sudah pernah dijalankan (butuh akun demo orang tua
- * dari OrangTuaKaryawanSeeder + wallet otomatis dari StudentCreated event).
+ * Dipanggil dari DatabaseSeeder::run() (posisi setelah OrangTuaKaryawanSeeder dan
+ * PendampinganSeeder) untuk demo end-to-end otomatis setiap fresh seed. Bergantung pada
+ * akun demo orang tua dari OrangTuaKaryawanSeeder + wallet otomatis dari StudentCreated event
+ * -- keduanya sudah terjamin ada di titik ini karena urutan DatabaseSeeder.
  */
 class KeuanganDemoSeeder extends Seeder
 {
     public function run(): void
     {
         $demoParents = [
-            ['nik' => '3273019901850001', 'email' => 'ortu.demo@permatakraksaan.sch.id'],
-            ['nik' => '3273019901850002', 'email' => 'ortu.kb.demo@permatakraksaan.sch.id'],
-            ['nik' => '3273019901850003', 'email' => 'ortu.tk.demo@permatakraksaan.sch.id'],
+            ['nik' => '0000019901850001', 'email' => 'ortu.demo@permatakraksaan.sch.id'],
+            ['nik' => '0000019901850002', 'email' => 'ortu.kb.demo@permatakraksaan.sch.id'],
+            ['nik' => '0000019901850003', 'email' => 'ortu.tk.demo@permatakraksaan.sch.id'],
         ];
 
         foreach ($demoParents as $demo) {
