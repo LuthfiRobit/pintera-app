@@ -11,7 +11,7 @@ class ApproverResolverService
 {
     public function canUserApprove(WorkflowStep $step, User $user, ApprovalRequest $request): bool
     {
-        if ($user->hasRole(['super_admin', 'yayasan_super_admin'])) {
+        if ($user->hasRole('yayasan_super_admin')) {
             return true;
         }
 
