@@ -44,7 +44,7 @@ class DokumenPendaftaranSeeder extends Seeder
     private function seedDokumenMenunggu(Lembaga $lembaga, Collection $syaratDokumen, ?User $staf): void
     {
         $pendaftaran = Pendaftaran::where('lembaga_id', $lembaga->id)
-            ->where('email_pendaftaran', 'wali.menunggu@example.test')
+            ->where('email_pendaftaran', 'wali.menunggu@demo.test')
             ->first();
 
         if (! $pendaftaran) {
@@ -77,7 +77,7 @@ class DokumenPendaftaranSeeder extends Seeder
     private function seedDokumenDiterima(Lembaga $lembaga, Collection $syaratDokumen, ?User $staf): void
     {
         $pendaftaran = Pendaftaran::where('lembaga_id', $lembaga->id)
-            ->where('email_pendaftaran', 'wali.diterima@example.test')
+            ->where('email_pendaftaran', 'wali.diterima@demo.test')
             ->first();
 
         if (! $pendaftaran) {

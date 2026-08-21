@@ -57,12 +57,12 @@ it('seeds mixed-status dokumen for the menunggu-verifikasi pendaftaran and all-d
         $jumlahSyarat = $jalur->dokumenSyarat()->count();
         expect($jumlahSyarat)->toBeGreaterThan(0);
 
-        $menunggu = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.menunggu@example.test')->first();
+        $menunggu = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.menunggu@demo.test')->first();
         $dokumenMenunggu = DokumenPendaftaran::where('pendaftaran_id', $menunggu->id)->get();
         expect($dokumenMenunggu)->toHaveCount($jumlahSyarat);
         expect($dokumenMenunggu->pluck('status_verifikasi')->unique()->count())->toBeGreaterThan(1);
 
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
         $dokumenDiterima = DokumenPendaftaran::where('pendaftaran_id', $diterima->id)->get();
         expect($dokumenDiterima)->toHaveCount($jumlahSyarat);
         expect($dokumenDiterima->pluck('status_verifikasi')->unique()->all())->toBe(['diterima']);

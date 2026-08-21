@@ -19,10 +19,10 @@ class AkunPendaftarSeeder extends Seeder
         }
 
         $emailPerNpsn = [
-            '20223311' => ['email' => 'pendaftar.kbit@example.test', 'nama' => 'Wali KBIT (Contoh)'],
-            '20223322' => ['email' => 'pendaftar.tkit@example.test', 'nama' => 'Wali TKIT (Contoh)'],
-            '20223333' => ['email' => 'pendaftar.sdit@example.test', 'nama' => 'Wali SDIT (Contoh)'],
-            '20223344' => ['email' => 'pendaftar.smpit@example.test', 'nama' => 'Wali SMPIT (Contoh)'],
+            '20223311' => ['email' => 'pendaftar.kb@demo.test', 'nama' => 'Wali KB (Contoh)'],
+            '20223322' => ['email' => 'pendaftar.tk@demo.test', 'nama' => 'Wali TK (Contoh)'],
+            '20223333' => ['email' => 'pendaftar.sd@demo.test', 'nama' => 'Wali SD (Contoh)'],
+            '20223344' => ['email' => 'pendaftar.smp@demo.test', 'nama' => 'Wali SMP (Contoh)'],
         ];
 
         foreach (Lembaga::whereIn('npsn', array_keys($emailPerNpsn))->get() as $lembaga) {
@@ -37,7 +37,7 @@ class AkunPendaftarSeeder extends Seeder
                 ]
             );
 
-            $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+            $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
 
             if ($diterima) {
                 $diterima->update(['akun_pendaftar_id' => $akun->id]);

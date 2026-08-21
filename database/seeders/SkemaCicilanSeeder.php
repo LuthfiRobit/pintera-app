@@ -16,7 +16,7 @@ class SkemaCicilanSeeder extends Seeder
         $service = app(PembayaranService::class);
 
         foreach (Lembaga::all() as $lembaga) {
-            $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+            $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
 
             if (! $cicilanDemo) {
                 continue;

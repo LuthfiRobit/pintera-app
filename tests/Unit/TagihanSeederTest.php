@@ -58,7 +58,7 @@ it('sets total_tagihan to the real configured NominalTagihanJalur value for each
     $jenisDaftarUlangSmp = JenisTagihan::where('lembaga_id', $smp->id)->where('nama', 'Uang Pangkal')->first();
     $nominalSmp = NominalTagihanJalur::where('jenis_tagihan_id', $jenisDaftarUlangSmp->id)->where('jalur_ppdb_id', $jalurSmp->id)->first();
 
-    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
     $tagihanDaftarUlangSmp = Tagihan::where('pendaftaran_id', $diterimaSmp->id)->where('kategori', 'daftar_ulang')->first();
     expect((int) $tagihanDaftarUlangSmp->total_tagihan)->toBe((int) $nominalSmp->nominal);
 
@@ -67,7 +67,7 @@ it('sets total_tagihan to the real configured NominalTagihanJalur value for each
     $jenisDaftarUlangSdit = JenisTagihan::where('lembaga_id', $sdit->id)->where('nama', 'Uang Pangkal')->first();
     $nominalSdit = NominalTagihanJalur::where('jenis_tagihan_id', $jenisDaftarUlangSdit->id)->where('jalur_ppdb_id', $jalurSdit->id)->first();
 
-    $diterimaSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $diterimaSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
     $tagihanDaftarUlangSdit = Tagihan::where('pendaftaran_id', $diterimaSdit->id)->where('kategori', 'daftar_ulang')->first();
     expect((int) $tagihanDaftarUlangSdit->total_tagihan)->toBe((int) $nominalSdit->nominal);
 
@@ -78,8 +78,8 @@ it('creates 2 tagihan for the diterima candidate and 1 for the cicilan-demo cand
     (new TagihanSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
 
         expect(Tagihan::where('pendaftaran_id', $diterima->id)->count())->toBe(2);
         expect(Tagihan::where('pendaftaran_id', $cicilanDemo->id)->count())->toBe(1);

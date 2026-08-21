@@ -40,12 +40,12 @@ class PendaftaranSeeder extends Seeder
 
             $staf = User::where('lembaga_id', $lembaga->id)->first();
 
-            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Menunggu Verifikasi', 'wali.menunggu@example.test', [
+            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Menunggu Verifikasi', 'wali.menunggu@demo.test', [
                 'kode_pendaftaran' => 'REG-DEMO-'.$lembaga->id.'-'.random_int(10000, 99999),
                 'submitted_at' => now()->subDays(random_int(1, 5)),
             ]);
 
-            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Diterima', 'wali.diterima@example.test', [
+            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Diterima', 'wali.diterima@demo.test', [
                 'kode_pendaftaran' => 'REG-DEMO-'.$lembaga->id.'-'.random_int(10000, 99999),
                 'submitted_at' => now()->subDays(random_int(1, 5)),
                 'status' => 'diterima',
@@ -54,7 +54,7 @@ class PendaftaranSeeder extends Seeder
                 'ditetapkan_pada' => now(),
             ]);
 
-            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Ditolak', 'wali.ditolak@example.test', [
+            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Ditolak', 'wali.ditolak@demo.test', [
                 'kode_pendaftaran' => 'REG-DEMO-'.$lembaga->id.'-'.random_int(10000, 99999),
                 'submitted_at' => now()->subDays(random_int(1, 5)),
                 'status' => 'ditolak',
@@ -63,7 +63,7 @@ class PendaftaranSeeder extends Seeder
                 'ditetapkan_pada' => now(),
             ]);
 
-            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Cicilan Demo', 'wali.cicilan-demo@example.test', [
+            $this->seedPendaftaran($lembaga, $tahunAjaranAktif, $jalur, $gelombang, 'Calon Cicilan Demo', 'wali.cicilan@demo.test', [
                 'kode_pendaftaran' => 'REG-PEMBAYARAN-DEMO-'.$lembaga->id,
                 'submitted_at' => now()->subDays(2),
                 'status' => 'diterima',

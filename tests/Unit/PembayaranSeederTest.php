@@ -59,7 +59,7 @@ it('creates a pending payment for each of the diterima candidate 2 tagihan, per 
     (new PembayaranSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
 
         foreach (Tagihan::where('pendaftaran_id', $diterima->id)->get() as $tagihan) {
             $pembayaran = Pembayaran::where('tagihan_id', $tagihan->id)->first();
@@ -74,7 +74,7 @@ it('creates a pending payment for termin 1 of the cicilan-demo candidate, per K-
     (new PembayaranSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
         $tagihan = Tagihan::where('pendaftaran_id', $cicilanDemo->id)->where('kategori', 'daftar_ulang')->first();
         $termin1 = $tagihan->skemaCicilan->cicilan()->where('urutan', 1)->first();
 
@@ -88,7 +88,7 @@ it('traces the full chain from a diterima pendaftaran through to its pembayaran 
     (new PembayaranSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
 
         expect($diterima->calonMurid->nama_lengkap)->toBe('Calon Diterima ('.$lembaga->nama.')');
         expect($diterima->lembaga_id)->toBe($lembaga->id);
@@ -107,8 +107,8 @@ it('traces the full chain from a diterima pendaftaran through to its pembayaran 
 
     $smp = Lembaga::where('npsn', '20223344')->first();
     $sdit = Lembaga::where('npsn', '20223333')->first();
-    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-    $diterimaSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
+    $diterimaSdit = Pendaftaran::where('lembaga_id', $sdit->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
 
     expect($diterimaSmp->sk_ppdb_id)->not->toBe($diterimaSdit->sk_ppdb_id);
     expect($diterimaSmp->calon_murid_id)->not->toBe($diterimaSdit->calon_murid_id);

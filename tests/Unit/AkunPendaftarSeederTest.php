@@ -44,10 +44,10 @@ it('seeds one verified akun pendaftar per lembaga across all K-9 institutions, a
     (new AkunPendaftarSeeder())->run();
 
     $emailPerNpsn = [
-        '20223311' => 'pendaftar.kbit@example.test',
-        '20223322' => 'pendaftar.tkit@example.test',
-        '20223333' => 'pendaftar.sdit@example.test',
-        '20223344' => 'pendaftar.smpit@example.test',
+        '20223311' => 'pendaftar.kb@demo.test',
+        '20223322' => 'pendaftar.tk@demo.test',
+        '20223333' => 'pendaftar.sd@demo.test',
+        '20223344' => 'pendaftar.smp@demo.test',
     ];
 
     foreach (Lembaga::all() as $lembaga) {
@@ -58,7 +58,7 @@ it('seeds one verified akun pendaftar per lembaga across all K-9 institutions, a
         expect($akun->email_verified_at)->not->toBeNull();
         expect(Hash::check('password', $akun->password))->toBeTrue();
 
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
         expect($diterima->fresh()->akun_pendaftar_id)->toBe($akun->id);
         expect($akun->pendaftaran()->count())->toBe(1);
     }

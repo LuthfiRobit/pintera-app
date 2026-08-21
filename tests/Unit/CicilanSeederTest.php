@@ -55,7 +55,7 @@ it('does not error when the skema cicilan already has its 3 termin rows from Ske
     expect(Cicilan::count())->toBe(12);
 
     foreach (Lembaga::all() as $lembaga) {
-        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
         $tagihan = Tagihan::where('pendaftaran_id', $cicilanDemo->id)->where('kategori', 'daftar_ulang')->first();
         $urutanList = $tagihan->skemaCicilan->cicilan()->orderBy('urutan')->pluck('urutan')->all();
 

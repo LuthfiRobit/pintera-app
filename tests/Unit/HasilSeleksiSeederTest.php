@@ -49,14 +49,14 @@ it('seeds passing-range nilai for diterima and failing-range nilai for ditolak a
     (new HasilSeleksiSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
         $nilaiDiterima = HasilSeleksi::where('pendaftaran_id', $diterima->id)->get();
         expect($nilaiDiterima)->not->toBeEmpty();
         foreach ($nilaiDiterima as $hasil) {
             expect((float) $hasil->nilai)->toBeGreaterThanOrEqual(75)->toBeLessThanOrEqual(95);
         }
 
-        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
+        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@demo.test')->first();
         $nilaiDitolak = HasilSeleksi::where('pendaftaran_id', $ditolak->id)->get();
         expect($nilaiDitolak)->not->toBeEmpty();
         foreach ($nilaiDitolak as $hasil) {

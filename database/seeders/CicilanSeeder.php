@@ -22,7 +22,7 @@ class CicilanSeeder extends Seeder
     public function run(): void
     {
         foreach (Lembaga::all() as $lembaga) {
-            $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+            $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
 
             if (! $cicilanDemo) {
                 continue;

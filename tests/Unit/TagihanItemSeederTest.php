@@ -50,7 +50,7 @@ it('creates exactly one item per tagihan across all K-9 institutions, with jumla
     (new TagihanItemSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
 
         foreach (Tagihan::where('pendaftaran_id', $diterima->id)->get() as $tagihan) {
             $items = TagihanItem::where('tagihan_id', $tagihan->id)->get();

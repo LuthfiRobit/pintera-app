@@ -46,8 +46,8 @@ it('creates one SK per lembaga across all K-9 institutions and attaches it to bo
         $sk = SkPpdb::where('lembaga_id', $lembaga->id)->first();
         expect($sk)->not->toBeNull();
 
-        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@example.test')->first();
+        $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
+        $ditolak = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.ditolak@demo.test')->first();
         expect($diterima->sk_ppdb_id)->toBe($sk->id);
         expect($ditolak->sk_ppdb_id)->toBe($sk->id);
     }

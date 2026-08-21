@@ -50,7 +50,7 @@ it('creates a 3-termin skema cicilan per lembaga for the cicilan-demo tagihan ac
     (new SkemaCicilanSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+        $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
         $tagihan = Tagihan::where('pendaftaran_id', $cicilanDemo->id)->where('kategori', 'daftar_ulang')->first();
 
         $skema = SkemaCicilan::where('tagihan_id', $tagihan->id)->first();

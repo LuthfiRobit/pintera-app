@@ -14,8 +14,8 @@ class PembayaranSeeder extends Seeder
     public function run(): void
     {
         foreach (Lembaga::all() as $lembaga) {
-            $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@example.test')->first();
-            $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan-demo@example.test')->first();
+            $diterima = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
+            $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();
 
             if ($diterima) {
                 foreach (['pendaftaran', 'daftar_ulang'] as $kategori) {

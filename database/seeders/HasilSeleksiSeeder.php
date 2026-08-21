@@ -44,8 +44,8 @@ class HasilSeleksiSeeder extends Seeder
 
             $seleksiList = SeleksiPpdb::where('jalur_ppdb_id', $jalur->id)->where('gelombang_ppdb_id', $gelombang->id)->get();
 
-            $this->seedHasil($lembaga, $seleksiList, 'wali.diterima@example.test', 75, 95, $staf);
-            $this->seedHasil($lembaga, $seleksiList, 'wali.ditolak@example.test', 30, 55, $staf);
+            $this->seedHasil($lembaga, $seleksiList, 'wali.diterima@demo.test', 75, 95, $staf);
+            $this->seedHasil($lembaga, $seleksiList, 'wali.ditolak@demo.test', 30, 55, $staf);
         }
     }
 
