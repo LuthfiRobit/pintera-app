@@ -17,6 +17,7 @@ class AttendanceRecord extends Model
 
     protected $fillable = [
         'lembaga_id', 'pegawai_type', 'pegawai_id', 'tanggal', 'status', 'waktu_masuk', 'waktu_pulang',
+        'is_late', 'late_minutes',
     ];
 
     protected function casts(): array
@@ -26,6 +27,8 @@ class AttendanceRecord extends Model
             'tanggal' => 'date',
             'waktu_masuk' => 'datetime',
             'waktu_pulang' => 'datetime',
+            'is_late' => 'boolean',
+            'late_minutes' => 'integer',
         ];
     }
 
