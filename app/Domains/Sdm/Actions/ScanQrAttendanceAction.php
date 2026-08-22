@@ -12,15 +12,15 @@ use App\Domains\Sdm\Exceptions\InvalidQrTokenException;
 use App\Domains\Sdm\Exceptions\QrTokenLembagaMismatchException;
 use App\Domains\Sdm\Models\AttendanceEvent;
 use App\Domains\Sdm\Models\EmployeeQrCode;
+use App\Domains\Sdm\Services\AttendancePolicyResolver;
 use App\Domains\Sdm\Services\AttendanceRecordAggregator;
-use App\Domains\Sdm\Services\KalenderKerjaSdmResolver;
 use Illuminate\Support\Facades\DB;
 
 final class ScanQrAttendanceAction
 {
     public function __construct(
         private readonly AttendanceRecordAggregator $aggregator,
-        private readonly KalenderKerjaSdmResolver $kalenderResolver,
+        private readonly AttendancePolicyResolver $policyResolver,
     ) {}
 
     public function execute(ScanQrAttendanceData $data): AttendanceEvent
@@ -37,7 +37,7 @@ final class ScanQrAttendanceAction
             throw new QrTokenLembagaMismatchException();
         }
 
-        $resolusi = $this->kalenderResolver->resolve($pegawai->lembaga, now());
+        $resolusi = $this->policyResolver->resolveLibur($pegawai, now());
 
         if ($resolusi['libur']) {
             throw new AttendanceOnHolidayException($resolusi['alasan']);

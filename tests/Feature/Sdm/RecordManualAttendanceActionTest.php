@@ -111,3 +111,25 @@ it('allows a manual attendance record on a libur day when overrideHariLibur is t
     expect($event->arah)->toBe('masuk');
     expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeTrue();
 });
+
+it('allows a manual attendance record on a lembaga-libur day when the pegawai category has a policy hari_kerja override', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
+    $jenisKaryawan = \App\Models\JenisKaryawanMaster::factory()->create();
+    $karyawan = \App\Models\Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id]);
+    $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    \App\Domains\Sdm\Models\AttendancePolicy::create([
+        'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenisKaryawan->id,
+        'jam_masuk' => '18:00', 'toleransi_menit' => 10, 'hari_kerja' => [0, 1, 2, 3, 4, 5, 6],
+    ]);
+    $action = app(\App\Domains\Sdm\Actions\RecordManualAttendanceAction::class);
+
+    $event = $action->execute($karyawan, new RecordManualAttendanceData(
+        lembagaId: $lembaga->id, arah: 'masuk', status: AttendanceStatus::Hadir,
+        waktu: CarbonImmutable::parse('2026-08-23 18:05:00'), dicatatOlehUserId: $admin->id, // Sunday, but policy overrides it as a work day
+    ));
+
+    expect($event->arah)->toBe('masuk');
+    expect(AttendanceRecord::where('pegawai_type', \App\Models\Karyawan::class)->where('pegawai_id', $karyawan->id)->exists())->toBeTrue();
+});
+

@@ -8,8 +8,8 @@ use App\Domains\Sdm\DataTransferObjects\RecordManualAttendanceData;
 use App\Domains\Sdm\Enums\AttendanceMethod;
 use App\Domains\Sdm\Exceptions\AttendanceOnHolidayException;
 use App\Domains\Sdm\Models\AttendanceEvent;
+use App\Domains\Sdm\Services\AttendancePolicyResolver;
 use App\Domains\Sdm\Services\AttendanceRecordAggregator;
-use App\Domains\Sdm\Services\KalenderKerjaSdmResolver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -17,12 +17,12 @@ final class RecordManualAttendanceAction
 {
     public function __construct(
         private readonly AttendanceRecordAggregator $aggregator,
-        private readonly KalenderKerjaSdmResolver $kalenderResolver,
+        private readonly AttendancePolicyResolver $policyResolver,
     ) {}
 
     public function execute(Model $pegawai, RecordManualAttendanceData $data): AttendanceEvent
     {
-        $resolusi = $this->kalenderResolver->resolve($pegawai->lembaga, $data->waktu);
+        $resolusi = $this->policyResolver->resolveLibur($pegawai, $data->waktu);
 
         if ($resolusi['libur'] && ! $data->overrideHariLibur) {
             throw new AttendanceOnHolidayException($resolusi['alasan']);
