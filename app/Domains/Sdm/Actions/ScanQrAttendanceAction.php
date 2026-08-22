@@ -7,16 +7,21 @@ namespace App\Domains\Sdm\Actions;
 use App\Domains\Sdm\DataTransferObjects\ScanQrAttendanceData;
 use App\Domains\Sdm\Enums\AttendanceMethod;
 use App\Domains\Sdm\Enums\AttendanceStatus;
+use App\Domains\Sdm\Exceptions\AttendanceOnHolidayException;
 use App\Domains\Sdm\Exceptions\InvalidQrTokenException;
 use App\Domains\Sdm\Exceptions\QrTokenLembagaMismatchException;
 use App\Domains\Sdm\Models\AttendanceEvent;
 use App\Domains\Sdm\Models\EmployeeQrCode;
 use App\Domains\Sdm\Services\AttendanceRecordAggregator;
+use App\Domains\Sdm\Services\KalenderKerjaSdmResolver;
 use Illuminate\Support\Facades\DB;
 
 final class ScanQrAttendanceAction
 {
-    public function __construct(private readonly AttendanceRecordAggregator $aggregator) {}
+    public function __construct(
+        private readonly AttendanceRecordAggregator $aggregator,
+        private readonly KalenderKerjaSdmResolver $kalenderResolver,
+    ) {}
 
     public function execute(ScanQrAttendanceData $data): AttendanceEvent
     {
@@ -30,6 +35,12 @@ final class ScanQrAttendanceAction
 
         if (! $pegawai || (int) $pegawai->lembaga_id !== $data->lembagaId) {
             throw new QrTokenLembagaMismatchException();
+        }
+
+        $resolusi = $this->kalenderResolver->resolve($pegawai->lembaga, now());
+
+        if ($resolusi['libur']) {
+            throw new AttendanceOnHolidayException($resolusi['alasan']);
         }
 
         return DB::transaction(function () use ($pegawai, $data) {

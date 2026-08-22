@@ -52,3 +52,17 @@ it('rejects a token belonging to an employee from a different lembaga than the s
 
     expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guruLembagaB->id)->exists())->toBeFalse();
 });
+
+it('rejects a qr scan on a day the calendar resolver marks as libur, with no override path', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => range(0, 6)]); // every day is libur
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $petugas = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $qr = app(\App\Domains\Sdm\Actions\GenerateEmployeeQrTokenAction::class)->execute($guru);
+
+    expect(fn () => app(ScanQrAttendanceAction::class)->execute(new ScanQrAttendanceData(
+        token: $qr->token, arah: 'masuk', lembagaId: $lembaga->id, dicatatOlehUserId: $petugas->id,
+    )))->toThrow(\App\Domains\Sdm\Exceptions\AttendanceOnHolidayException::class);
+
+    expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeFalse();
+});
