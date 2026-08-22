@@ -28,3 +28,12 @@ Route::post('kehadiran-sdm/konfigurasi/policy', [AttendanceConfigurationControll
 Route::put('kehadiran-sdm/konfigurasi/policy/{policy}', [AttendanceConfigurationController::class, 'updatePolicy'])->name('kehadiran-sdm.policy.update');
 Route::delete('kehadiran-sdm/konfigurasi/policy/{policy}', [AttendanceConfigurationController::class, 'destroyPolicy'])->name('kehadiran-sdm.policy.destroy');
 
+Route::post('kehadiran-sdm/konfigurasi/jenis-shift', [AttendanceConfigurationController::class, 'storeJenisShift'])->name('kehadiran-sdm.jenis-shift.store');
+Route::put('kehadiran-sdm/konfigurasi/jenis-shift/{jenisShift}', [AttendanceConfigurationController::class, 'updateJenisShift'])->name('kehadiran-sdm.jenis-shift.update');
+Route::delete('kehadiran-sdm/konfigurasi/jenis-shift/{jenisShift}', [AttendanceConfigurationController::class, 'destroyJenisShift'])->name('kehadiran-sdm.jenis-shift.destroy');
+
+Route::post('kehadiran-sdm/konfigurasi/penugasan-shift', [AttendanceConfigurationController::class, 'storePenugasanShift'])->name('kehadiran-sdm.penugasan-shift.store');
+Route::put('kehadiran-sdm/konfigurasi/penugasan-shift/{penugasanShift}', [AttendanceConfigurationController::class, 'updatePenugasanShift'])->name('kehadiran-sdm.penugasan-shift.update');
+Route::delete('kehadiran-sdm/konfigurasi/penugasan-shift/{penugasanShift}', [AttendanceConfigurationController::class, 'destroyPenugasanShift'])->name('kehadiran-sdm.penugasan-shift.destroy');
+
+

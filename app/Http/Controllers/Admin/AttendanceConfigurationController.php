@@ -3,17 +3,24 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Akademik\Models\KalenderAkademik;
+use App\Domains\Sdm\Actions\AssignShiftAction;
 use App\Domains\Sdm\Actions\CopyKalenderAkademikNasionalAction;
 use App\Domains\Sdm\Actions\SetAttendanceMethodConfigurationAction;
 use App\Domains\Sdm\Actions\SetHariLiburMingguanSdmAction;
 use App\Domains\Sdm\DataTransferObjects\HariKerjaSdmData;
+use App\Domains\Sdm\DataTransferObjects\ShiftAssignmentData;
 use App\Domains\Sdm\Enums\AttendanceMethod;
 use App\Domains\Sdm\Enums\TipeKalenderKerjaSdm;
+use App\Domains\Sdm\Exceptions\ShiftAssignmentOverlapException;
 use App\Domains\Sdm\Models\AttendanceMethodConfiguration;
 use App\Domains\Sdm\Models\AttendancePoint;
 use App\Domains\Sdm\Models\AttendancePolicy;
+use App\Domains\Sdm\Models\JenisShift;
 use App\Domains\Sdm\Models\KalenderKerjaSdm;
+use App\Domains\Sdm\Models\PenugasanShift;
+use App\Models\Guru;
 use App\Models\JenisKaryawanMaster;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -69,6 +76,22 @@ class AttendanceConfigurationController extends BaseController
             ->with('jenisKaryawan')
             ->get() : collect();
 
+        $jenisShiftList = $yayasanId ? JenisShift::withoutGlobalScope(TenantScope::class)
+            ->where('yayasan_id', $yayasanId)
+            ->where(function ($query) use ($lembagaId) {
+                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            })
+            ->orderBy('nama')
+            ->get() : collect();
+
+        $penugasanShiftList = $lembagaId ? PenugasanShift::where('lembaga_id', $lembagaId)
+            ->with(['pegawai', 'jenisShift'])
+            ->orderByDesc('tanggal_mulai')
+            ->get() : collect();
+
+        $guruList = $lembagaId ? Guru::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']) : collect();
+        $karyawanList = $lembagaId ? Karyawan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']) : collect();
+
         return view('admin.kehadiran-sdm.konfigurasi', [
             'methods' => AttendanceMethod::cases(),
             'konfigurasi' => $konfigurasi,
@@ -81,6 +104,10 @@ class AttendanceConfigurationController extends BaseController
             'policyList' => $policyList,
             'jenisPtkOptions' => self::JENIS_PTK_OPTIONS,
             'jenisKaryawanList' => JenisKaryawanMaster::orderBy('nama')->get(),
+            'jenisShiftList' => $jenisShiftList,
+            'penugasanShiftList' => $penugasanShiftList,
+            'guruList' => $guruList,
+            'karyawanList' => $karyawanList,
         ]);
     }
 
@@ -375,6 +402,150 @@ class AttendanceConfigurationController extends BaseController
         $policy->delete();
 
         return back()->with('status', 'Attendance Policy berhasil dihapus.');
+    }
+
+    public function storeJenisShift(Request $request): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'jam_masuk' => ['required', 'date_format:H:i'],
+            'jam_pulang' => ['required', 'date_format:H:i'],
+            'is_nasional' => ['nullable', 'boolean'],
+        ]);
+
+        $isNasional = (bool) ($data['is_nasional'] ?? false);
+
+        if ($isNasional && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh membuat jenis shift nasional.');
+        }
+
+        $lembagaId = $isNasional ? null : $this->resolveLembagaId($request);
+
+        if (! $isNasional && $lembagaId === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis shift.']);
+        }
+
+        $yayasanId = $this->resolveYayasanId($request, $lembagaId);
+
+        JenisShift::create([
+            'yayasan_id' => $yayasanId,
+            'lembaga_id' => $lembagaId,
+            'nama' => $data['nama'],
+            'jam_masuk' => $data['jam_masuk'],
+            'jam_pulang' => $data['jam_pulang'],
+        ]);
+
+        return back()->with('status', 'Jenis shift berhasil ditambahkan.');
+    }
+
+    public function updateJenisShift(Request $request, JenisShift $jenisShift): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        if ($jenisShift->lembaga_id === null && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh mengubah jenis shift nasional.');
+        }
+
+        $data = $request->validate([
+            'nama' => ['required', 'string', 'max:255'],
+            'jam_masuk' => ['required', 'date_format:H:i'],
+            'jam_pulang' => ['required', 'date_format:H:i'],
+        ]);
+
+        $jenisShift->update($data);
+
+        return back()->with('status', 'Jenis shift berhasil diperbarui.');
+    }
+
+    public function destroyJenisShift(Request $request, JenisShift $jenisShift): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        if ($jenisShift->lembaga_id === null && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh menghapus jenis shift nasional.');
+        }
+
+        $jenisShift->delete();
+
+        return back()->with('status', 'Jenis shift berhasil dihapus.');
+    }
+
+    public function storePenugasanShift(Request $request, AssignShiftAction $action): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        $data = $request->validate([
+            'pegawai_tipe' => ['required', 'in:guru,karyawan'],
+            'pegawai_id' => ['required', 'integer'],
+            'jenis_shift_id' => ['required', 'integer', 'exists:jenis_shift,id'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
+            'hari_kerja' => ['nullable', 'array'],
+            'hari_kerja.*' => ['integer', 'between:0,6'],
+        ]);
+
+        $lembagaId = $this->resolveLembagaId($request);
+
+        if ($lembagaId === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.']);
+        }
+
+        $pegawaiModel = $data['pegawai_tipe'] === 'guru' ? Guru::class : Karyawan::class;
+        $pegawai = $pegawaiModel::find($data['pegawai_id']);
+
+        abort_if($pegawai === null || (int) $pegawai->lembaga_id !== $lembagaId, 404, 'Pegawai tidak ditemukan di lembaga aktif Anda.');
+
+        try {
+            $action->execute($pegawai, new ShiftAssignmentData(
+                lembagaId: $lembagaId,
+                jenisShiftId: $data['jenis_shift_id'],
+                tanggalMulai: $data['tanggal_mulai'],
+                tanggalSelesai: $data['tanggal_selesai'] ?? null,
+                hariKerja: $data['hari_kerja'] ?? null,
+            ));
+        } catch (ShiftAssignmentOverlapException $exception) {
+            return back()->withErrors(['tanggal_mulai' => $exception->getMessage()])->withInput();
+        }
+
+        return back()->with('status', 'Penugasan shift berhasil ditambahkan.');
+    }
+
+    public function updatePenugasanShift(Request $request, PenugasanShift $penugasanShift, AssignShiftAction $action): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        $data = $request->validate([
+            'jenis_shift_id' => ['required', 'integer', 'exists:jenis_shift,id'],
+            'tanggal_mulai' => ['required', 'date'],
+            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
+            'hari_kerja' => ['nullable', 'array'],
+            'hari_kerja.*' => ['integer', 'between:0,6'],
+        ]);
+
+        try {
+            $action->execute($penugasanShift->pegawai, new ShiftAssignmentData(
+                lembagaId: $penugasanShift->lembaga_id,
+                jenisShiftId: $data['jenis_shift_id'],
+                tanggalMulai: $data['tanggal_mulai'],
+                tanggalSelesai: $data['tanggal_selesai'] ?? null,
+                hariKerja: $data['hari_kerja'] ?? null,
+            ), excludingId: $penugasanShift->id);
+        } catch (ShiftAssignmentOverlapException $exception) {
+            return back()->withErrors(['tanggal_mulai' => $exception->getMessage()])->withInput();
+        }
+
+        return back()->with('status', 'Penugasan shift berhasil diperbarui.');
+    }
+
+    public function destroyPenugasanShift(PenugasanShift $penugasanShift): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        $penugasanShift->delete();
+
+        return back()->with('status', 'Penugasan shift berhasil dihapus.');
     }
 
     private function resolveLembagaId(Request $request): ?int
