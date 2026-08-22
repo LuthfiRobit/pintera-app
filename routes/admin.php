@@ -19,4 +19,5 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     require base_path('routes/admin/sarpras.php');
 
     require base_path('routes/admin/pengadaan.php');
+    require base_path('routes/admin/kehadiran-sdm.php');
 });
