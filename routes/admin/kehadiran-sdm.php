@@ -23,3 +23,8 @@ Route::put('kehadiran-sdm/konfigurasi/kalender/entri/{entri}', [AttendanceConfig
 Route::delete('kehadiran-sdm/konfigurasi/kalender/entri/{entri}', [AttendanceConfigurationController::class, 'destroyKalenderEntri'])->name('kehadiran-sdm.kalender.entri.destroy');
 Route::get('kehadiran-sdm/konfigurasi/kalender/salin-tersedia', [AttendanceConfigurationController::class, 'kalenderSalinTersedia'])->name('kehadiran-sdm.kalender.salin-tersedia');
 Route::post('kehadiran-sdm/konfigurasi/kalender/salin', [AttendanceConfigurationController::class, 'kalenderSalin'])->name('kehadiran-sdm.kalender.salin');
+
+Route::post('kehadiran-sdm/konfigurasi/policy', [AttendanceConfigurationController::class, 'storePolicy'])->name('kehadiran-sdm.policy.store');
+Route::put('kehadiran-sdm/konfigurasi/policy/{policy}', [AttendanceConfigurationController::class, 'updatePolicy'])->name('kehadiran-sdm.policy.update');
+Route::delete('kehadiran-sdm/konfigurasi/policy/{policy}', [AttendanceConfigurationController::class, 'destroyPolicy'])->name('kehadiran-sdm.policy.destroy');
+

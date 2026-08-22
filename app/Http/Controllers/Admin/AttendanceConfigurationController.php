@@ -11,7 +11,9 @@ use App\Domains\Sdm\Enums\AttendanceMethod;
 use App\Domains\Sdm\Enums\TipeKalenderKerjaSdm;
 use App\Domains\Sdm\Models\AttendanceMethodConfiguration;
 use App\Domains\Sdm\Models\AttendancePoint;
+use App\Domains\Sdm\Models\AttendancePolicy;
 use App\Domains\Sdm\Models\KalenderKerjaSdm;
+use App\Models\JenisKaryawanMaster;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -24,6 +26,14 @@ use Illuminate\View\View;
 class AttendanceConfigurationController extends BaseController
 {
     use AuthorizesRequests;
+
+    private const JENIS_PTK_OPTIONS = [
+        'guru_kelas' => 'Guru Kelas',
+        'guru_mapel' => 'Guru Mapel',
+        'kepala_sekolah' => 'Kepala Sekolah',
+        'tenaga_administrasi' => 'Tenaga Administrasi',
+        'guru_bk' => 'Guru BK',
+    ];
 
     public function index(Request $request): View
     {
@@ -51,6 +61,14 @@ class AttendanceConfigurationController extends BaseController
             ->orderBy('tanggal')
             ->get() : collect();
 
+        $policyList = $yayasanId ? AttendancePolicy::withoutGlobalScope(TenantScope::class)
+            ->where('yayasan_id', $yayasanId)
+            ->where(function ($query) use ($lembagaId) {
+                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            })
+            ->with('jenisKaryawan')
+            ->get() : collect();
+
         return view('admin.kehadiran-sdm.konfigurasi', [
             'methods' => AttendanceMethod::cases(),
             'konfigurasi' => $konfigurasi,
@@ -60,6 +78,9 @@ class AttendanceConfigurationController extends BaseController
             'kalenderEntriList' => $kalenderEntriList,
             'tipeKalenderOptions' => TipeKalenderKerjaSdm::cases(),
             'bolehKelolaNasional' => $request->user()->widestScopeLevel() === 'yayasan',
+            'policyList' => $policyList,
+            'jenisPtkOptions' => self::JENIS_PTK_OPTIONS,
+            'jenisKaryawanList' => JenisKaryawanMaster::orderBy('nama')->get(),
         ]);
     }
 
@@ -258,6 +279,102 @@ class AttendanceConfigurationController extends BaseController
         $disalin = $action->execute($request->user()->yayasan_id, $data['kalender_akademik_ids']);
 
         return back()->with('status', "{$disalin->count()} entri kalender berhasil disalin dari kalender akademik.");
+    }
+
+    public function storePolicy(Request $request): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        $data = $request->validate([
+            'kategori_tipe' => ['required', 'in:guru,karyawan'],
+            'jenis_ptk' => ['required_if:kategori_tipe,guru', 'nullable', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi,guru_bk'],
+            'jenis_karyawan_id' => ['required_if:kategori_tipe,karyawan', 'nullable', 'integer', 'exists:jenis_karyawan_master,id'],
+            'jam_masuk' => ['required', 'date_format:H:i'],
+            'jam_pulang' => ['nullable', 'date_format:H:i'],
+            'toleransi_menit' => ['required', 'integer', 'min:0'],
+            'hari_kerja' => ['nullable', 'array'],
+            'hari_kerja.*' => ['integer', 'between:0,6'],
+            'is_nasional' => ['nullable', 'boolean'],
+        ]);
+
+        $isNasional = (bool) ($data['is_nasional'] ?? false);
+
+        if ($isNasional && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh membuat Attendance Policy nasional.');
+        }
+
+        $lembagaId = $isNasional ? null : $this->resolveLembagaId($request);
+
+        if (! $isNasional && $lembagaId === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah Attendance Policy.']);
+        }
+
+        $yayasanId = $this->resolveYayasanId($request, $lembagaId);
+        $jenisPtk = $data['kategori_tipe'] === 'guru' ? $data['jenis_ptk'] : null;
+        $jenisKaryawanId = $data['kategori_tipe'] === 'karyawan' ? $data['jenis_karyawan_id'] : null;
+
+        $sudahAda = AttendancePolicy::withoutGlobalScope(TenantScope::class)
+            ->where('yayasan_id', $yayasanId)
+            ->where('lembaga_id', $lembagaId)
+            ->where('jenis_ptk', $jenisPtk)
+            ->where('jenis_karyawan_id', $jenisKaryawanId)
+            ->exists();
+
+        if ($sudahAda) {
+            return back()->withErrors(['kategori_tipe' => 'Attendance Policy untuk kategori dan scope ini sudah ada. Edit yang sudah ada, jangan buat baru.']);
+        }
+
+        AttendancePolicy::create([
+            'yayasan_id' => $yayasanId,
+            'lembaga_id' => $lembagaId,
+            'jenis_ptk' => $jenisPtk,
+            'jenis_karyawan_id' => $jenisKaryawanId,
+            'jam_masuk' => $data['jam_masuk'],
+            'jam_pulang' => $data['jam_pulang'] ?? null,
+            'toleransi_menit' => $data['toleransi_menit'],
+            'hari_kerja' => $data['hari_kerja'] ?? null,
+        ]);
+
+        return back()->with('status', 'Attendance Policy berhasil ditambahkan.');
+    }
+
+    public function updatePolicy(Request $request, AttendancePolicy $policy): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        if ($policy->lembaga_id === null && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh mengubah Attendance Policy nasional.');
+        }
+
+        $data = $request->validate([
+            'jam_masuk' => ['required', 'date_format:H:i'],
+            'jam_pulang' => ['nullable', 'date_format:H:i'],
+            'toleransi_menit' => ['required', 'integer', 'min:0'],
+            'hari_kerja' => ['nullable', 'array'],
+            'hari_kerja.*' => ['integer', 'between:0,6'],
+        ]);
+
+        $policy->update([
+            'jam_masuk' => $data['jam_masuk'],
+            'jam_pulang' => $data['jam_pulang'] ?? null,
+            'toleransi_menit' => $data['toleransi_menit'],
+            'hari_kerja' => $data['hari_kerja'] ?? null,
+        ]);
+
+        return back()->with('status', 'Attendance Policy berhasil diperbarui.');
+    }
+
+    public function destroyPolicy(Request $request, AttendancePolicy $policy): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        if ($policy->lembaga_id === null && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh menghapus Attendance Policy nasional.');
+        }
+
+        $policy->delete();
+
+        return back()->with('status', 'Attendance Policy berhasil dihapus.');
     }
 
     private function resolveLembagaId(Request $request): ?int
