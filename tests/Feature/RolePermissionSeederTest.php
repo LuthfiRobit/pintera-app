@@ -48,7 +48,7 @@ it('seeds the initial permissions', function () {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(134);
+    expect(Permission::count())->toBe(138);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -57,7 +57,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(134);
+    expect($superAdmin->permissions()->count())->toBe(138);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -66,6 +66,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     expect(Role::where('name', 'admin_akademik')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'bendahara_yayasan')->first()->scope_level)->toBe('yayasan');
     expect(Role::where('name', 'admin_sarpras')->first()->scope_level)->toBe('yayasan');
+    expect(Role::where('name', 'admin_sdm')->first()->scope_level)->toBe('lembaga');
 });
 
 it('gives admin_administrasi the SPMB-related granular permissions by default', function () {
@@ -130,8 +131,8 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
     (new RolePermissionSeeder())->run();
 
-    expect(Role::count())->toBe(12);
-    expect(Permission::count())->toBe(134);
+    expect(Role::count())->toBe(13);
+    expect(Permission::count())->toBe(138);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {
