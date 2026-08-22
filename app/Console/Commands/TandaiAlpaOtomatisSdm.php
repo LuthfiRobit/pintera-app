@@ -5,8 +5,8 @@ namespace App\Console\Commands;
 use App\Domains\Sdm\Enums\AttendanceMethod;
 use App\Domains\Sdm\Enums\AttendanceStatus;
 use App\Domains\Sdm\Models\AttendanceRecord;
-use App\Domains\Sdm\Services\AttendancePolicyResolver;
 use App\Domains\Sdm\Services\AttendanceRecordAggregator;
+use App\Domains\Sdm\Services\ShiftAwareAttendanceResolver;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
@@ -20,7 +20,7 @@ class TandaiAlpaOtomatisSdm extends Command
     protected $description = 'Tandai pegawai aktif sebagai Alpa untuk hari kerja kemarin (H-1) yang sama sekali tidak punya AttendanceRecord';
 
     public function __construct(
-        private readonly AttendancePolicyResolver $policyResolver,
+        private readonly ShiftAwareAttendanceResolver $resolver,
         private readonly AttendanceRecordAggregator $aggregator,
     ) {
         parent::__construct();
@@ -40,7 +40,7 @@ class TandaiAlpaOtomatisSdm extends Command
                 // perilaku pegawai tanpa Policy tetap identik Sub-project 2. Ini menangani DUA
                 // arah celah: pegawai yang Policy-nya menambah hari kerja (satpam 7 hari) MAUPUN
                 // yang menguranginya (kategori part-time) terhadap kalender lembaga.
-                ->filter(fn ($pegawai) => ! $this->policyResolver->resolveLibur($pegawai, $tanggal)['libur']);
+                ->filter(fn ($pegawai) => ! $this->resolver->resolveLibur($pegawai, $tanggal)['libur']);
 
             $jumlahDitandai += $this->tandaiPegawaiTanpaRecord($pegawaiList, $lembaga, $tanggal);
         }

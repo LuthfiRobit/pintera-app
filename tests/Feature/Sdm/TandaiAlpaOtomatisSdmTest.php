@@ -147,3 +147,23 @@ it('does NOT mark a karyawan as Alpa on a lembaga work day when the policy hari_
     Carbon::setTestNow();
 });
 
+it('marks a pegawai with an active shift assignment as Alpa on a lembaga-libur day even without an AttendancePolicy hari_kerja override', function () {
+    Carbon::setTestNow(Carbon::parse('2026-08-24 01:00:00')); // Monday, H-1 = Sunday (lembaga libur)
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => 'aktif']);
+    $jenisShift = \App\Domains\Sdm\Models\JenisShift::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'nama' => 'Shift Malam', 'jam_masuk' => '22:00', 'jam_pulang' => '06:00']);
+    app(\App\Domains\Sdm\Actions\AssignShiftAction::class)->execute($guru, new \App\Domains\Sdm\DataTransferObjects\ShiftAssignmentData(
+        lembagaId: $lembaga->id, jenisShiftId: $jenisShift->id, tanggalMulai: '2026-08-17', tanggalSelesai: '2026-08-30',
+    ));
+
+    $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
+
+    $record = AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->first();
+    expect($record)->not->toBeNull();
+    expect($record->status)->toBe(AttendanceStatus::Alpa);
+
+    Carbon::setTestNow();
+});
+
+
