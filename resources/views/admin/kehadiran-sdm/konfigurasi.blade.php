@@ -60,6 +60,29 @@
         },
         togglePolicyHari(day) {
             this.formPolicy.hari_kerja = this.formPolicy.hari_kerja.includes(day) ? this.formPolicy.hari_kerja.filter((d) => d !== day) : [...this.formPolicy.hari_kerja, day];
+        },
+        showJenisShiftModal: false,
+        editingJenisShift: null,
+        formJenisShift: { nama: '', jam_masuk: '06:00', jam_pulang: '14:00', is_nasional: false },
+        openJenisShiftModal(jenisShift = null, nasional = false) {
+            this.editingJenisShift = jenisShift;
+            this.formJenisShift = jenisShift
+                ? { nama: jenisShift.nama, jam_masuk: jenisShift.jam_masuk.slice(0, 5), jam_pulang: jenisShift.jam_pulang.slice(0, 5), is_nasional: jenisShift.lembaga_id === null }
+                : { nama: '', jam_masuk: '06:00', jam_pulang: '14:00', is_nasional: nasional };
+            this.showJenisShiftModal = true;
+        },
+        showPenugasanModal: false,
+        editingPenugasan: null,
+        formPenugasan: { jenis_shift_id: '', tanggal_mulai: '', tanggal_selesai: '', hari_kerja: [], overrideHariKerja: false },
+        openPenugasanModal(penugasan = null) {
+            this.editingPenugasan = penugasan;
+            this.formPenugasan = penugasan
+                ? { jenis_shift_id: penugasan.jenis_shift_id, tanggal_mulai: penugasan.tanggal_mulai.split('T')[0], tanggal_selesai: penugasan.tanggal_selesai ? penugasan.tanggal_selesai.split('T')[0] : '', hari_kerja: penugasan.hari_kerja ?? [], overrideHariKerja: penugasan.hari_kerja !== null }
+                : { jenis_shift_id: '', tanggal_mulai: '', tanggal_selesai: '', hari_kerja: [], overrideHariKerja: false };
+            this.showPenugasanModal = true;
+        },
+        togglePenugasanHari(day) {
+            this.formPenugasan.hari_kerja = this.formPenugasan.hari_kerja.includes(day) ? this.formPenugasan.hari_kerja.filter((d) => d !== day) : [...this.formPenugasan.hari_kerja, day];
         }
     }">
         @if (session('status'))
@@ -78,6 +101,7 @@
             <button type="button" @click="tab = 'metode'" :class="tab === 'metode' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500 hover:text-gray-700'" class="rounded-t-lg px-4 py-2.5 text-sm font-semibold transition">Metode &amp; Titik Absen</button>
             <button type="button" @click="tab = 'kalender'" :class="tab === 'kalender' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500 hover:text-gray-700'" class="rounded-t-lg px-4 py-2.5 text-sm font-semibold transition">Kalender Kerja</button>
             <button type="button" @click="tab = 'policy'" :class="tab === 'policy' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500 hover:text-gray-700'" class="rounded-t-lg px-4 py-2.5 text-sm font-semibold transition">Attendance Policy</button>
+            <button type="button" @click="tab = 'shift'" :class="tab === 'shift' ? 'border-b-2 border-brand-500 text-brand-600' : 'text-gray-500 hover:text-gray-700'" class="rounded-t-lg px-4 py-2.5 text-sm font-semibold transition">Shift Bergilir</button>
         </div>
 
         {{-- Tab: Metode & Titik Absen --}}
@@ -265,6 +289,73 @@
             </div>
         </div>
 
+        {{-- Tab: Shift Bergilir --}}
+        <div x-show="tab === 'shift'" x-cloak class="space-y-6">
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-display text-sm font-bold text-gray-900">Jenis Shift</h2>
+                    @can('kehadiran-sdm.kelola-konfigurasi')
+                        <x-primary-button type="button" @click="openJenisShiftModal(null, false)">+ Tambah Jenis Shift</x-primary-button>
+                    @endcan
+                </div>
+                <div class="mt-4 divide-y divide-gray-100">
+                    @forelse ($jenisShiftList as $js)
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">
+                                    {{ $js->nama }}
+                                    @if ($js->lembaga_id === null)
+                                        <span class="ml-1 inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">Nasional</span>
+                                    @endif
+                                </p>
+                                <p class="text-[11px] text-gray-400">{{ substr($js->jam_masuk, 0, 5) }} — {{ substr($js->jam_pulang, 0, 5) }}</p>
+                            </div>
+                            @can('kehadiran-sdm.kelola-konfigurasi')
+                                <div class="flex items-center gap-2">
+                                    <button type="button" @click="openJenisShiftModal({{ $js->toJson() }})" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Edit</button>
+                                    <form method="POST" action="{{ route('admin.kehadiran-sdm.jenis-shift.destroy', $js) }}" onsubmit="return confirm('Hapus jenis shift ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-xs font-semibold text-rose-600 hover:text-rose-700">Hapus</button>
+                                    </form>
+                                </div>
+                            @endcan
+                        </div>
+                    @empty
+                        <p class="py-6 text-center text-sm text-gray-400">Belum ada jenis shift.</p>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-display text-sm font-bold text-gray-900">Penugasan Shift</h2>
+                    @can('kehadiran-sdm.kelola-konfigurasi')
+                        <x-primary-button type="button" @click="openPenugasanModal()">+ Tambah Penugasan</x-primary-button>
+                    @endcan
+                </div>
+                <div class="mt-4 divide-y divide-gray-100">
+                    @forelse ($penugasanShiftList as $p)
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">{{ $p->pegawai->nama ?? '—' }} — {{ $p->jenisShift->nama }}</p>
+                                <p class="text-[11px] text-gray-400">{{ $p->tanggal_mulai->format('d M Y') }}{{ $p->tanggal_selesai ? ' — '.$p->tanggal_selesai->format('d M Y') : ' (tanpa batas)' }}</p>
+                            </div>
+                            @can('kehadiran-sdm.kelola-konfigurasi')
+                                <form method="POST" action="{{ route('admin.kehadiran-sdm.penugasan-shift.destroy', $p) }}" onsubmit="return confirm('Hapus penugasan shift ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-xs font-semibold text-rose-600 hover:text-rose-700">Hapus</button>
+                                </form>
+                            @endcan
+                        </div>
+                    @empty
+                        <p class="py-6 text-center text-sm text-gray-400">Belum ada penugasan shift untuk lembaga ini.</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
         {{-- Modal Titik Absen (sudah ada dari Sub-project 1) --}}
         <div x-show="showTitikModal" class="fixed inset-0 z-50 flex items-center justify-center px-4" style="display: none;">
             <div class="fixed inset-0 bg-gray-900/60" @click="showTitikModal = false"></div>
@@ -445,6 +536,129 @@
 
                     <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
                         <x-secondary-button type="button" @click="showPolicyModal = false">Batal</x-secondary-button>
+                        <x-primary-button type="submit">Simpan</x-primary-button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- Modal Jenis Shift --}}
+        <div x-show="showJenisShiftModal" class="fixed inset-0 z-50 flex items-center justify-center px-4" style="display: none;">
+            <div class="fixed inset-0 bg-gray-900/60" @click="showJenisShiftModal = false"></div>
+            <div class="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-elevated">
+                <h3 class="font-display text-base font-bold text-gray-900" x-text="editingJenisShift ? 'Edit Jenis Shift' : 'Tambah Jenis Shift'"></h3>
+                <form method="POST" :action="editingJenisShift ? `/admin/kehadiran-sdm/konfigurasi/jenis-shift/${editingJenisShift.id}` : '{{ route('admin.kehadiran-sdm.jenis-shift.store') }}'" class="mt-4 space-y-4">
+                    @csrf
+                    <template x-if="editingJenisShift"><input type="hidden" name="_method" value="PUT"></template>
+                    <template x-if="!editingJenisShift && formJenisShift.is_nasional"><input type="hidden" name="is_nasional" value="1"></template>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Nama Shift</label>
+                        <input x-model="formJenisShift.nama" name="nama" type="text" required placeholder="Contoh: Shift Malam" class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jam Masuk</label>
+                            <input x-model="formJenisShift.jam_masuk" name="jam_masuk" type="time" required class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jam Pulang</label>
+                            <input x-model="formJenisShift.jam_pulang" name="jam_pulang" type="time" required class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
+                        <x-secondary-button type="button" @click="showJenisShiftModal = false">Batal</x-secondary-button>
+                        <x-primary-button type="submit">Simpan</x-primary-button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {{-- Modal Penugasan Shift --}}
+        <div x-show="showPenugasanModal" class="fixed inset-0 z-50 flex items-center justify-center px-4" style="display: none;">
+            <div class="fixed inset-0 bg-gray-900/60" @click="showPenugasanModal = false"></div>
+            <div class="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-elevated" x-data="shiftPenugasanForm()">
+                <h3 class="font-display text-base font-bold text-gray-900" x-text="editingPenugasan ? 'Edit Penugasan Shift' : 'Tambah Penugasan Shift'"></h3>
+                <form method="POST" :action="editingPenugasan ? `/admin/kehadiran-sdm/konfigurasi/penugasan-shift/${editingPenugasan.id}` : '{{ route('admin.kehadiran-sdm.penugasan-shift.store') }}'" class="mt-4 space-y-4">
+                    @csrf
+                    <template x-if="editingPenugasan"><input type="hidden" name="_method" value="PUT"></template>
+
+                    <template x-if="!editingPenugasan">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jenis Pegawai</label>
+                            <div class="flex gap-4">
+                                <label class="flex items-center gap-2 text-sm"><input type="radio" name="pegawai_tipe" value="guru" x-model="pegawaiTipe"> Guru</label>
+                                <label class="flex items-center gap-2 text-sm"><input type="radio" name="pegawai_tipe" value="karyawan" x-model="pegawaiTipe"> Karyawan</label>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="!editingPenugasan && pegawaiTipe === 'guru'">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Nama Guru</label>
+                            <select name="pegawai_id" x-ref="guruSelectShift" x-init="initSelect($refs.guruSelectShift)" class="w-full rounded-lg border-gray-200 text-sm">
+                                <option value="">Pilih guru...</option>
+                                @foreach ($guruList as $g)
+                                    <option value="{{ $g->id }}">{{ $g->nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </template>
+
+                    <template x-if="!editingPenugasan && pegawaiTipe === 'karyawan'">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Nama Karyawan</label>
+                            <select name="pegawai_id" x-ref="karyawanSelectShift" x-init="initSelect($refs.karyawanSelectShift)" class="w-full rounded-lg border-gray-200 text-sm">
+                                <option value="">Pilih karyawan...</option>
+                                @foreach ($karyawanList as $k)
+                                    <option value="{{ $k->id }}">{{ $k->nama }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </template>
+
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jenis Shift</label>
+                        <select x-model="formPenugasan.jenis_shift_id" name="jenis_shift_id" required class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm">
+                            <option value="">Pilih jenis shift...</option>
+                            @foreach ($jenisShiftList as $js)
+                                <option value="{{ $js->id }}">{{ $js->nama }} ({{ substr($js->jam_masuk, 0, 5) }}-{{ substr($js->jam_pulang, 0, 5) }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Tanggal Mulai</label>
+                            <input x-model="formPenugasan.tanggal_mulai" name="tanggal_mulai" type="date" required class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Tanggal Selesai (opsional)</label>
+                            <input x-model="formPenugasan.tanggal_selesai" name="tanggal_selesai" type="date" class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="rounded-lg bg-amber-50 border border-amber-100 px-3.5 py-3">
+                        <label class="flex items-center gap-2 text-xs font-semibold text-amber-800">
+                            <input type="checkbox" x-model="formPenugasan.overrideHariKerja" class="rounded border-gray-300">
+                            Batasi ke hari tertentu dalam rentang (opsional — kosongkan berarti semua hari dalam rentang dianggap kerja)
+                        </label>
+                        <template x-if="formPenugasan.overrideHariKerja">
+                            <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                <template x-for="[hari, label] in Object.entries({1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis', 5: 'Jumat', 6: 'Sabtu', 0: 'Minggu'})" :key="hari">
+                                    <label class="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-white px-2 py-1.5 text-xs">
+                                        <input type="checkbox" :checked="formPenugasan.hari_kerja.includes(Number(hari))" @change="togglePenugasanHari(Number(hari))">
+                                        <span x-text="label"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </template>
+                        <template x-for="day in (formPenugasan.overrideHariKerja ? formPenugasan.hari_kerja : [])" :key="day">
+                            <input type="hidden" name="hari_kerja[]" :value="day">
+                        </template>
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
+                        <x-secondary-button type="button" @click="showPenugasanModal = false">Batal</x-secondary-button>
                         <x-primary-button type="submit">Simpan</x-primary-button>
                     </div>
                 </form>
