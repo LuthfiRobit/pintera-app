@@ -133,3 +133,24 @@ it('allows a manual attendance record on a lembaga-libur day when the pegawai ca
     expect(AttendanceRecord::where('pegawai_type', \App\Models\Karyawan::class)->where('pegawai_id', $karyawan->id)->exists())->toBeTrue();
 });
 
+it('allows a manual attendance record on a lembaga-libur day when the pegawai has an active shift assignment covering that day', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisShift = \App\Domains\Sdm\Models\JenisShift::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'nama' => 'Shift Malam', 'jam_masuk' => '22:00', 'jam_pulang' => '06:00']);
+    app(\App\Domains\Sdm\Actions\AssignShiftAction::class)->execute($guru, new \App\Domains\Sdm\DataTransferObjects\ShiftAssignmentData(
+        lembagaId: $lembaga->id, jenisShiftId: $jenisShift->id, tanggalMulai: '2026-08-17', tanggalSelesai: '2026-08-30',
+    ));
+    $action = app(\App\Domains\Sdm\Actions\RecordManualAttendanceAction::class);
+
+    $event = $action->execute($guru, new RecordManualAttendanceData(
+        lembagaId: $lembaga->id, arah: 'masuk', status: AttendanceStatus::Hadir,
+        waktu: CarbonImmutable::parse('2026-08-23 22:05:00'), dicatatOlehUserId: $admin->id, // Sunday, but shift active
+    ));
+
+    expect($event->arah)->toBe('masuk');
+    expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeTrue();
+});
+
+
