@@ -51,7 +51,7 @@ class AttendanceQrScanController extends BaseController
                 dicatatOlehUserId: $request->user()->id,
                 attendancePointId: $data['attendance_point_id'] ?? null,
             ));
-        } catch (InvalidQrTokenException|QrTokenLembagaMismatchException $exception) {
+        } catch (InvalidQrTokenException|QrTokenLembagaMismatchException|\App\Domains\Sdm\Exceptions\AttendanceOnHolidayException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
 

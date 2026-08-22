@@ -80,6 +80,11 @@
                 <textarea name="catatan" rows="2" class="w-full rounded-lg border-gray-200 text-sm"></textarea>
             </div>
 
+            <div class="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-100 px-3.5 py-3">
+                <input type="checkbox" name="override_hari_libur" id="override_hari_libur" value="1" class="rounded border-gray-300">
+                <label for="override_hari_libur" class="text-xs text-amber-800">Tetap catat meski hari ini libur menurut kalender kerja SDM (mis. lembur/acara khusus).</label>
+            </div>
+
             <div class="flex justify-end gap-2 border-t border-gray-100 pt-4">
                 <a href="{{ route('admin.kehadiran-sdm.index') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50">Batal</a>
                 <x-primary-button type="submit">Simpan Kehadiran</x-primary-button>

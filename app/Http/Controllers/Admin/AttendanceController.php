@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Sdm\Actions\RecordManualAttendanceAction;
 use App\Domains\Sdm\DataTransferObjects\RecordManualAttendanceData;
 use App\Domains\Sdm\Enums\AttendanceStatus;
+use App\Domains\Sdm\Exceptions\AttendanceOnHolidayException;
 use App\Domains\Sdm\Models\AttendancePoint;
 use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Models\Guru;
@@ -67,6 +68,7 @@ class AttendanceController extends BaseController
             'waktu' => ['required', 'date'],
             'attendance_point_id' => ['nullable', 'integer', 'exists:attendance_points,id'],
             'catatan' => ['nullable', 'string', 'max:1000'],
+            'override_hari_libur' => ['nullable', 'boolean'],
         ]);
 
         $lembagaId = $this->resolveLembagaId($request);
@@ -80,15 +82,20 @@ class AttendanceController extends BaseController
 
         abort_if($pegawai === null || (int) $pegawai->lembaga_id !== $lembagaId, 404, 'Pegawai tidak ditemukan di lembaga aktif Anda.');
 
-        $action->execute($pegawai, new RecordManualAttendanceData(
-            lembagaId: $lembagaId,
-            arah: $data['arah'],
-            status: AttendanceStatus::from($data['status']),
-            waktu: CarbonImmutable::parse($data['waktu']),
-            dicatatOlehUserId: $request->user()->id,
-            attendancePointId: $data['attendance_point_id'] ?? null,
-            catatan: $data['catatan'] ?? null,
-        ));
+        try {
+            $action->execute($pegawai, new RecordManualAttendanceData(
+                lembagaId: $lembagaId,
+                arah: $data['arah'],
+                status: AttendanceStatus::from($data['status']),
+                waktu: CarbonImmutable::parse($data['waktu']),
+                dicatatOlehUserId: $request->user()->id,
+                attendancePointId: $data['attendance_point_id'] ?? null,
+                catatan: $data['catatan'] ?? null,
+                overrideHariLibur: (bool) ($data['override_hari_libur'] ?? false),
+            ));
+        } catch (AttendanceOnHolidayException $exception) {
+            return back()->withErrors(['tanggal' => $exception->getMessage().' Centang "Tetap catat meski hari libur" kalau ini disengaja.'])->withInput();
+        }
 
         return redirect()->route('admin.kehadiran-sdm.index')->with('status', 'Kehadiran berhasil dicatat.');
     }
