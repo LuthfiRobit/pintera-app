@@ -36,4 +36,9 @@ Route::post('kehadiran-sdm/konfigurasi/penugasan-shift', [AttendanceConfiguratio
 Route::put('kehadiran-sdm/konfigurasi/penugasan-shift/{penugasanShift}', [AttendanceConfigurationController::class, 'updatePenugasanShift'])->name('kehadiran-sdm.penugasan-shift.update');
 Route::delete('kehadiran-sdm/konfigurasi/penugasan-shift/{penugasanShift}', [AttendanceConfigurationController::class, 'destroyPenugasanShift'])->name('kehadiran-sdm.penugasan-shift.destroy');
 
+Route::get('kehadiran-sdm/izin-cuti', [\App\Http\Controllers\Admin\ApprovalIzinCutiController::class, 'index'])->name('kehadiran-sdm.izin-cuti.index');
+Route::get('kehadiran-sdm/izin-cuti/{izinCuti}', [\App\Http\Controllers\Admin\ApprovalIzinCutiController::class, 'show'])->name('kehadiran-sdm.izin-cuti.show');
+Route::post('kehadiran-sdm/izin-cuti/{izinCuti}/keputusan', [\App\Http\Controllers\Admin\ApprovalIzinCutiController::class, 'decision'])->name('kehadiran-sdm.izin-cuti.decision');
+
+
 
