@@ -12,6 +12,7 @@ use App\Domains\Sdm\Models\AttendanceEvent;
 use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Domains\Sdm\Models\EmployeeQrCode;
 use App\Domains\Sdm\Models\PenugasanShift;
+use App\Domains\Sdm\Models\PengajuanIzinCuti;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Notifications\Notifiable;
@@ -96,6 +97,11 @@ class Guru extends Model
     public function penugasanShift(): MorphMany
     {
         return $this->morphMany(PenugasanShift::class, 'pegawai');
+    }
+
+    public function pengajuanIzinCuti(): MorphMany
+    {
+        return $this->morphMany(PengajuanIzinCuti::class, 'pegawai');
     }
 
     public function getActivitylogOptions(): LogOptions
