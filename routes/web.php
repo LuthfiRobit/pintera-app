@@ -51,3 +51,4 @@ Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.act
 
 require __DIR__.'/spmb.php';
 require __DIR__.'/portal.php';
+require __DIR__.'/sdm.php';
