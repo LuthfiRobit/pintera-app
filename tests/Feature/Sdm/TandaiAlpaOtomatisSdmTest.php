@@ -8,6 +8,7 @@ use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Artisan;
 
 it('marks an active guru with no attendance record as Alpa for a work-day yesterday', function () {
     Carbon::setTestNow(Carbon::parse('2026-08-25 01:00:00')); // Tuesday
@@ -165,5 +166,46 @@ it('marks a pegawai with an active shift assignment as Alpa on a lembaga-libur d
 
     Carbon::setTestNow();
 });
+
+it('skips a pegawai whose pending pengajuan covers H-1', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-02 01:00:00')); // Wednesday, H-1 = 2026-09-01
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PermissionSeeder']);
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder']);
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\WorkflowDefinitionSeeder']);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => 'aktif']);
+    app(\App\Domains\Sdm\Actions\AjukanIzinCutiAction::class)->execute($guru, \App\Domains\Sdm\Enums\KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit.');
+
+    $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
+
+    expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeFalse();
+
+    Carbon::setTestNow();
+});
+
+it('marks Alpa normally once the pengajuan for that day has been rejected', function () {
+    Carbon::setTestNow(Carbon::parse('2026-09-02 01:00:00')); // Wednesday, H-1 = 2026-09-01
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PermissionSeeder']);
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder']);
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\WorkflowDefinitionSeeder']);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => 'aktif']);
+    $kepsekRole = \App\Models\Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $kepsek = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kepsek->assignRole($kepsekRole);
+    $pengajuan = app(\App\Domains\Sdm\Actions\AjukanIzinCutiAction::class)->execute($guru, \App\Domains\Sdm\Enums\KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit.');
+    app(\App\Domains\Sdm\Actions\ProsesApprovalIzinCutiAction::class)->execute($pengajuan, $kepsek, \App\Domains\Workflow\Enums\ApprovalAction::Reject);
+
+    $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
+
+    $record = AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->first();
+    expect($record)->not->toBeNull();
+    expect($record->status)->toBe(AttendanceStatus::Alpa);
+
+    Carbon::setTestNow();
+});
+
 
 

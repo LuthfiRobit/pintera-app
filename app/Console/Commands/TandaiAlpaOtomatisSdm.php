@@ -5,8 +5,10 @@ namespace App\Console\Commands;
 use App\Domains\Sdm\Enums\AttendanceMethod;
 use App\Domains\Sdm\Enums\AttendanceStatus;
 use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\PengajuanIzinCuti;
 use App\Domains\Sdm\Services\AttendanceRecordAggregator;
 use App\Domains\Sdm\Services\ShiftAwareAttendanceResolver;
+use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
@@ -40,7 +42,8 @@ class TandaiAlpaOtomatisSdm extends Command
                 // perilaku pegawai tanpa Policy tetap identik Sub-project 2. Ini menangani DUA
                 // arah celah: pegawai yang Policy-nya menambah hari kerja (satpam 7 hari) MAUPUN
                 // yang menguranginya (kategori part-time) terhadap kalender lembaga.
-                ->filter(fn ($pegawai) => ! $this->resolver->resolveLibur($pegawai, $tanggal)['libur']);
+                ->filter(fn ($pegawai) => ! $this->resolver->resolveLibur($pegawai, $tanggal)['libur'])
+                ->filter(fn ($pegawai) => ! $this->punyaPengajuanPending($pegawai, $tanggal));
 
             $jumlahDitandai += $this->tandaiPegawaiTanpaRecord($pegawaiList, $lembaga, $tanggal);
         }
@@ -48,6 +51,16 @@ class TandaiAlpaOtomatisSdm extends Command
         $this->info("{$jumlahDitandai} pegawai ditandai Alpa otomatis untuk tanggal {$tanggal->toDateString()}.");
 
         return self::SUCCESS;
+    }
+
+    private function punyaPengajuanPending($pegawai, \Carbon\CarbonImmutable $tanggal): bool
+    {
+        return PengajuanIzinCuti::where('pegawai_type', $pegawai::class)
+            ->where('pegawai_id', $pegawai->id)
+            ->where('tanggal_mulai', '<=', $tanggal->toDateString())
+            ->where('tanggal_selesai', '>=', $tanggal->toDateString())
+            ->whereHas('approvalRequest', fn ($q) => $q->whereIn('status', [ApprovalStatus::Pending, ApprovalStatus::InReview]))
+            ->exists();
     }
 
     private function tandaiPegawaiTanpaRecord(Collection $pegawaiList, Lembaga $lembaga, \Carbon\CarbonImmutable $tanggal): int
