@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Domains\Sdm\Models\AttendanceEvent;
 use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Domains\Sdm\Models\EmployeeQrCode;
+use App\Domains\Sdm\Models\PenugasanShift;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
@@ -70,5 +71,10 @@ class Karyawan extends Model
     public function employeeQrCode(): MorphOne
     {
         return $this->morphOne(EmployeeQrCode::class, 'pegawai')->where('is_active', true);
+    }
+
+    public function penugasanShift(): MorphMany
+    {
+        return $this->morphMany(PenugasanShift::class, 'pegawai');
     }
 }

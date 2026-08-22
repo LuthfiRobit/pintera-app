@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Domains\Sdm\Models\AttendanceEvent;
 use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Domains\Sdm\Models\EmployeeQrCode;
+use App\Domains\Sdm\Models\PenugasanShift;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Notifications\Notifiable;
@@ -90,6 +91,11 @@ class Guru extends Model
     public function employeeQrCode(): MorphOne
     {
         return $this->morphOne(EmployeeQrCode::class, 'pegawai')->where('is_active', true);
+    }
+
+    public function penugasanShift(): MorphMany
+    {
+        return $this->morphMany(PenugasanShift::class, 'pegawai');
     }
 
     public function getActivitylogOptions(): LogOptions
