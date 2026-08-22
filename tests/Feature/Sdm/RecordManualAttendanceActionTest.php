@@ -79,3 +79,35 @@ it('overrides the day status to izin when an izin event exists alongside a hadir
     $record = AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->first();
     expect($record->status)->toBe(AttendanceStatus::Izin);
 });
+
+it('rejects a manual attendance record on a day the calendar resolver marks as libur', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $action = app(\App\Domains\Sdm\Actions\RecordManualAttendanceAction::class);
+
+    expect(fn () => $action->execute($guru, new RecordManualAttendanceData(
+        lembagaId: $lembaga->id, arah: 'masuk', status: AttendanceStatus::Hadir,
+        waktu: CarbonImmutable::parse('2026-08-23 07:00:00'), dicatatOlehUserId: $admin->id, // Sunday
+    )))->toThrow(\App\Domains\Sdm\Exceptions\AttendanceOnHolidayException::class);
+
+    expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeFalse();
+});
+
+it('allows a manual attendance record on a libur day when overrideHariLibur is true', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $action = app(\App\Domains\Sdm\Actions\RecordManualAttendanceAction::class);
+
+    $event = $action->execute($guru, new RecordManualAttendanceData(
+        lembagaId: $lembaga->id, arah: 'masuk', status: AttendanceStatus::Hadir,
+        waktu: CarbonImmutable::parse('2026-08-23 07:00:00'), dicatatOlehUserId: $admin->id, // Sunday
+        overrideHariLibur: true,
+    ));
+
+    expect($event->arah)->toBe('masuk');
+    expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeTrue();
+});

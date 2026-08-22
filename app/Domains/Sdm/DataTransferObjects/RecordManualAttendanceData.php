@@ -17,5 +17,6 @@ final readonly class RecordManualAttendanceData
         public int $dicatatOlehUserId,
         public ?int $attendancePointId = null,
         public ?string $catatan = null,
+        public bool $overrideHariLibur = false,
     ) {}
 }
