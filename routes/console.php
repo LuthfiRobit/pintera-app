@@ -3,6 +3,7 @@
 use App\Console\Commands\GenerateTagihanHarian;
 use App\Console\Commands\KirimDueReminderTagihan;
 use App\Console\Commands\KirimReminderSesi;
+use App\Console\Commands\TandaiAlpaOtomatisSdm;
 use App\Console\Commands\TandaiTugasTerlewat;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -15,5 +16,6 @@ Artisan::command('inspire', function () {
 Schedule::command(KirimReminderSesi::class)->dailyAt('07:00');
 Schedule::command('finance:reconcile-payments')->hourly()->withoutOverlapping();
 Schedule::command(TandaiTugasTerlewat::class)->dailyAt('01:00');
+Schedule::command(TandaiAlpaOtomatisSdm::class)->dailyAt('01:00');
 Schedule::command(GenerateTagihanHarian::class)->dailyAt('00:01');
 Schedule::command(KirimDueReminderTagihan::class)->dailyAt('08:00');
