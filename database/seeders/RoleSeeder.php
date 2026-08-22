@@ -27,6 +27,7 @@ class RoleSeeder extends Seeder
             'karyawan_lembaga' => ['scope_level' => 'lembaga', 'is_protected' => false],
             'bendahara_yayasan' => ['scope_level' => 'yayasan', 'is_protected' => false],
             'admin_sarpras' => ['scope_level' => 'yayasan', 'is_protected' => false],
+            'admin_sdm' => ['scope_level' => 'lembaga', 'is_protected' => false],
         ];
 
         foreach ($roles as $name => $attributes) {
@@ -78,6 +79,7 @@ class RoleSeeder extends Seeder
                     'presensi.isi', 'asesmen.kelola', 'komponen-penilaian.kelola-sendiri', 'rapor.input-wali', 'rapor.ajukan',
                     'kasus.ajukan', 'kasus.view',
                     'rpp.view', 'rpp.kelola',
+                    'kehadiran-sdm.lihat-qr-sendiri',
                 ]);
             }
 
@@ -116,7 +118,13 @@ class RoleSeeder extends Seeder
             }
 
             if (in_array($name, ['karyawan_pool', 'karyawan_lembaga'], true)) {
-                $role->givePermissionTo(['kasus.view']);
+                $role->givePermissionTo(['kasus.view', 'kehadiran-sdm.lihat-qr-sendiri']);
+            }
+
+            if ($name === 'admin_sdm') {
+                $role->givePermissionTo([
+                    'kehadiran-sdm.view', 'kehadiran-sdm.catat', 'kehadiran-sdm.kelola-konfigurasi', 'kehadiran-sdm.lihat-qr-sendiri',
+                ]);
             }
         }
     }

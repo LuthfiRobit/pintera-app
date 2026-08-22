@@ -76,6 +76,7 @@ class PermissionSeeder extends Seeder
             'pengadaan.lpj.submit', 'pengadaan.lpj.verify',
             'workflow.config.manage',
             'rpp.view', 'rpp.kelola', 'rpp.verify',
+            'kehadiran-sdm.view', 'kehadiran-sdm.catat', 'kehadiran-sdm.kelola-konfigurasi', 'kehadiran-sdm.lihat-qr-sendiri',
         ];
 
         foreach ($permissions as $name) {
