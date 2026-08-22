@@ -30,7 +30,10 @@ it('never lists a kelas from another lembaga even via a raw jadwal_pelajaran row
     $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id, 'status_aktif' => true]);
     $polaLain = PolaJam::factory()->create(['lembaga_id' => $lembagaLain->id]);
     $jamLain = JamPelajaran::factory()->create(['pola_jam_id' => $polaLain->id]);
-    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id, 'pola_jam_id' => $polaLain->id]);
+    $kelasLain = Kelas::factory()->create([
+        'nama' => 'Kelas Asing Khusus Lintas Lembaga 1',
+        'lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id, 'pola_jam_id' => $polaLain->id,
+    ]);
     $mapelLain = MataPelajaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
 
     // Simulate a raw/legacy row where this guru is (incorrectly) attached to a foreign lembaga's jadwal.
@@ -62,6 +65,7 @@ it('never lists a kelas from another lembaga when guru is wali_kelas_guru_id of 
 
     // Create a foreign kelas and set this guru as wali_kelas (triggering the orWhere branch)
     $kelasLain = Kelas::factory()->create([
+        'nama' => 'Kelas Asing Khusus Lintas Lembaga 2',
         'lembaga_id' => $lembagaLain->id,
         'tahun_ajaran_id' => $tahunAjaranLain->id,
         'pola_jam_id' => $polaLain->id,

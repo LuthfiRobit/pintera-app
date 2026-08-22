@@ -51,7 +51,7 @@ function buatKaryawanKonselorAkses(Yayasan $yayasan): array
 it('lets an assigned guru_bk konselor open kasus.index and kasus.show', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Test Satu']);
     [$konselorUser, $guruBk] = buatGuruBkKonselorAkses($lembaga);
 
     $kasus = Kasus::create([
@@ -67,7 +67,7 @@ it('lets an assigned guru_bk konselor open kasus.index and kasus.show', function
 it('lets an assigned karyawan_pool konselor open kasus.index and kasus.show', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Test Dua']);
     [$konselorUser, $karyawan] = buatKaryawanKonselorAkses($yayasan);
 
     $kasus = Kasus::create([

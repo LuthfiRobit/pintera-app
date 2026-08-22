@@ -42,13 +42,14 @@ it('seeds the initial permissions', function () {
         'kalender-akademik.view', 'kalender-akademik.kelola', 'kalender-akademik.kelola-nasional',
         'pengaturan-akademik.kelola',
         'rpp.view', 'rpp.kelola', 'rpp.verify',
+        'kehadiran-sdm.izin.ajukan', 'kehadiran-sdm.izin.approve', 'kehadiran-sdm.izin.lihat-sendiri',
     ];
 
     foreach ($expected as $name) {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(138);
+    expect(Permission::count())->toBe(141);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -57,7 +58,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(138);
+    expect($superAdmin->permissions()->count())->toBe(141);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -101,12 +102,13 @@ it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, inclu
         'komponen-penilaian.kelola', 'rapor.view', 'rapor.approve',
         'kenaikan-kelas.kelola',
         'rpp.view', 'rpp.verify',
+        'kehadiran-sdm.izin.approve',
     ];
 
     foreach ($expected as $name) {
         expect($kepalaSekolah->hasPermissionTo($name))->toBeTrue();
     }
-    expect($kepalaSekolah->permissions()->count())->toBe(12);
+    expect($kepalaSekolah->permissions()->count())->toBe(13);
 });
 
 it('gives admin_keuangan the jenis-tagihan and tagihan permissions by default', function () {
@@ -132,7 +134,7 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
 
     expect(Role::count())->toBe(13);
-    expect(Permission::count())->toBe(138);
+    expect(Permission::count())->toBe(141);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {
