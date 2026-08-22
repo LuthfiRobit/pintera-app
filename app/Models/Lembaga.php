@@ -26,7 +26,7 @@ class Lembaga extends Model
         'telepon', 'fax', 'email', 'website',
         'nama_bank', 'cabang_kcp_unit', 'rekening_atas_nama', 'nomor_rekening',
         'mbs', 'nama_wajib_pajak', 'npwp',
-        'status_aktif', 'hari_libur_mingguan',
+        'status_aktif', 'hari_libur_mingguan', 'hari_libur_mingguan_sdm',
     ];
 
     protected function casts(): array
@@ -42,6 +42,7 @@ class Lembaga extends Model
             'nomor_rekening' => 'encrypted',
             'npwp' => 'encrypted',
             'hari_libur_mingguan' => 'array',
+            'hari_libur_mingguan_sdm' => 'array',
         ];
     }
 
