@@ -16,3 +16,10 @@ Route::post('kehadiran-sdm/konfigurasi/metode', [AttendanceConfigurationControll
 Route::post('kehadiran-sdm/konfigurasi/titik', [AttendanceConfigurationController::class, 'storeTitik'])->name('kehadiran-sdm.titik.store');
 Route::put('kehadiran-sdm/konfigurasi/titik/{titik}', [AttendanceConfigurationController::class, 'updateTitik'])->name('kehadiran-sdm.titik.update');
 Route::delete('kehadiran-sdm/konfigurasi/titik/{titik}', [AttendanceConfigurationController::class, 'destroyTitik'])->name('kehadiran-sdm.titik.destroy');
+
+Route::put('kehadiran-sdm/konfigurasi/kalender/hari-kerja', [AttendanceConfigurationController::class, 'updateHariKerja'])->name('kehadiran-sdm.kalender.hari-kerja');
+Route::post('kehadiran-sdm/konfigurasi/kalender/entri', [AttendanceConfigurationController::class, 'storeKalenderEntri'])->name('kehadiran-sdm.kalender.entri.store');
+Route::put('kehadiran-sdm/konfigurasi/kalender/entri/{entri}', [AttendanceConfigurationController::class, 'updateKalenderEntri'])->name('kehadiran-sdm.kalender.entri.update');
+Route::delete('kehadiran-sdm/konfigurasi/kalender/entri/{entri}', [AttendanceConfigurationController::class, 'destroyKalenderEntri'])->name('kehadiran-sdm.kalender.entri.destroy');
+Route::get('kehadiran-sdm/konfigurasi/kalender/salin-tersedia', [AttendanceConfigurationController::class, 'kalenderSalinTersedia'])->name('kehadiran-sdm.kalender.salin-tersedia');
+Route::post('kehadiran-sdm/konfigurasi/kalender/salin', [AttendanceConfigurationController::class, 'kalenderSalin'])->name('kehadiran-sdm.kalender.salin');
