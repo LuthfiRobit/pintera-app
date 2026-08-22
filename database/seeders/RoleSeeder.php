@@ -71,6 +71,7 @@ class RoleSeeder extends Seeder
                     'komponen-penilaian.kelola', 'rapor.view', 'rapor.approve',
                     'kenaikan-kelas.kelola',
                     'rpp.view', 'rpp.verify',
+                    'kehadiran-sdm.izin.approve',
                 ]);
             }
 
@@ -80,6 +81,7 @@ class RoleSeeder extends Seeder
                     'kasus.ajukan', 'kasus.view',
                     'rpp.view', 'rpp.kelola',
                     'kehadiran-sdm.lihat-qr-sendiri',
+                    'kehadiran-sdm.izin.ajukan', 'kehadiran-sdm.izin.lihat-sendiri',
                 ]);
             }
 
@@ -118,12 +120,13 @@ class RoleSeeder extends Seeder
             }
 
             if (in_array($name, ['karyawan_pool', 'karyawan_lembaga'], true)) {
-                $role->givePermissionTo(['kasus.view', 'kehadiran-sdm.lihat-qr-sendiri']);
+                $role->givePermissionTo(['kasus.view', 'kehadiran-sdm.lihat-qr-sendiri', 'kehadiran-sdm.izin.ajukan', 'kehadiran-sdm.izin.lihat-sendiri']);
             }
 
             if ($name === 'admin_sdm') {
                 $role->givePermissionTo([
                     'kehadiran-sdm.view', 'kehadiran-sdm.catat', 'kehadiran-sdm.kelola-konfigurasi', 'kehadiran-sdm.lihat-qr-sendiri',
+                    'kehadiran-sdm.izin.approve',
                 ]);
             }
         }

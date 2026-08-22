@@ -77,6 +77,7 @@ class PermissionSeeder extends Seeder
             'workflow.config.manage',
             'rpp.view', 'rpp.kelola', 'rpp.verify',
             'kehadiran-sdm.view', 'kehadiran-sdm.catat', 'kehadiran-sdm.kelola-konfigurasi', 'kehadiran-sdm.lihat-qr-sendiri',
+            'kehadiran-sdm.izin.ajukan', 'kehadiran-sdm.izin.approve', 'kehadiran-sdm.izin.lihat-sendiri',
         ];
 
         foreach ($permissions as $name) {

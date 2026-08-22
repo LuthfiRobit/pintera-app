@@ -79,6 +79,40 @@ class WorkflowDefinitionSeeder extends Seeder
                 'is_final_step' => true,
             ]
         );
+
+        // 3. Workflow Izin/Cuti SDM
+        $izinCuti = WorkflowDefinition::updateOrCreate(
+            ['code' => 'IZIN_CUTI_SDM'],
+            [
+                'nama_workflow' => 'Izin/Cuti Pegawai',
+                'deskripsi' => 'Alur persetujuan pengajuan izin/sakit/cuti mandiri oleh guru dan karyawan.',
+                'is_active' => true,
+            ]
+        );
+
+        $this->assertRoleExists('kepala_sekolah');
+        WorkflowStep::updateOrCreate(
+            ['workflow_definition_id' => $izinCuti->id, 'step_number' => 1],
+            [
+                'step_name' => 'Verifikasi Kepala Sekolah',
+                'approver_type' => ApproverType::Role,
+                'approver_value' => 'kepala_sekolah',
+                'scope_level' => 'lembaga',
+                'is_final_step' => false,
+            ]
+        );
+
+        $this->assertRoleExists('admin_sdm');
+        WorkflowStep::updateOrCreate(
+            ['workflow_definition_id' => $izinCuti->id, 'step_number' => 2],
+            [
+                'step_name' => 'Persetujuan Admin SDM',
+                'approver_type' => ApproverType::Role,
+                'approver_value' => 'admin_sdm',
+                'scope_level' => 'lembaga',
+                'is_final_step' => true,
+            ]
+        );
     }
 
     private function assertRoleExists(string $roleName): void
