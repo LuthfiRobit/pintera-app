@@ -8,6 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Domains\Sdm\Models\AttendanceEvent;
+use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\EmployeeQrCode;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -70,6 +75,21 @@ class Guru extends Model
             ->withPivot(['mulai_periode', 'akhir_periode', 'no_sk'])
             ->withTimestamps()
             ->using(GuruJabatanTambahan::class);
+    }
+
+    public function attendanceEvents(): MorphMany
+    {
+        return $this->morphMany(AttendanceEvent::class, 'pegawai');
+    }
+
+    public function attendanceRecords(): MorphMany
+    {
+        return $this->morphMany(AttendanceRecord::class, 'pegawai');
+    }
+
+    public function employeeQrCode(): MorphOne
+    {
+        return $this->morphOne(EmployeeQrCode::class, 'pegawai')->where('is_active', true);
     }
 
     public function getActivitylogOptions(): LogOptions

@@ -6,6 +6,11 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Domains\Sdm\Models\AttendanceEvent;
+use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\EmployeeQrCode;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class Karyawan extends Model
 {
@@ -50,5 +55,20 @@ class Karyawan extends Model
     public function jenisKaryawan(): BelongsTo
     {
         return $this->belongsTo(JenisKaryawanMaster::class, 'jenis_karyawan_id');
+    }
+
+    public function attendanceEvents(): MorphMany
+    {
+        return $this->morphMany(AttendanceEvent::class, 'pegawai');
+    }
+
+    public function attendanceRecords(): MorphMany
+    {
+        return $this->morphMany(AttendanceRecord::class, 'pegawai');
+    }
+
+    public function employeeQrCode(): MorphOne
+    {
+        return $this->morphOne(EmployeeQrCode::class, 'pegawai')->where('is_active', true);
     }
 }
