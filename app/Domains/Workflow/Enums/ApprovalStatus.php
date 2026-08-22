@@ -9,6 +9,7 @@ enum ApprovalStatus: string
     case Approved = 'approved';
     case Rejected = 'rejected';
     case RevisionRequired = 'revision_required';
+    case Cancelled = 'cancelled';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum ApprovalStatus: string
             self::Approved => 'Disetujui',
             self::Rejected => 'Ditolak',
             self::RevisionRequired => 'Perlu Revisi',
+            self::Cancelled => 'Dibatalkan',
         };
     }
 
@@ -29,6 +31,7 @@ enum ApprovalStatus: string
             self::Approved => 'green',
             self::Rejected => 'rose',
             self::RevisionRequired => 'amber',
+            self::Cancelled => 'slate',
         };
     }
 }

@@ -2,33 +2,27 @@
 
 namespace App\Domains\Sdm\Enums;
 
-enum AttendanceStatus: string
+enum KategoriPengajuanIzin: string
 {
-    case Hadir = 'hadir';
     case Izin = 'izin';
     case Sakit = 'sakit';
-    case Alpa = 'alpa';
     case Cuti = 'cuti';
 
     public function label(): string
     {
         return match ($this) {
-            self::Hadir => 'Hadir',
             self::Izin => 'Izin',
             self::Sakit => 'Sakit',
-            self::Alpa => 'Alpa',
             self::Cuti => 'Cuti',
         };
     }
 
-    public function badgeTone(): string
+    public function toAttendanceStatus(): AttendanceStatus
     {
         return match ($this) {
-            self::Hadir => 'green',
-            self::Izin => 'blue',
-            self::Sakit => 'amber',
-            self::Alpa => 'red',
-            self::Cuti => 'indigo',
+            self::Izin => AttendanceStatus::Izin,
+            self::Sakit => AttendanceStatus::Sakit,
+            self::Cuti => AttendanceStatus::Cuti,
         };
     }
 }

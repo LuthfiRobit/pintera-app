@@ -7,6 +7,7 @@ enum ApprovalAction: string
     case Approve = 'APPROVE';
     case Reject = 'REJECT';
     case RequestRevision = 'REQUEST_REVISION';
+    case Cancel = 'CANCEL';
 
     public function label(): string
     {
@@ -14,6 +15,7 @@ enum ApprovalAction: string
             self::Approve => 'Disetujui',
             self::Reject => 'Ditolak',
             self::RequestRevision => 'Minta Revisi',
+            self::Cancel => 'Dibatalkan',
         };
     }
 }
