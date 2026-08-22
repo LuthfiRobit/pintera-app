@@ -19,6 +19,14 @@
             ]),
         ],
         [
+            'label' => 'Kehadiran Saya',
+            'group_icon' => 'clock',
+            'items' => array_filter([
+                Auth::user()->can('kehadiran-sdm.lihat-qr-sendiri') ? ['route' => 'sdm.qr-saya', 'pattern' => 'sdm.qr-saya', 'label' => 'QR Kehadiran Saya', 'icon' => 'qr-code'] : null,
+                Auth::user()->can('kehadiran-sdm.izin.lihat-sendiri') ? ['route' => 'sdm.izin-cuti.index', 'pattern' => 'sdm.izin-cuti.*', 'label' => 'Izin/Cuti Saya', 'icon' => 'calendar-days'] : null,
+            ]),
+        ],
+        [
             'label' => 'Akademik',
             'group_icon' => 'book-open',
             'items' => array_filter([
@@ -40,6 +48,16 @@
                 Auth::user()->can('kasus.view') ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'stethoscope'] : null,
                 Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.log-akses', 'pattern' => 'admin.kasus.log-akses', 'label' => 'Log Akses Klinis', 'icon' => 'file-lock-2'] : null,
                 Auth::user()->can('kasus.lihat-log-akses') ? ['route' => 'admin.kasus.terhapus', 'pattern' => 'admin.kasus.terhapus', 'label' => 'Kasus Terhapus', 'icon' => 'ban'] : null,
+            ]),
+        ],
+        [
+            'label' => 'Kehadiran SDM',
+            'group_icon' => 'calendar-check',
+            'items' => array_filter([
+                Auth::user()->can('kehadiran-sdm.view') ? ['route' => 'admin.kehadiran-sdm.index', 'pattern' => 'admin.kehadiran-sdm.index', 'label' => 'Daftar Kehadiran', 'icon' => 'clipboard-list'] : null,
+                Auth::user()->can('kehadiran-sdm.catat') ? ['route' => 'admin.kehadiran-sdm.scan.index', 'pattern' => 'admin.kehadiran-sdm.scan.*', 'label' => 'Scan QR', 'icon' => 'qr-code'] : null,
+                Auth::user()->can('kehadiran-sdm.izin.approve') ? ['route' => 'admin.kehadiran-sdm.izin-cuti.index', 'pattern' => 'admin.kehadiran-sdm.izin-cuti.*', 'label' => 'Persetujuan Izin/Cuti', 'icon' => 'check-square'] : null,
+                Auth::user()->can('kehadiran-sdm.view') ? ['route' => 'admin.kehadiran-sdm.konfigurasi.index', 'pattern' => 'admin.kehadiran-sdm.konfigurasi.*', 'label' => 'Konfigurasi', 'icon' => 'settings'] : null,
             ]),
         ],
         [
