@@ -4,8 +4,17 @@ export function attendanceManualForm() {
     return {
         pegawaiTipe: 'guru',
 
-        initSelect(el) {
-            new TomSelect(el, { maxItems: 1, create: false, allowEmptyOption: true, controlInput: null });
+        initSelect(el, placeholder = 'Cari nama...') {
+            if (!el) return;
+            if (el.tomselect) {
+                el.tomselect.destroy();
+            }
+            new TomSelect(el, {
+                create: false,
+                allowEmptyOption: true,
+                placeholder: placeholder,
+                sortField: { field: 'text', order: 'asc' },
+            });
         },
     };
 }

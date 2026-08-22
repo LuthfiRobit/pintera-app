@@ -44,8 +44,14 @@ class AttendanceController extends BaseController
 
         $lembagaId = $this->resolveLembagaId($request);
 
-        $guruList = $lembagaId ? Guru::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']) : collect();
-        $karyawanList = $lembagaId ? Karyawan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']) : collect();
+        $guruList = $lembagaId 
+            ? Guru::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama', 'nip', 'nuptk'])
+                ->map(fn ($g) => ['id' => (string) $g->id, 'nama' => $g->nama, 'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : '')])->values()
+            : collect();
+        $karyawanList = $lembagaId 
+            ? Karyawan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama', 'email'])
+                ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
+            : collect();
         $titikAbsen = $lembagaId ? AttendancePoint::where('lembaga_id', $lembagaId)->where('is_active', true)->orderBy('nama')->get() : collect();
 
         return view('admin.kehadiran-sdm.create', [

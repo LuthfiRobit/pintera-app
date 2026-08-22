@@ -843,24 +843,36 @@
                     <template x-if="!editingPenugasan && pegawaiTipe === 'guru'">
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold text-gray-700">Nama Guru <span class="text-rose-500">*</span></label>
-                            <select name="pegawai_id" x-ref="guruSelectShift" x-init="initSelect($refs.guruSelectShift)" class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                                <option value="">Pilih guru...</option>
-                                @foreach ($guruList as $g)
-                                    <option value="{{ $g->id }}">{{ $g->nama }}</option>
-                                @endforeach
-                            </select>
+                            <div x-data="tomSelectPegawai({ options: @js($guruList), placeholder: 'Cari nama guru atau NIP/NUPTK...' })" class="mt-1">
+                                <select 
+                                    name="pegawai_id" 
+                                    x-ref="selectElement" 
+                                    :disabled="pegawaiTipe !== 'guru'"
+                                    :required="pegawaiTipe === 'guru'"
+                                    class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 focus:border-brand-500 focus:ring-brand-500" 
+                                    autocomplete="off"
+                                >
+                                    <option value="">Cari nama guru atau NIP/NUPTK...</option>
+                                </select>
+                            </div>
                         </div>
                     </template>
 
                     <template x-if="!editingPenugasan && pegawaiTipe === 'karyawan'">
                         <div>
                             <label class="mb-1.5 block text-xs font-semibold text-gray-700">Nama Karyawan <span class="text-rose-500">*</span></label>
-                            <select name="pegawai_id" x-ref="karyawanSelectShift" x-init="initSelect($refs.karyawanSelectShift)" class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                                <option value="">Pilih karyawan...</option>
-                                @foreach ($karyawanList as $k)
-                                    <option value="{{ $k->id }}">{{ $k->nama }}</option>
-                                @endforeach
-                            </select>
+                            <div x-data="tomSelectPegawai({ options: @js($karyawanList), placeholder: 'Cari nama karyawan...' })" class="mt-1">
+                                <select 
+                                    name="pegawai_id" 
+                                    x-ref="selectElement" 
+                                    :disabled="pegawaiTipe !== 'karyawan'"
+                                    :required="pegawaiTipe === 'karyawan'"
+                                    class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 focus:border-brand-500 focus:ring-brand-500" 
+                                    autocomplete="off"
+                                >
+                                    <option value="">Cari nama karyawan...</option>
+                                </select>
+                            </div>
                         </div>
                     </template>
 

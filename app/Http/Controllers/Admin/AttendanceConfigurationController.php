@@ -89,8 +89,14 @@ class AttendanceConfigurationController extends BaseController
             ->orderByDesc('tanggal_mulai')
             ->get() : collect();
 
-        $guruList = $lembagaId ? Guru::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']) : collect();
-        $karyawanList = $lembagaId ? Karyawan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']) : collect();
+        $guruList = $lembagaId 
+            ? Guru::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama', 'nip', 'nuptk'])
+                ->map(fn ($g) => ['id' => (string) $g->id, 'nama' => $g->nama, 'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : '')])->values()
+            : collect();
+        $karyawanList = $lembagaId 
+            ? Karyawan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama', 'email'])
+                ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
+            : collect();
 
         return view('admin.kehadiran-sdm.konfigurasi', [
             'methods' => AttendanceMethod::cases(),
