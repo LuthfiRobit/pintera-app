@@ -8,10 +8,10 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('seeds exactly 134 permissions', function () {
+it('seeds exactly 138 permissions', function () {
     (new PermissionSeeder())->run();
 
-    expect(Permission::count())->toBe(134);
+    expect(Permission::count())->toBe(138);
     expect(Permission::where('name', 'roles.view')->exists())->toBeTrue();
     expect(Permission::where('name', 'cicilan.kelola')->exists())->toBeTrue();
     expect(Permission::where('name', 'pembayaran.virtual-account')->exists())->toBeTrue();
@@ -19,6 +19,10 @@ it('seeds exactly 134 permissions', function () {
     expect(Permission::where('name', 'rapor.ajukan')->exists())->toBeTrue();
     expect(Permission::where('name', 'rapor.verify')->exists())->toBeTrue();
     expect(Permission::where('name', 'rapor.approve')->exists())->toBeTrue();
+    expect(Permission::where('name', 'kehadiran-sdm.view')->exists())->toBeTrue();
+    expect(Permission::where('name', 'kehadiran-sdm.catat')->exists())->toBeTrue();
+    expect(Permission::where('name', 'kehadiran-sdm.kelola-konfigurasi')->exists())->toBeTrue();
+    expect(Permission::where('name', 'kehadiran-sdm.lihat-qr-sendiri')->exists())->toBeTrue();
 });
 
 it('seeds the kalender-akademik.kelola-nasional permission row', function () {
@@ -37,7 +41,7 @@ it('is idempotent when run twice', function () {
     (new PermissionSeeder())->run();
     (new PermissionSeeder())->run();
 
-    expect(Permission::count())->toBe(134);
+    expect(Permission::count())->toBe(138);
 });
 
 it('removes orphaned legacy flat-name permissions on re-seed', function () {

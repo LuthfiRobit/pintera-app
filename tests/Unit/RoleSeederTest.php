@@ -21,13 +21,14 @@ it('seeds 6 roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(134);
+    expect($superAdmin->permissions()->count())->toBe(138);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_keuangan')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'guru')->first()->scope_level)->toBe('diri_sendiri');
     expect(Role::where('name', 'admin_akademik')->first()->scope_level)->toBe('lembaga');
+    expect(Role::where('name', 'admin_sdm')->first()->scope_level)->toBe('lembaga');
 });
 
 it('gives admin_administrasi the correct 20 SPMB-related permissions', function () {
@@ -65,7 +66,7 @@ it('gives guru the presensi, asesmen, and komponen-penilaian-sendiri permissions
     (new RoleSeeder())->run();
 
     $guru = Role::where('name', 'guru')->first();
-    expect($guru->permissions()->count())->toBe(9);
+    expect($guru->permissions()->count())->toBe(10);
     expect($guru->hasPermissionTo('presensi.isi'))->toBeTrue();
     expect($guru->hasPermissionTo('asesmen.kelola'))->toBeTrue();
     expect($guru->hasPermissionTo('komponen-penilaian.kelola-sendiri'))->toBeTrue();
@@ -73,13 +74,14 @@ it('gives guru the presensi, asesmen, and komponen-penilaian-sendiri permissions
     expect($guru->hasPermissionTo('rapor.ajukan'))->toBeTrue();
     expect($guru->hasPermissionTo('rpp.view'))->toBeTrue();
     expect($guru->hasPermissionTo('rpp.kelola'))->toBeTrue();
+    expect($guru->hasPermissionTo('kehadiran-sdm.lihat-qr-sendiri'))->toBeTrue();
 });
 
 it('is idempotent when run twice', function () {
     (new RoleSeeder())->run();
     (new RoleSeeder())->run();
 
-    expect(Role::count())->toBe(12);
+    expect(Role::count())->toBe(13);
 });
 
 it('grants kalender-akademik.kelola-nasional to yayasan_super_admin via bulk permission sync, but not to admin_akademik', function () {
