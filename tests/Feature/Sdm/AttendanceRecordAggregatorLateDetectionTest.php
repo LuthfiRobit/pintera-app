@@ -61,3 +61,27 @@ it('leaves is_late false and late_minutes null when the pegawai has no policy at
     expect($record->is_late)->toBeFalse();
     expect($record->late_minutes)->toBeNull();
 });
+
+it('marks is_late true with toleransi 0 when a shift-assigned pegawai with no policy arrives after the shift jam_masuk', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'jenis_ptk' => 'guru_bk']);
+    $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisShift = \App\Domains\Sdm\Models\JenisShift::create([
+        'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'nama' => 'Shift Pagi',
+        'jam_masuk' => '06:00', 'jam_pulang' => '14:00',
+    ]);
+    app(\App\Domains\Sdm\Actions\AssignShiftAction::class)->execute($guru, new \App\Domains\Sdm\DataTransferObjects\ShiftAssignmentData(
+        lembagaId: $lembaga->id, jenisShiftId: $jenisShift->id, tanggalMulai: '2026-08-24', tanggalSelesai: '2026-08-24',
+    ));
+
+    app(RecordManualAttendanceAction::class)->execute($guru, new RecordManualAttendanceData(
+        lembagaId: $lembaga->id, arah: 'masuk', status: AttendanceStatus::Hadir,
+        waktu: CarbonImmutable::parse('2026-08-24 06:10:00'), dicatatOlehUserId: $admin->id, // Monday
+    ));
+
+    $record = AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->first();
+    expect($record->is_late)->toBeTrue();
+    expect($record->late_minutes)->toBe(10);
+});
+

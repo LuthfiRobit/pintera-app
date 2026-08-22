@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttendanceRecordAggregator
 {
-    public function __construct(private readonly AttendancePolicyResolver $policyResolver) {}
+    public function __construct(private readonly ShiftAwareAttendanceResolver $resolver) {}
 
     public function sync(Model $pegawai, CarbonImmutable $tanggal): AttendanceRecord
     {
@@ -55,13 +55,13 @@ class AttendanceRecordAggregator
             return [false, null];
         }
 
-        $policy = $this->policyResolver->resolvePolicy($pegawai);
+        $jamKerja = $this->resolver->resolveJamKerjaEfektif($pegawai, $tanggal);
 
-        if (! $policy) {
+        if (! $jamKerja) {
             return [false, null];
         }
 
-        $batasWaktu = CarbonImmutable::parse($tanggal->toDateString().' '.$policy->jam_masuk)->addMinutes($policy->toleransi_menit);
+        $batasWaktu = CarbonImmutable::parse($tanggal->toDateString().' '.$jamKerja['jam_masuk'])->addMinutes($jamKerja['toleransi_menit']);
 
         if ($waktuMasuk->lessThanOrEqualTo($batasWaktu)) {
             return [false, 0];
