@@ -2,7 +2,7 @@
 
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 
 it('lets a single pembayaran allocate its amount across multiple tagihan rows', function () {
     $pembayaran = Pembayaran::factory()->create();

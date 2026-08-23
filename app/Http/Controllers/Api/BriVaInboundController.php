@@ -9,7 +9,7 @@ use App\Models\BriInboundPaymentLog;
 use App\Models\BriVirtualAccount;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 

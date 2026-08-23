@@ -6,7 +6,7 @@ use App\Models\Lembaga;
 use App\Models\Pembayaran;
 use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\SkemaCicilan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

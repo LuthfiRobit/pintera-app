@@ -7,7 +7,7 @@ use App\Models\BriVirtualAccount;
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Wallet;
 use App\DTO\PaymentStatusResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;

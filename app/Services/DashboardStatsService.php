@@ -5,7 +5,7 @@ namespace App\Services;
 
 use App\Models\Pembayaran;
 use App\Models\Pendaftaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\TahunAjaran;
 
 class DashboardStatsService

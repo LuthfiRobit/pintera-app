@@ -5,7 +5,7 @@ namespace App\Services\Finance;
 
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 
 class SkipAlertResolver
 {

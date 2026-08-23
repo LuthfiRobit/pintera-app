@@ -4,7 +4,7 @@ namespace App\Services\Finance;
 
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Wallet;
 use App\Notifications\Finance\SaldoTidakCukupNotification;
 use Illuminate\Support\Facades\DB;

@@ -5,7 +5,7 @@ use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
 use App\Models\SystemSetting;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Notifications\Finance\SaldoTidakCukupNotification;
 use Illuminate\Support\Facades\Notification;
 

@@ -10,7 +10,7 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;

@@ -2,7 +2,7 @@
 // tests/Feature/Keuangan/PembayaranWalletColumnsTest.php
 
 use App\Models\Pembayaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 
 it('accepts the new metode and sumber values for siswa-facing payments', function () {
     $pembayaran = Pembayaran::create([

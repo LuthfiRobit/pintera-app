@@ -3,7 +3,7 @@
 
 use App\Models\Lembaga;
 use App\Models\Pembayaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Services\PembayaranService;
 use Database\Seeders\RolePermissionSeeder;

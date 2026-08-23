@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Keuangan;
 use App\Exceptions\PaymentException;
 use App\Models\Scopes\TenantScope;
 use App\Models\SystemSetting;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Notifications\NotificationFeedResolver;
 use App\Services\Finance\PaymentService;
 use App\Services\Finance\SkipAlertResolver;

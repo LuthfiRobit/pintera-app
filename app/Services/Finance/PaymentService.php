@@ -11,7 +11,7 @@ use App\Models\ManualPaymentRequest;
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

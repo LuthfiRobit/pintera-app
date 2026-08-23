@@ -4,7 +4,7 @@
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Support\Carbon;
 
 it('processes only jenis_tagihan whose tanggal_generate matches today and is within the active window', function () {

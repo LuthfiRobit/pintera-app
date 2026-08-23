@@ -5,7 +5,7 @@ use App\Models\Cicilan;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\Pembayaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
 use App\Services\PembayaranService;

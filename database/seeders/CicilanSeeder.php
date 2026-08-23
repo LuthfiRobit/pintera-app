@@ -5,7 +5,7 @@ namespace Database\Seeders;
 
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Database\Seeder;
 use RuntimeException;
 

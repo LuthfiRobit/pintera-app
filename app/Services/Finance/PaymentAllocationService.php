@@ -5,7 +5,7 @@ namespace App\Services\Finance;
 use App\Exceptions\AutoAllocationFailedException;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Wallet;
 use App\Notifications\Finance\PembayaranBerhasilNotification;
 use Illuminate\Support\Facades\DB;

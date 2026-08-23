@@ -2,7 +2,7 @@
 
 use App\Models\Pembayaran;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Wallet;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Services\Finance\AutoAllocationEngine;

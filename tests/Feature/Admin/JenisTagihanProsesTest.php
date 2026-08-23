@@ -6,7 +6,7 @@ use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use App\Services\TagihanBillingGenerator;

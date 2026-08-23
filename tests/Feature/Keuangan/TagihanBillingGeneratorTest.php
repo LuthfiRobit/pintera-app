@@ -3,7 +3,7 @@
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Finance\NotificationDispatcher;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Services\TagihanBillingGenerator;

@@ -6,7 +6,7 @@ use App\Models\BriInboundPaymentLog;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\SystemSetting;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use App\Services\Finance\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

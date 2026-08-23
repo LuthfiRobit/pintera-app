@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Pembayaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Pembayaran> */

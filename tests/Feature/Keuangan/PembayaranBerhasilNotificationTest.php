@@ -6,7 +6,7 @@ use App\Models\OrangTua;
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Notifications\Finance\PembayaranBerhasilNotification;
 use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Support\Facades\DB;

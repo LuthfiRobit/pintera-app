@@ -3,7 +3,7 @@
 
 use App\Models\Pendaftaran;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 
 it('lets a tagihan target a siswa via the tagihable polymorphic relation', function () {

@@ -4,7 +4,7 @@
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 
 it('generates tagihan for the given jenis_tagihan_id and reports the count', function () {
     $lembaga = Lembaga::factory()->create();

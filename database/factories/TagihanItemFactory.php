@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -4,7 +4,7 @@ namespace Tests\Feature\Keuangan;
 
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

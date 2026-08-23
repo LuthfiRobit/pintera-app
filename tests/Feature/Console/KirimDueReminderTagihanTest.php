@@ -5,7 +5,7 @@ use App\Models\Lembaga;
 use App\Models\NotificationLog;
 use App\Models\OrangTua;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Notifications\Finance\DueReminderNotification;
 use Illuminate\Support\Facades\Notification;
 

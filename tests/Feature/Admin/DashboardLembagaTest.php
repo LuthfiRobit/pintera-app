@@ -4,7 +4,7 @@
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Models\TahunAjaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

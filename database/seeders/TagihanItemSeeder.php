@@ -5,7 +5,7 @@ namespace Database\Seeders;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use Illuminate\Database\Seeder;
 

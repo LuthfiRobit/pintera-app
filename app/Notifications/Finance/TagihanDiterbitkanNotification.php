@@ -3,7 +3,7 @@
 
 namespace App\Notifications\Finance;
 
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\WhatsAppTemplate;
 use Illuminate\Notifications\Messages\MailMessage;
 

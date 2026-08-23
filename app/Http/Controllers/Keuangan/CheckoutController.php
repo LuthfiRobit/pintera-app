@@ -9,7 +9,7 @@ use App\Http\Controllers\Keuangan\Concerns\AuthorizesPembayaran;
 use App\Http\Requests\Keuangan\StoreManualTransferRequest;
 use App\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Finance\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

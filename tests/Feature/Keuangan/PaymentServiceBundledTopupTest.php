@@ -4,7 +4,7 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Yayasan;
 use App\Services\Finance\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -6,7 +6,7 @@ namespace App\Services;
 use App\Models\Cicilan;
 use App\Models\Pembayaran;
 use App\Domains\Keuangan\Models\SkemaCicilan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use RuntimeException;

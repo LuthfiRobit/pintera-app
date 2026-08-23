@@ -8,7 +8,7 @@ use App\Models\Pendaftaran;
 use App\Models\Role;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Models\TahunAjaran;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Services\DashboardStatsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

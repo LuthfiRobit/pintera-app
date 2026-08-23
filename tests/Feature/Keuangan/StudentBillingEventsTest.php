@@ -6,7 +6,7 @@ use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 use App\Models\Kelas;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 
 it('generates a tagihan automatically when a new siswa is created and matches an active jenis_tagihan', function () {
     $jenisTagihan = JenisTagihan::factory()->create(['default_amount' => 200000, 'mode' => 'otomatis', 'is_active' => true]);

@@ -10,7 +10,7 @@ use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Models\Role;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;

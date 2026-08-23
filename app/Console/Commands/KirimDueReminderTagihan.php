@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\NotificationLog;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Notifications\Finance\DueReminderNotification;
 use App\Services\Finance\NotificationDispatcher;
 use Illuminate\Console\Command;

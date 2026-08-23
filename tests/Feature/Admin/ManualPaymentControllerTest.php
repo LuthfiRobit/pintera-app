@@ -7,7 +7,7 @@ use App\Models\ManualPaymentRequest;
 use App\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
 use App\Models\Siswa;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Models\Yayasan;
