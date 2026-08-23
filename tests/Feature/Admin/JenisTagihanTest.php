@@ -73,6 +73,20 @@ it('lets admin_keuangan set nominal per jalur, rejecting a duplicate pair at the
     expect(NominalTagihanJalur::where('jenis_tagihan_id', $jenisTagihan->id)->where('jalur_ppdb_id', $jalur->id)->first()->nominal)->toEqual(200000);
 });
 
+it('silently ignores a nominal.store payload for a jalur_ppdb_id belonging to a different lembaga', function () {
+    [$lembagaA] = buatLembagaDenganJalurUntukTagihan();
+    [$lembagaB, , $jalurB] = buatLembagaDenganJalurUntukTagihan();
+    $userA = User::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $userA->assignRole('admin_keuangan');
+    $jenisTagihanA = JenisTagihan::create(['lembaga_id' => $lembagaA->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
+
+    $this->actingAs($userA)->post(route('admin.jenis-tagihan.nominal.store', $jenisTagihanA), [
+        'nominal' => [$jalurB->id => 999000],
+    ]);
+
+    expect(NominalTagihanJalur::where('jenis_tagihan_id', $jenisTagihanA->id)->where('jalur_ppdb_id', $jalurB->id)->exists())->toBeFalse();
+});
+
 it('only lists jenis tagihan belonging to the acting lembaga-scoped user own lembaga', function () {
     [$lembagaA] = buatLembagaDenganJalurUntukTagihan();
     [$lembagaB] = buatLembagaDenganJalurUntukTagihan();

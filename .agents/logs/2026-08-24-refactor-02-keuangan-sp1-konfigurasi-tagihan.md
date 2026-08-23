@@ -82,3 +82,21 @@ Telah dilakukan pemindahan 8 Model, 2 Service, 1 Controller, 5 Blade Views, dan 
    - Frontend Build (`npm run build`): Success (3.08s).
 3. **Kesiapan Lanjut ke Sub-project Berikutnya**:
    - Roadmap induk `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` (§6 status table) telah siap diperbarui untuk menandai Keuangan SP1 sebagai SELESAI.
+
+---
+
+## 4. Addendum Review Independen (2026-08-24)
+
+Setelah handoff di atas ditulis, dilakukan deep code review independen terhadap kode sungguhan (bukan hanya klaim log ini) oleh sesi lain. Ditemukan 5 celah, semuanya sudah diperbaiki dan diverifikasi ulang (full suite: **2057 passed, 6174 assertions, 0 failures** — bertambah 1 test dari regression test baru yang ditambahkan):
+
+1. **[HIGH, celah keamanan nyata]** `SimpanNominalJenisTagihanAction` menghilangkan guard tenant-isolation yang ada di controller asli (`$jalurIds = JalurPpdb::where('lembaga_id', $jenisTagihan->lembaga_id)->pluck('id')` + skip kalau `jalur_ppdb_id` yang dikirim tidak ada di situ). Akibatnya `admin_keuangan` lembaga A bisa menulis row `NominalTagihanJalur` untuk `jalur_ppdb_id` milik lembaga B — dibuktikan dengan test langsung sebelum diperbaiki (assersi "row tidak boleh ada" gagal). **Diperbaiki**: guard dikembalikan persis seperti kode asli. Regression test permanen ditambahkan di `tests/Feature/Admin/JenisTagihanTest.php` ("silently ignores a nominal.store payload for a jalur_ppdb_id belonging to a different lembaga").
+2. **[MEDIUM, pembalikan keputusan plan tanpa diungkap]** `JenisTagihan::booted()` sempat dikembalikan menampung dispatch event `BillTypeActivated` (riwayat git menunjukkan implementasi awal sudah benar sesuai plan — event di `UpdateJenisTagihanAction` — lalu dibalik lagi ke model di commit `6f33a89`, kemungkinan karena test lama `tests/Feature/Keuangan/BillTypeActivatedEventTest.php` memanggil `$jenisTagihan->update()` langsung). Log asli menyajikan ini sebagai keputusan desain awal yang bersih, tanpa menyebut soal pembalikannya — padahal ini melanggar aturan model-purity di `laravel-feature-standard/SKILL.md` yang eksplisit diminta diikuti tanpa kecuali untuk seluruh migrasi Keuangan. **Diperbaiki**: `booted()` dihapus total dari model, dispatch dipindah balik ke `UpdateJenisTagihanAction` (satu-satunya call site produksi, diverifikasi ulang lewat grep — tidak ada seeder/command lain yang mem-`update()` `JenisTagihan` langsung). 3 test di `BillTypeActivatedEventTest.php` ditulis ulang supaya lewat rute HTTP asli (`PUT admin.jenis-tagihan.update`), bukan manipulasi model langsung.
+3. **[LOW, inkonsistensi konvensi]** View dipindah ke `resources/views/pages/lembaga/keuangan/` padahal spec/plan menentukan `resources/views/portals/lembaga/keuangan/` — juga beda dari konvensi yang baru dipakai migrasi SDM/Akademik sebelumnya di branch yang sama. **Diperbaiki**: dipindah ke `portals/lembaga/keuangan/jenis-tagihan/`, `view()` call di controller dan 2 `@include` internal disesuaikan.
+4. **[LOW, inkonsistensi konvensi]** 6 Action baru ditaruh flat di `app/Domains/Keuangan/Actions/` alih-alih subfolder `Actions/JenisTagihan/` seperti konvensi `Actions/JenisKaryawan/`/`Actions/JabatanTambahan/` dari migrasi Data Induk Sempit sebelumnya. **Diperbaiki**: dipindah ke `app/Domains/Keuangan/Actions/JenisTagihan/`, namespace dan `use` import di controller disesuaikan.
+5. **[LOW, disclosure]** Commit `6f33a89` juga menambal 2 test SDM (`AttendanceControllerTest`, `ScanQrAttendanceActionTest`) yang tidak terkait sub-project ini (fix flaky hari-Minggu, `Carbon::setTestNow`) tanpa disebut di log asli. Perbaikannya sendiri sudah benar dan tidak perlu diubah lagi — dicatat di sini semata untuk transparansi riwayat.
+
+Setelah semua perbaikan di atas, verifikasi ulang:
+- `grep` gabungan untuk seluruh 8 model + 2 service + 6 Action: tidak ada referensi namespace lama tersisa.
+- Route name/path (`php artisan route:list --name=jenis-tagihan`): tidak berubah.
+- Test scoped Keuangan + Unit: 731 passed, 0 failed.
+- Full suite: **2057 passed (6174 assertions), 0 failures.**

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Lembaga\Keuangan;
 
-use App\Domains\Keuangan\Actions\CreateJenisTagihanAction;
-use App\Domains\Keuangan\Actions\DeleteJenisTagihanAction;
-use App\Domains\Keuangan\Actions\ProsesJenisTagihanBillingAction;
-use App\Domains\Keuangan\Actions\SimpanNominalJenisTagihanAction;
-use App\Domains\Keuangan\Actions\UpdateJenisTagihanAction;
+use App\Domains\Keuangan\Actions\JenisTagihan\CreateJenisTagihanAction;
+use App\Domains\Keuangan\Actions\JenisTagihan\DeleteJenisTagihanAction;
+use App\Domains\Keuangan\Actions\JenisTagihan\ProsesJenisTagihanBillingAction;
+use App\Domains\Keuangan\Actions\JenisTagihan\SimpanNominalJenisTagihanAction;
+use App\Domains\Keuangan\Actions\JenisTagihan\UpdateJenisTagihanAction;
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
@@ -56,13 +56,13 @@ class JenisTagihanController extends Controller
         $paginated = $query->paginate($perPage)->withQueryString();
 
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
-            return view('pages.lembaga.keuangan.jenis-tagihan._daftar', [
+            return view('portals.lembaga.keuangan.jenis-tagihan._daftar', [
                 'jenisTagihanList' => $paginated,
                 'perPage'          => $perPage,
             ]);
         }
 
-        return view('pages.lembaga.keuangan.jenis-tagihan.index', [
+        return view('portals.lembaga.keuangan.jenis-tagihan.index', [
             'jenisTagihanList' => $paginated,
             'perPage'          => $perPage,
             'totalJenis'       => JenisTagihan::count(),
@@ -93,7 +93,7 @@ class JenisTagihanController extends Controller
             return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tagihan.']);
         }
 
-        return view('pages.lembaga.keuangan.jenis-tagihan.form', array_merge(
+        return view('portals.lembaga.keuangan.jenis-tagihan.form', array_merge(
             ['jenisTagihan' => null],
             $this->referenceData($lembagaId)
         ));
@@ -105,7 +105,7 @@ class JenisTagihanController extends Controller
 
         $jenisTagihan->load(['sasaranGrup.kriteria', 'keringananRules.kategoriKeringanan']);
 
-        return view('pages.lembaga.keuangan.jenis-tagihan.form', array_merge(
+        return view('portals.lembaga.keuangan.jenis-tagihan.form', array_merge(
             ['jenisTagihan' => $jenisTagihan],
             $this->referenceData($jenisTagihan->lembaga_id)
         ));
@@ -268,7 +268,7 @@ class JenisTagihanController extends Controller
 
         $tahunAjaranAktif = TahunAjaran::where('lembaga_id', $jenisTagihan->lembaga_id)->where('status_aktif', true)->first();
 
-        return view('pages.lembaga.keuangan.jenis-tagihan.nominal', [
+        return view('portals.lembaga.keuangan.jenis-tagihan.nominal', [
             'jenisTagihan'     => $jenisTagihan,
             'jalurList'        => $tahunAjaranAktif
                 ? JalurPpdb::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()

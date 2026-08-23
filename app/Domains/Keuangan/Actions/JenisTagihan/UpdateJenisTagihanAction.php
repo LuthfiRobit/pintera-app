@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\Keuangan\Actions;
+namespace App\Domains\Keuangan\Actions\JenisTagihan;
 
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
 use App\Domains\Keuangan\Models\JenisTagihan;
@@ -29,7 +29,16 @@ class UpdateJenisTagihanAction
 
             $jenisTagihan->update($attributes);
 
-            return $jenisTagihan->fresh();
+            $fresh = $jenisTagihan->fresh();
+
+            // Menggantikan JenisTagihan::booted() lama (model tidak boleh punya business
+            // logic) — satu-satunya call site nyata adalah alur ini (update() generik via
+            // controller), store()/create() tidak pernah memicu transisi is_active.
+            if (! $wasActive && (bool) $fresh->is_active) {
+                event(new BillTypeActivated($fresh));
+            }
+
+            return $fresh;
         });
     }
 }

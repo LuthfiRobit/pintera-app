@@ -314,6 +314,6 @@
         </form>
 
         {{-- Modal Kategori Keringanan --}}
-        @include('pages.lembaga.keuangan.jenis-tagihan._modal-kategori-baru')
+        @include('portals.lembaga.keuangan.jenis-tagihan._modal-kategori-baru')
     </div>
 </x-app-layout>

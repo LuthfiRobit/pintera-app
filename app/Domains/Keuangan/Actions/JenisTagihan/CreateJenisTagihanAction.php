@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\Keuangan\Actions;
+namespace App\Domains\Keuangan\Actions\JenisTagihan;
 
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
 use App\Domains\Keuangan\Models\JenisTagihan;
