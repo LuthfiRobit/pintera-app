@@ -25,8 +25,9 @@ Menambahkan mode pemindaian QR berbasis kamera browser ke halaman pemindai kehad
    - Penyesuaian `tests/Feature/Admin/AttendanceQrScanControllerTest.php` untuk isolasi hari libur mingguan (Minggu).
    - Eksekusi test dan re-build assets (`npm run build`).
 
-3. **Task 3 (Commit saat ini)**:
+3. **Task 3 (Commit `0576647` & `abc4b98`)**:
    - Verifikasi automated test suite dan verifikasi live browser execution via browser subagent.
+   - Refactoring styling kontainer kamera: `aspectRatio: 1.0` pada library config, dynamic `qrbox` calculation, `object-fit: cover` untuk elemen `<video>`, styling `#qr-camera-reader` dengan sudut melengkung `rounded-2xl`, dark placeholder state, dan responsive sizing `max-w-sm sm:max-w-md mx-auto` untuk desktop dan mobile.
    - Penulisan handoff log.
 
 ---
