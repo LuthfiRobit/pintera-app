@@ -109,7 +109,7 @@ it('shows a karyawan_pool konselor only kasus they are assigned to', function ()
     $role = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
     $karyawanUser->assignRole('karyawan_pool');
-    $jenis = \App\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
     $karyawan = \App\Models\Karyawan::withoutGlobalScopes()->create([
         'user_id' => $karyawanUser->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Konselor',

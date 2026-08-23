@@ -90,7 +90,7 @@ it('marks a karyawan with a policy hari_kerja override as Alpa even on a lembaga
     Carbon::setTestNow(Carbon::parse('2026-08-24 01:00:00')); // Monday, so H-1 = Sunday (lembaga libur)
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
-    $jenisKaryawan = \App\Models\JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
     $karyawan = Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id, 'status_aktif' => 'aktif']);
     \App\Domains\Sdm\Models\AttendancePolicy::create([
         'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenisKaryawan->id,
@@ -111,7 +111,7 @@ it('still skips a guru with no policy override on a lembaga-libur day, alongside
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'jenis_ptk' => 'guru_kelas', 'status_aktif' => 'aktif']);
-    $jenisKaryawan = \App\Models\JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
     $karyawan = Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id, 'status_aktif' => 'aktif']);
     \App\Domains\Sdm\Models\AttendancePolicy::create([
         'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenisKaryawan->id,
@@ -134,7 +134,7 @@ it('does NOT mark a karyawan as Alpa on a lembaga work day when the policy hari_
     Carbon::setTestNow(Carbon::parse('2026-08-21 01:00:00')); // Friday, so H-1 = Thursday (lembaga work day)
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]); // Mon-Sat is lembaga work days
-    $jenisKaryawan = \App\Models\JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
     $karyawan = Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id, 'status_aktif' => 'aktif']);
     \App\Domains\Sdm\Models\AttendancePolicy::create([
         'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenisKaryawan->id,

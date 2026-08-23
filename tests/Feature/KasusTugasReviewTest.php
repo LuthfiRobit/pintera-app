@@ -133,7 +133,7 @@ it('notifies the siswa on revisi_diminta even when a yayasan-scoped konselor has
     $konselorRole = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $konselorRole->givePermissionTo(['kasus.view']);
     $konselorUser->assignRole('karyawan_pool');
-    $jenis = \App\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
     $karyawan = \App\Models\Karyawan::withoutGlobalScopes()->create([
         'user_id' => $konselorUser->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaLain->id,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Konselor Lintas Lembaga',

@@ -115,7 +115,7 @@ it('allows a manual attendance record on a libur day when overrideHariLibur is t
 it('allows a manual attendance record on a lembaga-libur day when the pegawai category has a policy hari_kerja override', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
-    $jenisKaryawan = \App\Models\JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
     $karyawan = \App\Models\Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id]);
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
     \App\Domains\Sdm\Models\AttendancePolicy::create([

@@ -38,7 +38,7 @@ function buatKaryawanKonselorAkses(Yayasan $yayasan): array
     $role = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
     $user->assignRole('karyawan_pool');
-    $jenis = \App\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
     $karyawan = Karyawan::withoutGlobalScopes()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Konselor',
