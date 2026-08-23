@@ -2,7 +2,7 @@
 // tests/Feature/Keuangan/TagihanNominalResolverTest.php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\JenisTagihanKeringanan;
+use App\Domains\Keuangan\Models\JenisTagihanKeringanan;
 use App\Models\JenisTagihanSasaranGrup;
 use App\Models\JenisTagihanSasaranKriteria;
 use App\Models\KategoriKeringanan;

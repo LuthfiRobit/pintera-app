@@ -2,7 +2,7 @@
 // tests/Feature/Keuangan/KeringananTest.php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\JenisTagihanKeringanan;
+use App\Domains\Keuangan\Models\JenisTagihanKeringanan;
 use App\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\Siswa;

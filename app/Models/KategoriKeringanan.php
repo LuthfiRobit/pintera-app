@@ -23,7 +23,7 @@ class KategoriKeringanan extends Model
 
     public function jenisTagihanKeringanan(): HasMany
     {
-        return $this->hasMany(JenisTagihanKeringanan::class);
+        return $this->hasMany(\App\Domains\Keuangan\Models\JenisTagihanKeringanan::class);
     }
 
     public function siswaKeringanan(): HasMany

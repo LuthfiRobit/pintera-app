@@ -1,8 +1,9 @@
 <?php
-// app/Models/JenisTagihanKeringanan.php
+// app/Domains/Keuangan/Models/JenisTagihanKeringanan.php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
+use App\Models\KategoriKeringanan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
