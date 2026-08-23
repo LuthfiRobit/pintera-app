@@ -43,7 +43,7 @@ final class AjukanIzinCutiAction
             ]);
         }
 
-        if ($kategori === KategoriPengajuanIzin::Cuti && $this->kuotaResolver->jatahTahunan($pegawai) > 0) {
+        if ($kategori === KategoriPengajuanIzin::Cuti && $this->kuotaResolver->jatahTahunan($pegawai) !== null) {
             $lockKey = 'kuota-cuti:'.get_class($pegawai).':'.$pegawai->id.':'.$tahunMulai;
 
             return Cache::lock($lockKey, 10)->block(5, function () use ($pegawai, $kategori, $tanggalMulai, $tanggalSelesai, $alasan, $tahunMulai) {

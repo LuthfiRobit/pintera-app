@@ -93,6 +93,17 @@ it('allows a Cuti pengajuan within the remaining kuota', function () {
     expect($pengajuan)->not->toBeNull();
 });
 
+it('rejects a Cuti pengajuan when admin explicitly configured a 0-day kuota (zero must not be treated as unconfigured)', function () {
+    seedKuotaCutiWorkflowForTest_ajukan();
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    \App\Domains\Sdm\Models\KuotaCutiConfig::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jatah_hari_per_tahun' => 0]);
+
+    expect(fn () => app(AjukanIzinCutiAction::class)->execute($guru, KategoriPengajuanIzin::Cuti, '2026-09-01', '2026-09-01', 'Cuti 1 hari, jatah dibekukan ke 0.'))
+        ->toThrow(\Illuminate\Validation\ValidationException::class);
+});
+
 it('serializes concurrent Cuti submissions for the same pegawai+tahun via Cache::lock (isolation test, not true concurrency)', function () {
     seedKuotaCutiWorkflowForTest_ajukan();
     $yayasan = Yayasan::factory()->create();

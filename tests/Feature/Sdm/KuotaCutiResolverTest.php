@@ -21,10 +21,19 @@ function seedKuotaCutiWorkflowForTest(): void
     Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\WorkflowDefinitionSeeder']);
 }
 
-it('returns 0 jatah when there is no config at all', function () {
+it('returns null jatah when there is no config at all (distinct from an explicit 0)', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    expect(app(KuotaCutiResolver::class)->jatahTahunan($guru))->toBeNull();
+});
+
+it('returns an explicit 0 jatah when admin configured zero days (not null)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    KuotaCutiConfig::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jatah_hari_per_tahun' => 0]);
 
     expect(app(KuotaCutiResolver::class)->jatahTahunan($guru))->toBe(0);
 });

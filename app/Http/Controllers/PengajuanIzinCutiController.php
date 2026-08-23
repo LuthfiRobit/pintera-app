@@ -37,7 +37,7 @@ class PengajuanIzinCutiController extends BaseController
 
         $pegawai = $this->resolvePegawai($request);
         $sisaKuotaCuti = $pegawai ? $kuotaResolver->sisaKuota($pegawai, (int) now()->format('Y')) : null;
-        $adaKonfigurasiKuota = $pegawai && $kuotaResolver->jatahTahunan($pegawai) > 0;
+        $adaKonfigurasiKuota = $pegawai && $kuotaResolver->jatahTahunan($pegawai) !== null;
 
         return view('sdm.izin-cuti.create', [
             'kategoriOptions' => KategoriPengajuanIzin::cases(),

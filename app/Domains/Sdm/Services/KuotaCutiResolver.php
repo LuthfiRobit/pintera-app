@@ -60,16 +60,21 @@ class KuotaCutiResolver
             ->first();
     }
 
-    public function jatahTahunan(Model $pegawai): int
+    /**
+     * null = tidak ada config sama sekali (kuota tidak ditegakkan). 0 = config eksplisit "nol hari"
+     * (kuota DITEGAKKAN, semua pengajuan Cuti ditolak) — dua kondisi ini harus tetap bisa dibedakan
+     * pemanggil, jangan disatukan jadi int 0 lagi (lihat AjukanIzinCutiAction::execute()).
+     */
+    public function jatahTahunan(Model $pegawai): ?int
     {
-        return $this->resolveConfig($pegawai)?->jatah_hari_per_tahun ?? 0;
+        return $this->resolveConfig($pegawai)?->jatah_hari_per_tahun;
     }
 
     public function sisaKuota(Model $pegawai, int $tahun): int
     {
         $jatah = $this->jatahTahunan($pegawai);
 
-        if ($jatah === 0) {
+        if ($jatah === null || $jatah === 0) {
             return 0;
         }
 
