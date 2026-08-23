@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\Guru\JabatanTambahanController as GuruJabatanTamb
 use App\Http\Controllers\Admin\Guru\RiwayatPendidikanController as GuruRiwayatPendidikanController;
 use App\Http\Controllers\Admin\Guru\SertifikasiController as GuruSertifikasiController;
 use App\Http\Controllers\Admin\GuruController;
-use App\Http\Controllers\Admin\JabatanTambahanMasterController;
+use App\Http\Controllers\Lembaga\Sdm\JabatanTambahanMasterController;
 use App\Http\Controllers\Lembaga\Sdm\JenisKaryawanMasterController;
 use Illuminate\Support\Facades\Route;
 

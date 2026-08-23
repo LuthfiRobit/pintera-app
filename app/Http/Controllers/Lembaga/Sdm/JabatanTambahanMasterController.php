@@ -1,7 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Sdm;
 
+use App\Domains\Sdm\Actions\JabatanTambahan\CreateJabatanTambahanAction;
+use App\Domains\Sdm\Actions\JabatanTambahan\DeleteJabatanTambahanAction;
+use App\Domains\Sdm\Actions\JabatanTambahan\UpdateJabatanTambahanAction;
+use App\Domains\Sdm\DataTransferObjects\JabatanTambahanMasterData;
 use App\Domains\Sdm\Models\JabatanTambahanMaster;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -9,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class JabatanTambahanMasterController extends BaseController
@@ -25,12 +30,12 @@ class JabatanTambahanMasterController extends BaseController
             return response()->json(['items' => $jabatanList]);
         }
 
-        return view('admin.jabatan-tambahan-master.index', [
+        return view('portals.lembaga.sdm.jabatan-tambahan-master.index', [
             'jabatanList' => $jabatanList,
         ]);
     }
 
-    public function store(Request $request): JsonResponse|RedirectResponse
+    public function store(Request $request, CreateJabatanTambahanAction $action): JsonResponse|RedirectResponse
     {
         $this->authorize('jabatan-tambahan-master.create');
 
@@ -39,7 +44,7 @@ class JabatanTambahanMasterController extends BaseController
             'kelompok' => ['required', Rule::in(['struktural', 'fungsional'])],
         ]);
 
-        $item = JabatanTambahanMaster::create($data)->loadCount(['guru' => fn ($q) => $q->withoutGlobalScopes()]);
+        $item = $action->execute(JabatanTambahanMasterData::fromArray($data));
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -51,7 +56,7 @@ class JabatanTambahanMasterController extends BaseController
         return back()->with('success', 'Jabatan tambahan berhasil ditambahkan.');
     }
 
-    public function update(Request $request, JabatanTambahanMaster $jabatanTambahanMaster): JsonResponse|RedirectResponse
+    public function update(Request $request, JabatanTambahanMaster $jabatanTambahanMaster, UpdateJabatanTambahanAction $action): JsonResponse|RedirectResponse
     {
         $this->authorize('jabatan-tambahan-master.edit');
 
@@ -60,34 +65,33 @@ class JabatanTambahanMasterController extends BaseController
             'kelompok' => ['required', Rule::in(['struktural', 'fungsional'])],
         ]);
 
-        $jabatanTambahanMaster->update($data);
+        $item = $action->execute($jabatanTambahanMaster, JabatanTambahanMasterData::fromArray($data));
 
         if ($request->wantsJson()) {
             return response()->json([
                 'message' => 'Data jabatan berhasil diperbarui',
-                'item' => $jabatanTambahanMaster->fresh(['guru' => fn ($q) => $q->withoutGlobalScopes()])->loadCount(['guru' => fn ($q) => $q->withoutGlobalScopes()]),
+                'item' => $item,
             ], 200);
         }
 
         return back()->with('success', 'Jabatan tambahan berhasil diperbarui.');
     }
 
-    public function destroy(Request $request, JabatanTambahanMaster $jabatanTambahanMaster): JsonResponse|RedirectResponse
+    public function destroy(Request $request, JabatanTambahanMaster $jabatanTambahanMaster, DeleteJabatanTambahanAction $action): JsonResponse|RedirectResponse
     {
         $this->authorize('jabatan-tambahan-master.delete');
 
-        $guruCount = $jabatanTambahanMaster->guru()->withoutGlobalScopes()->count();
-        if ($guruCount > 0) {
-            $message = "Jabatan tidak dapat dihapus karena saat ini masih disandang oleh {$guruCount} Guru aktif. Lepaskan tautan jabatan pada guru bersangkutan sebelum menghapusnya.";
-            
+        try {
+            $action->execute($jabatanTambahanMaster);
+        } catch (ValidationException $exception) {
+            $message = $exception->errors()['jabatan'][0];
+
             if ($request->wantsJson()) {
                 return response()->json(['message' => $message], 422);
             }
 
             return back()->with('error', $message);
         }
-
-        $jabatanTambahanMaster->delete();
 
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Jabatan telah dihapus permanen.'], 200);
