@@ -6,6 +6,7 @@ use App\Domains\Sdm\Actions\AjukanIzinCutiAction;
 use App\Domains\Sdm\Actions\BatalkanPengajuanIzinCutiAction;
 use App\Domains\Sdm\Enums\KategoriPengajuanIzin;
 use App\Domains\Sdm\Models\PengajuanIzinCuti;
+use App\Domains\Sdm\Services\KuotaCutiResolver;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -30,11 +31,19 @@ class PengajuanIzinCutiController extends BaseController
         return view('sdm.izin-cuti.index', ['riwayat' => $riwayat]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request, KuotaCutiResolver $kuotaResolver): View
     {
         $this->authorize('kehadiran-sdm.izin.ajukan');
 
-        return view('sdm.izin-cuti.create', ['kategoriOptions' => KategoriPengajuanIzin::cases()]);
+        $pegawai = $this->resolvePegawai($request);
+        $sisaKuotaCuti = $pegawai ? $kuotaResolver->sisaKuota($pegawai, (int) now()->format('Y')) : null;
+        $adaKonfigurasiKuota = $pegawai && $kuotaResolver->jatahTahunan($pegawai) > 0;
+
+        return view('sdm.izin-cuti.create', [
+            'kategoriOptions' => KategoriPengajuanIzin::cases(),
+            'sisaKuotaCuti' => $sisaKuotaCuti,
+            'adaKonfigurasiKuota' => $adaKonfigurasiKuota,
+        ]);
     }
 
     public function store(Request $request, AjukanIzinCutiAction $action): RedirectResponse

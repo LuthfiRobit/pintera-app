@@ -36,7 +36,7 @@
                 method="POST" 
                 action="{{ route('sdm.izin-cuti.store') }}" 
                 class="space-y-5"
-                x-data
+                x-data="{ kategori: '{{ old('kategori') }}' }"
                 @submit.prevent="confirmDialog(
                     'Ajukan Permohonan Izin/Cuti?', 
                     'Apakah Anda yakin data permohonan izin/cuti ini sudah benar dan siap dikirim?', 
@@ -48,7 +48,7 @@
                 {{-- Kategori Dropdown --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-700">Kategori Permohonan <span class="text-rose-500">*</span></label>
-                    <select name="kategori" required class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                    <select name="kategori" x-model="kategori" required class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Kategori Permohonan —</option>
                         @foreach ($kategoriOptions as $kategori)
                             <option value="{{ $kategori->value }}" {{ old('kategori') === $kategori->value ? 'selected' : '' }}>
@@ -57,6 +57,12 @@
                         @endforeach
                     </select>
                 </div>
+
+                @if ($adaKonfigurasiKuota)
+                    <div x-show="kategori === 'cuti'" x-cloak class="rounded-xl border border-brand-100 bg-brand-50/50 p-3.5 text-xs font-semibold text-brand-800">
+                        Sisa kuota Cuti Anda tahun ini: <span class="font-mono">{{ $sisaKuotaCuti }}</span> hari.
+                    </div>
+                @endif
 
                 {{-- Tanggal Range Grid --}}
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

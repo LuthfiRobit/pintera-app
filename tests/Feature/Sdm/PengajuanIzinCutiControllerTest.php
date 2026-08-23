@@ -63,3 +63,21 @@ it('rejects a user without kehadiran-sdm.izin.ajukan permission', function () {
         'kategori' => 'sakit', 'tanggal_mulai' => '2026-09-01', 'tanggal_selesai' => '2026-09-01', 'alasan' => 'Demam.',
     ])->assertForbidden();
 });
+
+it('shows the remaining Cuti kuota on the create form when configured', function () {
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PermissionSeeder']);
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder']);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Permission::firstOrCreate(['name' => 'kehadiran-sdm.izin.ajukan', 'guard_name' => 'web']);
+    $role->givePermissionTo(['kehadiran-sdm.izin.ajukan']);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($role);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $user->id]);
+    \App\Domains\Sdm\Models\KuotaCutiConfig::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jatah_hari_per_tahun' => 12]);
+
+    $response = $this->actingAs($user)->get(route('sdm.izin-cuti.create'));
+
+    $response->assertOk()->assertSee('Sisa kuota Cuti Anda tahun ini');
+});
