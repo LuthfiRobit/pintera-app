@@ -9,7 +9,7 @@ use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
-use App\Services\TagihanBillingGenerator;
+use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

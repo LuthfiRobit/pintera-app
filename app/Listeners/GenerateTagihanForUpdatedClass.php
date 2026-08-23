@@ -7,7 +7,7 @@ use App\Events\StudentUpdatedClass;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Scopes\TenantScope;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
-use App\Services\TagihanBillingGenerator;
+use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 
 class GenerateTagihanForUpdatedClass
 {

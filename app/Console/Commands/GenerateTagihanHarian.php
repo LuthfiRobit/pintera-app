@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Scopes\TenantScope;
-use App\Services\TagihanBillingGenerator;
+use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 use Illuminate\Console\Command;
 
 class GenerateTagihanHarian extends Command

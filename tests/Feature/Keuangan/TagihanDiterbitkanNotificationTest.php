@@ -7,7 +7,7 @@ use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
 use App\Notifications\Finance\TagihanDiterbitkanNotification;
-use App\Services\TagihanBillingGenerator;
+use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 use Illuminate\Support\Facades\Notification;
 
 it('sends TagihanDiterbitkanNotification to the kontak utama when a tagihan is generated', function () {

@@ -3,7 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\BillTypeActivated;
-use App\Services\TagihanBillingGenerator;
+use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 
 class GenerateTagihanForActivatedBillType
 {

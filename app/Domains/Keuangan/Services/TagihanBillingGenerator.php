@@ -1,14 +1,12 @@
 <?php
-// app/Services/TagihanBillingGenerator.php
+// app/Domains/Keuangan/Services/TagihanBillingGenerator.php
 
-namespace App\Services;
+namespace App\Domains\Keuangan\Services;
 
-use App\Models\BillingJobLog;
+use App\Domains\Keuangan\Models\BillingJobLog;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
-use App\Domains\Keuangan\Services\TagihanNominalResolver;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Siswa;
-use App\Models\Tagihan;
 use App\Notifications\Finance\TagihanDiterbitkanNotification;
 use App\Services\Finance\NotificationDispatcher;
 use Carbon\Carbon;

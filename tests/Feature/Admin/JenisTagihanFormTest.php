@@ -5,9 +5,9 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Models\KategoriKeringanan;
 use App\Models\Lembaga;
-use App\Models\TagihanBillingGenerator;
+
 use App\Models\User;
-use App\Services\TagihanBillingGenerator as BillingGenerator;
+use App\Domains\Keuangan\Services\TagihanBillingGenerator as BillingGenerator;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

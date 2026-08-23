@@ -4,7 +4,7 @@ namespace App\Domains\Keuangan\Actions\JenisTagihan;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\BillingJobLog;
-use App\Services\TagihanBillingGenerator;
+use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 
 class ProsesJenisTagihanBillingAction
 {
