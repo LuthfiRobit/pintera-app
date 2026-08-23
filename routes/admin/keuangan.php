@@ -5,7 +5,7 @@ use App\Http\Controllers\Lembaga\Keuangan\JenisTagihanMonitoringController;
 use App\Http\Controllers\Admin\KategoriKeringananController;
 use App\Http\Controllers\Admin\ManualPaymentController;
 use App\Http\Controllers\Admin\PembayaranController;
-use App\Http\Controllers\Admin\TagihanController;
+use App\Http\Controllers\Lembaga\Keuangan\TagihanController;
 use App\Http\Controllers\Admin\VirtualAccountController;
 use Illuminate\Support\Facades\Route;
 

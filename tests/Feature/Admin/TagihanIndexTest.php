@@ -81,3 +81,16 @@ it('filters by status', function () {
     expect($names)->toContain('Sudah Lunas');
     expect($names)->not->toContain('Belum Bayar');
 });
+
+it('404s on catatManualTagihan when tagihan belongs to a different lembaga', function () {
+    [$lembagaA, , , $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Milik A');
+    [$lembagaB, , , $pendaftaranB] = buatPendaftaranUntukAdmin(namaCalon: 'Milik B');
+    $tagihanB = Tagihan::create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 200000, 'status' => 'belum_bayar']);
+    $userA = User::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $userA->assignRole('admin_keuangan');
+
+    $response = $this->actingAs($userA)->post(route('admin.tagihan.catat-manual', $tagihanB));
+
+    $response->assertNotFound();
+});
+

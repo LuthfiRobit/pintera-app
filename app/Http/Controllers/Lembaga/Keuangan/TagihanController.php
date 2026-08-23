@@ -1,29 +1,26 @@
 <?php
-// app/Http/Controllers/Admin/TagihanController.php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Keuangan;
 
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Actions\Tagihan\BuatSkemaCicilanAction;
+use App\Domains\Keuangan\Actions\Tagihan\CatatManualCicilanAction;
+use App\Domains\Keuangan\Actions\Tagihan\CatatManualTagihanAction;
+use App\Domains\Keuangan\Actions\Tagihan\SimpanNominalCicilanAction;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\PembayaranService;
+use App\Domains\Keuangan\Services\TagihanCicilanEligibilityService;
+use App\Http\Controllers\Controller;
+use App\Models\Cicilan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
 
-class TagihanController extends BaseController
+class TagihanController extends Controller
 {
     use AuthorizesRequests;
 
-    /**
-     * Same duplicated-per-controller pattern as PendaftaranAdminController and
-     * SkPpdbController: Tagihan has no lembaga_id of its own (derived
-     * transitively via pendaftaran_id), so every action here must resolve and
-     * apply the acting user's effective lembaga scope manually.
-     */
     private function lembagaId(Request $request): ?int
     {
         return $request->user()->widestScopeLevel() === 'yayasan'
@@ -35,7 +32,7 @@ class TagihanController extends BaseController
     {
         $this->authorize('tagihan.view');
 
-        return view('admin.tagihan.index', [
+        return view('portals.lembaga.keuangan.tagihan.index', [
             'lembagaBelumDipilih' => $this->lembagaId($request) === null,
         ]);
     }
@@ -98,17 +95,23 @@ class TagihanController extends BaseController
         ]);
     }
 
-    public function buatSkemaCicilan(Request $request, Tagihan $tagihan, PembayaranService $service): RedirectResponse
-    {
+    public function buatSkemaCicilan(
+        Request $request,
+        Tagihan $tagihan,
+        BuatSkemaCicilanAction $action,
+        TagihanCicilanEligibilityService $eligibility,
+    ): RedirectResponse {
         $this->authorize('cicilan.kelola');
         abort_unless($tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
+        $maks = $eligibility->maksCicilan($tagihan) ?? 2;
+
         $data = $request->validate([
-            'jumlah_termin' => ['required', 'integer', 'min:2', 'max:'.(app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class)->maksCicilan($tagihan) ?? 2)],
+            'jumlah_termin' => ['required', 'integer', 'min:2', "max:{$maks}"],
         ]);
 
         try {
-            $service->buatSkemaCicilan($tagihan, $data['jumlah_termin'], 'admin', $request->user()->id);
+            $action->execute($tagihan, $data['jumlah_termin'], 'admin', $request->user()->id);
         } catch (\RuntimeException $exception) {
             return back()->withErrors(['jumlah_termin' => $exception->getMessage()]);
         }
@@ -116,8 +119,11 @@ class TagihanController extends BaseController
         return back()->with('status', 'Skema cicilan berhasil dibuat.');
     }
 
-    public function simpanNominalCicilan(Request $request, SkemaCicilan $skemaCicilan, PembayaranService $service): RedirectResponse
-    {
+    public function simpanNominalCicilan(
+        Request $request,
+        SkemaCicilan $skemaCicilan,
+        SimpanNominalCicilanAction $action,
+    ): RedirectResponse {
         $this->authorize('cicilan.kelola');
         abort_unless($skemaCicilan->tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
@@ -127,7 +133,7 @@ class TagihanController extends BaseController
         ]);
 
         try {
-            $service->simpanNominalManual($skemaCicilan, array_map('intval', $data['nominal']));
+            $action->execute($skemaCicilan, array_map('intval', $data['nominal']));
         } catch (\InvalidArgumentException $exception) {
             return back()->withErrors(['nominal' => $exception->getMessage()]);
         }
@@ -135,13 +141,16 @@ class TagihanController extends BaseController
         return back()->with('status', 'Nominal cicilan berhasil diperbarui.');
     }
 
-    public function catatManualTagihan(Request $request, Tagihan $tagihan, PembayaranService $service): RedirectResponse
-    {
+    public function catatManualTagihan(
+        Request $request,
+        Tagihan $tagihan,
+        CatatManualTagihanAction $action,
+    ): RedirectResponse {
         $this->authorize('pembayaran.catat-manual');
         abort_unless($tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
         try {
-            $service->catatPembayaran($tagihan, null, 'admin', null, $request->user()->id);
+            $action->execute($tagihan, 'admin', $request->user()->id);
         } catch (\RuntimeException $exception) {
             return back()->withErrors(['pembayaran' => $exception->getMessage()]);
         }
@@ -149,13 +158,16 @@ class TagihanController extends BaseController
         return back()->with('status', 'Pembayaran berhasil dicatat.');
     }
 
-    public function catatManualCicilan(Request $request, Cicilan $cicilan, PembayaranService $service): RedirectResponse
-    {
+    public function catatManualCicilan(
+        Request $request,
+        Cicilan $cicilan,
+        CatatManualCicilanAction $action,
+    ): RedirectResponse {
         $this->authorize('pembayaran.catat-manual');
         abort_unless($cicilan->skemaCicilan->tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
         try {
-            $service->catatPembayaran(null, $cicilan, 'admin', null, $request->user()->id);
+            $action->execute($cicilan, 'admin', $request->user()->id);
         } catch (\RuntimeException $exception) {
             return back()->withErrors(['pembayaran' => $exception->getMessage()]);
         }
