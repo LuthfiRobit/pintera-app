@@ -5,7 +5,7 @@ use App\Http\Controllers\Admin\Guru\RiwayatPendidikanController as GuruRiwayatPe
 use App\Http\Controllers\Admin\Guru\SertifikasiController as GuruSertifikasiController;
 use App\Http\Controllers\Admin\GuruController;
 use App\Http\Controllers\Admin\JabatanTambahanMasterController;
-use App\Http\Controllers\Admin\JenisKaryawanMasterController;
+use App\Http\Controllers\Lembaga\Sdm\JenisKaryawanMasterController;
 use Illuminate\Support\Facades\Route;
 
 Route::resource('guru', GuruController::class)->except(['show', 'destroy']);

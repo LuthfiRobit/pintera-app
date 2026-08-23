@@ -1,7 +1,11 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Sdm;
 
+use App\Domains\Sdm\Actions\JenisKaryawan\CreateJenisKaryawanAction;
+use App\Domains\Sdm\Actions\JenisKaryawan\DeleteJenisKaryawanAction;
+use App\Domains\Sdm\Actions\JenisKaryawan\UpdateJenisKaryawanAction;
+use App\Domains\Sdm\DataTransferObjects\JenisKaryawanMasterData;
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -9,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class JenisKaryawanMasterController extends BaseController
@@ -25,12 +30,12 @@ class JenisKaryawanMasterController extends BaseController
             return response()->json(['items' => $jenisList]);
         }
 
-        return view('admin.jenis-karyawan-master.index', [
+        return view('portals.lembaga.sdm.jenis-karyawan-master.index', [
             'jenisList' => $jenisList,
         ]);
     }
 
-    public function store(Request $request): JsonResponse|RedirectResponse
+    public function store(Request $request, CreateJenisKaryawanAction $action): JsonResponse|RedirectResponse
     {
         $this->authorize('jenis-karyawan-master.create');
 
@@ -38,7 +43,7 @@ class JenisKaryawanMasterController extends BaseController
             'nama' => ['required', 'string', 'max:255', 'unique:jenis_karyawan_master,nama'],
         ]);
 
-        $item = JenisKaryawanMaster::create($data)->loadCount('karyawan');
+        $item = $action->execute(JenisKaryawanMasterData::fromArray($data));
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -50,7 +55,7 @@ class JenisKaryawanMasterController extends BaseController
         return back()->with('success', 'Jenis karyawan berhasil ditambahkan.');
     }
 
-    public function update(Request $request, JenisKaryawanMaster $jenisKaryawanMaster): JsonResponse|RedirectResponse
+    public function update(Request $request, JenisKaryawanMaster $jenisKaryawanMaster, UpdateJenisKaryawanAction $action): JsonResponse|RedirectResponse
     {
         $this->authorize('jenis-karyawan-master.edit');
 
@@ -58,25 +63,26 @@ class JenisKaryawanMasterController extends BaseController
             'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_karyawan_master', 'nama')->ignore($jenisKaryawanMaster->id)],
         ]);
 
-        $jenisKaryawanMaster->update($data);
+        $item = $action->execute($jenisKaryawanMaster, JenisKaryawanMasterData::fromArray($data));
 
         if ($request->wantsJson()) {
             return response()->json([
                 'message' => 'Jenis karyawan berhasil diperbarui.',
-                'item' => $jenisKaryawanMaster->fresh()->loadCount('karyawan'),
+                'item' => $item,
             ], 200);
         }
 
         return back()->with('success', 'Jenis karyawan berhasil diperbarui.');
     }
 
-    public function destroy(Request $request, JenisKaryawanMaster $jenisKaryawanMaster): JsonResponse|RedirectResponse
+    public function destroy(Request $request, JenisKaryawanMaster $jenisKaryawanMaster, DeleteJenisKaryawanAction $action): JsonResponse|RedirectResponse
     {
         $this->authorize('jenis-karyawan-master.delete');
 
-        $karyawanCount = $jenisKaryawanMaster->karyawan()->count();
-        if ($karyawanCount > 0) {
-            $message = "Jenis karyawan tidak dapat dihapus karena masih dipakai oleh {$karyawanCount} karyawan.";
+        try {
+            $action->execute($jenisKaryawanMaster);
+        } catch (ValidationException $exception) {
+            $message = $exception->errors()['jenis_karyawan'][0];
 
             if ($request->wantsJson()) {
                 return response()->json(['message' => $message], 422);
@@ -84,8 +90,6 @@ class JenisKaryawanMasterController extends BaseController
 
             return back()->with('error', $message);
         }
-
-        $jenisKaryawanMaster->delete();
 
         if ($request->wantsJson()) {
             return response()->json(['message' => 'Jenis karyawan telah dihapus.'], 200);
