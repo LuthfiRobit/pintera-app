@@ -302,3 +302,27 @@ it('checks tagihan ownership before the status business rule, preventing a cross
     $tagihanFromOtherJenisTagihan->refresh();
     expect($tagihanFromOtherJenisTagihan->status)->toBe('lunas');
 });
+
+it('returns 403 (not 422) when batalTagihan targets a tagihan belonging to a different jenis tagihan, even when that tagihan is belum_bayar', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('admin_keuangan');
+
+    $jenisTagihanA = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP A', 'kategori' => 'spp', 'bisa_dicicil' => false]);
+    $jenisTagihanB = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP B', 'kategori' => 'spp', 'bisa_dicicil' => false]);
+
+    $tagihanMilikB = Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihanB->id,
+        'status' => 'belum_bayar',
+    ]);
+
+    $response = $this->actingAs($user)->post(
+        route('admin.jenis-tagihan.monitoring.batal', [$jenisTagihanA, $tagihanMilikB]),
+        ['cancel_reason' => 'Uji guard kepemilikan']
+    );
+
+    $response->assertForbidden();
+    expect($tagihanMilikB->fresh()->status)->toBe('belum_bayar');
+});
+

@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\Lembaga\Keuangan\JenisTagihanController;
-use App\Http\Controllers\Admin\JenisTagihanMonitoringController;
+use App\Http\Controllers\Lembaga\Keuangan\JenisTagihanMonitoringController;
 use App\Http\Controllers\Admin\KategoriKeringananController;
 use App\Http\Controllers\Admin\ManualPaymentController;
 use App\Http\Controllers\Admin\PembayaranController;

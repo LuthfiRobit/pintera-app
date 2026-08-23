@@ -1,19 +1,21 @@
 <?php
-// app/Http/Controllers/Admin/JenisTagihanMonitoringController.php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Keuangan;
 
+use App\Domains\Keuangan\Actions\Tagihan\BatalkanTagihanAction;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
-class JenisTagihanMonitoringController extends BaseController
+class JenisTagihanMonitoringController extends Controller
 {
     use AuthorizesRequests;
 
-    public function index(JenisTagihan $jenisTagihan)
+    public function index(JenisTagihan $jenisTagihan): View
     {
         $this->authorize('jenis-tagihan.view');
 
@@ -42,7 +44,7 @@ class JenisTagihanMonitoringController extends BaseController
             ->orderByDesc('total_tunggakan')
             ->paginate(15, ['*'], 'tunggakan_page');
 
-        return view('admin.jenis-tagihan.monitoring.index', [
+        return view('portals.lembaga.keuangan.jenis-tagihan.monitoring.index', [
             'jenisTagihan' => $jenisTagihan,
             'ringkasan' => $ringkasan,
             'tagihanPenerima' => $tagihanPenerima,
@@ -50,7 +52,7 @@ class JenisTagihanMonitoringController extends BaseController
         ]);
     }
 
-    public function batalTagihan(Request $request, JenisTagihan $jenisTagihan, Tagihan $tagihan)
+    public function batalTagihan(Request $request, JenisTagihan $jenisTagihan, Tagihan $tagihan, BatalkanTagihanAction $action): RedirectResponse
     {
         $this->authorize('jenis-tagihan.edit');
 
@@ -58,23 +60,7 @@ class JenisTagihanMonitoringController extends BaseController
             'cancel_reason' => 'required|string|max:255',
         ]);
 
-        // Ownership check MUST run before any business-rule check — otherwise a status-based
-        // 422/403 response difference leaks whether an arbitrary cross-tenant tagihan is
-        // belum_bayar, before we've verified it even belongs to this jenisTagihan.
-        if ($tagihan->jenis_tagihan_id !== $jenisTagihan->id) {
-            abort(403, 'Tagihan tidak ditemukan untuk jenis tagihan ini.');
-        }
-
-        if ($tagihan->status !== 'belum_bayar') {
-            abort(422, 'Hanya tagihan dengan status belum bayar yang dapat dibatalkan.');
-        }
-
-        $tagihan->update([
-            'status' => 'dibatalkan',
-            'cancelled_by' => auth()->id(),
-            'cancelled_at' => now(),
-            'cancel_reason' => $request->cancel_reason,
-        ]);
+        $action->execute($jenisTagihan, $tagihan, auth()->id(), $request->cancel_reason);
 
         return back()->with('success', 'Tagihan berhasil dibatalkan.');
     }
