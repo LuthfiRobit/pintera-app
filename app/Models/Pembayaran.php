@@ -39,7 +39,7 @@ class Pembayaran extends Model
 
     public function tagihan(): BelongsTo
     {
-        return $this->belongsTo(Tagihan::class);
+        return $this->belongsTo(\App\Domains\Keuangan\Models\Tagihan::class);
     }
 
     public function cicilan(): BelongsTo

@@ -108,6 +108,6 @@ it('does not send when the wallet balance fully covers every active tagihan', fu
 });
 
 it('is urgent = false', function () {
-    $notification = new SaldoTidakCukupNotification(\App\Models\Tagihan::factory()->make(), 100000.0);
+    $notification = new SaldoTidakCukupNotification(\App\Domains\Keuangan\Models\Tagihan::factory()->make(), 100000.0);
     expect($notification->isUrgent())->toBeFalse();
 });

@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Cicilan;
 use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\SkemaCicilan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\PembayaranService;
 use App\Services\TagihanGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -126,7 +126,7 @@ class TagihanController extends BaseController
         abort_unless($tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
 
         $data = $request->validate([
-            'jumlah_termin' => ['required', 'integer', 'min:2', 'max:'.($tagihan->maksCicilan() ?? 2)],
+            'jumlah_termin' => ['required', 'integer', 'min:2', 'max:'.(app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class)->maksCicilan($tagihan) ?? 2)],
         ]);
 
         try {

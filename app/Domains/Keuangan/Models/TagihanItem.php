@@ -22,7 +22,7 @@ class TagihanItem extends Model
 
     public function tagihan(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Tagihan::class);
+        return $this->belongsTo(Tagihan::class);
     }
 
     public function jenisTagihan(): BelongsTo

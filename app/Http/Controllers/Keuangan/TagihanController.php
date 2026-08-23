@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Keuangan;
 
 use App\Models\Scopes\TenantScope;
 use App\Models\SystemSetting;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;

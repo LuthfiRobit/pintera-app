@@ -89,7 +89,7 @@ class Pendaftaran extends Model
 
     public function tagihan(): HasMany
     {
-        return $this->hasMany(Tagihan::class);
+        return $this->hasMany(\App\Domains\Keuangan\Models\Tagihan::class);
     }
 
     public function siswa(): HasOne

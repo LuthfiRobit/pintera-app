@@ -70,7 +70,7 @@ class Siswa extends Model
 
     public function tagihan(): MorphMany
     {
-        return $this->morphMany(Tagihan::class, 'tagihable');
+        return $this->morphMany(\App\Domains\Keuangan\Models\Tagihan::class, 'tagihable');
     }
 
     public function wallet()

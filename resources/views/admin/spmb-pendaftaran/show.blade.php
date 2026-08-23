@@ -298,11 +298,11 @@
                                                 <button type="submit" class="font-bold text-ink hover:underline">Catat Lunas (Tanpa Cicilan)</button>
                                             </form>
                                         @endif
-                                        @if ($tagihan->status === 'belum_bayar' && $tagihan->bisaDicicil() && auth()->user()->can('cicilan.kelola'))
+                                        @if ($tagihan->status === 'belum_bayar' && app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class)->bisaDicicil($tagihan) && auth()->user()->can('cicilan.kelola'))
                                             <form method="POST" action="{{ route('admin.tagihan.skema-cicilan.store', $tagihan) }}" class="flex items-center gap-2">
                                                 @csrf
                                                 <select name="jumlah_termin" class="rounded-lg border-ink/15 text-xs">
-                                                    @for ($n = 2; $n <= $tagihan->maksCicilan(); $n++)
+                                                    @for ($n = 2; $n <= app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class)->maksCicilan($tagihan); $n++)
                                                         <option value="{{ $n }}">{{ $n }}x cicilan</option>
                                                     @endfor
                                                 </select>

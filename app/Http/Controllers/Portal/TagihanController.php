@@ -4,7 +4,7 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Models\Cicilan;
-use App\Models\Tagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\PembayaranService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,7 +44,7 @@ class TagihanController extends BaseController
         $this->pastikanMilikSendiri($tagihan);
 
         $data = $request->validate([
-            'jumlah_termin' => ['required', 'integer', 'min:2', 'max:'.($tagihan->maksCicilan() ?? 2)],
+            'jumlah_termin' => ['required', 'integer', 'min:2', 'max:'.(app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class)->maksCicilan($tagihan) ?? 2)],
         ]);
 
         try {

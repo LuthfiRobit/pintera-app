@@ -56,11 +56,11 @@
                                         <x-spmb-primary-button class="!px-3 !py-1.5 !text-xs">Bayar Lunas</x-spmb-primary-button>
                                     </form>
 
-                                    @if ($tagihan->bisaDicicil())
+                                    @if (app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class)->bisaDicicil($tagihan))
                                         <form method="POST" action="{{ route('portal.tagihan.skema-cicilan', $tagihan) }}" class="flex items-center gap-2">
                                             @csrf
                                             <select name="jumlah_termin" class="rounded-xl border-slate/25 text-xs">
-                                                @for ($n = 2; $n <= $tagihan->maksCicilan(); $n++)
+                                                @for ($n = 2; $n <= app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class)->maksCicilan($tagihan); $n++)
                                                     <option value="{{ $n }}">Cicil {{ $n }}x</option>
                                                 @endfor
                                             </select>

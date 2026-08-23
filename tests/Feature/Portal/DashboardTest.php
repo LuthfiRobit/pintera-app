@@ -299,7 +299,7 @@ it('shows the real dokumen-verified count on the submitted status card', functio
 it('shows the real payment status on the submitted status card', function () {
     $akun = AkunPendaftar::factory()->create();
     $pendaftaran = buatPendaftaranUntukAkun($akun);
-    \App\Models\Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar', 'jatuh_tempo' => now()->addWeek()]);
+    \App\Domains\Keuangan\Models\Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar', 'jatuh_tempo' => now()->addWeek()]);
 
     $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
         ->assertOk()

@@ -42,6 +42,6 @@ it('does not send when generateForSiswa returns false because the tagihan alread
 });
 
 it('is not urgent', function () {
-    $notification = new TagihanDiterbitkanNotification(\App\Models\Tagihan::factory()->make());
+    $notification = new TagihanDiterbitkanNotification(\App\Domains\Keuangan\Models\Tagihan::factory()->make());
     expect($notification->isUrgent())->toBeFalse();
 });
