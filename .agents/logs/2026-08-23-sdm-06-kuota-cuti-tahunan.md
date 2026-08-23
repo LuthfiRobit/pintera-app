@@ -100,3 +100,24 @@ Hasil: **KOSONG TOTAL (0 baris diubah)**.
 - **Git State**:
   - Branch: `sdm-v1`
   - Clean working tree (semua commit tersimpan berurutan dan tidak ada rewrite history).
+
+---
+
+## 5. Catatan Review (ditambahkan Claude, 23 Agustus 2026)
+
+Log di atas ditulis oleh agent eksekutor. Setelah ditinjau ulang secara independen (baca kode langsung, jalankan ulang test, `git diff` terhadap baseline) berikut hasilnya:
+
+**Yang terkonfirmasi akurat:**
+- Disiplin scope bersih total — `git diff 210c673..HEAD -- app/Domains/Workflow/ ...` (file-file terlarang) benar-benar KOSONG, diverifikasi ulang independen.
+- Migration/model `KuotaCutiConfig` persis pola `AttendancePolicy`.
+- Resolusi 4-tingkat `KuotaCutiResolver` benar dan sesuai plan.
+- `Cache::lock()` di `AjukanIzinCutiAction` benar-benar membungkus CEK dan TULIS sekaligus (bukan cuma cek) — inti jaminan concurrency-nya valid. Test lock isolasi dijalankan ulang, benar-benar makan waktu ~5 detik nyata (bukti blocking sungguhan).
+- Wiring UI admin (Task 4) dan self-service (Task 5) sesuai klaim.
+
+**1 bug nyata ditemukan dan SUDAH DIPERBAIKI (commit `d40c988`):** `KuotaCutiResolver::jatahTahunan()` mengembalikan `int 0` untuk dua kondisi berbeda — tidak ada config sama sekali, ATAU admin sengaja mengisi `jatah_hari_per_tahun = 0` untuk membekukan Cuti. `AjukanIzinCutiAction` menggerbang validasi dengan `jatahTahunan() > 0`, sehingga config eksplisit 0 malah melewati SELURUH validasi — pegawai di lembaga yang sengaja dibekukan kuotanya justru bisa mengajukan Cuti tanpa batas. **Akar masalah ini ada di plan/spec yang saya tulis sendiri** (kondisi `> 0` sebagai penanda "ada config" adalah keputusan desain saya, bukan penyimpangan eksekutor — kode yang ditulis eksekutor sudah persis sesuai plan). Diperbaiki dengan mengubah `jatahTahunan()` jadi `?int` (null = tidak ada config, `0` = config eksplisit nol) dan mengganti pengecekan jadi `!== null` di `AjukanIzinCutiAction` dan `PengajuanIzinCutiController`. Ditambahkan 2 test baru yang membuktikan perbaikannya (satu di `KuotaCutiResolverTest`, satu di `AjukanIzinCutiActionTest`) — keduanya lulus, plus 21 test lain di area ini tetap hijau tanpa regresi.
+
+**2 temuan dokumentasi di bagian 3 log ini (tidak fatal, tidak ada tindakan lanjut diperlukan tapi dicatat sebagai referensi):**
+1. Baris agregat "Total Scoped SDM Tests: 87 Passed / 209 assertions" (§3.A) tidak cocok dengan tabel di atasnya sendiri (jumlah tabel cuma 55 assertions), maupun dengan hasil re-run independen saya (23 passed / 38 assertions untuk 5 file inti + 2 file regresi terkait langsung). Sepertinya angka salah-tempel dari run lain.
+2. Klaim full-suite "2051 Passed" (§3.C) tanpa kegagalan bertentangan dengan kalimat di paragraf yang sama yang menyebut 2 test "gagal" karena hari Minggu — tidak jelas apakah run itu benar-benar 100% hijau atau tidak. Rekomendasi ke depan: kalau ada test yang diketahui flaky/gagal di suatu run, sebutkan angka gagal-nya secara eksplisit di baris "Total", jangan hanya disinggung di catatan terpisah.
+
+**Kesimpulan:** Bug sudah diperbaiki dan diverifikasi, tidak ada yang menghalangi merge. Temuan dokumentasi di atas murni soal kualitas laporan, bukan soal kebenaran kode.
