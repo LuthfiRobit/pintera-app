@@ -1,7 +1,7 @@
 <?php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\NominalTagihanSiswa;
+use App\Domains\Keuangan\Models\NominalTagihanSiswa;
 use App\Models\Siswa;
 
 it('stores a per-siswa nominal override for a jenis_tagihan', function () {

@@ -5,7 +5,7 @@ namespace App\Services;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\JenisTagihanKeringanan;
-use App\Models\NominalTagihanSiswa;
+use App\Domains\Keuangan\Models\NominalTagihanSiswa;
 use App\Models\Siswa;
 use App\Models\SiswaKeringanan;
 

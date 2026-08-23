@@ -6,7 +6,7 @@ use App\Models\JenisTagihanKeringanan;
 use App\Models\JenisTagihanSasaranGrup;
 use App\Models\JenisTagihanSasaranKriteria;
 use App\Models\KategoriKeringanan;
-use App\Models\NominalTagihanSiswa;
+use App\Domains\Keuangan\Models\NominalTagihanSiswa;
 use App\Models\Siswa;
 use App\Models\SiswaKeringanan;
 use App\Services\JenisTagihanSasaranMatcher;
