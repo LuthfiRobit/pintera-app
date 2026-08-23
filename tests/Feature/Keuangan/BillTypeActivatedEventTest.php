@@ -68,5 +68,5 @@ it('does not throw and does not generate anything when a ppdb-kategori jenis_tag
     ]);
 
     expect(Tagihan::count())->toBe(0);
-    expect(\App\Models\BillingJobLog::count())->toBe(0);
+    expect(\App\Domains\Keuangan\Models\BillingJobLog::count())->toBe(0);
 });

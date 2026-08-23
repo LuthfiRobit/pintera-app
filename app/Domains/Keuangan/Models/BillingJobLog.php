@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +24,6 @@ class BillingJobLog extends Model
 
     public function jenisTagihan(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Keuangan\Models\JenisTagihan::class);
+        return $this->belongsTo(JenisTagihan::class);
     }
 }

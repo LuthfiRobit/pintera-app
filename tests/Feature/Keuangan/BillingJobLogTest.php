@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\BillingJobLog;
+use App\Domains\Keuangan\Models\BillingJobLog;
 use App\Domains\Keuangan\Models\JenisTagihan;
 
 it('stores a billing job log with an error_log array and relates back to jenis_tagihan', function () {

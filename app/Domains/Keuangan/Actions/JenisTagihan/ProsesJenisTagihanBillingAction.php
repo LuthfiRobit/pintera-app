@@ -3,7 +3,7 @@
 namespace App\Domains\Keuangan\Actions\JenisTagihan;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\BillingJobLog;
+use App\Domains\Keuangan\Models\BillingJobLog;
 use App\Services\TagihanBillingGenerator;
 
 class ProsesJenisTagihanBillingAction

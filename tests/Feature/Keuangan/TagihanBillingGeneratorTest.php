@@ -138,7 +138,7 @@ it('rejects generate() for a pendaftaran-kategori jenis_tagihan without creating
     expect(fn () => buatGenerator()->generate($jenisTagihan, 'manual'))->toThrow(\RuntimeException::class);
 
     expect(Tagihan::count())->toBe(0);
-    expect(\App\Models\BillingJobLog::count())->toBe(0);
+    expect(\App\Domains\Keuangan\Models\BillingJobLog::count())->toBe(0);
 });
 
 it('rejects generateForSiswaViaEvent() for a daftar_ulang-kategori jenis_tagihan without creating anything', function () {
@@ -152,5 +152,5 @@ it('rejects generateForSiswaViaEvent() for a daftar_ulang-kategori jenis_tagihan
     expect(fn () => buatGenerator()->generateForSiswaViaEvent($siswa, $jenisTagihan, 'StudentCreated'))->toThrow(\RuntimeException::class);
 
     expect(Tagihan::count())->toBe(0);
-    expect(\App\Models\BillingJobLog::count())->toBe(0);
+    expect(\App\Domains\Keuangan\Models\BillingJobLog::count())->toBe(0);
 });
