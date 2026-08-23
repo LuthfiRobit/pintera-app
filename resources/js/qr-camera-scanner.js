@@ -19,7 +19,15 @@ export function qrCameraScanner(config) {
             try {
                 await this.html5Qrcode.start(
                     { facingMode: 'environment' },
-                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    {
+                        fps: 15,
+                        aspectRatio: 1.0,
+                        qrbox: (viewfinderWidth, viewfinderHeight) => {
+                            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                            const qrboxSize = Math.max(180, Math.floor(minEdge * 0.72));
+                            return { width: qrboxSize, height: qrboxSize };
+                        },
+                    },
                     (decodedText) => this.handleScanSuccess(decodedText),
                     () => {
                         // Dipanggil per-frame saat tidak ada QR terbaca — noise normal, sengaja diabaikan.

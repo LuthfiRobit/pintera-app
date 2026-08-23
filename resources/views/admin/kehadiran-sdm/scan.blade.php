@@ -156,19 +156,101 @@
                             }
                         })"
                         x-effect="mode === 'kamera' ? startCamera() : stopCamera()"
+                        class="space-y-3"
                     >
-                        <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-black">
+                        <div class="relative mx-auto w-full max-w-sm sm:max-w-md overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 shadow-inner">
+                            {{-- Video Container --}}
                             <div id="qr-camera-reader" class="aspect-square w-full"></div>
+
+                            {{-- Camera Starting / Placeholder State --}}
+                            <div
+                                x-show="!cameraActive && !processing"
+                                class="absolute inset-0 flex flex-col items-center justify-center gap-2.5 bg-gray-950 text-gray-400 p-6 text-center"
+                            >
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-900 border border-gray-800 text-brand-400 animate-pulse">
+                                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                </div>
+                                <p class="text-xs font-semibold text-gray-300">Menghubungkan Kamera...</p>
+                                <p class="text-[11px] text-gray-500">Pastikan akses kamera diizinkan oleh browser Anda.</p>
+                            </div>
+
+                            {{-- Active Badge --}}
+                            <div
+                                x-show="cameraActive && !processing"
+                                class="pointer-events-none absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-emerald-400 border border-emerald-500/30"
+                            >
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                                <span>Kamera Aktif</span>
+                            </div>
+
+                            {{-- Processing Overlay --}}
                             <div
                                 x-show="processing"
                                 x-cloak
-                                class="absolute inset-0 flex items-center justify-center bg-black/60 text-xs font-bold text-white"
+                                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-gray-950/85 backdrop-blur-sm text-white"
                             >
-                                Memproses...
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/20 text-brand-400 ring-4 ring-brand-500/10">
+                                    <svg class="h-6 w-6 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                    </svg>
+                                </div>
+                                <div class="text-center">
+                                    <p class="text-xs font-bold text-white tracking-wide">Memproses Presensi...</p>
+                                    <p class="text-[11px] text-gray-400 mt-0.5">Mohon tunggu sebentar</p>
+                                </div>
                             </div>
                         </div>
-                        <p class="mt-2 text-center text-[11px] text-gray-400">Arahkan kamera ke QR Code pegawai. Pemindaian dan pencatatan berjalan otomatis.</p>
+
+                        {{-- Guidance Info --}}
+                        <div class="flex items-center justify-center gap-1.5 text-center text-xs text-gray-500">
+                            <svg class="h-3.5 w-3.5 text-brand-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Arahkan kamera ke QR Code pegawai. Pemindaian dan pencatatan berjalan otomatis.</span>
+                        </div>
                     </div>
+
+                    <style>
+                        #qr-camera-reader {
+                            border: none !important;
+                            width: 100% !important;
+                            padding: 0 !important;
+                            overflow: hidden !important;
+                            border-radius: 1rem !important;
+                            background-color: #030712 !important;
+                        }
+                        #qr-camera-reader video {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                            border-radius: 1rem !important;
+                            display: block !important;
+                        }
+                        #qr-camera-reader canvas {
+                            width: 100% !important;
+                            height: 100% !important;
+                            object-fit: cover !important;
+                            border-radius: 1rem !important;
+                        }
+                        #qr-camera-reader__scan_region {
+                            min-height: auto !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                        }
+                        #qr-camera-reader__dashboard_section,
+                        #qr-camera-reader__dashboard_section_csr,
+                        #qr-camera-reader__header_message {
+                            display: none !important;
+                        }
+                        #qr-shaded-region {
+                            border-color: rgba(15, 23, 42, 0.55) !important;
+                        }
+                    </style>
 
                     {{-- Mode Manual --}}
                     <div x-show="mode === 'manual'">
