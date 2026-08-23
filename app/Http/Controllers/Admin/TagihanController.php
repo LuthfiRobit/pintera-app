@@ -4,11 +4,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Cicilan;
-use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\PembayaranService;
-use App\Services\TagihanGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,26 +29,6 @@ class TagihanController extends BaseController
         return $request->user()->widestScopeLevel() === 'yayasan'
             ? session('active_lembaga_id')
             : $request->user()->lembaga_id;
-    }
-
-    public function buatSusulan(Request $request, Pendaftaran $pendaftaran, TagihanGenerator $generator): RedirectResponse
-    {
-        $this->authorize('tagihan.buat-susulan');
-        abort_unless($pendaftaran->lembaga_id === $this->lembagaId($request), 404);
-
-        $data = $request->validate([
-            'kategori' => ['required', 'in:pendaftaran,daftar_ulang'],
-        ]);
-
-        $tagihan = $generator->generate($pendaftaran, $data['kategori']);
-
-        if (! $tagihan) {
-            return back()->withErrors([
-                'kategori' => 'Tagihan sudah ada, atau belum ada nominal yang dikonfigurasi untuk jalur ini.',
-            ]);
-        }
-
-        return back()->with('status', 'Tagihan susulan berhasil dibuat.');
     }
 
     public function index(Request $request): View
