@@ -1,6 +1,6 @@
 # Migrasi Domain Keuangan Sub-project 1: Konfigurasi & Generasi Tagihan — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Memindahkan 8 model konfigurasi billing + `JenisTagihanController` (direfactor Action/DTO) + 2 service ke `app/Domains/Keuangan/*`, tanpa mengubah perilaku aplikasi.
 
@@ -35,13 +35,13 @@
 
 **PENTING:** event `BillTypeActivated` dispatch di `booted()` DIHAPUS dari model ini di task ini (bukan ditunda ke Task 12) — supaya model langsung bersih begitu pindah. TAPI perilaku dispatch event itu sendiri BELUM boleh hilang dari aplikasi — Task 12 WAJIB memindahkan logic yang sama persis ke `UpdateJenisTagihanAction`. Kalau plan dieksekusi task-by-task dengan jeda (subagent terpisah), ada window singkat di mana event TIDAK di-dispatch sama sekali (antara Task 1 selesai dan Task 12 selesai) — ini AMAN untuk kode produksi karena tidak ada deploy parsial di antara task, tapi WAJIB diperhatikan kalau urutan eksekusi task berubah (Task 12 tidak boleh dilewati/ditunda terpisah dari Task 1).
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/JenisTagihan.php app/Domains/Keuangan/Models/JenisTagihan.php
 ```
 
-- [ ] **Step 2: Ubah isi file — namespace, `newFactory()`, HAPUS `booted()`**
+- [x] **Step 2: Ubah isi file — namespace, `newFactory()`, HAPUS `booted()`**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/JenisTagihan.php` dengan:
 
@@ -126,11 +126,11 @@ class JenisTagihan extends Model
 
 Catatan: relasi `nominalJalur()`, `tagihanItem()`, `sasaranGrup()`, `nominalTagihanSiswa()`, `keringananRules()` menunjuk ke model LAIN yang JUGA pindah ke `Domains\Keuangan\Models` di task-task berikutnya (Task 2-7) — TIDAK PERLU `use` statement tambahan atau FQCN, karena semua akan berbagi namespace `App\Domains\Keuangan\Models` yang sama begitu task 2-7 selesai. Kalau task ini dijalankan SEBELUM Task 2-7 (urutan normal), class-class itu belum ada di namespace baru — ini TIDAK error di level PHP (lazy class resolution untuk return type method biasa), tapi test yang benar-benar memanggil relasi ini akan gagal sampai Task 2-7 selesai. INI ALASAN kenapa urutan Task 1-8 penting dan sebaiknya dieksekusi berurutan tanpa test-scoped-luas di antara sebelum Task 8 selesai (test scoped SEMPIT per task tetap wajib, lihat Step 7).
 
-- [ ] **Step 3: Update `database/factories/JenisTagihanFactory.php`**
+- [x] **Step 3: Update `database/factories/JenisTagihanFactory.php`**
 
 Ganti baris `use App\Models\JenisTagihan;` menjadi `use App\Domains\Keuangan\Models\JenisTagihan;`. Tidak ada perubahan lain.
 
-- [ ] **Step 4: Update seluruh file consumer lain (grep ulang dulu untuk daftar pasti)**
+- [x] **Step 4: Update seluruh file consumer lain (grep ulang dulu untuk daftar pasti)**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihan;" --include="*.php" app database tests
@@ -138,11 +138,11 @@ grep -rln "use App\\\\Models\\\\JenisTagihan;" --include="*.php" app database te
 
 Di SETIAP file hasil grep (KECUALI `database/factories/JenisTagihanFactory.php` yang sudah di Step 3), ganti baris `use App\Models\JenisTagihan;` menjadi `use App\Domains\Keuangan\Models\JenisTagihan;`. Tidak ada perubahan lain di file-file ini.
 
-- [ ] **Step 5: Perbaiki gotcha referensi implisit di `app/Models/BillingJobLog.php`**
+- [x] **Step 5: Perbaiki gotcha referensi implisit di `app/Models/BillingJobLog.php`**
 
 Baca file, cari baris yang memanggil `JenisTagihan::class` tanpa `use` statement, ganti jadi `\App\Domains\Keuangan\Models\JenisTagihan::class` (FQCN inline).
 
-- [ ] **Step 6: Perbaiki gotcha referensi implisit di `app/Models/Tagihan.php` (3 referensi sekaligus)**
+- [x] **Step 6: Perbaiki gotcha referensi implisit di `app/Models/Tagihan.php` (3 referensi sekaligus)**
 
 Baca file, cari SEMUA baris yang memanggil `JenisTagihan::class`, `TagihanItem::class`, atau `SkemaCicilan::class` tanpa `use` statement. Ganti masing-masing jadi FQCN inline:
 - `JenisTagihan::class` → `\App\Domains\Keuangan\Models\JenisTagihan::class`
@@ -151,7 +151,7 @@ Baca file, cari SEMUA baris yang memanggil `JenisTagihan::class`, `TagihanItem::
 
 **PENTING:** `TagihanItem` dan `SkemaCicilan` BELUM pindah namespace-nya sampai Task 7 dan Task 8 selesai — kalau Task 6 ini dikerjakan sebelum Task 7/8, class `\App\Domains\Keuangan\Models\TagihanItem`/`SkemaCicilan` belum ada. Referensi FQCN yang "menunjuk ke depan" ini AMAN ditulis sekarang (PHP tidak resolve nama class sampai benar-benar dipanggil), tapi test yang memanggil relasi ini akan gagal sampai Task 7/8 selesai — WAJAR, bukan bug, jangan panik kalau test scoped Task 1 yang menyentuh `Tagihan.php` gagal sebagian sampai seluruh Task 1-8 selesai.
 
-- [ ] **Step 7: Jalankan test scoped SEMPIT (murni cek tidak ada "Class not found" untuk `use` statement, BUKAN test penuh — test penuh baru masuk akal setelah Task 8)**
+- [x] **Step 7: Jalankan test scoped SEMPIT (murni cek tidak ada "Class not found" untuk `use` statement, BUKAN test penuh — test penuh baru masuk akal setelah Task 8)**
 
 ```bash
 php artisan test tests/Unit/JenisTagihanSeederTest.php database/seeders --dry-run 2>&1 | head -5
@@ -165,14 +165,14 @@ php artisan tinker --execute="echo class_exists(\App\Domains\Keuangan\Models\Jen
 
 Expected: `OK`. Ini verifikasi minimal bahwa class ter-load tanpa fatal error — test fungsional penuh menunggu Task 8 selesai (lihat Task 9).
 
-- [ ] **Step 8: Verifikasi tidak ada `use` lama tersisa**
+- [x] **Step 8: Verifikasi tidak ada `use` lama tersisa**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihan;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add -A
@@ -191,13 +191,13 @@ git commit -m "refactor(keuangan): pindah model JenisTagihan ke Domains\Keuangan
 **Interfaces:**
 - Produces: `App\Domains\Keuangan\Models\NominalTagihanJalur` — dipakai Task 9, 12.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/NominalTagihanJalur.php app/Domains/Keuangan/Models/NominalTagihanJalur.php
 ```
 
-- [ ] **Step 2: Ubah isi file**
+- [x] **Step 2: Ubah isi file**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/NominalTagihanJalur.php` dengan:
 
@@ -237,11 +237,11 @@ class NominalTagihanJalur extends Model
 }
 ```
 
-- [ ] **Step 3: Update `database/factories/NominalTagihanJalurFactory.php`**
+- [x] **Step 3: Update `database/factories/NominalTagihanJalurFactory.php`**
 
 Ganti `use App\Models\NominalTagihanJalur;` → `use App\Domains\Keuangan\Models\NominalTagihanJalur;`.
 
-- [ ] **Step 4: Update seluruh file consumer lain**
+- [x] **Step 4: Update seluruh file consumer lain**
 
 ```bash
 grep -rln "use App\\\\Models\\\\NominalTagihanJalur;" --include="*.php" app database tests
@@ -249,14 +249,14 @@ grep -rln "use App\\\\Models\\\\NominalTagihanJalur;" --include="*.php" app data
 
 Di SETIAP file hasil grep (kecuali Factory di Step 3), ganti `use App\Models\NominalTagihanJalur;` → `use App\Domains\Keuangan\Models\NominalTagihanJalur;`.
 
-- [ ] **Step 5: Verifikasi**
+- [x] **Step 5: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Models\\\\NominalTagihanJalur;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -274,13 +274,13 @@ git commit -m "refactor(keuangan): pindah model NominalTagihanJalur ke Domains\K
 **Interfaces:**
 - Produces: `App\Domains\Keuangan\Models\NominalTagihanSiswa` — dipakai Task 9.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/NominalTagihanSiswa.php app/Domains/Keuangan/Models/NominalTagihanSiswa.php
 ```
 
-- [ ] **Step 2: Ubah isi file (TANPA `newFactory()` — model ini tidak pakai `HasFactory`)**
+- [x] **Step 2: Ubah isi file (TANPA `newFactory()` — model ini tidak pakai `HasFactory`)**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/NominalTagihanSiswa.php` dengan:
 
@@ -318,7 +318,7 @@ class NominalTagihanSiswa extends Model
 }
 ```
 
-- [ ] **Step 3: Update seluruh file consumer**
+- [x] **Step 3: Update seluruh file consumer**
 
 ```bash
 grep -rln "use App\\\\Models\\\\NominalTagihanSiswa;" --include="*.php" app database tests
@@ -326,14 +326,14 @@ grep -rln "use App\\\\Models\\\\NominalTagihanSiswa;" --include="*.php" app data
 
 Di SETIAP file hasil grep, ganti `use App\Models\NominalTagihanSiswa;` → `use App\Domains\Keuangan\Models\NominalTagihanSiswa;`.
 
-- [ ] **Step 4: Verifikasi**
+- [x] **Step 4: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Models\\\\NominalTagihanSiswa;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -352,13 +352,13 @@ git commit -m "refactor(keuangan): pindah model NominalTagihanSiswa ke Domains\K
 **Interfaces:**
 - Produces: `App\Domains\Keuangan\Models\JenisTagihanKeringanan` — dipakai Task 9.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/JenisTagihanKeringanan.php app/Domains/Keuangan/Models/JenisTagihanKeringanan.php
 ```
 
-- [ ] **Step 2: Ubah isi file**
+- [x] **Step 2: Ubah isi file**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/JenisTagihanKeringanan.php` dengan:
 
@@ -397,7 +397,7 @@ class JenisTagihanKeringanan extends Model
 }
 ```
 
-- [ ] **Step 3: Update seluruh file consumer**
+- [x] **Step 3: Update seluruh file consumer**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihanKeringanan;" --include="*.php" app database tests
@@ -405,18 +405,18 @@ grep -rln "use App\\\\Models\\\\JenisTagihanKeringanan;" --include="*.php" app d
 
 Di SETIAP file hasil grep, ganti `use App\Models\JenisTagihanKeringanan;` → `use App\Domains\Keuangan\Models\JenisTagihanKeringanan;`.
 
-- [ ] **Step 4: Perbaiki gotcha referensi implisit di `app/Models/KategoriKeringanan.php`**
+- [x] **Step 4: Perbaiki gotcha referensi implisit di `app/Models/KategoriKeringanan.php`**
 
 Baca file, cari baris yang memanggil `JenisTagihanKeringanan::class` tanpa `use` statement, ganti jadi `\App\Domains\Keuangan\Models\JenisTagihanKeringanan::class` (FQCN inline).
 
-- [ ] **Step 5: Verifikasi**
+- [x] **Step 5: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihanKeringanan;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -434,13 +434,13 @@ git commit -m "refactor(keuangan): pindah model JenisTagihanKeringanan ke Domain
 **Interfaces:**
 - Produces: `App\Domains\Keuangan\Models\JenisTagihanSasaranGrup` — dipakai Task 6, 9.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/JenisTagihanSasaranGrup.php app/Domains/Keuangan/Models/JenisTagihanSasaranGrup.php
 ```
 
-- [ ] **Step 2: Ubah isi file**
+- [x] **Step 2: Ubah isi file**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/JenisTagihanSasaranGrup.php` dengan:
 
@@ -478,7 +478,7 @@ class JenisTagihanSasaranGrup extends Model
 }
 ```
 
-- [ ] **Step 3: Update seluruh file consumer**
+- [x] **Step 3: Update seluruh file consumer**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihanSasaranGrup;" --include="*.php" app database tests
@@ -486,14 +486,14 @@ grep -rln "use App\\\\Models\\\\JenisTagihanSasaranGrup;" --include="*.php" app 
 
 Di SETIAP file hasil grep, ganti `use App\Models\JenisTagihanSasaranGrup;` → `use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;`.
 
-- [ ] **Step 4: Verifikasi**
+- [x] **Step 4: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihanSasaranGrup;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -511,13 +511,13 @@ git commit -m "refactor(keuangan): pindah model JenisTagihanSasaranGrup ke Domai
 **Interfaces:**
 - Produces: `App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria` — dipakai Task 9.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/JenisTagihanSasaranKriteria.php app/Domains/Keuangan/Models/JenisTagihanSasaranKriteria.php
 ```
 
-- [ ] **Step 2: Ubah isi file**
+- [x] **Step 2: Ubah isi file**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/JenisTagihanSasaranKriteria.php` dengan:
 
@@ -549,7 +549,7 @@ class JenisTagihanSasaranKriteria extends Model
 }
 ```
 
-- [ ] **Step 3: Update seluruh file consumer**
+- [x] **Step 3: Update seluruh file consumer**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihanSasaranKriteria;" --include="*.php" app database tests
@@ -557,14 +557,14 @@ grep -rln "use App\\\\Models\\\\JenisTagihanSasaranKriteria;" --include="*.php" 
 
 Di SETIAP file hasil grep, ganti `use App\Models\JenisTagihanSasaranKriteria;` → `use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;`.
 
-- [ ] **Step 4: Verifikasi**
+- [x] **Step 4: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihanSasaranKriteria;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -583,13 +583,13 @@ git commit -m "refactor(keuangan): pindah model JenisTagihanSasaranKriteria ke D
 - Produces: `App\Domains\Keuangan\Models\TagihanItem` — dipakai Task 9.
 - `tagihan()` tetap `belongsTo(\App\Models\Tagihan::class)` — `Tagihan` TIDAK pindah (Sub-project 2), jadi ini jadi referensi lintas-domain yang WAJIB pakai FQCN inline (bukan `use`, konsisten dengan pola preseden Data Induk Sempit untuk relasi ke model di luar domain).
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/TagihanItem.php app/Domains/Keuangan/Models/TagihanItem.php
 ```
 
-- [ ] **Step 2: Ubah isi file**
+- [x] **Step 2: Ubah isi file**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/TagihanItem.php` dengan:
 
@@ -628,11 +628,11 @@ class TagihanItem extends Model
 }
 ```
 
-- [ ] **Step 3: Update `database/factories/TagihanItemFactory.php`**
+- [x] **Step 3: Update `database/factories/TagihanItemFactory.php`**
 
 Ganti `use App\Models\TagihanItem;` → `use App\Domains\Keuangan\Models\TagihanItem;`.
 
-- [ ] **Step 4: Update seluruh file consumer lain**
+- [x] **Step 4: Update seluruh file consumer lain**
 
 ```bash
 grep -rln "use App\\\\Models\\\\TagihanItem;" --include="*.php" app database tests
@@ -640,14 +640,14 @@ grep -rln "use App\\\\Models\\\\TagihanItem;" --include="*.php" app database tes
 
 Di SETIAP file hasil grep (kecuali Factory di Step 3), ganti `use App\Models\TagihanItem;` → `use App\Domains\Keuangan\Models\TagihanItem;`.
 
-- [ ] **Step 5: Verifikasi**
+- [x] **Step 5: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Models\\\\TagihanItem;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -667,13 +667,13 @@ git commit -m "refactor(keuangan): pindah model TagihanItem ke Domains\Keuangan\
 - Produces: `App\Domains\Keuangan\Models\SkemaCicilan` — model terakhir sub-project ini.
 - `tagihan()` tetap referensi ke `\App\Models\Tagihan::class` (Sub-project 2, FQCN inline). `cicilan()` tetap referensi ke `\App\Models\Cicilan::class` (Sub-project 4, FQCN inline) — DUA-DUANYA lintas-domain, DUA-DUANYA FQCN inline.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/SkemaCicilan.php app/Domains/Keuangan/Models/SkemaCicilan.php
 ```
 
-- [ ] **Step 2: Ubah isi file**
+- [x] **Step 2: Ubah isi file**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/SkemaCicilan.php` dengan:
 
@@ -719,11 +719,11 @@ class SkemaCicilan extends Model
 }
 ```
 
-- [ ] **Step 3: Update `database/factories/SkemaCicilanFactory.php`**
+- [x] **Step 3: Update `database/factories/SkemaCicilanFactory.php`**
 
 Ganti `use App\Models\SkemaCicilan;` → `use App\Domains\Keuangan\Models\SkemaCicilan;`.
 
-- [ ] **Step 4: Update seluruh file consumer lain (termasuk `TagihanController.php` yang bukan bagian migrasi ini)**
+- [x] **Step 4: Update seluruh file consumer lain (termasuk `TagihanController.php` yang bukan bagian migrasi ini)**
 
 ```bash
 grep -rln "use App\\\\Models\\\\SkemaCicilan;" --include="*.php" app database tests
@@ -731,25 +731,25 @@ grep -rln "use App\\\\Models\\\\SkemaCicilan;" --include="*.php" app database te
 
 Di SETIAP file hasil grep (kecuali Factory di Step 3), ganti `use App\Models\SkemaCicilan;` → `use App\Domains\Keuangan\Models\SkemaCicilan;`. Ini termasuk `app/Http/Controllers/Admin/TagihanController.php` — HANYA baris `use` yang diganti, method/logic di dalamnya TIDAK disentuh sama sekali (controller ini bukan bagian migrasi sub-project ini).
 
-- [ ] **Step 5: Perbaiki gotcha referensi implisit di `app/Models/Cicilan.php`**
+- [x] **Step 5: Perbaiki gotcha referensi implisit di `app/Models/Cicilan.php`**
 
 Baca file, cari baris yang memanggil `SkemaCicilan::class` tanpa `use` statement, ganti jadi `\App\Domains\Keuangan\Models\SkemaCicilan::class` (FQCN inline).
 
-- [ ] **Step 6: Verifikasi**
+- [x] **Step 6: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Models\\\\SkemaCicilan;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 7: Jalankan test scoped GABUNGAN untuk seluruh 8 model (Task 1-8 SEKARANG selesai semua)**
+- [x] **Step 7: Jalankan test scoped GABUNGAN untuk seluruh 8 model (Task 1-8 SEKARANG selesai semua)**
 
 ```bash
 php artisan test tests/Unit/TagihanSeederTest.php tests/Unit/NominalTagihanJalurSeederTest.php tests/Unit/JenisTagihanSeederTest.php tests/Feature/Keuangan/TagihanNominalResolverTest.php tests/Feature/Keuangan/JenisTagihanSasaranMatcherTest.php tests/Feature/Keuangan/JenisTagihanSasaranGrupTest.php tests/Feature/Keuangan/NominalTagihanSiswaTest.php tests/Feature/Keuangan/KeringananTest.php tests/Feature/Admin/SkemaCicilanTest.php
 ```
 Expected: semua PASS, 0 failed, 0 error. Kalau ADA yang gagal dengan "Class not found", cek lagi Task 1-8 — kemungkinan ada `use` statement yang kelewat.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -770,14 +770,14 @@ git commit -m "refactor(keuangan): pindah model SkemaCicilan ke Domains\Keuangan
 
 Isi kedua service SAAT INI (baseline — baca dulu untuk konfirmasi sebelum edit) sudah dikutip lengkap di eksplorasi spec ini; hanya `use App\Models\{JenisTagihan,JenisTagihanSasaranGrup,JenisTagihanSasaranKriteria,NominalTagihanSiswa,JenisTagihanKeringanan};` yang berubah ke `Domains\Keuangan\Models`, `use App\Models\{Siswa,SiswaKeringanan};` TETAP (di luar domain, model fondasi).
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Services/JenisTagihanSasaranMatcher.php app/Domains/Keuangan/Services/JenisTagihanSasaranMatcher.php
 git mv app/Services/TagihanNominalResolver.php app/Domains/Keuangan/Services/TagihanNominalResolver.php
 ```
 
-- [ ] **Step 2: Ubah isi `JenisTagihanSasaranMatcher.php`**
+- [x] **Step 2: Ubah isi `JenisTagihanSasaranMatcher.php`**
 
 Timpa seluruh isi `app/Domains/Keuangan/Services/JenisTagihanSasaranMatcher.php` dengan:
 
@@ -922,7 +922,7 @@ class JenisTagihanSasaranMatcher
 }
 ```
 
-- [ ] **Step 3: Ubah isi `TagihanNominalResolver.php`**
+- [x] **Step 3: Ubah isi `TagihanNominalResolver.php`**
 
 Timpa seluruh isi `app/Domains/Keuangan/Services/TagihanNominalResolver.php` dengan:
 
@@ -1021,7 +1021,7 @@ class TagihanNominalResolver
 }
 ```
 
-- [ ] **Step 4: Update seluruh file consumer**
+- [x] **Step 4: Update seluruh file consumer**
 
 ```bash
 grep -rln "use App\\\\Services\\\\JenisTagihanSasaranMatcher;" --include="*.php" app database tests
@@ -1034,21 +1034,21 @@ Di SETIAP file hasil kedua grep di atas, ganti:
 
 Ini termasuk `app/Services/TagihanBillingGenerator.php` dan `app/Http/Controllers/Admin/JenisTagihanController.php` (yang terakhir ini akan diganti total di Task 12, tapi kalau Task 9 dikerjakan sebelum Task 12, `use` statement-nya tetap harus diupdate dulu supaya tidak ada window rusak).
 
-- [ ] **Step 5: Verifikasi**
+- [x] **Step 5: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Services\\\\JenisTagihanSasaranMatcher;\|use App\\\\Services\\\\TagihanNominalResolver;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 6: Jalankan test scoped**
+- [x] **Step 6: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/JenisTagihanSasaranMatcherTest.php tests/Feature/Keuangan/TagihanNominalResolverTest.php tests/Feature/Keuangan/TagihanBillingGeneratorTest.php
 ```
 Expected: semua PASS, 0 failed, 0 error.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -1073,7 +1073,7 @@ git commit -m "refactor(keuangan): pindah JenisTagihanSasaranMatcher + TagihanNo
 
 **Catatan desain:** payload `billing` (`sasaran`/`tarif`/`keringanan`) TETAP array mentah (bukan dibungkus DTO baru) — bentuknya deeply-nested dan opsional, memaksakan DTO kaku di sini nambah kompleksitas tanpa manfaat nyata (YAGNI). `JenisTagihanData` HANYA membungkus field dasar (bukan billing).
 
-- [ ] **Step 1: Buat DTO**
+- [x] **Step 1: Buat DTO**
 
 `app/Domains/Keuangan/DataTransferObjects/JenisTagihanData.php`:
 
@@ -1141,7 +1141,7 @@ final readonly class JenisTagihanData
 
 **Catatan `toArray()`:** `array_filter` dengan `$value !== null` supaya field yang memang `null` (mis. `lembaga_id` untuk aktor non-yayasan yang tidak override) TIDAK ikut dikirim ke `update()`/`create()` — mencegah field ke-overwrite jadi `null` secara tidak sengaja. `is_active`/`bisa_dicicil` selalu `bool` (tidak pernah `null` dari `$request->boolean()`), aman selalu ikut.
 
-- [ ] **Step 2: Buat `CreateJenisTagihanAction`**
+- [x] **Step 2: Buat `CreateJenisTagihanAction`**
 
 `app/Domains/Keuangan/Actions/JenisTagihan/CreateJenisTagihanAction.php`:
 
@@ -1173,7 +1173,7 @@ final class CreateJenisTagihanAction
 }
 ```
 
-- [ ] **Step 3: Buat `SyncJenisTagihanBillingConfigAction` (dipakai Create & Update)**
+- [x] **Step 3: Buat `SyncJenisTagihanBillingConfigAction` (dipakai Create & Update)**
 
 `app/Domains/Keuangan/Actions/JenisTagihan/SyncJenisTagihanBillingConfigAction.php`:
 
@@ -1214,7 +1214,7 @@ final class SyncJenisTagihanBillingConfigAction
 }
 ```
 
-- [ ] **Step 4: Buat `UpdateJenisTagihanAction` (termasuk dispatch event `BillTypeActivated`, dipindah dari `booted()` model)**
+- [x] **Step 4: Buat `UpdateJenisTagihanAction` (termasuk dispatch event `BillTypeActivated`, dipindah dari `booted()` model)**
 
 `app/Domains/Keuangan/Actions/JenisTagihan/UpdateJenisTagihanAction.php`:
 
@@ -1258,7 +1258,7 @@ final class UpdateJenisTagihanAction
 }
 ```
 
-- [ ] **Step 5: Buat `DeleteJenisTagihanAction`**
+- [x] **Step 5: Buat `DeleteJenisTagihanAction`**
 
 `app/Domains/Keuangan/Actions/JenisTagihan/DeleteJenisTagihanAction.php`:
 
@@ -1295,7 +1295,7 @@ final class DeleteJenisTagihanAction
 }
 ```
 
-- [ ] **Step 6: Buat `ProsesJenisTagihanBillingAction`**
+- [x] **Step 6: Buat `ProsesJenisTagihanBillingAction`**
 
 `app/Domains/Keuangan/Actions/JenisTagihan/ProsesJenisTagihanBillingAction.php`:
 
@@ -1347,7 +1347,7 @@ final class ProsesJenisTagihanBillingAction
 }
 ```
 
-- [ ] **Step 7: Buat `SimpanNominalJenisTagihanAction`**
+- [x] **Step 7: Buat `SimpanNominalJenisTagihanAction`**
 
 `app/Domains/Keuangan/Actions/JenisTagihan/SimpanNominalJenisTagihanAction.php`:
 
@@ -1382,7 +1382,7 @@ final class SimpanNominalJenisTagihanAction
 }
 ```
 
-- [ ] **Step 8: Commit (belum ada test — Action ini belum dikonsumsi controller sampai Task 12, test scoped baru masuk akal setelah controller jadi)**
+- [x] **Step 8: Commit (belum ada test — Action ini belum dikonsumsi controller sampai Task 12, test scoped baru masuk akal setelah controller jadi)**
 
 ```bash
 git add -A
@@ -1399,28 +1399,28 @@ git commit -m "feat(keuangan): buat DTO + 6 Action dari business logic JenisTagi
 **Interfaces:**
 - Tidak ada file baru — task ini murni verifikasi.
 
-- [ ] **Step 1: Verifikasi gabungan seluruh 8 model — tidak ada `use App\Models\{X}` tersisa**
+- [x] **Step 1: Verifikasi gabungan seluruh 8 model — tidak ada `use App\Models\{X}` tersisa**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihan;\|use App\\\\Models\\\\NominalTagihanJalur;\|use App\\\\Models\\\\NominalTagihanSiswa;\|use App\\\\Models\\\\JenisTagihanKeringanan;\|use App\\\\Models\\\\JenisTagihanSasaranGrup;\|use App\\\\Models\\\\JenisTagihanSasaranKriteria;\|use App\\\\Models\\\\TagihanItem;\|use App\\\\Models\\\\SkemaCicilan;" --include="*.php" app database tests
 ```
 Expected: KOSONG total.
 
-- [ ] **Step 2: Verifikasi gabungan — tidak ada referensi implisit `X::class` tersisa di `app/Models/`**
+- [x] **Step 2: Verifikasi gabungan — tidak ada referensi implisit `X::class` tersisa di `app/Models/`**
 
 ```bash
 grep -rn "JenisTagihan::class\|NominalTagihanJalur::class\|NominalTagihanSiswa::class\|JenisTagihanKeringanan::class\|JenisTagihanSasaranGrup::class\|JenisTagihanSasaranKriteria::class\|TagihanItem::class\|SkemaCicilan::class" --include="*.php" app/Models
 ```
 Expected: KOSONG total (semua sudah FQCN di Task 1/4/8, atau sudah sama-namespace jadi tidak perlu grep-catch).
 
-- [ ] **Step 3: Verifikasi 8 file model lama sudah tidak ada di lokasi lama**
+- [x] **Step 3: Verifikasi 8 file model lama sudah tidak ada di lokasi lama**
 
 ```bash
 ls app/Models/JenisTagihan.php app/Models/NominalTagihanJalur.php app/Models/NominalTagihanSiswa.php app/Models/JenisTagihanKeringanan.php app/Models/JenisTagihanSasaranGrup.php app/Models/JenisTagihanSasaranKriteria.php app/Models/TagihanItem.php app/Models/SkemaCicilan.php 2>&1
 ```
 Expected: error "No such file or directory" untuk ke-8-nya.
 
-- [ ] **Step 4: Kalau ada temuan yang tidak sesuai Step 1-3, STOP dan perbaiki sebelum lanjut Task 12.**
+- [x] **Step 4: Kalau ada temuan yang tidak sesuai Step 1-3, STOP dan perbaiki sebelum lanjut Task 12.**
 
 Tidak ada commit di task ini — murni gate verifikasi sebelum masuk ke controller.
 
@@ -1440,7 +1440,7 @@ Tidak ada commit di task ini — murni gate verifikasi sebelum masuk ke controll
 
 Isi controller SAAT INI (baseline, 445 baris — SUDAH dikutip lengkap di eksplorasi/plan-writing sebelumnya, baca ulang `git show ed25f74:app/Http/Controllers/Admin/JenisTagihanController.php` untuk konfirmasi persis sebelum edit). Kalau isi file yang kamu baca BEDA dari itu, STOP dan laporkan ke user.
 
-- [ ] **Step 1: Cek dulu apakah ada `assertViewIs` untuk view jenis-tagihan di test manapun**
+- [x] **Step 1: Cek dulu apakah ada `assertViewIs` untuk view jenis-tagihan di test manapun**
 
 ```bash
 grep -rn "assertViewIs('admin\.jenis-tagihan" tests
@@ -1448,7 +1448,7 @@ grep -rn "assertViewIs('admin\.jenis-tagihan" tests
 
 Catat hasilnya — kalau ADA, file & baris itu WAJIB diupdate di Step 8 nanti (ganti ke `portals.lembaga.keuangan.jenis-tagihan.*`). Kalau KOSONG, tidak ada yang perlu diupdate untuk ini.
 
-- [ ] **Step 2: Buat controller baru di namespace `Lembaga\Keuangan\`**
+- [x] **Step 2: Buat controller baru di namespace `Lembaga\Keuangan\`**
 
 Buat `app/Http/Controllers/Lembaga/Keuangan/JenisTagihanController.php`:
 
@@ -1832,13 +1832,13 @@ class JenisTagihanController extends BaseController
 - `simpanNominal()` — loop `foreach` pindah ke `SimpanNominalJenisTagihanAction`, controller cuma validasi lalu panggil Action.
 - `resolveLembagaIdOrFail()`, `referenceData()`, `hasBillingPayload()`, `baseRules()`, `billingRules()`, `findDuplicateKeringanan()`, `errorResponse()` — TETAP private method di controller (bukan Action) karena murni terkait HTTP request-parsing/reference-data-untuk-view, bukan business logic domain inti. Ini konsisten dengan preseden (`MataPelajaranController` di Data Induk Sempit juga menyisakan beberapa private helper HTTP-layer di controller).
 
-- [ ] **Step 3: Hapus controller lama**
+- [x] **Step 3: Hapus controller lama**
 
 ```bash
 git rm app/Http/Controllers/Admin/JenisTagihanController.php
 ```
 
-- [ ] **Step 4: Pindahkan 5 view**
+- [x] **Step 4: Pindahkan 5 view**
 
 ```bash
 mkdir -p resources/views/portals/lembaga/keuangan/jenis-tagihan
@@ -1849,7 +1849,7 @@ git mv resources/views/admin/jenis-tagihan/form.blade.php resources/views/portal
 git mv resources/views/admin/jenis-tagihan/nominal.blade.php resources/views/portals/lembaga/keuangan/jenis-tagihan/nominal.blade.php
 ```
 
-- [ ] **Step 5: Perbaiki 2 `@include` yang sudah diketahui (JANGAN blanket sed, edit manual persis 2 baris ini)**
+- [x] **Step 5: Perbaiki 2 `@include` yang sudah diketahui (JANGAN blanket sed, edit manual persis 2 baris ini)**
 
 Di `resources/views/portals/lembaga/keuangan/jenis-tagihan/form.blade.php`, cari baris:
 ```blade
@@ -1871,7 +1871,7 @@ Ganti jadi:
 
 Baris `route('admin.jenis-tagihan...')` di dalam ke-5 view TIDAK diubah — nama route tetap sama.
 
-- [ ] **Step 6: Update `routes/admin/keuangan.php`**
+- [x] **Step 6: Update `routes/admin/keuangan.php`**
 
 Ganti baris:
 ```php
@@ -1884,7 +1884,7 @@ use App\Http\Controllers\Lembaga\Keuangan\JenisTagihanController;
 
 Seluruh baris route `jenis-tagihan.*` (baris 12-20 di baseline) TIDAK diubah.
 
-- [ ] **Step 7: Verifikasi tidak ada view/route yang salah path**
+- [x] **Step 7: Verifikasi tidak ada view/route yang salah path**
 
 ```bash
 grep -rn "route('portals\." resources/views/portals
@@ -1896,11 +1896,11 @@ php artisan route:list --name=jenis-tagihan
 ```
 Expected: 9 route (`create, index, store, edit, update, destroy, proses, nominal, nominal.store`), nama SAMA seperti sebelumnya (prefix `admin.jenis-tagihan.*`), Action mengarah ke `Lembaga\Keuangan\JenisTagihanController`.
 
-- [ ] **Step 8: Update `assertViewIs` kalau ditemukan di Step 1 (kondisional)**
+- [x] **Step 8: Update `assertViewIs` kalau ditemukan di Step 1 (kondisional)**
 
 Kalau Step 1 menemukan hasil grep tidak kosong, edit baris itu: ganti string view lama (`admin.jenis-tagihan.*`) jadi `portals.lembaga.keuangan.jenis-tagihan.*` yang sesuai. Kalau Step 1 kosong, skip step ini.
 
-- [ ] **Step 9: Jalankan test scoped**
+- [x] **Step 9: Jalankan test scoped**
 
 ```bash
 grep -rln "JenisTagihan" tests/Feature/Admin --include="*.php" -l
@@ -1913,7 +1913,7 @@ php artisan test <daftar file hasil grep di atas, dipisah spasi>
 ```
 Expected: semua PASS, 0 failed, 0 error.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add -A
@@ -1927,7 +1927,7 @@ git commit -m "refactor(keuangan): refactor JenisTagihanController jadi Action/D
 **Files:**
 - Create: `.agents/logs/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md`
 
-- [ ] **Step 1: Jalankan test scoped gabungan luas (seluruh area Keuangan yang tersentuh)**
+- [x] **Step 1: Jalankan test scoped gabungan luas (seluruh area Keuangan yang tersentuh)**
 
 ```bash
 php artisan test tests/Feature/Keuangan tests/Feature/Admin tests/Unit tests/Feature/Spmb tests/Feature/Portal
@@ -1935,18 +1935,18 @@ php artisan test tests/Feature/Keuangan tests/Feature/Admin tests/Unit tests/Fea
 
 Catat jumlah pasti passed/failed. **Flaky yang sudah dikenal**: test yang memakai `now()` untuk cek hari libur mingguan SDM (`ScanQrAttendanceActionTest`, `AttendanceControllerTest`) bisa gagal kalau kebetulan dijalankan hari Minggu — kalau itu SATU-SATUNYA yang gagal, jalankan ulang sendirian untuk konfirmasi, BUKAN regresi dari sub-project ini.
 
-- [ ] **Step 2: Verifikasi gabungan final (ulangi Task 11 sekali lagi, pastikan Task 12 tidak menambah referensi lama baru)**
+- [x] **Step 2: Verifikasi gabungan final (ulangi Task 11 sekali lagi, pastikan Task 12 tidak menambah referensi lama baru)**
 
 ```bash
 grep -rln "use App\\\\Models\\\\JenisTagihan;\|use App\\\\Models\\\\NominalTagihanJalur;\|use App\\\\Models\\\\NominalTagihanSiswa;\|use App\\\\Models\\\\JenisTagihanKeringanan;\|use App\\\\Models\\\\JenisTagihanSasaranGrup;\|use App\\\\Models\\\\JenisTagihanSasaranKriteria;\|use App\\\\Models\\\\TagihanItem;\|use App\\\\Models\\\\SkemaCicilan;\|use App\\\\Services\\\\JenisTagihanSasaranMatcher;\|use App\\\\Services\\\\TagihanNominalResolver;" --include="*.php" app database tests
 ```
 Expected: KOSONG total.
 
-- [ ] **Step 3: Minta izin user untuk full test suite**
+- [x] **Step 3: Minta izin user untuk full test suite**
 
 Tanya ke user: "Task 1-12 selesai, test scoped semua hijau. Boleh saya jalankan full test suite (`php artisan test`) untuk verifikasi akhir?" — TUNGGU jawaban eksplisit. JANGAN jalankan otomatis tanpa izin.
 
-- [ ] **Step 4: Jalankan full suite (HANYA setelah izin didapat)**
+- [x] **Step 4: Jalankan full suite (HANYA setelah izin didapat)**
 
 ```bash
 php artisan test
@@ -1954,15 +1954,15 @@ php artisan test
 
 Catat angka PASTI passed/failed/duration.
 
-- [ ] **Step 5: Tulis handoff log**
+- [x] **Step 5: Tulis handoff log**
 
 Buat `.agents/logs/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md` (Bahasa Indonesia): ringkasan tiap task (1-12) dengan commit hash, hasil test dengan angka PASTI dari Step 1 dan Step 4 (JANGAN dicampur/disatukan), hasil Step 2 (harus "kosong"). Sebutkan eksplisit kalau ada file di luar daftar yang disebutkan plan yang ternyata perlu disentuh (jangan diam-diam seperti insiden Data Induk Sempit sebelumnya) — laporkan sebagai temuan terpisah di log, bukan disembunyikan di 1 baris netral tabel commit.
 
-- [ ] **Step 6: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
+- [x] **Step 6: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
 
 Tambahkan baris baru di tabel Sub-Task untuk "Migrasi Domain Keuangan Sub-project 1 (Konfigurasi & Generasi Tagihan)" dengan link ke spec/plan/log, status 🟢 SELESAI.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add .agents/logs/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md .agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md
