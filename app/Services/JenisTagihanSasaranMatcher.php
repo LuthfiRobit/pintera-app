@@ -5,7 +5,7 @@ namespace App\Services;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
-use App\Models\JenisTagihanSasaranKriteria;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Builder;

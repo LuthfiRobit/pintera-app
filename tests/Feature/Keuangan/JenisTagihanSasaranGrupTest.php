@@ -2,7 +2,7 @@
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
-use App\Models\JenisTagihanSasaranKriteria;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 
 it('stores a sasaran grup with AND-ed criteria rows under one jenis_tagihan', function () {
     $jenisTagihan = JenisTagihan::factory()->create();

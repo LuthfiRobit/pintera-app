@@ -4,7 +4,7 @@
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanKeringanan;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
-use App\Models\JenisTagihanSasaranKriteria;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 use App\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanSiswa;
 use App\Models\Siswa;
