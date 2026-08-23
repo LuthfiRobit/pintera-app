@@ -6,6 +6,7 @@ use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Domains\Keuangan\Services\TagihanBillingGenerator as BillingGenerator;
 use App\Models\Yayasan;
@@ -110,7 +111,7 @@ it('replaces sasaran on update without touching already-generated tagihan for th
 
     $log = app(BillingGenerator::class)->generate($jenisTagihan, 'manual');
     expect($log->bills_generated)->toBeGreaterThanOrEqual(0);
-    $existingTagihanCount = \App\Models\Tagihan::where('jenis_tagihan_id', $jenisTagihan->id)->count();
+    $existingTagihanCount = Tagihan::where('jenis_tagihan_id', $jenisTagihan->id)->count();
 
     $response = $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $jenisTagihan), [
         'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false,
@@ -121,7 +122,7 @@ it('replaces sasaran on update without touching already-generated tagihan for th
     ]);
 
     $response->assertRedirect(route('admin.jenis-tagihan.index'));
-    expect(\App\Models\Tagihan::where('jenis_tagihan_id', $jenisTagihan->id)->count())->toBe($existingTagihanCount);
+    expect(Tagihan::where('jenis_tagihan_id', $jenisTagihan->id)->count())->toBe($existingTagihanCount);
     $newGrup = $jenisTagihan->sasaranGrup()->where('tipe', 'sasaran')->first();
     expect($newGrup->kriteria->first()->value)->toBe(['lulus']);
 });

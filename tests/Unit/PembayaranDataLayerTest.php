@@ -39,8 +39,9 @@ it('computes bisaDicicil/maksCicilan from the cheapest cicilable item, not a sto
     TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => $jenisTidakBisaDicicil->id, 'jumlah' => 100000]);
     TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => $jenisBisaDicicil->id, 'jumlah' => 400000]);
 
-    expect($tagihan->bisaDicicil())->toBeTrue();
-    expect($tagihan->maksCicilan())->toBe(3);
+    $eligibility = app(\App\Domains\Keuangan\Services\TagihanCicilanEligibilityService::class);
+    expect($eligibility->bisaDicicil($tagihan))->toBeTrue();
+    expect($eligibility->maksCicilan($tagihan))->toBe(3);
 });
 
 it('reports isAktif false for a diterima pendaftaran with no lunas payment at all', function () {
