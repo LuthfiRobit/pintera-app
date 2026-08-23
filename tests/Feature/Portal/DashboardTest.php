@@ -158,8 +158,8 @@ it('shows the batas gelombang date on the progress card', function () {
 
 it('shows the biaya pendaftaran nominal without a payment-status claim on the progress card', function () {
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
-    $jenisTagihan = \App\Models\JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran']);
-    \App\Models\NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
+    $jenisTagihan = \App\Domains\Keuangan\Models\JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran']);
+    \App\Domains\Keuangan\Models\NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
     $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
     $response = $this->get(route('portal.dashboard'));

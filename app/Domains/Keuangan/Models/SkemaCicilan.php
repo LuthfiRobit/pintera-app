@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
+use App\Models\User;
+use Database\Factories\SkemaCicilanFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,18 +13,23 @@ class SkemaCicilan extends Model
 {
     use HasFactory;
 
+    protected static function newFactory(): SkemaCicilanFactory
+    {
+        return SkemaCicilanFactory::new();
+    }
+
     protected $table = 'skema_cicilan';
 
     protected $fillable = ['tagihan_id', 'jumlah_termin', 'dibuat_oleh', 'dibuat_oleh_user_id'];
 
     public function tagihan(): BelongsTo
     {
-        return $this->belongsTo(Tagihan::class);
+        return $this->belongsTo(\App\Models\Tagihan::class);
     }
 
     public function cicilan(): HasMany
     {
-        return $this->hasMany(Cicilan::class)->orderBy('urutan');
+        return $this->hasMany(\App\Models\Cicilan::class)->orderBy('urutan');
     }
 
     public function dibuatOlehUser(): BelongsTo

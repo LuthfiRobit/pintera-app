@@ -5,7 +5,7 @@ use App\Models\Cicilan;
 use App\Models\Lembaga;
 use App\Models\Pembayaran;
 use App\Models\Pendaftaran;
-use App\Models\SkemaCicilan;
+use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Models\Tagihan;
 use App\Models\User;
 use App\Services\PembayaranService;

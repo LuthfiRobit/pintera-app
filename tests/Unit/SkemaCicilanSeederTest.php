@@ -3,7 +3,7 @@
 
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
-use App\Models\SkemaCicilan;
+use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Models\Tagihan;
 use App\Models\Yayasan;
 use Database\Seeders\CalonMuridSeeder;

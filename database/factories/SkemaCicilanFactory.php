@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\SkemaCicilan;
+use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Models\Tagihan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

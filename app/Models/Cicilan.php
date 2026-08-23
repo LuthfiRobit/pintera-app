@@ -24,7 +24,7 @@ class Cicilan extends Model
 
     public function skemaCicilan(): BelongsTo
     {
-        return $this->belongsTo(SkemaCicilan::class);
+        return $this->belongsTo(\App\Domains\Keuangan\Models\SkemaCicilan::class);
     }
 
     public function pembayaran(): HasMany

@@ -6,7 +6,7 @@ use App\Models\Lembaga;
 use App\Models\Pembayaran;
 use App\Models\Pendaftaran;
 use App\Models\Role;
-use App\Models\SkemaCicilan;
+use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Models\TahunAjaran;
 use App\Models\Tagihan;
 use App\Models\User;

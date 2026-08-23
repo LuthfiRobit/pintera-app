@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Cicilan;
 use App\Models\Pendaftaran;
-use App\Models\SkemaCicilan;
+use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Models\Tagihan;
 use App\Services\PembayaranService;
 use App\Services\TagihanGenerator;

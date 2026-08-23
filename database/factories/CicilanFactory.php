@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Cicilan;
-use App\Models\SkemaCicilan;
+use App\Domains\Keuangan\Models\SkemaCicilan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Cicilan> */
