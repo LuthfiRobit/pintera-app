@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Akademik\Models\CatatanWaliKelas;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -157,7 +158,7 @@ it('rejects updating catatan for a siswa the guru is not wali kelas of', functio
 
 it('generates a narasi draft via AJAX for a siswa with nilai', function () {
     ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
-    $mapel = \App\Models\MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
     $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
     $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'membaca lancar', 'kktp_minimal' => 75]);
     \App\Domains\Akademik\Models\NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 88]);

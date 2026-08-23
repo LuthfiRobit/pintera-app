@@ -48,7 +48,7 @@ class JadwalPelajaran extends Model
 
     public function mataPelajaran(): BelongsTo
     {
-        return $this->belongsTo(MataPelajaran::class);
+        return $this->belongsTo(\App\Domains\Akademik\Models\MataPelajaran::class);
     }
 
     public function guru(): BelongsTo

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Domains\Akademik\Models\KomponenPenilaian;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

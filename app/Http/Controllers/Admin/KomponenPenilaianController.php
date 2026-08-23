@@ -8,7 +8,7 @@ use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Http\Requests\Akademik\StoreKomponenPenilaianRequest;
 use App\Http\Requests\Akademik\UpdateKomponenPenilaianRequest;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;

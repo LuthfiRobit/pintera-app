@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

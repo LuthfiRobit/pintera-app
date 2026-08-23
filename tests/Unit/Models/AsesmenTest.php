@@ -5,7 +5,7 @@ use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Models\Guru;
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

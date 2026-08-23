@@ -16,7 +16,7 @@ use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Semester;
 use App\Models\TahunAjaran;

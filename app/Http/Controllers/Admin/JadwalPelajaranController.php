@@ -17,7 +17,7 @@ use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Scopes\TenantScope;
 use App\Models\Semester;
 use App\Models\TahunAjaran;

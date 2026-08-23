@@ -12,7 +12,7 @@ use App\Http\Requests\Akademik\StoreAsesmenRequest;
 use App\Http\Requests\Akademik\UpdateNilaiSiswaRequest;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;

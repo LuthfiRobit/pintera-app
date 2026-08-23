@@ -30,7 +30,7 @@ use App\Domains\Workflow\Actions\ProcessApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Semester;

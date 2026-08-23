@@ -8,7 +8,7 @@ use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use Illuminate\Database\Seeder;

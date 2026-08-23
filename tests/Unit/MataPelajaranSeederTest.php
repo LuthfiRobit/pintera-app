@@ -2,7 +2,7 @@
 // tests/Unit/MataPelajaranSeederTest.php
 
 use App\Models\Lembaga;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Yayasan;
 use Database\Seeders\LembagaSeeder;
 use Database\Seeders\MataPelajaranSeeder;

@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Akademik\Models;
 
 use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Lembaga;
+use Database\Factories\MataPelajaranFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +15,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MataPelajaran extends Model
 {
     use HasFactory, BelongsToTenant;
+
+    protected static function newFactory(): MataPelajaranFactory
+    {
+        return MataPelajaranFactory::new();
+    }
 
     protected $table = 'mata_pelajaran';
 

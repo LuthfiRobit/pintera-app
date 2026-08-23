@@ -5,7 +5,7 @@ namespace App\Domains\Akademik\Models;
 use App\Domains\Akademik\Enums\ElemenCapaianPembelajaran;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Lembaga;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Database\Factories\KomponenPenilaianFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

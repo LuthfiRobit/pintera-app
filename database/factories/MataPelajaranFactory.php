@@ -6,7 +6,7 @@ use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
 use App\Models\Lembaga;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class MataPelajaranFactory extends Factory

@@ -7,7 +7,7 @@ use App\Models\Concerns\BelongsToTenant;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Models\MataPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Database\Factories\AsesmenFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
