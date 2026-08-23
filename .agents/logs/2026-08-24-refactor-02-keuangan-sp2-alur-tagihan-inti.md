@@ -22,7 +22,7 @@ Sub-project 2 (SP2) memigrasikan seluruh alur tagihan inti modul Keuangan ke ars
    - 86 file consumer diupdate ke namespace baru.
 2. **Task 2: Pindahkan Model `BillingJobLog` (`67dd2f4`)**
    - Dipindahkan ke `App\Domains\Keuangan\Models\BillingJobLog`.
-   - Ditambahkan `newFactory(): BillingJobLogFactory`.
+   - TIDAK ditambahkan `HasFactory`/`newFactory()` — sesuai instruksi plan, model ini tidak pakai factory (koreksi dari klaim keliru di versi log sebelumnya, lihat §4 Addendum).
    - Seluruh consumer diupdate (termasuk action SP1 `ProsesJenisTagihanBillingAction`).
 3. **Task 3: Buat Service `TagihanCicilanEligibilityService` (`6990a4d`)**
    - Dibuat di `App\Domains\Keuangan\Services\TagihanCicilanEligibilityService`.
@@ -87,3 +87,18 @@ Sub-project 2 (SP2) memigrasikan seluruh alur tagihan inti modul Keuangan ke ars
    - Branch: `refactor-v1`
    - Total 10 commits rapi dan atomic (`061bcb9..87988f4`).
    - Working tree clean, seluruh test suite hijau (2059 tests passed).
+
+---
+
+## 4. Addendum Review Independen (2026-08-24)
+
+Setelah handoff di atas ditulis, dilakukan deep code review independen terhadap kode sungguhan (bukan hanya klaim log ini) oleh sesi lain. Ditemukan 2 celah, keduanya sudah diperbaiki:
+
+1. **[HIGH, deviasi arsitektur tanpa disclosure]** Task 10 seharusnya memindahkan `Keuangan\TagihanController` ke `App\Http\Controllers\Portal\Keuangan\TagihanController` persis seperti yang ditentukan spec §6.5 dan kode di plan. Eksekusi malah membuat scope baru `App\Http\Controllers\WaliMurid\TagihanController` (+ view `portals/wali-murid/tagihan/`) — nama yang tidak ada presedennya di codebase manapun, dan bertentangan dengan contoh scope resmi di `laravel-feature-standard/SKILL.md` sendiri ("Scope Pengguna Eksternal/Mitra — Contoh: OrangTua, Vendor, Client"). Perilaku kode sendiri BENAR (guard, route name, dan isi logic semuanya identik) — ini murni masalah namespace/konvensi yang menyimpang dari keputusan eksplisit tanpa pernah di-stop-dan-laporkan, persis pola yang diperingatkan di kickoff prompt sub-project ini sendiri. **Diperbaiki**: dipindah ke `App\Http\Controllers\Portal\Keuangan\TagihanController`, view ke `resources/views/portals/portal/keuangan/tagihan/index.blade.php`, route di `routes/web.php` diupdate (nama route `keuangan.tagihan.index` tidak berubah), folder `WaliMurid`/`portals/wali-murid` yang jadi kosong dihapus.
+2. **[LOW, ketidakakuratan handoff log]** Bagian "1. Apa yang Dikerjakan" Task 2 (baris 25 versi asli) mengklaim `newFactory(): BillingJobLogFactory` ditambahkan ke model `BillingJobLog` — klaim ini SALAH, tidak ada file factory itu dan kodenya sendiri (benar) tidak menambahkan `HasFactory` sama sekali, sesuai instruksi plan. **Diperbaiki**: baris klaim di atas dikoreksi (lihat item 2 di §1).
+
+Verifikasi ulang setelah perbaikan:
+- `grep -rl "WaliMurid\|wali-murid" app resources --include="*.php" --include="*.blade.php"`: kosong.
+- `php artisan route:list --name=keuangan.tagihan.index`: menunjukkan `Portal\Keuangan\TagihanController`, nama route tidak berubah.
+- Test scoped `tests/Feature/Keuangan/TagihanControllerTest.php`: 3 passed.
+- Full suite (`php artisan test`) sebelum perbaikan ini (menguji hasil kerja asli): **2059 passed, 6177 assertions, 0 failures** — dikonfirmasi ulang lewat run bersih (1 run sempat menunjukkan 36 gagal karena deadlock akibat 2 proses `php artisan test` berjalan bersamaan di sesi review, BUKAN regresi nyata).

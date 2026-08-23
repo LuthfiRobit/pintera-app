@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\WaliMurid;
+namespace App\Http\Controllers\Portal\Keuangan;
 
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Http\Controllers\Controller;
@@ -28,7 +28,7 @@ class TagihanController extends Controller
 
         $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, false);
 
-        return view('portals.wali-murid.tagihan.index', [
+        return view('portals.portal.keuangan.tagihan.index', [
             'activeSiswa' => $activeSiswa,
             'tagihans' => $tagihans,
             'autoDebitEnabled' => $autoDebitEnabled,
