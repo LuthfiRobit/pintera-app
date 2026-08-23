@@ -1,16 +1,15 @@
 <?php
-// app/Http/Controllers/Keuangan/TagihanController.php
 
-namespace App\Http\Controllers\Keuangan;
+namespace App\Http\Controllers\WaliMurid;
 
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Http\Controllers\Controller;
 use App\Models\Scopes\TenantScope;
 use App\Models\SystemSetting;
-use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
 
-class TagihanController extends BaseController
+class TagihanController extends Controller
 {
     public function index(Request $request): View
     {
@@ -29,7 +28,7 @@ class TagihanController extends BaseController
 
         $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, false);
 
-        return view('keuangan.tagihan.index', [
+        return view('portals.wali-murid.tagihan.index', [
             'activeSiswa' => $activeSiswa,
             'tagihans' => $tagihans,
             'autoDebitEnabled' => $autoDebitEnabled,
