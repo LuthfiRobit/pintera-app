@@ -4,7 +4,7 @@
 namespace App\Services;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\NominalTagihanJalur;
+use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\Pendaftaran;
 use App\Models\Tagihan;
 use App\Models\TagihanItem;

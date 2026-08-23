@@ -3,7 +3,7 @@
 
 use App\Models\Cicilan;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\NominalTagihanJalur;
+use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
 use App\Models\TagihanItem;

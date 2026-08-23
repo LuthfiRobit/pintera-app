@@ -5,7 +5,7 @@ use App\Models\GelombangPpdb;
 use App\Models\JalurPpdb;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
-use App\Models\NominalTagihanJalur;
+use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
 

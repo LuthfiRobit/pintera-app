@@ -4,7 +4,7 @@ namespace Database\Factories;
 
 use App\Models\JalurPpdb;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\NominalTagihanJalur;
+use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<NominalTagihanJalur> */
