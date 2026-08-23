@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/KaryawanDashboardTest.php
 
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 use App\Services\AkunKaryawanGenerator;

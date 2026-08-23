@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Admin/JenisKaryawanMasterCrudTest.php
 
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Role;

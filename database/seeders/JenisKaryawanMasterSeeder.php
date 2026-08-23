@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use Illuminate\Database\Seeder;
 
 class JenisKaryawanMasterSeeder extends Seeder

@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\User;

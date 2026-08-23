@@ -1,7 +1,7 @@
 <?php
 // tests/Unit/JenisKaryawanMasterSeederTest.php
 
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use Database\Seeders\JenisKaryawanMasterSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

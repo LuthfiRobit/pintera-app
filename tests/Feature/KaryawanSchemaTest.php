@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Karyawan;
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;

@@ -3,7 +3,7 @@
 namespace App\Domains\Sdm\Models;
 
 use App\Models\Concerns\BelongsToTenant;
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 use Illuminate\Database\Eloquent\Model;

@@ -56,7 +56,7 @@ class Karyawan extends Model
 
     public function jenisKaryawan(): BelongsTo
     {
-        return $this->belongsTo(JenisKaryawanMaster::class, 'jenis_karyawan_id');
+        return $this->belongsTo(\App\Domains\Sdm\Models\JenisKaryawanMaster::class, 'jenis_karyawan_id');
     }
 
     public function attendanceEvents(): MorphMany

@@ -2,7 +2,7 @@
 // tests/Feature/Admin/KaryawanCrudTest.php
 
 use App\Models\Karyawan;
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;

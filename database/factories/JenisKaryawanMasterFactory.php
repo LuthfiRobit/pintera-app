@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class JenisKaryawanMasterFactory extends Factory

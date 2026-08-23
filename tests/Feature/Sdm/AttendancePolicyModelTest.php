@@ -2,7 +2,7 @@
 // tests/Feature/Sdm/AttendancePolicyModelTest.php
 
 use App\Domains\Sdm\Models\AttendancePolicy;
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Lembaga;
 use App\Models\Yayasan;
 

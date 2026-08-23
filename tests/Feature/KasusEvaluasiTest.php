@@ -3,7 +3,7 @@
 
 use App\Domains\Kasus\Enums\StatusKasus;
 use App\Models\Guru;
-use App\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusEvaluasi;
