@@ -98,6 +98,16 @@
         },
         togglePenugasanHari(day) {
             this.formPenugasan.hari_kerja = this.formPenugasan.hari_kerja.includes(day) ? this.formPenugasan.hari_kerja.filter((d) => d !== day) : [...this.formPenugasan.hari_kerja, day];
+        },
+        showKuotaModal: false,
+        editingKuota: null,
+        formKuota: { jatah_hari_per_tahun: 12, is_nasional: false },
+        openKuotaModal(kuota = null, nasional = false) {
+            this.editingKuota = kuota;
+            this.formKuota = kuota
+                ? { jatah_hari_per_tahun: kuota.jatah_hari_per_tahun, is_nasional: kuota.lembaga_id === null }
+                : { jatah_hari_per_tahun: 12, is_nasional: nasional };
+            this.showKuotaModal = true;
         }
     }">
         
@@ -178,6 +188,18 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
                     <span>Shift Bergilir</span>
+                </button>
+
+                <button 
+                    type="button" 
+                    @click="setTab('kuota')" 
+                    :class="tab === 'kuota' ? 'bg-brand-50 text-brand-700 font-semibold shadow-2xs border border-brand-200' : 'text-gray-600 hover:bg-gray-50 border border-transparent'" 
+                    class="rounded-xl px-4 py-2 text-xs transition whitespace-nowrap flex items-center gap-2"
+                >
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <span>Kuota Cuti</span>
                 </button>
             </div>
         </div>
@@ -503,6 +525,94 @@
                         </div>
                     @endforelse
                 </div>
+            </div>
+        </div>
+
+        {{-- Tab 5: Kuota Cuti --}}
+        <div x-show="tab === 'kuota'" x-cloak class="space-y-4">
+            <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+                <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                    <div>
+                        <h2 class="font-display text-sm font-bold text-gray-900">Kuota Cuti Tahunan</h2>
+                        <p class="mt-0.5 text-xs text-gray-500">Jatah hari Cuti per tahun kalender. Hanya berlaku untuk kategori Cuti — Izin dan Sakit tidak dibatasi. Tanpa kuota terkonfigurasi, pengajuan Cuti tidak dibatasi sama sekali.</p>
+                    </div>
+                    @can('kehadiran-sdm.kelola-konfigurasi')
+                        <button type="button" @click="openKuotaModal(null, false)" class="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-brand-700 transition active:scale-[0.98]">
+                            <span>+ Tambah Kuota Cuti</span>
+                        </button>
+                    @endcan
+                </div>
+
+                <div class="mt-3 divide-y divide-gray-100">
+                    @forelse ($kuotaCutiList as $kuota)
+                        <div class="flex items-center justify-between py-3">
+                            <div>
+                                <p class="text-xs font-bold text-gray-900">
+                                    {{ $kuota->lembaga_id === null ? 'Semua Pegawai (Flat)' : 'Semua Pegawai Lembaga Ini (Flat)' }}
+                                    @if ($kuota->lembaga_id === null)
+                                        <span class="ml-1 inline-flex items-center rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 border border-indigo-200">Nasional</span>
+                                    @endif
+                                </p>
+                                <p class="text-[11px] text-gray-500 font-mono mt-0.5">{{ $kuota->jatah_hari_per_tahun }} hari / tahun</p>
+                            </div>
+                            @can('kehadiran-sdm.kelola-konfigurasi')
+                                <div class="flex items-center gap-2">
+                                    <button type="button" @click="openKuotaModal({{ $kuota->toJson() }})" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-brand-200 bg-brand-50 text-xs font-semibold text-brand-700 hover:bg-brand-100 transition shadow-2xs">Edit</button>
+                                    <form 
+                                        method="POST" 
+                                        action="{{ route('admin.kehadiran-sdm.kuota-cuti.destroy', $kuota) }}?tab=kuota" 
+                                        @submit.prevent="confirmDialog('Hapus Kuota Cuti?', 'Apakah Anda yakin ingin menghapus konfigurasi kuota cuti ini?', { confirmLabel: 'Ya, Hapus Kuota', isDanger: true }).then(confirmed => { if (confirmed) $el.submit() })"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition shadow-2xs">Hapus</button>
+                                    </form>
+                                </div>
+                            @endcan
+                        </div>
+                    @empty
+                        <div class="py-8 text-center text-gray-400">
+                            <p class="text-xs font-semibold text-gray-700">Belum ada kuota cuti dikonfigurasi.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        {{-- Standard Modal 7: Kuota Cuti --}}
+        <div x-show="showKuotaModal" class="fixed inset-0 z-50 overflow-y-auto px-4 py-6 sm:px-0 flex items-center justify-center" style="display: none;">
+            <div x-show="showKuotaModal" class="fixed inset-0 transform transition-all" @click="showKuotaModal = false"
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+                <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-xs"></div>
+            </div>
+
+            <div x-show="showKuotaModal" class="bg-white rounded-2xl overflow-hidden shadow-elevated transform transition-all sm:max-w-md sm:w-full z-10 p-6 relative text-left"
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
+                <div class="flex items-center justify-between pb-3.5 border-b border-gray-100">
+                    <h3 class="font-display text-base font-bold text-gray-900" x-text="editingKuota ? 'Edit Kuota Cuti' : 'Tambah Kuota Cuti'"></h3>
+                    <button @click="showKuotaModal = false" type="button" class="text-gray-400 hover:text-gray-600 transition">
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+                <form method="POST" :action="editingKuota ? `/admin/kehadiran-sdm/konfigurasi/kuota-cuti/${editingKuota.id}?tab=kuota` : '{{ route('admin.kehadiran-sdm.kuota-cuti.store') }}?tab=kuota'" class="mt-4 space-y-4">
+                    @csrf
+                    <template x-if="editingKuota"><input type="hidden" name="_method" value="PUT"></template>
+                    <template x-if="!editingKuota && formKuota.is_nasional"><input type="hidden" name="is_nasional" value="1"></template>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jatah Hari Cuti per Tahun <span class="text-rose-500">*</span></label>
+                        <input x-model.number="formKuota.jatah_hari_per_tahun" name="jatah_hari_per_tahun" type="number" min="0" required class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                    </div>
+                    <div class="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-gray-100">
+                        <x-secondary-button type="button" @click="showKuotaModal = false">Batal</x-secondary-button>
+                        <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
+                    </div>
+                </form>
             </div>
         </div>
 

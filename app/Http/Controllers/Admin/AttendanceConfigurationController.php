@@ -17,6 +17,7 @@ use App\Domains\Sdm\Models\AttendancePoint;
 use App\Domains\Sdm\Models\AttendancePolicy;
 use App\Domains\Sdm\Models\JenisShift;
 use App\Domains\Sdm\Models\KalenderKerjaSdm;
+use App\Domains\Sdm\Models\KuotaCutiConfig;
 use App\Domains\Sdm\Models\PenugasanShift;
 use App\Models\Guru;
 use App\Models\JenisKaryawanMaster;
@@ -84,7 +85,16 @@ class AttendanceConfigurationController extends BaseController
             ->orderBy('nama')
             ->get() : collect();
 
-        $penugasanShiftList = $lembagaId ? PenugasanShift::where('lembaga_id', $lembagaId)
+        $kuotaCutiList = $yayasanId ? KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
+            ->where('yayasan_id', $yayasanId)
+            ->where(function ($query) use ($lembagaId) {
+                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            })
+            ->orderByRaw('lembaga_id IS NULL')
+            ->get() : collect();
+
+        $penugasanShiftList = $lembagaId ? PenugasanShift::withoutGlobalScope(TenantScope::class)
+            ->where('lembaga_id', $lembagaId)
             ->with(['pegawai', 'jenisShift'])
             ->orderByDesc('tanggal_mulai')
             ->get() : collect();
@@ -114,6 +124,7 @@ class AttendanceConfigurationController extends BaseController
             'penugasanShiftList' => $penugasanShiftList,
             'guruList' => $guruList,
             'karyawanList' => $karyawanList,
+            'kuotaCutiList' => $kuotaCutiList,
         ]);
     }
 
@@ -552,6 +563,81 @@ class AttendanceConfigurationController extends BaseController
         $penugasanShift->delete();
 
         return back()->with('status', 'Penugasan shift berhasil dihapus.');
+    }
+
+    public function storeKuotaCuti(Request $request): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        $data = $request->validate([
+            'jatah_hari_per_tahun' => ['required', 'integer', 'min:0'],
+            'is_nasional' => ['nullable', 'boolean'],
+        ]);
+
+        $isNasional = (bool) ($data['is_nasional'] ?? false);
+
+        if ($isNasional && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh membuat kuota cuti nasional.');
+        }
+
+        $lembagaId = $isNasional ? null : $this->resolveLembagaId($request);
+
+        if (! $isNasional && $lembagaId === null) {
+            return back()->withErrors(['jatah_hari_per_tahun' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah kuota cuti.']);
+        }
+
+        $yayasanId = $this->resolveYayasanId($request, $lembagaId);
+
+        $sudahAda = KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
+            ->where('yayasan_id', $yayasanId)
+            ->where('lembaga_id', $lembagaId)
+            ->whereNull('jenis_ptk')
+            ->whereNull('jenis_karyawan_id')
+            ->exists();
+
+        if ($sudahAda) {
+            return back()->withErrors(['jatah_hari_per_tahun' => 'Kuota cuti untuk scope ini sudah ada. Edit yang sudah ada, jangan buat baru.']);
+        }
+
+        KuotaCutiConfig::create([
+            'yayasan_id' => $yayasanId,
+            'lembaga_id' => $lembagaId,
+            'jenis_ptk' => null,
+            'jenis_karyawan_id' => null,
+            'jatah_hari_per_tahun' => $data['jatah_hari_per_tahun'],
+        ]);
+
+        return back()->with('status', 'Kuota cuti berhasil ditambahkan.');
+    }
+
+    public function updateKuotaCuti(Request $request, KuotaCutiConfig $kuotaCuti): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        if ($kuotaCuti->lembaga_id === null && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh mengubah kuota cuti nasional.');
+        }
+
+        $data = $request->validate([
+            'jatah_hari_per_tahun' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $kuotaCuti->update(['jatah_hari_per_tahun' => $data['jatah_hari_per_tahun']]);
+
+        return back()->with('status', 'Kuota cuti berhasil diperbarui.');
+    }
+
+    public function destroyKuotaCuti(Request $request, KuotaCutiConfig $kuotaCuti): RedirectResponse
+    {
+        $this->authorize('kehadiran-sdm.kelola-konfigurasi');
+
+        if ($kuotaCuti->lembaga_id === null && $request->user()->widestScopeLevel() !== 'yayasan') {
+            abort(403, 'Hanya aktor berscope yayasan yang boleh menghapus kuota cuti nasional.');
+        }
+
+        $kuotaCuti->delete();
+
+        return back()->with('status', 'Kuota cuti berhasil dihapus.');
     }
 
     private function resolveLembagaId(Request $request): ?int
