@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Yayasan;
 
 it('records a hadir event when scanning a valid token for a pegawai in the same lembaga as the petugas', function () {
+    \Illuminate\Support\Carbon::setTestNow('2026-08-25 08:00:00'); // Tuesday (working day)
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -26,6 +27,7 @@ it('records a hadir event when scanning a valid token for a pegawai in the same 
 
     expect($event->method)->toBe(AttendanceMethod::Qr);
     expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeTrue();
+    \Illuminate\Support\Carbon::setTestNow();
 });
 
 it('rejects an unknown or inactive token', function () {

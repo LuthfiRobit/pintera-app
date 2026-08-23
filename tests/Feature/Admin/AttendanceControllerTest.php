@@ -26,6 +26,7 @@ if (! function_exists('actingAsAdminSdmCatat')) {
 }
 
 it('lets an admin_sdm record manual attendance for a guru in their own lembaga', function () {
+    \Illuminate\Support\Carbon::setTestNow('2026-08-25 08:00:00'); // Tuesday (working day)
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -40,6 +41,7 @@ it('lets an admin_sdm record manual attendance for a guru in their own lembaga',
     ])->assertRedirect(route('admin.kehadiran-sdm.index'));
 
     expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeTrue();
+    \Illuminate\Support\Carbon::setTestNow();
 });
 
 it('404s when recording attendance for a guru from a different lembaga', function () {

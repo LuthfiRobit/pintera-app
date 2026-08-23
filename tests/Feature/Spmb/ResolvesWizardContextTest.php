@@ -63,8 +63,8 @@ it('404s when the jalur in session does not belong to the lembaga in session', f
 
 it('resolves the nominal pendaftaran for the jalur when a jenis tagihan pendaftaran exists', function () {
     [$lembaga, , $jalur] = buatLembagaDenganGelombangBuka();
-    $jenis = App\Models\JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran']);
-    App\Models\NominalTagihanJalur::create(['jenis_tagihan_id' => $jenis->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
+    $jenis = \App\Domains\Keuangan\Models\JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran']);
+    \App\Domains\Keuangan\Models\NominalTagihanJalur::create(['jenis_tagihan_id' => $jenis->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
 
     $nominal = subjekResolvesWizardContext()->nominal($lembaga, $jalur);
 

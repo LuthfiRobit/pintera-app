@@ -29,14 +29,7 @@ class UpdateJenisTagihanAction
 
             $jenisTagihan->update($attributes);
 
-            $fresh = $jenisTagihan->fresh();
-
-            // Dispatch event BillTypeActivated saat status bertransisi false -> true
-            if (! $wasActive && (bool) $fresh->is_active) {
-                event(new BillTypeActivated($fresh));
-            }
-
-            return $fresh;
+            return $jenisTagihan->fresh();
         });
     }
 }
