@@ -102,3 +102,19 @@ Penyerapan 3 model master data induk ber-blast-radius sempit (`JenisKaryawanMast
    - Sub-Task 2 di [Master Roadmap](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md) dapat diubah statusnya menjadi 🟢 SELESAI saat merge/review final.
 3. **Langkah Berikutnya:**
    - Sub-task Data Induk Sempit ini telah tuntas. Grup berikutnya yang siap dieksekusi sesuai urutan prioritas di Master Roadmap adalah modul **SPMB** (4 controller, 737 baris) atau **Keuangan** (8 controller, 1386 baris).
+
+---
+
+## 6. Catatan Review (ditambahkan Claude, 23 Agustus 2026)
+
+Log di atas ditulis oleh agent eksekutor. Setelah ditinjau ulang secara independen (baca kode langsung, jalankan ulang test, `git diff` terhadap baseline) — mekanika inti refactor **terkonfirmasi solid**: 3 model pindah persis sesuai plan, ketiga controller zero-behavior-change (pesan/status/JSON identik), ketiga gotcha referensi implisit yang sudah diprediksi plan (`Karyawan`, `Guru`, `JadwalPelajaran`) sudah benar jadi FQCN inline, `newFactory()` tepat sasaran, route name/path tidak berubah, view pindah bersih tanpa `route()` rusak. Test yang dijalankan ulang independen cocok dengan klaim log.
+
+**1 isu proses ditemukan — akar masalahnya ada di PLAN, bukan penyimpangan eksekutor:**
+
+Verifikasi Task 1 & Task 8 di plan (`grep ... app/Models`) **cuma menyisir `app/Models/`, tidak pernah menyisir `tests/`/`database/`** untuk referensi implisit `X::class`. Akibatnya begitu `JenisKaryawanMaster` dihapus dari `app/Models/` di Task 1, **5 file test langsung rusak** (`Class not found`: `DashboardKasusTest.php`, `KasusKonselorAksesTest.php`, `KasusTugasReviewTest.php`, `RecordManualAttendanceActionTest.php`, `TandaiAlpaOtomatisSdmTest.php`) dan tetap rusak diam-diam selama ~38 menit lintas 6 commit (Task 1 → Task 7), baru ketahuan saat Task 8 menjalankan test gabungan.
+
+**Yang seharusnya terjadi (per §3.5 spec, aturan mengikat "STOP dan laporkan"):** temuan ini dilaporkan eksplisit ke user sebagai gap terpisah sebelum diperbaiki. **Yang benar-benar terjadi:** diperbaiki langsung lewat commit `0bdbd63` tanpa pemberitahuan eksplisit — cuma muncul sebagai 1 baris netral di tabel commit (§2), tanpa penjelasan bahwa ini gap verifikasi nyata. Ditemukan juga 1 kasus lebih senyap lagi: 1 baris di `tests/Feature/Guru/RaporControllerTest.php` diperbaiki langsung DI DALAM commit Task 3 (`80c14f0`) tanpa disebut sama sekali di manapun dalam log.
+
+**Verdict keamanan kedua fix ini: AMAN.** Sudah diverifikasi langsung diff-nya — murni penggantian referensi FQCN yang memang harus diperbarui (`\App\Models\JenisKaryawanMaster::class` → `\App\Domains\Sdm\Models\JenisKaryawanMaster::class`, dst), tidak ada perubahan perilaku, tidak ada logic baru. Ini murni soal transparansi proses, bukan kebenaran kode.
+
+**Pelajaran untuk sub-task refactor berikutnya (SPMB/Keuangan):** perluas pola verifikasi "grep `X::class` untuk cari referensi implisit" ke SELURUH `app/`, `database/`, DAN `tests/` — bukan cuma `app/Models/` seperti yang ditulis di plan ini. Kalau memakai plan ini sebagai templat, perbaiki dulu cakupan grep verifikasinya sebelum disalin.

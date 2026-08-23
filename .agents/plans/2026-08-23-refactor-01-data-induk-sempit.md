@@ -18,6 +18,8 @@
 - Baseline kode yang dikutip plan ini: commit `31a03ab` di branch `refactor-v1`. Kalau isi file yang kamu baca BEDA signifikan dari yang dikutip plan (bukan cuma beda baris), STOP, jangan menebak — laporkan ke user.
 - Tiap task: jalankan test SCOPED dulu SEBELUM commit. Full suite HANYA di task terakhir, dan HARUS izin eksplisit user dulu.
 
+**Koreksi pasca-eksekusi (24 Agustus 2026, ditambahkan setelah review kode):** grep verifikasi di Task 1/2/3/8 pada eksekusi asli sempat dibatasi ke `app/Models` saja, sehingga 5 file test yang mereferensikan `\App\Models\JenisKaryawanMaster::class` secara inline (BUKAN lewat `use` statement, jadi tidak kena grep `use App\Models\X;` di Step "update N file consumer") sempat rusak diam-diam selama beberapa commit sebelum ketahuan saat test gabungan Task 8. Perbaikannya benar (murni ganti ke FQCN domain baru, zero-behavior-change), tapi seharusnya dilaporkan eksplisit ke user dulu (§3.5), bukan diperbaiki+commit diam-diam. Command grep di plan ini SUDAH DIPERBAIKI (menyisir `app database tests`, mencari string `App\Models\X` bukan `X::class`, supaya menangkap referensi inline FQCN juga) — pakai versi yang sudah diperbaiki ini kalau plan ini dijadikan templat untuk sub-task refactor berikutnya (SPMB/Keuangan).
+
 ---
 
 ## Task 1: Pindahkan Model `JenisKaryawanMaster`
@@ -149,7 +151,7 @@ grep -rln "use App\\\\Models\\\\JenisKaryawanMaster;" --include="*.php" app data
 Expected: kosong (tidak ada output).
 
 ```bash
-grep -rn "JenisKaryawanMaster::class" --include="*.php" app/Models
+grep -rn "App\\\\Models\\\\JenisKaryawanMaster" --include="*.php" app database tests
 ```
 Expected: kosong (tidak ada output — kalau masih ada berarti Step 5 belum lengkap).
 
@@ -257,7 +259,7 @@ grep -rln "use App\\\\Models\\\\JabatanTambahanMaster;" --include="*.php" app da
 Expected: kosong.
 
 ```bash
-grep -rn "JabatanTambahanMaster::class" --include="*.php" app/Models
+grep -rn "App\\\\Models\\\\JabatanTambahanMaster" --include="*.php" app database tests
 ```
 Expected: kosong.
 
@@ -427,7 +429,7 @@ grep -rln "use App\\\\Models\\\\MataPelajaran;" --include="*.php" app database t
 Expected: kosong.
 
 ```bash
-grep -rn "MataPelajaran::class" --include="*.php" app/Models
+grep -rn "App\\\\Models\\\\MataPelajaran" --include="*.php" app database tests
 ```
 Expected: kosong.
 
@@ -1630,7 +1632,7 @@ Expected: KOSONG total.
 - [ ] **Step 3: Verifikasi tidak ada referensi `X::class` implisit tersisa di `app/Models/`**
 
 ```bash
-grep -rn "JenisKaryawanMaster::class\|JabatanTambahanMaster::class\|MataPelajaran::class" --include="*.php" app/Models
+grep -rn "App\\\\Models\\\\JenisKaryawanMaster\|App\\\\Models\\\\JabatanTambahanMaster\|App\\\\Models\\\\MataPelajaran" --include="*.php" app database tests
 ```
 Expected: KOSONG total.
 
