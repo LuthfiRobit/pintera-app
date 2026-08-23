@@ -95,7 +95,7 @@
                 </div>
 
                 {{-- Decision Form Card --}}
-                @if ($ar && in_array($ar->status->value, ['pending', 'in_review'], true))
+                @if ($canDecide)
                     <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4" x-data="{ actionToSubmit: '', notes: '' }">
                         <div class="border-b border-gray-100 pb-3">
                             <h3 class="font-display text-sm font-bold text-gray-900">Form Keputusan Approver</h3>
@@ -149,6 +149,22 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+                @elseif ($ar && in_array($ar->status->value, ['pending', 'in_review'], true))
+                    <div class="rounded-2xl border border-gray-200 bg-gray-50/60 p-5 shadow-card">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-200 text-gray-500">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-gray-700">Menunggu Keputusan Tahap Ini</p>
+                                <p class="text-[11px] text-gray-500 mt-0.5">
+                                    Anda bukan approver untuk tahap saat ini ({{ $ar->currentStep?->step_name ?? '—' }}). Form keputusan hanya muncul untuk approver yang berwenang di tahap yang sedang berjalan.
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 @endif
             </div>

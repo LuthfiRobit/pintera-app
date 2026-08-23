@@ -6,6 +6,7 @@ use App\Domains\Sdm\Actions\ProsesApprovalIzinCutiAction;
 use App\Domains\Sdm\Models\PengajuanIzinCuti;
 use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalStatus;
+use App\Domains\Workflow\Services\ApproverResolverService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,13 +30,19 @@ class ApprovalIzinCutiController extends BaseController
         return view('admin.kehadiran-sdm.izin-cuti.index', ['daftar' => $daftar]);
     }
 
-    public function show(PengajuanIzinCuti $izinCuti): View
+    public function show(PengajuanIzinCuti $izinCuti, ApproverResolverService $resolver): View
     {
         $this->authorize('kehadiran-sdm.izin.approve');
 
         $izinCuti->load(['pegawai', 'approvalRequest.currentStep', 'approvalRequest.logs.user']);
 
-        return view('admin.kehadiran-sdm.izin-cuti.show', ['izinCuti' => $izinCuti]);
+        $approvalRequest = $izinCuti->approvalRequest;
+        $canDecide = $approvalRequest
+            && in_array($approvalRequest->status->value, ['pending', 'in_review'], true)
+            && $approvalRequest->currentStep
+            && $resolver->canUserApprove($approvalRequest->currentStep, auth()->user(), $approvalRequest);
+
+        return view('admin.kehadiran-sdm.izin-cuti.show', ['izinCuti' => $izinCuti, 'canDecide' => $canDecide]);
     }
 
     public function decision(Request $request, PengajuanIzinCuti $izinCuti, ProsesApprovalIzinCutiAction $action): RedirectResponse
