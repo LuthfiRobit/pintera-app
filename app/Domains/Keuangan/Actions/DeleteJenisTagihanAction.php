@@ -9,18 +9,25 @@ use Illuminate\Validation\ValidationException;
 class DeleteJenisTagihanAction
 {
     /**
-     * @throws ValidationException Jika jenis tagihan sudah memiliki relasi tagihan_item
+     * @throws ValidationException
      */
     public function execute(JenisTagihan $jenisTagihan): void
     {
-        if ($jenisTagihan->tagihanItem()->exists()) {
+        $jumlahTagihan = $jenisTagihan->tagihanItem()->count();
+        if ($jumlahTagihan > 0) {
             throw ValidationException::withMessages([
-                'delete' => 'Jenis tagihan tidak dapat dihapus karena sudah memiliki tagihan yang diterbitkan.',
+                'jenis_tagihan' => "Tidak bisa dihapus, sudah dipakai di {$jumlahTagihan} tagihan milik calon murid.",
+            ]);
+        }
+
+        $jumlahNominal = $jenisTagihan->nominalJalur()->count();
+        if ($jumlahNominal > 0) {
+            throw ValidationException::withMessages([
+                'jenis_tagihan' => "Tidak bisa dihapus, sudah ada {$jumlahNominal} nominal jalur yang dikonfigurasi. Hapus dulu di halaman Kelola Nominal.",
             ]);
         }
 
         DB::transaction(function () use ($jenisTagihan) {
-            $jenisTagihan->nominalJalur()->delete();
             $jenisTagihan->delete();
         });
     }

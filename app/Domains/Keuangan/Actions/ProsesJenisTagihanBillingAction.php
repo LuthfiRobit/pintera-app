@@ -3,6 +3,7 @@
 namespace App\Domains\Keuangan\Actions;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Models\BillingJobLog;
 use App\Services\TagihanBillingGenerator;
 
 class ProsesJenisTagihanBillingAction
@@ -11,10 +12,7 @@ class ProsesJenisTagihanBillingAction
         private readonly TagihanBillingGenerator $generator,
     ) {}
 
-    /**
-     * @return array{created: int, skipped: int, failed: int}
-     */
-    public function execute(JenisTagihan $jenisTagihan): array
+    public function execute(JenisTagihan $jenisTagihan): BillingJobLog
     {
         return $this->generator->generate($jenisTagihan, 'manual');
     }

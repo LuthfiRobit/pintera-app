@@ -15,7 +15,7 @@ class CreateJenisTagihanAction
     public function execute(int $lembagaId, JenisTagihanData $data): JenisTagihan
     {
         return DB::transaction(function () use ($lembagaId, $data) {
-            $jenisTagihan = JenisTagihan::create([
+            $attributes = array_merge($data->attributes, [
                 'lembaga_id'   => $lembagaId,
                 'nama'         => $data->nama,
                 'kategori'     => $data->kategori,
@@ -23,7 +23,11 @@ class CreateJenisTagihanAction
                 'maks_cicilan' => $data->maksCicilan,
             ]);
 
-            $this->syncBillingConfig->execute($jenisTagihan, $data->rawBillingConfig);
+            $jenisTagihan = JenisTagihan::create($attributes);
+
+            if ($data->billing !== null) {
+                $this->syncBillingConfig->execute($jenisTagihan, $data->billing);
+            }
 
             return $jenisTagihan->fresh();
         });

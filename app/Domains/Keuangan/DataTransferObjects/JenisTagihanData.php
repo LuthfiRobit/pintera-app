@@ -5,29 +5,31 @@ namespace App\Domains\Keuangan\DataTransferObjects;
 final readonly class JenisTagihanData
 {
     /**
-     * @param  array<string, mixed>  $rawBillingConfig  Semua field konfigurasi billing dari form/request
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>|null  $billing
      */
     public function __construct(
         public string $nama,
         public string $kategori,
         public bool $bisaDicicil,
         public ?int $maksCicilan,
-        public array $rawBillingConfig = [],
+        public array $attributes,
+        public ?array $billing = null,
     ) {}
 
     /**
-     * Factory dari request array tervalidasi.
-     *
-     * @param  array<string, mixed>  $validated
+     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>|null  $billing
      */
-    public static function fromArray(array $validated): self
+    public static function fromArray(array $data, ?array $billing = null): self
     {
         return new self(
-            nama: (string) $validated['nama'],
-            kategori: (string) $validated['kategori'],
-            bisaDicicil: ! empty($validated['bisa_dicicil']),
-            maksCicilan: ! empty($validated['bisa_dicicil']) ? (int) ($validated['maks_cicilan'] ?? 1) : null,
-            rawBillingConfig: $validated,
+            nama: (string) $data['nama'],
+            kategori: (string) $data['kategori'],
+            bisaDicicil: ! empty($data['bisa_dicicil']),
+            maksCicilan: ! empty($data['bisa_dicicil']) ? (int) ($data['maks_cicilan'] ?? 1) : null,
+            attributes: $data,
+            billing: $billing,
         );
     }
 }

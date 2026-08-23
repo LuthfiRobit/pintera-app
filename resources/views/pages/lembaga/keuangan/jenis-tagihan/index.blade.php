@@ -137,7 +137,7 @@
 
             {{-- Table Wrapper --}}
             <div x-ref="tableContainer" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
-                @include('admin.jenis-tagihan._daftar')
+                @include('pages.lembaga.keuangan.jenis-tagihan._daftar')
             </div>
         </div>
     </div>
