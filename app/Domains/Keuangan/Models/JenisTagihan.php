@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Lembaga;
+use Database\Factories\JenisTagihanFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class JenisTagihan extends Model
 {
     use BelongsToTenant, HasFactory;
+
+    protected static function newFactory(): JenisTagihanFactory
+    {
+        return JenisTagihanFactory::new();
+    }
 
     protected $table = 'jenis_tagihan';
 
@@ -65,14 +72,5 @@ class JenisTagihan extends Model
     public function keringananRules(): HasMany
     {
         return $this->hasMany(JenisTagihanKeringanan::class);
-    }
-
-    protected static function booted(): void
-    {
-        static::updated(function (JenisTagihan $jenisTagihan) {
-            if ($jenisTagihan->wasChanged('is_active') && $jenisTagihan->is_active) {
-                event(new \App\Events\BillTypeActivated($jenisTagihan));
-            }
-        });
     }
 }

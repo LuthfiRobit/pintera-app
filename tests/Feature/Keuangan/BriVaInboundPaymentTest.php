@@ -3,7 +3,7 @@
 namespace Tests\Feature\Keuangan;
 
 use App\Models\BriInboundPaymentLog;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\SystemSetting;
 use App\Models\Tagihan;

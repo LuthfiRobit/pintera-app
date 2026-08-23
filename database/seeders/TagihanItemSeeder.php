@@ -3,7 +3,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\Tagihan;
 use App\Models\TagihanItem;

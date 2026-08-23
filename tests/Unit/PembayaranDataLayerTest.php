@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Cicilan;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\Pembayaran;
 use App\Models\Pendaftaran;

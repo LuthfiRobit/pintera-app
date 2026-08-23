@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

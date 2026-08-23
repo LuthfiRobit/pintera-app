@@ -2,7 +2,7 @@
 // tests/Feature/Admin/SkemaCicilanTest.php
 
 use App\Models\Cicilan;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\NominalTagihanJalur;
 use App\Models\SkemaCicilan;
 use App\Models\Tagihan;

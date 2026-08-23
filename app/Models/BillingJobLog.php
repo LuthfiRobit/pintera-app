@@ -24,6 +24,6 @@ class BillingJobLog extends Model
 
     public function jenisTagihan(): BelongsTo
     {
-        return $this->belongsTo(JenisTagihan::class);
+        return $this->belongsTo(\App\Domains\Keuangan\Models\JenisTagihan::class);
     }
 }

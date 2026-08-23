@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\JalurPpdb;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\KategoriKeringanan;
 use App\Models\Kelas;
 use App\Models\Lembaga;

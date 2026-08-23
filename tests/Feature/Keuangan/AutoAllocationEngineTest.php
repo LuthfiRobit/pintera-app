@@ -4,7 +4,7 @@ use App\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 use App\Models\Wallet;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Services\Finance\AutoAllocationEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Keuangan/StudentBillingEventsTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\JenisTagihanSasaranGrup;
 use App\Models\JenisTagihanSasaranKriteria;
 use App\Models\Kelas;

@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Spmb/TagihanPendaftaranHookTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\NominalTagihanJalur;
 use App\Models\Pendaftaran;
 use App\Models\Tagihan;

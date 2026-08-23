@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Keuangan/TagihanDiterbitkanNotificationTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\OrangTua;

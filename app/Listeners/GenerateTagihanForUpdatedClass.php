@@ -4,7 +4,7 @@
 namespace App\Listeners;
 
 use App\Events\StudentUpdatedClass;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Scopes\TenantScope;
 use App\Services\JenisTagihanSasaranMatcher;
 use App\Services\TagihanBillingGenerator;

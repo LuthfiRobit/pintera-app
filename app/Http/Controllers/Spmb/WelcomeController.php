@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Spmb;
 
 use App\Models\JalurPpdb;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\NominalTagihanJalur;
 use App\Models\TahunAjaran;

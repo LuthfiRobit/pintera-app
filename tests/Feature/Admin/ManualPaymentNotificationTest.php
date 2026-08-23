@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Admin/ManualPaymentNotificationTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\ManualPaymentRequest;
 use App\Models\OrangTua;

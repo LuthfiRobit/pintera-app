@@ -6,7 +6,7 @@
 // I1 (persen keringanan > 100 server-side cap), I2 (nominal()/simpanNominal() ppdb guard).
 
 use App\Enums\StatusSiswa;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\Siswa;

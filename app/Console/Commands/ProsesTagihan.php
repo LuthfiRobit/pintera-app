@@ -3,7 +3,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Services\TagihanBillingGenerator;
 use Illuminate\Console\Command;
 

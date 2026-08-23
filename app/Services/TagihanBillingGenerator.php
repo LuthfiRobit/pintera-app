@@ -4,7 +4,7 @@
 namespace App\Services;
 
 use App\Models\BillingJobLog;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 use App\Notifications\Finance\TagihanDiterbitkanNotification;

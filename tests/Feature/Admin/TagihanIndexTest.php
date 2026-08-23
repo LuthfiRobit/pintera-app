@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Admin/TagihanIndexTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Tagihan;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;

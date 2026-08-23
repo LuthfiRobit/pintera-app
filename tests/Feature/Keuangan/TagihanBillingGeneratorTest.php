@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Keuangan/TagihanBillingGeneratorTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 use App\Services\Finance\NotificationDispatcher;

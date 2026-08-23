@@ -49,22 +49,22 @@ class Tagihan extends Model
 
     public function jenisTagihan(): BelongsTo
     {
-        return $this->belongsTo(JenisTagihan::class);
+        return $this->belongsTo(\App\Domains\Keuangan\Models\JenisTagihan::class);
     }
 
     public function item(): HasMany
     {
-        return $this->hasMany(TagihanItem::class);
+        return $this->hasMany(\App\Domains\Keuangan\Models\TagihanItem::class);
     }
 
     public function skemaCicilan(): HasOne
     {
-        return $this->hasOne(SkemaCicilan::class);
+        return $this->hasOne(\App\Domains\Keuangan\Models\SkemaCicilan::class);
     }
 
     public function cicilan(): HasManyThrough
     {
-        return $this->hasManyThrough(Cicilan::class, SkemaCicilan::class, 'tagihan_id', 'skema_cicilan_id');
+        return $this->hasManyThrough(Cicilan::class, \App\Domains\Keuangan\Models\SkemaCicilan::class, 'tagihan_id', 'skema_cicilan_id');
     }
 
     public function pembayaran(): HasMany
@@ -95,7 +95,7 @@ class Tagihan extends Model
             ->whereHas('jenisTagihan', fn ($q) => $q->where('bisa_dicicil', true))
             ->with('jenisTagihan')
             ->get()
-            ->min(fn (TagihanItem $item) => $item->jenisTagihan->maks_cicilan);
+            ->min(fn (\App\Domains\Keuangan\Models\TagihanItem $item) => $item->jenisTagihan->maks_cicilan);
     }
 
     public function getActivitylogOptions(): LogOptions

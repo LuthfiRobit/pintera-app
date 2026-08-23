@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Admin/JenisTagihanFormPageTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;

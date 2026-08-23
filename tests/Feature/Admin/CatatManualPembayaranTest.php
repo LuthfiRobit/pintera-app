@@ -2,7 +2,7 @@
 // tests/Feature/Admin/CatatManualPembayaranTest.php
 
 use App\Models\Cicilan;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\NominalTagihanJalur;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;

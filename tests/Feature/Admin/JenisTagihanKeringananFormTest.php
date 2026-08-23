@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\User;

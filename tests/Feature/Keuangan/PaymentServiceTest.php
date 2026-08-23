@@ -6,7 +6,7 @@ use App\Contracts\PaymentGatewayInterface;
 use App\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Tagihan;
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\TagihanItem;
 use App\Models\User;
 use App\Services\Finance\PaymentService;

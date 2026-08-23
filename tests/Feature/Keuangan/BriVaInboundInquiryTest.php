@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 use App\Models\TagihanItem;

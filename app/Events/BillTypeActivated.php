@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use Illuminate\Foundation\Events\Dispatchable;
 
 class BillTypeActivated

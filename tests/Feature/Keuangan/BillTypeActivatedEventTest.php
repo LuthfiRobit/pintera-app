@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Keuangan/BillTypeActivatedEventTest.php
 
-use App\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 
