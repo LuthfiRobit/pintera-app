@@ -26,7 +26,7 @@ if (! function_exists('actingAsPetugasScan')) {
 
 it('records attendance via qr scan endpoint for an employee in the same lembaga', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => []]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $petugas = actingAsPetugasScan($lembaga);
     $qr = app(GenerateEmployeeQrTokenAction::class)->execute($guru);

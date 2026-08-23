@@ -1,6 +1,7 @@
 {{-- resources/views/admin/kehadiran-sdm/scan.blade.php --}}
 <x-app-layout>
     <div class="mx-auto max-w-4xl space-y-4 px-4 sm:px-0" x-data="{
+        mode: 'kamera',
         arah: 'masuk',
         attendancePointId: '',
         token: '',
@@ -58,7 +59,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Pemindai QR Presensi SDM</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Arahkan barcode scanner ke QR Code pegawai atau ketik token manual.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Gunakan kamera untuk memindai QR pegawai, scanner fisik, atau ketik token manual.</p>
             </div>
             <div class="flex items-center gap-2">
                 <p class="hidden text-sm text-gray-500 sm:block mr-2">
@@ -76,7 +77,37 @@
             {{-- Form Scanner --}}
             <div class="lg:col-span-7 space-y-4">
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-5">
-                    
+
+                    {{-- Mode Toggle: Kamera vs Manual --}}
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-gray-700">Mode Pemindaian</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                @click="mode = 'kamera'"
+                                :class="mode === 'kamera' ? 'border-brand-300 bg-brand-50/60 text-brand-800 ring-2 ring-brand-500/20' : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'"
+                                class="flex items-center justify-center gap-2 rounded-xl border p-3 text-xs font-bold transition cursor-pointer"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <span>Scan Kamera</span>
+                            </button>
+                            <button
+                                type="button"
+                                @click="mode = 'manual'; $nextTick(() => { if ($refs.tokenInput) $refs.tokenInput.focus() })"
+                                :class="mode === 'manual' ? 'border-brand-300 bg-brand-50/60 text-brand-800 ring-2 ring-brand-500/20' : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'"
+                                class="flex items-center justify-center gap-2 rounded-xl border p-3 text-xs font-bold transition cursor-pointer"
+                            >
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Input Manual</span>
+                            </button>
+                        </div>
+                    </div>
+
                     {{-- Arah Presensi Radio Pills --}}
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold text-gray-700">Arah Presensi <span class="text-rose-500">*</span></label>
@@ -111,35 +142,64 @@
                         </div>
                     @endif
 
-                    {{-- Form Input Token --}}
-                    <form @submit.prevent="submitScan()" class="space-y-4">
-                        <div>
-                            <label class="mb-1.5 block text-xs font-semibold text-gray-700">Token QR Pegawai <span class="text-rose-500">*</span></label>
-                            <div class="relative">
-                                <input 
-                                    x-ref="tokenInput" 
-                                    x-model="token" 
-                                    type="text" 
-                                    autofocus 
-                                    placeholder="Scan atau ketik token unik..." 
-                                    class="w-full rounded-xl border-gray-200 bg-gray-50 p-3 pr-10 font-mono text-sm text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"
-                                >
-                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
-                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m0 14v1m8-8h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
-                                    </svg>
-                                </div>
+                    {{-- Mode Kamera --}}
+                    <div
+                        x-show="mode === 'kamera'"
+                        x-data="qrCameraScanner({
+                            elementId: 'qr-camera-reader',
+                            onScanSuccess: (decodedText) => { token = decodedText; submitScan(); },
+                            onCameraError: (msg) => {
+                                mode = 'manual';
+                                message = msg;
+                                messageType = 'error';
+                                $nextTick(() => { if ($refs.tokenInput) $refs.tokenInput.focus() });
+                            }
+                        })"
+                        x-effect="mode === 'kamera' ? startCamera() : stopCamera()"
+                    >
+                        <div class="relative overflow-hidden rounded-xl border border-gray-200 bg-black">
+                            <div id="qr-camera-reader" class="aspect-square w-full"></div>
+                            <div
+                                x-show="processing"
+                                x-cloak
+                                class="absolute inset-0 flex items-center justify-center bg-black/60 text-xs font-bold text-white"
+                            >
+                                Memproses...
                             </div>
                         </div>
+                        <p class="mt-2 text-center text-[11px] text-gray-400">Arahkan kamera ke QR Code pegawai. Pemindaian dan pencatatan berjalan otomatis.</p>
+                    </div>
 
-                        <button 
-                            type="submit" 
-                            x-bind:disabled="loading || !token.trim()" 
-                            class="w-full rounded-xl bg-brand-600 px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50 active:scale-[0.98]"
-                        >
-                            <span x-text="loading ? 'Memproses Presensi...' : 'Catat Presensi SDM'"></span>
-                        </button>
-                    </form>
+                    {{-- Mode Manual --}}
+                    <div x-show="mode === 'manual'">
+                        <form @submit.prevent="submitScan()" class="space-y-4">
+                            <div>
+                                <label class="mb-1.5 block text-xs font-semibold text-gray-700">Token QR Pegawai <span class="text-rose-500">*</span></label>
+                                <div class="relative">
+                                    <input 
+                                        x-ref="tokenInput" 
+                                        x-model="token" 
+                                        type="text" 
+                                        placeholder="Scan atau ketik token unik..." 
+                                        class="w-full rounded-xl border-gray-200 bg-gray-50 p-3 pr-10 font-mono text-sm text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500"
+                                    >
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400">
+                                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m0 14v1m8-8h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                x-bind:disabled="loading || !token.trim()" 
+                                class="w-full rounded-xl bg-brand-600 px-4 py-3 text-xs font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50 active:scale-[0.98]"
+                            >
+                                <span x-text="loading ? 'Memproses Presensi...' : 'Catat Presensi SDM'"></span>
+                            </button>
+                        </form>
+                    </div>
 
                     {{-- Feedback Message Card --}}
                     <template x-if="message">
