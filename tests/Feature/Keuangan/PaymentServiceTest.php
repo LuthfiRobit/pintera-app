@@ -7,7 +7,7 @@ use App\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\TagihanItem;
+use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
 use App\Services\Finance\PaymentService;
 use App\Exceptions\PaymentException;

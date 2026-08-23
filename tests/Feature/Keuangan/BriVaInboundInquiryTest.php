@@ -5,7 +5,7 @@ namespace Tests\Feature\Keuangan;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
-use App\Models\TagihanItem;
+use App\Domains\Keuangan\Models\TagihanItem;
 use App\Services\Finance\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

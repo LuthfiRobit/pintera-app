@@ -6,7 +6,7 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\Pembayaran;
 use App\Models\Tagihan;
-use App\Models\TagihanItem;
+use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
 use App\Services\PembayaranService;
 use Database\Seeders\RolePermissionSeeder;

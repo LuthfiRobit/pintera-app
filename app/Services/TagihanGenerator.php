@@ -7,7 +7,7 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\Pendaftaran;
 use App\Models\Tagihan;
-use App\Models\TagihanItem;
+use App\Domains\Keuangan\Models\TagihanItem;
 use Illuminate\Support\Facades\DB;
 
 class TagihanGenerator

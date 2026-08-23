@@ -7,7 +7,7 @@ use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
 use App\Models\Tagihan;
-use App\Models\TagihanItem;
+use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
 use App\Services\Finance\PaymentService;
 use Illuminate\Database\Seeder;

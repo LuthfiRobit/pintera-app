@@ -6,7 +6,7 @@ namespace Database\Seeders;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\Tagihan;
-use App\Models\TagihanItem;
+use App\Domains\Keuangan\Models\TagihanItem;
 use Illuminate\Database\Seeder;
 
 class TagihanItemSeeder extends Seeder

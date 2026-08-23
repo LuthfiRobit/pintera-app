@@ -7,7 +7,7 @@ use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\Pendaftaran;
 use App\Models\Tagihan;
-use App\Models\TagihanItem;
+use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\TahunAjaran;
 use App\Models\Role;
 use App\Models\User;
