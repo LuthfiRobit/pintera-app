@@ -73,7 +73,7 @@ class Guru extends Model
 
     public function jabatanTambahan(): BelongsToMany
     {
-        return $this->belongsToMany(JabatanTambahanMaster::class, 'guru_jabatan_tambahan')
+        return $this->belongsToMany(\App\Domains\Sdm\Models\JabatanTambahanMaster::class, 'guru_jabatan_tambahan')
             ->withPivot(['mulai_periode', 'akhir_periode', 'no_sk'])
             ->withTimestamps()
             ->using(GuruJabatanTambahan::class);

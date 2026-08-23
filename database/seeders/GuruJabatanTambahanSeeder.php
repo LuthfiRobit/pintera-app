@@ -5,7 +5,7 @@ namespace Database\Seeders;
 
 use App\Models\Guru;
 use App\Models\GuruJabatanTambahan;
-use App\Models\JabatanTambahanMaster;
+use App\Domains\Sdm\Models\JabatanTambahanMaster;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 

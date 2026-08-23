@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Guru;
-use App\Models\JabatanTambahanMaster;
+use App\Domains\Sdm\Models\JabatanTambahanMaster;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;

@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Guru;
-use App\Models\JabatanTambahanMaster;
+use App\Domains\Sdm\Models\JabatanTambahanMaster;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

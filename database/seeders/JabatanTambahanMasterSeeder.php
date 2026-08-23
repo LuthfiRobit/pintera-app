@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\JabatanTambahanMaster;
+use App\Domains\Sdm\Models\JabatanTambahanMaster;
 use Illuminate\Database\Seeder;
 
 class JabatanTambahanMasterSeeder extends Seeder
