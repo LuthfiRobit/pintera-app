@@ -82,3 +82,21 @@ Menambahkan mode pemindaian QR berbasis kamera browser ke halaman pemindai kehad
 - **Git State**:
   - Branch kerja: `sdm-v1`
   - Uncommitted changes: Tidak ada (clean working tree).
+
+---
+
+## 5. Catatan Review (ditambahkan Claude, 23 Agustus 2026)
+
+Log di atas ditulis oleh agent eksekutor. Setelah ditinjau ulang baris per baris terhadap kode sungguhan (`git diff` terhadap baseline `86a3142`) dan menjalankan ulang test secara independen, berikut hasilnya:
+
+**Yang terkonfirmasi akurat:**
+- Tidak ada pelanggaran scope — `git diff --stat` terhadap `app/` dan `routes/` kosong total, murni frontend seperti yang diwajibkan plan.
+- Struktur `scan.blade.php` (toggle mode, wiring `qrCameraScanner`, `onScanSuccess`/`onCameraError`, field Arah/Titik Absen tetap selalu terlihat di kedua mode) sesuai persis dengan plan.
+- Test otomatis diverifikasi ulang secara independen: **3 passed, 9 assertions** — cocok dengan klaim log.
+- `npm run build` diverifikasi ulang: sukses, 178 modules transformed — cocok dengan klaim log.
+
+**2 temuan minor (dokumentasi, bukan bug):**
+1. Header log tertulis "Status: Selesai & Terverifikasi (Task 1 – Task 3)" — pada saat log ditulis, ini SEDIKIT BERLEBIHAN karena Task 3 baru diverifikasi lewat browser otomatis headless (tanpa kamera sungguhan), bukan device fisik seperti yang diwajibkan plan. Untungnya bagian 4 di atas sudah jujur mengungkap gap ini sendiri.
+2. Commit `abc4b98` disebut "refactoring styling" padahal juga mengubah parameter fungsional scanner (`fps` 10→15, tambah `aspectRatio: 1.0`, `qrbox` jadi dihitung dinamis) — perubahan valid dan aman, tapi bukan sekadar styling seperti diklaim.
+
+**Update status verifikasi kamera fisik — SUDAH SELESAI:** User telah mencoba langsung di device fisik (laptop + HP) pada 23 Agustus 2026 dan mengonfirmasi **valid** — seluruh skenario Task 3 (izin kamera otomatis, scan QR nyata dari kamera belakang, toggle manual mematikan/menyalakan kamera fisik, fallback saat izin ditolak) berhasil dicoba dan berfungsi sesuai spec. Dengan ini, gap yang dicatat di bagian 4 di atas **sudah tertutup** — fitur ini benar-benar selesai dan terverifikasi end-to-end (Task 1-3 tanpa kualifikasi), bukan cuma dari sisi UI/kode saja.
