@@ -74,6 +74,12 @@
                 Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.riwayat.index', 'pattern' => 'keuangan.riwayat.*', 'label' => 'Riwayat', 'icon' => 'history'] : null,
             ]),
         ],
+        /*
+         * Menu SPMB sengaja disembunyikan sementara dari sidebar admin (24 Agustus 2026) - modul ini
+         * akan dirombak ulang, jadi navigasinya ditutup dulu supaya tidak dipakai staf di tengah masa
+         * tunggu rombakan. Route & controller TIDAK disentuh sama sekali (tetap hidup, portal publik
+         * pendaftaran juga TIDAK terpengaruh) - ini murni menyembunyikan link navigasi internal.
+         * Hapus komentar ini begitu rombakan modul SPMB siap/dimulai.
         [
             'label' => 'SPMB',
             'group_icon' => 'user-check',
@@ -84,6 +90,7 @@
                 Auth::user()->can('spmb-pendaftaran.view') ? ['route' => 'admin.spmb-pendaftaran.index', 'pattern' => 'admin.spmb-pendaftaran.*', 'label' => 'Verifikasi & Keputusan', 'icon' => 'clipboard-check'] : null,
             ]),
         ],
+        */
         [
             'label' => 'Sarana & Prasarana',
             'group_icon' => 'building',
