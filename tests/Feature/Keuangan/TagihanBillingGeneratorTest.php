@@ -5,9 +5,9 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\Tagihan;
 use App\Services\Finance\NotificationDispatcher;
-use App\Services\JenisTagihanSasaranMatcher;
+use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Services\TagihanBillingGenerator;
-use App\Services\TagihanNominalResolver;
+use App\Domains\Keuangan\Services\TagihanNominalResolver;
 
 function buatGenerator(): TagihanBillingGenerator
 {

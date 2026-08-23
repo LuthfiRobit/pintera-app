@@ -9,8 +9,8 @@ use App\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanSiswa;
 use App\Models\Siswa;
 use App\Models\SiswaKeringanan;
-use App\Services\JenisTagihanSasaranMatcher;
-use App\Services\TagihanNominalResolver;
+use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
+use App\Domains\Keuangan\Services\TagihanNominalResolver;
 
 function buatResolver(): TagihanNominalResolver
 {

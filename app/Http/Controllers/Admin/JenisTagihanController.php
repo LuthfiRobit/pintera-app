@@ -9,7 +9,7 @@ use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Models\TahunAjaran;
-use App\Services\JenisTagihanSasaranMatcher;
+use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Services\TagihanBillingGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;

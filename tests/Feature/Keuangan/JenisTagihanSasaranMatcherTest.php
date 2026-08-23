@@ -7,7 +7,7 @@ use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Services\JenisTagihanSasaranMatcher;
+use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 
 it('returns every siswa in the lembaga when there is no sasaran grup at all', function () {
     $lembaga = Lembaga::factory()->create();

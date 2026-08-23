@@ -1,7 +1,7 @@
 <?php
-// app/Services/TagihanNominalResolver.php
+// app/Domains/Keuangan/Services/TagihanNominalResolver.php
 
-namespace App\Services;
+namespace App\Domains\Keuangan\Services;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanKeringanan;

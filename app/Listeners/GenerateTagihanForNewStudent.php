@@ -6,7 +6,7 @@ namespace App\Listeners;
 use App\Events\StudentCreated;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Scopes\TenantScope;
-use App\Services\JenisTagihanSasaranMatcher;
+use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Services\TagihanBillingGenerator;
 
 class GenerateTagihanForNewStudent
