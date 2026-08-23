@@ -162,7 +162,7 @@ it('returns only table partial view when requested via AJAX XMLHttpRequest', fun
     ]);
 
     $response->assertOk();
-    $response->assertViewIs('admin.mata-pelajaran._daftar');
+    $response->assertViewIs('portals.lembaga.akademik.mata-pelajaran._daftar');
     $response->assertSee('Mapel AJAX');
 });
 

@@ -1,11 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Akademik;
 
+use App\Domains\Akademik\Actions\MataPelajaran\CreateMataPelajaranAction;
+use App\Domains\Akademik\Actions\MataPelajaran\UpdateMataPelajaranAction;
+use App\Domains\Akademik\DataTransferObjects\MataPelajaranData;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
-use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -47,13 +50,13 @@ class MataPelajaranController extends BaseController
         $paginated = $query->paginate($perPage)->withQueryString();
 
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
-            return view('admin.mata-pelajaran._daftar', [
+            return view('portals.lembaga.akademik.mata-pelajaran._daftar', [
                 'mataPelajaranList' => $paginated,
                 'perPage'           => $perPage,
             ]);
         }
 
-        return view('admin.mata-pelajaran.index', [
+        return view('portals.lembaga.akademik.mata-pelajaran.index', [
             'mataPelajaranList' => $paginated,
             'tipeList'          => TipeMataPelajaran::cases(),
             'kelompokList'      => KelompokMataPelajaran::cases(),
@@ -69,14 +72,14 @@ class MataPelajaranController extends BaseController
     {
         $this->authorize('mata-pelajaran.create');
 
-        return view('admin.mata-pelajaran.create', [
+        return view('portals.lembaga.akademik.mata-pelajaran.create', [
             'tipeList'     => TipeMataPelajaran::cases(),
             'kelompokList' => KelompokMataPelajaran::cases(),
             'statusList'   => StatusMataPelajaran::cases(),
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, CreateMataPelajaranAction $action): RedirectResponse
     {
         $this->authorize('mata-pelajaran.create');
 
@@ -97,8 +100,7 @@ class MataPelajaranController extends BaseController
             'status' => ['required', 'string', Rule::enum(StatusMataPelajaran::class)],
         ]);
 
-        $data['lembaga_id'] = $lembagaId;
-        MataPelajaran::create($data);
+        $action->execute(MataPelajaranData::fromArray($data, $lembagaId));
 
         return redirect()->route('admin.mata-pelajaran.index')->with('status', 'Mata pelajaran berhasil disimpan.');
     }
@@ -107,7 +109,7 @@ class MataPelajaranController extends BaseController
     {
         $this->authorize('mata-pelajaran.edit');
 
-        return view('admin.mata-pelajaran.edit', [
+        return view('portals.lembaga.akademik.mata-pelajaran.edit', [
             'mataPelajaran' => $mataPelajaran,
             'tipeList'      => TipeMataPelajaran::cases(),
             'kelompokList'  => KelompokMataPelajaran::cases(),
@@ -115,7 +117,7 @@ class MataPelajaranController extends BaseController
         ]);
     }
 
-    public function update(Request $request, MataPelajaran $mataPelajaran): RedirectResponse
+    public function update(Request $request, MataPelajaran $mataPelajaran, UpdateMataPelajaranAction $action): RedirectResponse
     {
         $this->authorize('mata-pelajaran.edit');
 
@@ -133,7 +135,7 @@ class MataPelajaranController extends BaseController
             'status' => ['required', 'string', Rule::enum(StatusMataPelajaran::class)],
         ]);
 
-        $mataPelajaran->update($data);
+        $action->execute($mataPelajaran, MataPelajaranData::fromArray($data, $lembagaId));
 
         return redirect()->route('admin.mata-pelajaran.index')->with('status', 'Mata pelajaran berhasil diperbarui.');
     }

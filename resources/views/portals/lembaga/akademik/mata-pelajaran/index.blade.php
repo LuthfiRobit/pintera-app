@@ -140,7 +140,7 @@
 
             {{-- Table Wrapper --}}
             <div x-ref="daftarMataPelajaran">
-                @include('admin.mata-pelajaran._daftar')
+                @include('portals.lembaga.akademik.mata-pelajaran._daftar')
             </div>
         </div>
     </div>

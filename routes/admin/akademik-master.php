@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
-use App\Http\Controllers\Admin\MataPelajaranController;
+use App\Http\Controllers\Lembaga\Akademik\MataPelajaranController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\SemesterController;
