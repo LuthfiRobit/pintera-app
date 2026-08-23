@@ -1,7 +1,7 @@
 <?php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\JenisTagihanSasaranGrup;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Models\JenisTagihanSasaranKriteria;
 
 it('stores a sasaran grup with AND-ed criteria rows under one jenis_tagihan', function () {

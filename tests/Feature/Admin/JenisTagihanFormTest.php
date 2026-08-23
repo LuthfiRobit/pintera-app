@@ -2,7 +2,7 @@
 // tests/Feature/Admin/JenisTagihanFormTest.php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\JenisTagihanSasaranGrup;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\TagihanBillingGenerator;

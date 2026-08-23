@@ -2,7 +2,7 @@
 // tests/Feature/Admin/JenisTagihanProsesTest.php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\JenisTagihanSasaranGrup;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Models\JenisTagihanSasaranKriteria;
 use App\Models\Lembaga;
 use App\Models\Siswa;

@@ -4,7 +4,7 @@
 namespace App\Services;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\JenisTagihanSasaranGrup;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Models\JenisTagihanSasaranKriteria;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
