@@ -17,7 +17,14 @@ use Illuminate\Support\ServiceProvider;
 use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\HybridPaymentGateway;
 use App\Contracts\BriInboundAuthenticatorInterface;
+use App\Domains\Keuangan\Events\BillTypeActivated;
+use App\Domains\Keuangan\Listeners\GenerateTagihanForActivatedBillType;
+use App\Domains\Keuangan\Listeners\GenerateTagihanForNewStudent;
+use App\Domains\Keuangan\Listeners\GenerateTagihanForUpdatedClass;
+use App\Events\StudentCreated;
+use App\Events\StudentUpdatedClass;
 use App\Services\Finance\BriInbound\SimpleBriInboundAuthenticator;
+use Illuminate\Support\Facades\Event;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -71,5 +78,9 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Notification::extend('whatsapp', fn ($app) => new WhatsAppChannel);
+        
+        Event::listen(BillTypeActivated::class, GenerateTagihanForActivatedBillType::class);
+        Event::listen(StudentCreated::class, GenerateTagihanForNewStudent::class);
+        Event::listen(StudentUpdatedClass::class, GenerateTagihanForUpdatedClass::class);
     }
 }

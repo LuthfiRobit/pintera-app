@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Domains\Keuangan\Listeners;
 
-use App\Events\BillTypeActivated;
+use App\Domains\Keuangan\Events\BillTypeActivated;
 use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 
 class GenerateTagihanForActivatedBillType

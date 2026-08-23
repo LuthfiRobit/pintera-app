@@ -4,7 +4,7 @@ namespace App\Domains\Keuangan\Actions\JenisTagihan;
 
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Events\BillTypeActivated;
+use App\Domains\Keuangan\Events\BillTypeActivated;
 use Illuminate\Support\Facades\DB;
 
 class UpdateJenisTagihanAction

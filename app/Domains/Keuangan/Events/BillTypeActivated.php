@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Events;
+namespace App\Domains\Keuangan\Events;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use Illuminate\Foundation\Events\Dispatchable;

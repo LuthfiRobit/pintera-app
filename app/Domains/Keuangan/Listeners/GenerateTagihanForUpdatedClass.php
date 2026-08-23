@@ -1,15 +1,15 @@
 <?php
-// app/Listeners/GenerateTagihanForNewStudent.php
+// app/Domains/Keuangan/Listeners/GenerateTagihanForUpdatedClass.php
 
-namespace App\Listeners;
+namespace App\Domains\Keuangan\Listeners;
 
-use App\Events\StudentCreated;
+use App\Events\StudentUpdatedClass;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Scopes\TenantScope;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Domains\Keuangan\Services\TagihanBillingGenerator;
 
-class GenerateTagihanForNewStudent
+class GenerateTagihanForUpdatedClass
 {
     public function __construct(
         private readonly JenisTagihanSasaranMatcher $matcher,
@@ -17,7 +17,7 @@ class GenerateTagihanForNewStudent
     ) {
     }
 
-    public function handle(StudentCreated $event): void
+    public function handle(StudentUpdatedClass $event): void
     {
         $siswa = $event->siswa;
 
@@ -28,7 +28,7 @@ class GenerateTagihanForNewStudent
             ->get()
             ->each(function (JenisTagihan $jenisTagihan) use ($siswa) {
                 if ($this->matcher->siswaMatchesJenisTagihan($siswa, $jenisTagihan)) {
-                    $this->generator->generateForSiswaViaEvent($siswa, $jenisTagihan, 'StudentCreated');
+                    $this->generator->generateForSiswaViaEvent($siswa, $jenisTagihan, 'StudentUpdatedClass');
                 }
             });
     }
