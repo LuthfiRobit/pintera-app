@@ -4,7 +4,7 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\ManualPaymentRequest;
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;

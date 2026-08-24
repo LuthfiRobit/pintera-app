@@ -1,6 +1,5 @@
 <?php
-
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -25,6 +24,6 @@ class PembayaranTagihan extends Model
 
     public function tagihan(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Keuangan\Models\Tagihan::class);
+        return $this->belongsTo(Tagihan::class);
     }
 }

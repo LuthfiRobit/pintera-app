@@ -4,7 +4,7 @@
 namespace App\Domains\Keuangan\Models;
 
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Pendaftaran;
 use Database\Factories\TagihanFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

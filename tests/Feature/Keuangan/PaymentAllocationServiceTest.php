@@ -3,7 +3,7 @@
 namespace Tests\Feature\Keuangan;
 
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;

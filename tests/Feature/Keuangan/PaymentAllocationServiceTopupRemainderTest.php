@@ -2,7 +2,7 @@
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Finance\PaymentAllocationService;

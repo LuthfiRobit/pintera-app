@@ -1,7 +1,7 @@
 <?php
 
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Domains\Keuangan\Models\Tagihan;
 
 it('lets a single pembayaran allocate its amount across multiple tagihan rows', function () {
