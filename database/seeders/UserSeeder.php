@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
         $this->seedStaf($sdit, [
             ['name' => 'Abdullah, M.Pd.', 'email' => 'kepsek.sd@demo.test', 'role' => 'kepala_sekolah'],
             ['name' => 'Lukman, S.Kom.', 'email' => 'adm.sd@demo.test', 'role' => 'admin_administrasi'],
-            ['name' => 'Hasan, S.E.', 'email' => 'keuangan.sd@demo.test', 'role' => 'admin_keuangan'],
+            ['name' => 'Hasan, S.E.', 'email' => 'keuangan.sd@demo.test', 'role' => 'bendahara_lembaga'],
         ], [
             ['name' => 'Sari Wulandari, S.Pd.', 'email' => 'sari.wulandari@demo.test'],
             ['name' => 'Agus Setiawan, S.Pd.', 'email' => 'agus.setiawan@demo.test'],
@@ -74,6 +74,7 @@ class UserSeeder extends Seeder
             );
             $user->update(['name' => $data['name'], 'lembaga_id' => $lembaga->id]);
             $user->assignRole($data['role']);
+            $user->assignRole('pegawai_lembaga');
         }
 
         foreach ($guruList as $data) {
@@ -89,6 +90,7 @@ class UserSeeder extends Seeder
             );
             $user->update(['name' => $data['name'], 'lembaga_id' => $lembaga->id]);
             $user->assignRole('guru');
+            $user->assignRole('pegawai_lembaga');
         }
     }
 }
