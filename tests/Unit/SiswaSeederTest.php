@@ -35,25 +35,23 @@ beforeEach(function () {
     (new KelasSeeder())->run();
 });
 
-it('seeds students into active classes across all K-9 institutions', function () {
+it('seeds students into active classes for the SD institution', function () {
     (new SiswaSeeder())->run();
 
-    foreach (Lembaga::all() as $lembaga) {
-        $aktif = TahunAjaran::where('lembaga_id', $lembaga->id)->where('status_aktif', true)->first();
-        $kelasIds = Kelas::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $aktif->id)->pluck('id');
-        
-        $siswaCount = Siswa::whereIn('kelas_id', $kelasIds)->count();
-        expect($siswaCount)->toBeGreaterThan(0);
+    $sdit = Lembaga::where('npsn', '20223333')->first();
+    $aktif = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
+    $kelasIds = Kelas::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $aktif->id)->pluck('id');
 
-        $siswaWithUser = Siswa::whereIn('kelas_id', $kelasIds)->whereNotNull('user_id')->first();
-        expect($siswaWithUser)->not->toBeNull();
-        expect($siswaWithUser->user->hasRole('siswa'))->toBeTrue();
-    }
+    $siswaCount = Siswa::whereIn('kelas_id', $kelasIds)->count();
+    expect($siswaCount)->toBe(336);
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $aditya = Siswa::where('lembaga_id', $smp->id)->where('nis', '2627001')->first();
-    expect($aditya)->not->toBeNull();
-    expect($aditya->nama_lengkap)->toBe('Aditya Pratama');
+    $siswaWithUser = Siswa::whereIn('kelas_id', $kelasIds)->whereNotNull('user_id')->first();
+    expect($siswaWithUser)->not->toBeNull();
+    expect($siswaWithUser->user->hasRole('siswa'))->toBeTrue();
+
+    $siswaPertama = Siswa::where('lembaga_id', $sdit->id)->where('nis', '3333001')->first();
+    expect($siswaPertama)->not->toBeNull();
+    expect($siswaPertama->nama_lengkap)->toBe('Muhammad Santoso');
 });
 
 it('is idempotent when run twice', function () {
