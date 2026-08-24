@@ -40,7 +40,7 @@ beforeEach(function () {
     (new KelasSeeder())->run();
 });
 
-it('seeds assessment components across all K-9 institutions', function () {
+it('seeds assessment components for the SD institution', function () {
     (new KomponenPenilaianSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -50,9 +50,9 @@ it('seeds assessment components across all K-9 institutions', function () {
         expect($komponenCount)->toBeGreaterThan(0);
     }
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $mtk = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
-    expect(KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('kode', 'TP.1.1')->where('bobot', 50)->exists())->toBeTrue();
+    $sdit = Lembaga::where('npsn', '20223333')->first();
+    $mtk = MataPelajaran::where('lembaga_id', $sdit->id)->where('nama', 'Matematika')->first();
+    expect(KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('kode', 'TP.1')->where('bobot', 100)->exists())->toBeTrue();
     expect((int) KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->sum('bobot'))->toBe(100);
 });
 
