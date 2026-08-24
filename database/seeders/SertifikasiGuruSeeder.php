@@ -13,7 +13,7 @@ class SertifikasiGuruSeeder extends Seeder
     public function run(): void
     {
         $data = [
-            'budi.santoso@demo.test' => ['jenis_sertifikasi' => 'Sertifikasi Guru (Portofolio)', 'nomor_sertifikat' => '123456789012', 'bidang_studi_sertifikasi' => 'Matematika', 'nrg' => '112233445566', 'tahun_sertifikasi' => 2012],
+            'sari.wulandari@demo.test' => ['jenis_sertifikasi' => 'Sertifikasi Guru (Portofolio)', 'nomor_sertifikat' => '123456789012', 'bidang_studi_sertifikasi' => 'Guru Kelas', 'nrg' => '112233445566', 'tahun_sertifikasi' => 2012],
             'hendra.gunawan@demo.test' => ['jenis_sertifikasi' => 'Sertifikasi Guru (PLPG)', 'nomor_sertifikat' => '223456789012', 'bidang_studi_sertifikasi' => 'Fisika', 'nrg' => '122334455667', 'tahun_sertifikasi' => 2010],
             'maya.anggraini@demo.test' => ['jenis_sertifikasi' => 'Sertifikasi Guru (PPG Dalam Jabatan)', 'nomor_sertifikat' => '323456789012', 'bidang_studi_sertifikasi' => 'Bahasa Inggris', 'nrg' => '132334455668', 'tahun_sertifikasi' => 2022],
         ];

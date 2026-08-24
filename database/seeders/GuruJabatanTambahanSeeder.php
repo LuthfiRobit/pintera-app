@@ -14,8 +14,8 @@ class GuruJabatanTambahanSeeder extends Seeder
     public function run(): void
     {
         $data = [
-            'siti.rahmawati@demo.test' => ['jabatan' => 'Wali Kelas', 'tmt_tugas' => '2015-07-01'],
-            'andi.wijaya@demo.test' => ['jabatan' => 'Pembina Ekstrakurikuler', 'tmt_tugas' => '2019-07-01'],
+            'sari.wulandari@demo.test' => ['jabatan' => 'Wali Kelas', 'tmt_tugas' => '2015-07-01'],
+            'agus.setiawan@demo.test' => ['jabatan' => 'Pembina Ekstrakurikuler', 'tmt_tugas' => '2019-07-01'],
             'hendra.gunawan@demo.test' => ['jabatan' => 'Wakil Kepala Sekolah Kurikulum', 'tmt_tugas' => '2008-01-01'],
             'taufik.hidayat@demo.test' => ['jabatan' => 'Koordinator BK', 'tmt_tugas' => '2016-07-01'],
         ];

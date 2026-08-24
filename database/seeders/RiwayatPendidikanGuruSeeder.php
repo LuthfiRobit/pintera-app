@@ -13,13 +13,13 @@ class RiwayatPendidikanGuruSeeder extends Seeder
     public function run(): void
     {
         $data = [
-            'budi.santoso@demo.test' => [
-                ['jenjang_pendidikan' => 'S1', 'sekolah_formal' => 'Universitas Pendidikan Indonesia', 'fakultas' => 'FPMIPA', 'bidang_studi' => 'Pendidikan Matematika', 'kependidikan' => true, 'tahun_masuk' => 2003, 'tahun_lulus' => 2007],
+            'sari.wulandari@demo.test' => [
+                ['jenjang_pendidikan' => 'S1', 'sekolah_formal' => 'Universitas Pendidikan Indonesia', 'fakultas' => 'FIP', 'bidang_studi' => 'Pendidikan Guru Sekolah Dasar', 'kependidikan' => true, 'tahun_masuk' => 2003, 'tahun_lulus' => 2007],
             ],
-            'siti.rahmawati@demo.test' => [
+            'agus.setiawan@demo.test' => [
                 ['jenjang_pendidikan' => 'S1', 'sekolah_formal' => 'Universitas Islam Negeri Sunan Gunung Djati', 'fakultas' => 'Tarbiyah', 'bidang_studi' => 'Pendidikan Guru Madrasah Ibtidaiyah', 'kependidikan' => true, 'tahun_masuk' => 2006, 'tahun_lulus' => 2010],
             ],
-            'andi.wijaya@demo.test' => [
+            'nita.kurniawati@demo.test' => [
                 ['jenjang_pendidikan' => 'S1', 'sekolah_formal' => 'Institut Agama Islam Negeri Bandung', 'fakultas' => 'Tarbiyah', 'bidang_studi' => 'Pendidikan Agama Islam', 'kependidikan' => true, 'tahun_masuk' => 2008, 'tahun_lulus' => 2012],
             ],
             'hendra.gunawan@demo.test' => [
