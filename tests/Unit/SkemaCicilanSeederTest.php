@@ -46,7 +46,7 @@ beforeEach(function () {
     (new TagihanSeeder())->run();
 });
 
-it('creates a 3-termin skema cicilan per lembaga for the cicilan-demo tagihan across all K-9 institutions', function () {
+it('creates a 3-termin skema cicilan for the cicilan-demo tagihan in the SD institution', function () {
     (new SkemaCicilanSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -64,5 +64,5 @@ it('is idempotent when run twice', function () {
     (new SkemaCicilanSeeder())->run();
     (new SkemaCicilanSeeder())->run();
 
-    expect(SkemaCicilan::count())->toBe(4);
+    expect(SkemaCicilan::count())->toBe(1);
 });

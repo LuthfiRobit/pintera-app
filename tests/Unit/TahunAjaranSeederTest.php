@@ -16,7 +16,7 @@ beforeEach(function () {
     (new LembagaSeeder())->run();
 });
 
-it('seeds an inactive 2025/2026 and an active 2026/2027 tahun ajaran across all K-9 institutions', function () {
+it('seeds an inactive 2025/2026 and an active 2026/2027 tahun ajaran for the SD institution', function () {
     (new TahunAjaranSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -34,5 +34,5 @@ it('is idempotent when run twice', function () {
     (new TahunAjaranSeeder())->run();
     (new TahunAjaranSeeder())->run();
 
-    expect(TahunAjaran::count())->toBe(8);
+    expect(TahunAjaran::count())->toBe(2);
 });

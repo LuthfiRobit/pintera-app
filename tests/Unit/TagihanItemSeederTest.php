@@ -46,7 +46,7 @@ beforeEach(function () {
     (new TagihanSeeder())->run();
 });
 
-it('creates exactly one item per tagihan across all K-9 institutions, with jumlah matching total_tagihan', function () {
+it('creates exactly one item per tagihan for the SD institution, with jumlah matching total_tagihan', function () {
     (new TagihanItemSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -64,5 +64,5 @@ it('is idempotent when run twice', function () {
     (new TagihanItemSeeder())->run();
     (new TagihanItemSeeder())->run();
 
-    expect(TagihanItem::count())->toBe(12);
+    expect(TagihanItem::count())->toBe(3);
 });
