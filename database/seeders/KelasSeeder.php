@@ -29,11 +29,17 @@ class KelasSeeder extends Seeder
                 ],
                 'SD' => [
                     ['nama' => 'Kelas 1-A', 'tingkat' => '1'],
+                    ['nama' => 'Kelas 1-B', 'tingkat' => '1'],
                     ['nama' => 'Kelas 2-A', 'tingkat' => '2'],
+                    ['nama' => 'Kelas 2-B', 'tingkat' => '2'],
                     ['nama' => 'Kelas 3-A', 'tingkat' => '3'],
+                    ['nama' => 'Kelas 3-B', 'tingkat' => '3'],
                     ['nama' => 'Kelas 4-A', 'tingkat' => '4'],
+                    ['nama' => 'Kelas 4-B', 'tingkat' => '4'],
                     ['nama' => 'Kelas 5-A', 'tingkat' => '5'],
+                    ['nama' => 'Kelas 5-B', 'tingkat' => '5'],
                     ['nama' => 'Kelas 6-A', 'tingkat' => '6'],
+                    ['nama' => 'Kelas 6-B', 'tingkat' => '6'],
                 ],
                 default => [
                     ['nama' => 'VII-A', 'tingkat' => '7'],
