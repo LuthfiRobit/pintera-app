@@ -35,11 +35,11 @@ final class ApproveConsentAction
         $guruPengaju?->notify(new ConsentDisetujuiNotification($kasus));
 
         // Avoid Spatie's ->role() query scope here: it throws RoleDoesNotExist when the
-        // 'admin_akademik' role hasn't been created yet in the current guard (e.g. in tests
+        // 'operator_akademik' role hasn't been created yet in the current guard (e.g. in tests
         // that don't need lembaga-admin notifications). whereHas() degrades to zero matches
         // instead, which is the correct behavior for a best-effort notification fan-out.
         $lembagaAdmins = User::withoutGlobalScope(TenantScope::class)
-            ->whereHas('roles', fn ($query) => $query->where('name', 'admin_akademik'))
+            ->whereHas('roles', fn ($query) => $query->where('name', 'operator_akademik'))
             ->where('lembaga_id', $kasus->lembaga_id)
             ->get();
 
