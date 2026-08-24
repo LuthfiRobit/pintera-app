@@ -23,58 +23,58 @@ class NilaiSiswaSeeder extends Seeder
                 continue;
             }
 
-            if ($lembaga->npsn === '20223344') {
-                $this->seedSmpNilai($lembaga, $aktif);
+            if ($lembaga->npsn === '20223333') {
+                $this->seedSdNilai($lembaga, $aktif);
             } else {
                 $this->seedGenericNilai($lembaga, $aktif);
             }
         }
     }
 
-    private function seedSmpNilai(Lembaga $smp, TahunAjaran $aktif): void
+    private function seedSdNilai(Lembaga $sd, TahunAjaran $aktif): void
     {
-        $kelasA = Kelas::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'VII-A')->first();
+        $kelasA = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-A')->first();
         if (! $kelasA) {
             return;
         }
 
         $siswaA = Siswa::where('kelas_id', $kelasA->id)->orderBy('nis')->get();
-        $mtk = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
-        $ipa = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Ilmu Pengetahuan Alam (IPA)')->first();
+        $mtk = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
+        $ipas = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
+
+        $catatanVariasi = [
+            'Menunjukkan pemahaman yang sangat baik, mampu mengerjakan latihan tanpa bantuan.',
+            'Cukup baik, masih perlu bimbingan pada beberapa soal cerita.',
+            'Sangat unggul, selalu aktif bertanya dan mengerjakan tugas tambahan.',
+            'Perlu penguatan pada pemahaman konsep dasar, disarankan les tambahan.',
+            'Baik, konsisten dalam menyelesaikan latihan harian.',
+        ];
 
         if ($mtk && $siswaA->isNotEmpty()) {
             $asesmenMtk = Asesmen::where('kelas_id', $kelasA->id)->where('mata_pelajaran_id', $mtk->id)->first();
-            $tpMtk1 = KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('kode', 'TP.1.1')->first();
+            $tpMtk1 = KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->first();
 
             if ($asesmenMtk && $tpMtk1) {
-                $skorMtk = [89, 92, 78, 85, 95];
-                $catatanMtk = [
-                    'Menunjukkan pemahaman yang sangat baik dalam operasi aritmetika dan aljabar.',
-                    'Sangat unggul dalam analisis soal cerita dan pemecahan masalah bilangan.',
-                    'Perlu penguatan pada pemahaman representasi grafik dan fungsi.',
-                    'Cukup baik, konsisten dalam menyelesaikan latihan operasi bilangan bulat.',
-                    'Sempurna dalam menguasai seluruh indikator Tujuan Pembelajaran 1 dan 2.',
-                ];
-
                 foreach ($siswaA as $i => $siswa) {
+                    $skor = 70 + (($i * 7 + 13) % 30); // rentang 70-99, bervariasi per siswa
                     NilaiSiswa::updateOrCreate(
                         ['asesmen_id' => $asesmenMtk->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tpMtk1->id],
-                        ['nilai_angka' => $skorMtk[$i] ?? 80, 'catatan' => $catatanMtk[$i] ?? 'Baik']
+                        ['nilai_angka' => $skor, 'catatan' => $catatanVariasi[$i % count($catatanVariasi)]]
                     );
                 }
             }
         }
 
-        if ($ipa && $siswaA->isNotEmpty()) {
-            $asesmenIpa = Asesmen::where('kelas_id', $kelasA->id)->where('mata_pelajaran_id', $ipa->id)->first();
-            $tpIpa1 = KomponenPenilaian::where('mata_pelajaran_id', $ipa->id)->where('kode', 'TP.IPA.1')->first();
+        if ($ipas && $siswaA->isNotEmpty()) {
+            $asesmenIpas = Asesmen::where('kelas_id', $kelasA->id)->where('mata_pelajaran_id', $ipas->id)->first();
+            $tpIpas1 = KomponenPenilaian::where('mata_pelajaran_id', $ipas->id)->first();
 
-            if ($asesmenIpa && $tpIpa1) {
-                $skorIpa = [84, 89, 92, 82, 88];
+            if ($asesmenIpas && $tpIpas1) {
                 foreach ($siswaA as $i => $siswa) {
+                    $skor = 72 + (($i * 5 + 9) % 28); // rentang 72-99, bervariasi per siswa
                     NilaiSiswa::updateOrCreate(
-                        ['asesmen_id' => $asesmenIpa->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tpIpa1->id],
-                        ['nilai_angka' => $skorIpa[$i] ?? 85, 'catatan' => 'Mampu menggunakan jangka sorong dan mikrometer sekrup dengan ketelitian baik.']
+                        ['asesmen_id' => $asesmenIpas->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tpIpas1->id],
+                        ['nilai_angka' => $skor, 'catatan' => $catatanVariasi[($i + 2) % count($catatanVariasi)]]
                     );
                 }
             }
