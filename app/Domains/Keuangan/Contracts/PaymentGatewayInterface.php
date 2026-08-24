@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Contracts;
+namespace App\Domains\Keuangan\Contracts;
 
-use App\DTO\PaymentStatusResult;
-use App\DTO\QrisResult;
-use App\DTO\VirtualAccountResult;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
+use App\Domains\Keuangan\DataTransferObjects\QrisResult;
+use App\Domains\Keuangan\DataTransferObjects\VirtualAccountResult;
+use App\Domains\Keuangan\Models\Pembayaran;
 
 interface PaymentGatewayInterface
 {

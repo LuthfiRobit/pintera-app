@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\DTO\PaymentStatusResult;
-use App\DTO\QrisResult;
-use App\DTO\VirtualAccountResult;
+use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
+use App\Domains\Keuangan\DataTransferObjects\QrisResult;
+use App\Domains\Keuangan\DataTransferObjects\VirtualAccountResult;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Services\Finance\Gateway\BriSnapGateway;
 use App\Services\Finance\Gateway\HybridPaymentGateway;

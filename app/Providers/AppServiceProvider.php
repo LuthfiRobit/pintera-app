@@ -3,7 +3,7 @@
 namespace App\Providers;
 
 use App\Auth\TenantAwareUserProvider;
-use App\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Models\AkunPendaftar;
 use App\Notifications\Channels\WhatsAppChannel;
 use App\Services\Finance\Gateway\BriSnapGateway;
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\ServiceProvider;
 use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\HybridPaymentGateway;
-use App\Contracts\BriInboundAuthenticatorInterface;
+use App\Domains\Keuangan\Contracts\BriInboundAuthenticatorInterface;
 use App\Domains\Keuangan\Events\BillTypeActivated;
 use App\Domains\Keuangan\Listeners\GenerateTagihanForActivatedBillType;
 use App\Domains\Keuangan\Listeners\GenerateTagihanForNewStudent;

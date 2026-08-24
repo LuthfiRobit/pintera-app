@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\Contracts\PaymentGatewayInterface;
-use App\DTO\PaymentStatusResult;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
 use App\Domains\Keuangan\Models\BriQrisPayment;
 use App\Domains\Keuangan\Models\Pembayaran;
 use Illuminate\Foundation\Testing\RefreshDatabase;

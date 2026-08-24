@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
@@ -132,12 +132,12 @@ class PaymentServiceTest extends TestCase
         $siswa = Siswa::factory()->create();
         $tagihan = Tagihan::factory()->create(['status' => 'belum_bayar', 'net_amount' => 10000]);
 
-        $mockGateway = \Mockery::mock(\App\Contracts\PaymentGatewayInterface::class);
+        $mockGateway = \Mockery::mock(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class);
         $mockGateway->shouldReceive('createQris')
             ->once()
-            ->andReturn(new \App\DTO\QrisResult('QR123', 10000, now()->addMinutes(15), ['referenceNo' => 'REF-001']));
+            ->andReturn(new \App\Domains\Keuangan\DataTransferObjects\QrisResult('QR123', 10000, now()->addMinutes(15), ['referenceNo' => 'REF-001']));
             
-        $this->app->instance(\App\Contracts\PaymentGatewayInterface::class, $mockGateway);
+        $this->app->instance(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class, $mockGateway);
 
         $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 
@@ -151,12 +151,12 @@ class PaymentServiceTest extends TestCase
         $siswa = Siswa::factory()->create();
         $tagihan = Tagihan::factory()->create(['status' => 'belum_bayar', 'net_amount' => 10000]);
 
-        $mockGateway = \Mockery::mock(\App\Contracts\PaymentGatewayInterface::class);
+        $mockGateway = \Mockery::mock(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class);
         $mockGateway->shouldReceive('createQris')
             ->once()
-            ->andReturn(new \App\DTO\QrisResult('QR123', 10000, now()->addMinutes(15), ['someOtherField' => 'val']));
+            ->andReturn(new \App\Domains\Keuangan\DataTransferObjects\QrisResult('QR123', 10000, now()->addMinutes(15), ['someOtherField' => 'val']));
             
-        $this->app->instance(\App\Contracts\PaymentGatewayInterface::class, $mockGateway);
+        $this->app->instance(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class, $mockGateway);
 
         $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 

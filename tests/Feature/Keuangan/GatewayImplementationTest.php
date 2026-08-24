@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\Contracts\PaymentGatewayInterface;
-use App\DTO\PaymentStatusResult;
-use App\DTO\QrisResult;
-use App\DTO\VirtualAccountResult;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
+use App\Domains\Keuangan\DataTransferObjects\QrisResult;
+use App\Domains\Keuangan\DataTransferObjects\VirtualAccountResult;
 use App\Exceptions\PaymentException;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;

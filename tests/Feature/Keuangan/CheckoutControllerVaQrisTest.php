@@ -1,6 +1,6 @@
 <?php
 
-use App\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTO;
+namespace App\Domains\Keuangan\DataTransferObjects;
 
 class QrisResult
 {
