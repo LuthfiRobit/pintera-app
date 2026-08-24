@@ -32,90 +32,54 @@ class PendampinganSeeder extends Seeder
      *   4. berjalan          — sesi/tugas pertama sudah dibuat
      *   5. eskalasi          — dikonselerkan ke admin setelah evaluasi
      *   6. selesai           — kasus sudah ditutup konselor
+     *   7. ringan SD         — tugas batch harian, status berjalan
      */
     public function run(): void
     {
-        $smpit = Lembaga::where('npsn', '20223344')->firstOrFail();
+        $sdit = Lembaga::where('npsn', '20223333')->firstOrFail();
 
-        $gurubk     = $this->resolveGuruBk($smpit);
+        $gurubk     = $this->resolveGuruBk($sdit);
         $psikolog   = $this->resolveKaryawanPool();
-        $adminUser  = User::where('email', 'adm.smp@demo.test')->first();
-        $siswas     = Siswa::where('lembaga_id', $smpit->id)->take(10)->get();
+        $adminUser  = User::where('email', 'adm.sd@demo.test')->first();
+        $siswas     = Siswa::where('lembaga_id', $sdit->id)->take(10)->get();
+        $guruUmum   = Guru::where('lembaga_id', $sdit->id)->where('jenis_ptk', 'guru_kelas')->first();
 
         if ($siswas->count() < 5) {
-            $this->command->warn('PendampinganSeeder: kurang dari 5 siswa SMPIT, skip.');
+            $this->command->warn('PendampinganSeeder: kurang dari 5 siswa SDIT, skip.');
             return;
         }
 
         // ── Skenario 1: Diajukan oleh guru ───────────────────────────────────
-        $this->buatKasusDiajukan($siswas[0], $smpit, $gurubk);
+        $this->buatKasusDiajukan($siswas[0], $sdit, $gurubk);
 
         // ── Skenario 2: Menunggu Consent ─────────────────────────────────────
-        $this->buatKasusMenungguConsent($siswas[1], $smpit, $gurubk, $psikolog);
+        $this->buatKasusMenungguConsent($siswas[1], $sdit, $gurubk, $psikolog);
 
         // ── Skenario 3: Ditugaskan (consent disetujui, belum ada sesi/tugas) ─
-        $this->buatKasusDitugaskan($siswas[2], $smpit, $gurubk);
+        $this->buatKasusDitugaskan($siswas[2], $sdit, $gurubk);
 
         // ── Skenario 4: Berjalan (ada sesi & tugas) ──────────────────────────
-        $this->buatKasusBerjalan($siswas[3], $smpit, $gurubk, $adminUser);
+        $this->buatKasusBerjalan($siswas[3], $sdit, $gurubk, $adminUser);
 
         // ── Skenario 5: Eskalasi ──────────────────────────────────────────────
-        $this->buatKasusEskalasi($siswas[4], $smpit, $psikolog, $adminUser);
+        $this->buatKasusEskalasi($siswas[4], $sdit, $psikolog, $adminUser);
 
         // ── Skenario 6: Selesai ───────────────────────────────────────────────
         if ($siswas->count() >= 6) {
-            $this->buatKasusSelesai($siswas[5], $smpit, $gurubk, $adminUser);
+            $this->buatKasusSelesai($siswas[5], $sdit, $gurubk, $adminUser);
         }
 
-        // ── Skenario 7: Kasus ringan SMP (percaya diri presentasi, selesai) ──
-        if ($siswas->count() >= 7 && $gurubk) {
-            $this->buatKasusRinganSmp($siswas[6], $smpit, $gurubk);
-        }
-
-        // ── Skenario ringan lintas jenjang: KB, TK, SD ───────────────────────
-        // Menunjukkan fitur ini juga cocok untuk kasus sehari-hari yang ringan,
-        // bukan hanya kasus berat — bukan cuma jenjang SMP.
-        $this->buatSkenarioRinganLintasJenjang($psikolog);
-    }
-
-    private function buatSkenarioRinganLintasJenjang(?Karyawan $psikolog): void
-    {
-        $kbit = Lembaga::where('npsn', '20223311')->first();
-        $tkit = Lembaga::where('npsn', '20223322')->first();
-        $sdit = Lembaga::where('npsn', '20223333')->first();
-
-        if ($kbit) {
-            $siswaKb = Siswa::where('lembaga_id', $kbit->id)->first();
-            $guruKb  = Guru::where('lembaga_id', $kbit->id)->first();
-            if ($siswaKb && $guruKb) {
-                $this->buatKasusRinganKb($siswaKb, $kbit, $guruKb);
-            }
-        }
-
-        if ($tkit) {
-            $siswaTk = Siswa::where('lembaga_id', $tkit->id)->first();
-            if ($siswaTk) {
-                $orangTuaTk = $this->resolveOrangTuaKontakUtama($siswaTk);
-                if ($orangTuaTk) {
-                    $this->buatKasusRinganTk($siswaTk, $tkit, $orangTuaTk, $psikolog);
-                }
-            }
-        }
-
-        if ($sdit) {
-            $siswaSd = Siswa::where('lembaga_id', $sdit->id)->first();
-            $guruSd  = Guru::where('lembaga_id', $sdit->id)->first();
-            if ($siswaSd && $guruSd) {
-                $this->buatKasusRinganSd($siswaSd, $sdit, $guruSd);
-            }
+        // ── Skenario 7: Kasus ringan (tugas batch harian, status berjalan) ───
+        if ($siswas->count() >= 7 && $guruUmum) {
+            $this->buatKasusRinganSd($siswas[6], $sdit, $guruUmum);
         }
     }
 
     // ── Resolvers ────────────────────────────────────────────────────────────
 
-    private function resolveGuruBk(Lembaga $smpit): ?Guru
+    private function resolveGuruBk(Lembaga $sdit): ?Guru
     {
-        return Guru::where('lembaga_id', $smpit->id)
+        return Guru::where('lembaga_id', $sdit->id)
             ->where('jenis_ptk', 'guru_bk')
             ->first();
     }
@@ -150,7 +114,7 @@ class PendampinganSeeder extends Seeder
      * Skenario 1 — Status: diajukan
      * Guru mengajukan kasus, belum ada triase.
      */
-    private function buatKasusDiajukan(Siswa $siswa, Lembaga $smpit, ?Guru $gurubk): void
+    private function buatKasusDiajukan(Siswa $siswa, Lembaga $sdit, ?Guru $gurubk): void
     {
         if (! $gurubk) {
             return;
@@ -159,7 +123,7 @@ class PendampinganSeeder extends Seeder
         Kasus::firstOrCreate(
             ['siswa_id' => $siswa->id, 'diajukan_oleh_guru_id' => $gurubk->id, 'kategori_masalah' => 'Perilaku'],
             [
-                'lembaga_id'           => $smpit->id,
+                'lembaga_id'           => $sdit->id,
                 'status'               => StatusKasus::Diajukan,
                 'deskripsi'            => 'Siswa sering tidak mengumpulkan tugas dan terlihat menarik diri dari pergaulan teman sebaya. Guru wali kelas sudah berkomunikasi tapi perlu penanganan lebih lanjut.',
                 'tingkat_urgensi'      => 'sedang',
@@ -171,7 +135,7 @@ class PendampinganSeeder extends Seeder
      * Skenario 2 — Status: menunggu_consent
      * Admin sudah triase dan pilih konselor, menunggu persetujuan ortu.
      */
-    private function buatKasusMenungguConsent(Siswa $siswa, Lembaga $smpit, ?Guru $gurubk, ?Karyawan $psikolog): void
+    private function buatKasusMenungguConsent(Siswa $siswa, Lembaga $sdit, ?Guru $gurubk, ?Karyawan $psikolog): void
     {
         if (! $gurubk) {
             return;
@@ -180,7 +144,7 @@ class PendampinganSeeder extends Seeder
         $kasus = Kasus::firstOrCreate(
             ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Sosial-Emosional'],
             [
-                'lembaga_id'              => $smpit->id,
+                'lembaga_id'              => $sdit->id,
                 'diajukan_oleh_guru_id'   => $gurubk->id,
                 'status'                  => StatusKasus::MenungguConsent,
                 'deskripsi'               => 'Siswa menunjukkan tanda-tanda kecemasan berlebih saat ujian dan menghindari interaksi dengan guru.',
@@ -200,7 +164,7 @@ class PendampinganSeeder extends Seeder
      * Skenario 3 — Status: ditugaskan
      * Consent sesi disetujui, konselor resmi ditugaskan, belum ada sesi/tugas.
      */
-    private function buatKasusDitugaskan(Siswa $siswa, Lembaga $smpit, ?Guru $gurubk): void
+    private function buatKasusDitugaskan(Siswa $siswa, Lembaga $sdit, ?Guru $gurubk): void
     {
         if (! $gurubk) {
             return;
@@ -209,7 +173,7 @@ class PendampinganSeeder extends Seeder
         $kasus = Kasus::firstOrCreate(
             ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Akademik', 'tingkat_urgensi' => 'rendah'],
             [
-                'lembaga_id'            => $smpit->id,
+                'lembaga_id'            => $sdit->id,
                 'diajukan_oleh_guru_id' => $gurubk->id,
                 'status'                => StatusKasus::Ditugaskan,
                 'deskripsi'             => 'Performa akademik menurun drastis dalam 2 bulan terakhir. Nilai rata-rata turun dari 80 ke 62. Perlu asesmen penyebab.',
@@ -232,7 +196,7 @@ class PendampinganSeeder extends Seeder
      * Skenario 4 — Status: berjalan
      * Ada sesi selesai, ada tugas yang dikerjakan, ada evaluasi lanjut.
      */
-    private function buatKasusBerjalan(Siswa $siswa, Lembaga $smpit, ?Guru $gurubk, ?User $adminUser): void
+    private function buatKasusBerjalan(Siswa $siswa, Lembaga $sdit, ?Guru $gurubk, ?User $adminUser): void
     {
         if (! $gurubk || ! $adminUser) {
             return;
@@ -241,7 +205,7 @@ class PendampinganSeeder extends Seeder
         $kasus = Kasus::firstOrCreate(
             ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Perilaku', 'tingkat_urgensi' => 'tinggi'],
             [
-                'lembaga_id'            => $smpit->id,
+                'lembaga_id'            => $sdit->id,
                 'diajukan_oleh_guru_id' => $gurubk->id,
                 'status'                => StatusKasus::Berjalan,
                 'deskripsi'             => 'Siswa menunjukkan agresi verbal di kelas, sudah terjadi 3 insiden dalam sebulan.',
@@ -321,7 +285,7 @@ class PendampinganSeeder extends Seeder
      * Skenario 5 — Status: eskalasi
      * Konselor mengeskalasi ke admin/koordinator BK.
      */
-    private function buatKasusEskalasi(Siswa $siswa, Lembaga $smpit, ?Karyawan $psikolog, ?User $adminUser): void
+    private function buatKasusEskalasi(Siswa $siswa, Lembaga $sdit, ?Karyawan $psikolog, ?User $adminUser): void
     {
         if (! $psikolog || ! $adminUser) {
             return;
@@ -330,7 +294,7 @@ class PendampinganSeeder extends Seeder
         $kasus = Kasus::firstOrCreate(
             ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Kesehatan Mental'],
             [
-                'lembaga_id'              => $smpit->id,
+                'lembaga_id'              => $sdit->id,
                 'diajukan_oleh_guru_id'   => null,
                 'diajukan_oleh_orang_tua_id' => $this->resolveOrangTuaKontakUtama($siswa)?->id,
                 'status'                  => StatusKasus::Eskalasi,
@@ -374,7 +338,7 @@ class PendampinganSeeder extends Seeder
      * Skenario 6 — Status: selesai
      * Kasus sudah ditutup oleh konselor.
      */
-    private function buatKasusSelesai(Siswa $siswa, Lembaga $smpit, ?Guru $gurubk, ?User $adminUser): void
+    private function buatKasusSelesai(Siswa $siswa, Lembaga $sdit, ?Guru $gurubk, ?User $adminUser): void
     {
         if (! $gurubk || ! $adminUser) {
             return;
@@ -383,7 +347,7 @@ class PendampinganSeeder extends Seeder
         $kasus = Kasus::firstOrCreate(
             ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Akademik', 'tingkat_urgensi' => 'sedang'],
             [
-                'lembaga_id'            => $smpit->id,
+                'lembaga_id'            => $sdit->id,
                 'diajukan_oleh_guru_id' => $gurubk->id,
                 'status'                => StatusKasus::Selesai,
                 'deskripsi'             => 'Siswa mengalami kesulitan konsentrasi dan sering absen. Sudah ditangani 6 sesi.',
@@ -448,120 +412,7 @@ class PendampinganSeeder extends Seeder
     }
 
     /**
-     * Skenario ringan SMP — Status: selesai
-     * Contoh kasus ringan (bukan kasus berat) yang ditangani sampai tuntas,
-     * untuk menunjukkan fitur ini juga cocok untuk keperluan sehari-hari.
-     */
-    private function buatKasusRinganSmp(Siswa $siswa, Lembaga $smpit, Guru $gurubk): void
-    {
-        $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'kategori_masalah' => 'Kepercayaan Diri'],
-            [
-                'lembaga_id'            => $smpit->id,
-                'diajukan_oleh_guru_id' => $gurubk->id,
-                'status'                => StatusKasus::Selesai,
-                'deskripsi'             => 'Siswa terlihat gugup dan menghindar setiap kali diminta presentasi di depan kelas, meski persiapannya sudah baik.',
-                'tingkat_urgensi'       => 'rendah',
-                'konselor_guru_id'      => $gurubk->id,
-            ]
-        );
-
-        KasusConsent::firstOrCreate(
-            ['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan'],
-            ['status' => 'disetujui', 'disetujui_at' => now()->subDays(20)]
-        );
-        KasusConsent::firstOrCreate(
-            ['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media'],
-            ['status' => 'menunggu']
-        );
-
-        KasusSesi::firstOrCreate(
-            ['kasus_id' => $kasus->id, 'dijadwalkan_pada' => now()->subDays(10)->setTime(9, 0)],
-            [
-                'peserta'          => 'siswa',
-                'lokasi_mode'      => 'Ruang BK',
-                'status'           => StatusKasusSesi::Selesai,
-                'catatan_internal' => 'Latihan presentasi singkat 1-lawan-1 dengan konselor. Siswa lebih rileks setelah beberapa kali mencoba.',
-            ]
-        );
-
-        $tugas = KasusTugas::firstOrCreate(
-            ['kasus_id' => $kasus->id, 'judul' => 'Latihan Bicara di Depan Cermin'],
-            [
-                'instruksi'          => 'Latihan menyampaikan 1 topik singkat di depan cermin selama 2 menit setiap hari, rekam perasaanmu setelahnya.',
-                'frekuensi'          => 'harian',
-                'batch_id'           => (string) Str::uuid(),
-                'batch_urutan'       => 1,
-                'batch_total'        => 1,
-                'mulai_pada'         => now()->subDays(9)->toDateString(),
-                'batas_selesai_pada' => now()->subDays(9)->toDateString(),
-                'status'             => StatusKasusTugas::Selesai,
-            ]
-        );
-
-        KasusTugasSubmission::firstOrCreate(
-            ['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id],
-            [
-                'teks'          => 'Sudah coba latihan di depan cermin, awalnya canggung tapi lama-lama lebih pede.',
-                'status_review' => 'diterima',
-            ]
-        );
-
-        KasusEvaluasi::firstOrCreate(
-            ['kasus_id' => $kasus->id, 'dibuat_oleh_user_id' => $gurubk->user_id],
-            [
-                'tanggal'   => now()->subDays(8),
-                'catatan'   => 'Siswa sudah berhasil presentasi di kelas minggu ini tanpa menghindar. Kasus dinyatakan selesai.',
-                'keputusan' => 'selesai',
-            ]
-        );
-    }
-
-    /**
-     * Skenario ringan KB — Status: diajukan
-     * Diajukan oleh guru (wali kelas), belum ditriase. Contoh kasus keseharian
-     * jenjang usia dini, bukan masalah perilaku/emosional berat.
-     */
-    private function buatKasusRinganKb(Siswa $siswa, Lembaga $kbit, Guru $guruKb): void
-    {
-        Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'diajukan_oleh_guru_id' => $guruKb->id, 'kategori_masalah' => 'Kebiasaan Makan'],
-            [
-                'lembaga_id'       => $kbit->id,
-                'status'           => StatusKasus::Diajukan,
-                'deskripsi'        => 'Ananda selalu menolak sayur saat makan bersama di kelas dan hanya mau makan nasi putih. Mohon saran pendampingan sederhana untuk orang tua di rumah.',
-                'tingkat_urgensi'  => 'rendah',
-            ]
-        );
-    }
-
-    /**
-     * Skenario ringan TK — Status: menunggu_consent
-     * Diajukan LANGSUNG oleh orang tua (bukan guru) — menunjukkan jalur
-     * pengajuan orang tua. Sudah ditriase admin (konselor psikolog pool
-     * ditugaskan), tinggal menunggu persetujuan consent dari orang tua yang
-     * sama.
-     */
-    private function buatKasusRinganTk(Siswa $siswa, Lembaga $tkit, OrangTua $orangTuaTk, ?Karyawan $psikolog): void
-    {
-        $kasus = Kasus::firstOrCreate(
-            ['siswa_id' => $siswa->id, 'diajukan_oleh_orang_tua_id' => $orangTuaTk->id, 'kategori_masalah' => 'Adaptasi Sekolah'],
-            [
-                'lembaga_id'           => $tkit->id,
-                'diajukan_oleh_guru_id' => null,
-                'status'               => StatusKasus::MenungguConsent,
-                'deskripsi'            => 'Ananda masih menangis dan sulit dilepas setiap kali diantar ke sekolah, sudah berlangsung 2 minggu sejak masuk TK.',
-                'tingkat_urgensi'      => 'rendah',
-                'konselor_karyawan_id' => $psikolog?->id,
-            ]
-        );
-
-        KasusConsent::firstOrCreate(['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan'], ['status' => 'menunggu']);
-        KasusConsent::firstOrCreate(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media'],  ['status' => 'menunggu']);
-    }
-
-    /**
-     * Skenario ringan SD — Status: berjalan
+     * Skenario 7 (Ringan SD) — Status: berjalan
      * Memakai fitur tugas batch generator (frekuensi harian) pada kasus
      * ringan, untuk menunjukkan fitur terbaru juga cocok dipakai di luar
      * kasus berat.
