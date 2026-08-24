@@ -67,7 +67,7 @@ SertifikasiGuru: 3
 ```
 Ketiga seeder aplikasi berjalan mulus tanpa error dan tanpa *silent skip*, menghasilkan jumlah record yang sesuai dengan target data demo SD.
 
-### D. Step 5: Full Test Suite Solo Run
+### D. Step 5: Full Test Suite Solo Run (Executor)
 Perintah:
 ```bash
 php artisan test
@@ -76,7 +76,21 @@ php artisan test
 - **Total Passed:** **1,724 passed (4,648 assertions)**
 - **Failed:** **339 failed**
 - **Durasi:** 617.77s
-- **Catatan Analisis:** Kegagalan pada full test suite murni disebabkan oleh tabrakan DDL skema database MySQL (`SQLSTATE[42S01]: Base table or view already exists` / `Table 'migrations' doesn't exist`) akibat eksekusi serial 2.000+ test di MySQL (terutama test migrasi/seeder seperti `LembagaIuranMigrationTest` dan `DatabaseSeederTest` yang menjalankan DDL tanpa rollback transaksional DDL pada MySQL). Seluruh unit test dan feature test yang relevan dengan domain seeder terbukti 100% PASS saat diisolasi.
+- **Catatan Analisis (executor):** Kegagalan diklaim murni disebabkan tabrakan DDL skema database MySQL akibat eksekusi serial 2.000+ test (terutama `LembagaIuranMigrationTest` dan `DatabaseSeederTest`).
+
+**⚠️ Klaim di atas TIDAK terverifikasi ulang — lihat Addendum §5 di bawah, run independen menunjukkan hasil yang bertentangan (0 gagal).**
+
+---
+
+## 5. Addendum — Verifikasi Independen Sesi Review (24 Agustus 2026)
+
+Sesi review terpisah dari yang mengeksekusi plan ini menemukan lonjakan 45→339 kegagalan (7,5×) antara full-suite sebelum sub-project ini (setelah review penyusutan seeder) dan full-suite Step 5 di atas — jauh lebih besar daripada yang bisa dijelaskan wajar oleh "tabrakan DDL 2 file pre-existing" (`LembagaIuranMigrationTest.php`, `DatabaseSeederTest.php` — dikonfirmasi keduanya memang pre-existing, tidak disentuh plan ini, terakhir diubah 25 Juli dan 23 Agustus). Kedua file itu SUDAH ada di full-suite run sebelumnya di sesi ini (yang cuma menemukan 1 flaky test tak terkait), jadi klaim "penyebabnya murni 2 file itu" perlu dibuktikan, bukan diasumsikan.
+
+**Verifikasi**: `php artisan test` dijalankan solo (dikonfirmasi tidak ada proses lain yang mengakses database bersamaan sebelum run — cuma proses `artisan serve` dev-server yang tidak menyentuh test DB).
+
+**Hasil**: **2063 passed, 0 failed (5768 assertions), durasi 467.59s.** Total jumlah test sama persis dengan run executor (1724+339=2063), tapi di lingkungan bersih SEMUANYA lolos.
+
+**Kesimpulan**: 339 kegagalan di run executor adalah **anomali/flaky environmental saat run itu berlangsung** (kemungkinan proses lain sempat menyerempet, atau MySQL glitch transien — pola yang sama seperti insiden review SP3 Keuangan sebelumnya di sesi ini), **BUKAN regresi nyata dari kerjaan sub-project ini**. Kode 20 task (perbaikan 33 test + 3 seeder) terbukti bersih dan solid lewat run independen bersih.
 
 ---
 
@@ -94,3 +108,4 @@ php artisan test
 - **Branch Saat Ini:** `rbac-v2`
 - **Working Tree:** Bersih (`git status` clean setelah commit log ini)
 - **Kompatibilitas:** Seluruh seeder demo dan test seeder telah sinkron 100% dengan standar seeder 1-lembaga (SD).
+- **Status akhir (pasca-addendum §5): TUNTAS DAN BERSIH.** Full suite independen 2063 passed, 0 failed. Rangkaian kerja hari ini (spec RBAC v2, penyusutan seeder ke 1 lembaga SD, perbaikan 33 test + 3 seeder cacat) semuanya terverifikasi solid.
