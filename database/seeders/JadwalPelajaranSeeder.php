@@ -35,26 +35,26 @@ class JadwalPelajaranSeeder extends Seeder
                 continue;
             }
 
-            if ($lembaga->npsn === '20223344') {
-                $this->seedSmpJadwal($lembaga, $aktif, $semester, $polaJam, $daftarHari);
+            if ($lembaga->npsn === '20223333') {
+                $this->seedSdJadwal($lembaga, $aktif, $semester, $polaJam, $daftarHari);
             } else {
                 $this->seedGenericJadwal($lembaga, $aktif, $semester, $polaJam, $daftarHari);
             }
         }
     }
 
-    private function seedSmpJadwal(Lembaga $smp, TahunAjaran $aktif, Semester $semester, PolaJam $polaJam, array $daftarHari): void
+    private function seedSdJadwal(Lembaga $sd, TahunAjaran $aktif, Semester $semester, PolaJam $polaJam, array $daftarHari): void
     {
-        $kelasA = Kelas::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'VII-A')->first();
-        $kelasB = Kelas::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'VII-B')->first();
+        $kelasA = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-A')->first();
+        $kelasB = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-B')->first();
 
-        $mapelMatematika = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
-        $mapelIPA = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Ilmu Pengetahuan Alam (IPA)')->first();
+        $mapelMatematika = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
+        $mapelIPAS = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
 
-        $guruBudi = Guru::where('email', 'budi.santoso@demo.test')->first();
-        $guruSiti = Guru::where('email', 'siti.rahmawati@demo.test')->first();
+        $guruHendra = Guru::where('email', 'hendra.gunawan@demo.test')->first();
+        $guruMaya = Guru::where('email', 'maya.anggraini@demo.test')->first();
 
-        if (! $kelasA || ! $kelasB || ! $mapelMatematika || ! $mapelIPA || ! $guruBudi || ! $guruSiti) {
+        if (! $kelasA || ! $kelasB || ! $mapelMatematika || ! $mapelIPAS || ! $guruHendra || ! $guruMaya) {
             return;
         }
 
@@ -65,44 +65,44 @@ class JadwalPelajaranSeeder extends Seeder
             $jam5 = JamPelajaran::where('pola_jam_id', $polaJam->id)->where('hari', $hari)->where('urutan', 5)->first();
 
             if ($jam1 && $jam2 && $jam4 && $jam5) {
-                // VII-A: Jam 1 & 2 Matematika (Budi)
+                // Kelas 1-A: Jam 1 & 2 Matematika (Hendra)
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam1->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruBudi->id]
+                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
                 );
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam2->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruBudi->id]
+                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
                 );
 
-                // VII-A: Jam 4 & 5 IPA (Siti)
+                // Kelas 1-A: Jam 4 & 5 IPAS (Maya)
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam4->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPA->id, 'guru_id' => $guruSiti->id]
+                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
                 );
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam5->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPA->id, 'guru_id' => $guruSiti->id]
+                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
                 );
 
-                // VII-B: Jam 1 & 2 IPA (Siti)
+                // Kelas 1-B: Jam 1 & 2 IPAS (Maya)
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam1->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPA->id, 'guru_id' => $guruSiti->id]
+                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
                 );
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam2->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPA->id, 'guru_id' => $guruSiti->id]
+                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
                 );
 
-                // VII-B: Jam 4 & 5 Matematika (Budi)
+                // Kelas 1-B: Jam 4 & 5 Matematika (Hendra)
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam4->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruBudi->id]
+                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
                 );
                 JadwalPelajaran::firstOrCreate(
                     ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam5->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruBudi->id]
+                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
                 );
             }
         }
