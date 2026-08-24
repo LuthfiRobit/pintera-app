@@ -3960,29 +3960,29 @@ git commit -m "refactor(keuangan): refactor webhook BriVaInboundController jadi 
 **Interfaces:**
 - Consumes: `App\Domains\Keuangan\Models\{Pembayaran,BriQrisPayment}` (Task 1, 3), `App\Domains\Keuangan\Contracts\PaymentGatewayInterface` (Task 5) kalau dipakai langsung, `App\Services\Finance\PaymentAllocationService` (TIDAK PINDAH, tetap `app/Services/Finance`).
 
-- [ ] **Step 1: Baca `app/Console/Commands/ReconcilePayments.php` lengkap, update SEMUA `use` yang menunjuk model/contract/service yang pindah**
+- [x] **Step 1: Baca `app/Console/Commands/ReconcilePayments.php` lengkap, update SEMUA `use` yang menunjuk model/contract/service yang pindah**
 
 Command ini TIDAK pindah lokasi (tetap `app/Console/Commands/ReconcilePayments.php`) — hanya baris `use` yang mengarah ke `App\Models\Pembayaran`, `App\Models\BriQrisPayment`, `App\Contracts\PaymentGatewayInterface` (kalau dipakai langsung, bukan cuma lewat `PaymentAllocationService`) yang diupdate ke namespace `Domains\Keuangan\*`. `use App\Services\Finance\PaymentAllocationService;` TIDAK diubah (kelas itu sengaja tidak pindah).
 
-- [ ] **Step 2: Baca `app/Console/Commands/BriTestQris.php` lengkap, update `use` yang sama kalau ada**
+- [x] **Step 2: Baca `app/Console/Commands/BriTestQris.php` lengkap, update `use` yang sama kalau ada**
 
 Command dev/testing ini menginstansiasi `BriSnapGateway` manual (dikonfirmasi saat riset) — update `use App\Services\Finance\Gateway\BriSnapGateway;` (kalau ada) ke `use App\Domains\Keuangan\Services\Gateway\BriSnapGateway;`, dan `use App\Models\Pembayaran;` (kalau ada) ke namespace baru.
 
-- [ ] **Step 3: Grep ulang untuk verifikasi**
+- [x] **Step 3: Grep ulang untuk verifikasi**
 
 ```bash
 grep -rln "App\\\\Models\\\\Pembayaran\|App\\\\Models\\\\BriQrisPayment\|App\\\\Contracts\\\\PaymentGatewayInterface\|App\\\\Services\\\\Finance\\\\Gateway\\\\BriSnapGateway" app/Console/Commands
 ```
 Expected: kosong (semua referensi di `app/Console/Commands/*` sudah ke namespace baru).
 
-- [ ] **Step 4: Jalankan test scoped**
+- [x] **Step 4: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/ReconciliationCommandTest.php tests/Feature/Keuangan/ReconcilePaymentsBundledTopupTest.php tests/Feature/Keuangan/ReconcilePaymentsQrisTest.php tests/Feature/Keuangan/SimulateBriInboundCommandTest.php
 ```
 Expected: semua PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -3996,21 +3996,21 @@ git commit -m "refactor(keuangan): cross-scope touch ReconcilePayments dan BriTe
 **Files:**
 - Tidak ada file baru — task ini murni verifikasi gate sebelum Task 19.
 
-- [ ] **Step 1: Verifikasi gabungan — tidak ada referensi namespace lama tersisa di manapun**
+- [x] **Step 1: Verifikasi gabungan — tidak ada referensi namespace lama tersisa di manapun**
 
 ```bash
 grep -rln "use App\\\\Models\\\\Pembayaran;\|use App\\\\Models\\\\PembayaranTagihan;\|use App\\\\Models\\\\BriVirtualAccount;\|use App\\\\Models\\\\BriQrisPayment;\|use App\\\\Models\\\\BriInboundPaymentLog;\|use App\\\\Models\\\\ManualPaymentRequest;\|use App\\\\Contracts\\\\PaymentGatewayInterface;\|use App\\\\Contracts\\\\BriInboundAuthenticatorInterface;\|use App\\\\DTO\\\\PaymentStatusResult;\|use App\\\\DTO\\\\QrisResult;\|use App\\\\DTO\\\\VirtualAccountResult;\|use App\\\\Services\\\\Finance\\\\PaymentService;\|use App\\\\Services\\\\PembayaranService;\|use App\\\\Http\\\\Controllers\\\\Keuangan\\\\Concerns\\\\AuthorizesPembayaran;" --include="*.php" app database tests
 ```
 Expected: KOSONG total.
 
-- [ ] **Step 2: Verifikasi file/folder lama sudah tidak ada**
+- [x] **Step 2: Verifikasi file/folder lama sudah tidak ada**
 
 ```bash
 ls app/Models/Pembayaran.php app/Models/PembayaranTagihan.php app/Models/BriVirtualAccount.php app/Models/BriQrisPayment.php app/Models/BriInboundPaymentLog.php app/Models/ManualPaymentRequest.php app/Contracts/PaymentGatewayInterface.php app/Contracts/BriInboundAuthenticatorInterface.php app/DTO/PaymentStatusResult.php app/DTO/QrisResult.php app/DTO/VirtualAccountResult.php app/Services/Finance/PaymentService.php app/Services/PembayaranService.php app/Services/Finance/Gateway app/Services/Finance/BriInbound app/Http/Controllers/Keuangan/Concerns app/Http/Controllers/Admin/PembayaranController.php app/Http/Controllers/Admin/ManualPaymentController.php app/Http/Controllers/Admin/VirtualAccountController.php app/Http/Controllers/Keuangan/CheckoutController.php app/Http/Controllers/Keuangan/RiwayatController.php app/Http/Controllers/Api/BriVaInboundController.php 2>&1
 ```
 Expected: error "No such file or directory" untuk SEMUANYA.
 
-- [ ] **Step 3: Verifikasi route name dan URL tidak berubah**
+- [x] **Step 3: Verifikasi route name dan URL tidak berubah**
 
 ```bash
 php artisan route:list --name=admin.pembayaran
@@ -4022,7 +4022,7 @@ php artisan route:list --path=snap
 ```
 Bandingkan dengan daftar route sebelum migrasi (nama harus identik, URL webhook `/snap/v1.0/...` harus identik, Action target harus mengarah ke namespace baru).
 
-- [ ] **Step 4: Kalau ada temuan yang tidak sesuai Step 1-3, STOP dan perbaiki sebelum lanjut Task 19.**
+- [x] **Step 4: Kalau ada temuan yang tidak sesuai Step 1-3, STOP dan perbaiki sebelum lanjut Task 19.**
 
 Tidak ada commit di task ini — murni gate verifikasi.
 
@@ -4033,25 +4033,25 @@ Tidak ada commit di task ini — murni gate verifikasi.
 **Files:**
 - Create: `.agents/logs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md`
 
-- [ ] **Step 1: Jalankan test scoped gabungan luas**
+- [x] **Step 1: Jalankan test scoped gabungan luas**
 
 ```bash
 php artisan test tests/Feature/Keuangan tests/Feature/Admin tests/Unit tests/Feature/Portal tests/Feature/Spmb tests/Feature/Console
 ```
 Catat jumlah pasti passed/failed. Flaky yang sudah dikenal (hari-Minggu terkait hari libur mingguan SDM) — kalau itu SATU-SATUNYA yang gagal, jalankan ulang sendirian untuk konfirmasi, BUKAN regresi dari sub-project ini.
 
-- [ ] **Step 2: Minta izin user untuk full test suite**
+- [x] **Step 2: Minta izin user untuk full test suite**
 
 Tanya ke user: "Task 1-18 selesai, test scoped semua hijau. Boleh saya jalankan full test suite (`php artisan test`) untuk verifikasi akhir?" — TUNGGU jawaban eksplisit. JANGAN jalankan otomatis tanpa izin.
 
-- [ ] **Step 3: Jalankan full suite (HANYA setelah izin didapat)**
+- [x] **Step 3: Jalankan full suite (HANYA setelah izin didapat)**
 
 ```bash
 php artisan test
 ```
 Catat angka PASTI passed/failed/duration.
 
-- [ ] **Step 4: Tulis handoff log**
+- [x] **Step 4: Tulis handoff log**
 
 Buat `.agents/logs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md` (Bahasa Indonesia): ringkasan tiap task (1-17) dengan commit hash, hasil test dengan angka PASTI dari Step 1 dan Step 3 (JANGAN dicampur), hasil Task 18 (harus "kosong"/sesuai). **WAJIB sebutkan eksplisit**:
 - Daftar kondisi webhook (dari 11 kombinasi §4 spec) mana yang SUDAH ada test-nya sebelum SP3 vs BARU ditambahkan di Task 16 Step 9 — JANGAN digeneralisir jadi "semua sudah tertest".
@@ -4059,11 +4059,11 @@ Buat `.agents/logs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md` (B
 - Kalau ada file di luar daftar yang disebutkan plan yang ternyata perlu disentuh, laporkan sebagai temuan terpisah — JANGAN diam-diam.
 - Konfirmasi eksplisit bahwa TIDAK ADA perubahan pada urutan guard §7 manapun (sebutkan satu per satu, ceklist 7 item).
 
-- [ ] **Step 5: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
+- [x] **Step 5: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
 
 Tambahkan baris baru di tabel Sub-Task untuk "Migrasi Domain Keuangan Sub-project 3 (Pembayaran & Gateway)" dengan link ke spec/plan/log, status 🟢 SELESAI.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .agents/logs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md .agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md
