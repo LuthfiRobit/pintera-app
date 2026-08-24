@@ -3,7 +3,7 @@
 use App\Models\Siswa;
 use App\Models\SystemSetting;
 use App\Domains\Keuangan\Models\Wallet;
-use App\Models\WalletMutasi;
+use App\Domains\Keuangan\Models\WalletMutasi;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -54,4 +54,22 @@ it('can create wallet mutasi', function () {
     expect($mutasi->wallet->id)->toBe($wallet->id);
     expect($wallet->mutasi)->toHaveCount(1);
     expect($mutasi->tipe)->toBe('topup');
+});
+
+it('resolves the pembayaran relation on wallet_mutasi correctly (regression: this relation was silently broken by an implicit same-namespace reference after Pembayaran moved domains in SP3)', function () {
+    $siswa = Siswa::factory()->create();
+    $wallet = $siswa->wallet;
+    $pembayaran = \App\Domains\Keuangan\Models\Pembayaran::factory()->create();
+
+    $mutasi = $wallet->mutasi()->create([
+        'pembayaran_id' => $pembayaran->id,
+        'tipe' => 'topup',
+        'amount' => 100000,
+        'saldo_sebelum' => 0,
+        'saldo_sesudah' => 100000,
+        'keterangan' => 'Test regresi relasi pembayaran',
+    ]);
+
+    expect($mutasi->pembayaran)->not->toBeNull();
+    expect($mutasi->pembayaran->id)->toBe($pembayaran->id);
 });
