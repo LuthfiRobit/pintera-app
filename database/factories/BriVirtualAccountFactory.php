@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class BriVirtualAccountFactory extends Factory
 {
+    protected $model = BriVirtualAccount::class;
     /**
      * Define the model's default state.
      *
