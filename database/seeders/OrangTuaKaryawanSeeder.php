@@ -76,7 +76,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             'is_active'            => true,
             'must_change_password' => true,
         ]);
-        $user->assignRole('karyawan_pool');
+        $user->assignRole('pegawai_yayasan');
 
         Karyawan::create([
             'user_id'              => $user->id,
