@@ -28,12 +28,15 @@ class PresensiSeeder extends Seeder
                 $siswaList = Siswa::where('kelas_id', $sesi->kelas_id)->get();
 
                 foreach ($siswaList as $index => $siswa) {
-                    if ($lembaga->npsn === '20223344' && $sesi->mataPelajaran && str_contains($sesi->mataPelajaran->nama, 'Matematika') && $siswa->nis === '2627001') {
+                    // Variasi status: 1 dari setiap 10 siswa sakit, 1 dari setiap 15 izin, sisanya hadir.
+                    // Modulo deterministik (idempotent), bukan random -- supaya migrate:fresh --seed
+                    // berulang menghasilkan data identik.
+                    if ($lembaga->npsn === '20223333' && $index % 10 === 0) {
                         Presensi::firstOrCreate(
                             ['sesi_pembelajaran_id' => $sesi->id, 'siswa_id' => $siswa->id],
-                            ['status' => 'sakit', 'keterangan' => 'Demam tinggi']
+                            ['status' => 'sakit', 'keterangan' => 'Demam, surat dokter menyusul']
                         );
-                    } elseif ($lembaga->npsn === '20223344' && $sesi->mataPelajaran && str_contains($sesi->mataPelajaran->nama, 'IPA') && $siswa->nis === '2627002') {
+                    } elseif ($lembaga->npsn === '20223333' && $index % 15 === 1) {
                         Presensi::firstOrCreate(
                             ['sesi_pembelajaran_id' => $sesi->id, 'siswa_id' => $siswa->id],
                             ['status' => 'izin', 'keterangan' => 'Acara keluarga']
