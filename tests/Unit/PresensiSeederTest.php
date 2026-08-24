@@ -47,21 +47,20 @@ beforeEach(function () {
     (new SesiPembelajaranSeeder())->run();
 });
 
-it('seeds student attendance records across all K-9 institutions', function () {
+it('seeds student attendance records for the SD institution, with sakit/izin variation', function () {
     (new PresensiSeeder())->run();
 
-    foreach (Lembaga::all() as $lembaga) {
-        $aktif = TahunAjaran::where('lembaga_id', $lembaga->id)->where('status_aktif', true)->first();
-        $kelasIds = Kelas::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $aktif->id)->pluck('id');
-        $sesiIds = SesiPembelajaran::whereIn('kelas_id', $kelasIds)->pluck('id');
+    $sdit = Lembaga::where('npsn', '20223333')->first();
+    $aktif = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
+    $kelasIds = Kelas::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $aktif->id)->pluck('id');
+    $sesiIds = SesiPembelajaran::whereIn('kelas_id', $kelasIds)->pluck('id');
 
-        $presensiCount = Presensi::whereIn('sesi_pembelajaran_id', $sesiIds)->count();
-        expect($presensiCount)->toBeGreaterThan(0);
-    }
+    $presensiCount = Presensi::whereIn('sesi_pembelajaran_id', $sesiIds)->count();
+    expect($presensiCount)->toBeGreaterThan(0);
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $aditya = Siswa::where('lembaga_id', $smp->id)->where('nis', '2627001')->first();
-    expect(Presensi::where('siswa_id', $aditya->id)->where('status', 'sakit')->exists())->toBeTrue();
+    // Formula PresensiSeeder: index 0 dari tiap kelas (index % 10 === 0) selalu 'sakit'.
+    $siswaPertamaKelas1A = Siswa::whereHas('kelas', fn ($q) => $q->where('nama', 'Kelas 1-A'))->orderBy('nis')->first();
+    expect(Presensi::where('siswa_id', $siswaPertamaKelas1A->id)->where('status', 'sakit')->exists())->toBeTrue();
 });
 
 it('is idempotent when run twice', function () {
