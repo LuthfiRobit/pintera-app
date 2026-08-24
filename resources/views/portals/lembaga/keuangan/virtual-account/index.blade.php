@@ -111,12 +111,12 @@
             </div>
 
             <div x-ref="daftarVirtualAccount">
-                @include('admin.virtual-account._daftar')
+                @include('portals.lembaga.keuangan.virtual-account._daftar')
             </div>
 
-            @include('admin.virtual-account._riwayat-modal')
-            @include('admin.virtual-account._topup-modal')
-            @include('admin.virtual-account._generate-modal')
+            @include('portals.lembaga.keuangan.virtual-account._riwayat-modal')
+            @include('portals.lembaga.keuangan.virtual-account._topup-modal')
+            @include('portals.lembaga.keuangan.virtual-account._generate-modal')
         </div>
     </div>
 </x-app-layout>

@@ -6,7 +6,7 @@ use App\Http\Controllers\Admin\KategoriKeringananController;
 use App\Http\Controllers\Lembaga\Keuangan\ManualPaymentController;
 use App\Http\Controllers\Lembaga\Keuangan\PembayaranController;
 use App\Http\Controllers\Lembaga\Keuangan\TagihanController;
-use App\Http\Controllers\Admin\VirtualAccountController;
+use App\Http\Controllers\Lembaga\Keuangan\VirtualAccountController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('jenis-tagihan/create', [JenisTagihanController::class, 'create'])->name('jenis-tagihan.create');

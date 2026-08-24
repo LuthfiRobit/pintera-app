@@ -269,3 +269,14 @@ it('denies export without pembayaran.virtual-account permission', function () {
 
     $this->actingAs($user)->get(route('admin.virtual-account.export'))->assertForbidden();
 });
+
+it('returns 404 when riwayat targets a siswa belonging to a different lembaga', function () {
+    [$userA] = buatAdminKeuanganUntukVirtualAccount();
+    [, $lembagaB] = buatAdminKeuanganUntukVirtualAccount();
+    $siswaB = Siswa::factory()->create(['lembaga_id' => $lembagaB->id]);
+
+    $response = $this->actingAs($userA)->get(route('admin.virtual-account.riwayat', $siswaB));
+
+    $response->assertNotFound();
+});
+

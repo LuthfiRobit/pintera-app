@@ -1,25 +1,24 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Keuangan;
 
+use App\Domains\Keuangan\Actions\VirtualAccount\GenerateVirtualAccountAction;
+use App\Domains\Keuangan\Models\BriInboundPaymentLog;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Enums\StatusSiswa;
 use App\Exports\VirtualAccountExport;
-use App\Models\BriInboundPaymentLog;
-use App\Models\BriVirtualAccount;
+use App\Http\Controllers\Controller;
 use App\Models\Kelas;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
-use App\Services\Finance\PaymentService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 
-class VirtualAccountController extends BaseController
+class VirtualAccountController extends Controller
 {
     use AuthorizesRequests;
 
@@ -53,7 +52,7 @@ class VirtualAccountController extends BaseController
         $paginated = $query->paginate($perPage)->withQueryString();
 
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
-            return view('admin.virtual-account._daftar', [
+            return view('portals.lembaga.keuangan.virtual-account._daftar', [
                 'vaList' => $paginated,
                 'perPage' => $perPage,
             ]);
@@ -80,7 +79,7 @@ class VirtualAccountController extends BaseController
 
         $kelasListGrouped = $kelasList->groupBy(fn ($k) => $k->tahunAjaran?->nama ?? 'Tanpa Tahun Ajaran');
 
-        return view('admin.virtual-account.index', [
+        return view('portals.lembaga.keuangan.virtual-account.index', [
             'vaList' => $paginated,
             'perPage' => $perPage,
             'kelasList' => $kelasList,
@@ -106,7 +105,7 @@ class VirtualAccountController extends BaseController
             ? BriInboundPaymentLog::where('va_number', $va->va_number)->latest()->get()
             : collect();
 
-        return view('admin.virtual-account._riwayat-list', ['logs' => $logs]);
+        return view('portals.lembaga.keuangan.virtual-account._riwayat-list', ['logs' => $logs]);
     }
 
     public function calonGenerate(Request $request): JsonResponse
@@ -145,7 +144,7 @@ class VirtualAccountController extends BaseController
         ]);
     }
 
-    public function generate(Request $request): RedirectResponse
+    public function generate(Request $request, GenerateVirtualAccountAction $action): RedirectResponse
     {
         $this->authorize('pembayaran.virtual-account');
 
@@ -167,22 +166,11 @@ class VirtualAccountController extends BaseController
 
         $siswaList = $query->get();
 
-        $berhasil = 0;
-        $gagalNama = [];
+        $hasil = $action->execute($siswaList);
 
-        foreach ($siswaList as $siswa) {
-            try {
-                app(PaymentService::class)->getOrCreatePermanentVa($siswa);
-                $berhasil++;
-            } catch (\Throwable $e) {
-                Log::error("Gagal generate VA untuk siswa id={$siswa->id}: ".$e->getMessage());
-                $gagalNama[] = $siswa->nama_lengkap;
-            }
-        }
-
-        $status = "{$berhasil} nomor VA berhasil dibuat.";
-        if (count($gagalNama) > 0) {
-            $status .= ' Gagal untuk: '.implode(', ', $gagalNama).'.';
+        $status = "{$hasil['berhasil']} nomor VA berhasil dibuat.";
+        if (count($hasil['gagalNama']) > 0) {
+            $status .= ' Gagal untuk: '.implode(', ', $hasil['gagalNama']).'.';
         }
 
         return redirect()->route('admin.virtual-account.index')->with('status', $status);
@@ -206,7 +194,7 @@ class VirtualAccountController extends BaseController
     // berdasarkan tenant user yang sedang login. Method ini sengaja bypass scope itu
     // untuk mendapatkan lembaga_id SEBENARNYA dari siswa manapun (termasuk siswa
     // tenant lain), supaya bisa dibandingkan eksplisit dengan lembagaId() — pola
-    // sama persis app/Http/Controllers/Admin/ManualPaymentController.php:86-93.
+    // sama persis app/Http/Controllers/Lembaga/Keuangan/ManualPaymentController.php.
     private function siswaLembagaId(?int $siswaId): ?int
     {
         if ($siswaId === null) {
