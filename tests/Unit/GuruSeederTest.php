@@ -23,21 +23,19 @@ beforeEach(function () {
     (new UserSeeder())->run();
 });
 
-it('seeds Guru profiles across all K-9 institutions', function () {
+it('seeds Guru profiles for the SD institution', function () {
     (new GuruSeeder())->run();
 
-    foreach (Lembaga::all() as $lembaga) {
-        $gurus = Guru::where('lembaga_id', $lembaga->id)->get();
-        expect($gurus->count())->toBeGreaterThanOrEqual(3);
-    }
+    $sdit = Lembaga::where('npsn', '20223333')->first();
+    $gurus = Guru::where('lembaga_id', $sdit->id)->get();
+    expect($gurus->count())->toBe(15);
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $user = User::where('email', 'budi.santoso@demo.test')->first();
+    $user = User::where('email', 'hendra.gunawan@demo.test')->first();
     $guru = Guru::where('user_id', $user->id)->first();
 
     expect($guru)->not->toBeNull();
-    expect($guru->lembaga_id)->toBe($smp->id);
-    expect($guru->nik)->toBe('3273011503850001');
+    expect($guru->lembaga_id)->toBe($sdit->id);
+    expect($guru->nik)->toBe('3273010108820004');
     expect($guru->status_kepegawaian)->toBe('PNS');
 });
 
@@ -45,5 +43,5 @@ it('is idempotent when run twice', function () {
     (new GuruSeeder())->run();
     (new GuruSeeder())->run();
 
-    expect(Guru::count())->toBe(12);
+    expect(Guru::count())->toBe(15);
 });
