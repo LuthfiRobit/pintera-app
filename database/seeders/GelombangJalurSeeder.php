@@ -13,16 +13,16 @@ class GelombangJalurSeeder extends Seeder
 {
     public function run(): void
     {
-        $smp = Lembaga::where('npsn', '20223344')->firstOrFail();
-        $smpAktif = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->firstOrFail();
+        $sdit = Lembaga::where('npsn', '20223333')->firstOrFail();
+        $sditAktif = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->firstOrFail();
 
-        $gelombang1 = GelombangPpdb::where('lembaga_id', $smp->id)
-            ->where('tahun_ajaran_id', $smpAktif->id)
+        $gelombang1 = GelombangPpdb::where('lembaga_id', $sdit->id)
+            ->where('tahun_ajaran_id', $sditAktif->id)
             ->where('nama', 'Gelombang 1')
             ->firstOrFail();
 
-        $jalurDiizinkan = JalurPpdb::where('lembaga_id', $smp->id)
-            ->where('tahun_ajaran_id', $smpAktif->id)
+        $jalurDiizinkan = JalurPpdb::where('lembaga_id', $sdit->id)
+            ->where('tahun_ajaran_id', $sditAktif->id)
             ->whereIn('nama', ['Reguler', 'Prestasi'])
             ->pluck('id');
 
