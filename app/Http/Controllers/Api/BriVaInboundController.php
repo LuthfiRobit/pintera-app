@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Contracts\BriInboundAuthenticatorInterface;
+use App\Domains\Keuangan\Contracts\BriInboundAuthenticatorInterface;
 use App\Exceptions\AutoAllocationFailedException;
 use App\Http\Controllers\Controller;
 use App\Models\BriInboundPaymentLog;

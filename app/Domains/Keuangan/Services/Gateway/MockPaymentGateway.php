@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Services\Finance\Gateway;
+namespace App\Domains\Keuangan\Services\Gateway;
 
-use App\Contracts\PaymentGatewayInterface;
-use App\DTO\PaymentStatusResult;
-use App\DTO\QrisResult;
-use App\DTO\VirtualAccountResult;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
+use App\Domains\Keuangan\DataTransferObjects\QrisResult;
+use App\Domains\Keuangan\DataTransferObjects\VirtualAccountResult;
+use App\Domains\Keuangan\Models\Pembayaran;
 
 class MockPaymentGateway implements PaymentGatewayInterface
 {
@@ -15,7 +15,7 @@ class MockPaymentGateway implements PaymentGatewayInterface
         $vaNumber = 'MOCK-VA-' . str_pad($pembayaran->id, 6, '0', STR_PAD_LEFT);
         $amount = $vaType === 'WALLET_PERMANENT' ? null : 10000;
         $expiredAt = $vaType === 'WALLET_PERMANENT' ? null : now()->addHours(24);
-        
+
         return new VirtualAccountResult(
             $vaNumber,
             $amount,
@@ -28,7 +28,7 @@ class MockPaymentGateway implements PaymentGatewayInterface
     {
         $qrCodeData = 'MOCK-QR-' . str_pad($pembayaran->id, 6, '0', STR_PAD_LEFT);
         $amount = 10000;
-        
+
         return new QrisResult(
             $qrCodeData,
             $amount,

@@ -10,9 +10,9 @@ use App\Exceptions\PaymentException;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Wallet;
-use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
-use App\Services\Finance\Gateway\BriSnapGateway;
-use App\Services\Finance\Gateway\MockPaymentGateway;
+use App\Domains\Keuangan\Services\Gateway\BriSnap\BriSnapClient;
+use App\Domains\Keuangan\Services\Gateway\BriSnapGateway;
+use App\Domains\Keuangan\Services\Gateway\MockPaymentGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
@@ -68,6 +68,6 @@ class GatewayImplementationTest extends TestCase
 
         $this->app->forgetInstance(PaymentGatewayInterface::class);
         $resolvedGatewayHybrid = app()->make(PaymentGatewayInterface::class);
-        $this->assertInstanceOf(\App\Services\Finance\Gateway\HybridPaymentGateway::class, $resolvedGatewayHybrid);
+        $this->assertInstanceOf(\App\Domains\Keuangan\Services\Gateway\HybridPaymentGateway::class, $resolvedGatewayHybrid);
     }
 }

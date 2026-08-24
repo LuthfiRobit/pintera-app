@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Services\Finance\BriInbound;
 
-use App\Services\Finance\BriInbound\SimpleBriInboundAuthenticator;
+use App\Domains\Keuangan\Services\BriInbound\SimpleBriInboundAuthenticator;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 

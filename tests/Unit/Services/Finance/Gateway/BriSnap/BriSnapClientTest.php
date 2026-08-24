@@ -3,7 +3,7 @@
 namespace Tests\Unit\Services\Finance\Gateway\BriSnap;
 
 use App\Exceptions\BriApiException;
-use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
+use App\Domains\Keuangan\Services\Gateway\BriSnap\BriSnapClient;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

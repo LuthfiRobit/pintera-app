@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Models\BriQrisPayment;
 use App\Models\Pembayaran;
 use App\Services\Finance\PaymentAllocationService;

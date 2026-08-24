@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Finance\Gateway\BriSnap;
+namespace App\Domains\Keuangan\Services\Gateway\BriSnap;
 
 use App\Exceptions\BriApiException;
 use Illuminate\Support\Facades\Cache;

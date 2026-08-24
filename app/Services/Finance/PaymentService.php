@@ -2,7 +2,7 @@
 
 namespace App\Services\Finance;
 
-use App\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
 use App\Models\BriQrisPayment;

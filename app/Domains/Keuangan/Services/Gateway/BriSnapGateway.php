@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Services\Finance\Gateway;
+namespace App\Domains\Keuangan\Services\Gateway;
 
-use App\Contracts\PaymentGatewayInterface;
-use App\DTO\PaymentStatusResult;
-use App\DTO\QrisResult;
-use App\DTO\VirtualAccountResult;
-use App\Models\Pembayaran;
-use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
+use App\Domains\Keuangan\DataTransferObjects\QrisResult;
+use App\Domains\Keuangan\DataTransferObjects\VirtualAccountResult;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Services\Gateway\BriSnap\BriSnapClient;
 
 class BriSnapGateway implements PaymentGatewayInterface
 {

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services\Finance\BriInbound;
+namespace App\Domains\Keuangan\Services\BriInbound;
 
-use App\Contracts\BriInboundAuthenticatorInterface;
+use App\Domains\Keuangan\Contracts\BriInboundAuthenticatorInterface;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
