@@ -4,9 +4,9 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/snap/v1.0/access-token/b2b', [\App\Http\Controllers\Api\BriVaInboundController::class, 'token']);
-Route::post('/snap/v1.0/transfer-va/inquiry', [\App\Http\Controllers\Api\BriVaInboundController::class, 'inquiry']);
-Route::post('/snap/v1.0/transfer-va/payment', [\App\Http\Controllers\Api\BriVaInboundController::class, 'payment']);
+Route::post('/snap/v1.0/access-token/b2b', [\App\Http\Controllers\Api\Keuangan\BriVaInboundController::class, 'token']);
+Route::post('/snap/v1.0/transfer-va/inquiry', [\App\Http\Controllers\Api\Keuangan\BriVaInboundController::class, 'inquiry']);
+Route::post('/snap/v1.0/transfer-va/payment', [\App\Http\Controllers\Api\Keuangan\BriVaInboundController::class, 'payment']);
 
 Route::get('/', function () {
     return view('welcome');

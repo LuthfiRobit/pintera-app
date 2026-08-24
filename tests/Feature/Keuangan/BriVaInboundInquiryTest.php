@@ -3,6 +3,7 @@
 namespace Tests\Feature\Keuangan;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
@@ -65,12 +66,35 @@ class BriVaInboundInquiryTest extends TestCase
         ]);
     }
 
+    public function test_inquiry_returns_zero_suggested_amount_when_no_active_tagihan()
+    {
+        $siswa = Siswa::factory()->create(['nama_lengkap' => 'Siti Nurhaliza']);
+        $va = app(PaymentService::class)->getOrCreatePermanentVa($siswa);
+
+        $response = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+            ->postJson('/snap/v1.0/transfer-va/inquiry', [
+                'virtualAccountNo' => $va->va_number,
+                'inquiryRequestId' => 'test-inquiry-zero',
+            ]);
+
+        $response->assertOk();
+        $response->assertJson([
+            'responseCode' => '2002400',
+            'responseMessage' => 'Successful',
+            'virtualAccountData' => [
+                'virtualAccountNo' => $va->va_number,
+                'virtualAccountName' => 'Siti Nurhaliza',
+                'totalAmount' => ['value' => '0.00', 'currency' => 'IDR'],
+            ],
+        ]);
+    }
+
     public function test_inquiry_does_not_change_any_data()
     {
         $siswa = Siswa::factory()->create();
         $va = app(PaymentService::class)->getOrCreatePermanentVa($siswa);
         $walletBalanceBefore = $siswa->wallet->fresh()->balance;
-        $pembayaranCountBefore = \App\Models\Pembayaran::count();
+        $pembayaranCountBefore = Pembayaran::count();
         $tagihanCountBefore = Tagihan::count();
 
         $this->withHeader('Authorization', 'Bearer ' . $this->token)
@@ -80,7 +104,7 @@ class BriVaInboundInquiryTest extends TestCase
             ]);
 
         $this->assertSame($walletBalanceBefore, $siswa->wallet->fresh()->balance);
-        $this->assertSame($pembayaranCountBefore, \App\Models\Pembayaran::count());
+        $this->assertSame($pembayaranCountBefore, Pembayaran::count());
         $this->assertSame($tagihanCountBefore, Tagihan::count());
     }
 
@@ -90,6 +114,10 @@ class BriVaInboundInquiryTest extends TestCase
             ->postJson('/snap/v1.0/transfer-va/inquiry', ['virtualAccountNo' => '7777777700000000000001']);
 
         $response->assertStatus(401);
+        $response->assertJson([
+            'responseCode' => '4012400',
+            'responseMessage' => 'Unauthorized. Invalid Token (B2B)',
+        ]);
     }
 
     public function test_inquiry_returns_404_for_unknown_va_number()
@@ -98,5 +126,9 @@ class BriVaInboundInquiryTest extends TestCase
             ->postJson('/snap/v1.0/transfer-va/inquiry', ['virtualAccountNo' => '9999999900000000000001']);
 
         $response->assertStatus(404);
+        $response->assertJson([
+            'responseCode' => '4042412',
+            'responseMessage' => 'Invalid Bill/Virtual Account',
+        ]);
     }
 }

@@ -4,6 +4,7 @@ namespace Tests\Feature\Keuangan;
 
 use App\Domains\Keuangan\Models\BriInboundPaymentLog;
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\SystemSetting;
 use App\Domains\Keuangan\Models\Tagihan;
@@ -175,7 +176,7 @@ class BriVaInboundPaymentTest extends TestCase
         // reflect that the credit itself succeeded -- NOT 'failed' -- otherwise
         // ReconcilePayments::retryFailedTopups() would re-select this Pembayaran
         // and double-credit the wallet (see NEW-1 regression test below).
-        $pembayaran = \App\Models\Pembayaran::where('channel_reference', 'PAY-AUTOALLOC-THROWS')->firstOrFail();
+        $pembayaran = Pembayaran::where('channel_reference', 'PAY-AUTOALLOC-THROWS')->firstOrFail();
         $this->assertSame('completed', $pembayaran->topup_status);
 
         // Replay with the same paymentRequestId -- must hit the idempotency check and
@@ -188,6 +189,37 @@ class BriVaInboundPaymentTest extends TestCase
 
         $this->assertSame($saldoAwal + 60000, (float) $siswa->wallet->fresh()->balance);
         $this->assertSame(1, BriInboundPaymentLog::where('payment_request_id', 'PAY-AUTOALLOC-THROWS')->count());
+    }
+
+    public function test_payment_rejects_missing_mandatory_fields()
+    {
+        // 1. Missing virtualAccountNo
+        $response1 = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+            ->postJson('/snap/v1.0/transfer-va/payment', [
+                'virtualAccountNo' => '',
+                'paidAmount' => ['value' => '50000.00', 'currency' => 'IDR'],
+                'paymentRequestId' => 'PAY-REQ-001',
+            ]);
+
+        $response1->assertStatus(400);
+        $response1->assertJson([
+            'responseCode' => '4002500',
+            'responseMessage' => 'Invalid Mandatory Field',
+        ]);
+
+        // 2. Missing paymentRequestId
+        $response2 = $this->withHeader('Authorization', 'Bearer ' . $this->token)
+            ->postJson('/snap/v1.0/transfer-va/payment', [
+                'virtualAccountNo' => '7777777700000000000001',
+                'paidAmount' => ['value' => '50000.00', 'currency' => 'IDR'],
+                'paymentRequestId' => '',
+            ]);
+
+        $response2->assertStatus(400);
+        $response2->assertJson([
+            'responseCode' => '4002500',
+            'responseMessage' => 'Invalid Mandatory Field',
+        ]);
     }
 
     /**
@@ -231,12 +263,12 @@ class BriVaInboundPaymentTest extends TestCase
         $afterPayment = (float) $siswa->wallet->fresh()->balance;
         $this->assertSame($saldoAwal + 60000, $afterPayment);
 
-        $pembayaran = \App\Models\Pembayaran::where('channel_reference', 'PAY-RECONCILE-NO-DOUBLE-CREDIT')->firstOrFail();
+        $pembayaran = Pembayaran::where('channel_reference', 'PAY-RECONCILE-NO-DOUBLE-CREDIT')->firstOrFail();
         $this->assertSame('completed', $pembayaran->topup_status);
 
         // Step 2: the hourly reconciliation scheduler's query must exclude this
         // Pembayaran entirely, because topup_status is 'completed', not 'failed'.
-        $selectedForRetry = \App\Models\Pembayaran::where('topup_status', 'failed')
+        $selectedForRetry = Pembayaran::where('topup_status', 'failed')
             ->where('status', 'lunas')
             ->whereNotNull('siswa_id')
             ->pluck('id');
