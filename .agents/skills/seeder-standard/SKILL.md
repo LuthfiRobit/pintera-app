@@ -75,7 +75,20 @@ Untuk data transaksi, jadwal seleksi, tagihan, atau mutasi aset:
 
 ---
 
-## 5. Pembersihan Legacy Permission via Migration
+## 5. Skala Data Demo — Minimal, Bukan Realistis
+
+Seeder demo/dev di Pintera **WAJIB** menargetkan dataset seminimal mungkin yang cukup untuk mendemonstrasikan fitur — BUKAN dataset "realistis" yang meniru skala yayasan sungguhan (banyak lembaga/jenjang sekaligus).
+
+- **Default: 1 lembaga per seed run** (contoh representatif: 1 SD), bukan multi-lembaga/multi-jenjang (KB+TK+SD+SMP sekaligus) seperti pola lama.
+- Alasan: dataset besar memperlambat iterasi lokal (`migrate:fresh --seed` lebih lama), memperbesar blast radius setiap kali seeder diaudit/diubah, dan TIDAK menambah nilai demo — 1 lembaga representatif sudah cukup menunjukkan fitur bekerja.
+- **Multi-lembaga HANYA dibuat kalau fitur yang didemokan memang butuh multi-lembaga secara inheren** (misal: dashboard rekap yayasan lintas lembaga, workflow mutasi siswa antar lembaga) — bukan default untuk semua seeder.
+- Uji tenant-isolation (`TenantScopeTest` dan sejenisnya) TIDAK bergantung pada seeder demo ini — mereka pakai `RefreshDatabase` + factory per-test, independen dari `DatabaseSeeder::run()`. Menyusutkan seeder demo ke 1 lembaga TIDAK mengurangi cakupan test isolasi tenant.
+- Data yang dihasilkan seeder demo bersifat **buang-pakai** (`migrate:fresh --seed` adalah alur kerja normal, bukan pengecualian) — jangan menulis logic migrasi/preservasi data seeder demo yang rumit, itu di luar tujuan seeder demo.
+- Kalau menemukan seeder yang hardcode identitas lembaga spesifik (NPSN/`kode_lembaga`) di luar `LembagaSeeder.php` (grep `grep -rl "<npsn/kode_lembaga>" database/seeders`), itu tanda seeder tersebut perlu direfactor mengikuti `Lembaga::first()`/parameter eksplisit, bukan hardcode — supaya penyusutan jumlah lembaga di masa depan tidak butuh audit ulang lintas puluhan file.
+
+---
+
+## 6. Pembersihan Legacy Permission via Migration
 
 Jika ada permission usang/orphan yang dihapus dari codebase:
 - Hapus dari `PermissionSeeder.php`.
