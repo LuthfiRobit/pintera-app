@@ -33,7 +33,7 @@ require __DIR__.'/guru.php';
 
 Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.active.siswa'])
     ->prefix('keuangan')->name('keuangan.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Keuangan\DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/', [\App\Http\Controllers\Portal\Keuangan\DashboardController::class, 'index'])->name('dashboard');
         Route::get('/tagihan', [\App\Http\Controllers\Portal\Keuangan\TagihanController::class, 'index'])->name('tagihan.index');
         Route::get('/riwayat', [\App\Http\Controllers\Portal\Keuangan\RiwayatController::class, 'index'])->name('riwayat.index');
         Route::get('/riwayat/{pembayaran}/kwitansi', [\App\Http\Controllers\Portal\Keuangan\RiwayatController::class, 'kwitansi'])->name('riwayat.kwitansi');

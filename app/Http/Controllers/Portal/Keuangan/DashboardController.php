@@ -1,21 +1,21 @@
 <?php
-// app/Http/Controllers/Keuangan/DashboardController.php
+// app/Http/Controllers/Portal/Keuangan/DashboardController.php
 
-namespace App\Http\Controllers\Keuangan;
+namespace App\Http\Controllers\Portal\Keuangan;
 
-use App\Exceptions\PaymentException;
-use App\Models\Scopes\TenantScope;
-use App\Models\SystemSetting;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\Notifications\NotificationFeedResolver;
 use App\Domains\Keuangan\Services\PaymentService;
 use App\Domains\Keuangan\Services\SkipAlertResolver;
+use App\Exceptions\PaymentException;
+use App\Http\Controllers\Controller;
+use App\Models\Scopes\TenantScope;
+use App\Models\SystemSetting;
+use App\Services\Notifications\NotificationFeedResolver;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
-class DashboardController extends BaseController
+class DashboardController extends Controller
 {
     public function __construct(
         private readonly SkipAlertResolver $skipAlertResolver,
@@ -29,7 +29,7 @@ class DashboardController extends BaseController
         $activeSiswa = $request->attributes->get('activeSiswa');
 
         if ($activeSiswa === null) {
-            return view('keuangan.tanpa-anak');
+            return view('portals.portal.keuangan.tanpa-anak');
         }
 
         try {
@@ -53,7 +53,7 @@ class DashboardController extends BaseController
 
         $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, false);
 
-        return view('keuangan.dashboard', [
+        return view('portals.portal.keuangan.dashboard', [
             'activeSiswa' => $activeSiswa,
             'wallet' => $wallet,
             'skipAlert' => $skipAlert,
