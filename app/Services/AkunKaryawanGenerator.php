@@ -30,7 +30,7 @@ class AkunKaryawanGenerator
                 'is_active' => true,
                 'must_change_password' => true,
             ]);
-            $user->assignRole($lembagaId === null ? 'karyawan_pool' : 'karyawan_lembaga');
+            $user->assignRole($lembagaId === null ? 'pegawai_yayasan' : 'pegawai_lembaga');
 
             return Karyawan::create([
                 'user_id' => $user->id,
