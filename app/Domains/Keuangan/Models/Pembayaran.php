@@ -1,8 +1,12 @@
 <?php
-// app/Models/Pembayaran.php
+// app/Domains/Keuangan/Models/Pembayaran.php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
+use App\Models\Cicilan;
+use App\Models\Siswa;
+use App\Models\User;
+use Database\Factories\PembayaranFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +18,11 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Pembayaran extends Model
 {
     use HasFactory, LogsActivity;
+
+    protected static function newFactory(): PembayaranFactory
+    {
+        return PembayaranFactory::new();
+    }
 
     protected $table = 'pembayaran';
 
@@ -39,7 +48,7 @@ class Pembayaran extends Model
 
     public function tagihan(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Keuangan\Models\Tagihan::class);
+        return $this->belongsTo(Tagihan::class);
     }
 
     public function cicilan(): BelongsTo

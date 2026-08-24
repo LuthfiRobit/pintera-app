@@ -3,7 +3,7 @@
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;

@@ -2,7 +2,7 @@
 // tests/Feature/Admin/VerifikasiPembayaranTest.php
 
 use App\Models\Lembaga;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Services\PembayaranService;

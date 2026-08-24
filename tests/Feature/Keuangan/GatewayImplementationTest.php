@@ -7,7 +7,7 @@ use App\DTO\PaymentStatusResult;
 use App\DTO\QrisResult;
 use App\DTO\VirtualAccountResult;
 use App\Exceptions\PaymentException;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\Wallet;
 use App\Services\Finance\Gateway\BriSnap\BriSnapClient;

@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

@@ -2,7 +2,7 @@
 
 namespace App\Services\Finance;
 
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\PembayaranTagihan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Wallet;

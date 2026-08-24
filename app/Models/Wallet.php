@@ -41,7 +41,7 @@ class Wallet extends Model
     /**
      * Top-up saldo secara aman dengan lock for update.
      */
-    public function topup(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
+    public function topup(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran = null, ?string $keterangan = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Amount top-up harus lebih dari 0");
@@ -92,7 +92,7 @@ class Wallet extends Model
      * Debit saldo secara aman dengan pengecekan strict.
      * Gunakan ini dari luar engine (membungkus dalam transaction sendiri).
      */
-    public function debit(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
+    public function debit(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran = null, ?string $keterangan = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Amount debit harus lebih dari 0");
@@ -110,7 +110,7 @@ class Wallet extends Model
      *
      * @internal Jangan pakai dari luar kecuali dalam konteks DB::transaction yang sudah ada.
      */
-    public function debitWithinTransaction(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
+    public function debitWithinTransaction(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran = null, ?string $keterangan = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Amount debit harus lebih dari 0");
@@ -122,7 +122,7 @@ class Wallet extends Model
     /**
      * Core debit logic, bisa dipakai dengan atau tanpa lockForUpdate.
      */
-    private function debitCore(float $amount, ?Pembayaran $pembayaran, ?string $keterangan, bool $lockRow): void
+    private function debitCore(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran, ?string $keterangan, bool $lockRow): void
     {
         // Pessimistic lock (opsional, tidak dibutuhkan jika caller sudah lock)
         $wallet = $lockRow

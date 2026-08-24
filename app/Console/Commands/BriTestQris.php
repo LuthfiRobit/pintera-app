@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Exceptions\BriApiException;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\BriSnapGateway;
 use Illuminate\Console\Command;

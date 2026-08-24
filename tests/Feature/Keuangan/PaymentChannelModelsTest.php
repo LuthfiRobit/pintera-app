@@ -5,7 +5,7 @@ namespace Tests\Feature\Keuangan;
 use App\Models\BriQrisPayment;
 use App\Models\BriVirtualAccount;
 use App\Models\ManualPaymentRequest;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Wallet;

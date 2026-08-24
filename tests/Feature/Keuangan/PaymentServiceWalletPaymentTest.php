@@ -5,7 +5,7 @@ namespace Tests\Feature\Keuangan;
 use App\Contracts\PaymentGatewayInterface;
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Finance\PaymentService;

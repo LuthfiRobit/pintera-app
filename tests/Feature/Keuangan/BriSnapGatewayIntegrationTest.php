@@ -5,7 +5,7 @@ namespace Tests\Feature\Keuangan;
 use App\Exceptions\BriApiException;
 use App\Services\Finance\Gateway\BriSnap\BriSnapClient;
 use App\Services\Finance\Gateway\BriSnapGateway;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Mockery;

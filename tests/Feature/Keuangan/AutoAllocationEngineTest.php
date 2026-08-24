@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Wallet;

@@ -29,6 +29,6 @@ class Cicilan extends Model
 
     public function pembayaran(): HasMany
     {
-        return $this->hasMany(Pembayaran::class);
+        return $this->hasMany(\App\Domains\Keuangan\Models\Pembayaran::class);
     }
 }

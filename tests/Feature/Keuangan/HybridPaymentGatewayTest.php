@@ -5,7 +5,7 @@ namespace Tests\Feature\Keuangan;
 use App\DTO\PaymentStatusResult;
 use App\DTO\QrisResult;
 use App\DTO\VirtualAccountResult;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Services\Finance\Gateway\BriSnapGateway;
 use App\Services\Finance\Gateway\HybridPaymentGateway;
 use App\Services\Finance\Gateway\MockPaymentGateway;

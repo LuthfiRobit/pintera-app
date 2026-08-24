@@ -3,7 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\BriInboundPaymentLog;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

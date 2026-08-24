@@ -2,7 +2,7 @@
 // tests/Unit/PembayaranSeederTest.php
 
 use App\Models\Lembaga;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
