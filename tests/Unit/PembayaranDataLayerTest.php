@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\Pembayaran;

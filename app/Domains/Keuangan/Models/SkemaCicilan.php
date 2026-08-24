@@ -29,7 +29,7 @@ class SkemaCicilan extends Model
 
     public function cicilan(): HasMany
     {
-        return $this->hasMany(\App\Models\Cicilan::class)->orderBy('urutan');
+        return $this->hasMany(Cicilan::class)->orderBy('urutan');
     }
 
     public function dibuatOlehUser(): BelongsTo

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Keuangan\Actions\Tagihan;
 
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Domains\Keuangan\Services\PembayaranService;
 
 class CatatManualCicilanAction

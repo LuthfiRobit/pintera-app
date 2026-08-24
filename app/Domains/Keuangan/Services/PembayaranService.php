@@ -3,7 +3,7 @@
 
 namespace App\Domains\Keuangan\Services;
 
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;

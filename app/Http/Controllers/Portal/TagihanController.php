@@ -3,7 +3,7 @@
 
 namespace App\Http\Controllers\Portal;
 
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\PembayaranService;
 use Illuminate\Http\RedirectResponse;

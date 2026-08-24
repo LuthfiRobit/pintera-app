@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
+use Database\Factories\CicilanFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Cicilan extends Model
 {
     use HasFactory;
+
+    protected static function newFactory(): CicilanFactory
+    {
+        return CicilanFactory::new();
+    }
 
     protected $table = 'cicilan';
 
@@ -24,11 +30,11 @@ class Cicilan extends Model
 
     public function skemaCicilan(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Keuangan\Models\SkemaCicilan::class);
+        return $this->belongsTo(SkemaCicilan::class);
     }
 
     public function pembayaran(): HasMany
     {
-        return $this->hasMany(\App\Domains\Keuangan\Models\Pembayaran::class);
+        return $this->hasMany(Pembayaran::class);
     }
 }

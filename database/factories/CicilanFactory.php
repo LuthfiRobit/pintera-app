@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

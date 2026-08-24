@@ -3,7 +3,6 @@
 
 namespace App\Domains\Keuangan\Models;
 
-use App\Models\Cicilan;
 use App\Models\Siswa;
 use App\Models\User;
 use Database\Factories\PembayaranFactory;

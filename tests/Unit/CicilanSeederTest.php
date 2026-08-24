@@ -1,7 +1,7 @@
 <?php
 // tests/Unit/CicilanSeederTest.php
 
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;

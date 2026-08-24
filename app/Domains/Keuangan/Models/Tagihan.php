@@ -73,7 +73,7 @@ class Tagihan extends Model
 
     public function cicilan(): HasManyThrough
     {
-        return $this->hasManyThrough(\App\Models\Cicilan::class, SkemaCicilan::class, 'tagihan_id', 'skema_cicilan_id');
+        return $this->hasManyThrough(Cicilan::class, SkemaCicilan::class, 'tagihan_id', 'skema_cicilan_id');
     }
 
     public function pembayaran(): HasMany

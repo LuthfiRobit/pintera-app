@@ -10,7 +10,7 @@ use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\TagihanCicilanEligibilityService;
 use App\Http\Controllers\Controller;
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;

@@ -3,7 +3,7 @@
 
 use App\Models\AkunPendaftar;
 use App\Models\CalonMurid;
-use App\Models\Cicilan;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Pendaftaran;
