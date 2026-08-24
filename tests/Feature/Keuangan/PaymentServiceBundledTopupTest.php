@@ -6,7 +6,7 @@ use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Yayasan;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

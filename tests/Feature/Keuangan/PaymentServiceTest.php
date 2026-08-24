@@ -9,7 +9,7 @@ use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 use App\Exceptions\PaymentException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -139,7 +139,7 @@ class PaymentServiceTest extends TestCase
             
         $this->app->instance(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class, $mockGateway);
 
-        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
+        $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 
         $this->assertEquals('qris', $pembayaran->metode);
         $this->assertNotNull($pembayaran->briQrisPayment);
@@ -158,7 +158,7 @@ class PaymentServiceTest extends TestCase
             
         $this->app->instance(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class, $mockGateway);
 
-        $pembayaran = app(\App\Services\Finance\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
+        $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 
         $this->assertNull($pembayaran->briQrisPayment->reference_no);
     }

@@ -8,7 +8,7 @@ use App\Exceptions\PaymentException;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

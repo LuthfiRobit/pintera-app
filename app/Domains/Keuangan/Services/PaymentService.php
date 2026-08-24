@@ -1,17 +1,18 @@
 <?php
 
-namespace App\Services\Finance;
+namespace App\Domains\Keuangan\Services;
 
 use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
-use App\Models\BriQrisPayment;
-use App\Models\BriVirtualAccount;
-use App\Models\ManualPaymentRequest;
-use App\Models\Pembayaran;
-use App\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\BriQrisPayment;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\ManualPaymentRequest;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Services\Finance\PaymentAllocationService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,7 +25,6 @@ class PaymentService
     ) {
     }
 
-
     /**
      * Create QRIS payment.
      */
@@ -34,9 +34,9 @@ class PaymentService
 
         return DB::transaction(function () use ($siswa, $tagihans) {
             $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'qris', 'menunggu_pembayaran');
-            
+
             $qrisResult = $this->gateway->createQris($pembayaran, 'DIRECT');
-            
+
             BriQrisPayment::create([
                 'pembayaran_id' => $pembayaran->id,
                 'qris_type' => 'DIRECT',
@@ -65,13 +65,13 @@ class PaymentService
 
         return DB::transaction(function () use ($siswa, $tagihans, $topupAmount) {
             $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'qris', 'menunggu_pembayaran');
-            
+
             $pembayaran->amount = $pembayaran->pembayaranTagihan()->sum('amount_allocated') + $topupAmount;
             $pembayaran->topup_status = 'pending';
             $pembayaran->save();
-            
+
             $qrisResult = $this->gateway->createQris($pembayaran, 'DIRECT');
-            
+
             BriQrisPayment::create([
                 'pembayaran_id' => $pembayaran->id,
                 'qris_type' => 'DIRECT',
@@ -86,6 +86,7 @@ class PaymentService
             return $pembayaran;
         });
     }
+
     /**
      * Get or create permanent VA for a student's wallet.
      */
@@ -247,7 +248,7 @@ class PaymentService
 
         return DB::transaction(function () use ($siswa, $tagihans, $cashierUserId) {
             $pembayaran = $this->createPembayaranRecord($siswa, $tagihans, 'cash', 'lunas');
-            
+
             $pembayaran->update([
                 'diverifikasi_oleh_user_id' => $cashierUserId,
                 'diverifikasi_pada' => now(),

@@ -9,7 +9,7 @@ use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 use Illuminate\Database\Seeder;
 
 /**

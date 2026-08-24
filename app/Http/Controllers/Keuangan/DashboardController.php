@@ -8,7 +8,7 @@ use App\Models\Scopes\TenantScope;
 use App\Models\SystemSetting;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Notifications\NotificationFeedResolver;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 use App\Services\Finance\SkipAlertResolver;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;

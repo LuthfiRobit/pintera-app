@@ -8,7 +8,7 @@ use App\Models\Siswa;
 use App\Models\SystemSetting;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Tests\TestCase;

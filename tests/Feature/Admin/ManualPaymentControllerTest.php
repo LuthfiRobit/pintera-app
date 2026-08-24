@@ -80,7 +80,7 @@ it('approves a TOPUP manual request: calls Wallet::topup() outside the transacti
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $walletSaldoAwal = (float) $siswa->wallet->balance;
 
-    $pembayaran = app(\App\Services\Finance\PaymentService::class)->createManualTopupPayment($siswa, [
+    $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createManualTopupPayment($siswa, [
         'amount' => 200000, 'requested_by' => $user->id, 'transfer_proof_path' => 'x.jpg', 'transfer_date' => now()->toDateString(),
     ]);
     $manualRequest = ManualPaymentRequest::where('pembayaran_id', $pembayaran->id)->first();
@@ -109,7 +109,7 @@ it('marks a TOPUP manual request completed (not failed) when AutoAllocationEngin
 
     \Illuminate\Support\Facades\Log::shouldReceive('error')->atLeast()->once();
 
-    $pembayaran = app(\App\Services\Finance\PaymentService::class)->createManualTopupPayment($siswa, [
+    $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createManualTopupPayment($siswa, [
         'amount' => 200000, 'requested_by' => $user->id, 'transfer_proof_path' => 'x.jpg', 'transfer_date' => now()->toDateString(),
     ]);
     $manualRequest = ManualPaymentRequest::where('pembayaran_id', $pembayaran->id)->first();

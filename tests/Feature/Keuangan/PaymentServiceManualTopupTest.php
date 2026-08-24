@@ -5,7 +5,7 @@ use App\Domains\Keuangan\Models\ManualPaymentRequest;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\User;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 
 it('creates a manual topup payment with topup_status pending and no pembayaran_tagihan rows', function () {
     $siswa = Siswa::factory()->create();
