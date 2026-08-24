@@ -107,10 +107,10 @@
                     </div>
 
                     <div class="mt-4">
-                        @include('keuangan.checkout.tabs.va')
-                        @include('keuangan.checkout.tabs.qris')
-                        @include('keuangan.checkout.tabs.wallet')
-                        @include('keuangan.checkout.tabs.transfer')
+                        @include('portals.portal.keuangan.checkout.tabs.va')
+                        @include('portals.portal.keuangan.checkout.tabs.qris')
+                        @include('portals.portal.keuangan.checkout.tabs.wallet')
+                        @include('portals.portal.keuangan.checkout.tabs.transfer')
                     </div>
                 </div>
             </div>

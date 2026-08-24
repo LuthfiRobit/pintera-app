@@ -1,28 +1,30 @@
 <?php
-// app/Http/Controllers/Keuangan/CheckoutController.php
+// app/Http/Controllers/Portal/Keuangan/CheckoutController.php
 
-namespace App\Http\Controllers\Keuangan;
+namespace App\Http\Controllers\Portal\Keuangan;
 
+use App\Domains\Keuangan\Actions\Pembayaran\CreateManualTransferPaymentAction;
+use App\Domains\Keuangan\Actions\Pembayaran\CreateQrisPaymentAction;
+use App\Domains\Keuangan\Actions\Pembayaran\CreateWalletPaymentAction;
+use App\Domains\Keuangan\Concerns\AuthorizesPembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
-use App\Domains\Keuangan\Concerns\AuthorizesPembayaran;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\Keuangan\StoreManualTransferRequest;
-use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
-use App\Domains\Keuangan\Models\Tagihan;
-use App\Domains\Keuangan\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 
-class CheckoutController extends BaseController
+class CheckoutController extends Controller
 {
     use AuthorizesPembayaran;
 
-    public function __construct(private readonly PaymentService $paymentService)
+    public function __construct(private readonly \App\Domains\Keuangan\Services\PaymentService $paymentService)
     {
     }
 
@@ -48,7 +50,7 @@ class CheckoutController extends BaseController
             0.0
         );
 
-        return view('keuangan.checkout.create', [
+        return view('portals.portal.keuangan.checkout.create', [
             'activeSiswa' => $activeSiswa,
             'tagihans' => $tagihans,
             'totalTagihan' => $totalTagihan,
@@ -86,14 +88,14 @@ class CheckoutController extends BaseController
             return back()->withErrors(['tagihan_ids' => 'Gagal mendapatkan VA, silakan coba lagi.']);
         }
 
-        return view('keuangan.checkout.va-info', [
+        return view('portals.portal.keuangan.checkout.va-info', [
             'va' => $va,
             'totalTagihan' => $totalTagihan,
             'tagihans' => $tagihans,
         ]);
     }
 
-    public function qris(Request $request)
+    public function qris(Request $request, CreateQrisPaymentAction $action)
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
         $requestedIds = (array) $request->input('tagihan_ids', []);
@@ -117,11 +119,7 @@ class CheckoutController extends BaseController
         }
 
         try {
-            if ($topupAmount > 0) {
-                $pembayaran = $this->paymentService->createQrisPaymentWithTopup($activeSiswa, $tagihans, $topupAmount);
-            } else {
-                $pembayaran = $this->paymentService->createQrisPayment($activeSiswa, $tagihans);
-            }
+            $pembayaran = $action->execute($activeSiswa, $tagihans, $topupAmount);
         } catch (PaymentException $e) {
             Log::error('Gagal membuat QRIS: '.$e->getMessage());
             return back()->withErrors(['tagihan_ids' => 'Gagal membuat pembayaran, silakan coba lagi.']);
@@ -130,7 +128,7 @@ class CheckoutController extends BaseController
         return redirect()->route('keuangan.checkout.show', $pembayaran);
     }
 
-    public function wallet(Request $request)
+    public function wallet(Request $request, CreateWalletPaymentAction $action)
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
         $requestedIds = (array) $request->input('tagihan_ids', []);
@@ -146,7 +144,7 @@ class CheckoutController extends BaseController
         }
 
         try {
-            $pembayaran = $this->paymentService->createWalletPayment($activeSiswa, $tagihans);
+            $pembayaran = $action->execute($activeSiswa, $tagihans);
         } catch (InsufficientBalanceException|PaymentException $e) {
             return back()->withErrors(['tagihan_ids' => 'Saldo wallet tidak mencukupi untuk tagihan terpilih.']);
         }
@@ -154,7 +152,7 @@ class CheckoutController extends BaseController
         return redirect()->route('keuangan.checkout.sukses', $pembayaran);
     }
 
-    public function transfer(StoreManualTransferRequest $request)
+    public function transfer(StoreManualTransferRequest $request, CreateManualTransferPaymentAction $action)
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
         $requestedIds = (array) $request->input('tagihan_ids', []);
@@ -177,7 +175,7 @@ class CheckoutController extends BaseController
         try {
             $path = $request->file('transfer_proof')->store('bukti-transfer', 'public');
 
-            $pembayaran = $this->paymentService->createManualPayment($activeSiswa, $tagihans, [
+            $pembayaran = $action->execute($activeSiswa, $tagihans, [
                 'amount' => $totalTagihan,
                 'transfer_proof_path' => $path,
                 'bank_origin' => $request->input('bank_origin'),
@@ -195,7 +193,7 @@ class CheckoutController extends BaseController
     {
         $this->authorizePembayaran($pembayaran);
 
-        return view('keuangan.checkout.menunggu-verifikasi', ['pembayaran' => $pembayaran->load('manualRequest')]);
+        return view('portals.portal.keuangan.checkout.menunggu-verifikasi', ['pembayaran' => $pembayaran->load('manualRequest')]);
     }
 
     public function sukses(Request $request, Pembayaran $pembayaran)
@@ -204,7 +202,7 @@ class CheckoutController extends BaseController
 
         $pembayaran->load(['pembayaranTagihan.tagihan.jenisTagihan' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)]);
 
-        return view('keuangan.checkout.sukses', ['pembayaran' => $pembayaran]);
+        return view('portals.portal.keuangan.checkout.sukses', ['pembayaran' => $pembayaran]);
     }
 
     public function show(Request $request, Pembayaran $pembayaran)
@@ -221,7 +219,7 @@ class CheckoutController extends BaseController
             $qrCodeDataUri = 'data:image/svg+xml;base64,'.base64_encode($svg);
         }
 
-        return view('keuangan.checkout.show', [
+        return view('portals.portal.keuangan.checkout.show', [
             'pembayaran' => $pembayaran,
             'qrCodeDataUri' => $qrCodeDataUri,
         ]);
