@@ -30,7 +30,7 @@ class EssentialUserSeeder extends Seeder
         );
         $superAdmin->assignRole('yayasan_super_admin');
 
-        $lembaga = Lembaga::where('npsn', '20223311')->first() ?? Lembaga::first();
+        $lembaga = Lembaga::where('npsn', '20223333')->first() ?? Lembaga::first();
 
         if (! $lembaga) {
             $this->command?->warn('Belum ada Lembaga -- akun kepala_sekolah/admin_administrasi/admin_keuangan/guru dilewati.');
@@ -39,12 +39,12 @@ class EssentialUserSeeder extends Seeder
         }
 
         $akunLembagaScoped = [
-            'kepsek.kb@demo.test' => ['name' => 'Aisyah, S.Psi.', 'role' => 'kepala_sekolah'],
-            'adm.kb@demo.test' => ['name' => 'Nurul, S.Pd.', 'role' => 'admin_administrasi'],
-            'keuangan.kb@demo.test' => ['name' => 'Halimah, S.E.', 'role' => 'admin_keuangan'],
-            'kurikulum.kb@demo.test' => ['name' => 'Kurikulum (Contoh)', 'role' => 'admin_akademik'],
-            'guru.kb1@demo.test' => ['name' => 'Fatimah, S.Psi.', 'role' => 'guru'],
-            'sarpras.kb@demo.test' => ['name' => 'Sarpras (Contoh)', 'role' => 'admin_sarpras'],
+            'kepsek.sd@demo.test' => ['name' => 'Abdullah, M.Pd.', 'role' => 'kepala_sekolah'],
+            'adm.sd@demo.test' => ['name' => 'Lukman, S.Kom.', 'role' => 'admin_administrasi'],
+            'keuangan.sd@demo.test' => ['name' => 'Hasan, S.E.', 'role' => 'admin_keuangan'],
+            'kurikulum.sd@demo.test' => ['name' => 'Kurikulum (Contoh)', 'role' => 'admin_akademik'],
+            'guru.sd1@demo.test' => ['name' => 'Sari Wulandari, S.Pd.', 'role' => 'guru'],
+            'sarpras.sd@demo.test' => ['name' => 'Sarpras (Contoh)', 'role' => 'admin_sarpras'],
         ];
 
         foreach ($akunLembagaScoped as $email => $data) {
