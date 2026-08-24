@@ -3,10 +3,10 @@
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanKeringanan;
-use App\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Models\SiswaKeringanan;
+use App\Domains\Keuangan\Models\SiswaKeringanan;
 use App\Models\User;
 
 it('lets a jenis_tagihan define its own discount rule for a kategori_keringanan', function () {

@@ -7,7 +7,7 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanSiswa;
 use App\Models\Siswa;
-use App\Models\SiswaKeringanan;
+use App\Domains\Keuangan\Models\SiswaKeringanan;
 
 class TagihanNominalResolver
 {

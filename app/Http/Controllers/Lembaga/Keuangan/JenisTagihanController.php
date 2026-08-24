@@ -13,7 +13,7 @@ use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Http\Controllers\Controller;
 use App\Models\JalurPpdb;
-use App\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\TahunAjaran;

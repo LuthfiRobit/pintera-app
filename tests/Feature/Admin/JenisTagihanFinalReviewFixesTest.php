@@ -7,7 +7,7 @@
 
 use App\Enums\StatusSiswa;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;

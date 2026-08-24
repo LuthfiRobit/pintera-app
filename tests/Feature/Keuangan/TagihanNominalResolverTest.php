@@ -5,10 +5,10 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanKeringanan;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
-use App\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanSiswa;
 use App\Models\Siswa;
-use App\Models\SiswaKeringanan;
+use App\Domains\Keuangan\Models\SiswaKeringanan;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Domains\Keuangan\Services\TagihanNominalResolver;
 

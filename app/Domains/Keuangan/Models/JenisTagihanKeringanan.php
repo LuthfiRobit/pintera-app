@@ -3,7 +3,6 @@
 
 namespace App\Domains\Keuangan\Models;
 
-use App\Models\KategoriKeringanan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 

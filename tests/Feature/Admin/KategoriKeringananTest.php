@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Admin/KategoriKeringananTest.php
 
-use App\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;

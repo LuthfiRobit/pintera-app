@@ -1,9 +1,10 @@
 <?php
-// app/Models/KategoriKeringanan.php
+// app/Domains/Keuangan/Models/KategoriKeringanan.php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Lembaga;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,7 +24,7 @@ class KategoriKeringanan extends Model
 
     public function jenisTagihanKeringanan(): HasMany
     {
-        return $this->hasMany(\App\Domains\Keuangan\Models\JenisTagihanKeringanan::class);
+        return $this->hasMany(JenisTagihanKeringanan::class);
     }
 
     public function siswaKeringanan(): HasMany
