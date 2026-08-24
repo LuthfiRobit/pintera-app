@@ -233,6 +233,16 @@ Blast radius hardcoded role-name checks di luar `RoleSeeder.php`/`RolePermission
 
 **`app/Http/Controllers/Admin/KaryawanController.php::store()`** — logic `is_pool`+gate `yayasan_super_admin` TIDAK diubah, hanya baris `assignRole()` di `AkunKaryawanGenerator` yang dipanggilnya yang berubah nama.
 
+**`database/seeders/*.php`** (BLIND SPOT yang baru ditemukan 24 Agustus 2026 — audit awal §10 di atas cuma grep `app resources/views routes`, TIDAK menyentuh `database/seeders/`, padahal seeder demo memanggil `assignRole()` dengan nama role lama secara luas). Grep ulang WAJIB scope `database/seeders` juga, daftar hasil audit awal:
+- `database/seeders/EssentialUserSeeder.php` — `assignRole('yayasan_super_admin')` (baris 31, TIDAK berubah) + `assignRole($data['role'])` dinamis dari array `$akunLembagaScoped` yang berisi literal `'kepala_sekolah'`, `'admin_administrasi'`, **`'admin_keuangan'`** (review-required §6.2), **`'admin_akademik'`** (review-required §6.2), `'guru'`, `'admin_sarpras'` (baris 41-48).
+- `database/seeders/UserSeeder.php` — `assignRole('yayasan_super_admin')` (baris 30, TIDAK berubah) + `assignRole($data['role'])` dinamis dari array pimpinan berisi `'kepala_sekolah'`, `'admin_administrasi'`, **`'admin_keuangan'`** (review-required) + `assignRole('guru')` literal (baris 111).
+- `database/seeders/OrangTuaKaryawanSeeder.php` — **`assignRole('karyawan_pool')`** (baris 90, HARUS jadi `pegawai_yayasan`) + `assignRole('orang_tua')` ×5 (TIDAK berubah).
+- `database/seeders/SarprasPengadaanDemoSeeder.php` — `assignRole('bendahara_yayasan')`, `assignRole('kepala_sekolah')` (TIDAK berubah) + `assignRole('admin_administrasi')` (baris 91 — **catatan nyata**: di file ini `admin_administrasi` dipakai untuk akun admin Sarpras/operasional, BUKAN konteks SPMB, meski nama role-nya sama; pembekuan §9 tetap berlaku ke ROLE-nya, tapi worth dicatat sebagai inkonsistensi pemakaian existing, bukan sesuatu yang RBAC v2 WAJIB perbaiki).
+- `database/seeders/KehadiranSdmDemoSeeder.php` — `assignRole('admin_sdm')` (baris 70, TIDAK berubah — nama final `admin_sdm` vs `operator_sdm` masih belum diputuskan per §6.2).
+- `database/seeders/SiswaSeeder.php` — `assignRole('siswa')` (TIDAK berubah).
+
+**Konsekuensi praktis**: karena data seeder demo bersifat buang-pakai (lihat §11), file-file ini TIDAK butuh "migrasi data" — cukup diupdate literal string role-nya mengikuti §6, lalu `migrate:fresh --seed` ulang. TAPI tetap WAJIB masuk daftar file yang diaudit — kalau terlewat, seeder demo akan gagal (`assignRole()` melempar exception untuk role yang sudah tidak ada) atau diam-diam assign role yang salah.
+
 ## 11. Migration & Backward Compatibility
 
 - **Data migrasi `user_has_roles` existing WAJIB eksplisit**, mengikuti tabel §6 — TIDAK ada migrasi otomatis 100% untuk `admin_akademik` (kategori review-required).

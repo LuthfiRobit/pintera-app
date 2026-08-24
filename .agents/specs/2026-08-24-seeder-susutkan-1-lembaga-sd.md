@@ -36,7 +36,7 @@ Akar masalah: SMP selama ini jadi lembaga "kelinci percobaan" utama untuk skenar
 6. **Data tetap buang-pakai** (sesuai konfirmasi user + skill `seeder-standard` §5) — TIDAK ada migrasi data lama yang dipertahankan, cukup `migrate:fresh --seed` setelah seluruh seeder diperbaiki.
 7. **3 lembaga lain (KB/TK/SMP) dan seluruh data turunannya DIHAPUS dari seeder**, bukan cuma "diabaikan" — `LembagaSeeder.php` hanya menyisakan 1 blok `firstOrCreate` untuk SD.
 
-## 3. Cakupan File (26 file total)
+## 3. Cakupan File (27 file total)
 
 ### 3.1 Wajib direfactor total (5 file — CRASH tanpa perbaikan)
 
@@ -62,10 +62,12 @@ Akar masalah: SMP selama ini jadi lembaga "kelinci percobaan" utama untuk skenar
 |---|---|---|
 | `KeuanganDemoSeeder.php` | `$demoParents` array hardcode 3 NIK (`ortu@demo.test` SMP, `ortu.kb@demo.test`, `ortu.tk@demo.test`) — TIDAK ADA entri SD | Hapus 3 entri KB/TK/SMP, tambah entri SD (`ortu.sd@demo.test`, tautkan ke siswa SD hasil §3.1 `OrangTuaKaryawanSeeder` yang baru). |
 
-### 3.4 Perlu penambahan volume data (7 file — tidak crash, tapi kualitas/volume SD di bawah standar §2.2 dibanding treatment SMP)
+### 3.4 Perlu penambahan volume data (9 file — tidak crash, tapi kualitas/volume SD di bawah standar §2.2 dibanding treatment SMP)
 
 | File | Kondisi SD saat ini | Target |
 |---|---|---|
+| `KelasSeeder.php` | **Koreksi kategorisasi**: file ini GENERIK (`Lembaga::all()` + `match(bentuk_pendidikan)`), TIDAK hardcode NPSN — tapi array `$kelasConfigs` untuk `'SD'` cuma berisi 6 baris (1 rombel/tingkat: "Kelas 1-A" s.d. "Kelas 6-A") | Tambah jadi 12 baris (2 rombel/tingkat: "Kelas 1-A"+"Kelas 1-B" s.d. "Kelas 6-A"+"Kelas 6-B"), meniru pola `default` (SMP) yang sudah 2 rombel/tingkat. |
+| `SiswaSeeder.php` | **Koreksi kategorisasi**: file ini GENERIK (`Lembaga::all()`, TIDAK hardcode NPSN untuk lookup — tapi punya cabang `if ($lembaga->npsn === '20223344')` khusus SMP dan `seedGenericStudents()` untuk SD cuma bikin 3 siswa/kelas (`for ($i = 1; $i <= 3; $i++)`, nama auto-generate "Siswa {kelas} No.{i}") | Naikkan ke 28 siswa/kelas × 12 kelas (§4) = ~336 siswa. `seedSiswaAccount()`-nya juga punya `$emailMap` dengan 3 entri KB/TK/SMP mati (`siswa.kb@demo.test` dst) — hapus, sisakan `siswa.sd@demo.test`. |
 | `AsesmenSeeder.php` | Fallback generik: 1 asesmen/kelas, guru & mapel pertama yang ditemukan (6 baris total) | Terapkan pola detail yang tadinya khusus SMP (`seedSmpAsesmen`) ke SD: asesmen per-mapel dengan guru pengampu yang sesuai, bukan guru/mapel pertama yang ditemukan. |
 | `JadwalPelajaranSeeder.php` | Fallback generik: 1 guru & 1 mapel yang sama dipakai berulang di semua slot jadwal | Terapkan pola per-mapel-per-guru yang tadinya khusus SMP, disesuaikan 9 mapel SD (§2.2 tidak perlu ubah `MataPelajaranSeeder`). |
 | `KomponenPenilaianSeeder.php` | 9 baris (1 komponen/mapel) — sebenarnya sudah proporsional terhadap 9 mapel SD | **Tidak perlu diubah**, cukup diverifikasi tetap jalan setelah refactor lembaga lain. |
@@ -74,9 +76,11 @@ Akar masalah: SMP selama ini jadi lembaga "kelinci percobaan" utama untuk skenar
 | `SesiPembelajaranSeeder.php` | Materi generik "Kegiatan Belajar Mengajar Rutin dan Interaktif" semua sesi | Materi spesifik per-mapel mengikuti pola yang tadinya khusus SMP. |
 | `AkunPendaftarSeeder.php` | 1 akun pendaftar SD sudah ada (`pendaftar.sd@demo.test`) + 3 baris array sampah untuk KB/TK/SMP | Hapus 3 baris array KB/TK/SMP dari `$emailPerNpsn`, sisakan SD. Volume 1 akun sudah cukup (fitur PPDB tidak butuh banyak pendaftar demo). |
 
-### 3.5 Tidak disentuh (9 file — generik penuh atau tidak menyentuh Lembaga sama sekali)
+### 3.5 Tidak disentuh (8 file — generik penuh atau tidak menyentuh Lembaga sama sekali)
 
-`KelasSeeder.php`, `TahunAjaranSeeder.php`, `SemesterSeeder.php`, `MataPelajaranSeeder.php`, `GelombangPpdbSeeder.php`, `JalurPpdbSeeder.php`, `PendaftaranSeeder.php`, `CalonMuridSeeder.php`, `WorkflowDefinitionSeeder.php`.
+`TahunAjaranSeeder.php`, `SemesterSeeder.php`, `MataPelajaranSeeder.php`, `GelombangPpdbSeeder.php`, `JalurPpdbSeeder.php`, `PendaftaranSeeder.php`, `CalonMuridSeeder.php`, `WorkflowDefinitionSeeder.php`.
+
+**Catatan koreksi**: `KelasSeeder.php` dan `SiswaSeeder.php` awalnya salah ditaruh di kategori ini — keduanya memang generik (tidak hardcode NPSN), TAPI volumenya untuk SD perlu dinaikkan supaya sesuai target §4. Sudah dipindah ke §3.4.
 
 ### 3.6 File inti (1 file — sumber lembaga)
 
