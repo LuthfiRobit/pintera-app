@@ -19,7 +19,7 @@ beforeEach(function () {
     (new TahunAjaranSeeder())->run();
 });
 
-it('seeds Ganjil and Genap semester across all K-9 institutions', function () {
+it('seeds Ganjil and Genap semester for the SD institution', function () {
     (new SemesterSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -41,5 +41,5 @@ it('is idempotent when run twice', function () {
     (new SemesterSeeder())->run();
     (new SemesterSeeder())->run();
 
-    expect(Semester::count())->toBe(16);
+    expect(Semester::count())->toBe(4);
 });

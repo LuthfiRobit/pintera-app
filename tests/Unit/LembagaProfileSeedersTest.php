@@ -36,11 +36,8 @@ it('seeds Tunadaksa as a program inklusi for all lembaga', function () {
     }
 });
 
-it('seeds jenjang-specific ekstrakurikuler across K-9 institutions', function () {
+it('seeds jenjang-specific ekstrakurikuler for SD institution', function () {
     (new EkstrakurikulerLembagaSeeder())->run();
-
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    expect(EkstrakurikulerLembaga::where('lembaga_id', $smp->id)->where('nama_ekskul', 'Futsal')->exists())->toBeTrue();
 
     $sd = Lembaga::where('npsn', '20223333')->first();
     expect(EkstrakurikulerLembaga::where('lembaga_id', $sd->id)->where('nama_ekskul', 'Pramuka')->exists())->toBeTrue();

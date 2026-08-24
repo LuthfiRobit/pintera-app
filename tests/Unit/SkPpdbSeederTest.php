@@ -39,7 +39,7 @@ beforeEach(function () {
     (new PendaftaranSeeder())->run();
 });
 
-it('creates one SK per lembaga across all K-9 institutions and attaches it to both the diterima and ditolak pendaftaran of that lembaga', function () {
+it('creates one SK for the SD institution and attaches it to both the diterima and ditolak pendaftaran of that lembaga', function () {
     (new SkPpdbSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -57,5 +57,5 @@ it('is idempotent when run twice', function () {
     (new SkPpdbSeeder())->run();
     (new SkPpdbSeeder())->run();
 
-    expect(SkPpdb::count())->toBe(4);
+    expect(SkPpdb::count())->toBe(1);
 });

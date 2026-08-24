@@ -55,16 +55,16 @@ it('seeds PPDB configuration in ALL institutions across active and inactive tahu
 it('seeds 3 jalur (Reguler, Prestasi, Afirmasi) with their formulir/dokumen/seleksi for the active tahun ajaran', function () {
     jalankanKonfigurasiPpdb();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $baru = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->first();
+    $sdit = Lembaga::where('npsn', '20223333')->first();
+    $baru = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
 
-    $reguler = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $baru->id)->where('nama', 'Reguler')->first();
+    $reguler = JalurPpdb::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $baru->id)->where('nama', 'Reguler')->first();
     expect($reguler)->not->toBeNull();
-    expect(FormulirField::where('jalur_ppdb_id', $reguler->id)->where('label', 'Sekolah Asal')->exists())->toBeTrue();
+    expect(FormulirField::where('jalur_ppdb_id', $reguler->id)->where('label', 'Asal TK / PAUD')->exists())->toBeTrue();
     expect(DokumenSyaratPpdb::where('jalur_ppdb_id', $reguler->id)->where('nama_dokumen', 'Akta Kelahiran')->exists())->toBeTrue();
     expect(SeleksiPpdb::where('jalur_ppdb_id', $reguler->id)->count())->toBe(2);
 
-    $afirmasi = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $baru->id)->where('nama', 'Afirmasi')->first();
+    $afirmasi = JalurPpdb::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $baru->id)->where('nama', 'Afirmasi')->first();
     expect($afirmasi)->not->toBeNull();
     expect(SeleksiPpdb::where('jalur_ppdb_id', $afirmasi->id)->count())->toBe(0);
 });

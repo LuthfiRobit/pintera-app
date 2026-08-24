@@ -24,12 +24,12 @@ beforeEach(function () {
 it('seeds a data periodik row for each semester of the active tahun ajaran, per lembaga', function () {
     (new LembagaDataPeriodikSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $aktif = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->first();
+    $sdit = Lembaga::where('npsn', '20223333')->first();
+    $aktif = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
     $semesterAktif = Semester::where('tahun_ajaran_id', $aktif->id)->get();
 
     foreach ($semesterAktif as $semester) {
-        $periodik = LembagaDataPeriodik::where('lembaga_id', $smp->id)->where('semester_id', $semester->id)->first();
+        $periodik = LembagaDataPeriodik::where('lembaga_id', $sdit->id)->where('semester_id', $semester->id)->first();
         expect($periodik)->not->toBeNull();
         expect($periodik->sumber_listrik)->toBe('PLN');
         expect($periodik->daya_listrik)->toBe(5500);

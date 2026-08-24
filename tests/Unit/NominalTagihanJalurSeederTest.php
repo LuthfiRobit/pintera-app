@@ -25,7 +25,7 @@ beforeEach(function () {
     (new JenisTagihanSeeder())->run();
 });
 
-it('sets real nominals for Reguler and exactly 0 for Afirmasi, and skips Prestasi across all K-9 institutions', function () {
+it('sets real nominals for Reguler and exactly 0 for Afirmasi, and skips Prestasi for the SD institution', function () {
     (new NominalTagihanJalurSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -46,12 +46,12 @@ it('sets real nominals for Reguler and exactly 0 for Afirmasi, and skips Prestas
     }
 });
 
-it('does not set nominal against the inactive tahun ajaran jalur for SMP', function () {
+it('does not set nominal against the inactive tahun ajaran jalur for SD', function () {
     (new NominalTagihanJalurSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
-    $lama = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', false)->first();
-    $jalurLama = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $lama->id)->pluck('id');
+    $sdit = Lembaga::where('npsn', '20223333')->first();
+    $lama = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', false)->first();
+    $jalurLama = JalurPpdb::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $lama->id)->pluck('id');
 
     expect(NominalTagihanJalur::whereIn('jalur_ppdb_id', $jalurLama)->exists())->toBeFalse();
 });

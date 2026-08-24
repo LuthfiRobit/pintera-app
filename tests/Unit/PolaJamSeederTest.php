@@ -16,7 +16,7 @@ beforeEach(function () {
     (new LembagaSeeder())->run();
 });
 
-it('seeds one pola jam per lembaga across all K-9 institutions', function () {
+it('seeds one pola jam for the SD institution', function () {
     (new PolaJamSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -30,5 +30,5 @@ it('is idempotent when run twice', function () {
     (new PolaJamSeeder())->run();
     (new PolaJamSeeder())->run();
 
-    expect(PolaJam::count())->toBe(4);
+    expect(PolaJam::count())->toBe(1);
 });
