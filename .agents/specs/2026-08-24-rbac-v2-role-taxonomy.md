@@ -5,6 +5,8 @@
 - **Tanggal**: 24 Agustus 2026
 - **Konteks**: kelanjutan diskusi role/permission yang sengaja ditunda sampai migrasi domain Keuangan selesai (lihat memori `project_role_permission_org_redesign`). Bukan proyek terpisah dari inisiatif "RBAC v2 Permission Consistency" sebelumnya di branch ini — ini babak lanjutan yang lebih besar: bukan sekadar merapikan permission existing, tapi merombak taxonomy role itu sendiri.
 
+> **Headline prinsip** (rangkuman seluruh keputusan spec ini): **Role menjawab "apa yang boleh dilakukan dan pada scope apa"; data domain menjawab "siapa orangnya dan bagaimana ia berafiliasi"; relasi domain menjawab "record mana yang secara spesifik boleh ia kelola."**
+
 ---
 
 ## 1. Context & Problem
@@ -24,7 +26,7 @@ Sistem role saat ini (`RoleSeeder.php`, `RolePermissionAssignmentSeeder.php`) tu
 
 1. **`scope_level` = batas wilayah data. Role = fungsi/kewenangan.** Keduanya dimensi berbeda, jangan dipaksa jadi satu konsep.
 2. **Role tidak merepresentasikan status kepegawaian.** Role merepresentasikan kombinasi capability dan authorization scope. Status/atribut organisasi (afiliasi lembaga, jenis kepegawaian) tetap berasal dari data domain (`Karyawan`, `User.lembaga_id`, dst), bukan dari nama role.
-   - **Pengecualian eksplisit**: `pegawai_lembaga`/`pegawai_yayasan` adalah *scope-carrier roles* — lihat §5.4. Ini pengecualian sadar karena mekanisme authorization legacy (`widestScopeLevel()`) membutuhkan `scope_level` pada role, bukan penyimpangan dari prinsip di atas.
+   - **Pengecualian eksplisit**: `pegawai_lembaga`/`pegawai_yayasan` adalah *scope-carrier roles* — lihat §5.5. Ini pengecualian sadar karena mekanisme authorization legacy (`widestScopeLevel()`) membutuhkan `scope_level` pada role, bukan penyimpangan dari prinsip di atas.
 3. **Satu user boleh punya banyak role** (Spatie multi-role sudah didukung) — kombinasi role, bukan role monolitik per user.
 4. **Jabatan baru menjadi role ketika menghasilkan kewenangan aplikasi yang berbeda** — bukan otomatis karena ada nama jabatan di struktur organisasi. Expand-on-demand, bukan modeling organisasi lengkap di depan.
 5. **Permission bukan satu-satunya security boundary.** Permission = gate route/action. Record-level ownership/Policy = siapa boleh lihat/ubah record spesifik. Tenant/scope constraint = boundary data. Ketiganya lapisan terpisah, RBAC v2 hanya menata lapisan pertama.
@@ -32,7 +34,7 @@ Sistem role saat ini (`RoleSeeder.php`, `RolePermissionAssignmentSeeder.php`) tu
 ## 3. Role Taxonomy
 
 ### 3.1 Organizational-scope roles
-`pegawai_lembaga`, `pegawai_yayasan` — baseline scope-carrier untuk SEMUA akun pegawai, lihat §5.4. Bukan jabatan, murni bucket scope + baseline capability.
+`pegawai_lembaga`, `pegawai_yayasan` — baseline scope-carrier untuk SEMUA akun pegawai, lihat §5.5. Bukan jabatan, murni bucket scope + baseline capability.
 
 ### 3.2 Functional roles
 Merepresentasikan fungsi/kewenangan operasional nyata: `kepala_sekolah`, `wakasek_kurikulum`, `wakasek_kesiswaan`, `guru`, `wali_kelas`, `guru_bk`, `bendahara_lembaga`, `bendahara_yayasan`, `admin_sdm`, `admin_sarpras`, `operator_akademik`. Sebagian merepresentasikan jabatan organisasi nyata (`kepala_sekolah`), sebagian murni fungsional tanpa jabatan 1:1 (`admin_sarpras` — lihat §7 soal kenapa ini tetap sah).
@@ -40,20 +42,19 @@ Merepresentasikan fungsi/kewenangan operasional nyata: `kepala_sekolah`, `wakase
 ### 3.3 Principal / self-service roles
 `orang_tua`, `siswa` — bukan employee baseline, tidak butuh `pegawai_*`.
 
-## 4. Baseline 18 Roles
+## 4. Baseline 17 Roles
 
-Ini role yang **dibutuhkan berdasarkan kondisi produk saat ini** (fitur yang sudah ada + roadmap yang sudah pasti dikerjakan) — bukan pemetaan lengkap seluruh jabatan yang mungkin ada di organisasi sekolah. Role di luar daftar ini masuk *candidate roles* (§13), dibuat hanya ketika ada capability nyata yang membutuhkannya.
+Ini role yang **dibutuhkan berdasarkan kondisi produk saat ini** (fitur yang sudah ada + roadmap yang sudah pasti dikerjakan) — bukan pemetaan lengkap seluruh jabatan yang mungkin ada di organisasi sekolah. Role di luar daftar ini masuk *candidate roles* (§14), dibuat hanya ketika ada capability nyata yang membutuhkannya.
 
-**Catatan progresi hitungan** (supaya tidak membingungkan bila dibandingkan dengan draft diskusi sebelumnya): baseline sempat disebut "16 role inti", lalu "17" setelah `pegawai` ditambahkan sebagai baseline wajib, lalu jadi **18** setelah `pegawai` dipecah jadi `pegawai_lembaga`+`pegawai_yayasan` karena temuan `widestScopeLevel()` (§5.4) — 1 role scope-carrier tunggal tidak bisa membawa 2 `scope_level` berbeda sekaligus.
+**Keputusan final: 17, bukan 18.** Draft diskusi sempat mempertimbangkan `pengurus_yayasan` masuk baseline (yang akan membuat totalnya 18), tapi permission pembeda dia dari `yayasan_super_admin` belum jelas — sesuai prinsip §2.4 ("jabatan baru menjadi role ketika menghasilkan kewenangan aplikasi yang berbeda"), dia TIDAK masuk baseline, sepenuhnya jadi *candidate role* (§14) sampai ada kebutuhan permission konkret.
 
 ```text
 PLATFORM (1)
 └── platform_super_admin
 
-YAYASAN (3)
+YAYASAN (2)
 ├── yayasan_super_admin
-├── bendahara_yayasan
-└── pengurus_yayasan          ← lihat §13, status masih kandidat tervalidasi-sebagian
+└── bendahara_yayasan
 
 ORGANIZATIONAL SCOPE / PEGAWAI (2)
 ├── pegawai_lembaga
@@ -74,32 +75,36 @@ FUNCTIONAL — LEMBAGA (10)
 PRINCIPAL (2)
 ├── orang_tua
 └── siswa
-```
 
-**Catatan koreksi jumlah**: draft diskusi sempat menyebut "17 role" termasuk `pengurus_yayasan` dalam hitungan — tapi §13 menegaskan `pengurus_yayasan` statusnya masih kandidat tervalidasi-sebagian (belum ada permission pembeda jelas dari `yayasan_super_admin`), bukan baseline murni. Spec ini tetap MENDAFTARKAN dia di baseline (karena kebutuhan organisasi yayasan sudah cukup jelas untuk didaftarkan sebagai role), tapi implementasi izin/permission-nya menunggu validasi eksplisit sebelum dipakai produksi — lihat §13 untuk kondisi keluarnya.
+TOTAL: 17
+```
 
 ## 5. Scope Model
 
-Tetap 3 `scope_level` yang sudah ada, TIDAK ditambah level baru:
+Tetap 3 `scope_level` yang sudah ada, TIDAK ditambah level baru: `yayasan`, `lembaga`, `diri_sendiri`.
 
-### 5.1 `yayasan`
-Boundary: seluruh lembaga di bawah 1 yayasan. Dipegang: `platform_super_admin` (lintas yayasan — TIDAK termasuk dalam match `widestScopeLevel()` biasa, role ini di luar cakupan yayasan sama sekali, hanya dicatat di sini untuk konteks hierarki), `yayasan_super_admin`, `bendahara_yayasan`, `pengurus_yayasan`, `pegawai_yayasan`.
+### 5.1 `platform` — di luar 3 `scope_level` existing
 
-### 5.2 `lembaga`
+`platform_super_admin` beroperasi LINTAS YAYASAN, sepenuhnya di luar enum `scope_level` (`yayasan`/`lembaga`/`diri_sendiri`) yang ada di `RoleSeeder.php` hari ini. **JANGAN diberi `scope_level = yayasan` di seeder** — itu salah secara konseptual (platform ⊃ yayasan, bukan bagian darinya) dan berisiko ikut ter-agregasi ke `widestScopeLevel()` role lain lewat `$levels->contains('yayasan')`. Untuk kondisi sekarang (SaaS multi-tenant belum aktif), role ini murni dicatat sebagai bagian hierarki (§4) — implementasi `scope_level`/mekanisme tenant-lintas-yayasan konkretnya BELUM dibangun, di luar cakupan spec ini.
+
+### 5.2 `yayasan`
+Boundary: seluruh lembaga di bawah 1 yayasan. Dipegang: `yayasan_super_admin`, `bendahara_yayasan`, `pegawai_yayasan`.
+
+### 5.3 `lembaga`
 Boundary: 1 sekolah/lembaga spesifik. Dipegang: `kepala_sekolah`, `wakasek_*`, `operator_akademik`, `admin_sdm`, `bendahara_lembaga`, `guru`, `wali_kelas`, `guru_bk`, `pegawai_lembaga`.
 
 **Catatan khusus `admin_sarpras`**: scope_level-nya `yayasan` (sesuai `RoleSeeder.php` baris 29 saat ini), BUKAN `lembaga` — dipertahankan apa adanya, TIDAK diubah oleh RBAC v2 ini (lihat §6.3 unchanged).
 
-### 5.3 `diri_sendiri`
+### 5.4 `diri_sendiri`
 Boundary: data milik sendiri. Dipegang: `orang_tua`, `siswa`.
 
-### 5.4 `pegawai_*` scope-carrier invariant (FORMAL)
+### 5.5 `pegawai_*` scope-carrier invariant (FORMAL)
 
 > **`pegawai_lembaga` dan `pegawai_yayasan` adalah scope-carrier roles. Keduanya memiliki functional permission baseline yang SAMA; perbedaannya HANYA pada `scope_level`.**
 
 Alasan teknis (bukan preferensi taxonomy): `App\Models\User::widestScopeLevel()` (baris 97-106) menurunkan scope efektif user 100% dari `$this->roles->pluck('scope_level')` — TIDAK dari `User.lembaga_id`. Kalau baseline pegawai jadi 1 role tunggal dengan 1 `scope_level`, pegawai pool (lembaga_id null, kerja lintas-lembaga) kehilangan mekanisme satu-satunya yang memberi mereka akses `yayasan`-scope.
 
-**RBAC v2 secara eksplisit TIDAK mengubah `widestScopeLevel()`** — itu kontrak authorization yang dipakai banyak role lain, mengubahnya di luar scope sub-project ini (lihat §14 Non-Goals).
+**RBAC v2 secara eksplisit TIDAK mengubah `widestScopeLevel()`** — itu kontrak authorization yang dipakai banyak role lain, mengubahnya di luar scope sub-project ini (lihat §15 Non-Goals).
 
 Invariant assignment (sudah dijaga hari ini di `Admin\KaryawanController::store()`, TIDAK berubah):
 
@@ -117,9 +122,11 @@ is_pool = false → lembaga_id = <lembaga>   → assignRole('pegawai_lembaga')
 
 `is_pool` adalah checkbox eksplisit di form, digated ke `yayasan_super_admin` — BUKAN hasil form kosong/tidak lengkap. `lembaga_id = null` TIDAK PERNAH berarti "data belum diisi", selalu berarti "pegawai ini memang secara organisatoris pool yayasan". Invariant ini sudah terjaga di kode existing, RBAC v2 hanya me-rename role yang di-assign, TIDAK mengubah gate/validasi ini.
 
+**Batasan cakupan invariant ini**: `pegawai_*` WAJIB untuk akun yang dibuat/dikelola lewat `AkunKaryawanGenerator` (jalur employee-account resmi). Penambahan `pegawai_*` ke role existing lain (§6.1) dilakukan berdasarkan **audit data user aktual** — bukan otomatis disimpulkan semata-mata karena user punya functional role tertentu. Contoh konkret: `admin_sarpras` scope-nya `yayasan`, tapi itu TIDAK OTOMATIS berarti setiap pemegang `admin_sarpras` harus punya `pegawai_yayasan` — bisa saja role fungsional itu dipegang user dengan konteks afiliasi berbeda. Migration script TIDAK BOLEH melakukan `semua pemegang admin_sarpras → pegawai_yayasan` secara membabi buta; §6.1 mencatat ini sebagai *pola migrasi yang umum berlaku*, bukan aturan mekanis tanpa verifikasi data.
+
 ## 6. Existing Role → New Role Migration
 
-### 6.1 Automatic (permission bundle identik, migrasi mekanis aman)
+### 6.1 Automatic (permission bundle identik, migrasi mekanis aman — TETAP verifikasi data user aktual, lihat catatan §5.5)
 
 | Role lama | Role baru | Catatan |
 |---|---|---|
@@ -127,7 +134,7 @@ is_pool = false → lembaga_id = <lembaga>   → assignRole('pegawai_lembaga')
 | `karyawan_pool` | `pegawai_yayasan` | Scope tetap `yayasan` |
 | `guru` | `guru` + `pegawai_lembaga` | Tidak berubah nama, HANYA ditambah baseline `pegawai_lembaga` |
 | `kepala_sekolah` | `kepala_sekolah` + `pegawai_lembaga` | Idem |
-| `admin_sarpras` | `admin_sarpras` + `pegawai_yayasan` | Idem (scope tetap yayasan, tidak diubah) |
+| `admin_sarpras` | `admin_sarpras` + `pegawai_yayasan` (**pending konfirmasi**) | Pola umum, TAPI konfirmasi dulu bahwa SETIAP pemegang `admin_sarpras` saat ini memang pegawai yayasan/pool sebelum di-apply — lihat batasan invariant di §5.5 |
 | `orang_tua` | `orang_tua` | No change — principal, bukan employee |
 | `siswa` | `siswa` | No change — principal, bukan employee |
 | `yayasan_super_admin` | `yayasan_super_admin` | No change — JANGAN disentuh |
@@ -146,7 +153,7 @@ is_pool = false → lembaga_id = <lembaga>   → assignRole('pegawai_lembaga')
 |---|---|
 | `admin_administrasi` | SPMB — dibekukan, lihat §9. |
 | `bendahara_yayasan` | Scope/permission Sarpras-Pengadaan-nya tidak disentuh; perluasan ke Payroll/BOS terjadi saat modul itu dibangun, bukan sekarang. |
-| `admin_sarpras` (permission-nya) | Functional role sudah tepat, hanya ditambah baseline `pegawai_yayasan` (§6.1), permission Sarpras/Pengadaan itu sendiri tidak diubah. |
+| `admin_sarpras` (permission-nya) | Functional role sudah tepat, permission Sarpras/Pengadaan itu sendiri tidak diubah — hanya penambahan baseline `pegawai_yayasan` yang pending konfirmasi (§6.1). |
 
 ## 7. Multi-role Composition Rules
 
@@ -163,7 +170,7 @@ Bendahara Y  : pegawai_yayasan + bendahara_yayasan
 
 **Invariant**: setiap akun pegawai (dibuat lewat `AkunKaryawanGenerator`) WAJIB memiliki tepat satu dari `pegawai_lembaga`/`pegawai_yayasan`. Role fungsional spesialis adalah TAMBAHAN, tidak pernah menggantikan baseline ini. `orang_tua` dan `siswa` TIDAK memakai `pegawai_*` — mereka principal, bukan employee.
 
-**JANGAN membuat role bernama jabatan spesifik** (`satpam`, `ob`, `pustakawan`) hanya karena ada record kepegawaian dengan jenis itu — `pegawai_lembaga`/`pegawai_yayasan` saja sudah cukup sampai ada capability nyata yang membutuhkan role terpisah (lihat §13).
+**JANGAN membuat role bernama jabatan spesifik** (`satpam`, `ob`, `pustakawan`) hanya karena ada record kepegawaian dengan jenis itu — `pegawai_lembaga`/`pegawai_yayasan` saja sudah cukup sampai ada capability nyata yang membutuhkan role terpisah (lihat §14).
 
 ## 8. Wali Kelas: Role Capability vs Kelas Relation
 
@@ -202,12 +209,12 @@ $user->hasRole('wali_kelas')   // lalu diasumsikan boleh lihat SEMUA kelas — S
 
 ## 10. Existing Code Consumers (Audit Wajib Sebelum Implementasi)
 
-Blast radius hardcoded role-name checks di luar `RoleSeeder.php`/`RolePermissionAssignmentSeeder.php` (grep `app resources/views routes`, 24 Agustus 2026 — WAJIB grep ulang saat implementasi untuk konfirmasi masih akurat):
+Blast radius hardcoded role-name checks di luar `RoleSeeder.php`/`RolePermissionAssignmentSeeder.php` — **daftar hasil audit awal (grep `app resources/views routes`, 24 Agustus 2026), WAJIB digrep ulang saat implementasi, jangan percaya jumlahnya tanpa verifikasi ulang**:
 
-**`karyawan_pool`/`karyawan_lembaga`** (9 file, HARUS diupdate ke `pegawai_yayasan`/`pegawai_lembaga`):
+**`karyawan_pool`/`karyawan_lembaga`** (HARUS diupdate ke `pegawai_yayasan`/`pegawai_lembaga`):
 - `app/Domains/Kasus/Actions/Pengajuan/ListKasusUntukUserAction.php`
 - `app/Http/Controllers/Admin/DashboardController.php`
-- `app/Services/AkunKaryawanGenerator.php` — **consumer paling kritis**, ini yang melakukan `assignRole()` saat akun pegawai baru dibuat (lihat §5.4 untuk logic-nya, HANYA nama role yang berubah, logic `is_pool` TIDAK disentuh)
+- `app/Services/AkunKaryawanGenerator.php` — **consumer paling kritis**, ini yang melakukan `assignRole()` saat akun pegawai baru dibuat (lihat §5.5 untuk logic-nya, HANYA nama role yang berubah, logic `is_pool` TIDAK disentuh)
 - `tests/Feature/Admin/KaryawanCrudTest.php`
 - `tests/Feature/DashboardKasusTest.php`
 - `tests/Feature/KaryawanDashboardTest.php`
@@ -218,7 +225,7 @@ Blast radius hardcoded role-name checks di luar `RoleSeeder.php`/`RolePermission
 - `tests/Feature/Sdm/IzinCutiWorkflowSeedTest.php`
 - `tests/Unit/Services/AkunKaryawanGeneratorTest.php`
 
-**`admin_akademik`/`admin_keuangan`** (2 file, HARUS diupdate sesuai hasil review §6.2):
+**`admin_akademik`/`admin_keuangan`** (HARUS diupdate sesuai hasil review §6.2):
 - `app/Domains/Kasus/Actions/Consent/ApproveConsentAction.php`
 - `app/Domains/Kasus/Actions/Evaluasi/CatatEvaluasiAction.php`
 
@@ -229,29 +236,60 @@ Blast radius hardcoded role-name checks di luar `RoleSeeder.php`/`RolePermission
 ## 11. Migration & Backward Compatibility
 
 - **Data migrasi `user_has_roles` existing WAJIB eksplisit**, mengikuti tabel §6 — TIDAK ada migrasi otomatis 100% untuk `admin_akademik` (kategori review-required).
-- Untuk role di §6.1 (automatic): migration script Laravel bisa langsung rename/tambah role assignment di `role_has_permissions`/`model_has_roles` tanpa intervensi manual.
+- Untuk role di §6.1 (automatic): migration script Laravel bisa langsung rename/tambah role assignment di `role_has_permissions`/`model_has_roles`, TAPI tetap jalankan audit data ringan dulu untuk kasus `admin_sarpras` (lihat catatan pending-konfirmasi di §6.1) — bukan intervensi manual per-user, cukup query verifikasi sebelum apply massal.
 - Untuk role di §6.2 (review-required): migration script WAJIB menghasilkan laporan/daftar user + role lama mereka untuk direview manual SEBELUM assignment baru diterapkan — bukan auto-assign.
 - `RoleSeeder.php` dan `RolePermissionAssignmentSeeder.php` diupdate untuk mendefinisikan 17 role baseline (§4) dengan permission masing-masing sesuai hasil pemetaan §6.
-- Role lama yang digantikan (`karyawan_pool`, `karyawan_lembaga`) TIDAK dihapus dari database sampai migration + `AkunKaryawanGenerator` refactor + seluruh test di §10 lolos — urutan ini penting untuk zero-downtime migration.
+- Role lama yang digantikan (`karyawan_pool`, `karyawan_lembaga`) TIDAK dihapus dari database sampai migration + `AkunKaryawanGenerator` refactor + seluruh test di §10 lolos. Urutan ini dirancang sebagai **backward-compatible migration sequence** yang menghindari authorization gap selama masa transisi deployment — ini BUKAN jaminan *zero-downtime* dalam arti teknis penuh (dual-read/dual-write, dsb); klaim zero-downtime di luar cakupan spec ini karena bergantung pada strategi deployment yang belum ditentukan (cache permission Spatie, worker queue lama, request yang sedang berjalan saat cutover, dll — semua itu keputusan operasional terpisah, bukan bagian dari desain taxonomy ini).
 
-## 12. Test Requirements
+## 12. Migration Invariants
+
+Kondisi yang HARUS tetap benar SEBELUM, SELAMA, dan SETELAH migrasi dijalankan — bukan cuma "apa yang diubah", tapi "apa yang harus tetap benar":
+
+```text
+M1. Tidak ada akun pegawai aktif yang kehilangan functional baseline selama migrasi.
+
+M2. Setiap akun employee yang dikelola AkunKaryawanGenerator memiliki
+    tepat satu pegawai_* role (pegawai_lembaga XOR pegawai_yayasan).
+
+M3. pegawai_lembaga ≠ pegawai_yayasan HANYA pada scope_level;
+    permission bundle keduanya identik (§5.5).
+
+M4. Tidak ada role lama (karyawan_pool, karyawan_lembaga) yang
+    direferensikan application code setelah cutover selesai (§10).
+
+M5. admin_akademik tidak dimigrasikan secara otomatis tanpa hasil
+    review assignment aktual (§6.2).
+
+M6. admin_administrasi/SPMB tidak mengalami perubahan permission
+    apapun akibat RBAC v2 ini (§9).
+
+M7. widestScopeLevel() tidak berubah behavior SELAIN akibat role baru
+    yang menggantikan role lama secara scope-equivalent (role baru
+    punya scope_level yang sama persis dengan role lama yang
+    digantikannya, bukan scope_level baru).
+
+M8. admin_sarpras → pegawai_yayasan HANYA di-apply setelah verifikasi
+    data user aktual (§5.5, §6.1) — bukan blanket migration.
+```
+
+## 13. Test Requirements
 
 Minimal WAJIB ada di implementasi:
 
-- **Invariant `pegawai_*` assignment**: pegawai dengan `lembaga_id` terisi → `pegawai_lembaga`; pegawai pool (`is_pool=true`, hanya `yayasan_super_admin` yang bisa) → `pegawai_yayasan`; user NON-`yayasan_super_admin` yang mencoba `is_pool=true` → 403 (regression test, guard existing HARUS tetap lolos setelah rename).
-- **`widestScopeLevel()` regression**: user dengan HANYA `pegawai_lembaga` → `widestScopeLevel()` = `lembaga`; user dengan HANYA `pegawai_yayasan` → `yayasan`.
+- **Invariant `pegawai_*` assignment (M2)**: pegawai dengan `lembaga_id` terisi → `pegawai_lembaga`; pegawai pool (`is_pool=true`, hanya `yayasan_super_admin` yang bisa) → `pegawai_yayasan`; user NON-`yayasan_super_admin` yang mencoba `is_pool=true` → 403 (regression test, guard existing HARUS tetap lolos setelah rename).
+- **`widestScopeLevel()` regression (M3, M7)**: user dengan HANYA `pegawai_lembaga` → `widestScopeLevel()` = `lembaga`; user dengan HANYA `pegawai_yayasan` → `yayasan`.
 - **Multi-role composition**: user dengan `pegawai_lembaga` + `guru` + `wali_kelas` → semua permission gabungan aktif, TIDAK saling menghapus.
 - **Wali Kelas capability-vs-relation**: user dengan role `wali_kelas` TAPI `Kelas.wali_kelas_guru_id` bukan miliknya → ditolak akses ke kelas itu (walau role-nya ada).
-- Test existing yang menyentuh `karyawan_pool`/`karyawan_lembaga` (§10 daftar 9 file) WAJIB diupdate dan tetap lolos.
-- Test existing yang menyentuh `admin_akademik`/`admin_keuangan` (§10 daftar 2 file) WAJIB diupdate sesuai hasil review §6.2 dan tetap lolos.
+- Test existing yang menyentuh `karyawan_pool`/`karyawan_lembaga` (§10) WAJIB diupdate dan tetap lolos.
+- Test existing yang menyentuh `admin_akademik`/`admin_keuangan` (§10) WAJIB diupdate sesuai hasil review §6.2 dan tetap lolos.
 
-## 13. Candidate Roles — Not Implemented Yet
+## 14. Candidate Roles — Not Implemented Yet
 
-Role berikut TIDAK masuk baseline 17, TIDAK dihapus dari kemungkinan desain — dibuat HANYA ketika ada permission/capability nyata yang membutuhkannya:
+Role berikut TIDAK masuk baseline 17 (§4), TIDAK dihapus dari kemungkinan desain — dibuat HANYA ketika ada permission/capability nyata yang membutuhkannya:
 
 | Role kandidat | Kondisi munculnya |
 |---|---|
-| `pengurus_yayasan` | Butuh permission yang benar-benar berbeda dari `yayasan_super_admin` dulu — sampai saat ini belum jelas apa bedanya. **Perlu divalidasi eksplisit sebelum jadi role produksi**, walau didaftarkan di §4 karena kebutuhan organisasinya sudah cukup jelas. |
+| `pengurus_yayasan` | Butuh permission yang benar-benar berbeda dari `yayasan_super_admin` dulu — sampai saat ini belum jelas apa bedanya. Sempat dipertimbangkan masuk baseline, tapi diputuskan TETAP di luar (§4) sampai ada kebutuhan permission konkret. |
 | `kepala_tu` | Kalau permission TU mulai berbeda dari `operator_akademik`. |
 | `staff_tu` | Idem. |
 | `wakasek_sarpras` | Kalau workflow Sarpras perlu membedakan kewenangan Wakasek dari `admin_sarpras`. |
@@ -263,14 +301,15 @@ Role berikut TIDAK masuk baseline 17, TIDAK dihapus dari kemungkinan desain — 
 | `platform_admin`/`platform_support`/`platform_finance`/`platform_auditor` | Kalau SaaS multi-tenant benar-benar diaktifkan — untuk kondisi sekarang cukup `platform_super_admin` saja. |
 | Role SPMB baru manapun | Dibekukan total, lihat §9. |
 
-## 14. Explicit Non-Goals
+## 15. Explicit Non-Goals
 
 RBAC v2 ini **TIDAK**:
 
-1. Mengubah mekanisme `scope_level`/`widestScopeLevel()` itu sendiri (§5.4) — kontrak authorization existing dipertahankan.
+1. Mengubah mekanisme `scope_level`/`widestScopeLevel()` itu sendiri (§5.5) — kontrak authorization existing dipertahankan.
 2. Memindahkan `Lembaga`/`Kelas`/`Siswa`/`TahunAjaran`/`Semester` ke domain baru — di luar cakupan RBAC, itu keputusan arsitektur terpisah (§3.2 `master-refactor-domain-pattern.md`).
 3. Mendesain ulang `TenantScope` atau mekanisme tenant-isolation lainnya.
 4. Mengubah permission/role SPMB (§9) — dibekukan total sampai redesign SPMB dimulai.
-5. Membuat SEMUA jabatan organisasi nyata jadi Spatie role — hanya yang menghasilkan kewenangan aplikasi berbeda (§2 prinsip 4, §13 daftar kandidat).
+5. Membuat SEMUA jabatan organisasi nyata jadi Spatie role — hanya yang menghasilkan kewenangan aplikasi berbeda (§2 prinsip 4, §14 daftar kandidat).
 6. Menghapus kebutuhan Policy/record-level authorization — permission RBAC ini tetap 1 lapisan dari 3 (§2 prinsip 5), bukan pengganti ownership check per-record.
-7. Menyentuh permission Sarpras/Pengadaan existing (§6.3) — hanya menambah baseline `pegawai_*` di atasnya.
+7. Menyentuh permission Sarpras/Pengadaan existing (§6.3) — hanya menambah baseline `pegawai_*` di atasnya, itupun pending konfirmasi (§6.1).
+8. Menjanjikan zero-downtime deployment (§11) — spec ini hanya menjamin backward-compatible migration sequence, bukan strategi deployment operasional penuh.
