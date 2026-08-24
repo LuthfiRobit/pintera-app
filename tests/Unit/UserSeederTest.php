@@ -20,7 +20,7 @@ beforeEach(function () {
     (new LembagaSeeder())->run();
 });
 
-it('seeds the yayasan admin and per-lembaga staff across all 4 K-9 institutions', function () {
+it('seeds the yayasan admin and per-lembaga staff for the SD institution', function () {
     (new UserSeeder())->run();
 
     $adminYayasan = User::where('email', 'adm.yayasan@demo.test')->first();
@@ -29,29 +29,18 @@ it('seeds the yayasan admin and per-lembaga staff across all 4 K-9 institutions'
     expect($adminYayasan->lembaga_id)->toBeNull();
     expect($adminYayasan->email_verified_at)->not->toBeNull();
 
-    $smpit = Lembaga::where('npsn', '20223344')->first();
-    $kepsekSmp = User::where('email', 'kepsek.smp@demo.test')->first();
-    expect($kepsekSmp->hasRole('kepala_sekolah'))->toBeTrue();
-    expect($kepsekSmp->lembaga_id)->toBe($smpit->id);
-
     $sdit = Lembaga::where('npsn', '20223333')->first();
     $kepsekSd = User::where('email', 'kepsek.sd@demo.test')->first();
     expect($kepsekSd->hasRole('kepala_sekolah'))->toBeTrue();
     expect($kepsekSd->lembaga_id)->toBe($sdit->id);
 
-    $tkit = Lembaga::where('npsn', '20223322')->first();
-    $admTk = User::where('email', 'adm.tk@demo.test')->first();
-    expect($admTk->hasRole('admin_administrasi'))->toBeTrue();
-    expect($admTk->lembaga_id)->toBe($tkit->id);
+    $admSd = User::where('email', 'adm.sd@demo.test')->first();
+    expect($admSd->hasRole('admin_administrasi'))->toBeTrue();
+    expect($admSd->lembaga_id)->toBe($sdit->id);
 
-    $kbit = Lembaga::where('npsn', '20223311')->first();
-    $keuanganKb = User::where('email', 'keuangan.kb@demo.test')->first();
-    expect($keuanganKb->hasRole('admin_keuangan'))->toBeTrue();
-    expect($keuanganKb->lembaga_id)->toBe($kbit->id);
-
-    $guruSmp = User::where('email', 'budi.santoso@demo.test')->first();
-    expect($guruSmp->hasRole('guru'))->toBeTrue();
-    expect($guruSmp->lembaga_id)->toBe($smpit->id);
+    $keuanganSd = User::where('email', 'keuangan.sd@demo.test')->first();
+    expect($keuanganSd->hasRole('admin_keuangan'))->toBeTrue();
+    expect($keuanganSd->lembaga_id)->toBe($sdit->id);
 
     $guruSd = User::where('email', 'hendra.gunawan@demo.test')->first();
     expect($guruSd->hasRole('guru'))->toBeTrue();
@@ -62,5 +51,5 @@ it('is idempotent when run twice', function () {
     (new UserSeeder())->run();
     (new UserSeeder())->run();
 
-    expect(User::count())->toBe(25);
+    expect(User::count())->toBe(19);
 });
