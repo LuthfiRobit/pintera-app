@@ -129,7 +129,7 @@ it('marks a TOPUP manual request completed (not failed) when AutoAllocationEngin
     // Defense-in-depth: even if topupSisaJikaAda() were called again directly on
     // this Pembayaran (what retryFailedTopups() would do if it wrongly selected
     // it), it must be a safe no-op given topup_status is already 'completed'.
-    app(\App\Services\Finance\PaymentAllocationService::class)->topupSisaJikaAda($pembayaran->fresh());
+    app(\App\Domains\Keuangan\Services\PaymentAllocationService::class)->topupSisaJikaAda($pembayaran->fresh());
 
     expect((float) $siswa->wallet->fresh()->balance)->toBe($balanceAfterApprove);
 });
