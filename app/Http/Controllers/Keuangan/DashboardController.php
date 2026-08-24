@@ -9,7 +9,7 @@ use App\Models\SystemSetting;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Services\Notifications\NotificationFeedResolver;
 use App\Domains\Keuangan\Services\PaymentService;
-use App\Services\Finance\SkipAlertResolver;
+use App\Domains\Keuangan\Services\SkipAlertResolver;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Log;

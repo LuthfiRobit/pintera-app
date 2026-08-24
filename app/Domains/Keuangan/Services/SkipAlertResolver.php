@@ -1,11 +1,11 @@
 <?php
-// app/Services/Finance/SkipAlertResolver.php
+// app/Domains/Keuangan/Services/SkipAlertResolver.php
 
-namespace App\Services\Finance;
+namespace App\Domains\Keuangan\Services;
 
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 
 class SkipAlertResolver
 {
