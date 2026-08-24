@@ -1,16 +1,16 @@
 <?php
-// app/Http/Controllers/Admin/KategoriKeringananController.php
+// app/Http/Controllers/Lembaga/Keuangan/KategoriKeringananController.php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Keuangan;
 
-use App\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\KategoriKeringanan;
+use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Validation\Rule;
 
-class KategoriKeringananController extends BaseController
+class KategoriKeringananController extends Controller
 {
     use AuthorizesRequests;
 

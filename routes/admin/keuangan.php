@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Lembaga\Keuangan\JenisTagihanController;
 use App\Http\Controllers\Lembaga\Keuangan\JenisTagihanMonitoringController;
-use App\Http\Controllers\Admin\KategoriKeringananController;
+use App\Http\Controllers\Lembaga\Keuangan\KategoriKeringananController;
 use App\Http\Controllers\Lembaga\Keuangan\ManualPaymentController;
 use App\Http\Controllers\Lembaga\Keuangan\PembayaranController;
 use App\Http\Controllers\Lembaga\Keuangan\TagihanController;
