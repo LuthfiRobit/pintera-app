@@ -96,8 +96,9 @@ POST  admin/kategori-keringanan admin.kategori-keringanan.store › Lembaga\Keua
   - **16 passed (57 assertions)**
 - **Broad Scoped Test Task 3** (`tests/Feature/Keuangan tests/Feature/Admin --filter="Keringanan|JenisTagihan|TagihanBillingGenerator|TagihanNominalResolver"`):
   - **95 passed (261 assertions)**
-- **Full Test Suite (`php artisan test`)**:
-  - ⏭️ Dilewati sesuai instruksi eksplisit user ("tak perlu menjalankan full test suite, jelaskan saja di handoff kalau belum dijalankan").
+- **Full Test Suite (`php artisan test`)** — dijalankan oleh sesi review independen pada 24 Agustus 2026, solo (tanpa proses test lain berjalan bersamaan):
+  - **Hasil**: **2063 passed, 0 failed (6188 assertions)**, durasi 552.28s.
+  - **Status**: 🟢 100% hijau, tidak ada satupun kegagalan (termasuk test flaky `KomponenPenilaianCrudTest` yang tercatat di addendum SP4 — lolos bersih kali ini).
 
 ---
 
@@ -105,3 +106,20 @@ POST  admin/kategori-keringanan admin.kategori-keringanan.store › Lembaga\Keua
 
 - **Git State**: Berada di branch `refactor-v1` dengan commit history per task rapi dan atomic.
 - **Integritas Domain Keuangan**: Dengan selesainya SP5 ini, seluruh celah model/controller domain Keuangan yang tersisa di `app/Models` dan `app/Http/Controllers/Admin` telah tuntas 100% dipindahkan ke domain pattern.
+
+---
+
+## 6. Addendum — Review Independen & Full Suite (24 Agustus 2026)
+
+Sesi terpisah dari yang mengeksekusi plan ini melakukan review kode langsung (baca diff penuh 2 commit `ad000c8` dan `52b0569`, tanpa subagent — cakupan cukup kecil untuk direview manual) DAN menjalankan full test suite secara solo.
+
+**Hasil review kode — BERSIH, cocok 100% dengan plan:**
+- `git show ad000c8`: diff persis sesuai Task 1 — 2 model pindah namespace, gotcha `use App\Models\KategoriKeringanan;` di `JenisTagihanKeringanan.php` dihapus (redundan, sama-namespace), FQCN `\App\Domains\Keuangan\Models\JenisTagihanKeringanan::class` disederhanakan jadi bare, `use` di `TagihanNominalResolver.php` dan `JenisTagihanController.php` diupdate, 7 file test diupdate importnya saja (tidak ada perubahan logic test).
+- `git show 52b0569`: diff persis sesuai Task 2 — controller pindah namespace + base class diselaraskan ke `App\Http\Controllers\Controller`, `routes/admin/keuangan.php` hanya `use` yang berubah. Body method `store()` byte-identik dengan baseline.
+- Verifikasi independen: grep gabungan (`App\Models\KategoriKeringanan`, `App\Models\SiswaKeringanan`, `Controllers\Admin\KategoriKeringananController`) di `app database tests routes` — **0 match** (dikonfirmasi ulang, bukan cuma percaya klaim log). 3 file lama dikonfirmasi terhapus, 3 file baru dikonfirmasi ada di lokasi domain.
+
+**Hasil full test suite (`php artisan test`), dijalankan solo:**
+- **2063 passed, 0 failed, 6188 assertions, durasi 552.28s.**
+- 100% hijau — bahkan test flaky `KomponenPenilaianCrudTest` (dicatat di addendum SP4, tabrakan unique-constraint vs factory acak, tidak terkait Keuangan) lolos bersih di run ini.
+
+**Kesimpulan**: Sub-project 5 dinyatakan **TUNTAS DAN BERSIH**. Celah kecil yang lolos dari audit final SP4 (kata "keringanan" tidak tercakup pola grep lama) sudah tertutup sepenuhnya.
