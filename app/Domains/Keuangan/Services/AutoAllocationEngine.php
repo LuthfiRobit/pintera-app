@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Services\Finance;
+namespace App\Domains\Keuangan\Services;
 
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Notifications\Finance\SaldoTidakCukupNotification;
+use App\Services\Finance\NotificationDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -24,7 +25,7 @@ class AutoAllocationEngine
         // lockForUpdate to ensure wallet balance doesn't change concurrently during calculation
         DB::transaction(function () use ($wallet, &$skippedTagihan) {
             $wallet = Wallet::where('id', $wallet->id)->lockForUpdate()->first();
-            
+
             $saldo = $wallet->balance;
             if ($saldo <= 0) {
                 return; // Nothing to allocate
@@ -59,7 +60,7 @@ class AutoAllocationEngine
                 if ($amountToPay > 0) {
                     $saldo -= $amountToPay;
                     $totalAllocatedAmount += $amountToPay;
-                    
+
                     $allocated[] = [
                         'tagihan' => $tagihan,
                         'amount' => $amountToPay,

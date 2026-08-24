@@ -103,9 +103,9 @@ it('marks a TOPUP manual request completed (not failed) when AutoAllocationEngin
     \App\Models\SystemSetting::create(['lembaga_id' => $lembaga->id, 'key' => 'auto_debit_enabled', 'value' => 'true']);
     $walletSaldoAwal = (float) $siswa->wallet->balance;
 
-    $mockEngine = \Mockery::mock(\App\Services\Finance\AutoAllocationEngine::class);
+    $mockEngine = \Mockery::mock(\App\Domains\Keuangan\Services\AutoAllocationEngine::class);
     $mockEngine->shouldReceive('run')->andThrow(new \RuntimeException('Simulated AutoAllocationEngine failure'));
-    app()->instance(\App\Services\Finance\AutoAllocationEngine::class, $mockEngine);
+    app()->instance(\App\Domains\Keuangan\Services\AutoAllocationEngine::class, $mockEngine);
 
     \Illuminate\Support\Facades\Log::shouldReceive('error')->atLeast()->once();
 

@@ -152,9 +152,9 @@ class BriVaInboundPaymentTest extends TestCase
         $va = app(PaymentService::class)->getOrCreatePermanentVa($siswa);
         $saldoAwal = (float) $siswa->wallet->fresh()->balance;
 
-        $mockEngine = \Mockery::mock(\App\Services\Finance\AutoAllocationEngine::class);
+        $mockEngine = \Mockery::mock(\App\Domains\Keuangan\Services\AutoAllocationEngine::class);
         $mockEngine->shouldReceive('run')->andThrow(new \RuntimeException('Simulated AutoAllocationEngine failure'));
-        $this->app->instance(\App\Services\Finance\AutoAllocationEngine::class, $mockEngine);
+        $this->app->instance(\App\Domains\Keuangan\Services\AutoAllocationEngine::class, $mockEngine);
 
         Log::shouldReceive('error')->atLeast()->once();
 
@@ -246,9 +246,9 @@ class BriVaInboundPaymentTest extends TestCase
         $va = app(PaymentService::class)->getOrCreatePermanentVa($siswa);
         $saldoAwal = (float) $siswa->wallet->fresh()->balance;
 
-        $mockEngine = \Mockery::mock(\App\Services\Finance\AutoAllocationEngine::class);
+        $mockEngine = \Mockery::mock(\App\Domains\Keuangan\Services\AutoAllocationEngine::class);
         $mockEngine->shouldReceive('run')->andThrow(new \RuntimeException('Simulated AutoAllocationEngine failure'));
-        $this->app->instance(\App\Services\Finance\AutoAllocationEngine::class, $mockEngine);
+        $this->app->instance(\App\Domains\Keuangan\Services\AutoAllocationEngine::class, $mockEngine);
 
         Log::shouldReceive('error')->atLeast()->once();
 

@@ -5,7 +5,7 @@ use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\Wallet;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Services\Finance\AutoAllocationEngine;
+use App\Domains\Keuangan\Services\AutoAllocationEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
