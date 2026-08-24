@@ -1,9 +1,10 @@
 # Spec: RBAC v2 — Role Taxonomy & Migration Baseline
 
 - **Branch**: `rbac-v2`
-- **Baseline commit**: `3f88c30`
-- **Tanggal**: 24 Agustus 2026
+- **Baseline commit**: `0a2e8bd` (diperbarui — baseline awal `3f88c30` sudah jauh tertinggal setelah sub-project penyusutan seeder + perbaikan test selesai di branch yang sama)
+- **Tanggal**: 24 Agustus 2026 (revisi ringan pasca-konfirmasi data seeder buang-pakai)
 - **Konteks**: kelanjutan diskusi role/permission yang sengaja ditunda sampai migrasi domain Keuangan selesai (lihat memori `project_role_permission_org_redesign`). Bukan proyek terpisah dari inisiatif "RBAC v2 Permission Consistency" sebelumnya di branch ini — ini babak lanjutan yang lebih besar: bukan sekadar merapikan permission existing, tapi merombak taxonomy role itu sendiri.
+- **Revisi ringan (pasca-penulisan awal)**: user mengonfirmasi seluruh data seeder di repo ini bersifat **buang-pakai** (`migrate:fresh --seed` adalah alur kerja normal, bukan pengecualian) — TIDAK ada data produksi/pengguna nyata yang harus dipertahankan lintas migrasi. Ini menyederhanakan drastis §6.2, §11, §12 di bawah: "migrasi" di sini berarti menulis ulang seeder dengan benar lalu reseed, BUKAN menulis script migrasi data yang menyelamatkan assignment lama. Detail lengkap ada di catatan tiap bagian terkait.
 
 > **Headline prinsip** (rangkuman seluruh keputusan spec ini): **Role menjawab "apa yang boleh dilakukan dan pada scope apa"; data domain menjawab "siapa orangnya dan bagaimana ia berafiliasi"; relasi domain menjawab "record mana yang secara spesifik boleh ia kelola."**
 
@@ -122,7 +123,7 @@ is_pool = false → lembaga_id = <lembaga>   → assignRole('pegawai_lembaga')
 
 `is_pool` adalah checkbox eksplisit di form, digated ke `yayasan_super_admin` — BUKAN hasil form kosong/tidak lengkap. `lembaga_id = null` TIDAK PERNAH berarti "data belum diisi", selalu berarti "pegawai ini memang secara organisatoris pool yayasan". Invariant ini sudah terjaga di kode existing, RBAC v2 hanya me-rename role yang di-assign, TIDAK mengubah gate/validasi ini.
 
-**Batasan cakupan invariant ini**: `pegawai_*` WAJIB untuk akun yang dibuat/dikelola lewat `AkunKaryawanGenerator` (jalur employee-account resmi). Penambahan `pegawai_*` ke role existing lain (§6.1) dilakukan berdasarkan **audit data user aktual** — bukan otomatis disimpulkan semata-mata karena user punya functional role tertentu. Contoh konkret: `admin_sarpras` scope-nya `yayasan`, tapi itu TIDAK OTOMATIS berarti setiap pemegang `admin_sarpras` harus punya `pegawai_yayasan` — bisa saja role fungsional itu dipegang user dengan konteks afiliasi berbeda. Migration script TIDAK BOLEH melakukan `semua pemegang admin_sarpras → pegawai_yayasan` secara membabi buta; §6.1 mencatat ini sebagai *pola migrasi yang umum berlaku*, bukan aturan mekanis tanpa verifikasi data.
+**Batasan cakupan invariant ini**: `pegawai_*` WAJIB untuk akun yang dibuat/dikelola lewat `AkunKaryawanGenerator` (jalur employee-account resmi). Penambahan `pegawai_*` ke role existing lain (§6.1) dilakukan berdasarkan **tinjauan sengaja per akun demo** (lihat §6.2 — data buang-pakai, jadi ini bukan lagi soal "audit data produksi", tapi tetap TIDAK boleh cari-ganti otomatis tanpa mikir) — bukan otomatis disimpulkan semata-mata karena user punya functional role tertentu. Contoh konkret: `admin_sarpras` scope-nya `yayasan`, tapi itu TIDAK OTOMATIS berarti setiap pemegang `admin_sarpras` harus punya `pegawai_yayasan` — bisa saja role fungsional itu dipegang user dengan konteks afiliasi berbeda. Seeder rewrite TIDAK BOLEH melakukan `semua pemegang admin_sarpras → pegawai_yayasan` secara membabi buta; §6.1 mencatat ini sebagai *pola yang umum berlaku*, bukan aturan mekanis tanpa berpikir.
 
 ## 6. Existing Role → New Role Migration
 
@@ -139,12 +140,14 @@ is_pool = false → lembaga_id = <lembaga>   → assignRole('pegawai_lembaga')
 | `siswa` | `siswa` | No change — principal, bukan employee |
 | `yayasan_super_admin` | `yayasan_super_admin` | No change — JANGAN disentuh |
 
-### 6.2 Review-required (JANGAN mapping otomatis presisi — audit assignment aktual dulu)
+### 6.2 Review-required (JANGAN mapping otomatis presisi — tentukan sengaja per akun demo, bukan blanket rename)
 
-| Role lama | Kandidat role baru | Kenapa perlu review |
+**Karena data buang-pakai (lihat catatan revisi di header), "review" di sini BUKAN audit data produksi** — tidak ada `user_has_roles` existing yang harus diselamatkan. Yang tetap butuh perhatian sadar: setiap seeder demo (§10 daftar `database/seeders/*.php`) yang assign role ini WAJIB ditinjau satu-per-satu supaya role baru yang dipilih benar-benar cocok dengan apa yang akun demo itu SEHARUSNYA representasikan — bukan cuma cari-ganti string otomatis yang mungkin salah pilih role pengganti untuk akun tertentu.
+
+| Role lama | Kandidat role baru | Kenapa perlu ditinjau sengaja |
 |---|---|---|
-| `admin_akademik` | `operator_akademik` + kombinasi `wakasek_kurikulum`/`wali_kelas`/`guru_bk` sesuai kondisi user aktual | Role paling broad — user yang pegang bisa jadi sebenarnya Kepala TU, Wakasek Kurikulum, operator rapor, atau kombinasi. Audit `user_has_roles` existing untuk `admin_akademik` dulu, baru tentukan role baru per user, BUKAN mapping 1:1 mekanis. |
-| `admin_keuangan` | `bendahara_lembaga` + `pegawai_lembaga` | Kemungkinan besar 1:1, tapi tetap validasi tidak ada user yang sebenarnya cuma operator input (bukan bendahara penuh) sebelum migrasi permanen. |
+| `admin_akademik` | `operator_akademik` + kombinasi `wakasek_kurikulum`/`wali_kelas`/`guru_bk` sesuai konteks akun demo | Role paling broad — akun demo yang pegang role ini (`kurikulum.sd@demo.test` di `EssentialUserSeeder.php`) perlu ditentukan SENGAJA jadi role baru yang mana berdasarkan namanya/konteksnya, BUKAN mapping 1:1 mekanis. |
+| `admin_keuangan` | `bendahara_lembaga` + `pegawai_lembaga` | Kemungkinan besar 1:1 untuk akun demo `keuangan.sd@demo.test` (di `EssentialUserSeeder.php`/`UserSeeder.php`), tapi tetap tinjau apakah namanya cocok representasi "bendahara" vs "operator input" sebelum ganti permanen. |
 | `admin_sdm` | `admin_sdm` (rename opsional `operator_sdm`, BELUM diputuskan) | Nama akhir belum final — putuskan saat implementasi, bukan blocker spec ini. |
 
 ### 6.3 Unchanged (di luar scope RBAC v2 ini)
@@ -243,20 +246,26 @@ Blast radius hardcoded role-name checks di luar `RoleSeeder.php`/`RolePermission
 
 **Konsekuensi praktis**: karena data seeder demo bersifat buang-pakai (lihat §11), file-file ini TIDAK butuh "migrasi data" — cukup diupdate literal string role-nya mengikuti §6, lalu `migrate:fresh --seed` ulang. TAPI tetap WAJIB masuk daftar file yang diaudit — kalau terlewat, seeder demo akan gagal (`assignRole()` melempar exception untuk role yang sudah tidak ada) atau diam-diam assign role yang salah.
 
-## 11. Migration & Backward Compatibility
+## 11. Migration & Backward Compatibility (Disederhanakan — Data Seeder Buang-Pakai)
 
-- **Data migrasi `user_has_roles` existing WAJIB eksplisit**, mengikuti tabel §6 — TIDAK ada migrasi otomatis 100% untuk `admin_akademik` (kategori review-required).
-- Untuk role di §6.1 (automatic): migration script Laravel bisa langsung rename/tambah role assignment di `role_has_permissions`/`model_has_roles`, TAPI tetap jalankan audit data ringan dulu untuk kasus `admin_sarpras` (lihat catatan pending-konfirmasi di §6.1) — bukan intervensi manual per-user, cukup query verifikasi sebelum apply massal.
-- Untuk role di §6.2 (review-required): migration script WAJIB menghasilkan laporan/daftar user + role lama mereka untuk direview manual SEBELUM assignment baru diterapkan — bukan auto-assign.
-- `RoleSeeder.php` dan `RolePermissionAssignmentSeeder.php` diupdate untuk mendefinisikan 17 role baseline (§4) dengan permission masing-masing sesuai hasil pemetaan §6.
-- Role lama yang digantikan (`karyawan_pool`, `karyawan_lembaga`) TIDAK dihapus dari database sampai migration + `AkunKaryawanGenerator` refactor + seluruh test di §10 lolos. Urutan ini dirancang sebagai **backward-compatible migration sequence** yang menghindari authorization gap selama masa transisi deployment — ini BUKAN jaminan *zero-downtime* dalam arti teknis penuh (dual-read/dual-write, dsb); klaim zero-downtime di luar cakupan spec ini karena bergantung pada strategi deployment yang belum ditentukan (cache permission Spatie, worker queue lama, request yang sedang berjalan saat cutover, dll — semua itu keputusan operasional terpisah, bukan bagian dari desain taxonomy ini).
+**Konfirmasi eksplisit (lihat header)**: seluruh data di repo ini seeder demo, `migrate:fresh --seed` alur kerja normal. TIDAK ADA data produksi/user nyata yang harus dipertahankan lintas migrasi role ini. Ini menghapus kebutuhan machinery migrasi data yang berat (dual-read/dual-write, laporan review sebelum apply, dsb) — sepenuhnya di luar scope karena memang tidak relevan untuk kondisi repo saat ini.
+
+**Yang benar-benar perlu dikerjakan**:
+
+1. `RoleSeeder.php` dan `RolePermissionAssignmentSeeder.php` ditulis ulang untuk mendefinisikan 17 role baseline (§4) dengan permission masing-masing sesuai hasil pemetaan §6. Role lama (`karyawan_pool`, `karyawan_lembaga`, dst) **dihapus langsung dari seeder** — tidak perlu dipertahankan "untuk transisi", karena tidak ada deployment live yang butuh masa transisi saat ini.
+2. **Seluruh 6 file `database/seeders/*.php`** yang teridentifikasi di §10 (`EssentialUserSeeder.php`, `UserSeeder.php`, `OrangTuaKaryawanSeeder.php`, `SarprasPengadaanDemoSeeder.php`, `KehadiranSdmDemoSeeder.php`, `SiswaSeeder.php`) diupdate literal string role-nya mengikuti §6 — untuk role di §6.2 (review-required), tentukan role pengganti SENGAJA per akun demo (lihat catatan §6.2), bukan cari-ganti otomatis.
+3. **11 file consumer aplikasi non-seeder** di §10 (`AkunKaryawanGenerator.php`, `KaryawanController.php`, `ListKasusUntukUserAction.php`, `Admin\DashboardController.php`, `ApproveConsentAction.php`, `CatatEvaluasiAction.php`, + test terkait) diupdate mengikuti §6 — ini kode APLIKASI yang tetap perlu benar terlepas dari status seeder, karena akan dipakai lagi begitu ada data user sungguhan nanti.
+4. Verifikasi: `php artisan migrate:fresh --seed` sukses tanpa exception, lalu query `tinker` untuk konfirmasi role baseline ter-assign benar ke akun demo (lihat §13 Test Requirements untuk daftar assertion).
+5. **Kalau di masa depan repo ini sudah punya data produksi/user nyata** (bukan lagi seeder-only), migrasi role serupa WAJIB direncanakan ulang dengan machinery yang lebih hati-hati (audit `user_has_roles` aktual, laporan review sebelum apply, strategi zero-authorization-gap) — spec ini SENGAJA tidak merancang itu karena tidak relevan untuk kondisi sekarang, bukan karena dianggap tidak penting.
 
 ## 12. Migration Invariants
 
-Kondisi yang HARUS tetap benar SEBELUM, SELAMA, dan SETELAH migrasi dijalankan — bukan cuma "apa yang diubah", tapi "apa yang harus tetap benar":
+Kondisi yang HARUS tetap benar SETELAH seeder ditulis ulang dan `migrate:fresh --seed` dijalankan — diverifikasi via query `tinker`/test (§13), BUKAN via monitoring live-migration (tidak relevan untuk data buang-pakai, lihat §11):
 
 ```text
-M1. Tidak ada akun pegawai aktif yang kehilangan functional baseline selama migrasi.
+M1. Tidak ada akun pegawai DEMO yang kehilangan functional baseline
+    setelah reseed (dibandingkan dengan seeder lama, secara fungsi
+    — bukan dibandingkan data row yang sama persis).
 
 M2. Setiap akun employee yang dikelola AkunKaryawanGenerator memiliki
     tepat satu pegawai_* role (pegawai_lembaga XOR pegawai_yayasan).
@@ -265,10 +274,12 @@ M3. pegawai_lembaga ≠ pegawai_yayasan HANYA pada scope_level;
     permission bundle keduanya identik (§5.5).
 
 M4. Tidak ada role lama (karyawan_pool, karyawan_lembaga) yang
-    direferensikan application code setelah cutover selesai (§10).
+    direferensikan application code SETELAH seluruh file §10 diupdate
+    (grep gabungan kosong total).
 
-M5. admin_akademik tidak dimigrasikan secara otomatis tanpa hasil
-    review assignment aktual (§6.2).
+M5. admin_akademik tidak diganti otomatis tanpa keputusan sengaja per
+    akun demo yang menggunakannya (§6.2) — bukan lagi soal "audit data
+    produksi", tapi soal tidak asal cari-ganti string.
 
 M6. admin_administrasi/SPMB tidak mengalami perubahan permission
     apapun akibat RBAC v2 ini (§9).
@@ -278,8 +289,9 @@ M7. widestScopeLevel() tidak berubah behavior SELAIN akibat role baru
     punya scope_level yang sama persis dengan role lama yang
     digantikannya, bukan scope_level baru).
 
-M8. admin_sarpras → pegawai_yayasan HANYA di-apply setelah verifikasi
-    data user aktual (§5.5, §6.1) — bukan blanket migration.
+M8. admin_sarpras → pegawai_yayasan HANYA di-apply setelah ditinjau
+    sengaja bahwa akun demo yang pegang admin_sarpras (§6.1) memang
+    representasi pegawai yayasan/pool — bukan blanket rename.
 ```
 
 ## 13. Test Requirements
