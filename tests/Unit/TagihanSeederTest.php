@@ -47,20 +47,21 @@ beforeEach(function () {
     (new PendaftaranSeeder())->run();
 });
 
-it('sets total_tagihan to the real configured NominalTagihanJalur value for each lembaga across K-9 institutions', function () {
+it('sets total_tagihan to the real configured NominalTagihanJalur value, distinct per lembaga', function () {
+    $lembagaKedua = Lembaga::factory()->create(['yayasan_id' => Lembaga::first()->yayasan_id]);
+
+    (new TahunAjaranSeeder())->run();
+    (new SemesterSeeder())->run();
+    (new JenisTesMasterSeeder())->run();
+    (new GelombangPpdbSeeder())->run();
+    (new JalurPpdbSeeder())->run();
+    (new JenisTagihanSeeder())->run();
+    (new NominalTagihanJalurSeeder())->run();
+    (new CalonMuridSeeder())->run();
+    (new PendaftaranSeeder())->run();
     (new TagihanSeeder())->run();
 
-    $smp = Lembaga::where('npsn', '20223344')->first();
     $sdit = Lembaga::where('npsn', '20223333')->first();
-
-    $aktifSmp = TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->first();
-    $jalurSmp = JalurPpdb::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktifSmp->id)->where('nama', 'Reguler')->first();
-    $jenisDaftarUlangSmp = JenisTagihan::where('lembaga_id', $smp->id)->where('nama', 'Uang Pangkal')->first();
-    $nominalSmp = NominalTagihanJalur::where('jenis_tagihan_id', $jenisDaftarUlangSmp->id)->where('jalur_ppdb_id', $jalurSmp->id)->first();
-
-    $diterimaSmp = Pendaftaran::where('lembaga_id', $smp->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
-    $tagihanDaftarUlangSmp = Tagihan::where('pendaftaran_id', $diterimaSmp->id)->where('kategori', 'daftar_ulang')->first();
-    expect((int) $tagihanDaftarUlangSmp->total_tagihan)->toBe((int) $nominalSmp->nominal);
 
     $aktifSdit = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
     $jalurSdit = JalurPpdb::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $aktifSdit->id)->where('nama', 'Reguler')->first();
@@ -71,10 +72,17 @@ it('sets total_tagihan to the real configured NominalTagihanJalur value for each
     $tagihanDaftarUlangSdit = Tagihan::where('pendaftaran_id', $diterimaSdit->id)->where('kategori', 'daftar_ulang')->first();
     expect((int) $tagihanDaftarUlangSdit->total_tagihan)->toBe((int) $nominalSdit->nominal);
 
-    expect((int) $tagihanDaftarUlangSmp->total_tagihan)->not->toBe((int) $tagihanDaftarUlangSdit->total_tagihan);
+    $aktifKedua = TahunAjaran::where('lembaga_id', $lembagaKedua->id)->where('status_aktif', true)->first();
+    $jalurKedua = JalurPpdb::where('lembaga_id', $lembagaKedua->id)->where('tahun_ajaran_id', $aktifKedua->id)->where('nama', 'Reguler')->first();
+    $jenisDaftarUlangKedua = JenisTagihan::where('lembaga_id', $lembagaKedua->id)->where('nama', 'Uang Pangkal')->first();
+    $nominalKedua = NominalTagihanJalur::where('jenis_tagihan_id', $jenisDaftarUlangKedua->id)->where('jalur_ppdb_id', $jalurKedua->id)->first();
+
+    $diterimaKedua = Pendaftaran::where('lembaga_id', $lembagaKedua->id)->where('email_pendaftaran', 'wali.diterima@demo.test')->first();
+    $tagihanDaftarUlangKedua = Tagihan::where('pendaftaran_id', $diterimaKedua->id)->where('kategori', 'daftar_ulang')->first();
+    expect((int) $tagihanDaftarUlangKedua->total_tagihan)->toBe((int) $nominalKedua->nominal);
 });
 
-it('creates 2 tagihan for the diterima candidate and 1 for the cicilan-demo candidate, per K-9 lembaga', function () {
+it('creates 2 tagihan for the diterima candidate and 1 for the cicilan-demo candidate', function () {
     (new TagihanSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -91,5 +99,5 @@ it('is idempotent when run twice', function () {
     (new TagihanSeeder())->run();
     (new TagihanSeeder())->run();
 
-    expect(Tagihan::count())->toBe(12);
+    expect(Tagihan::count())->toBe(3);
 });
