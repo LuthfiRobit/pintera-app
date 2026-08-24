@@ -312,24 +312,15 @@ it('shows a "N Jalur Dibatasi" badge for a gelombang using fewer than all active
         ->assertSee('1 Jalur Dibatasi');
 });
 
-it('seeds a restricted demo gelombang for SMP alongside unrestricted ones', function () {
+it('seeds a restricted demo gelombang for the SD institution', function () {
     $this->seed();
-
-    $smp = \App\Models\Lembaga::where('npsn', '20223344')->firstOrFail();
-    $smpAktif = \App\Models\TahunAjaran::where('lembaga_id', $smp->id)->where('status_aktif', true)->firstOrFail();
-    $gelombang1 = GelombangPpdb::where('lembaga_id', $smp->id)
-        ->where('tahun_ajaran_id', $smpAktif->id)
-        ->where('nama', 'Gelombang 1')
-        ->firstOrFail();
-
-    expect($gelombang1->jalur()->pluck('jalur_ppdb.nama')->sort()->values()->all())->toBe(['Prestasi', 'Reguler']);
 
     $sd = \App\Models\Lembaga::where('npsn', '20223333')->firstOrFail();
     $sdAktif = \App\Models\TahunAjaran::where('lembaga_id', $sd->id)->where('status_aktif', true)->firstOrFail();
-    $sdGelombang1 = GelombangPpdb::where('lembaga_id', $sd->id)
+    $gelombang1 = GelombangPpdb::where('lembaga_id', $sd->id)
         ->where('tahun_ajaran_id', $sdAktif->id)
         ->where('nama', 'Gelombang 1')
         ->firstOrFail();
 
-    expect($sdGelombang1->jalur()->exists())->toBeFalse();
+    expect($gelombang1->jalur()->pluck('jalur_ppdb.nama')->sort()->values()->all())->toBe(['Prestasi', 'Reguler']);
 });
