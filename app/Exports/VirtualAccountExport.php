@@ -2,7 +2,7 @@
 
 namespace App\Exports;
 
-use App\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 

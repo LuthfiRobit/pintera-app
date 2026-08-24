@@ -1,7 +1,7 @@
 <?php
 // tests/Feature/Keuangan/PaymentServiceManualTopupTest.php
 
-use App\Models\ManualPaymentRequest;
+use App\Domains\Keuangan\Models\ManualPaymentRequest;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\User;

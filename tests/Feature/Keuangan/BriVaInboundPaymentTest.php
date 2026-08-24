@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\Models\BriInboundPaymentLog;
+use App\Domains\Keuangan\Models\BriInboundPaymentLog;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Siswa;
 use App\Models\SystemSetting;

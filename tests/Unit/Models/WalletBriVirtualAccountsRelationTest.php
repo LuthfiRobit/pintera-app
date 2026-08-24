@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Models\Siswa;
 use App\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;

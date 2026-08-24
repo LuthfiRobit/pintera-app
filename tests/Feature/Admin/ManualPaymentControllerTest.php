@@ -3,7 +3,7 @@
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Lembaga;
-use App\Models\ManualPaymentRequest;
+use App\Domains\Keuangan\Models\ManualPaymentRequest;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;

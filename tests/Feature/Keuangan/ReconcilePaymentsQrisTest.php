@@ -4,7 +4,7 @@ namespace Tests\Feature\Keuangan;
 
 use App\Contracts\PaymentGatewayInterface;
 use App\DTO\PaymentStatusResult;
-use App\Models\BriQrisPayment;
+use App\Domains\Keuangan\Models\BriQrisPayment;
 use App\Domains\Keuangan\Models\Pembayaran;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;

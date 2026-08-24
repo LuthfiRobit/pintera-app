@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Models\Siswa;
-use App\Models\BriInboundPaymentLog;
+use App\Domains\Keuangan\Models\BriInboundPaymentLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

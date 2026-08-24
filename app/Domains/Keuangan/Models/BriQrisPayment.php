@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ManualPaymentRequest extends Model
+class BriQrisPayment extends Model
 {
     use HasFactory;
 
@@ -14,22 +14,12 @@ class ManualPaymentRequest extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'transfer_date' => 'date',
-        'reviewed_at' => 'datetime',
+        'expired_at' => 'datetime',
+        'callback_payload' => 'array',
     ];
 
     public function pembayaran(): BelongsTo
     {
         return $this->belongsTo(Pembayaran::class);
-    }
-
-    public function requestedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'requested_by');
-    }
-
-    public function reviewedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

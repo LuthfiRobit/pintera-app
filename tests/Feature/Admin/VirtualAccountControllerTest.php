@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\BriInboundPaymentLog;
-use App\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\BriInboundPaymentLog;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Siswa;

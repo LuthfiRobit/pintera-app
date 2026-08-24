@@ -1,14 +1,21 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
+use App\Models\Wallet;
+use Database\Factories\BriVirtualAccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BriQrisPayment extends Model
+class BriVirtualAccount extends Model
 {
     use HasFactory;
+
+    protected static function newFactory(): BriVirtualAccountFactory
+    {
+        return BriVirtualAccountFactory::new();
+    }
 
     protected $guarded = ['id'];
 
@@ -21,5 +28,10 @@ class BriQrisPayment extends Model
     public function pembayaran(): BelongsTo
     {
         return $this->belongsTo(Pembayaran::class);
+    }
+
+    public function wallet(): BelongsTo
+    {
+        return $this->belongsTo(Wallet::class);
     }
 }

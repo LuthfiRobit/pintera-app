@@ -35,7 +35,7 @@ class Wallet extends Model
 
     public function briVirtualAccounts(): HasMany
     {
-        return $this->hasMany(BriVirtualAccount::class);
+        return $this->hasMany(\App\Domains\Keuangan\Models\BriVirtualAccount::class);
     }
 
     /**

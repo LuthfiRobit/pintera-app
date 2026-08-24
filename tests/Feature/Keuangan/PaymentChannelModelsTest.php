@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Keuangan;
 
-use App\Models\BriQrisPayment;
-use App\Models\BriVirtualAccount;
-use App\Models\ManualPaymentRequest;
+use App\Domains\Keuangan\Models\BriQrisPayment;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\ManualPaymentRequest;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
 use App\Models\User;

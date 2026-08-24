@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -3,7 +3,7 @@
 namespace Tests\Feature\Keuangan;
 
 use App\Contracts\PaymentGatewayInterface;
-use App\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;

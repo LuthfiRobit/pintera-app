@@ -1,12 +1,13 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class BriVirtualAccount extends Model
+class ManualPaymentRequest extends Model
 {
     use HasFactory;
 
@@ -14,8 +15,8 @@ class BriVirtualAccount extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'expired_at' => 'datetime',
-        'callback_payload' => 'array',
+        'transfer_date' => 'date',
+        'reviewed_at' => 'datetime',
     ];
 
     public function pembayaran(): BelongsTo
@@ -23,8 +24,13 @@ class BriVirtualAccount extends Model
         return $this->belongsTo(Pembayaran::class);
     }
 
-    public function wallet(): BelongsTo
+    public function requestedBy(): BelongsTo
     {
-        return $this->belongsTo(Wallet::class);
+        return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }
