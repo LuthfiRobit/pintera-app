@@ -35,7 +35,7 @@ beforeEach(function () {
     (new PolaJamSeeder())->run();
 });
 
-it('seeds appropriate classes for every K-9 institution and links them to PolaJam and Wali Kelas', function () {
+it('seeds appropriate classes for the SD institution and links them to PolaJam and Wali Kelas', function () {
     (new KelasSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -44,10 +44,8 @@ it('seeds appropriate classes for every K-9 institution and links them to PolaJa
         $kelasAktif = Kelas::where('lembaga_id', $lembaga->id)->where('tahun_ajaran_id', $aktif->id)->get();
 
         $expectedNames = match ($lembaga->bentuk_pendidikan) {
-            'KB' => ['KB A-1', 'KB B-1'],
-            'TK' => ['TK A-1', 'TK B-1'],
-            'SD' => ['Kelas 1-A', 'Kelas 2-A', 'Kelas 3-A', 'Kelas 4-A', 'Kelas 5-A', 'Kelas 6-A'],
-            default => ['VII-A', 'VII-B', 'VIII-A', 'VIII-B', 'IX-A'],
+            'SD' => ['Kelas 1-A', 'Kelas 1-B', 'Kelas 2-A', 'Kelas 2-B', 'Kelas 3-A', 'Kelas 3-B', 'Kelas 4-A', 'Kelas 4-B', 'Kelas 5-A', 'Kelas 5-B', 'Kelas 6-A', 'Kelas 6-B'],
+            default => [],
         };
 
         expect($kelasAktif->pluck('nama')->toArray())->toEqualCanonicalizing($expectedNames);
@@ -68,6 +66,6 @@ it('is idempotent when run twice', function () {
     (new KelasSeeder())->run();
 
     expect(Kelas::count())->toBe($sebelum);
-    // Across 2 tahun ajaran per lembaga: (2 + 2 + 6 + 5) * 2 = 30 kelas total
-    expect(Kelas::count())->toBe(30);
+    // Across 2 tahun ajaran, 1 lembaga (SD): 12 kelas * 2 = 24 kelas total
+    expect(Kelas::count())->toBe(24);
 });
