@@ -105,3 +105,15 @@ Semua 7 security guards inti tetap aktif dan urutan eksekusinya tidak berubah:
 
 - **Git State**: Branch `refactor-v1`, working tree clean, semua commit terdokumentasi rapi.
 - **Komponen Tertunda ke SP4 (Sesuai Desain)**: `AutoAllocationEngine`, `SkipAlertResolver`, `PaymentAllocationService`, `NotificationDispatcher`, `Wallet`, `Cicilan`. Seluruh komponen ini tetap diakses via DI/import dari namespace saat ini tanpa perubahan kontrak.
+
+---
+
+## 8. Addendum Review Independen (2026-08-24)
+
+Deep review independen dilakukan lewat 4 subagent paralel (model dipilih sesuai kompleksitas — mekanis pada model murah, guard/webhook pada Sonnet) plus verifikasi full-suite manual. **Hasil: TIDAK ADA temuan HIGH/MEDIUM.** Berbeda dari SP1 (1 celah HIGH guard tenant-isolation hilang) dan SP2 (1 deviasi namespace `WaliMurid` tak terungkap), SP3 **bersih dari pola serupa** — semua namespace sesuai spec §6.7, ke-7 guard di §7 (termasuk guard data-consistency paling kritis dan seluruh 11 kondisi response webhook) dikonfirmasi byte-identical dengan kode asli lewat pembacaan langsung, bukan cuma percaya test lulus.
+
+Ditemukan 2 temuan LOW, murni kosmetik dokumentasi (tidak ada dampak fungsional):
+1. Commit `7f3a056` (pesan: "cross-scope touch ReconcilePayments dan BriTestQris command") diffnya sebenarnya hanya menyentuh `database/factories/BriVirtualAccountFactory.php` — update `use`-statement `ReconcilePayments.php`/`BriTestQris.php` yang sesungguhnya sudah lebih dulu terjadi (sebagai efek alami) di commit `830d637`/`28b7807`/`da7515b`. Pesan commit-nya salah label, tapi tidak ada perubahan yang hilang atau tersembunyi.
+2. §1 tabel Task 6 di log ini menyebut tujuan pindah sebagai `App\Domains\Keuangan\Gateways` — namespace AKTUAL dan benar (sesuai spec) adalah `App\Domains\Keuangan\Services\Gateway`. Salah ketik prosa saja, kode sungguhan sudah benar.
+
+Verifikasi full-suite ulang (dijalankan solo, tanpa proses lain yang mengakses DB bersamaan — beberapa percobaan awal sempat menunjukkan ratusan test gagal akibat tabrakan multi-proses terhadap `pintera_app_test` yang sama, BUKAN regresi kode): **2062 passed, 6186 assertions, 0 failures.** Sedikit lebih tinggi dari klaim log asli (2060/6176) karena penambahan test regresi permanen di SP1 review sebelumnya sudah masuk baseline; bukan tanda test SP3 hilang.
