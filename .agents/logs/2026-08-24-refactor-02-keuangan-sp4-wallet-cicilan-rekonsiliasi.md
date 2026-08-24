@@ -214,8 +214,11 @@ d:\laragon\www\pintera-app\app\Domains\Keuangan\Models\ManualPaymentRequest.php:
 - **Scoped Test Gabungan Luas** (`tests/Feature/Keuangan tests/Feature/Admin tests/Unit tests/Feature/Portal tests/Feature/Spmb tests/Feature/Console`):
   - **Hasil**: **1.562 PASSED (4.668 assertions)**
   - **Status**: 🟢 Semua test hijau tanpa kegagalan.
-- **Full Test Suite (`php artisan test`)**:
-  - **Status**: ⏭️ Dilewati sesuai instruksi eksplisit user ("tak perlu jalankan tulis saja di handoff kalau belum melakukan full suite test").
+- **Full Test Suite (`php artisan test`)** — dijalankan oleh sesi review independen pada 24 Agustus 2026, solo (tanpa proses test lain berjalan bersamaan):
+  - **Hasil**: **2062 passed, 1 failed (6185 assertions)**, durasi 506.21s.
+  - **Kegagalan**: `Tests\Feature\Admin\KomponenPenilaianCrudTest` — `UniqueConstraintViolationException` pada `tahun_ajaran.tahun_ajaran_lembaga_id_nama_unique` (tabrakan data factory acak `nama` tahun ajaran, bukan bug kode). **Tidak terkait modul Keuangan/SP4** — domain Akademik/Komponen Penilaian.
+  - **Konfirmasi flaky (bukan regresi)**: dijalankan ulang sendirian (`php artisan test --filter=KomponenPenilaianCrudTest`) → **33 passed (93 assertions)**, 100% hijau. Pola tabrakan unique-constraint-vs-factory-acak yang sudah dikenal di repo ini, bukan disebabkan perubahan SP4.
+  - **Status**: 🟢 Suite dianggap HIJAU (0 regresi nyata dari SP4).
 
 ---
 
@@ -224,3 +227,21 @@ d:\laragon\www\pintera-app\app\Domains\Keuangan\Models\ManualPaymentRequest.php:
 - **Git State**: Berada di branch `refactor-v1` dengan commit riwayat per task rapi dan atomic.
 - **Status Domain Keuangan**: Seluruh 4 sub-project domain Keuangan (`SP1: Konfigurasi & Tagihan`, `SP2: Portal Tagihan & Riwayat`, `SP3: Pembayaran & Gateway`, `SP4: Wallet, Cicilan, & Rekonsiliasi`) kini **RESMI TUNTAS 100%**.
 - **Langkah Selanjutnya**: Melanjutkan roadmap induk refactor ke domain berikutnya sesuai rencana di `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md`.
+
+---
+
+## 6. Addendum — Review Independen & Full Suite (24 Agustus 2026)
+
+Sesi terpisah dari yang mengeksekusi plan ini melakukan review kode independen (4 subagent paralel, model/effort adaptif, mencakup Task 1-13) DAN menjalankan full test suite secara solo (tidak ada proses test lain berjalan bersamaan, menghindari korupsi DB test bersama seperti yang pernah terjadi di review SP3).
+
+**Hasil review kode independen — BERSIH, tidak ada temuan HIGH/MEDIUM:**
+- Task 1-4 (model Wallet/WalletMutasi/Cicilan): logic bisnis dibandingkan baris-per-baris dengan baseline `af83794` — identik kecuali namespace/import. Bug fix `WalletMutasi::pembayaran()` diverifikasi genuine: `git log` menunjukkan file hanya disentuh 2× sepanjang sejarah (dibuat, lalu fix SP4), tidak pernah diupdate saat `Pembayaran` pindah domain di SP3 — mengonfirmasi klaim "rusak sejak SP3" akurat, bukan diklaim asal.
+- Task 5-8 (service AutoAllocationEngine/SkipAlertResolver/PaymentAllocationService/ReconcilePayments): guard `withoutGlobalScope(TenantScope::class)` di `SkipAlertResolver` dihitung persis 2× di posisi yang sama seperti baseline. `PaymentAllocationService` dikonfirmasi tetap 1 file utuh (`allocate()` + `topupSisaJikaAda()`), sesuai keputusan arsitektur. Tidak ada perubahan urutan `lockForUpdate`/transaction boundary.
+- Task 9-10 (DashboardController + view tanpa-anak.blade.php): namespace, route name, dan 4 titik panggil view fallback semua terverifikasi benar; logic `index()` identik baseline.
+- Audit final Task 12 diverifikasi ULANG secara independen (bukan sekadar percaya kutipan log) — 7 langkah audit dijalankan ulang dari nol, hasil **100% cocok** dengan klaim §3 di atas. Tidak ada kebohongan/salah lapor di handoff log.
+
+**Hasil full test suite (`php artisan test`), dijalankan solo:**
+- **2062 passed, 1 failed, 6185 assertions, durasi 506.21s.**
+- 1 kegagalan: `Tests\Feature\Admin\KomponenPenilaianCrudTest` — `UniqueConstraintViolationException` pada `tahun_ajaran_lembaga_id_nama_unique`, domain Akademik (bukan Keuangan), disebabkan tabrakan data factory acak. Dijalankan ulang sendirian: **33 passed, 0 failed** — mengonfirmasi FLAKY, bukan regresi dari SP4.
+
+**Kesimpulan**: Migrasi Sub-project 4 dinyatakan **TUNTAS DAN BERSIH**. Seluruh migrasi domain Keuangan (SP1-4) resmi selesai dengan hasil verifikasi independen yang solid.
