@@ -3,7 +3,7 @@
 - **Document ID / Slug:** `2026-08-20-1800-master-refactor-domain-pattern`
 - **Tanggal & Waktu:** 20 Agustus 2026, 18:00 WIB
 - **Branch:** `rbac-v2`
-- **Status Master:** 🟢 1 Sub-Task Selesai (Kasus), 4 Grup Tersisa
+- **Status Master:** 🟢 2 Domain Selesai (Kasus, Keuangan 100% Tuntas [SP1-4]), Data Induk Parsial (Sempit), 3 Grup Tersisa
 
 ---
 
@@ -116,6 +116,9 @@ Proyek refactor ini TIDAK menghentikan kebutuhan fitur baru. Kalau di tengah pro
 | 3 | Refactor Domain Keuangan SP1 (Konfigurasi & Generasi Tagihan) | [`.agents/specs/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md) | [`.agents/plans/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md) | [`.agents/logs/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-24-refactor-02-keuangan-sp1-konfigurasi-tagihan.md) | 🟢 SELESAI |
 | 4 | Refactor Domain Keuangan SP2 (Alur Tagihan Inti) | [`.agents/specs/2026-08-24-refactor-02-keuangan-sp2-alur-tagihan-inti.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-24-refactor-02-keuangan-sp2-alur-tagihan-inti.md) | [`.agents/plans/2026-08-24-refactor-02-keuangan-sp2-alur-tagihan-inti.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-24-refactor-02-keuangan-sp2-alur-tagihan-inti.md) | [`.agents/logs/2026-08-24-refactor-02-keuangan-sp2-alur-tagihan-inti.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-24-refactor-02-keuangan-sp2-alur-tagihan-inti.md) | 🟢 SELESAI |
 | 5 | Refactor Domain Keuangan SP3 (Pembayaran & Gateway) | [`.agents/specs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md) | [`.agents/plans/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md) | [`.agents/logs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-24-refactor-02-keuangan-sp3-pembayaran-gateway.md) | 🟢 SELESAI |
+| 6 | Refactor Domain Keuangan SP4 (Wallet, Cicilan, & Rekonsiliasi) — PENUTUP | [`.agents/specs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md`](file:///d:/laragon/www/pintera-app/.agents/specs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md) | [`.agents/plans/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md`](file:///d:/laragon/www/pintera-app/.agents/plans/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md) | [`.agents/logs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md`](file:///d:/laragon/www/pintera-app/.agents/logs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md) | 🟢 SELESAI |
+
+> **🎉 DOMAIN KEUANGAN SELESAI TOTAL:** Seluruh 4 sub-project (SP1, SP2, SP3, SP4) telah tuntas dipindahkan. Audit final Task 12 pada SP4 membuktikan 100% komponen domain Keuangan (Model, Service, DTO, Contract, Controller, View) sudah berada di bawah namespace/lokasi standar.
 
 > Isi tabel ini setiap kali satu sub-task selesai brainstorming (spec ditulis) — jangan tunggu sampai implementasi selesai untuk mendaftarkannya, supaya sesi lain yang membuka dokumen ini tahu ada pekerjaan yang sedang berjalan.
 

@@ -1,6 +1,6 @@
 # Migrasi Domain Keuangan Sub-project 4 (TERAKHIR): Wallet & Cicilan + Rekonsiliasi Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Memindahkan `Wallet`, `WalletMutasi`, `Cicilan`, `AutoAllocationEngine`, `SkipAlertResolver`, `PaymentAllocationService`, dan `Keuangan\DashboardController` ke `app/Domains/Keuangan/*` — **menuntaskan seluruh migrasi domain Keuangan**, tanpa mengubah perilaku aplikasi KECUALI 1 bug fix yang disengaja (`WalletMutasi::pembayaran()`).
 
@@ -34,13 +34,13 @@
 **Interfaces:**
 - Produces: `App\Domains\Keuangan\Models\Wallet` — dipakai seluruh task berikutnya.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/Wallet.php app/Domains/Keuangan/Models/Wallet.php
 ```
 
-- [ ] **Step 2: Ubah isi file — namespace, `newFactory()`, tambah `use SystemSetting` (gotcha arah sebalik), `AutoAllocationEngine` jadi biasa (akan sama-namespace setelah Task 5)**
+- [x] **Step 2: Ubah isi file — namespace, `newFactory()`, tambah `use SystemSetting` (gotcha arah sebalik), `AutoAllocationEngine` jadi biasa (akan sama-namespace setelah Task 5)**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/Wallet.php` dengan:
 
@@ -214,15 +214,15 @@ app(\App\Domains\Keuangan\Services\AutoAllocationEngine::class)->run($this);
 ```
 `Pembayaran::class` (dipakai di 4 signature parameter type-hint) TIDAK perlu `use`/FQCN — sama-namespace `Domains\Keuangan\Models` (sudah dipindah SP3). `SystemSetting`, `AutoAllocationFailedException`, `InsufficientBalanceException` TETAP `use` biasa (semua TETAP di `app/Models`/`app/Exceptions`, tidak pindah).
 
-- [ ] **Step 3: Perbaiki gotcha implisit di `app/Models/Siswa.php`**
+- [x] **Step 3: Perbaiki gotcha implisit di `app/Models/Siswa.php`**
 
 Baca file, cari baris `return $this->hasOne(Wallet::class);` di method `wallet()` (baris 78 baseline), ganti jadi `return $this->hasOne(\App\Domains\Keuangan\Models\Wallet::class);`.
 
-- [ ] **Step 4: Update `database/factories/WalletFactory.php`**
+- [x] **Step 4: Update `database/factories/WalletFactory.php`**
 
 Ganti `use App\Models\Wallet;` → `use App\Domains\Keuangan\Models\Wallet;`.
 
-- [ ] **Step 5: Grep ulang untuk daftar consumer PASTI**
+- [x] **Step 5: Grep ulang untuk daftar consumer PASTI**
 
 ```bash
 grep -rln "App\\\\Models\\\\Wallet\b" --include="*.php" app database tests
@@ -251,20 +251,20 @@ app/Domains/Keuangan/Actions/Pembayaran/ApproveManualPaymentAction.php
 
 Update `use App\Models\Wallet;` → `use App\Domains\Keuangan\Models\Wallet;` di SETIAP file KECUALI yang ditandai "JANGAN diedit di sini".
 
-- [ ] **Step 6: Verifikasi**
+- [x] **Step 6: Verifikasi**
 
 ```bash
 grep -rln "App\\\\Models\\\\Wallet\b" --include="*.php" app database tests
 ```
 Expected: hanya `app/Services/Finance/AutoAllocationEngine.php` dan `app/Services/Finance/PaymentAllocationService.php` yang tersisa (ditangani Task 5 & 7).
 
-- [ ] **Step 7: Jalankan test scoped minimal**
+- [x] **Step 7: Jalankan test scoped minimal**
 
 ```bash
 php artisan tinker --execute="echo class_exists(\App\Domains\Keuangan\Models\Wallet::class) ? 'OK' : 'MISSING';"
 ```
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add -A
@@ -284,13 +284,13 @@ git commit -m "refactor(keuangan): pindah model Wallet ke Domains\Keuangan\Model
 
 **PENTING — INI SATU-SATUNYA PERUBAHAN PERILAKU DI SELURUH SP4 (bukan zero-behavior-change biasa)**: relasi `pembayaran()` di baseline SUDAH RUSAK (referensi implisit `Pembayaran::class` yang resolve ke `App\Models\Pembayaran` yang sudah tidak ada sejak SP3). Memindahkan model ini ke namespace baru DENGAN referensi yang benar akan MEMPERBAIKI bug ini — perilaku SETELAH migrasi akan BERBEDA (benar) dari SEBELUM migrasi (rusak). Ini disengaja, dicatat eksplisit, BUKAN pelanggaran zero-behavior-change.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/WalletMutasi.php app/Domains/Keuangan/Models/WalletMutasi.php
 ```
 
-- [ ] **Step 2: Ubah isi file — namespace, PERBAIKI relasi `pembayaran()`, TANPA `newFactory()` (tidak ada file factory-nya, JANGAN ditambahkan)**
+- [x] **Step 2: Ubah isi file — namespace, PERBAIKI relasi `pembayaran()`, TANPA `newFactory()` (tidak ada file factory-nya, JANGAN ditambahkan)**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/WalletMutasi.php` dengan:
 
@@ -333,14 +333,14 @@ class WalletMutasi extends Model
 
 Catatan: `Wallet::class` (Task 1) dan `Pembayaran::class` (SP3) sama-sama SUDAH di `Domains\Keuangan\Models` — begitu file ini pindah ke namespace yang sama, relasi `pembayaran()` OTOMATIS BENAR tanpa perlu `use`/FQCN tambahan (beda dengan baseline yang rusak karena `Pembayaran` sudah pindah keluar dari `App\Models` sejak SP3 tapi file ini tetap di situ tanpa `use`).
 
-- [ ] **Step 3: Grep ulang untuk consumer (kemungkinan kosong/minim, `WalletMutasi` cuma diakses via relasi `wallet->mutasi()`, bukan FQCN langsung)**
+- [x] **Step 3: Grep ulang untuk consumer (kemungkinan kosong/minim, `WalletMutasi` cuma diakses via relasi `wallet->mutasi()`, bukan FQCN langsung)**
 
 ```bash
 grep -rln "App\\\\Models\\\\WalletMutasi\b" --include="*.php" app database tests
 ```
 Expected: kosong atau sangat sedikit — update kalau ada.
 
-- [ ] **Step 4: Tulis test regresi baru yang membuktikan bug sudah diperbaiki**
+- [x] **Step 4: Tulis test regresi baru yang membuktikan bug sudah diperbaiki**
 
 Cari test file yang sudah ada untuk `WalletMutasi` (`tests/Feature/Keuangan/WalletDatabaseTest.php` — baca isinya dulu untuk cocokkan pola helper), tambahkan:
 
@@ -365,14 +365,14 @@ it('resolves the pembayaran relation on wallet_mutasi correctly (regression: thi
 
 **Sebelum menulis persis seperti di atas**: baca dulu isi `tests/Feature/Keuangan/WalletDatabaseTest.php`, cocokkan pola factory/helper yang sudah dipakai di file itu (mungkin ada helper pembuat wallet/siswa yang sebaiknya dipakai ulang daripada `Wallet::factory()->create()` polos).
 
-- [ ] **Step 5: Jalankan test scoped**
+- [x] **Step 5: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/WalletDatabaseTest.php tests/Feature/Keuangan/WalletTest.php
 ```
 Expected: semua PASS termasuk test regresi baru.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -390,13 +390,13 @@ git commit -m "fix(keuangan): pindah model WalletMutasi ke Domains\Keuangan\Mode
 **Interfaces:**
 - Produces: `App\Domains\Keuangan\Models\Cicilan`.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Models/Cicilan.php app/Domains/Keuangan/Models/Cicilan.php
 ```
 
-- [ ] **Step 2: Ubah isi file**
+- [x] **Step 2: Ubah isi file**
 
 Timpa seluruh isi `app/Domains/Keuangan/Models/Cicilan.php` dengan:
 
@@ -445,11 +445,11 @@ class Cicilan extends Model
 
 Catatan: `SkemaCicilan::class`/`Pembayaran::class` sama-sama SUDAH di `Domains\Keuangan\Models` sejak SP1/SP3 — tidak perlu FQCN lagi setelah `Cicilan` sama-namespace.
 
-- [ ] **Step 3: Update `database/factories/CicilanFactory.php`**
+- [x] **Step 3: Update `database/factories/CicilanFactory.php`**
 
 Ganti `use App\Models\Cicilan;` → `use App\Domains\Keuangan\Models\Cicilan;`.
 
-- [ ] **Step 4: Grep ulang untuk daftar consumer PASTI (WAJIB pola `App\Models\Cicilan\b`, BUKAN cuma `use` — beberapa consumer pakai FQCN inline)**
+- [x] **Step 4: Grep ulang untuk daftar consumer PASTI (WAJIB pola `App\Models\Cicilan\b`, BUKAN cuma `use` — beberapa consumer pakai FQCN inline)**
 
 ```bash
 grep -rln "App\\\\Models\\\\Cicilan\b" --include="*.php" app database tests
@@ -476,21 +476,21 @@ app/Domains/Keuangan/Models/SkemaCicilan.php
 
 Update `use App\Models\Cicilan;` (atau FQCN inline `\App\Models\Cicilan::class`) → `App\Domains\Keuangan\Models\Cicilan` di SETIAP file (kecuali factory yang sudah diedit Step 3).
 
-- [ ] **Step 5: Verifikasi**
+- [x] **Step 5: Verifikasi**
 
 ```bash
 grep -rln "App\\\\Models\\\\Cicilan\b" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 6: Jalankan test scoped**
+- [x] **Step 6: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Unit/CicilanSeederTest.php tests/Feature/Admin/SkemaCicilanTest.php
 ```
 Expected: semua PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -504,28 +504,28 @@ git commit -m "refactor(keuangan): pindah model Cicilan ke Domains\Keuangan\Mode
 **Files:**
 - Tidak ada file baru — task ini murni verifikasi gate.
 
-- [ ] **Step 1: Verifikasi gabungan — tidak ada referensi namespace lama tersisa untuk 3 model**
+- [x] **Step 1: Verifikasi gabungan — tidak ada referensi namespace lama tersisa untuk 3 model**
 
 ```bash
 grep -rln "App\\\\Models\\\\Wallet\b\|App\\\\Models\\\\WalletMutasi\b\|App\\\\Models\\\\Cicilan\b" --include="*.php" app database tests
 ```
 Expected: hanya `app/Services/Finance/AutoAllocationEngine.php` dan `app/Services/Finance/PaymentAllocationService.php` (ditangani Task 5 & 7).
 
-- [ ] **Step 2: Verifikasi 3 file lama sudah tidak ada**
+- [x] **Step 2: Verifikasi 3 file lama sudah tidak ada**
 
 ```bash
 ls app/Models/Wallet.php app/Models/WalletMutasi.php app/Models/Cicilan.php 2>&1
 ```
 Expected: error "No such file or directory" untuk ketiganya.
 
-- [ ] **Step 3: Jalankan test scoped luas**
+- [x] **Step 3: Jalankan test scoped luas**
 
 ```bash
 php artisan test tests/Feature/Keuangan tests/Unit --filter="Wallet|Cicilan"
 ```
 Expected: semua PASS (kalau ada "Class not found", cek lagi Task 1-3).
 
-- [ ] **Step 4: Kalau ada temuan tidak sesuai, STOP dan perbaiki sebelum lanjut Task 5.**
+- [x] **Step 4: Kalau ada temuan tidak sesuai, STOP dan perbaiki sebelum lanjut Task 5.**
 
 Tidak ada commit di task ini.
 
@@ -541,13 +541,13 @@ Tidak ada commit di task ini.
 - Consumes: `App\Domains\Keuangan\Models\{Wallet,Pembayaran,PembayaranTagihan,Tagihan}` (Task 1, SP1-3), `App\Services\Finance\NotificationDispatcher` (TIDAK PINDAH).
 - Produces: `App\Domains\Keuangan\Services\AutoAllocationEngine` — dipakai `Wallet::topup()` (Task 1, via FQCN karena beda sub-namespace).
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Services/Finance/AutoAllocationEngine.php app/Domains/Keuangan/Services/AutoAllocationEngine.php
 ```
 
-- [ ] **Step 2: Ubah isi file — namespace, tambah `use NotificationDispatcher` (gotcha dua arah), `Wallet` jadi biasa (sama-namespace dengan... TUNGGU, `Wallet` di `Domains\Keuangan\Models`, `AutoAllocationEngine` di `Domains\Keuangan\Services` — BEDA sub-namespace, WAJIB `use` eksplisit meski sama domain)**
+- [x] **Step 2: Ubah isi file — namespace, tambah `use NotificationDispatcher` (gotcha dua arah), `Wallet` jadi biasa (sama-namespace dengan... TUNGGU, `Wallet` di `Domains\Keuangan\Models`, `AutoAllocationEngine` di `Domains\Keuangan\Services` — BEDA sub-namespace, WAJIB `use` eksplisit meski sama domain)**
 
 Timpa seluruh isi `app/Domains/Keuangan/Services/AutoAllocationEngine.php` dengan:
 
@@ -683,7 +683,7 @@ class AutoAllocationEngine
 }
 ```
 
-- [ ] **Step 3: Grep ulang dan update consumer**
+- [x] **Step 3: Grep ulang dan update consumer**
 
 ```bash
 grep -rln "use App\\\\Services\\\\Finance\\\\AutoAllocationEngine;" --include="*.php" app database tests
@@ -691,21 +691,21 @@ grep -rln "use App\\\\Services\\\\Finance\\\\AutoAllocationEngine;" --include="*
 
 Update `use App\Services\Finance\AutoAllocationEngine;` → `use App\Domains\Keuangan\Services\AutoAllocationEngine;` di SETIAP file hasil grep. Ini TIDAK termasuk `app/Domains/Keuangan/Models/Wallet.php` yang sudah pakai FQCN inline (Task 1 Step 2 catatan), cek dulu apakah FQCN itu sudah benar.
 
-- [ ] **Step 4: Verifikasi**
+- [x] **Step 4: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Services\\\\Finance\\\\AutoAllocationEngine;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 5: Jalankan test scoped**
+- [x] **Step 5: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/AutoAllocationEngineTest.php tests/Feature/Keuangan/WalletTest.php tests/Feature/Keuangan/WalletDatabaseTest.php
 ```
 Expected: semua PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -726,13 +726,13 @@ git commit -m "refactor(keuangan): pindah AutoAllocationEngine ke Domains\Keuang
 
 **GUARD WAJIB dipertahankan persis**: `withoutGlobalScope(TenantScope::class)` di baris 39 DAN baris 80 baseline (2 titik terpisah — query utama `tagihan()` DAN relasi `jenisTagihan()`), dengan komentar panjang alasan divergensi dari `AutoAllocationEngine::run()` (baris 12-27 baseline) — WAJIB disalin PERSIS, TIDAK disingkat.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Services/Finance/SkipAlertResolver.php app/Domains/Keuangan/Services/SkipAlertResolver.php
 ```
 
-- [ ] **Step 2: Ubah isi file — HANYA namespace + `use Tagihan` biasa (sama-domain, beda sub-namespace, WAJIB `use` eksplisit)**
+- [x] **Step 2: Ubah isi file — HANYA namespace + `use Tagihan` biasa (sama-domain, beda sub-namespace, WAJIB `use` eksplisit)**
 
 Timpa seluruh isi `app/Domains/Keuangan/Services/SkipAlertResolver.php` dengan:
 
@@ -824,7 +824,7 @@ class SkipAlertResolver
 }
 ```
 
-- [ ] **Step 3: Grep ulang dan update consumer**
+- [x] **Step 3: Grep ulang dan update consumer**
 
 ```bash
 grep -rln "use App\\\\Services\\\\Finance\\\\SkipAlertResolver;" --include="*.php" app database tests
@@ -832,21 +832,21 @@ grep -rln "use App\\\\Services\\\\Finance\\\\SkipAlertResolver;" --include="*.ph
 
 Update di SETIAP file hasil grep (kemungkinan besar `app/Http/Controllers/Keuangan/DashboardController.php` — JANGAN diedit di sini kalau muncul, ditangani Task 9 sekaligus dengan refactor controllernya).
 
-- [ ] **Step 4: Verifikasi**
+- [x] **Step 4: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Services\\\\Finance\\\\SkipAlertResolver;" --include="*.php" app database tests
 ```
 Expected: hanya `app/Http/Controllers/Keuangan/DashboardController.php` (ditangani Task 9).
 
-- [ ] **Step 5: Jalankan test scoped**
+- [x] **Step 5: Jalankan test scoped**
 
 ```bash
 php artisan test --filter="SkipAlert"
 ```
 Expected: semua PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -867,13 +867,13 @@ git commit -m "refactor(keuangan): pindah SkipAlertResolver ke Domains\Keuangan\
 
 **Keputusan desain (spec §6.1)**: file ini pindah UTUH, KEDUA method (`allocate()` dan `topupSisaJikaAda()`) TETAP dalam 1 class, TIDAK dipecah meski subjek datanya beda (Tagihan/Pembayaran vs Wallet). JANGAN pisahkan jadi 2 file di task ini.
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv app/Services/Finance/PaymentAllocationService.php app/Domains/Keuangan/Services/PaymentAllocationService.php
 ```
 
-- [ ] **Step 2: Ubah isi file — namespace, tambah `use NotificationDispatcher` (gotcha dua arah), `Wallet`/`Tagihan`/`Pembayaran` jadi `use` biasa dalam domain (beda sub-namespace tetap WAJIB `use` eksplisit kecuali sama-sub-namespace persis)**
+- [x] **Step 2: Ubah isi file — namespace, tambah `use NotificationDispatcher` (gotcha dua arah), `Wallet`/`Tagihan`/`Pembayaran` jadi `use` biasa dalam domain (beda sub-namespace tetap WAJIB `use` eksplisit kecuali sama-sub-namespace persis)**
 
 Timpa seluruh isi `app/Domains/Keuangan/Services/PaymentAllocationService.php` dengan:
 
@@ -1004,7 +1004,7 @@ class PaymentAllocationService
 }
 ```
 
-- [ ] **Step 3: Grep ulang dan update consumer**
+- [x] **Step 3: Grep ulang dan update consumer**
 
 ```bash
 grep -rln "use App\\\\Services\\\\Finance\\\\PaymentAllocationService;" --include="*.php" app database tests
@@ -1012,21 +1012,21 @@ grep -rln "use App\\\\Services\\\\Finance\\\\PaymentAllocationService;" --includ
 
 Update SETIAP file hasil grep, TERMASUK `app/Console/Commands/ReconcilePayments.php` (baris `use` saja — file ini akan direfactor lengkap namanya-tetap-sama di Task 8, tapi `use`-nya WAJIB diupdate sekarang supaya tidak error di window antar-task).
 
-- [ ] **Step 4: Verifikasi**
+- [x] **Step 4: Verifikasi**
 
 ```bash
 grep -rln "use App\\\\Services\\\\Finance\\\\PaymentAllocationService;" --include="*.php" app database tests
 ```
 Expected: kosong.
 
-- [ ] **Step 5: Jalankan test scoped**
+- [x] **Step 5: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/PaymentAllocationServiceTest.php tests/Feature/Keuangan/PaymentAllocationServiceTopupRemainderTest.php tests/Feature/Keuangan/ReconciliationCommandTest.php
 ```
 Expected: semua PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -1043,21 +1043,21 @@ git commit -m "refactor(keuangan): pindah PaymentAllocationService (utuh) ke Dom
 **Interfaces:**
 - Tidak ada file baru.
 
-- [ ] **Step 1: Baca ulang `app/Console/Commands/ReconcilePayments.php`, konfirmasi `use App\Domains\Keuangan\Services\PaymentAllocationService;` sudah benar dari Task 7**
+- [x] **Step 1: Baca ulang `app/Console/Commands/ReconcilePayments.php`, konfirmasi `use App\Domains\Keuangan\Services\PaymentAllocationService;` sudah benar dari Task 7**
 
 ```bash
 grep -n "^use" app/Console/Commands/ReconcilePayments.php
 ```
 Expected: `PaymentGatewayInterface`, `BriQrisPayment`, `Pembayaran` sudah `Domains\Keuangan\*` (dari SP3), `PaymentAllocationService` sudah `Domains\Keuangan\Services\PaymentAllocationService` (dari Task 7). Isi method `reconcileWaitingPayments()`/`retryFailedTopups()` TIDAK berubah sama sekali.
 
-- [ ] **Step 2: Jalankan test scoped**
+- [x] **Step 2: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/ReconciliationCommandTest.php tests/Feature/Keuangan/ReconcilePaymentsBundledTopupTest.php tests/Feature/Keuangan/ReconcilePaymentsQrisTest.php
 ```
 Expected: semua PASS.
 
-- [ ] **Step 3: Kalau ada yang belum sesuai, perbaiki sekarang. Tidak ada commit baru di task ini kalau Task 7 sudah benar (murni verifikasi) — kalau ADA perbaikan, commit terpisah:**
+- [x] **Step 3: Kalau ada yang belum sesuai, perbaiki sekarang. Tidak ada commit baru di task ini kalau Task 7 sudah benar (murni verifikasi) — kalau ADA perbaikan, commit terpisah:**
 
 ```bash
 git add -A
@@ -1081,7 +1081,7 @@ Controller ini 100% read-only (index() saja) — TIDAK ADA Action baru, konsiste
 
 Baseline kode (65 baris, commit `5c71903`) — baca ulang untuk konfirmasi sebelum edit.
 
-- [ ] **Step 1: Buat controller baru di `Portal\Keuangan\`**
+- [x] **Step 1: Buat controller baru di `Portal\Keuangan\`**
 
 `app/Http/Controllers/Portal/Keuangan/DashboardController.php`:
 
@@ -1155,13 +1155,13 @@ class DashboardController extends Controller
 
 **Catatan**: baris `view('keuangan.tanpa-anak')` SUDAH diubah jadi `view('portals.portal.keuangan.tanpa-anak')` LANGSUNG di sini (bukan tetap `keuangan.tanpa-anak` dulu) — karena Task 10 (pemindahan view `tanpa-anak.blade.php`) akan dieksekusi SETELAH task ini. Kalau plan dieksekusi berurutan tanpa lompat, ada window singkat (antara Task 9 dan Task 10 selesai) di mana baris ini menunjuk ke view yang BELUM ada — ini AMAN selama Task 10 langsung menyusul tanpa deploy parsial di antaranya, sama seperti pola window di SP1/SP2 sebelumnya.
 
-- [ ] **Step 2: Hapus controller lama**
+- [x] **Step 2: Hapus controller lama**
 
 ```bash
 git rm app/Http/Controllers/Keuangan/DashboardController.php
 ```
 
-- [ ] **Step 3: Pindahkan view `dashboard.blade.php`**
+- [x] **Step 3: Pindahkan view `dashboard.blade.php`**
 
 ```bash
 mkdir -p resources/views/portals/portal/keuangan
@@ -1170,7 +1170,7 @@ git mv resources/views/keuangan/dashboard.blade.php resources/views/portals/port
 
 Baca isi view, cek `@include` internal — kalau ada yang merujuk path `keuangan.*` lain, sesuaikan prefix ke `portals.portal.keuangan.*`.
 
-- [ ] **Step 4: Update `routes/web.php`**
+- [x] **Step 4: Update `routes/web.php`**
 
 Ganti baris:
 ```php
@@ -1182,7 +1182,7 @@ Route::get('/', [\App\Http\Controllers\Portal\Keuangan\DashboardController::clas
 ```
 Baris ini ada di dalam grup `Route::middleware([...])->prefix('keuangan')->name('keuangan.')->group(...)` — nama route final `keuangan.dashboard` TIDAK berubah.
 
-- [ ] **Step 5: Jalankan test scoped**
+- [x] **Step 5: Jalankan test scoped**
 
 ```bash
 php artisan route:list --name=keuangan.dashboard
@@ -1190,7 +1190,7 @@ php artisan test tests/Feature/Keuangan/DashboardControllerTest.php tests/Featur
 ```
 Expected: `route:list` menunjukkan `Portal\Keuangan\DashboardController`, nama route tidak berubah. Test kemungkinan GAGAL sementara kalau `tanpa-anak.blade.php` belum dipindah (Task 10) — CATAT hasilnya, lanjutkan ke Task 10 sebelum menganggap ada masalah nyata.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -1208,25 +1208,25 @@ git commit -m "refactor(keuangan): pindah Keuangan\DashboardController ke Portal
 **Interfaces:**
 - Tidak ada interface baru — murni pemindahan view + update 3 titik panggil (titik ke-4 di `Portal\Keuangan\DashboardController` SUDAH diupdate di Task 9 Step 1).
 
-- [ ] **Step 1: Pindahkan file fisik**
+- [x] **Step 1: Pindahkan file fisik**
 
 ```bash
 git mv resources/views/keuangan/tanpa-anak.blade.php resources/views/portals/portal/keuangan/tanpa-anak.blade.php
 ```
 
-- [ ] **Step 2: Update `app/Http/Controllers/Portal/Keuangan/TagihanController.php`**
+- [x] **Step 2: Update `app/Http/Controllers/Portal/Keuangan/TagihanController.php`**
 
 Baca file, cari baris `return view('keuangan.tanpa-anak');` (baris 19 baseline), ganti jadi `return view('portals.portal.keuangan.tanpa-anak');`.
 
-- [ ] **Step 3: Update `app/Http/Controllers/Portal/Keuangan/RiwayatController.php`**
+- [x] **Step 3: Update `app/Http/Controllers/Portal/Keuangan/RiwayatController.php`**
 
 Baca file, cari baris `return view('keuangan.tanpa-anak');` (baris 22 baseline), ganti jadi `return view('portals.portal.keuangan.tanpa-anak');`.
 
-- [ ] **Step 4: Update `app/Http/Controllers/Portal/Keuangan/CheckoutController.php`**
+- [x] **Step 4: Update `app/Http/Controllers/Portal/Keuangan/CheckoutController.php`**
 
 Baca file, cari baris `return view('keuangan.tanpa-anak');` (baris 36 baseline), ganti jadi `return view('portals.portal.keuangan.tanpa-anak');`.
 
-- [ ] **Step 5: Grep ulang untuk verifikasi SEMUA titik panggil sudah diupdate**
+- [x] **Step 5: Grep ulang untuk verifikasi SEMUA titik panggil sudah diupdate**
 
 ```bash
 grep -rn "keuangan\.tanpa-anak" --include="*.php" app
@@ -1238,14 +1238,14 @@ ls resources/views/keuangan/tanpa-anak.blade.php 2>&1
 ```
 Expected: error "No such file or directory".
 
-- [ ] **Step 6: Jalankan test scoped**
+- [x] **Step 6: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/DashboardControllerTest.php tests/Feature/Keuangan/DashboardAuthorizationTest.php tests/Feature/Keuangan/CheckoutControllerCreateTest.php tests/Feature/Keuangan/RiwayatControllerIndexTest.php tests/Feature/Keuangan/TagihanControllerTest.php
 ```
 Expected: semua PASS (termasuk yang sempat gagal di Task 9 Step 5 karena view belum ada — sekarang harus PASS).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -1259,28 +1259,28 @@ git commit -m "refactor(keuangan): pindah view fallback tanpa-anak.blade.php ke 
 **Files:**
 - Tidak ada file baru — task ini murni verifikasi gate.
 
-- [ ] **Step 1: Verifikasi gabungan — tidak ada referensi namespace lama tersisa**
+- [x] **Step 1: Verifikasi gabungan — tidak ada referensi namespace lama tersisa**
 
 ```bash
 grep -rln "App\\\\Models\\\\Wallet\b\|App\\\\Models\\\\WalletMutasi\b\|App\\\\Models\\\\Cicilan\b\|use App\\\\Services\\\\Finance\\\\AutoAllocationEngine;\|use App\\\\Services\\\\Finance\\\\SkipAlertResolver;\|use App\\\\Services\\\\Finance\\\\PaymentAllocationService;\|use App\\\\Http\\\\Controllers\\\\Keuangan\\\\DashboardController;\|keuangan\.tanpa-anak\|keuangan\.dashboard" --include="*.php" app database tests routes
 ```
 Expected: KOSONG total.
 
-- [ ] **Step 2: Verifikasi file lama sudah tidak ada**
+- [x] **Step 2: Verifikasi file lama sudah tidak ada**
 
 ```bash
 ls app/Models/Wallet.php app/Models/WalletMutasi.php app/Models/Cicilan.php app/Services/Finance/AutoAllocationEngine.php app/Services/Finance/SkipAlertResolver.php app/Services/Finance/PaymentAllocationService.php app/Http/Controllers/Keuangan/DashboardController.php resources/views/keuangan/dashboard.blade.php resources/views/keuangan/tanpa-anak.blade.php 2>&1
 ```
 Expected: error "No such file or directory" untuk SEMUANYA.
 
-- [ ] **Step 3: Jalankan test scoped luas**
+- [x] **Step 3: Jalankan test scoped luas**
 
 ```bash
 php artisan test tests/Feature/Keuangan tests/Unit --filter="Wallet|Cicilan|AutoAllocation|SkipAlert|Reconcil|Dashboard"
 ```
 Expected: semua PASS.
 
-- [ ] **Step 4: Kalau ada temuan tidak sesuai, STOP dan perbaiki sebelum lanjut Task 12.**
+- [x] **Step 4: Kalau ada temuan tidak sesuai, STOP dan perbaiki sebelum lanjut Task 12.**
 
 ---
 
@@ -1291,14 +1291,14 @@ Expected: semua PASS.
 
 **INI TASK PALING PENTING SECARA SIMBOLIS — membuktikan migrasi domain Keuangan (4 sub-project, sejak SP1) benar-benar TUNTAS.**
 
-- [ ] **Step 1: Audit `app/Models/` — cari sisa kelas Keuangan**
+- [x] **Step 1: Audit `app/Models/` — cari sisa kelas Keuangan**
 
 ```bash
 find app/Models -iname "*wallet*" -o -iname "*cicilan*" -o -iname "*tagihan*" -o -iname "*pembayaran*" -o -iname "*bri*"
 ```
 Expected: KOSONG total (semua kelas dengan nama-nama ini sudah ada di `app/Domains/Keuangan/Models/`).
 
-- [ ] **Step 2: Audit `app/Services/` level atas — cari sisa service Keuangan**
+- [x] **Step 2: Audit `app/Services/` level atas — cari sisa service Keuangan**
 
 ```bash
 find app/Services -maxdepth 1 -iname "*finance*" -o -iname "*pembayaran*" -o -iname "*tagihan*"
@@ -1306,7 +1306,7 @@ ls app/Services/Finance 2>&1
 ```
 Expected: `find` kosong. `ls app/Services/Finance` harus error "No such file or directory" (folder ikut terhapus otomatis setelah AutoAllocationEngine/SkipAlertResolver/PaymentAllocationService/Gateway/BriInbound semua pindah — kalau folder masih ada tapi kosong, hapus manual dengan `rmdir app/Services/Finance` kalau memang benar-benar kosong, JANGAN paksa hapus kalau masih ada isinya).
 
-- [ ] **Step 3: Audit `app/Http/Controllers/Admin/` dan `app/Http/Controllers/Keuangan/` — cari sisa controller Keuangan**
+- [x] **Step 3: Audit `app/Http/Controllers/Admin/` dan `app/Http/Controllers/Keuangan/` — cari sisa controller Keuangan**
 
 ```bash
 find app/Http/Controllers/Admin -iname "*tagihan*" -o -iname "*pembayaran*" -o -iname "*virtual*" -o -iname "*manualpayment*"
@@ -1314,7 +1314,7 @@ find app/Http/Controllers/Keuangan -type f
 ```
 Expected: command pertama HANYA menunjukkan `Admin\TagihanSusulanController.php` (dikonfirmasi milik PPDB, BUKAN temuan). Command kedua HANYA menunjukkan `NotifikasiController.php` (dikonfirmasi generic, BUKAN temuan) — `DashboardController.php` HARUS TIDAK ADA lagi di situ.
 
-- [ ] **Step 4: Audit `app/Contracts/` dan `app/DTO/` — pastikan benar-benar kosong dari sisa Keuangan**
+- [x] **Step 4: Audit `app/Contracts/` dan `app/DTO/` — pastikan benar-benar kosong dari sisa Keuangan**
 
 ```bash
 find app/Contracts -type f
@@ -1322,7 +1322,7 @@ find app/DTO -type f
 ```
 Expected: KOSONG total untuk keduanya (semua sudah pindah ke `Domains\Keuangan\Contracts`/`DataTransferObjects` di SP3) — kalau folder `app/Contracts`/`app/DTO` sendiri sudah kosong, boleh dihapus (`rmdir`), TAPI JANGAN paksa kalau ternyata masih ada file non-Keuangan di situ.
 
-- [ ] **Step 5: Audit final gabungan — grep seluruh app/ untuk nama kelas Keuangan yang mungkin tercecer**
+- [x] **Step 5: Audit final gabungan — grep seluruh app/ untuk nama kelas Keuangan yang mungkin tercecer**
 
 ```bash
 grep -rln "class.*Tagihan\|class.*Pembayaran\|class.*Wallet\|class.*Cicilan\|class.*BriVirtualAccount\|class.*BriQris\|class.*ManualPayment" --include="*.php" app | grep -v "app/Domains/Keuangan/"
@@ -1330,7 +1330,7 @@ grep -rln "class.*Tagihan\|class.*Pembayaran\|class.*Wallet\|class.*Cicilan\|cla
 
 Tinjau HASIL satu-per-satu. Yang BOLEH muncul (sudah dikonfirmasi domain lain, BUKAN temuan): `app/Services/TagihanGenerator.php`, `app/Http/Controllers/Admin/TagihanSusulanController.php`, `app/Http/Controllers/Portal/TagihanController.php`. SELAIN itu, kalau ada yang muncul, itu TEMUAN — STOP, laporkan ke user, JANGAN lanjut ke Task 13 sebelum ini diklarifikasi.
 
-- [ ] **Step 6: Catat SEMUA hasil Step 1-5 (termasuk command yang dijalankan dan output PERSIS) — akan dikutip penuh di handoff log Task 13.**
+- [x] **Step 6: Catat SEMUA hasil Step 1-5 (termasuk command yang dijalankan dan output PERSIS) — akan dikutip penuh di handoff log Task 13.**
 
 Tidak ada commit di task ini — murni audit, hasilnya didokumentasikan di Task 13.
 
@@ -1341,27 +1341,27 @@ Tidak ada commit di task ini — murni audit, hasilnya didokumentasikan di Task 
 **Files:**
 - Create: `.agents/logs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md`
 
-- [ ] **Step 1: Jalankan test scoped gabungan luas**
+- [x] **Step 1: Jalankan test scoped gabungan luas**
 
 ```bash
 php artisan test tests/Feature/Keuangan tests/Feature/Admin tests/Unit tests/Feature/Portal tests/Feature/Spmb tests/Feature/Console
 ```
 Catat jumlah pasti passed/failed. Flaky yang sudah dikenal (hari-Minggu terkait hari libur mingguan SDM) — kalau itu SATU-SATUNYA yang gagal, jalankan ulang sendirian untuk konfirmasi, BUKAN regresi dari sub-project ini.
 
-- [ ] **Step 2: Minta izin user untuk full test suite**
+- [x] **Step 2: Minta izin user untuk full test suite**
 
 Tanya ke user: "Task 1-12 selesai, test scoped semua hijau, audit final menyeluruh sudah bersih. Boleh saya jalankan full test suite (`php artisan test`) untuk verifikasi akhir?" — TUNGGU jawaban eksplisit. JANGAN jalankan otomatis tanpa izin.
 
 **PENTING (pelajaran dari review SP3)**: JANGAN jalankan full suite atau test scoped lain SECARA BERSAMAAN di proses/terminal terpisah — MySQL test database bersama (`pintera_app_test`) rentan tabrakan kalau diakses beberapa proses `php artisan test` sekaligus, menyebabkan kegagalan palsu (deadlock/schema corruption) yang BUKAN regresi kode. Jalankan HANYA SATU proses test di satu waktu, tunggu sampai selesai total sebelum menjalankan proses test lain.
 
-- [ ] **Step 3: Jalankan full suite SOLO (HANYA setelah izin didapat, TIDAK ada proses lain yang mengakses DB test bersamaan)**
+- [x] **Step 3: Jalankan full suite SOLO (HANYA setelah izin didapat, TIDAK ada proses lain yang mengakses DB test bersamaan)**
 
 ```bash
 php artisan test
 ```
 Catat angka PASTI passed/failed/duration.
 
-- [ ] **Step 4: Tulis handoff log**
+- [x] **Step 4: Tulis handoff log**
 
 Buat `.agents/logs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md` (Bahasa Indonesia): ringkasan tiap task (1-12) dengan commit hash, hasil test dengan angka PASTI dari Step 1 dan Step 3 (JANGAN dicampur). **WAJIB sertakan PENUH**:
 - Hasil audit final Task 12 (Step 1-5, command + output persis, bukan ringkasan) sebagai bukti tuntasnya migrasi domain Keuangan.
@@ -1369,11 +1369,11 @@ Buat `.agents/logs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsilia
 - Konfirmasi eksplisit 3 gotcha dua arah (Wallet→SystemSetting, AutoAllocationEngine→NotificationDispatcher, PaymentAllocationService→NotificationDispatcher) sudah ditangani.
 - Kalau ada file di luar daftar yang disebutkan plan yang ternyata perlu disentuh, laporkan sebagai temuan terpisah — JANGAN diam-diam.
 
-- [ ] **Step 5: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
+- [x] **Step 5: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
 
 Tambahkan baris baru untuk "Migrasi Domain Keuangan Sub-project 4 (Wallet & Cicilan + Rekonsiliasi) — PENUTUP" dengan link ke spec/plan/log, status 🟢 SELESAI. **Tambahkan juga catatan eksplisit bahwa SELURUH migrasi domain Keuangan (SP1-4) sudah TUNTAS**, mengacu ke hasil audit final Task 12.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .agents/logs/2026-08-24-refactor-02-keuangan-sp4-wallet-cicilan-rekonsiliasi.md .agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md
