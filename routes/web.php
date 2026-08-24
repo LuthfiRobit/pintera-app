@@ -35,8 +35,8 @@ Route::middleware(['auth', 'verified', 'permission:keuangan.akses', 'resolve.act
     ->prefix('keuangan')->name('keuangan.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Keuangan\DashboardController::class, 'index'])->name('dashboard');
         Route::get('/tagihan', [\App\Http\Controllers\Portal\Keuangan\TagihanController::class, 'index'])->name('tagihan.index');
-        Route::get('/riwayat', [\App\Http\Controllers\Keuangan\RiwayatController::class, 'index'])->name('riwayat.index');
-        Route::get('/riwayat/{pembayaran}/kwitansi', [\App\Http\Controllers\Keuangan\RiwayatController::class, 'kwitansi'])->name('riwayat.kwitansi');
+        Route::get('/riwayat', [\App\Http\Controllers\Portal\Keuangan\RiwayatController::class, 'index'])->name('riwayat.index');
+        Route::get('/riwayat/{pembayaran}/kwitansi', [\App\Http\Controllers\Portal\Keuangan\RiwayatController::class, 'kwitansi'])->name('riwayat.kwitansi');
         Route::get('/checkout', [\App\Http\Controllers\Portal\Keuangan\CheckoutController::class, 'create'])->name('checkout.create');
         Route::post('/checkout/va', [\App\Http\Controllers\Portal\Keuangan\CheckoutController::class, 'va'])->name('checkout.va');
         Route::post('/checkout/qris', [\App\Http\Controllers\Portal\Keuangan\CheckoutController::class, 'qris'])->name('checkout.qris');

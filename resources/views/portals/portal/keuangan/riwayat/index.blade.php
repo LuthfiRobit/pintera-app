@@ -1,4 +1,4 @@
-{{-- resources/views/keuangan/riwayat/index.blade.php --}}
+{{-- resources/views/portals/portal/keuangan/riwayat/index.blade.php --}}
 <x-app-layout>
     <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0">
         

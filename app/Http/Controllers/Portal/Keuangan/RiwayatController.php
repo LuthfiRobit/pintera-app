@@ -1,16 +1,16 @@
 <?php
-// app/Http/Controllers/Keuangan/RiwayatController.php
+// app/Http/Controllers/Portal/Keuangan/RiwayatController.php
 
-namespace App\Http\Controllers\Keuangan;
+namespace App\Http\Controllers\Portal\Keuangan;
 
 use App\Domains\Keuangan\Concerns\AuthorizesPembayaran;
 use App\Domains\Keuangan\Models\Pembayaran;
+use App\Http\Controllers\Controller;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
 
-class RiwayatController extends BaseController
+class RiwayatController extends Controller
 {
     use AuthorizesPembayaran;
 
@@ -54,7 +54,7 @@ class RiwayatController extends BaseController
         $totalMenungguCount = $statsQuery()->whereIn('status', ['menunggu_pembayaran', 'menunggu_verifikasi'])->count();
         $totalTransaksiCount = $statsQuery()->count();
 
-        return view('keuangan.riwayat.index', [
+        return view('portals.portal.keuangan.riwayat.index', [
             'activeSiswa' => $activeSiswa,
             'pembayarans' => $pembayarans,
             'dari' => $dari,
