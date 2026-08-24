@@ -32,7 +32,7 @@ final class ListKasusUntukUserAction
                         ->whereHas('orangTua', fn ($q3) => $q3->where('orang_tua.id', $orangTuaId)
                             ->where('siswa_orang_tua.is_kontak_utama', true))))
                 ->latest()->get();
-        } elseif ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
+        } elseif ($user->hasRole('pegawai_yayasan') || $user->hasRole('pegawai_lembaga')) {
             $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
             $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
                 ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
