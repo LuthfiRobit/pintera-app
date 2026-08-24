@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Keuangan;
 
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
-use App\Http\Controllers\Keuangan\Concerns\AuthorizesPembayaran;
+use App\Domains\Keuangan\Concerns\AuthorizesPembayaran;
 use App\Http\Requests\Keuangan\StoreManualTransferRequest;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\Finance\PaymentService;
+use App\Domains\Keuangan\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;

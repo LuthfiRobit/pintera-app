@@ -1,9 +1,9 @@
 <?php
-// app/Http/Controllers/Keuangan/Concerns/AuthorizesPembayaran.php
+// app/Domains/Keuangan/Concerns/AuthorizesPembayaran.php
 
-namespace App\Http\Controllers\Keuangan\Concerns;
+namespace App\Domains\Keuangan\Concerns;
 
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Support\Facades\Auth;
 

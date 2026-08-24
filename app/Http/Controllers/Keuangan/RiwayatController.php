@@ -3,8 +3,8 @@
 
 namespace App\Http\Controllers\Keuangan;
 
-use App\Http\Controllers\Keuangan\Concerns\AuthorizesPembayaran;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Concerns\AuthorizesPembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
