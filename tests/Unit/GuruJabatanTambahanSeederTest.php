@@ -30,9 +30,9 @@ beforeEach(function () {
 it('assigns Wali Kelas to the guru who has one, and Wakil Kepala Sekolah Kurikulum to another', function () {
     (new GuruJabatanTambahanSeeder())->run();
 
-    $siti = User::where('email', 'siti.rahmawati@demo.test')->first();
-    $guruSiti = Guru::where('user_id', $siti->id)->first();
-    expect(GuruJabatanTambahan::where('guru_id', $guruSiti->id)->exists())->toBeTrue();
+    $sari = User::where('email', 'sari.wulandari@demo.test')->first();
+    $guruSari = Guru::where('user_id', $sari->id)->first();
+    expect(GuruJabatanTambahan::where('guru_id', $guruSari->id)->exists())->toBeTrue();
 
     $hendra = User::where('email', 'hendra.gunawan@demo.test')->first();
     $guruHendra = Guru::where('user_id', $hendra->id)->first();
