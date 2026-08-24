@@ -1,18 +1,18 @@
 <?php
-// app/Http/Controllers/Admin/PembayaranController.php
+// app/Http/Controllers/Lembaga/Keuangan/PembayaranController.php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Lembaga\Keuangan;
 
+use App\Domains\Keuangan\Actions\Pembayaran\VerifikasiPembayaranAction;
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Domains\Keuangan\Services\PembayaranService;
+use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
 
-class PembayaranController extends BaseController
+class PembayaranController extends Controller
 {
     use AuthorizesRequests;
 
@@ -41,7 +41,7 @@ class PembayaranController extends BaseController
     {
         $this->authorize('pembayaran.view');
 
-        return view('admin.pembayaran.index', [
+        return view('portals.lembaga.keuangan.pembayaran.index', [
             'lembagaBelumDipilih' => $this->lembagaId($request) === null,
         ]);
     }
@@ -92,7 +92,7 @@ class PembayaranController extends BaseController
         ]);
     }
 
-    public function verifikasi(Request $request, Pembayaran $pembayaran, PembayaranService $service): RedirectResponse
+    public function verifikasi(Request $request, Pembayaran $pembayaran, VerifikasiPembayaranAction $action): RedirectResponse
     {
         $this->authorize('pembayaran.verifikasi');
 
@@ -106,7 +106,7 @@ class PembayaranController extends BaseController
         ]);
 
         try {
-            $service->verifikasiPembayaran($pembayaran, $data['keputusan'], $data['catatan_verifikasi'] ?? null, $request->user()->id);
+            $action->execute($pembayaran, $data['keputusan'], $data['catatan_verifikasi'] ?? null, $request->user()->id);
         } catch (\RuntimeException $exception) {
             return back()->withErrors(['keputusan' => $exception->getMessage()]);
         }

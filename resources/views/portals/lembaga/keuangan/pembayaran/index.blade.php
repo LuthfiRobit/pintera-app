@@ -1,4 +1,4 @@
-{{-- resources/views/admin/pembayaran/index.blade.php --}}
+{{-- resources/views/portals/lembaga/keuangan/pembayaran/index.blade.php --}}
 <x-app-layout>
     <x-slot name="header">
         <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Keuangan</p>
