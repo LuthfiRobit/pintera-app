@@ -6,7 +6,7 @@ namespace Database\Seeders;
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\PembayaranService;
+use App\Domains\Keuangan\Services\PembayaranService;
 use Illuminate\Database\Seeder;
 
 class SkemaCicilanSeeder extends Seeder

@@ -8,7 +8,7 @@ use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
-use App\Services\PembayaranService;
+use App\Domains\Keuangan\Services\PembayaranService;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

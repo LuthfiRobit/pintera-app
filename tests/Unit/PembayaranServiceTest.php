@@ -8,7 +8,7 @@ use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
-use App\Services\PembayaranService;
+use App\Domains\Keuangan\Services\PembayaranService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

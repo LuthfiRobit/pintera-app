@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Keuangan\Actions\Tagihan;
 
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\PembayaranService;
+use App\Domains\Keuangan\Services\PembayaranService;
 
 class BuatSkemaCicilanAction
 {

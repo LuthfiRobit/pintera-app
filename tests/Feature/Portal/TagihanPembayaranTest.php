@@ -87,7 +87,7 @@ it('404s uploading bukti transfer for a cicilan termin belonging to a different 
     $tagihanLain = siapkanTagihanUntukPortal($akunLain, 900000);
     \App\Domains\Keuangan\Models\JenisTagihan::create(['lembaga_id' => $tagihanLain->pendaftaran->lembaga_id, 'nama' => 'Uang Pangkal', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => true, 'maks_cicilan' => 3]);
     \App\Domains\Keuangan\Models\TagihanItem::create(['tagihan_id' => $tagihanLain->id, 'jenis_tagihan_id' => \App\Domains\Keuangan\Models\JenisTagihan::first()->id, 'jumlah' => 900000]);
-    $skemaLain = app(\App\Services\PembayaranService::class)->buatSkemaCicilan($tagihanLain, 3, 'calon_siswa');
+    $skemaLain = app(\App\Domains\Keuangan\Services\PembayaranService::class)->buatSkemaCicilan($tagihanLain, 3, 'calon_siswa');
     $termin1Lain = $skemaLain->cicilan()->where('urutan', 1)->firstOrFail();
 
     $akunSaya = AkunPendaftar::factory()->create();
@@ -161,7 +161,7 @@ it('shows the Kirim Bukti upload form again for a cicilan termin that was reject
     $tagihan = siapkanTagihanUntukPortal($akun, 900000);
     \App\Domains\Keuangan\Models\JenisTagihan::create(['lembaga_id' => $tagihan->pendaftaran->lembaga_id, 'nama' => 'Uang Pangkal', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => true, 'maks_cicilan' => 3]);
     \App\Domains\Keuangan\Models\TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => \App\Domains\Keuangan\Models\JenisTagihan::first()->id, 'jumlah' => 900000]);
-    $skema = app(\App\Services\PembayaranService::class)->buatSkemaCicilan($tagihan, 3, 'calon_siswa');
+    $skema = app(\App\Domains\Keuangan\Services\PembayaranService::class)->buatSkemaCicilan($tagihan, 3, 'calon_siswa');
     $termin1 = $skema->cicilan()->where('urutan', 1)->firstOrFail();
     $termin1->update(['status' => 'ditolak']);
     Pembayaran::create(['cicilan_id' => $termin1->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'file_path' => 'bukti/1.pdf', 'status' => 'ditolak', 'catatan_verifikasi' => 'Buram']);

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Portal;
 
 use App\Models\Cicilan;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\PembayaranService;
+use App\Domains\Keuangan\Services\PembayaranService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;

@@ -1,10 +1,10 @@
 <?php
-// app/Services/PembayaranService.php
+// app/Domains/Keuangan/Services/PembayaranService.php
 
-namespace App\Services;
+namespace App\Domains\Keuangan\Services;
 
 use App\Models\Cicilan;
-use App\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use Illuminate\Support\Facades\DB;

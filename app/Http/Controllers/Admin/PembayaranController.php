@@ -3,8 +3,8 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Pembayaran;
-use App\Services\PembayaranService;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Services\PembayaranService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
