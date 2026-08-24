@@ -25,7 +25,7 @@ it('creates only the superadmin account when no lembaga exists yet', function ()
     expect($superAdmin->hasRole('yayasan_super_admin'))->toBeTrue();
     expect($superAdmin->lembaga_id)->toBeNull();
 
-    expect(User::where('email', 'kepsek.kb@demo.test')->exists())->toBeFalse();
+    expect(User::where('email', 'kepsek.sd@demo.test')->exists())->toBeFalse();
 });
 
 it('creates all 7 essential accounts when a lembaga exists, attaching the lembaga-scoped ones to it', function () {
@@ -36,24 +36,24 @@ it('creates all 7 essential accounts when a lembaga exists, attaching the lembag
 
     expect(User::where('email', 'superadmin@demo.test')->exists())->toBeTrue();
 
-    $kepsek = User::where('email', 'kepsek.kb@demo.test')->first();
+    $kepsek = User::where('email', 'kepsek.sd@demo.test')->first();
     expect($kepsek->hasRole('kepala_sekolah'))->toBeTrue();
     expect($kepsek->lembaga_id)->toBe($lembaga->id);
 
-    $adm = User::where('email', 'adm.kb@demo.test')->first();
+    $adm = User::where('email', 'adm.sd@demo.test')->first();
     expect($adm->hasRole('admin_administrasi'))->toBeTrue();
 
-    $keuangan = User::where('email', 'keuangan.kb@demo.test')->first();
+    $keuangan = User::where('email', 'keuangan.sd@demo.test')->first();
     expect($keuangan->hasRole('admin_keuangan'))->toBeTrue();
 
-    $guru = User::where('email', 'guru.kb1@demo.test')->first();
+    $guru = User::where('email', 'guru.sd1@demo.test')->first();
     expect($guru->hasRole('guru'))->toBeTrue();
 
-    $akademik = User::where('email', 'kurikulum.kb@demo.test')->first();
+    $akademik = User::where('email', 'kurikulum.sd@demo.test')->first();
     expect($akademik->hasRole('admin_akademik'))->toBeTrue();
     expect($akademik->lembaga_id)->toBe($lembaga->id);
 
-    $sarpras = User::where('email', 'sarpras.kb@demo.test')->first();
+    $sarpras = User::where('email', 'sarpras.sd@demo.test')->first();
     expect($sarpras->hasRole('admin_sarpras'))->toBeTrue();
     expect($sarpras->lembaga_id)->toBe($lembaga->id);
 });

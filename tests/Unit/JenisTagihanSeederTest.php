@@ -16,7 +16,7 @@ beforeEach(function () {
     (new LembagaSeeder())->run();
 });
 
-it('seeds Biaya Pendaftaran (not cicilable) and Uang Pangkal (cicilable, max 3) per lembaga across all K-9 institutions', function () {
+it('seeds Biaya Pendaftaran (not cicilable) and Uang Pangkal (cicilable, max 3) for the SD institution', function () {
     (new JenisTagihanSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -37,5 +37,5 @@ it('is idempotent when run twice', function () {
     (new JenisTagihanSeeder())->run();
     (new JenisTagihanSeeder())->run();
 
-    expect(JenisTagihan::count())->toBe(8);
+    expect(JenisTagihan::count())->toBe(2);
 });

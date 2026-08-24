@@ -16,7 +16,7 @@ beforeEach(function () {
     (new LembagaSeeder())->run();
 });
 
-it('seeds 4 calon per lembaga across all K-9 institutions with lembaga-qualified names', function () {
+it('seeds 4 calon murid for the SD institution with lembaga-qualified names', function () {
     (new CalonMuridSeeder())->run();
 
     foreach (Lembaga::all() as $lembaga) {
@@ -31,5 +31,5 @@ it('is idempotent when run twice', function () {
     (new CalonMuridSeeder())->run();
     (new CalonMuridSeeder())->run();
 
-    expect(CalonMurid::count())->toBe(16);
+    expect(CalonMurid::count())->toBe(4);
 });

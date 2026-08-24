@@ -10,7 +10,7 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('seeds yayasan pintera and 4 K-9 institutions without SMA', function () {
+it('seeds yayasan pintera and the single SD institution', function () {
     (new YayasanSeeder())->run();
     (new LembagaSeeder())->run();
 
@@ -18,12 +18,12 @@ it('seeds yayasan pintera and 4 K-9 institutions without SMA', function () {
     expect($yayasan)->not->toBeNull();
     expect($yayasan->alamat)->toContain('Kraksaan', 'Probolinggo', 'Jawa Timur');
 
-    expect(Lembaga::count())->toBe(4);
-    expect(Lembaga::where('npsn', '20223311')->value('nama'))->toBe('KBIT PINTERA');
-    expect(Lembaga::where('npsn', '20223322')->value('nama'))->toBe('TKIT PINTERA');
+    expect(Lembaga::count())->toBe(1);
     expect(Lembaga::where('npsn', '20223333')->value('nama'))->toBe('SDIT PINTERA');
-    expect(Lembaga::where('npsn', '20223344')->value('nama'))->toBe('SMPIT PINTERA');
-    expect(Lembaga::where('npsn', '20223355')->exists())->toBeFalse();
+    expect(Lembaga::where('npsn', '20223333')->value('kode_lembaga'))->toBe('SDITPTR');
+    expect(Lembaga::where('npsn', '20223311')->exists())->toBeFalse();
+    expect(Lembaga::where('npsn', '20223322')->exists())->toBeFalse();
+    expect(Lembaga::where('npsn', '20223344')->exists())->toBeFalse();
 });
 
 it('is idempotent when run twice', function () {
@@ -32,5 +32,5 @@ it('is idempotent when run twice', function () {
     (new LembagaSeeder())->run();
     (new LembagaSeeder())->run();
 
-    expect(Lembaga::count())->toBe(4);
+    expect(Lembaga::count())->toBe(1);
 });

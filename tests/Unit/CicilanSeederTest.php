@@ -47,12 +47,12 @@ beforeEach(function () {
     (new TagihanSeeder())->run();
 });
 
-it('does not error when the skema cicilan already has its 3 termin rows from SkemaCicilanSeeder across all K-9 institutions', function () {
+it('does not error when the skema cicilan already has its 3 termin rows from SkemaCicilanSeeder for the SD institution', function () {
     (new SkemaCicilanSeeder())->run();
 
     (new CicilanSeeder())->run();
 
-    expect(Cicilan::count())->toBe(12);
+    expect(Cicilan::count())->toBe(3);
 
     foreach (Lembaga::all() as $lembaga) {
         $cicilanDemo = Pendaftaran::where('lembaga_id', $lembaga->id)->where('email_pendaftaran', 'wali.cicilan@demo.test')->first();

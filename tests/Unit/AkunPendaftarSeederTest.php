@@ -40,14 +40,11 @@ beforeEach(function () {
     (new PendaftaranSeeder())->run();
 });
 
-it('seeds one verified akun pendaftar per lembaga across all K-9 institutions, attached to that lembaga diterima pendaftaran', function () {
+it('seeds one verified akun pendaftar for the SD institution, attached to that lembaga diterima pendaftaran', function () {
     (new AkunPendaftarSeeder())->run();
 
     $emailPerNpsn = [
-        '20223311' => 'pendaftar.kb@demo.test',
-        '20223322' => 'pendaftar.tk@demo.test',
         '20223333' => 'pendaftar.sd@demo.test',
-        '20223344' => 'pendaftar.smp@demo.test',
     ];
 
     foreach (Lembaga::all() as $lembaga) {
@@ -68,5 +65,5 @@ it('is idempotent when run twice', function () {
     (new AkunPendaftarSeeder())->run();
     (new AkunPendaftarSeeder())->run();
 
-    expect(AkunPendaftar::count())->toBe(4);
+    expect(AkunPendaftar::count())->toBe(1);
 });
