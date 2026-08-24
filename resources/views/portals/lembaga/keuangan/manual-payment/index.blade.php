@@ -77,7 +77,7 @@
             </div>
 
             <div x-ref="daftarManualPayment">
-                @include('admin.manual-payment._daftar')
+                @include('portals.lembaga.keuangan.manual-payment._daftar')
             </div>
         </div>
     </div>
