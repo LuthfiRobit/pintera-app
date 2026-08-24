@@ -39,7 +39,7 @@ final class CatatEvaluasiAction
     {
         if ($keputusan === 'eskalasi') {
             $admins = User::withoutGlobalScope(TenantScope::class)
-                ->whereHas('roles', fn ($q) => $q->where('name', 'admin_akademik'))
+                ->whereHas('roles', fn ($q) => $q->where('name', 'operator_akademik'))
                 ->where('lembaga_id', $kasus->lembaga_id)
                 ->get();
             foreach ($admins as $admin) {
