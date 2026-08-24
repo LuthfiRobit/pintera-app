@@ -12,7 +12,7 @@ use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Services\Finance\PaymentAllocationService;
+use App\Domains\Keuangan\Services\PaymentAllocationService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

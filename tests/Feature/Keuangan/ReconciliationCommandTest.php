@@ -13,7 +13,7 @@ use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
-use App\Services\Finance\PaymentAllocationService;
+use App\Domains\Keuangan\Services\PaymentAllocationService;
 
 class ReconciliationCommandTest extends TestCase
 {

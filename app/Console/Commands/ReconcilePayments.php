@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Domains\Keuangan\Models\BriQrisPayment;
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Services\Finance\PaymentAllocationService;
+use App\Domains\Keuangan\Services\PaymentAllocationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;

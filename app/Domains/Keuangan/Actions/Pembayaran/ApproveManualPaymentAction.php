@@ -9,7 +9,7 @@ use App\Exceptions\AutoAllocationFailedException;
 use App\Domains\Keuangan\Models\Wallet;
 use App\Notifications\Finance\TransferManualDisetujuiNotification;
 use App\Services\Finance\NotificationDispatcher;
-use App\Services\Finance\PaymentAllocationService;
+use App\Domains\Keuangan\Services\PaymentAllocationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
