@@ -25,9 +25,7 @@ class KeuanganDemoSeeder extends Seeder
     public function run(): void
     {
         $demoParents = [
-            ['nik' => '0000019901850001', 'email' => 'ortu@demo.test'],
-            ['nik' => '0000019901850002', 'email' => 'ortu.kb@demo.test'],
-            ['nik' => '0000019901850003', 'email' => 'ortu.tk@demo.test'],
+            ['nik' => '0000019901850001', 'email' => 'ortu.sd@demo.test'],
         ];
 
         foreach ($demoParents as $demo) {
