@@ -3,7 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\StudentCreated;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 

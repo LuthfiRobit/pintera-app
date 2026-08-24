@@ -4,7 +4,7 @@ use App\Models\SystemSetting;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;

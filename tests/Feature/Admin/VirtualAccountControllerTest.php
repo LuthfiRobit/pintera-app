@@ -6,7 +6,7 @@ use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\User;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;

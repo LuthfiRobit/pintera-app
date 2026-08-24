@@ -2,7 +2,6 @@
 
 namespace App\Domains\Keuangan\Models;
 
-use App\Models\Wallet;
 use Database\Factories\BriVirtualAccountFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

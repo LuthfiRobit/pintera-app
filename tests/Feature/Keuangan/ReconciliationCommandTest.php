@@ -8,7 +8,7 @@ use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Domains\Keuangan\DataTransferObjects\PaymentStatusResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;

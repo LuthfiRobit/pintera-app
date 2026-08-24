@@ -3,11 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\Siswa;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Wallet>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Domains\Keuangan\Models\Wallet>
  */
 class WalletFactory extends Factory
 {

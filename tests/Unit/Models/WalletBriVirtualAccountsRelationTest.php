@@ -2,7 +2,7 @@
 
 use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Models\Siswa;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

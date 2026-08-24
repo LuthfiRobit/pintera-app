@@ -75,7 +75,7 @@ class Siswa extends Model
 
     public function wallet()
     {
-        return $this->hasOne(Wallet::class);
+        return $this->hasOne(\App\Domains\Keuangan\Models\Wallet::class);
     }
 
     protected static function booted(): void

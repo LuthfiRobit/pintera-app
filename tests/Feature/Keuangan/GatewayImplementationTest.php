@@ -9,7 +9,7 @@ use App\Domains\Keuangan\DataTransferObjects\VirtualAccountResult;
 use App\Exceptions\PaymentException;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Domains\Keuangan\Services\Gateway\BriSnap\BriSnapClient;
 use App\Domains\Keuangan\Services\Gateway\BriSnapGateway;
 use App\Domains\Keuangan\Services\Gateway\MockPaymentGateway;

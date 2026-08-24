@@ -1,19 +1,25 @@
 <?php
 
-namespace App\Models;
+namespace App\Domains\Keuangan\Models;
 
 use App\Exceptions\AutoAllocationFailedException;
 use App\Exceptions\InsufficientBalanceException;
+use App\Models\SystemSetting;
+use Database\Factories\WalletFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
-use App\Services\Finance\AutoAllocationEngine;
 
 class Wallet extends Model
 {
     use HasFactory;
+
+    protected static function newFactory(): WalletFactory
+    {
+        return WalletFactory::new();
+    }
 
     protected $fillable = [
         'siswa_id',
@@ -25,7 +31,7 @@ class Wallet extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class);
+        return $this->belongsTo(\App\Models\Siswa::class);
     }
 
     public function mutasi(): HasMany
@@ -35,13 +41,13 @@ class Wallet extends Model
 
     public function briVirtualAccounts(): HasMany
     {
-        return $this->hasMany(\App\Domains\Keuangan\Models\BriVirtualAccount::class);
+        return $this->hasMany(BriVirtualAccount::class);
     }
 
     /**
      * Top-up saldo secara aman dengan lock for update.
      */
-    public function topup(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran = null, ?string $keterangan = null): void
+    public function topup(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Amount top-up harus lebih dari 0");
@@ -50,7 +56,7 @@ class Wallet extends Model
         DB::transaction(function () use ($amount, $pembayaran, $keterangan) {
             // Pessimistic lock on this row
             $wallet = self::where('id', $this->id)->lockForUpdate()->first();
-            
+
             $saldoSebelum = $wallet->balance;
             $saldoSesudah = $saldoSebelum + $amount;
 
@@ -75,7 +81,7 @@ class Wallet extends Model
         // (Di luar transaction agar lock wallet terlepas dulu saat proses alokasi berjalan)
         if (SystemSetting::getResolved('auto_debit_enabled', $this->siswa->lembaga_id, true)) {
             try {
-                app(AutoAllocationEngine::class)->run($this);
+                app(\App\Domains\Keuangan\Services\AutoAllocationEngine::class)->run($this);
             } catch (\Throwable $e) {
                 // The balance increment above has ALREADY committed at this point --
                 // wrap in a distinct exception type so callers can tell "balance was
@@ -92,7 +98,7 @@ class Wallet extends Model
      * Debit saldo secara aman dengan pengecekan strict.
      * Gunakan ini dari luar engine (membungkus dalam transaction sendiri).
      */
-    public function debit(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran = null, ?string $keterangan = null): void
+    public function debit(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Amount debit harus lebih dari 0");
@@ -110,7 +116,7 @@ class Wallet extends Model
      *
      * @internal Jangan pakai dari luar kecuali dalam konteks DB::transaction yang sudah ada.
      */
-    public function debitWithinTransaction(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran = null, ?string $keterangan = null): void
+    public function debitWithinTransaction(float $amount, ?Pembayaran $pembayaran = null, ?string $keterangan = null): void
     {
         if ($amount <= 0) {
             throw new \InvalidArgumentException("Amount debit harus lebih dari 0");
@@ -122,7 +128,7 @@ class Wallet extends Model
     /**
      * Core debit logic, bisa dipakai dengan atau tanpa lockForUpdate.
      */
-    private function debitCore(float $amount, ?\App\Domains\Keuangan\Models\Pembayaran $pembayaran, ?string $keterangan, bool $lockRow): void
+    private function debitCore(float $amount, ?Pembayaran $pembayaran, ?string $keterangan, bool $lockRow): void
     {
         // Pessimistic lock (opsional, tidak dibutuhkan jika caller sudah lock)
         $wallet = $lockRow

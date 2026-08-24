@@ -6,7 +6,7 @@ namespace App\Domains\Keuangan\Actions\Pembayaran;
 
 use App\Domains\Keuangan\Models\ManualPaymentRequest;
 use App\Exceptions\AutoAllocationFailedException;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Notifications\Finance\TransferManualDisetujuiNotification;
 use App\Services\Finance\NotificationDispatcher;
 use App\Services\Finance\PaymentAllocationService;

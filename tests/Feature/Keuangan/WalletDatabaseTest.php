@@ -2,7 +2,7 @@
 
 use App\Models\Siswa;
 use App\Models\SystemSetting;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Models\WalletMutasi;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Testing\RefreshDatabase;

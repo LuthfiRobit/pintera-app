@@ -9,7 +9,7 @@ use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;

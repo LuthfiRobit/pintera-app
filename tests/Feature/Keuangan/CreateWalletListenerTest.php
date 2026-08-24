@@ -2,7 +2,7 @@
 
 use App\Events\StudentCreated;
 use App\Models\Siswa;
-use App\Models\Wallet;
+use App\Domains\Keuangan\Models\Wallet;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 
