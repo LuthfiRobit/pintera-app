@@ -35,17 +35,17 @@ class SesiPembelajaranSeeder extends Seeder
                 continue;
             }
 
-            if ($lembaga->npsn === '20223344') {
-                $this->seedSmpSesi($lembaga, $aktif, $polaJam, $kemarin, $hariKemarinName);
+            if ($lembaga->npsn === '20223333') {
+                $this->seedSdSesi($lembaga, $aktif, $polaJam, $kemarin, $hariKemarinName);
             } else {
                 $this->seedGenericSesi($lembaga, $aktif, $polaJam, $kemarin, $hariKemarinName);
             }
         }
     }
 
-    private function seedSmpSesi(Lembaga $smp, TahunAjaran $aktif, PolaJam $polaJam, Carbon $kemarin, string $hariKemarinName): void
+    private function seedSdSesi(Lembaga $sd, TahunAjaran $aktif, PolaJam $polaJam, Carbon $kemarin, string $hariKemarinName): void
     {
-        $kelasA = Kelas::where('lembaga_id', $smp->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'VII-A')->first();
+        $kelasA = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-A')->first();
         if (! $kelasA) {
             return;
         }
@@ -55,14 +55,14 @@ class SesiPembelajaranSeeder extends Seeder
 
         if ($jam1Kemarin && $jam4Kemarin) {
             $jadwalMatematikaA = JadwalPelajaran::where('kelas_id', $kelasA->id)->where('jam_pelajaran_id', $jam1Kemarin->id)->first();
-            $jadwalIpaA = JadwalPelajaran::where('kelas_id', $kelasA->id)->where('jam_pelajaran_id', $jam4Kemarin->id)->first();
+            $jadwalIpasA = JadwalPelajaran::where('kelas_id', $kelasA->id)->where('jam_pelajaran_id', $jam4Kemarin->id)->first();
 
-            $guruBudi = Guru::where('email', 'budi.santoso@demo.test')->first();
-            $guruSiti = Guru::where('email', 'siti.rahmawati@demo.test')->first();
-            $mapelMatematika = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Matematika')->first();
-            $mapelIPA = MataPelajaran::where('lembaga_id', $smp->id)->where('nama', 'Ilmu Pengetahuan Alam (IPA)')->first();
+            $guruHendra = Guru::where('email', 'hendra.gunawan@demo.test')->first();
+            $guruMaya = Guru::where('email', 'maya.anggraini@demo.test')->first();
+            $mapelMatematika = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
+            $mapelIPAS = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
 
-            if ($jadwalMatematikaA && $guruBudi && $mapelMatematika) {
+            if ($jadwalMatematikaA && $guruHendra && $mapelMatematika) {
                 SesiPembelajaran::firstOrCreate(
                     [
                         'jadwal_pelajaran_id' => $jadwalMatematikaA->id,
@@ -70,29 +70,29 @@ class SesiPembelajaranSeeder extends Seeder
                     ],
                     [
                         'kelas_id' => $kelasA->id,
-                        'guru_id' => $guruBudi->id,
+                        'guru_id' => $guruHendra->id,
                         'mata_pelajaran_id' => $mapelMatematika->id,
                         'jam_mulai' => '07:00:00',
                         'jam_selesai' => '08:20:00',
-                        'materi' => 'Pengenalan Aljabar dan Persamaan Linier Satu Variabel.',
+                        'materi' => 'Mengenal Bilangan Cacah dan Operasi Penjumlahan.',
                         'status' => 'terlaksana',
                     ]
                 );
             }
 
-            if ($jadwalIpaA && $guruSiti && $mapelIPA) {
+            if ($jadwalIpasA && $guruMaya && $mapelIPAS) {
                 SesiPembelajaran::firstOrCreate(
                     [
-                        'jadwal_pelajaran_id' => $jadwalIpaA->id,
+                        'jadwal_pelajaran_id' => $jadwalIpasA->id,
                         'tanggal' => $kemarin->toDateString(),
                     ],
                     [
                         'kelas_id' => $kelasA->id,
-                        'guru_id' => $guruSiti->id,
-                        'mata_pelajaran_id' => $mapelIPA->id,
+                        'guru_id' => $guruMaya->id,
+                        'mata_pelajaran_id' => $mapelIPAS->id,
                         'jam_mulai' => '08:50:00',
                         'jam_selesai' => '10:10:00',
-                        'materi' => 'Pengenalan Metode Ilmiah dan Pengukuran Fisika.',
+                        'materi' => 'Mengenal Lingkungan Sekitar dan Makhluk Hidup.',
                         'status' => 'terlaksana',
                     ]
                 );
