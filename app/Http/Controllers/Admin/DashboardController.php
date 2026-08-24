@@ -70,7 +70,7 @@ class DashboardController extends BaseController
             ]);
         }
 
-        if ($user->hasRole('karyawan_pool') || $user->hasRole('karyawan_lembaga')) {
+        if ($user->hasRole('pegawai_yayasan') || $user->hasRole('pegawai_lembaga')) {
             $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
             $kasusDitangani = $karyawanId === null
                 ? collect()
