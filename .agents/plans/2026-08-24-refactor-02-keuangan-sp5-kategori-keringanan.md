@@ -1,6 +1,6 @@
 # Migrasi Domain Keuangan Sub-project 5 (Mini, Penutup Celah): Kategori & Siswa Keringanan Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Memindahkan `KategoriKeringanan`, `SiswaKeringanan`, dan `KategoriKeringananController` ke `app/Domains/Keuangan/*` — menutup celah kecil yang lolos dari audit final SP4.
 
@@ -33,7 +33,7 @@
 
 Kedua model TIDAK punya relasi implisit ke class lain yang tetap tinggal di luar domain (bedanya dengan gotcha dua arah SP4) — `KategoriKeringanan::lembaga()` mengarah ke `App\Models\Lembaga` yang memang generic dan tetap `use` biasa.
 
-- [ ] **Step 1: Baca ulang kedua file existing untuk konfirmasi isi sama persis dengan baseline**
+- [x] **Step 1: Baca ulang kedua file existing untuk konfirmasi isi sama persis dengan baseline**
 
 ```bash
 cat app/Models/KategoriKeringanan.php
@@ -42,7 +42,7 @@ cat app/Models/SiswaKeringanan.php
 
 Bandingkan dengan kutipan di Step 2/3 di bawah — kalau berbeda signifikan, STOP dan laporkan.
 
-- [ ] **Step 2: Pindahkan `KategoriKeringanan.php` dan timpa isinya**
+- [x] **Step 2: Pindahkan `KategoriKeringanan.php` dan timpa isinya**
 
 ```bash
 git mv app/Models/KategoriKeringanan.php app/Domains/Keuangan/Models/KategoriKeringanan.php
@@ -89,7 +89,7 @@ class KategoriKeringanan extends Model
 
 Catatan: `JenisTagihanKeringanan::class` sekarang bare (bukan FQCN) karena sama-namespace `Domains\Keuangan\Models`. `SiswaKeringanan::class` juga bare, sah karena dipindah bersamaan di task ini. `Lembaga::class` pakai `use App\Models\Lembaga;` biasa karena `Lembaga` tetap generic, tidak pindah.
 
-- [ ] **Step 3: Pindahkan `SiswaKeringanan.php` dan timpa isinya**
+- [x] **Step 3: Pindahkan `SiswaKeringanan.php` dan timpa isinya**
 
 ```bash
 git mv app/Models/SiswaKeringanan.php app/Domains/Keuangan/Models/SiswaKeringanan.php
@@ -135,19 +135,19 @@ class SiswaKeringanan extends Model
 
 Catatan: `KategoriKeringanan::class` bare, sah karena sama-namespace setelah Step 2. `Siswa::class` pakai `use App\Models\Siswa;` biasa karena `Siswa` tetap generic, tidak pindah.
 
-- [ ] **Step 4: Perbaiki gotcha dua arah di `app/Domains/Keuangan/Models/JenisTagihanKeringanan.php`**
+- [x] **Step 4: Perbaiki gotcha dua arah di `app/Domains/Keuangan/Models/JenisTagihanKeringanan.php`**
 
 Baca file, hapus baris `use App\Models\KategoriKeringanan;` (baris 6 baseline) — sekarang redundan karena `KategoriKeringanan` sudah sama-namespace. Isi method `kategoriKeringanan(): BelongsTo { return $this->belongsTo(KategoriKeringanan::class); }` TIDAK berubah (tetap bare, sekarang otomatis benar).
 
-- [ ] **Step 5: Update `use` di `app/Domains/Keuangan/Services/TagihanNominalResolver.php`**
+- [x] **Step 5: Update `use` di `app/Domains/Keuangan/Services/TagihanNominalResolver.php`**
 
 Baca file, ganti baris `use App\Models\SiswaKeringanan;` (baris 10 baseline) menjadi `use App\Domains\Keuangan\Models\SiswaKeringanan;`. Baris pemakaian `SiswaKeringanan::where(...)` di `resolveDiscount()` TIDAK berubah.
 
-- [ ] **Step 6: Update `use` di `app/Http/Controllers/Lembaga/Keuangan/JenisTagihanController.php`**
+- [x] **Step 6: Update `use` di `app/Http/Controllers/Lembaga/Keuangan/JenisTagihanController.php`**
 
 Baca file, ganti baris `use App\Models\KategoriKeringanan;` (baris 16 baseline) menjadi `use App\Domains\Keuangan\Models\KategoriKeringanan;`. Baris pemakaian `KategoriKeringanan::where(...)` di `referenceData()` TIDAK berubah.
 
-- [ ] **Step 7: Grep ulang untuk daftar consumer lain yang masih pakai namespace lama**
+- [x] **Step 7: Grep ulang untuk daftar consumer lain yang masih pakai namespace lama**
 
 ```bash
 grep -rln "App\\\\Models\\\\KategoriKeringanan\b" --include="*.php" app database tests
@@ -167,7 +167,7 @@ tests/Feature/Admin/KategoriKeringananTest.php
 
 Untuk SETIAP file test di atas: baca, ganti `use App\Models\KategoriKeringanan;` → `use App\Domains\Keuangan\Models\KategoriKeringanan;` dan/atau `use App\Models\SiswaKeringanan;` → `use App\Domains\Keuangan\Models\SiswaKeringanan;` (sesuai yang dipakai file itu — tidak semua file pakai keduanya, cek dulu). JANGAN ubah logic test apapun, HANYA baris `use`.
 
-- [ ] **Step 8: Verifikasi grep final**
+- [x] **Step 8: Verifikasi grep final**
 
 ```bash
 grep -rln "App\\\\Models\\\\KategoriKeringanan\b" --include="*.php" app database tests
@@ -175,14 +175,14 @@ grep -rln "App\\\\Models\\\\SiswaKeringanan\b" --include="*.php" app database te
 ```
 Expected: KEDUANYA kosong (controller `Admin\KategoriKeringananController.php` yang masih pakai `use App\Models\KategoriKeringanan;` akan ditangani Task 2 — kalau plan dieksekusi berurutan Task 1 dulu, controller lama ini masih ada di Task 1 selesai, JANGAN kaget kalau grep di atas masih menunjukkan file itu; Task 2 akan menghapusnya).
 
-- [ ] **Step 9: Jalankan test scoped**
+- [x] **Step 9: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Keuangan/TagihanNominalResolverTest.php tests/Feature/Keuangan/TagihanBillingGeneratorTest.php tests/Feature/Keuangan/KeringananTest.php
 ```
 Expected: semua PASS.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add -A
@@ -206,7 +206,7 @@ Controller ini TETAP thin (1 method `store()`, validasi inline) — TIDAK ada Ac
 
 Baseline kode (43 baris, commit `032200b`) — baca ulang untuk konfirmasi sebelum edit.
 
-- [ ] **Step 1: Buat controller baru di `Lembaga\Keuangan\`**
+- [x] **Step 1: Buat controller baru di `Lembaga\Keuangan\`**
 
 `app/Http/Controllers/Lembaga/Keuangan/KategoriKeringananController.php`:
 
@@ -258,17 +258,17 @@ class KategoriKeringananController extends Controller
 
 Catatan: base class diganti dari `Illuminate\Routing\Controller as BaseController` (baseline) menjadi `App\Http\Controllers\Controller` (konsisten dengan `Controller` yang dipakai `JenisTagihanController` sibling-nya di namespace `Lembaga\Keuangan` yang sama) — ini konsisten dengan preseden Task 9 SP4 (`DashboardController` juga distandarkan base class-nya saat pindah scope, dikonfirmasi review independen sebagai "standarisasi minor, tidak ada impact"). Logic `store()` method itu sendiri TIDAK berubah sama sekali.
 
-- [ ] **Step 2: Hapus controller lama**
+- [x] **Step 2: Hapus controller lama**
 
 ```bash
 git rm app/Http/Controllers/Admin/KategoriKeringananController.php
 ```
 
-- [ ] **Step 3: Update `routes/admin/keuangan.php`**
+- [x] **Step 3: Update `routes/admin/keuangan.php`**
 
 Baca file, ganti baris `use App\Http\Controllers\Admin\KategoriKeringananController;` (baris 5 baseline) menjadi `use App\Http\Controllers\Lembaga\Keuangan\KategoriKeringananController;`. Baris route itu sendiri (`Route::post('kategori-keringanan', [KategoriKeringananController::class, 'store'])->name('kategori-keringanan.store');`, baris 25 baseline) TIDAK berubah — nama route dan path tetap sama, hanya `use` di atas yang membuatnya menunjuk class baru.
 
-- [ ] **Step 4: Grep verifikasi tidak ada sisa referensi controller lama**
+- [x] **Step 4: Grep verifikasi tidak ada sisa referensi controller lama**
 
 ```bash
 grep -rln "Controllers\\\\Admin\\\\KategoriKeringananController" --include="*.php" app routes tests
@@ -280,21 +280,21 @@ ls app/Http/Controllers/Admin/KategoriKeringananController.php
 ```
 Expected: error "No such file or directory".
 
-- [ ] **Step 5: Konfirmasi route name/path tidak berubah**
+- [x] **Step 5: Konfirmasi route name/path tidak berubah**
 
 ```bash
 php artisan route:list --name=kategori-keringanan
 ```
 Expected: `admin.kategori-keringanan.store`, method POST, path sama seperti sebelum migrasi, Action menunjuk `Lembaga\Keuangan\KategoriKeringananController@store`.
 
-- [ ] **Step 6: Jalankan test scoped**
+- [x] **Step 6: Jalankan test scoped**
 
 ```bash
 php artisan test tests/Feature/Admin/KategoriKeringananTest.php tests/Feature/Admin/JenisTagihanKeringananFormTest.php tests/Feature/Admin/JenisTagihanFormTest.php tests/Feature/Admin/JenisTagihanFinalReviewFixesTest.php
 ```
 Expected: semua PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -309,47 +309,47 @@ git commit -m "refactor(keuangan): pindah KategoriKeringananController ke Lembag
 - Create: `.agents/logs/2026-08-24-refactor-02-keuangan-sp5-kategori-keringanan.md`
 - Modify: `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` (§6, baris baru)
 
-- [ ] **Step 1: Grep gabungan final**
+- [x] **Step 1: Grep gabungan final**
 
 ```bash
 grep -rln "App\\\\Models\\\\KategoriKeringanan\b\|App\\\\Models\\\\SiswaKeringanan\b\|Controllers\\\\Admin\\\\KategoriKeringananController" --include="*.php" app database tests routes
 ```
 Expected: KOSONG total.
 
-- [ ] **Step 2: Verifikasi file lama sudah tidak ada**
+- [x] **Step 2: Verifikasi file lama sudah tidak ada**
 
 ```bash
 ls app/Models/KategoriKeringanan.php app/Models/SiswaKeringanan.php app/Http/Controllers/Admin/KategoriKeringananController.php 2>&1
 ```
 Expected: error "No such file or directory" untuk ketiganya.
 
-- [ ] **Step 3: Jalankan test scoped luas**
+- [x] **Step 3: Jalankan test scoped luas**
 
 ```bash
 php artisan test tests/Feature/Keuangan tests/Feature/Admin --filter="Keringanan|JenisTagihan|TagihanBillingGenerator|TagihanNominalResolver"
 ```
 Expected: semua PASS.
 
-- [ ] **Step 4: Minta izin user untuk full test suite**
+- [x] **Step 4: Minta izin user untuk full test suite**
 
 Tanya ke user: "Task 1-3 selesai, grep gabungan kosong total, test scoped semua hijau. Boleh saya jalankan full test suite untuk verifikasi akhir?" — TUNGGU jawaban eksplisit. JANGAN jalankan otomatis. JANGAN jalankan proses test lain bersamaan dengan full suite ini.
 
-- [ ] **Step 5: Jalankan full suite SOLO**
+- [x] **Step 5: Jalankan full suite SOLO**
 
 ```bash
 php artisan test
 ```
 Catat angka PASTI passed/failed/duration. Kalau ada kegagalan flaky yang sudah dikenal dan tidak terkait perubahan sub-project ini (mis. tabrakan unique-constraint factory acak), jalankan ulang test itu sendirian untuk konfirmasi, catat sebagai flaky bukan regresi — JANGAN diam-diam diabaikan tanpa dicatat.
 
-- [ ] **Step 6: Tulis handoff log**
+- [x] **Step 6: Tulis handoff log**
 
 Buat `.agents/logs/2026-08-24-refactor-02-keuangan-sp5-kategori-keringanan.md` (Bahasa Indonesia): ringkasan Task 1-3 dengan commit hash, hasil grep Step 1 (kosong), hasil test Step 3 dan Step 5 (angka pasti, jangan dicampur).
 
-- [ ] **Step 7: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
+- [x] **Step 7: Update `.agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md` §6**
 
 Tambahkan baris baru "Migrasi Domain Keuangan Sub-project 5 (Mini — Kategori & Siswa Keringanan, penutup celah audit SP4)" dengan link ke spec/plan/log, status 🟢 SELESAI.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add .agents/logs/2026-08-24-refactor-02-keuangan-sp5-kategori-keringanan.md .agents/plans/2026-08-20-1800-master-refactor-domain-pattern.md
