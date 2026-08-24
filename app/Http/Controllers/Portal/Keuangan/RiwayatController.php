@@ -19,7 +19,7 @@ class RiwayatController extends Controller
         $activeSiswa = $request->attributes->get('activeSiswa');
 
         if ($activeSiswa === null) {
-            return view('keuangan.tanpa-anak');
+            return view('portals.portal.keuangan.tanpa-anak');
         }
 
         $validated = $request->validate([

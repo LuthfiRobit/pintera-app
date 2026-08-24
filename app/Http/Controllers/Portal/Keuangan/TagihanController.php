@@ -16,7 +16,7 @@ class TagihanController extends Controller
         $activeSiswa = $request->attributes->get('activeSiswa');
 
         if ($activeSiswa === null) {
-            return view('keuangan.tanpa-anak');
+            return view('portals.portal.keuangan.tanpa-anak');
         }
 
         $tagihans = Tagihan::where('tagihable_type', get_class($activeSiswa))
