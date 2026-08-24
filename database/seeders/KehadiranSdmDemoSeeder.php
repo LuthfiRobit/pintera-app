@@ -47,30 +47,30 @@ class KehadiranSdmDemoSeeder extends Seeder
             return;
         }
 
-        $lembaga = Lembaga::where('npsn', '20223344')->first() ?? Lembaga::first();
+        $lembaga = Lembaga::where('npsn', '20223333')->first() ?? Lembaga::first();
         if (! $lembaga) {
             $this->command?->warn(static::class.': tidak ada Lembaga, dilewati.');
 
             return;
         }
 
-        $guruAbsensi = Guru::where('email', 'budi.santoso@demo.test')->first();
-        $guruPolicy = Guru::where('email', 'siti.rahmawati@demo.test')->first();
-        $guruShift = Guru::where('email', 'andi.wijaya@demo.test')->first();
+        $guruAbsensi = Guru::where('email', 'hendra.gunawan@demo.test')->first();
+        $guruPolicy = Guru::where('email', 'maya.anggraini@demo.test')->first();
+        $guruShift = Guru::where('email', 'taufik.hidayat@demo.test')->first();
 
         if (! $guruAbsensi || ! $guruPolicy || ! $guruShift) {
-            $this->command?->warn(static::class.': data Guru demo SMPIT belum lengkap (jalankan GuruSeeder dulu), dilewati.');
+            $this->command?->warn(static::class.': data Guru demo SDIT belum lengkap (jalankan GuruSeeder dulu), dilewati.');
 
             return;
         }
 
-        // ── Akun admin_sdm (reuse akun admin_administrasi SMPIT yang sudah ada) ──
-        $adminSdm = User::where('email', 'adm.smp@demo.test')->first();
+        // ── Akun admin_sdm (reuse akun admin_administrasi SDIT yang sudah ada) ──
+        $adminSdm = User::where('email', 'adm.sd@demo.test')->first();
         if ($adminSdm && ! $adminSdm->hasRole('admin_sdm')) {
             $adminSdm->assignRole('admin_sdm');
         }
 
-        $kepsek = User::where('email', 'kepsek.smp@demo.test')->first();
+        $kepsek = User::where('email', 'kepsek.sd@demo.test')->first();
 
         $this->command?->info('Menyiapkan Konfigurasi Metode Absensi & Titik Absen...');
 
