@@ -51,13 +51,13 @@ class SarprasPengadaanDemoSeeder extends Seeder
             $yayasan = Yayasan::create(['nama' => 'Yayasan Pintera']);
         }
 
-        $lembaga = Lembaga::where('npsn', '20223344')->first() ?? Lembaga::first();
+        $lembaga = Lembaga::where('npsn', '20223333')->first() ?? Lembaga::first();
         if (! $lembaga) {
             $lembaga = Lembaga::create([
                 'yayasan_id' => $yayasan->id,
-                'nama' => 'SMPIT PINTERA',
-                'jenjang' => 'SMP',
-                'npsn' => '20223344',
+                'nama' => 'SDIT PINTERA',
+                'jenjang' => 'SD',
+                'npsn' => '20223333',
                 'status_aktif' => true,
             ]);
         }
@@ -77,14 +77,14 @@ class SarprasPengadaanDemoSeeder extends Seeder
         $bendaharaYayasan->assignRole('bendahara_yayasan');
 
         $kepsek = User::firstOrCreate(
-            ['email' => 'kepsek.smp@demo.test'],
-            ['name' => 'Dr. H. Ahmad Dahlan (Kepala Sekolah)', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
+            ['email' => 'kepsek.sd@demo.test'],
+            ['name' => 'Abdullah, M.Pd. (Kepala Sekolah)', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
         $kepsek->update(['lembaga_id' => $lembaga->id]);
         $kepsek->assignRole('kepala_sekolah');
 
         $adm = User::firstOrCreate(
-            ['email' => 'adm.smp@demo.test'],
+            ['email' => 'adm.sd@demo.test'],
             ['name' => 'Admin Sarpras & Operasional', 'password' => 'password', 'is_active' => true, 'lembaga_id' => $lembaga->id]
         );
         $adm->update(['lembaga_id' => $lembaga->id]);
@@ -115,10 +115,10 @@ class SarprasPengadaanDemoSeeder extends Seeder
             ['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'kode_ruangan' => 'R-101'],
             [
                 'gedung_id' => $gedungUtama->id,
-                'nama_ruangan' => 'Ruang Kelas VII-A',
+                'nama_ruangan' => 'Ruang Kelas 1-A',
                 'lantai' => 1,
                 'jenis_ruangan' => JenisRuangan::KelasTeori,
-                'kapasitas_siswa' => 36,
+                'kapasitas_siswa' => 28,
                 'is_shared' => false,
                 'is_aktif' => true,
             ]
@@ -128,10 +128,10 @@ class SarprasPengadaanDemoSeeder extends Seeder
             ['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'kode_ruangan' => 'R-102'],
             [
                 'gedung_id' => $gedungUtama->id,
-                'nama_ruangan' => 'Ruang Kelas VII-B',
+                'nama_ruangan' => 'Ruang Kelas 1-B',
                 'lantai' => 1,
                 'jenis_ruangan' => JenisRuangan::KelasTeori,
-                'kapasitas_siswa' => 36,
+                'kapasitas_siswa' => 28,
                 'is_shared' => false,
                 'is_aktif' => true,
             ]
@@ -239,7 +239,7 @@ class SarprasPengadaanDemoSeeder extends Seeder
             ]
         );
 
-        // Batch Asset: Meja & Kursi Siswa Kelas VII-A
+        // Batch Asset: Meja & Kursi Siswa Kelas 1-A
         AsetBarang::firstOrCreate(
             ['kode_inventaris' => 'INV/2026/MEB/001'],
             [
@@ -251,12 +251,12 @@ class SarprasPengadaanDemoSeeder extends Seeder
                 'merk' => 'Custom Mebel',
                 'spesifikasi' => 'Kayu Jati Finishing Melamic, Laci Buku & Gantungan Tas',
                 'tipe_pencatatan' => TipePencatatanAset::Batch,
-                'qty' => 36,
+                'qty' => 28,
                 'satuan' => 'buah',
                 'kondisi' => KondisiAset::Baik,
                 'sumber_perolehan' => SumberPerolehanAset::BeliLembaga,
                 'tanggal_perolehan' => '2026-01-05',
-                'harga_perolehan' => 16200000, // 450rb x 36
+                'harga_perolehan' => 12600000, // 450rb x 28
             ]
         );
 
@@ -271,12 +271,12 @@ class SarprasPengadaanDemoSeeder extends Seeder
                 'merk' => 'Custom Mebel',
                 'spesifikasi' => 'Kayu Jati Kokoh Ergonomis',
                 'tipe_pencatatan' => TipePencatatanAset::Batch,
-                'qty' => 36,
+                'qty' => 28,
                 'satuan' => 'buah',
                 'kondisi' => KondisiAset::Baik,
                 'sumber_perolehan' => SumberPerolehanAset::BeliLembaga,
                 'tanggal_perolehan' => '2026-01-05',
-                'harga_perolehan' => 9000000, // 250rb x 36
+                'harga_perolehan' => 7000000, // 250rb x 28
             ]
         );
 
@@ -307,7 +307,7 @@ class SarprasPengadaanDemoSeeder extends Seeder
                 'ruangan_asal_id' => $rAula->id,
                 'qty_pindah' => 1,
                 'tanggal_mutasi' => '2026-02-01',
-                'alasan_mutasi' => 'Pemindahan tetap untuk kebutuhan presentasi digital harian Kelas VII-B.',
+                'alasan_mutasi' => 'Pemindahan tetap untuk kebutuhan presentasi digital harian Kelas 1-B.',
                 'dilakukan_oleh_user_id' => $operatorUser->id,
             ]
         );
@@ -321,7 +321,7 @@ class SarprasPengadaanDemoSeeder extends Seeder
                 lembagaId: $lembaga->id,
                 yayasanId: $yayasan->id,
                 judulPengajuan: 'Pengadaan Laptop Lab Komputer & Kursi Belajar Siswa',
-                latarBelakang: 'Kebutuhan mendesak perangkat lab multimedia dan perabotan ruang kelas VII.',
+                latarBelakang: 'Kebutuhan mendesak perangkat lab multimedia dan perabotan ruang kelas 1.',
                 tingkatUrgensi: TingkatUrgensi::Mendesak,
                 items: [
                     [
