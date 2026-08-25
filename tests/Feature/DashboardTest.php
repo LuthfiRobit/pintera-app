@@ -184,7 +184,7 @@ it('shows an orang tua the latest recorded grade for their linked child', functi
     $lembaga = Lembaga::factory()->create();
     $kelas = \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswa = \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Anak Dashboard Ortu']);
-    $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika Dashboard Ortu']);
     $semester = \App\Models\Semester::factory()->create(['lembaga_id' => $lembaga->id]);
     $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create([
         'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
@@ -194,6 +194,16 @@ it('shows an orang tua the latest recorded grade for their linked child', functi
     ]);
     \App\Domains\Akademik\Models\NilaiSiswa::create([
         'siswa_id' => $siswa->id, 'asesmen_id' => $asesmen->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 85,
+    ]);
+
+    $jamPelajaran = \App\Domains\Akademik\Models\JamPelajaran::factory()->create([
+        'hari' => \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek),
+    ]);
+    \App\Models\JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelas->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
     ]);
 
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
@@ -206,6 +216,8 @@ it('shows an orang tua the latest recorded grade for their linked child', functi
     $response->assertOk();
     $response->assertSee('Anak Dashboard Ortu');
     $response->assertSee('85');
+    $response->assertSee('Matematika Dashboard Ortu');
+    $response->assertSee($kelas->nama);
 });
 
 it('shows the 30-day attendance chart on the karyawan dashboard', function () {

@@ -184,7 +184,9 @@ class DashboardController extends BaseController
                     return $kasus->siswa->orangTua()->where('orang_tua_id', $orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
                 })->pluck('id')->all();
 
-                $anakList = $orangTua->siswa()->withoutGlobalScope(TenantScope::class)->with('kelas')->get();
+                $anakList = $orangTua->siswa()->withoutGlobalScope(TenantScope::class)
+                    ->with(['kelas' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                    ->get();
                 $siswaIds = $anakList->pluck('id')->all();
                 $pendaftaranIds = $anakList->pluck('pendaftaran_asal_id')->filter()->all();
 
@@ -200,7 +202,11 @@ class DashboardController extends BaseController
 
                 $nilaiTerbaru = NilaiSiswa::withoutGlobalScope(TenantScope::class)->whereIn('siswa_id', $siswaIds)
                     ->whereNotNull('nilai_angka')
-                    ->with(['komponenPenilaian.mataPelajaran', 'asesmen.mataPelajaran', 'siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                    ->with([
+                        'komponenPenilaian' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['mataPelajaran' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
+                        'asesmen' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['mataPelajaran' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
+                        'siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+                    ])
                     ->latest('id')
                     ->limit(5)
                     ->get();
@@ -218,8 +224,12 @@ class DashboardController extends BaseController
                     ? collect()
                     : \App\Models\JadwalPelajaran::withoutGlobalScope(TenantScope::class)
                         ->whereIn('kelas_id', $kelasIds)
-                        ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
-                        ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
+                        ->whereHas('jamPelajaran', fn ($q) => $q->withoutGlobalScope(TenantScope::class)->where('hari', $hariIni))
+                        ->with([
+                            'kelas' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+                            'mataPelajaran' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+                            'jamPelajaran' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+                        ])
                         ->get();
             }
 
