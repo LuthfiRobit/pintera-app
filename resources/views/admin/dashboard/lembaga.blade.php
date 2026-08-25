@@ -7,7 +7,7 @@
                 {{-- 1. Modern Gradient Hero Banner --}}
                 <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-8 text-white shadow-xl shadow-emerald-500/10">
                     <div class="relative z-10 max-w-xl">
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                             <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-semibold backdrop-blur-md text-white">
                                 <span class="h-2 w-2 rounded-full bg-emerald-300 animate-pulse"></span>
                                 Panel Administrasi Lembaga
@@ -41,8 +41,8 @@
                     </div>
                 </div>
 
-                {{-- 2. Stat Tiles Row --}}
-                <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                {{-- 2. Responsive Stat Tiles Row --}}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar di lembaga Anda" icon="school" />
                     <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif di lembaga Anda" icon="group" />
                     <x-stat-tile label="Tahun Ajaran Aktif" :value="$stats['tahunAjaranAktif']" :hint="$tahunAjaranAktif->nama ?? 'Belum diaktifkan'" icon="calendar_month" />
@@ -57,7 +57,7 @@
                                 <p class="text-xs text-slate">Statistik pendaftaran dan verifikasi calon siswa</p>
                             </div>
                         </div>
-                        <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                        <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                             <x-stat-tile label="Total Pendaftar" :value="$spmbStats['total']" icon="groups" />
                             <x-stat-tile label="Menunggu Verifikasi" :value="$spmbStats['menunggu_verifikasi']" icon="hourglass_empty" />
                             <x-stat-tile label="Diterima" :value="$spmbStats['diterima']" icon="check_circle" />
@@ -65,14 +65,14 @@
                         </div>
                         <div class="mt-6 border-t border-ink/10 pt-4">
                             <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Tren Pendaftaran (30 Hari Terakhir)</p>
-                            <div x-data="trenPendaftaranChart(@js($tren['labels']), @js($tren['data']))">
-                                <canvas x-ref="canvas" height="90"></canvas>
+                            <div class="h-60 w-full" x-data="trenPendaftaranChart(@js($tren['labels']), @js($tren['data']))">
+                                <canvas x-ref="canvas"></canvas>
                             </div>
                         </div>
                     </x-panel>
                 @endif
 
-                {{-- 4. Keuangan Section --}}
+                {{-- 4. Keuangan Section (Side-by-Side Donut & Legend - Gambar 3 & 5 Fix) --}}
                 @if ($keuanganStats)
                     <x-panel class="p-6">
                         <div class="flex items-center justify-between pb-4 border-b border-ink/10">
@@ -81,23 +81,70 @@
                                 <p class="text-xs text-slate">Arus pembayaran dan komposisi status tagihan</p>
                             </div>
                         </div>
-                        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
                             <x-stat-tile label="Rp Terkumpul" value="Rp {{ number_format($keuanganStats['rpTerkumpul'], 0, ',', '.') }}" icon="payments" />
                             <x-stat-tile label="Rp Belum Lunas" value="Rp {{ number_format($keuanganStats['rpBelumLunas'], 0, ',', '.') }}" icon="pending_actions" />
                             <a href="{{ route('admin.pembayaran.index') }}">
                                 <x-stat-tile label="Pembayaran Menunggu Verifikasi" :value="$keuanganStats['pembayaranMenungguVerifikasi']" icon="fact_check" />
                             </a>
                         </div>
-                        <div class="mt-6 border-t border-ink/10 pt-4">
-                            <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Komposisi Status Tagihan</p>
-                            <div
-                                x-data="donutTagihanChart(
-                                    ['Belum Bayar', 'Dicicil', 'Lunas'],
-                                    @js([$keuanganStats['donut']['belum_bayar'], $keuanganStats['donut']['dicicil'], $keuanganStats['donut']['lunas']])
-                                )"
-                                class="max-w-xs mx-auto sm:mx-0"
-                            >
-                                <canvas x-ref="canvas"></canvas>
+                        
+                        <div class="mt-6 border-t border-ink/10 pt-5">
+                            <p class="mb-4 text-xs font-bold uppercase tracking-wider text-slate">Komposisi Status Tagihan</p>
+                            
+                            @php
+                                $totalTagihanCount = array_sum($keuanganStats['donut']);
+                                $persenBelumBayar = $totalTagihanCount > 0 ? round(($keuanganStats['donut']['belum_bayar'] / $totalTagihanCount) * 100) : 0;
+                                $persenDicicil = $totalTagihanCount > 0 ? round(($keuanganStats['donut']['dicicil'] / $totalTagihanCount) * 100) : 0;
+                                $persenLunas = $totalTagihanCount > 0 ? round(($keuanganStats['donut']['lunas'] / $totalTagihanCount) * 100) : 0;
+                            @endphp
+                            
+                            <div class="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
+                                {{-- Donut Canvas on Left --}}
+                                <div class="relative h-48 w-48 shrink-0"
+                                    x-data="donutTagihanChart(
+                                        ['Belum Bayar', 'Dicicil', 'Lunas'],
+                                        @js([$keuanganStats['donut']['belum_bayar'], $keuanganStats['donut']['dicicil'], $keuanganStats['donut']['lunas']])
+                                    )"
+                                >
+                                    <canvas x-ref="canvas"></canvas>
+                                </div>
+
+                                {{-- Modern Legend Breakdown on Right (Gambar 3 Style) --}}
+                                <div class="w-full flex-1 space-y-3">
+                                    <div class="flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50/50 p-3">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="h-3 w-3 rounded-full bg-amber-500"></span>
+                                            <span class="text-xs font-bold text-ink">Belum Bayar</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-display font-bold text-sm text-ink">{{ $persenBelumBayar }}%</span>
+                                            <span class="ml-2 text-xs text-slate">({{ $keuanganStats['donut']['belum_bayar'] }} Tagihan)</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="h-3 w-3 rounded-full bg-blue-500"></span>
+                                            <span class="text-xs font-bold text-ink">Dicicil</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-display font-bold text-sm text-ink">{{ $persenDicicil }}%</span>
+                                            <span class="ml-2 text-xs text-slate">({{ $keuanganStats['donut']['dicicil'] }} Tagihan)</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/50 p-3">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="h-3 w-3 rounded-full bg-emerald-500"></span>
+                                            <span class="text-xs font-bold text-ink">Lunas</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="font-display font-bold text-sm text-ink">{{ $persenLunas }}%</span>
+                                            <span class="ml-2 text-xs text-slate">({{ $keuanganStats['donut']['lunas'] }} Tagihan)</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </x-panel>
@@ -109,19 +156,28 @@
                     </x-panel>
                 @endunless
 
-                {{-- 5. Progress Pengumpulan Nilai per Kelas --}}
+                {{-- 5. Progress Pengumpulan Nilai per Kelas (Filter & Scrollable Container) --}}
                 @if ($progressRaporPerKelas !== null)
-                    <x-panel class="p-6">
-                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                    <x-panel class="p-6" x-data="{ search: '' }">
+                        <div class="flex flex-col gap-3 pb-4 border-b border-ink/10 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h3 class="font-display font-bold text-lg text-ink">Progress Pengumpulan Nilai per Kelas</h3>
-                                <p class="text-xs text-slate">Rekapitulasi persentase pengisian rapor kelas</p>
+                                <p class="text-xs text-slate">Rekapitulasi pengisian rapor tahun ajaran aktif</p>
+                            </div>
+                            <div class="relative max-w-xs">
+                                <input
+                                    type="text"
+                                    x-model="search"
+                                    placeholder="Cari nama kelas..."
+                                    class="w-full rounded-xl border border-ink/10 bg-paper px-3 py-1.5 text-xs text-ink placeholder-slate/50 focus:border-emerald-500 focus:outline-none"
+                                >
                             </div>
                         </div>
-                        <div class="mt-4 overflow-x-auto">
+                        
+                        <div class="mt-4 max-h-72 overflow-y-auto">
                             <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                                <thead class="sticky top-0 bg-paper/95 backdrop-blur-sm shadow-sm">
+                                    <tr class="border-b border-ink/10 text-left text-xs uppercase tracking-wide text-slate">
                                         <th class="px-4 py-3 font-display font-semibold">Kelas</th>
                                         <th class="px-4 py-3 font-display font-semibold">Terisi</th>
                                         <th class="px-4 py-3 font-display font-semibold">Progress</th>
@@ -129,12 +185,12 @@
                                 </thead>
                                 <tbody class="divide-y divide-ink/10">
                                     @foreach ($progressRaporPerKelas as $item)
-                                        <tr>
+                                        <tr x-show="!search || '{{ strtolower($item['kelas']->nama) }}'.includes(search.toLowerCase())">
                                             <td class="px-4 py-3 font-display font-medium text-ink">{{ $item['kelas']->nama }}</td>
-                                            <td class="px-4 py-3">{{ $item['progress']['terisi'] }} / {{ $item['progress']['total'] }}</td>
+                                            <td class="px-4 py-3 text-xs text-slate">{{ $item['progress']['terisi'] }} / {{ $item['progress']['total'] }} slot</td>
                                             <td class="px-4 py-3">
                                                 <div class="flex items-center gap-2">
-                                                    <div class="h-2 w-24 overflow-hidden rounded-full bg-paper">
+                                                    <div class="h-2 w-28 overflow-hidden rounded-full bg-paper">
                                                         <div class="h-full bg-emerald-500" style="width: {{ min(100, max(0, $item['progress']['persen'])) }}%"></div>
                                                     </div>
                                                     <span class="font-semibold text-xs text-ink">{{ $item['progress']['persen'] }}%</span>
@@ -153,7 +209,7 @@
                     </x-panel>
                 @endif
 
-                {{-- 6. Kasus Pendampingan --}}
+                {{-- 6. Kasus Pendampingan Restyled (Side-by-Side Cards Left + List Right) --}}
                 @if ($kasusList !== null)
                     <x-panel class="p-6">
                         <div class="flex items-center justify-between pb-4 border-b border-ink/10">
@@ -162,32 +218,60 @@
                                 <p class="text-xs text-slate">Ringkasan kasus BK dan konseling siswa lembaga</p>
                             </div>
                         </div>
-                        <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
-                            <x-stat-tile label="Diajukan" :value="$kasusStats['diajukan']" icon="assignment_late" />
-                            <x-stat-tile label="Menunggu Consent" :value="$kasusStats['menunggu_consent']" icon="hourglass_empty" />
-                            <x-stat-tile label="Ditugaskan" :value="$kasusStats['ditugaskan']" icon="assignment" />
-                            <x-stat-tile label="Berjalan" :value="$kasusStats['berjalan']" icon="pending_actions" />
-                            <x-stat-tile label="Eskalasi" :value="$kasusStats['eskalasi']" icon="priority_high" />
-                            <x-stat-tile label="Selesai" :value="$kasusStats['selesai']" icon="check_circle" />
-                        </div>
-                        <div class="mt-4">
-                            @if ($kasusList->isEmpty())
-                                <p class="py-6 text-center text-xs text-slate">Belum ada kasus pendampingan di lembaga ini.</p>
-                            @else
-                                <ul class="divide-y divide-ink/10">
-                                    @foreach ($kasusList as $kasus)
-                                        <li class="py-3">
-                                            <a href="{{ route('kasus.show', $kasus) }}" class="flex items-center justify-between hover:text-brass transition">
-                                                <div>
-                                                    <p class="text-sm font-semibold text-ink">{{ $kasus->siswa->nama_lengkap }}</p>
-                                                    <p class="text-xs text-slate">{{ $kasus->kategori_masalah }}</p>
-                                                </div>
-                                                <x-badge tone="{{ $kasus->status->badgeTone() }}">{{ $kasus->status->label() }}</x-badge>
-                                            </a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            @endif
+
+                        <div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-12">
+                            {{-- Left Side: Status Breakdown Cards --}}
+                            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:col-span-5">
+                                <div class="rounded-2xl border border-ink/10 bg-paper/50 p-3 text-center">
+                                    <p class="text-[10px] font-bold uppercase text-slate">Diajukan</p>
+                                    <p class="mt-1 text-lg font-bold text-ink">{{ $kasusStats['diajukan'] }}</p>
+                                </div>
+                                <div class="rounded-2xl border border-amber-100 bg-amber-50/50 p-3 text-center">
+                                    <p class="text-[10px] font-bold uppercase text-amber-700">Consent</p>
+                                    <p class="mt-1 text-lg font-bold text-amber-600">{{ $kasusStats['menunggu_consent'] }}</p>
+                                </div>
+                                <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-3 text-center">
+                                    <p class="text-[10px] font-bold uppercase text-blue-700">Ditugaskan</p>
+                                    <p class="mt-1 text-lg font-bold text-blue-600">{{ $kasusStats['ditugaskan'] }}</p>
+                                </div>
+                                <div class="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-3 text-center">
+                                    <p class="text-[10px] font-bold uppercase text-indigo-700">Berjalan</p>
+                                    <p class="mt-1 text-lg font-bold text-indigo-600">{{ $kasusStats['berjalan'] }}</p>
+                                </div>
+                                <div class="rounded-2xl border border-rose-100 bg-rose-50/50 p-3 text-center">
+                                    <p class="text-[10px] font-bold uppercase text-rose-700">Eskalasi</p>
+                                    <p class="mt-1 text-lg font-bold text-rose-600">{{ $kasusStats['eskalasi'] }}</p>
+                                </div>
+                                <div class="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3 text-center">
+                                    <p class="text-[10px] font-bold uppercase text-emerald-700">Selesai</p>
+                                    <p class="mt-1 text-lg font-bold text-emerald-600">{{ $kasusStats['selesai'] }}</p>
+                                </div>
+                            </div>
+
+                            {{-- Right Side: Active Case List --}}
+                            <div class="lg:col-span-7">
+                                @if ($kasusList->isEmpty())
+                                    <div class="flex h-full items-center justify-center rounded-2xl border border-dashed border-ink/10 p-6 text-center">
+                                        <p class="text-xs text-slate">Belum ada kasus pendampingan di lembaga ini.</p>
+                                    </div>
+                                @else
+                                    <div class="max-h-64 overflow-y-auto pr-1">
+                                        <ul class="divide-y divide-ink/10">
+                                            @foreach ($kasusList as $kasus)
+                                                <li class="py-2.5">
+                                                    <a href="{{ route('kasus.show', $kasus) }}" class="flex items-center justify-between hover:text-brass transition">
+                                                        <div class="min-w-0 flex-1 pr-3">
+                                                            <p class="truncate text-sm font-semibold text-ink">{{ $kasus->siswa->nama_lengkap }}</p>
+                                                            <p class="text-xs text-slate">{{ $kasus->kategori_masalah }}</p>
+                                                        </div>
+                                                        <x-badge tone="{{ $kasus->status->badgeTone() }}">{{ $kasus->status->label() }}</x-badge>
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </x-panel>
                 @endif
@@ -203,7 +287,7 @@
                         <span class="text-xs font-bold text-emerald-600 uppercase">{{ now()->translatedFormat('d F Y') }}</span>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5 lg:grid-cols-2">
+                    <div class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
                         <x-stat-tile label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
                         <x-stat-tile label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
                         <x-stat-tile label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />

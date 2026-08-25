@@ -33,8 +33,8 @@
                     </div>
                 </div>
 
-                {{-- 2. Stat Tiles Grid --}}
-                <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                {{-- 2. Stat Tiles Responsive Grid --}}
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <x-stat-tile label="Lembaga" :value="$stats['lembaga']" hint="Total unit pendidikan" icon="apartment" />
                     <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar lintas lembaga" icon="school" />
                     <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif sistem" icon="group" />
@@ -59,13 +59,13 @@
                         @if ($ringkasanPerLembaga->isNotEmpty())
                             <div class="mt-6 border-t border-ink/10 pt-4">
                                 <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Grafik Pendaftar per Lembaga</p>
-                                <div
+                                <div class="h-60 w-full"
                                     x-data="perLembagaBarChart(
                                         @js($ringkasanPerLembaga->pluck('lembaga.nama')),
                                         @js($ringkasanPerLembaga->map(fn ($r) => $r['spmb']['total']))
                                     )"
                                 >
-                                    <canvas x-ref="canvas" height="90"></canvas>
+                                    <canvas x-ref="canvas"></canvas>
                                 </div>
                             </div>
                         @endif
@@ -141,7 +141,7 @@
                             <span class="text-xs font-bold text-blue-600 uppercase">{{ now()->translatedFormat('d F Y') }}</span>
                         </div>
 
-                        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5 lg:grid-cols-2">
+                        <div class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
                             <x-stat-tile label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
                             <x-stat-tile label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
                             <x-stat-tile label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />
