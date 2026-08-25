@@ -22,7 +22,7 @@ if (! function_exists('actingAsKasusTriaseManager')) {
         foreach (['kasus.view', 'kasus.triase'] as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
         }
-        $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+        $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
         $role->givePermissionTo(['kasus.view', 'kasus.triase']);
 
         $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -95,10 +95,10 @@ it('rejects triase from an admin without kasus.triase permission', function () {
     ])->assertForbidden();
 });
 
-it('404s an admin_akademik from another lembaga trying to assign a konselor to a kasus that is not theirs', function () {
+it('404s an operator_akademik from another lembaga trying to assign a konselor to a kasus that is not theirs', function () {
     // Regression test for Finding 3: the global Route::bind('kasus', ...) added earlier in
     // this sub-project bypasses TenantScope for the {kasus} route parameter everywhere, so
-    // without an explicit lembaga guard inside the controller, an admin_akademik from
+    // without an explicit lembaga guard inside the controller, an operator_akademik from
     // Lembaga A could triage/assign a konselor to a kasus belonging to Lembaga B.
     $yayasan = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
