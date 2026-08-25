@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Kasus\Enums\StatusKasus;
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
@@ -320,6 +322,7 @@ class DashboardController extends BaseController
                 'tahunAjaranAktif' => TahunAjaran::where('lembaga_id', $lembagaId)->where('status_aktif', true)->count(),
             ],
             'tahunAjaranAktif' => TahunAjaran::where('lembaga_id', $lembagaId)->where('status_aktif', true)->first(),
+            'tahunAjaranList' => TahunAjaran::where('lembaga_id', $lembagaId)->orderBy('tanggal_mulai', 'desc')->get(),
             'spmbStats' => null,
             'tren' => null,
             'keuanganStats' => null,
