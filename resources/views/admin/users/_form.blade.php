@@ -39,14 +39,32 @@
 @endif
 
 <div>
-    <x-input-label for="role" value="Role / Peran Akses" />
-    <x-select id="role" name="role" class="mt-1.5" required>
-        <option value="" disabled {{ !$targetUser ? 'selected' : '' }}>Pilih peran akses...</option>
-        @foreach ($roles as $roleOption)
-            <option value="{{ $roleOption->name }}" @selected(old('role', $targetUser?->roles->first()->name ?? null) === $roleOption->name)>
-                {{ $roleOption->name }}
-            </option>
+    <x-input-label value="Role / Peran Akses" />
+    <p class="mt-0.5 text-xs text-gray-500">Pilih satu atau lebih peran fungsional. Role teknis (scope pegawai) ditambahkan otomatis oleh sistem.</p>
+    @php
+        $checkedRoles = old('roles', $targetUser?->functionalRoles()->pluck('name')->toArray() ?? []);
+    @endphp
+    <div class="mt-2 space-y-4">
+        @foreach ($rolesByGroup as $groupLabel => $groupRoles)
+            <div>
+                <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">{{ $groupLabel }}</p>
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    @foreach ($groupRoles as $roleOption)
+                        <label class="flex items-center gap-2.5 rounded-lg border border-gray-200 px-3.5 py-2.5 text-sm text-gray-700 transition hover:bg-gray-50">
+                            <input
+                                type="checkbox"
+                                name="roles[]"
+                                value="{{ $roleOption->name }}"
+                                @checked(in_array($roleOption->name, $checkedRoles, true))
+                                class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                            >
+                            <span>{{ $roleOption->name }}</span>
+                        </label>
+                    @endforeach
+                </div>
+            </div>
         @endforeach
-    </x-select>
-    <x-input-error :messages="$errors->get('role')" class="mt-1.5" />
+    </div>
+    <x-input-error :messages="$errors->get('roles')" class="mt-1.5" />
+    <x-input-error :messages="$errors->get('roles.*')" class="mt-1.5" />
 </div>
