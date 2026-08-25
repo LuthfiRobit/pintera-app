@@ -24,8 +24,9 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
    - Melakukan kompilasi bundle frontend melalui `npm run build`.
 
 3. **Dashboard Platform (`admin/dashboard/platform.blade.php`)**:
-   - Menampilkan chart `trenTenantChart`.
+   - Menampilkan chart `trenTenantChart` (line chart pertumbuhan yayasan 6 bulan) dan agregat lintas tenant.
    - Menambahkan kolom health check: `TA Aktif?` (`adaTahunAjaranAktif`) dan `Akun Nonaktif` (`akunNonaktif`).
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-hero-banner>`, ganti emotikon 👋 dengan icon SVG platform/layer, hero banner gradient violet-purple (`from-violet-700 via-purple-700 to-indigo-800`), tabel ringkasan per yayasan dengan avatar inisial berwarna pastel, serta sidebar widget status operasional platform & mini kalender minggu ini.
 
 4. **Dashboard Yayasan (`admin/dashboard/yayasan.blade.php`)**:
    - Menampilkan widget `Kehadiran SDM Hari Ini` (Hadir, Izin, Sakit, Alpa, Cuti) dan tile `Kasus Eskalasi Belum Ditangani`.
