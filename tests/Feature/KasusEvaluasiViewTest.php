@@ -22,7 +22,7 @@ it('lets an assigned konselor submit an evaluasi form from kasus.show and see th
     $response->assertOk()->assertSee('RAHASIA-CATATAN-EVALUASI')->assertSee('Simpan Evaluasi');
 });
 
-it('lets admin_akademik see the evaluasi history and form on an eskalasi kasus', function () {
+it('lets operator_akademik see the evaluasi history and form on an eskalasi kasus', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus] = buatKasusEskalasi($lembaga);
     $admin = buatAdminAkademik($lembaga);
