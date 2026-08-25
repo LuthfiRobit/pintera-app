@@ -33,6 +33,9 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
    - Menampilkan tabel `Jadwal Mengajar Hari Ini` (jam, kelas, mapel) dan widget `Progress Nilai Kelas Wali`.
 8. **Dashboard Orang Tua (`admin/dashboard/orang-tua.blade.php`)**:
    - Menampilkan stat tile `Tagihan Belum Lunas` dan `Anak Terdaftar`, serta tabel `Jadwal Pelajaran Anak Hari Ini`.
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah dari layout 1-kolom linier kaku menjadi layout 2-kolom (8:4):
+     - Main Content (8 cols): Hero Banner gradient royal blue (`from-blue-600 via-indigo-600 to-sky-500`), Stat Tiles border accent, Card Avatar Inisial Anak berwarna dinamis (Orange, Blue, Emerald, Purple), dan Widget Status Kasus Pendampingan.
+     - Right Sidebar (4 cols): Mini Calendar Minggu Ini (aktif date highlight) dan Timeline Cards "Jadwal Pelajaran Anak Hari Ini" dengan badge urutan/jam berwarna pastel & chevron icon.
 9. **Dashboard Siswa (`admin/dashboard/siswa.blade.php`)**:
    - Menampilkan stat tile `Kelas Saya` & `Tagihan Belum Lunas`, serta tabel `Jadwal Pelajaran Hari Ini`.
 
