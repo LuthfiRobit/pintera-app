@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
@@ -144,13 +145,6 @@ class DashboardController extends BaseController
                 return view('admin.dashboard.lembaga', $this->lembagaViewData((int) $lembagaAktifId, $user));
             }
 
-            // Lembaga model doesn't use BelongsToTenant/TenantScope at all, so it must be
-            // filtered explicitly here by the acting user's own yayasan_id - a real column
-            // on User since 2026-08-17, populated for every correctly-provisioned
-            // yayasan-scope account (see UserController::store()/AkunKaryawanGenerator).
-            // where('yayasan_id', null) naturally yields zero rows when the actor's own
-            // yayasan_id is unset (Lembaga.yayasan_id is NOT NULL) - fail-closed, matching
-            // the same philosophy as the TenantScope fix this mirrors.
             // Deliberate trade-off vs. the design spec's "single groupBy('lembaga_id')
             // query" wording: this calls DashboardStatsService once per lembaga instead,
             // so the yayasan view reuses the exact same aggregation methods as the lembaga
@@ -172,17 +166,24 @@ class DashboardController extends BaseController
                 ];
             });
 
+            $lembagaIds = $lembagaList->pluck('id')->all();
+            $presensiSdmHariIni = $this->dashboardStats->statistikPresensiSdm($lembagaIds);
+            $kasusEskalasiUnassigned = Kasus::withoutGlobalScope(TenantScope::class)
+                ->whereIn('lembaga_id', $lembagaIds)
+                ->where('status', StatusKasus::Eskalasi)
+                ->whereNull('konselor_guru_id')
+                ->whereNull('konselor_karyawan_id')
+                ->count();
+
             return view('admin.dashboard.yayasan', [
                 'lembagaList' => $lembagaList,
                 'ringkasanPerLembaga' => $ringkasanPerLembaga,
                 'totalPendaftar' => $ringkasanPerLembaga->sum(fn ($r) => $r['spmb']['total']),
                 'totalDiterima' => $ringkasanPerLembaga->sum(fn ($r) => $r['spmb']['diterima']),
                 'totalRpTerkumpul' => $ringkasanPerLembaga->sum(fn ($r) => $r['keuangan']['rpTerkumpul']),
+                'presensiSdmHariIni' => $presensiSdmHariIni,
+                'kasusEskalasiUnassigned' => $kasusEskalasiUnassigned,
                 'stats' => [
-                    // Guru/User/TahunAjaran are all BelongsToTenant models - TenantScope
-                    // itself already restricts these to the acting user's own yayasan when
-                    // active_lembaga_id is unset. Lembaga is not tenant-scoped, so it needs
-                    // the same explicit yayasan_id filter as $lembagaList above.
                     'lembaga' => Lembaga::where('yayasan_id', $user->yayasan_id)->count(),
                     'guru' => Guru::count(),
                     'pengguna' => User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->count(),

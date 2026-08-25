@@ -69,3 +69,21 @@ it('renders the yayasan dashboard without error when there is no lembaga in the 
 
     $this->actingAs($user)->get(route('dashboard'))->assertOk();
 });
+
+it('shows SDM attendance summary and unassigned eskalasi count across every lembaga in the yayasan', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = \App\Models\Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    \App\Domains\Sdm\Models\AttendanceRecord::create([
+        'lembaga_id' => $lembaga->id, 'pegawai_type' => \App\Models\Guru::class, 'pegawai_id' => $guru->id,
+        'tanggal' => now()->toDateString(), 'status' => 'hadir',
+    ]);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole('yayasan_super_admin');
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertViewHas('presensiSdmHariIni', fn ($p) => $p['hadir'] === 1);
+});

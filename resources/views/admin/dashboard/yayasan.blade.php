@@ -71,5 +71,24 @@
                 </x-panel>
             </div>
         @endif
+
+        @if (isset($presensiSdmHariIni))
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <x-panel class="p-6">
+                    <p class="mb-3 text-sm font-medium text-ink">Kehadiran SDM Hari Ini (Semua Lembaga)</p>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                        <x-stat-tile label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
+                        <x-stat-tile label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
+                        <x-stat-tile label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />
+                        <x-stat-tile label="Alpa" :value="$presensiSdmHariIni['alpa']" icon="cancel" />
+                        <x-stat-tile label="Cuti" :value="$presensiSdmHariIni['cuti']" icon="beach_access" />
+                    </div>
+                </x-panel>
+                <x-panel class="p-6">
+                    <p class="mb-3 text-sm font-medium text-ink">Kasus Eskalasi Belum Ditangani</p>
+                    <x-stat-tile label="Menunggu Konselor" :value="$kasusEskalasiUnassigned" icon="priority_high" hint="Lintas semua lembaga di yayasan ini" />
+                </x-panel>
+            </div>
+        @endif
     </div>
 </x-app-layout>
