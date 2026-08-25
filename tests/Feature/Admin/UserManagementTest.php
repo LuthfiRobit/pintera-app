@@ -272,3 +272,26 @@ it('refuses to let a lembaga-scoped manager assign a yayasan-scoped role to a ne
 
     expect(User::withoutGlobalScopes()->where('email', 'sneaky@example.test')->exists())->toBeFalse();
 });
+
+it('lets a platform_super_admin assign a yayasan-scoped role to a new user', function () {
+    foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $platformRole = Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+    $platformRole->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
+    Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+
+    $platformAdmin = User::factory()->create();
+    $platformAdmin->assignRole($platformRole);
+
+    $this->actingAs($platformAdmin)->post(route('admin.users.store'), [
+        'name' => 'Admin Yayasan Baru dari Platform',
+        'email' => 'dariplatform@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'role' => 'yayasan_super_admin',
+    ])->assertRedirect(route('admin.users.index'));
+
+    expect(User::withoutGlobalScopes()->where('email', 'dariplatform@example.test')->exists())->toBeTrue();
+});
+

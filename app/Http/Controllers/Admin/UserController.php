@@ -166,6 +166,7 @@ class UserController extends BaseController
     private function scopeRank(string $level): int
     {
         return match ($level) {
+            'platform' => 4,
             'yayasan' => 3,
             'lembaga' => 2,
             default => 1, // diri_sendiri
