@@ -58,9 +58,9 @@ function buatKasusBerjalanDenganKaryawanKonselor(Yayasan $yayasan, Lembaga $lemb
 
     $konselorUser = User::factory()->create(['lembaga_id' => null]);
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
-    $konselorUser->assignRole('karyawan_pool');
+    $konselorUser->assignRole('pegawai_yayasan');
     $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
     $karyawan = Karyawan::withoutGlobalScopes()->create([
         'user_id' => $konselorUser->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
@@ -82,7 +82,7 @@ function buatAdminAkademik(Lembaga $lembaga): User
     foreach (['kasus.view', 'kasus.triase'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['kasus.view', 'kasus.triase']);
 
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -103,7 +103,7 @@ it('lets the konselor evaluate a berjalan kasus with keputusan lanjut, status st
     expect(KasusEvaluasi::where('kasus_id', $kasus->id)->where('keputusan', 'lanjut')->exists())->toBeTrue();
 });
 
-it('lets the konselor evaluate a berjalan kasus with keputusan eskalasi, notifies admin_akademik', function () {
+it('lets the konselor evaluate a berjalan kasus with keputusan eskalasi, notifies operator_akademik', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusBerjalanDenganKonselor($lembaga);
     $admin = buatAdminAkademik($lembaga);
@@ -134,7 +134,7 @@ it('does not 500 when notifying KasusEskalasiNotification for real (no Notificat
     expect($kasus->refresh()->status)->toBe(StatusKasus::Eskalasi);
 });
 
-it('lets a karyawan_pool konselor with a mismatched active_lembaga_id session evaluate a berjalan kasus with keputusan eskalasi, notifies admin_akademik', function () {
+it('lets a pegawai_yayasan konselor with a mismatched active_lembaga_id session evaluate a berjalan kasus with keputusan eskalasi, notifies operator_akademik', function () {
     // This is the TenantScope-bypass path at KasusEvaluasiController::store() line ~58:
     // $user->karyawan()->withoutGlobalScope(TenantScope::class). The konselor's own
     // Karyawan row has lembaga_id = null (pool), and their session active_lembaga_id is
@@ -209,7 +209,7 @@ it('does not 500 when notifying KasusSelesaiNotification for real (no Notificati
     expect($kasus->refresh()->status)->toBe(StatusKasus::Selesai);
 });
 
-it('lets admin_akademik evaluate an eskalasi kasus with keputusan lanjut, notifies the konselor, konselor unchanged', function () {
+it('lets operator_akademik evaluate an eskalasi kasus with keputusan lanjut, notifies the konselor, konselor unchanged', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusEskalasi($lembaga);
     $admin = buatAdminAkademik($lembaga);
@@ -243,7 +243,7 @@ it('does not 500 when notifying KasusDikembalikanNotification for real (no Notif
     expect($kasus->status)->toBe(StatusKasus::Berjalan);
 });
 
-it('lets admin_akademik evaluate an eskalasi kasus assigned to a karyawan_pool konselor with keputusan lanjut, notifies the konselor via the konselorKaryawan two-hop bypass', function () {
+it('lets operator_akademik evaluate an eskalasi kasus assigned to a pegawai_yayasan konselor with keputusan lanjut, notifies the konselor via the konselorKaryawan two-hop bypass', function () {
     // Covers notifyEvaluasi()'s "returned to konselor" branch (~line 119) for the
     // konselorKaryawan() side: $kasus->konselorKaryawan()->withoutGlobalScope(...)->first()
     //   ?->user()->withoutGlobalScope(...)->first(). If either hop of that two-hop bypass
@@ -267,7 +267,7 @@ it('lets admin_akademik evaluate an eskalasi kasus assigned to a karyawan_pool k
     Notification::assertSentTo($konselorUser, KasusDikembalikanNotification::class);
 });
 
-it('lets admin_akademik evaluate an eskalasi kasus with keputusan selesai', function () {
+it('lets operator_akademik evaluate an eskalasi kasus with keputusan selesai', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus] = buatKasusEskalasi($lembaga);
     $admin = buatAdminAkademik($lembaga);
