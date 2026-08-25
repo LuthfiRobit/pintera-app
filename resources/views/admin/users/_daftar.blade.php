@@ -23,6 +23,9 @@
                 <th class="px-5 py-3">Nama</th>
                 <th class="px-5 py-3">Email</th>
                 <th class="px-5 py-3">Role</th>
+                @if ($isPlatformViewer)
+                    <th class="px-5 py-3">Yayasan</th>
+                @endif
                 <th class="px-5 py-3">Lembaga</th>
                 <th class="px-5 py-3">Status</th>
             </tr>
@@ -54,6 +57,9 @@
                     <td class="px-5 py-3 align-top font-medium text-gray-900">{{ $user->name }}</td>
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->email }}</td>
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->roles->pluck('name')->implode(', ') }}</td>
+                    @if ($isPlatformViewer)
+                        <td class="px-5 py-3 align-top text-gray-500">{{ $user->yayasan?->nama ?? '—' }}</td>
+                    @endif
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->lembaga?->nama ?? '—' }}</td>
                     <td class="px-5 py-3 align-top">
                         @if ($user->is_active)
@@ -65,7 +71,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="px-5 py-8 text-center text-gray-500">Tidak ada akun yang ditemukan.</td>
+                    <td colspan="{{ $isPlatformViewer ? 7 : 6 }}" class="px-5 py-8 text-center text-gray-500">Tidak ada akun yang ditemukan.</td>
                 </tr>
             @endforelse
         </tbody>
