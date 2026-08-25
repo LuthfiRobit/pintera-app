@@ -124,4 +124,18 @@ it('passes teaching schedule and progressKelasWali to the guru dashboard view', 
     $response->assertViewHas('jadwalHariIni');
 });
 
+it('passes children data, unpaid bills, and today schedule to the orang_tua dashboard view', function () {
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $user = User::factory()->create();
+    $user->assignRole('orang_tua');
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('Tagihan Belum Lunas');
+    $response->assertSee('Jadwal Pelajaran Anak Hari Ini');
+    $response->assertViewHas('tagihanBelumLunas');
+});
+
+
 

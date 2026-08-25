@@ -8,8 +8,51 @@
         <x-hero-banner
             eyebrow="Portal Orang Tua"
             :title="'Selamat datang, ' . Auth::user()->name . '!'"
-            subtitle="Portal orang tua (nilai anak, presensi, tagihan) belum tersedia. Hubungi admin sekolah untuk informasi lebih lanjut."
+            subtitle="Ringkasan tagihan, presensi, dan jadwal sekolah anak Anda."
         />
+
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <x-stat-tile
+                label="Tagihan Belum Lunas"
+                value="Rp {{ number_format($tagihanBelumLunas, 0, ',', '.') }}"
+                hint="Total dari seluruh anak Anda"
+                icon="payments"
+            />
+            <x-stat-tile
+                label="Anak Terdaftar"
+                :value="$anakList->count() . ' Siswa'"
+                :hint="$anakList->pluck('nama_lengkap')->join(', ')"
+                icon="family_restroom"
+            />
+        </div>
+
+        <x-panel>
+            <div class="border-b border-ink/10 px-6 py-4">
+                <h3 class="font-display font-semibold text-ink">Jadwal Pelajaran Anak Hari Ini</h3>
+            </div>
+            @if ($jadwalAnakHariIni->isEmpty())
+                <p class="px-6 py-8 text-center text-sm text-slate">Tidak ada jadwal pelajaran anak untuk hari ini.</p>
+            @else
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                            <th class="px-6 py-3 font-display font-semibold">Jam</th>
+                            <th class="px-6 py-3 font-display font-semibold">Kelas</th>
+                            <th class="px-6 py-3 font-display font-semibold">Mata Pelajaran</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-ink/10">
+                        @foreach ($jadwalAnakHariIni as $jadwal)
+                            <tr>
+                                <td class="px-6 py-3.5">{{ $jadwal->jamPelajaran?->jam_mulai }} - {{ $jadwal->jamPelajaran?->jam_selesai }}</td>
+                                <td class="px-6 py-3.5 font-medium text-ink">{{ $jadwal->kelas?->nama }}</td>
+                                <td class="px-6 py-3.5">{{ $jadwal->mataPelajaran?->nama }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </x-panel>
 
         <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <x-stat-tile label="Diajukan" :value="$kasusStats['diajukan']" icon="assignment_late" />

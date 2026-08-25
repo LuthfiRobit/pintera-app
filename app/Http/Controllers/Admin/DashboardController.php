@@ -69,6 +69,10 @@ class DashboardController extends BaseController
             $orangTua = $user->orangTua;
             $kasusList = collect();
             $kontakUtamaKasusIds = [];
+            $anakList = collect();
+            $tagihanBelumLunas = 0;
+            $presensiAnakHariIni = collect();
+            $jadwalAnakHariIni = collect();
 
             if ($orangTua !== null) {
                 $kasusList = Kasus::withoutGlobalScope(TenantScope::class)
@@ -82,12 +86,46 @@ class DashboardController extends BaseController
                 $kontakUtamaKasusIds = $kasusList->filter(function (Kasus $kasus) use ($orangTua) {
                     return $kasus->siswa->orangTua()->where('orang_tua_id', $orangTua->id)->wherePivot('is_kontak_utama', true)->exists();
                 })->pluck('id')->all();
+
+                $anakList = $orangTua->siswa()->withoutGlobalScope(TenantScope::class)->with('kelas')->get();
+                $siswaIds = $anakList->pluck('id')->all();
+                $pendaftaranIds = $anakList->pluck('pendaftaran_asal_id')->filter()->all();
+
+                $tagihanBelumLunas = (int) Tagihan::withoutGlobalScope(TenantScope::class)
+                    ->where(function ($q) use ($siswaIds, $pendaftaranIds) {
+                        $q->where(fn ($q2) => $q2->where('tagihable_type', \App\Models\Siswa::class)->whereIn('tagihable_id', $siswaIds));
+                        if (! empty($pendaftaranIds)) {
+                            $q->orWhereIn('pendaftaran_id', $pendaftaranIds);
+                        }
+                    })
+                    ->whereIn('status', ['belum_bayar', 'dicicil'])
+                    ->sum('total_tagihan');
+
+                $presensiAnakHariIni = AttendanceRecord::withoutGlobalScope(TenantScope::class)
+                    ->where('pegawai_type', \App\Models\Siswa::class)
+                    ->whereIn('pegawai_id', $siswaIds)
+                    ->whereDate('tanggal', now()->toDateString())
+                    ->get();
+
+                $kelasIds = $anakList->pluck('kelas_id')->filter()->all();
+                $hariIni = \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+                $jadwalAnakHariIni = empty($kelasIds)
+                    ? collect()
+                    : \App\Models\JadwalPelajaran::withoutGlobalScope(TenantScope::class)
+                        ->whereIn('kelas_id', $kelasIds)
+                        ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
+                        ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
+                        ->get();
             }
 
             return view('admin.dashboard.orang-tua', [
                 'kasusList' => $kasusList,
                 'kontakUtamaKasusIds' => $kontakUtamaKasusIds,
                 'kasusStats' => $this->kasusStatusCounts($kasusList),
+                'anakList' => $anakList,
+                'tagihanBelumLunas' => $tagihanBelumLunas,
+                'presensiAnakHariIni' => $presensiAnakHariIni,
+                'jadwalAnakHariIni' => $jadwalAnakHariIni,
             ]);
         }
 
