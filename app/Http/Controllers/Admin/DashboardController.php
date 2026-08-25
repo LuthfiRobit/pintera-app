@@ -62,7 +62,36 @@ class DashboardController extends BaseController
         }
 
         if ($user->hasRole('siswa')) {
-            return view('admin.dashboard.siswa');
+            $siswa = $user->siswa()->withoutGlobalScope(TenantScope::class)->with('kelas')->first();
+            $jadwalHariIni = collect();
+            $tagihanBelumLunas = 0;
+
+            if ($siswa !== null) {
+                if ($siswa->kelas_id !== null) {
+                    $hariIni = \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+                    $jadwalHariIni = \App\Models\JadwalPelajaran::withoutGlobalScope(TenantScope::class)
+                        ->where('kelas_id', $siswa->kelas_id)
+                        ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
+                        ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
+                        ->get();
+                }
+
+                $tagihanBelumLunas = (int) Tagihan::withoutGlobalScope(TenantScope::class)
+                    ->where(function ($q) use ($siswa) {
+                        $q->where(fn ($q2) => $q2->where('tagihable_type', \App\Models\Siswa::class)->where('tagihable_id', $siswa->id));
+                        if ($siswa->pendaftaran_asal_id !== null) {
+                            $q->orWhere('pendaftaran_id', $siswa->pendaftaran_asal_id);
+                        }
+                    })
+                    ->whereIn('status', ['belum_bayar', 'dicicil'])
+                    ->sum('total_tagihan');
+            }
+
+            return view('admin.dashboard.siswa', [
+                'siswa' => $siswa,
+                'jadwalHariIni' => $jadwalHariIni,
+                'tagihanBelumLunas' => $tagihanBelumLunas,
+            ]);
         }
 
         if ($user->hasRole('orang_tua')) {

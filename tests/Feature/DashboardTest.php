@@ -137,5 +137,19 @@ it('passes children data, unpaid bills, and today schedule to the orang_tua dash
     $response->assertViewHas('tagihanBelumLunas');
 });
 
+it('passes profile, schedule, and unpaid bills to the siswa dashboard view', function () {
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $user = User::factory()->create();
+    $user->assignRole('siswa');
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('Kelas Saya');
+    $response->assertSee('Jadwal Pelajaran Hari Ini');
+    $response->assertViewHas('tagihanBelumLunas');
+});
+
+
 
 
