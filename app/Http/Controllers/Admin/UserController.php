@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class UserController extends BaseController
@@ -176,10 +177,9 @@ class UserController extends BaseController
         $this->authorize('users.create');
 
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
-        $roles = Role::all()->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)->values();
 
         return view('admin.users.create', [
-            'roles' => $roles,
+            'rolesByGroup' => $this->groupRolesForForm($this->assignableRoles($actingRank)),
             'lembaga' => $request->user()->widestScopeLevel() === 'yayasan'
                 ? Lembaga::withoutGlobalScopes()->get()
                 : collect(),
@@ -195,21 +195,25 @@ class UserController extends BaseController
             'email' => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:8'],
             'lembaga_id' => ['nullable', 'exists:lembaga,id'],
-            'role' => ['required', 'exists:roles,name'],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => ['exists:roles,name', Rule::notIn(['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan'])],
         ]);
 
         $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
             ? ($data['lembaga_id'] ?? null)
             : $request->user()->lembaga_id;
 
-        $selectedRole = Role::where('name', $data['role'])->firstOrFail();
+        $selectedRoles = Role::whereIn('name', $data['roles'])->get();
 
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
-        if ($this->scopeRank($selectedRole->scope_level) > $actingRank) {
-            return back()->withErrors(['role' => 'Anda tidak dapat memberikan role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+        foreach ($selectedRoles as $selectedRole) {
+            if ($this->scopeRank($selectedRole->scope_level) > $actingRank) {
+                return back()->withErrors(['roles' => 'Anda tidak dapat memberikan role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+            }
         }
 
-        if ($selectedRole->scope_level !== 'yayasan' && $lembagaId === null) {
+        $needsLembaga = $selectedRoles->contains(fn ($role) => $role->scope_level !== 'yayasan');
+        if ($needsLembaga && $lembagaId === null) {
             return back()->withErrors(['lembaga_id' => 'Lembaga wajib diisi untuk role ini.'])->withInput();
         }
 
@@ -218,10 +222,11 @@ class UserController extends BaseController
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
             'lembaga_id' => $lembagaId,
-            'yayasan_id' => $selectedRole->scope_level === 'yayasan' ? $request->user()->yayasan_id : null,
+            'yayasan_id' => $selectedRoles->contains(fn ($role) => $role->scope_level === 'yayasan') ? $request->user()->yayasan_id : null,
         ]);
 
-        $user->assignRole($data['role']);
+        $baselineRole = $this->baselineCarrierRole($selectedRoles, $lembagaId);
+        $user->assignRole(array_filter([...$data['roles'], $baselineRole]));
 
         return redirect()->route('admin.users.index')->with('status', 'Akun staff berhasil dibuat.');
     }

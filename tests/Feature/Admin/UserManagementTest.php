@@ -43,7 +43,7 @@ it('lets a yayasan-scoped manager create a staff account with a role and a lemba
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'lembaga_id' => $lembaga->id,
-        'role' => 'kepala_sekolah',
+        'roles' => ['kepala_sekolah'],
     ])->assertRedirect(route('admin.users.index'));
 
     $created = User::withoutGlobalScopes()->where('email', 'kepsek1@example.test')->first();
@@ -74,7 +74,7 @@ it('forces lembaga_id to the acting lembaga-scoped manager\'s own lembaga, ignor
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'lembaga_id' => $otherLembaga->id,
-        'role' => 'bendahara_lembaga',
+        'roles' => ['bendahara_lembaga'],
     ]);
 
     $created = User::withoutGlobalScopes()->where('email', 'keuangan1@example.test')->first();
@@ -90,7 +90,7 @@ it('requires a lembaga when creating a user with a lembaga-scoped role', functio
         'email' => 'tanpalembaga@example.test',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'role' => 'kepala_sekolah',
+        'roles' => ['kepala_sekolah'],
     ])->assertSessionHasErrors('lembaga_id');
 
     expect(User::withoutGlobalScopes()->where('email', 'tanpalembaga@example.test')->exists())->toBeFalse();
@@ -238,7 +238,7 @@ it('sets yayasan_id on a newly created yayasan-scoped staff account, inherited f
         'email' => 'adminyayasanbaru@example.test',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'role' => 'yayasan_super_admin',
+        'roles' => ['yayasan_super_admin'],
     ])->assertRedirect(route('admin.users.index'));
 
     $created = User::withoutGlobalScopes()->where('email', 'adminyayasanbaru@example.test')->first();
@@ -257,7 +257,7 @@ it('leaves yayasan_id null when creating a lembaga-scoped staff account', functi
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'lembaga_id' => $lembaga->id,
-        'role' => 'kepala_sekolah',
+        'roles' => ['kepala_sekolah'],
     ]);
 
     $created = User::withoutGlobalScopes()->where('email', 'kepsek2@example.test')->first();
@@ -306,8 +306,8 @@ it('refuses to let a lembaga-scoped manager assign a yayasan-scoped role to a ne
         'email' => 'sneaky@example.test',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'role' => 'yayasan_super_admin',
-    ])->assertSessionHasErrors('role');
+        'roles' => ['yayasan_super_admin'],
+    ])->assertSessionHasErrors('roles');
 
     expect(User::withoutGlobalScopes()->where('email', 'sneaky@example.test')->exists())->toBeFalse();
 });
@@ -328,7 +328,7 @@ it('lets a platform_super_admin assign a yayasan-scoped role to a new user', fun
         'email' => 'dariplatform@example.test',
         'password' => 'password123',
         'password_confirmation' => 'password123',
-        'role' => 'yayasan_super_admin',
+        'roles' => ['yayasan_super_admin'],
     ])->assertRedirect(route('admin.users.index'));
 
     expect(User::withoutGlobalScopes()->where('email', 'dariplatform@example.test')->exists())->toBeTrue();
