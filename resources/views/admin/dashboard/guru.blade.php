@@ -34,8 +34,8 @@
 
                 {{-- 1b. Stat Ringkas Guru --}}
                 <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3">
-                    <x-stat-tile label="Jam Mengajar Hari Ini" :value="$jadwalHariIni->count()" icon="school" />
-                    <x-stat-tile label="Presensi Diri" :value="$presensiDiriHariIni?->status?->label() ?? 'Belum Absen'" icon="badge" />
+                    <x-stat-tile tone="blue" label="Jam Mengajar Hari Ini" :value="$jadwalHariIni->count()" icon="school" />
+                    <x-stat-tile :tone="$presensiDiriHariIni?->status?->badgeTone() ?? 'amber'" label="Presensi Diri" :value="$presensiDiriHariIni?->status?->label() ?? 'Belum Absen'" icon="badge" />
                     <x-stat-tile :tone="$rppPerluTindakan > 0 ? 'amber' : 'green'" label="RPP Perlu Tindakan" :value="$rppPerluTindakan" icon="assignment_late" />
                 </div>
 

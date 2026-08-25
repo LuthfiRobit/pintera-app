@@ -35,18 +35,21 @@
                 @if ($karyawan)
                     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                         <x-stat-tile
+                            :tone="$presensiHariIni?->status?->badgeTone() ?? 'amber'"
                             label="Presensi Hari Ini"
                             :value="is_object($presensiHariIni) ? $presensiHariIni->status?->label() : ($presensiHariIni['status'] ?? 'Belum Absen')"
                             :hint="$karyawan->jenisKaryawan?->nama"
                             icon="badge"
                         />
                         <x-stat-tile
+                            :tone="! $sisaKuotaCuti ? 'default' : ($sisaKuotaCuti['sisa'] <= 0 ? 'red' : ($sisaKuotaCuti['sisa'] <= 3 ? 'amber' : 'green'))"
                             label="Sisa Kuota Cuti"
                             :value="$sisaKuotaCuti ? $sisaKuotaCuti['sisa'] . ' Hari' : 'N/A'"
                             :hint="$sisaKuotaCuti ? 'Dari total ' . $sisaKuotaCuti['jatah'] . ' hari/tahun' : 'Belum dikonfigurasi'"
                             icon="beach_access"
                         />
                         <x-stat-tile
+                            :tone="$jadwalShiftHariIni?->jenisShift ? 'blue' : 'default'"
                             label="Shift Hari Ini"
                             :value="$jadwalShiftHariIni?->jenisShift?->nama_shift ?? 'Tanpa Shift'"
                             :hint="$jadwalShiftHariIni?->jenisShift ? $jadwalShiftHariIni->jenisShift->jam_masuk . ' - ' . $jadwalShiftHariIni->jenisShift->jam_pulang : 'Libur/Rutin'"

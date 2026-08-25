@@ -35,6 +35,7 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Tagihan Tile --}}
                     <x-stat-tile
+                        :tone="$tagihanBelumLunas > 0 ? 'amber' : 'green'"
                         label="Tagihan Belum Lunas"
                         value="Rp {{ number_format($tagihanBelumLunas, 0, ',', '.') }}"
                         hint="Total dari seluruh anak Anda"
@@ -43,6 +44,7 @@
 
                     {{-- Anak Terdaftar Tile --}}
                     <x-stat-tile
+                        tone="indigo"
                         label="Anak Terdaftar"
                         :value="$anakList->count() . ' Siswa'"
                         :hint="$anakList->pluck('nama_lengkap')->join(', ')"

@@ -35,10 +35,10 @@
 
                 {{-- 2. Stat Tiles Responsive Grid --}}
                 <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-                    <x-stat-tile label="Lembaga" :value="$stats['lembaga']" hint="Total unit" icon="apartment" />
-                    <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar" icon="school" />
-                    <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif" icon="group" />
-                    <x-stat-tile label="Tahun Ajaran Aktif" :value="$stats['tahunAjaranAktif']" hint="Berjalan" icon="calendar_month" />
+                    <x-stat-tile tone="blue" label="Lembaga" :value="$stats['lembaga']" hint="Total unit" icon="apartment" />
+                    <x-stat-tile tone="green" label="Guru" :value="$stats['guru']" hint="Terdaftar" icon="school" />
+                    <x-stat-tile tone="indigo" label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif" icon="group" />
+                    <x-stat-tile tone="indigo" label="Tahun Ajaran Aktif" :value="$stats['tahunAjaranAktif']" hint="Berjalan" icon="calendar_month" />
                 </div>
 
                 {{-- 3. Konsolidasi SPMB & Keuangan --}}
@@ -51,9 +51,9 @@
                             </div>
                         </div>
                         <div class="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-                            <x-stat-tile label="Total Pendaftar" :value="$totalPendaftar" icon="groups" />
-                            <x-stat-tile label="Total Diterima" :value="$totalDiterima" icon="check_circle" />
-                            <x-stat-tile label="Total Rp Terkumpul" value="Rp {{ number_format($totalRpTerkumpul, 0, ',', '.') }}" icon="payments" />
+                            <x-stat-tile tone="blue" label="Total Pendaftar" :value="$totalPendaftar" icon="groups" />
+                            <x-stat-tile tone="green" label="Total Diterima" :value="$totalDiterima" icon="check_circle" />
+                            <x-stat-tile tone="indigo" label="Total Rp Terkumpul" value="Rp {{ number_format($totalRpTerkumpul, 0, ',', '.') }}" icon="payments" />
                         </div>
 
                         @if ($ringkasanPerLembaga->isNotEmpty())

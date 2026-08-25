@@ -43,9 +43,9 @@
 
                 {{-- 2. Responsive Stat Tiles Row --}}
                 <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3">
-                    <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar di lembaga" icon="school" />
-                    <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif sistem" icon="group" />
-                    <x-stat-tile label="Tahun Ajaran Aktif" :value="$stats['tahunAjaranAktif']" :hint="$tahunAjaranAktif->nama ?? 'Belum aktif'" icon="calendar_month" />
+                    <x-stat-tile tone="green" label="Guru" :value="$stats['guru']" hint="Terdaftar di lembaga" icon="school" />
+                    <x-stat-tile tone="indigo" label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif sistem" icon="group" />
+                    <x-stat-tile tone="blue" label="Tahun Ajaran Aktif" :value="$stats['tahunAjaranAktif']" :hint="$tahunAjaranAktif->nama ?? 'Belum aktif'" icon="calendar_month" />
                 </div>
 
                 {{-- 3. SPMB Section --}}
@@ -58,10 +58,10 @@
                             </div>
                         </div>
                         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                            <x-stat-tile label="Total Pendaftar" :value="$spmbStats['total']" icon="groups" />
-                            <x-stat-tile label="Menunggu Verifikasi" :value="$spmbStats['menunggu_verifikasi']" icon="hourglass_empty" />
-                            <x-stat-tile label="Diterima" :value="$spmbStats['diterima']" icon="check_circle" />
-                            <x-stat-tile label="Ditolak" :value="$spmbStats['ditolak']" icon="cancel" />
+                            <x-stat-tile tone="blue" label="Total Pendaftar" :value="$spmbStats['total']" icon="groups" />
+                            <x-stat-tile :tone="$spmbStats['menunggu_verifikasi'] > 0 ? 'amber' : 'green'" label="Menunggu Verifikasi" :value="$spmbStats['menunggu_verifikasi']" icon="hourglass_empty" />
+                            <x-stat-tile tone="green" label="Diterima" :value="$spmbStats['diterima']" icon="check_circle" />
+                            <x-stat-tile tone="red" label="Ditolak" :value="$spmbStats['ditolak']" icon="cancel" />
                         </div>
                         <div class="mt-6 border-t border-ink/10 pt-4">
                             <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Tren Pendaftaran (30 Hari Terakhir)</p>
@@ -82,10 +82,10 @@
                             </div>
                         </div>
                         <div class="mt-4 grid grid-cols-1 gap-3.5 sm:grid-cols-3">
-                            <x-stat-tile label="Rp Terkumpul" value="Rp {{ number_format($keuanganStats['rpTerkumpul'], 0, ',', '.') }}" icon="payments" />
-                            <x-stat-tile label="Rp Belum Lunas" value="Rp {{ number_format($keuanganStats['rpBelumLunas'], 0, ',', '.') }}" icon="pending_actions" />
+                            <x-stat-tile tone="green" label="Rp Terkumpul" value="Rp {{ number_format($keuanganStats['rpTerkumpul'], 0, ',', '.') }}" icon="payments" />
+                            <x-stat-tile :tone="$keuanganStats['rpBelumLunas'] > 0 ? 'amber' : 'green'" label="Rp Belum Lunas" value="Rp {{ number_format($keuanganStats['rpBelumLunas'], 0, ',', '.') }}" icon="pending_actions" />
                             <a href="{{ route('admin.pembayaran.index') }}">
-                                <x-stat-tile label="Pembayaran Menunggu Verifikasi" :value="$keuanganStats['pembayaranMenungguVerifikasi']" icon="fact_check" />
+                                <x-stat-tile :tone="$keuanganStats['pembayaranMenungguVerifikasi'] > 0 ? 'amber' : 'green'" label="Pembayaran Menunggu Verifikasi" :value="$keuanganStats['pembayaranMenungguVerifikasi']" icon="fact_check" />
                             </a>
                         </div>
                         
@@ -229,9 +229,9 @@
                             </div>
                         </div>
 
-                        <div class="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-12">
-                            {{-- Left Side: Status Breakdown Cards --}}
-                            <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:col-span-5">
+                        <div class="mt-4 space-y-5">
+                            {{-- Status Breakdown Cards (full width, tidak lagi disempitkan kolom bersarang) --}}
+                            <div class="grid grid-cols-3 gap-2.5 sm:grid-cols-6">
                                 <div class="rounded-2xl border border-ink/10 bg-paper/50 p-2.5 text-center">
                                     <p class="text-[10px] font-bold uppercase text-slate">Diajukan</p>
                                     <p class="mt-1 text-base font-bold text-ink">{{ $kasusStats['diajukan'] }}</p>
@@ -258,8 +258,8 @@
                                 </div>
                             </div>
 
-                            {{-- Right Side: Active Case List --}}
-                            <div class="lg:col-span-7">
+                            {{-- Active Case List (full width di bawah, bukan lagi disempitkan kolom bersarang) --}}
+                            <div>
                                 @if ($kasusList->isEmpty())
                                     <div class="flex h-full items-center justify-center rounded-2xl border border-dashed border-ink/10 p-6 text-center">
                                         <p class="text-xs text-slate">Belum ada kasus pendampingan di lembaga ini.</p>

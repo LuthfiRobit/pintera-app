@@ -35,10 +35,10 @@
 
                 {{-- 2. Stat Tiles Responsive Grid --}}
                 <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-4">
-                    <x-stat-tile label="Yayasan" :value="$stats['yayasan']" hint="Total tenant terdaftar" icon="domain" />
-                    <x-stat-tile label="Lembaga" :value="$stats['lembaga']" hint="Lintas semua yayasan" icon="apartment" />
-                    <x-stat-tile label="Guru" :value="$stats['guru']" hint="Lintas semua yayasan" icon="school" />
-                    <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif sistem" icon="group" />
+                    <x-stat-tile tone="indigo" label="Yayasan" :value="$stats['yayasan']" hint="Total tenant terdaftar" icon="domain" />
+                    <x-stat-tile tone="blue" label="Lembaga" :value="$stats['lembaga']" hint="Lintas semua yayasan" icon="apartment" />
+                    <x-stat-tile tone="green" label="Guru" :value="$stats['guru']" hint="Lintas semua yayasan" icon="school" />
+                    <x-stat-tile tone="indigo" label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif sistem" icon="group" />
                 </div>
 
                 {{-- 3. Tren Pertumbuhan Yayasan (Area Line Chart) --}}

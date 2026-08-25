@@ -35,6 +35,7 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {{-- Kelas Saya Tile --}}
                     <x-stat-tile
+                        tone="indigo"
                         label="Kelas Saya"
                         :value="$siswa?->kelas?->nama ?? 'Belum Ada Kelas'"
                         :hint="$siswa?->nisn ? 'NISN: ' . $siswa->nisn : 'Status: Siswa Aktif'"
@@ -43,6 +44,7 @@
 
                     {{-- Tagihan Tile --}}
                     <x-stat-tile
+                        :tone="$tagihanBelumLunas > 0 ? 'amber' : 'green'"
                         label="Tagihan Belum Lunas"
                         value="Rp {{ number_format($tagihanBelumLunas, 0, ',', '.') }}"
                         hint="Status tagihan sekolah"
