@@ -5,7 +5,28 @@ export function dataTableFilter(config) {
         filters: config.filters || {},
         perPage: config.perPage ?? 20,
         indexUrlBase: config.indexUrlBase,
+        roleGroups: config.roleGroups || {},
         tomSelects: {},
+
+        setScopeGroup(group) {
+            this.filters.scope_group = group;
+            this.filters.role = '';
+            this.refreshRoleOptions(group);
+            this.muatUlangDaftar();
+        },
+
+        refreshRoleOptions(group) {
+            const ts = this.tomSelects.role;
+            if (!ts) return;
+
+            const roles = (group && this.roleGroups[group]) || this.roleGroups.semua || [];
+
+            ts.clear(true);
+            ts.clearOptions();
+            ts.addOption({ value: '', text: 'Semua Role' });
+            roles.forEach((roleName) => ts.addOption({ value: roleName, text: roleName }));
+            ts.refreshOptions(false);
+        },
 
         initFilterSelect(el, fieldName, isSearchable = false) {
             let tomConfig = {
