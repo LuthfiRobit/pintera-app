@@ -21,10 +21,10 @@ it('seeds the admin_sdm role with all 4 kehadiran-sdm permissions', function () 
     expect($role->hasPermissionTo('kehadiran-sdm.lihat-qr-sendiri'))->toBeTrue();
 });
 
-it('gives guru and karyawan roles the lihat-qr-sendiri permission only', function () {
+it('gives guru and pegawai roles the lihat-qr-sendiri permission only', function () {
     Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder']);
 
-    foreach (['guru', 'karyawan_pool', 'karyawan_lembaga'] as $roleName) {
+    foreach (['guru', 'pegawai_yayasan', 'pegawai_lembaga'] as $roleName) {
         $role = Role::where('name', $roleName)->first();
         expect($role->hasPermissionTo('kehadiran-sdm.lihat-qr-sendiri'))->toBeTrue();
         expect($role->hasPermissionTo('kehadiran-sdm.kelola-konfigurasi'))->toBeFalse();
