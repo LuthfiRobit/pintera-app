@@ -30,14 +30,14 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
 6. **Dashboard Karyawan (`admin/dashboard/karyawan.blade.php`)**:
    - Menampilkan stat tile `Sisa Kuota Cuti` (jatah vs terpakai) dan `Shift Hari Ini` (nama & jam shift).
 7. **Dashboard Guru (`admin/dashboard/guru.blade.php`)**:
-   - Menampilkan tabel `Jadwal Mengajar Hari Ini` (jam, kelas, mapel) dan widget `Progress Nilai Kelas Wali`.
+   - Menampilkan tabel `Jadwal Mengajar Hari Ini` dan widget `Progress Nilai Kelas Wali`.
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG toga, gradient hero banner royal indigo-purple (`from-indigo-600 via-purple-600 to-blue-500`), dan sidebar timeline jam mengajar dengan badge lingkaran pastel.
 8. **Dashboard Orang Tua (`admin/dashboard/orang-tua.blade.php`)**:
    - Menampilkan stat tile `Tagihan Belum Lunas` dan `Anak Terdaftar`, serta tabel `Jadwal Pelajaran Anak Hari Ini`.
-   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah dari layout 1-kolom linier kaku menjadi layout 2-kolom (8:4):
-     - Main Content (8 cols): Hero Banner gradient royal blue (`from-blue-600 via-indigo-600 to-sky-500`), Stat Tiles border accent, Card Avatar Inisial Anak berwarna dinamis (Orange, Blue, Emerald, Purple), dan Widget Status Kasus Pendampingan.
-     - Right Sidebar (4 cols): Mini Calendar Minggu Ini (aktif date highlight) dan Timeline Cards "Jadwal Pelajaran Anak Hari Ini" dengan badge urutan/jam berwarna pastel & chevron icon.
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG, gradient hero banner royal blue (`from-blue-600 via-indigo-600 to-sky-500`), Card Avatar Inisial Anak berwarna dinamis, dan sidebar timeline jadwal pelajaran anak.
 9. **Dashboard Siswa (`admin/dashboard/siswa.blade.php`)**:
    - Menampilkan stat tile `Kelas Saya` & `Tagihan Belum Lunas`, serta tabel `Jadwal Pelajaran Hari Ini`.
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG buku/sekolah, gradient hero banner sky-indigo (`from-sky-500 via-blue-600 to-indigo-600`), Card Profil Akademik Siswa dengan avatar inisial nama, dan sidebar timeline jadwal pelajaran hari ini.
 
 ---
 
