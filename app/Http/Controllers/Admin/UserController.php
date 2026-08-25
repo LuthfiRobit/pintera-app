@@ -27,7 +27,7 @@ class UserController extends BaseController
 
         $groups = $this->scopeGroups();
 
-        $query = User::with('roles', 'lembaga', 'yayasan')
+        $query = User::with('roles', 'lembaga.yayasan', 'yayasan')
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")->orWhere('username', 'like', "%{$search}%")))
             ->when($roleFilter, fn ($q) => $q->whereHas('roles', fn ($q2) => $q2->where('name', $roleFilter)))
             ->when($scopeGroup && isset($groups[$scopeGroup]), fn ($q) => $q->whereHas('roles', fn ($q2) => $q2->whereIn('name', $groups[$scopeGroup])))

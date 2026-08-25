@@ -54,7 +54,7 @@ it('shows only pegawai_lembaga-family accounts and their count when the lembaga 
     $kepsek->assignRole(['kepala_sekolah', 'pegawai_lembaga']);
 
     $guru = User::factory()->create(['lembaga_id' => $lembaga->id, 'email' => 'guru.chip@example.test']);
-    $guru->assignRole(['guru', 'pegawai_lembaga']);
+    $guru->assignRole('guru');
 
     $response = $this->actingAs($admin)->get(route('admin.users.index', ['scope_group' => 'lembaga']));
 

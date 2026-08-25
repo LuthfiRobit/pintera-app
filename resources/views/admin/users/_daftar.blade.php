@@ -58,7 +58,7 @@
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->email }}</td>
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->roles->pluck('name')->implode(', ') }}</td>
                     @if ($isPlatformViewer)
-                        <td class="px-5 py-3 align-top text-gray-500">{{ $user->yayasan?->nama ?? '—' }}</td>
+                        <td class="px-5 py-3 align-top text-gray-500">{{ $user->yayasan?->nama ?? $user->lembaga?->yayasan?->nama ?? '—' }}</td>
                     @endif
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->lembaga?->nama ?? '—' }}</td>
                     <td class="px-5 py-3 align-top">
