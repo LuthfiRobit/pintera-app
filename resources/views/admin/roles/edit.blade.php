@@ -58,6 +58,9 @@
                         </template>
                         <template x-if="!isProtected">
                             <x-select x-model="scopeLevel" class="mt-1.5">
+                                @if ($isPlatformActor)
+                                    <option value="platform">Platform</option>
+                                @endif
                                 <option value="yayasan">Yayasan</option>
                                 <option value="lembaga">Lembaga</option>
                                 <option value="diri_sendiri">Diri Sendiri</option>

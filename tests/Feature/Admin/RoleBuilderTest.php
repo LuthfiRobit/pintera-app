@@ -342,3 +342,27 @@ it('refuses to let a yayasan-scoped role-manager create a platform-scoped role',
 
     expect(Role::where('name', 'sneaky_platform')->exists())->toBeFalse();
 });
+
+it('hides the Platform scope option from a non-platform actor on the create page', function () {
+    $admin = actingAsSuperAdmin();
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.create'));
+
+    $response->assertOk();
+    $response->assertDontSee('<option value="platform">Platform</option>', false);
+});
+
+it('shows the Platform scope option to a platform_super_admin actor on the create page', function () {
+    foreach (['roles.view', 'roles.create', 'roles.edit', 'roles.delete'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $platformRole = Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+    $platformRole->givePermissionTo(['roles.view', 'roles.create', 'roles.edit', 'roles.delete']);
+    $admin = User::factory()->create();
+    $admin->assignRole($platformRole);
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.create'));
+
+    $response->assertOk();
+    $response->assertSee('<option value="platform">Platform</option>', false);
+});

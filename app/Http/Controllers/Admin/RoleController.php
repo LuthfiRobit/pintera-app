@@ -73,11 +73,14 @@ class RoleController extends BaseController
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorize('create', Role::class);
 
-        return view('admin.roles.create', ['moduleGroups' => PermissionCatalog::grouped()]);
+        return view('admin.roles.create', [
+            'moduleGroups' => PermissionCatalog::grouped(),
+            'isPlatformActor' => $request->user()->widestScopeLevel() === 'platform',
+        ]);
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse
@@ -115,7 +118,7 @@ class RoleController extends BaseController
         return redirect()->route('admin.roles.index')->with('status', 'Role berhasil dibuat.');
     }
 
-    public function edit(Role $role): View
+    public function edit(Request $request, Role $role): View
     {
         $this->authorize('update', $role);
 
@@ -123,6 +126,7 @@ class RoleController extends BaseController
             'role' => $role,
             'moduleGroups' => PermissionCatalog::grouped(),
             'checkedIds' => $role->permissions->pluck('id')->all(),
+            'isPlatformActor' => $request->user()->widestScopeLevel() === 'platform',
         ]);
     }
 
