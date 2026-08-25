@@ -133,7 +133,7 @@ class OrangTuaController extends BaseController
         return redirect()->route('admin.orang-tua.index')->with('status', 'Status akun Orang Tua berhasil diperbarui.');
     }
 
-    // A lembaga-scoped admin (admin_akademik) may act on any orang tua profile that either has
+    // A lembaga-scoped admin (operator_akademik) may act on any orang tua profile that either has
     // no linked siswa yet (so the just-created-but-not-yet-tautkan flow isn't blocked) or has
     // at least one siswa in their own lembaga. yayasan_super_admin is unrestricted. OrangTua
     // has no lembaga_id of its own by design (a parent can have children in multiple lembaga),
