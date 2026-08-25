@@ -32,6 +32,13 @@
                     </div>
                 </div>
 
+                {{-- 1b. Stat Ringkas Guru --}}
+                <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3">
+                    <x-stat-tile label="Jam Mengajar Hari Ini" :value="$jadwalHariIni->count()" icon="school" />
+                    <x-stat-tile label="Presensi Diri" :value="$presensiDiriHariIni?->status?->label() ?? 'Belum Absen'" icon="badge" />
+                    <x-stat-tile label="RPP Perlu Tindakan" :value="$rppPerluTindakan" icon="assignment_late" />
+                </div>
+
                 {{-- 2. Progress Nilai Kelas Wali (If Applicable) --}}
                 @if ($kelasWali && $progressKelasWali)
                     <x-panel class="p-6 border-l-4 border-l-indigo-500">
@@ -129,6 +136,25 @@
                         </ul>
                     @endif
                 </x-panel>
+
+                {{-- 4b. Rekap Presensi Siswa di Kelas yang Diajar Hari Ini --}}
+                @if ($jadwalHariIni->isNotEmpty())
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">Rekap Presensi Siswa Hari Ini</h3>
+                                <p class="text-xs text-slate">Kehadiran siswa di kelas yang Anda ajarkan hari ini</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+                            <x-stat-tile label="Hadir" :value="$rekapPresensiSiswaHariIni['hadir']" icon="check_circle" />
+                            <x-stat-tile label="Izin" :value="$rekapPresensiSiswaHariIni['izin']" icon="hourglass_empty" />
+                            <x-stat-tile label="Sakit" :value="$rekapPresensiSiswaHariIni['sakit']" icon="local_hospital" />
+                            <x-stat-tile label="Alpa" :value="$rekapPresensiSiswaHariIni['alpa']" icon="cancel" />
+                            <x-stat-tile label="Terlambat" :value="$rekapPresensiSiswaHariIni['terlambat']" icon="schedule" />
+                        </div>
+                    </x-panel>
+                @endif
 
                 {{-- 5. Kasus Pendampingan yang Saya Tangani (Konselor) --}}
                 @if ($kasusDitangani->isNotEmpty())

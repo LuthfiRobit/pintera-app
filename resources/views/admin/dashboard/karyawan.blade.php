@@ -88,6 +88,22 @@
                     </x-panel>
                 @endif
 
+                {{-- 3b. Riwayat Presensi 30 Hari Terakhir --}}
+                @if ($karyawan)
+                    <x-panel class="p-6">
+                        <p class="mb-3 text-sm font-medium text-ink">Riwayat Presensi 30 Hari Terakhir</p>
+                        <div class="relative h-56 w-full" x-data="presensiBulananChart(
+                            @js($riwayatPresensi30Hari['labels']),
+                            @js($riwayatPresensi30Hari['hadir']),
+                            @js($riwayatPresensi30Hari['izin']),
+                            @js($riwayatPresensi30Hari['sakit']),
+                            @js($riwayatPresensi30Hari['alpa'])
+                        )">
+                            <canvas x-ref="canvas"></canvas>
+                        </div>
+                    </x-panel>
+                @endif
+
                 {{-- 4. Kasus Pendampingan yang Saya Tangani --}}
                 @if ($kasusDitangani->isNotEmpty())
                     <x-panel class="p-6">

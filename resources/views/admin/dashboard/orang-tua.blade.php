@@ -85,6 +85,45 @@
                     @endif
                 </x-panel>
 
+                {{-- 3b. Nilai Terbaru & Riwayat Izin/Sakit --}}
+                @if ($nilaiTerbaru->isNotEmpty())
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">Nilai Terbaru</h3>
+                                <p class="text-xs text-slate">5 nilai terakhir yang tercatat untuk anak Anda</p>
+                            </div>
+                        </div>
+                        <ul class="mt-4 divide-y divide-ink/10">
+                            @foreach ($nilaiTerbaru as $nilai)
+                                <li class="flex items-center justify-between py-2.5 text-sm">
+                                    <span class="text-ink">{{ $nilai->siswa->nama_lengkap }} &middot; {{ $nilai->komponenPenilaian?->mataPelajaran?->nama ?? $nilai->asesmen?->mataPelajaran?->nama ?? '-' }}</span>
+                                    <x-badge tone="brass">{{ $nilai->nilai_angka }}</x-badge>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </x-panel>
+                @endif
+
+                @if ($riwayatIzinSakit->isNotEmpty())
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">Riwayat Izin / Sakit</h3>
+                                <p class="text-xs text-slate">5 catatan izin/sakit terbaru anak Anda</p>
+                            </div>
+                        </div>
+                        <ul class="mt-4 divide-y divide-ink/10">
+                            @foreach ($riwayatIzinSakit as $presensi)
+                                <li class="flex items-center justify-between py-2.5 text-sm">
+                                    <span class="text-ink">{{ $presensi->siswa->nama_lengkap }}</span>
+                                    <x-badge tone="amber">{{ $presensi->status->label() }}</x-badge>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </x-panel>
+                @endif
+
                 {{-- 4. Kasus Pendampingan --}}
                 <x-panel class="p-6">
                     <div class="flex items-center justify-between pb-4 border-b border-ink/10">

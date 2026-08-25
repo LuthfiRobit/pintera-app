@@ -50,6 +50,18 @@
                     />
                 </div>
 
+                {{-- 2b. Rekap Presensi Bulan Ini --}}
+                <x-panel class="p-6">
+                    <p class="mb-3 text-sm font-medium text-ink">Rekap Presensi Bulan Ini</p>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                        <x-stat-tile label="Hadir" :value="$presensiBulanIni['hadir']" icon="check_circle" />
+                        <x-stat-tile label="Izin" :value="$presensiBulanIni['izin']" icon="hourglass_empty" />
+                        <x-stat-tile label="Sakit" :value="$presensiBulanIni['sakit']" icon="local_hospital" />
+                        <x-stat-tile label="Alpa" :value="$presensiBulanIni['alpa']" icon="cancel" />
+                        <x-stat-tile label="Terlambat" :value="$presensiBulanIni['terlambat']" icon="schedule" />
+                    </div>
+                </x-panel>
+
                 {{-- 3. Profil Siswa Card --}}
                 <x-panel class="p-6">
                     <div class="flex items-center justify-between pb-4 border-b border-ink/10">
@@ -87,6 +99,26 @@
                         </div>
                     </div>
                 </x-panel>
+
+                {{-- 3b. Nilai Terbaru --}}
+                @if ($nilaiTerbaru->isNotEmpty())
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">Nilai Terbaru</h3>
+                                <p class="text-xs text-slate">5 nilai terakhir yang tercatat</p>
+                            </div>
+                        </div>
+                        <ul class="mt-4 divide-y divide-ink/10">
+                            @foreach ($nilaiTerbaru as $nilai)
+                                <li class="flex items-center justify-between py-2.5 text-sm">
+                                    <span class="text-ink">{{ $nilai->komponenPenilaian?->mataPelajaran?->nama ?? $nilai->asesmen?->mataPelajaran?->nama ?? '-' }}</span>
+                                    <x-badge tone="brass">{{ $nilai->nilai_angka }}</x-badge>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </x-panel>
+                @endif
             </div>
 
             {{-- Right Sidebar Area (4 Cols) --}}

@@ -50,7 +50,7 @@
                         </div>
                     </div>
                     <div class="mt-4">
-                        <div class="h-60 w-full" x-data="trenTenantChart(@js($trenTenant['labels']), @js($trenTenant['data']))">
+                        <div class="relative h-60 w-full" x-data="trenTenantChart(@js($trenTenant['labels']), @js($trenTenant['data']))">
                             <canvas x-ref="canvas"></canvas>
                         </div>
                     </div>
@@ -114,27 +114,42 @@
             {{-- Right Sidebar Area (4 Cols) --}}
             <div class="space-y-6 lg:col-span-5 xl:col-span-4">
                 
-                {{-- 1. Status Platform Widget --}}
+                {{-- 1. Ringkasan Kesehatan Tenant Widget --}}
+                @php
+                    $yayasanTanpaTaAktif = $ringkasanPerYayasan->filter(fn ($r) => ! $r['adaTahunAjaranAktif'])->count();
+                    $totalAkunNonaktif = $ringkasanPerYayasan->sum('akunNonaktif');
+                @endphp
                 <x-panel class="p-6">
                     <div class="flex items-center justify-between pb-3 border-b border-ink/10">
-                        <h3 class="font-display font-bold text-sm uppercase tracking-wider text-slate">Status Operasional Platform</h3>
-                        <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 uppercase">
-                            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            Online
-                        </span>
+                        <h3 class="font-display font-bold text-sm uppercase tracking-wider text-slate">Ringkasan Kesehatan Tenant</h3>
                     </div>
 
                     <div class="mt-4 space-y-3">
-                        <div class="rounded-2xl border border-purple-100 bg-purple-50/50 p-4">
+                        <div class="rounded-2xl border {{ $yayasanTanpaTaAktif > 0 ? 'border-amber-100 bg-amber-50/50' : 'border-emerald-100 bg-emerald-50/50' }} p-4">
                             <div class="flex items-center gap-3">
-                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-600 text-white shadow-sm">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $yayasanTanpaTaAktif > 0 ? 'bg-amber-500' : 'bg-emerald-600' }} text-white shadow-sm">
                                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <h4 class="font-display font-bold text-sm text-ink">Multi-Tenant Core</h4>
-                                    <p class="text-xs text-slate mt-0.5">Sistem isolasi scope yayasan &amp; lembaga aktif sempurna</p>
+                                    <h4 class="font-display font-bold text-sm text-ink">Tahun Ajaran Aktif</h4>
+                                    <p class="text-xs text-slate mt-0.5">
+                                        {{ $yayasanTanpaTaAktif > 0 ? "{$yayasanTanpaTaAktif} yayasan belum punya TA aktif" : 'Semua yayasan punya TA aktif' }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border {{ $totalAkunNonaktif > 0 ? 'border-amber-100 bg-amber-50/50' : 'border-emerald-100 bg-emerald-50/50' }} p-4">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $totalAkunNonaktif > 0 ? 'bg-amber-500' : 'bg-emerald-600' }} text-white shadow-sm">
+                                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-display font-bold text-sm text-ink">Akun Nonaktif</h4>
+                                    <p class="text-xs text-slate mt-0.5">{{ $totalAkunNonaktif }} akun nonaktif lintas semua yayasan</p>
                                 </div>
                             </div>
                         </div>

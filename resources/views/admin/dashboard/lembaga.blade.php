@@ -65,7 +65,7 @@
                         </div>
                         <div class="mt-6 border-t border-ink/10 pt-4">
                             <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Tren Pendaftaran (30 Hari Terakhir)</p>
-                            <div class="h-56 w-full" x-data="trenPendaftaranChart(@js($tren['labels']), @js($tren['data']))">
+                            <div class="relative h-56 w-full" x-data="trenPendaftaranChart(@js($tren['labels']), @js($tren['data']))">
                                 <canvas x-ref="canvas"></canvas>
                             </div>
                         </div>

@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Enums\StatusRpp;
+use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Models\Presensi;
+use App\Domains\Akademik\Models\Rpp;
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Domains\Workflow\Enums\ApprovalStatus;
+use App\Enums\Hari;
 use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
@@ -51,6 +56,38 @@ class DashboardController extends BaseController
                 ? $this->dashboardStats->statistikProgressRaporKelas($kelasWali)
                 : null;
 
+            $presensiDiriHariIni = null;
+            $rppPerluTindakan = 0;
+            $rekapPresensiSiswaHariIni = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'terlambat' => 0];
+
+            if ($user->guru !== null) {
+                $presensiDiriHariIni = $user->guru->attendanceRecords()->withoutGlobalScope(TenantScope::class)
+                    ->where('tanggal', now()->toDateString())->first();
+
+                $rppPerluTindakan = Rpp::where('guru_id', $user->guru->id)
+                    ->whereIn('status', [StatusRpp::Draft, StatusRpp::PerluRevisi])
+                    ->count();
+
+                $sesiHariIni = SesiPembelajaran::where('guru_id', $user->guru->id)
+                    ->whereDate('tanggal', now()->toDateString())
+                    ->pluck('id');
+
+                if ($sesiHariIni->isNotEmpty()) {
+                    $counts = Presensi::whereIn('sesi_pembelajaran_id', $sesiHariIni)
+                        ->selectRaw('status, count(*) as total')
+                        ->groupBy('status')
+                        ->pluck('total', 'status');
+
+                    $rekapPresensiSiswaHariIni = [
+                        'hadir' => (int) ($counts['hadir'] ?? 0),
+                        'izin' => (int) ($counts['izin'] ?? 0),
+                        'sakit' => (int) ($counts['sakit'] ?? 0),
+                        'alpa' => (int) ($counts['alpa'] ?? 0),
+                        'terlambat' => (int) ($counts['terlambat'] ?? 0),
+                    ];
+                }
+            }
+
             return view('admin.dashboard.guru', [
                 'jabatanTambahan' => $user->guru?->jabatanTambahan ?? collect(),
                 'kasusDiajukan' => $kasusDiajukan,
@@ -60,6 +97,9 @@ class DashboardController extends BaseController
                 'jadwalHariIni' => $jadwalHariIni,
                 'kelasWali' => $kelasWali,
                 'progressKelasWali' => $progressKelasWali,
+                'presensiDiriHariIni' => $presensiDiriHariIni,
+                'rppPerluTindakan' => $rppPerluTindakan,
+                'rekapPresensiSiswaHariIni' => $rekapPresensiSiswaHariIni,
             ]);
         }
 
@@ -67,6 +107,8 @@ class DashboardController extends BaseController
             $siswa = $user->siswa()->withoutGlobalScope(TenantScope::class)->with('kelas')->first();
             $jadwalHariIni = collect();
             $tagihanBelumLunas = 0;
+            $nilaiTerbaru = collect();
+            $presensiBulanIni = ['hadir' => 0, 'izin' => 0, 'sakit' => 0, 'alpa' => 0, 'terlambat' => 0];
 
             if ($siswa !== null) {
                 if ($siswa->kelas_id !== null) {
@@ -87,12 +129,35 @@ class DashboardController extends BaseController
                     })
                     ->whereIn('status', ['belum_bayar', 'dicicil'])
                     ->sum('total_tagihan');
+
+                $nilaiTerbaru = NilaiSiswa::where('siswa_id', $siswa->id)
+                    ->whereNotNull('nilai_angka')
+                    ->with(['komponenPenilaian.mataPelajaran', 'asesmen.mataPelajaran'])
+                    ->latest('id')
+                    ->limit(5)
+                    ->get();
+
+                $counts = Presensi::where('siswa_id', $siswa->id)
+                    ->whereHas('sesiPembelajaran', fn ($q) => $q->whereMonth('tanggal', now()->month)->whereYear('tanggal', now()->year))
+                    ->selectRaw('status, count(*) as total')
+                    ->groupBy('status')
+                    ->pluck('total', 'status');
+
+                $presensiBulanIni = [
+                    'hadir' => (int) ($counts['hadir'] ?? 0),
+                    'izin' => (int) ($counts['izin'] ?? 0),
+                    'sakit' => (int) ($counts['sakit'] ?? 0),
+                    'alpa' => (int) ($counts['alpa'] ?? 0),
+                    'terlambat' => (int) ($counts['terlambat'] ?? 0),
+                ];
             }
 
             return view('admin.dashboard.siswa', [
                 'siswa' => $siswa,
                 'jadwalHariIni' => $jadwalHariIni,
                 'tagihanBelumLunas' => $tagihanBelumLunas,
+                'nilaiTerbaru' => $nilaiTerbaru,
+                'presensiBulanIni' => $presensiBulanIni,
             ]);
         }
 
@@ -102,7 +167,8 @@ class DashboardController extends BaseController
             $kontakUtamaKasusIds = [];
             $anakList = collect();
             $tagihanBelumLunas = 0;
-            $presensiAnakHariIni = collect();
+            $nilaiTerbaru = collect();
+            $riwayatIzinSakit = collect();
             $jadwalAnakHariIni = collect();
 
             if ($orangTua !== null) {
@@ -132,10 +198,18 @@ class DashboardController extends BaseController
                     ->whereIn('status', ['belum_bayar', 'dicicil'])
                     ->sum('total_tagihan');
 
-                $presensiAnakHariIni = AttendanceRecord::withoutGlobalScope(TenantScope::class)
-                    ->where('pegawai_type', \App\Models\Siswa::class)
-                    ->whereIn('pegawai_id', $siswaIds)
-                    ->whereDate('tanggal', now()->toDateString())
+                $nilaiTerbaru = NilaiSiswa::withoutGlobalScope(TenantScope::class)->whereIn('siswa_id', $siswaIds)
+                    ->whereNotNull('nilai_angka')
+                    ->with(['komponenPenilaian.mataPelajaran', 'asesmen.mataPelajaran', 'siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                    ->latest('id')
+                    ->limit(5)
+                    ->get();
+
+                $riwayatIzinSakit = Presensi::whereIn('siswa_id', $siswaIds)
+                    ->whereIn('status', ['izin', 'sakit'])
+                    ->with(['siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+                    ->latest('id')
+                    ->limit(5)
                     ->get();
 
                 $kelasIds = $anakList->pluck('kelas_id')->filter()->all();
@@ -155,7 +229,8 @@ class DashboardController extends BaseController
                 'kasusStats' => $this->kasusStatusCounts($kasusList),
                 'anakList' => $anakList,
                 'tagihanBelumLunas' => $tagihanBelumLunas,
-                'presensiAnakHariIni' => $presensiAnakHariIni,
+                'nilaiTerbaru' => $nilaiTerbaru,
+                'riwayatIzinSakit' => $riwayatIzinSakit,
                 'jadwalAnakHariIni' => $jadwalAnakHariIni,
             ]);
         }
@@ -189,11 +264,30 @@ class DashboardController extends BaseController
                 ->with('jenisShift')
                 ->first() : null;
 
+            $riwayatPresensi30Hari = ['labels' => [], 'hadir' => [], 'izin' => [], 'sakit' => [], 'alpa' => []];
+            if ($karyawan !== null) {
+                $records = $karyawan->attendanceRecords()->withoutGlobalScope(TenantScope::class)
+                    ->where('tanggal', '>=', now()->subDays(29)->toDateString())
+                    ->get()
+                    ->keyBy(fn ($r) => $r->tanggal->toDateString());
+
+                for ($i = 29; $i >= 0; $i--) {
+                    $tanggal = now()->subDays($i);
+                    $record = $records->get($tanggal->toDateString());
+                    $riwayatPresensi30Hari['labels'][] = $tanggal->translatedFormat('d M');
+                    $riwayatPresensi30Hari['hadir'][] = $record?->status?->value === 'hadir' ? 1 : 0;
+                    $riwayatPresensi30Hari['izin'][] = $record?->status?->value === 'izin' ? 1 : 0;
+                    $riwayatPresensi30Hari['sakit'][] = $record?->status?->value === 'sakit' ? 1 : 0;
+                    $riwayatPresensi30Hari['alpa'][] = $record?->status?->value === 'alpa' ? 1 : 0;
+                }
+            }
+
             return view('admin.dashboard.karyawan', [
                 'karyawan' => $karyawan,
                 'presensiHariIni' => $presensiHariIni,
                 'sisaKuotaCuti' => $sisaKuotaCuti,
                 'jadwalShiftHariIni' => $jadwalShiftHariIni,
+                'riwayatPresensi30Hari' => $riwayatPresensi30Hari,
                 'izinCutiPending' => $izinCutiPending,
                 'kasusDitangani' => $kasusDitangani,
                 'kasusDitanganiStats' => $this->kasusStatusCounts($kasusDitangani),

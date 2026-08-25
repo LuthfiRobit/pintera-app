@@ -150,6 +150,81 @@ it('passes profile, schedule, and unpaid bills to the siswa dashboard view', fun
     $response->assertViewHas('tagihanBelumLunas');
 });
 
+it('shows a siswa their latest recorded grade on their own dashboard', function () {
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $lembaga = Lembaga::factory()->create();
+    $kelas = \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+    $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = \App\Models\Semester::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create([
+        'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+    ]);
+    $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create([
+        'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+    ]);
+    \App\Domains\Akademik\Models\NilaiSiswa::create([
+        'siswa_id' => $siswa->id, 'asesmen_id' => $asesmen->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 92,
+    ]);
+
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('siswa');
+    $siswa->update(['user_id' => $user->id]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('92');
+});
+
+it('shows an orang tua the latest recorded grade for their linked child', function () {
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $lembaga = Lembaga::factory()->create();
+    $kelas = \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Anak Dashboard Ortu']);
+    $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = \App\Models\Semester::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create([
+        'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+    ]);
+    $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create([
+        'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+    ]);
+    \App\Domains\Akademik\Models\NilaiSiswa::create([
+        'siswa_id' => $siswa->id, 'asesmen_id' => $asesmen->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 85,
+    ]);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = \App\Models\OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+    $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($orangTuaUser)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('Anak Dashboard Ortu');
+    $response->assertSee('85');
+});
+
+it('shows the 30-day attendance chart on the karyawan dashboard', function () {
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
+
+    $karyawan = app(\App\Services\AkunKaryawanGenerator::class)->buat(
+        'Karyawan Chart Test', '3201234567894444', $yayasan->id, $lembaga->id, $jenis->id
+    );
+    $karyawan->user()->update(['must_change_password' => false, 'email_verified_at' => now()]);
+
+    $response = $this->actingAs($karyawan->user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('presensiBulananChart(', false);
+});
+
 
 
 

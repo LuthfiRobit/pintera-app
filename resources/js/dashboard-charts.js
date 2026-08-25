@@ -32,6 +32,7 @@ export function trenPendaftaranChart(labels, data) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -99,6 +100,7 @@ export function donutTagihanChart(labels, data) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
                     cutout: '76%',
                     plugins: {
                         legend: { display: false },
@@ -138,6 +140,7 @@ export function perLembagaBarChart(labels, data) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -194,6 +197,7 @@ export function trenTenantChart(labels, data) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { grid: { display: false } },
@@ -222,6 +226,17 @@ export function presensiBulananChart(labels, hadir, izin, sakit, alpa) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
+                    plugins: {
+                        tooltip: {
+                            backgroundColor: '#ffffff',
+                            titleColor: '#1e293b',
+                            bodyColor: '#334155',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 10,
+                        },
+                    },
                     scales: {
                         x: { stacked: true, grid: { display: false } },
                         y: { stacked: true, beginAtZero: true, ticks: { precision: 0, color: '#94a3b8' }, grid: { color: 'rgba(226, 232, 240, 0.6)', borderDash: [4, 4] } }

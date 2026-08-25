@@ -59,7 +59,7 @@
                         @if ($ringkasanPerLembaga->isNotEmpty())
                             <div class="mt-6 border-t border-ink/10 pt-4">
                                 <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Grafik Pendaftar per Lembaga</p>
-                                <div class="h-56 w-full"
+                                <div class="relative h-56 w-full"
                                     x-data="perLembagaBarChart(
                                         @js($ringkasanPerLembaga->pluck('lembaga.nama')),
                                         @js($ringkasanPerLembaga->map(fn ($r) => $r['spmb']['total']))
