@@ -17,16 +17,27 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
    - Menambahkan 5 unit test baru di `tests/Unit/DashboardStatsServiceTest.php` (total 15 test passing 100%).
 2. **Chart.js Integration (`resources/js/dashboard-charts.js` & `resources/js/app.js`)**:
    - Menambahkan dan mengoperasikan `trenTenantChart` (line chart pertumbuhan yayasan 6 bulan) dan `presensiBulananChart` (stacked bar chart presensi SDM).
+   - **Style Chart Redesign (Gambar 2, 3, 4)**:
+     - `perLembagaBarChart`: Diubah menjadi modern pill bar chart dengan `borderRadius: 12`, `borderSkipped: false`, hover active highlight, dan dashed horizontal gridlines (Gambar 2).
+     - `trenPendaftaranChart`: Diubah menjadi smooth area line chart (`tension: 0.4`) dengan background gradient fill `rgba(59, 130, 246, 0.35)` & point indicators (Gambar 4).
+     - `donutTagihanChart`: Diubah menjadi ring donut chart dengan cutout `76%`, plugin custom text total di tengah lingkaran donut, dan legenda breakdown berjejer di sisi kanan untuk mengeliminasi ruang kosong (Gambar 3 & 5).
    - Melakukan kompilasi bundle frontend melalui `npm run build`.
+
 3. **Dashboard Platform (`admin/dashboard/platform.blade.php`)**:
    - Menampilkan chart `trenTenantChart`.
    - Menambahkan kolom health check: `TA Aktif?` (`adaTahunAjaranAktif`) dan `Akun Nonaktif` (`akunNonaktif`).
+
 4. **Dashboard Yayasan (`admin/dashboard/yayasan.blade.php`)**:
    - Menampilkan widget `Kehadiran SDM Hari Ini` (Hadir, Izin, Sakit, Alpa, Cuti) dan tile `Kasus Eskalasi Belum Ditangani`.
    - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung/crown yayasan, hero banner gradient executive indigo-blue (`from-indigo-600 via-blue-700 to-purple-800`), tabel tinjau per lembaga dengan avatar inisial berwarna pastel (Blue, Purple, Emerald, Amber, Rose) & filter switcher, serta sidebar widget presensi SDM & mini kalender minggu ini.
+
 5. **Dashboard Lembaga (`admin/dashboard/lembaga.blade.php`)**:
    - Menampilkan widget `Kehadiran SDM Hari Ini`, `Pengajuan Izin/Cuti Menunggu Persetujuan`, dan tabel `Progress Pengumpulan Nilai per Kelas` (permission `komponen-penilaian.kelola`).
-   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung/lembaga, gradient hero banner emerald-teal (`from-emerald-600 via-teal-600 to-cyan-600`), serta sidebar widget kehadiran SDM & mini kalender minggu ini.
+   - **Visual Redesign (Ref-Driven Modern UI & Responsivitas Detail)**:
+     - Grid responsif fluid (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4`) untuk mencegah teks judul stat tile squished pada tablet/screen menengah.
+     - Layout Ringkasan Keuangan Side-by-Side: Donut chart ring di sisi kiri + legenda status tagihan (Belum Bayar, Dicicil, Lunas) lengkap dengan persentase & nominal di sisi kanan (Gambar 3 & 5 fix).
+     - Filter & Scroll Container Progress Nilai Kelas: Input pencarian live nama kelas (`x-model="search"`) dan container scrollable (`max-h-72 overflow-y-auto`) dengan sticky header.
+     - Restyle Kasus Pendampingan: Grid kartu status di sisi kiri (`lg:col-span-5`) dan daftar scrollable kasus aktif di sisi kanan (`lg:col-span-7`).
 6. **Dashboard Karyawan (`admin/dashboard/karyawan.blade.php`)**:
    - Menampilkan stat tile `Sisa Kuota Cuti` (jatah vs terpakai) dan `Shift Hari Ini` (nama & jam shift).
    - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG ID badge, gradient hero banner cyan-teal (`from-cyan-600 via-teal-600 to-blue-600`), Profil Kepegawaian dengan avatar inisial nama, serta sidebar widget detail shift kerja & mini kalender minggu ini.
