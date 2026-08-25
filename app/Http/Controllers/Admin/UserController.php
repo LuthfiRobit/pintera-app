@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Lembaga;
 use App\Models\Role;
+use App\Models\Scopes\TenantScope;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,26 +27,27 @@ class UserController extends BaseController
         $scopeGroup = $request->input('scope_group');
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
+        $actor = $request->user();
+        $isPlatformViewer = $actor->widestScopeLevel() === 'platform';
         $groups = $this->scopeGroups();
 
-        $query = User::with('roles', 'lembaga.yayasan', 'yayasan')
+        $query = $this->visibleUsersQuery($actor, $isPlatformViewer)
+            ->with('roles', 'lembaga.yayasan', 'yayasan')
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")->orWhere('username', 'like', "%{$search}%")))
             ->when($roleFilter, fn ($q) => $q->whereHas('roles', fn ($q2) => $q2->where('name', $roleFilter)))
-            ->when($scopeGroup && isset($groups[$scopeGroup]), fn ($q) => $q->whereHas('roles', fn ($q2) => $q2->whereIn('name', $groups[$scopeGroup])))
+            ->when($scopeGroup && array_key_exists($scopeGroup, $groups), fn ($q) => $this->applyScopeGroup($q, $scopeGroup))
             ->orderBy('name');
 
         $users = $query->paginate($perPage)->withQueryString();
 
-        $totalUsers = User::count();
-        $totalAktif = User::where('is_active', true)->count();
-        $totalNonaktif = User::where('is_active', false)->count();
+        $totalUsers = $this->visibleUsersQuery($actor, $isPlatformViewer)->count();
+        $totalAktif = $this->visibleUsersQuery($actor, $isPlatformViewer)->where('is_active', true)->count();
+        $totalNonaktif = $this->visibleUsersQuery($actor, $isPlatformViewer)->where('is_active', false)->count();
 
         $scopeCounts = ['semua' => $totalUsers];
-        foreach ($groups as $groupName => $roleNames) {
-            $scopeCounts[$groupName] = User::whereHas('roles', fn ($q) => $q->whereIn('name', $roleNames))->count();
+        foreach (array_keys($groups) as $groupName) {
+            $scopeCounts[$groupName] = $this->applyScopeGroup($this->visibleUsersQuery($actor, $isPlatformViewer), $groupName)->count();
         }
-
-        $isPlatformViewer = $request->user()->widestScopeLevel() === 'platform';
 
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return view('admin.users._daftar', [
@@ -78,8 +81,11 @@ class UserController extends BaseController
     }
 
     /**
-     * Peta kategori chip filter ke daftar nama role, sesuai precedence RBAC v2
-     * (spec .agents/specs/2026-08-25-rbac-pengguna-scope-filter.md §4).
+     * Peta kategori chip filter ke daftar nama role -- dipakai untuk mengisi opsi
+     * select Role per grup (Filter Role dinamis). BUKAN dipakai langsung sebagai
+     * filter keanggotaan chip karena pegawai_lembaga/pegawai_yayasan sengaja
+     * co-exist dengan role fungsional (invariant scope-carrier RBAC v2) --
+     * keanggotaan chip yang presisi ada di applyScopeGroup().
      */
     private function scopeGroups(): array
     {
@@ -91,6 +97,78 @@ class UserController extends BaseController
             'orang_tua' => ['orang_tua'],
             'siswa' => ['siswa'],
         ];
+    }
+
+    /**
+     * Filter keanggotaan chip scope, precedence-aware (spec §4): pegawai_lembaga
+     * dan pegawai_yayasan adalah role scope-carrier yang SENGAJA co-exist dengan
+     * role fungsional (mis. guru selalu juga punya pegawai_lembaga). Kalau grup
+     * "lembaga"/"yayasan" memakai whereIn polos atas nama role dalam daftar
+     * scopeGroups(), guru akan ikut tercocokkan lewat pegawai_lembaga-nya dan
+     * muncul ganda di chip Lembaga DAN Staf. Method ini mengecualikan user yang
+     * punya role dari grup berprioritas lebih rendah (staf, untuk lembaga; tidak
+     * ada pengecualian tambahan untuk yayasan karena platform_super_admin tidak
+     * pernah diberi pegawai_yayasan oleh invariant manapun saat ini).
+     */
+    private function applyScopeGroup(Builder $query, string $scopeGroup): Builder
+    {
+        return match ($scopeGroup) {
+            'platform' => $query->whereHas('roles', fn ($q) => $q->where('name', 'platform_super_admin')),
+            'yayasan' => $query->where(fn ($q) => $q
+                ->whereHas('roles', fn ($q2) => $q2->whereIn('name', ['yayasan_super_admin', 'bendahara_yayasan']))
+                ->orWhere(fn ($q2) => $q2
+                    ->whereHas('roles', fn ($q3) => $q3->where('name', 'pegawai_yayasan'))
+                    ->whereDoesntHave('roles', fn ($q3) => $q3->where('name', 'platform_super_admin')))),
+            'lembaga' => $query->where(fn ($q) => $q
+                ->whereHas('roles', fn ($q2) => $q2->whereIn('name', ['kepala_sekolah', 'wakasek_kurikulum', 'wakasek_kesiswaan', 'operator_akademik', 'admin_sdm', 'bendahara_lembaga', 'admin_sarpras', 'admin_administrasi']))
+                ->orWhere(fn ($q2) => $q2
+                    ->whereHas('roles', fn ($q3) => $q3->where('name', 'pegawai_lembaga'))
+                    ->whereDoesntHave('roles', fn ($q3) => $q3->whereIn('name', ['guru', 'wali_kelas', 'guru_bk'])))),
+            'staf' => $query->whereHas('roles', fn ($q) => $q->whereIn('name', ['guru', 'wali_kelas', 'guru_bk'])),
+            'orang_tua' => $query->whereHas('roles', fn ($q) => $q->where('name', 'orang_tua')),
+            'siswa' => $query->whereHas('roles', fn ($q) => $q->where('name', 'siswa')),
+            default => $query,
+        };
+    }
+
+    /**
+     * Query User:: yang visible bagi $actor, meniru logic TenantScope TAPI dengan
+     * satu tambahan: akun orang_tua SENGAJA punya lembaga_id=null DAN yayasan_id=null
+     * (lihat OrangTuaController::index(), pola yang sama persis sudah established
+     * di sana) -- visibilitasnya baru bisa diresolve lewat relasi
+     * orangTua->siswa->lembaga_id, bukan kolom lembaga_id/yayasan_id milik User itu
+     * sendiri. TenantScope generik tidak bisa mengekspresikan itu, jadi di-bypass
+     * total di sini dan diganti kondisi manual yang menambahkan orang_tua sebagai
+     * OR tambahan pada tiap cabang.
+     */
+    private function visibleUsersQuery(User $actor, bool $isPlatformViewer): Builder
+    {
+        $query = User::withoutGlobalScope(TenantScope::class);
+
+        if ($isPlatformViewer) {
+            return $query;
+        }
+
+        if ($actor->widestScopeLevel() === 'yayasan') {
+            $activeLembagaId = session('active_lembaga_id');
+
+            if ($activeLembagaId) {
+                return $query->where(fn ($q) => $q
+                    ->where('users.lembaga_id', $activeLembagaId)
+                    ->orWhereHas('orangTua.siswa', fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $activeLembagaId)));
+            }
+
+            $lembagaMilikYayasan = Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id');
+
+            return $query->where(fn ($q) => $q
+                ->whereIn('users.lembaga_id', $lembagaMilikYayasan)
+                ->orWhere('users.yayasan_id', $actor->yayasan_id)
+                ->orWhereHas('orangTua.siswa', fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)->whereIn('lembaga_id', $lembagaMilikYayasan)));
+        }
+
+        return $query->where(fn ($q) => $q
+            ->where('users.lembaga_id', $actor->lembaga_id)
+            ->orWhereHas('orangTua.siswa', fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $actor->lembaga_id)));
     }
 
     public function create(Request $request): View
