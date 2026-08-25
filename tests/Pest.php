@@ -122,7 +122,7 @@ function actingAsOrangTuaManager(): User
     foreach (['orang-tua.view', 'orang-tua.create', 'orang-tua.edit', 'siswa.edit'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['orang-tua.view', 'orang-tua.create', 'orang-tua.edit', 'siswa.edit']);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 
@@ -132,7 +132,7 @@ function actingAsOrangTuaManager(): User
     return $manager;
 }
 
-// `actingAsSiswaOrangTuaManager()` grants an `admin_akademik` role scoped to 'lembaga', but
+// `actingAsSiswaOrangTuaManager()` grants an `operator_akademik` role scoped to 'lembaga', but
 // the manager it creates has no `lembaga_id`. Siswa uses the BelongsToTenant trait /
 // TenantScope, which filters every query by the acting user's lembaga_id — so with a null
 // lembaga_id, route-model-binding on {siswa} never resolves (404) regardless of controller
