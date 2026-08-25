@@ -10,10 +10,6 @@ use App\Models\Yayasan;
 use App\Services\AkunKaryawanGenerator;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-
-uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     (new PermissionSeeder())->run();
