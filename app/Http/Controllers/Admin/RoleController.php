@@ -86,7 +86,7 @@ class RoleController extends BaseController
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255', 'unique:roles,name'],
-            'scope_level' => ['required', 'in:yayasan,lembaga,diri_sendiri'],
+            'scope_level' => ['required', 'in:yayasan,lembaga,diri_sendiri,platform'],
             'permissions' => ['array'],
             'permissions.*' => ['integer', 'exists:permissions,id'],
         ]);
@@ -199,6 +199,7 @@ class RoleController extends BaseController
     private function scopeRank(string $level): int
     {
         return match ($level) {
+            'platform' => 4,
             'yayasan' => 3,
             'lembaga' => 2,
             default => 1, // diri_sendiri

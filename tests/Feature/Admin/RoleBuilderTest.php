@@ -310,3 +310,35 @@ it('ignores a submitted name change for a protected role via AJAX, returning 200
     $response->assertOk();
     expect($protected->fresh()->name)->toBe('yayasan_super_admin');
 });
+
+it('lets a platform_super_admin create a role with scope_level platform', function () {
+    foreach (['roles.view', 'roles.create', 'roles.edit', 'roles.delete'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $platformRole = Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+    $platformRole->givePermissionTo(['roles.view', 'roles.create', 'roles.edit', 'roles.delete']);
+
+    $admin = User::factory()->create();
+    $admin->assignRole($platformRole);
+
+    $this->actingAs($admin)->post(route('admin.roles.store'), [
+        'name' => 'admin_platform_baru',
+        'scope_level' => 'platform',
+        'permissions' => [],
+    ])->assertRedirect(route('admin.roles.index'));
+
+    $created = Role::where('name', 'admin_platform_baru')->first();
+    expect($created->scope_level)->toBe('platform');
+});
+
+it('refuses to let a yayasan-scoped role-manager create a platform-scoped role', function () {
+    $admin = actingAsSuperAdmin();
+
+    $this->actingAs($admin)->post(route('admin.roles.store'), [
+        'name' => 'sneaky_platform',
+        'scope_level' => 'platform',
+        'permissions' => [],
+    ])->assertSessionHasErrors('scope_level');
+
+    expect(Role::where('name', 'sneaky_platform')->exists())->toBeFalse();
+});
