@@ -11,8 +11,8 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('creates a dedicated karyawan and assigns the karyawan_lembaga role', function () {
-    Role::firstOrCreate(['name' => 'karyawan_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+it('creates a dedicated karyawan and assigns the pegawai_lembaga role', function () {
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $jenis = JenisKaryawanMaster::factory()->create();
@@ -26,15 +26,15 @@ it('creates a dedicated karyawan and assigns the karyawan_lembaga role', functio
     expect($user->lembaga_id)->toBe($lembaga->id);
     expect(Hash::check('3201234567891111', $user->password))->toBeTrue();
     expect($user->must_change_password)->toBeTrue();
-    expect($user->hasRole('karyawan_lembaga'))->toBeTrue();
+    expect($user->hasRole('pegawai_lembaga'))->toBeTrue();
 
     expect($karyawan->lembaga_id)->toBe($lembaga->id);
     expect($karyawan->yayasan_id)->toBe($yayasan->id);
     expect($karyawan->no_hp)->toBe('081200001111');
 });
 
-it('creates a pool karyawan (lembaga_id null) and assigns the karyawan_pool role', function () {
-    Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+it('creates a pool karyawan (lembaga_id null) and assigns the pegawai_yayasan role', function () {
+    Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $yayasan = Yayasan::factory()->create();
     $jenis = JenisKaryawanMaster::factory()->create();
 
@@ -43,6 +43,6 @@ it('creates a pool karyawan (lembaga_id null) and assigns the karyawan_pool role
     );
 
     expect($karyawan->user->lembaga_id)->toBeNull();
-    expect($karyawan->user->hasRole('karyawan_pool'))->toBeTrue();
+    expect($karyawan->user->hasRole('pegawai_yayasan'))->toBeTrue();
     expect($karyawan->lembaga_id)->toBeNull();
 });
