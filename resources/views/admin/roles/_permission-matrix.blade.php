@@ -1,11 +1,15 @@
 <div class="rounded-2xl border border-gray-200 bg-white shadow-card">
     <div class="space-y-4 p-6">
-        <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+        <div class="flex flex-col gap-3 border-b border-gray-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <h3 class="font-display text-lg font-bold text-gray-900">Matriks Hak Akses</h3>
                 <p class="text-xs text-gray-500">Pilih izin (permissions) yang diizinkan untuk peran ini.</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="relative">
+                    <input type="text" x-model="permissionSearch" placeholder="Cari permission... (mis. tagihan, rapor)" class="w-64 rounded-lg border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-xs focus:border-brand-500 focus:ring-brand-500">
+                    <x-icon name="search" class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                </div>
                 <button type="button" @click="selectAll()" class="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100">
                     <x-icon name="check_circle" class="h-3.5 w-3.5" />
                     Pilih Semua
@@ -54,7 +58,7 @@
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 pt-2">
-            <template x-for="group in moduleGroups" :key="group.module">
+            <template x-for="group in filteredModuleGroups()" :key="group.module">
                 <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-5 transition hover:border-brand-200 hover:shadow-elevated">
                     <div class="mb-4 flex items-center justify-between border-b border-gray-200/60 pb-3">
                         <p class="font-display text-sm font-bold text-gray-900" x-text="'Modul: ' + group.label"></p>

@@ -67,6 +67,14 @@
                                 <option value="diri_sendiri">Diri Sendiri</option>
                             </x-select>
                         </template>
+                        <div x-show="!isProtected" class="mt-2 space-y-1.5 rounded-lg bg-gray-50 p-3 text-[11px] text-gray-500">
+                            @if ($isPlatformActor)
+                                <p><strong class="text-gray-700">Platform:</strong> Akses lintas SEMUA yayasan (hanya untuk admin sistem tertinggi).</p>
+                            @endif
+                            <p><strong class="text-gray-700">Yayasan:</strong> Akses ke semua lembaga dalam 1 yayasan.</p>
+                            <p><strong class="text-gray-700">Lembaga:</strong> Akses terbatas ke 1 lembaga/sekolah spesifik.</p>
+                            <p><strong class="text-gray-700">Diri Sendiri:</strong> Akses terbatas ke data milik sendiri (mis. guru, siswa, orang tua).</p>
+                        </div>
                         <p x-show="errors.scope_level" class="mt-1.5 text-sm font-medium text-error-600" x-text="errors.scope_level && errors.scope_level[0]"></p>
                     </div>
 

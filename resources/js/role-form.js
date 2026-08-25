@@ -15,6 +15,21 @@ export function roleForm(config) {
         auditMissingFromDatabase: [],
         auditUnusedInCode: [],
         showAuditBanner: false,
+        permissionSearch: '',
+
+        filteredModuleGroups() {
+            const query = this.permissionSearch.trim().toLowerCase();
+            if (!query) return this.moduleGroups;
+
+            return this.moduleGroups
+                .map((group) => ({
+                    ...group,
+                    permissions: group.permissions.filter((permission) =>
+                        permission.label.toLowerCase().includes(query) || permission.name.toLowerCase().includes(query)
+                    ),
+                }))
+                .filter((group) => group.permissions.length > 0);
+        },
 
         isChecked(id) {
             return this.checkedIds.includes(id);
