@@ -23,7 +23,7 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
    - Menambahkan kolom health check: `TA Aktif?` (`adaTahunAjaranAktif`) dan `Akun Nonaktif` (`akunNonaktif`).
 4. **Dashboard Yayasan (`admin/dashboard/yayasan.blade.php`)**:
    - Menampilkan widget `Kehadiran SDM Hari Ini` (Hadir, Izin, Sakit, Alpa, Cuti) dan tile `Kasus Eskalasi Belum Ditangani`.
-   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung yayasan, gradient hero banner slate-blue (`from-slate-900 via-indigo-950 to-blue-900`), tabel tinjau per lembaga dengan filter switcher, dan sidebar widget presensi SDM & mini kalender minggu ini.
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung/crown yayasan, hero banner gradient executive indigo-blue (`from-indigo-600 via-blue-700 to-purple-800`), tabel tinjau per lembaga dengan avatar inisial berwarna pastel (Blue, Purple, Emerald, Amber, Rose) & filter switcher, serta sidebar widget presensi SDM & mini kalender minggu ini.
 5. **Dashboard Lembaga (`admin/dashboard/lembaga.blade.php`)**:
    - Menampilkan widget `Kehadiran SDM Hari Ini`, `Pengajuan Izin/Cuti Menunggu Persetujuan`, dan tabel `Progress Pengumpulan Nilai per Kelas` (permission `komponen-penilaian.kelola`).
    - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung/lembaga, gradient hero banner emerald-teal (`from-emerald-600 via-teal-600 to-cyan-600`), serta sidebar widget kehadiran SDM & mini kalender minggu ini.
