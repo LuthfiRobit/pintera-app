@@ -11,6 +11,7 @@ function actingAsUserManager(): User
     foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role = Role::firstOrCreate(
         ['name' => 'yayasan_super_admin', 'guard_name' => 'web'],
         ['scope_level' => 'yayasan', 'is_protected' => true]
@@ -56,6 +57,7 @@ it('forces lembaga_id to the acting lembaga-scoped manager\'s own lembaga, ignor
     foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $lembagaRole->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
 
