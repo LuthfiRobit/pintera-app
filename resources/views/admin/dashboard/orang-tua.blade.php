@@ -1,10 +1,5 @@
 <x-app-layout>
-    <x-slot name="header">
-        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Orang Tua &middot; Ringkasan</p>
-        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Dashboard Orang Tua</h2>
-    </x-slot>
-
-    <div class="mx-auto max-w-7xl space-y-6">
+    <div class="mx-auto max-w-7xl space-y-6 pt-2">
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
             {{-- Main Content Area (8 Cols) --}}
             <div class="space-y-6 lg:col-span-7 xl:col-span-8">
@@ -16,8 +11,13 @@
                             <span class="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
                             Portal Orang Tua Active
                         </span>
-                        <h1 class="mt-4 font-display text-2xl font-bold tracking-tight sm:text-3xl">
-                            Selamat datang, {{ Auth::user()->name }}! 👋
+                        <h1 class="mt-4 flex items-center gap-2.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                            <span>Selamat datang, {{ Auth::user()->name }}!</span>
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </span>
                         </h1>
                         <p class="mt-2 text-sm leading-relaxed text-blue-100">
                             Pantau perkembangan akademik, keaktifan presensi, dan informasi kewajiban tagihan sekolah anak Anda secara realtime dalam satu portal.
