@@ -183,3 +183,62 @@ it('bypasses TahunAjaran tenant scoping: statistikKeuangan still finds the reque
     expect($hasil['rpTerkumpul'])->toBe(150000);
     expect($hasil['donut'])->toBe(['belum_bayar' => 0, 'dicicil' => 0, 'lunas' => 1]);
 });
+
+it('aggregates SDM attendance counts across the given lembaga ids for today', function () {
+    $lembaga = Lembaga::factory()->create();
+    $guru = \App\Models\Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    \App\Domains\Sdm\Models\AttendanceRecord::create([
+        'lembaga_id' => $lembaga->id, 'pegawai_type' => \App\Models\Guru::class, 'pegawai_id' => $guru->id,
+        'tanggal' => now()->toDateString(), 'status' => 'hadir',
+    ]);
+
+    $service = new DashboardStatsService();
+    $hasil = $service->statistikPresensiSdm([$lembaga->id]);
+
+    expect($hasil['hadir'])->toBe(1);
+    expect($hasil['izin'])->toBe(0);
+});
+
+it('computes rapor fill progress as zero when there is no active semester', function () {
+    $kelas = \App\Models\Kelas::factory()->create();
+
+    $service = new DashboardStatsService();
+    $hasil = $service->statistikProgressRaporKelas($kelas);
+
+    expect($hasil['persen'])->toBe(0.0);
+    expect($hasil['total'])->toBe(0);
+});
+
+it('returns null sisa kuota cuti when no KuotaCutiConfig matches the karyawan', function () {
+    $karyawan = \App\Models\Karyawan::factory()->create();
+
+    $service = new DashboardStatsService();
+    $hasil = $service->statistikSisaKuotaCuti($karyawan);
+
+    expect($hasil)->toBeNull();
+});
+
+it('computes sisa kuota cuti as jatah minus approved days this year', function () {
+    $lembaga = Lembaga::factory()->create();
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
+    $karyawan = \App\Models\Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenis->id]);
+    \App\Domains\Sdm\Models\KuotaCutiConfig::create(['yayasan_id' => $lembaga->yayasan_id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenis->id, 'jenis_ptk' => 'karyawan', 'jatah_hari_per_tahun' => 12]);
+
+    $service = new DashboardStatsService();
+    $hasil = $service->statistikSisaKuotaCuti($karyawan);
+
+    expect($hasil['jatah'])->toBe(12);
+    expect($hasil['sisa'])->toBe(12);
+});
+
+it('returns 6 months of yayasan growth trend labels and data', function () {
+    \App\Models\Yayasan::factory()->create();
+
+    $service = new DashboardStatsService();
+    $hasil = $service->trenPertumbuhanYayasan();
+
+    expect($hasil['labels'])->toHaveCount(6);
+    expect($hasil['data'])->toHaveCount(6);
+    expect(array_sum($hasil['data']))->toBeGreaterThanOrEqual(1);
+});
+

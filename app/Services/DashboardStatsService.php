@@ -7,6 +7,16 @@ use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\TahunAjaran;
+use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\KuotaCutiConfig;
+use App\Domains\Workflow\Enums\ApprovalStatus;
+use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Models\Karyawan;
+use App\Models\Kelas;
+use App\Models\Semester;
+use App\Models\Siswa;
+use App\Models\Yayasan;
 
 class DashboardStatsService
 {
@@ -95,6 +105,93 @@ class DashboardStatsService
                 'lunas' => (int) ($donutCounts['lunas'] ?? 0),
             ],
         ];
+    }
+
+    public function statistikPresensiSdm(array $lembagaIds): array
+    {
+        $counts = AttendanceRecord::whereIn('lembaga_id', $lembagaIds)
+            ->whereDate('tanggal', now()->toDateString())
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return [
+            'hadir' => (int) ($counts['hadir'] ?? 0),
+            'izin' => (int) ($counts['izin'] ?? 0),
+            'sakit' => (int) ($counts['sakit'] ?? 0),
+            'alpa' => (int) ($counts['alpa'] ?? 0),
+            'cuti' => (int) ($counts['cuti'] ?? 0),
+        ];
+    }
+
+    public function statistikProgressRaporKelas(Kelas $kelas): array
+    {
+        $semester = Semester::where('lembaga_id', $kelas->lembaga_id)->where('status_aktif', true)->first();
+
+        if (! $semester) {
+            return ['persen' => 0.0, 'terisi' => 0, 'total' => 0];
+        }
+
+        $totalSiswa = Siswa::where('kelas_id', $kelas->id)->count();
+        $totalKomponen = KomponenPenilaian::where('semester_id', $semester->id)
+            ->whereHas('mataPelajaran', fn ($q) => $q->where('lembaga_id', $kelas->lembaga_id))
+            ->count();
+
+        $totalTerisi = NilaiSiswa::whereHas('siswa', fn ($q) => $q->where('kelas_id', $kelas->id))
+            ->whereHas('komponenPenilaian', fn ($q) => $q->where('semester_id', $semester->id))
+            ->whereNotNull('nilai_angka')
+            ->count();
+
+        $totalSlot = $totalSiswa * $totalKomponen;
+
+        return [
+            'persen' => $totalSlot > 0 ? round($totalTerisi / $totalSlot * 100, 1) : 0.0,
+            'terisi' => $totalTerisi,
+            'total' => $totalSlot,
+        ];
+    }
+
+    public function statistikSisaKuotaCuti(Karyawan $karyawan): ?array
+    {
+        $config = KuotaCutiConfig::where('jenis_karyawan_id', $karyawan->jenis_karyawan_id)
+            ->where(fn ($q) => $q->where('lembaga_id', $karyawan->lembaga_id)->orWhere('yayasan_id', $karyawan->yayasan_id))
+            ->first();
+
+        if (! $config) {
+            return null;
+        }
+
+        $terpakai = $karyawan->pengajuanIzinCuti()
+            ->whereHas('approvalRequest', fn ($q) => $q->where('status', ApprovalStatus::Approved))
+            ->whereYear('tanggal_mulai', now()->year)
+            ->get()
+            ->sum(fn ($p) => $p->tanggal_mulai->diffInDays($p->tanggal_selesai) + 1);
+
+        return [
+            'jatah' => $config->jatah_hari_per_tahun,
+            'terpakai' => $terpakai,
+            'sisa' => max(0, $config->jatah_hari_per_tahun - $terpakai),
+        ];
+    }
+
+    public function trenPertumbuhanYayasan(): array
+    {
+        $mulai = now()->subMonths(5)->startOfMonth();
+
+        $counts = Yayasan::where('created_at', '>=', $mulai)
+            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as bulan, count(*) as total")
+            ->groupBy('bulan')
+            ->pluck('total', 'bulan');
+
+        $labels = [];
+        $data = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $bulan = now()->subMonths($i);
+            $labels[] = $bulan->translatedFormat('M Y');
+            $data[] = (int) ($counts[$bulan->format('Y-m')] ?? 0);
+        }
+
+        return ['labels' => $labels, 'data' => $data];
     }
 
     private function tahunAjaranAktif(int $lembagaId): ?TahunAjaran
