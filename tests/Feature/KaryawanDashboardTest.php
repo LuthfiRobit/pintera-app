@@ -15,7 +15,7 @@ beforeEach(function () {
     $this->seed(RoleSeeder::class);
 });
 
-it('shows a karyawan_pool account the karyawan placeholder dashboard, not the unrestricted yayasan dashboard', function () {
+it('shows a pegawai_yayasan account the karyawan placeholder dashboard, not the unrestricted yayasan dashboard', function () {
     $yayasan = Yayasan::factory()->create();
     $jenis = JenisKaryawanMaster::factory()->create();
 
@@ -35,7 +35,7 @@ it('shows a karyawan_pool account the karyawan placeholder dashboard, not the un
     $response->assertViewIs('admin.dashboard.karyawan');
 });
 
-it('shows a karyawan_lembaga account the karyawan placeholder dashboard, not the lembaga admin dashboard', function () {
+it('shows a pegawai_lembaga account the karyawan placeholder dashboard, not the lembaga admin dashboard', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $jenis = JenisKaryawanMaster::factory()->create();
