@@ -16,7 +16,7 @@ function actingAsKasusHapusAdminViewer(Lembaga $lembaga): User
     foreach (['kasus.view', 'kasus.triase', 'kasus.hapus'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['kasus.view', 'kasus.triase', 'kasus.hapus']);
 
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -42,7 +42,7 @@ function actingAsKonselorPemegangKasusUntukShow(Kasus $kasus, Lembaga $lembaga):
     return $user;
 }
 
-it('shows the Hapus Kasus delete form to an admin_akademik with kasus.hapus viewing a Selesai kasus', function () {
+it('shows the Hapus Kasus delete form to an operator_akademik with kasus.hapus viewing a Selesai kasus', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
