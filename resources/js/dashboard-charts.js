@@ -46,3 +46,39 @@ export function perLembagaBarChart(labels, data) {
         },
     };
 }
+
+export function trenTenantChart(labels, data) {
+    return {
+        init() {
+            new Chart(this.$refs.canvas, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{ label: 'Yayasan Baru', data, borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.1)', fill: true, tension: 0.3 }],
+                },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+            });
+        },
+    };
+}
+
+export function presensiBulananChart(labels, hadir, izin, sakit, alpa) {
+    return {
+        init() {
+            new Chart(this.$refs.canvas, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Hadir', data: hadir, backgroundColor: '#22c55e' },
+                        { label: 'Izin', data: izin, backgroundColor: '#3b82f6' },
+                        { label: 'Sakit', data: sakit, backgroundColor: '#f59e0b' },
+                        { label: 'Alpa', data: alpa, backgroundColor: '#ef4444' },
+                    ],
+                },
+                options: { responsive: true, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } } } },
+            });
+        },
+    };
+}
+
