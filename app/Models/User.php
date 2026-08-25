@@ -99,6 +99,7 @@ class User extends Authenticatable
         $levels = $this->roles->pluck('scope_level');
 
         return match (true) {
+            $levels->contains('platform') => 'platform',
             $levels->contains('yayasan') || $this->hasRole(['yayasan_super_admin', 'super_admin', 'bendahara_yayasan']) => 'yayasan',
             $levels->contains('lembaga') => 'lembaga',
             default => 'diri_sendiri',

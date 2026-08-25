@@ -44,3 +44,23 @@ it('takes the widest scope when a user has multiple roles with different scopes'
 
     expect($user->widestScopeLevel())->toBe('yayasan');
 });
+
+it('returns platform as the widest scope when user has a platform-scoped role', function () {
+    Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+
+    $user = User::factory()->create();
+    $user->assignRole('platform_super_admin');
+
+    expect($user->widestScopeLevel())->toBe('platform');
+});
+
+it('prefers platform over yayasan when a user somehow has both scopes', function () {
+    Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+    Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+
+    $user = User::factory()->create();
+    $user->assignRole(['platform_super_admin', 'yayasan_super_admin']);
+
+    expect($user->widestScopeLevel())->toBe('platform');
+});
+
