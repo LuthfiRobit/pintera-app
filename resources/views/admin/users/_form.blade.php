@@ -76,24 +76,24 @@
                             <span class="h-1.5 w-1.5 rounded-full bg-brand-400"></span>
                             {{ $groupLabel }}
                         </p>
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div class="grid grid-cols-2 gap-2.5">
                             @foreach ($groupRoles as $roleOption)
                                 <label 
                                     :class="selectedRoles.includes('{{ $roleOption->name }}') 
                                         ? 'border-brand-500 bg-brand-50/20 ring-1 ring-brand-500/10' 
                                         : 'border-gray-200 bg-white hover:bg-gray-50/50'"
-                                    class="flex items-center gap-3 rounded-xl border p-4 text-sm font-medium text-gray-700 transition duration-150 cursor-pointer shadow-sm hover:shadow-md"
+                                    class="flex items-center gap-2 rounded-xl border p-2.5 text-xs font-medium text-gray-700 transition duration-150 cursor-pointer shadow-sm hover:shadow-md"
                                 >
                                     <input
                                         type="checkbox"
                                         name="roles[]"
                                         value="{{ $roleOption->name }}"
                                         x-model="selectedRoles"
-                                        class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                        class="h-3.5 w-3.5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                                     >
-                                    <div class="flex flex-col gap-0.5">
-                                        <span class="text-gray-950 font-semibold leading-tight">{{ ucwords(str_replace('_', ' ', $roleOption->name)) }}</span>
-                                        <span class="text-[10px] text-gray-400 font-normal">Scope: {{ $roleOption->scope_level }}</span>
+                                    <div class="flex flex-col gap-0.5 min-w-0">
+                                        <span class="text-gray-950 font-semibold leading-tight truncate">{{ ucwords(str_replace('_', ' ', $roleOption->name)) }}</span>
+                                        <span class="text-[9px] text-gray-400 font-normal">Scope: {{ $roleOption->scope_level }}</span>
                                     </div>
                                 </label>
                             @endforeach
