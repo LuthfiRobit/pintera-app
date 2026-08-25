@@ -15,7 +15,7 @@ function actingAsKasusTerhapusViewer(Lembaga $lembaga): User
     foreach (['kasus.view', 'kasus.lihat-log-akses', 'kasus.hapus', 'kasus.pulihkan'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['kasus.view', 'kasus.lihat-log-akses', 'kasus.hapus', 'kasus.pulihkan']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -24,7 +24,7 @@ function actingAsKasusTerhapusViewer(Lembaga $lembaga): User
     return $manager;
 }
 
-it('lists soft-deleted kasus scoped to admin_akademik own lembaga with a restore action', function () {
+it('lists soft-deleted kasus scoped to operator_akademik own lembaga with a restore action', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
