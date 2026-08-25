@@ -115,11 +115,17 @@ class DashboardController extends BaseController
                         ->where(fn ($q) => $q->whereIn('lembaga_id', $lembagaIds)->orWhere('yayasan_id', $yayasan->id))
                         ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
                         ->count(),
+                    'adaTahunAjaranAktif' => TahunAjaran::whereIn('lembaga_id', $lembagaIds)->where('status_aktif', true)->exists(),
+                    'akunNonaktif' => User::withoutGlobalScope(TenantScope::class)
+                        ->where(fn ($q) => $q->whereIn('lembaga_id', $lembagaIds)->orWhere('yayasan_id', $yayasan->id))
+                        ->where('is_active', false)
+                        ->count(),
                 ];
             });
 
             return view('admin.dashboard.platform', [
                 'ringkasanPerYayasan' => $ringkasanPerYayasan,
+                'trenTenant' => $this->dashboardStats->trenPertumbuhanYayasan(),
                 'stats' => [
                     'yayasan' => $yayasanList->count(),
                     'lembaga' => Lembaga::count(),

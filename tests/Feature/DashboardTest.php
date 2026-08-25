@@ -94,3 +94,21 @@ it('shows the generic staff dashboard without a switcher to a lembaga-scoped use
     $response->assertOk();
     $response->assertDontSee('switch_lembaga', false);
 });
+
+it('shows the yayasan growth trend chart and health columns on the platform dashboard', function () {
+    Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+    $yayasan = Yayasan::factory()->create(['nama' => 'Yayasan Sehat']);
+    Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $admin = User::factory()->create();
+    $admin->assignRole('platform_super_admin');
+
+    $response = $this->actingAs($admin)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('trenTenantChart(', false);
+    $response->assertViewHas('ringkasanPerYayasan', function ($ringkasan) {
+        return $ringkasan->first()['akunNonaktif'] === 0;
+    });
+});
+

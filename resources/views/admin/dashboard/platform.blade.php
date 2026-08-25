@@ -15,6 +15,13 @@
             <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif sistem" icon="group" />
         </div>
 
+        <x-panel class="p-6">
+            <p class="mb-3 text-sm font-medium text-ink">Tren Pertumbuhan Yayasan (6 Bulan Terakhir)</p>
+            <div x-data="trenTenantChart(@js($trenTenant['labels']), @js($trenTenant['data']))">
+                <canvas x-ref="canvas" height="90"></canvas>
+            </div>
+        </x-panel>
+
         <x-panel>
             <div class="border-b border-ink/10 px-6 py-4">
                 <h3 class="font-display font-semibold text-ink">Ringkasan per Yayasan</h3>
@@ -27,6 +34,8 @@
                         <th class="px-6 py-3 font-display font-semibold">Lembaga</th>
                         <th class="px-6 py-3 font-display font-semibold">Guru</th>
                         <th class="px-6 py-3 font-display font-semibold">Pengguna</th>
+                        <th class="px-6 py-3 font-display font-semibold">TA Aktif?</th>
+                        <th class="px-6 py-3 font-display font-semibold">Akun Nonaktif</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-ink/10">
@@ -36,11 +45,15 @@
                             <td class="px-6 py-3.5">{{ $ringkasan['lembaga'] }}</td>
                             <td class="px-6 py-3.5">{{ $ringkasan['guru'] }}</td>
                             <td class="px-6 py-3.5">{{ $ringkasan['pengguna'] }}</td>
+                            <td class="px-6 py-3.5">
+                                <x-badge tone="{{ $ringkasan['adaTahunAjaranAktif'] ? 'green' : 'amber' }}">{{ $ringkasan['adaTahunAjaranAktif'] ? 'Ya' : 'Tidak' }}</x-badge>
+                            </td>
+                            <td class="px-6 py-3.5">{{ $ringkasan['akunNonaktif'] }}</td>
                         </tr>
                     @endforeach
                     @if ($ringkasanPerYayasan->isEmpty())
                         <tr>
-                            <td colspan="4" class="px-6 py-8 text-center text-slate">Belum ada yayasan terdaftar.</td>
+                            <td colspan="6" class="px-6 py-8 text-center text-slate">Belum ada yayasan terdaftar.</td>
                         </tr>
                     @endif
                 </tbody>
