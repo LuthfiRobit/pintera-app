@@ -18,7 +18,7 @@ it('renders the Proses Tagihan action for a non-ppdb jenis_tagihan on the index 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'spp']);
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.index'));
@@ -31,7 +31,7 @@ it('renders the Monitoring action for a non-ppdb jenis_tagihan on the index page
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'spp']);
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.index'));

@@ -39,10 +39,10 @@ it('denies jenis tagihan management without permission', function () {
     $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [])->assertForbidden();
 });
 
-it('lets admin_keuangan create a jenis tagihan scoped to their own lembaga', function () {
+it('lets bendahara_lembaga create a jenis tagihan scoped to their own lembaga', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
         'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false,
@@ -54,10 +54,10 @@ it('lets admin_keuangan create a jenis tagihan scoped to their own lembaga', fun
     expect($jenisTagihan->lembaga_id)->toBe($lembaga->id);
 });
 
-it('lets admin_keuangan set nominal per jalur, rejecting a duplicate pair at the db level', function () {
+it('lets bendahara_lembaga set nominal per jalur, rejecting a duplicate pair at the db level', function () {
     [$lembaga, , $jalur] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.nominal.store', $jenisTagihan), [
@@ -77,7 +77,7 @@ it('silently ignores a nominal.store payload for a jalur_ppdb_id belonging to a 
     [$lembagaA] = buatLembagaDenganJalurUntukTagihan();
     [$lembagaB, , $jalurB] = buatLembagaDenganJalurUntukTagihan();
     $userA = User::factory()->create(['lembaga_id' => $lembagaA->id]);
-    $userA->assignRole('admin_keuangan');
+    $userA->assignRole('bendahara_lembaga');
     $jenisTagihanA = JenisTagihan::create(['lembaga_id' => $lembagaA->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
 
     $this->actingAs($userA)->post(route('admin.jenis-tagihan.nominal.store', $jenisTagihanA), [
@@ -93,7 +93,7 @@ it('only lists jenis tagihan belonging to the acting lembaga-scoped user own lem
     JenisTagihan::create(['lembaga_id' => $lembagaA->id, 'nama' => 'Punya A', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     JenisTagihan::create(['lembaga_id' => $lembagaB->id, 'nama' => 'Punya B', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     $user = User::factory()->create(['lembaga_id' => $lembagaA->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.index'));
 
@@ -103,7 +103,7 @@ it('only lists jenis tagihan belonging to the acting lembaga-scoped user own lem
 it('does not send kategori lainnya through the jalur-based nominal flow after create', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
         'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false,
@@ -115,7 +115,7 @@ it('does not send kategori lainnya through the jalur-based nominal flow after cr
 it('redirects away from the nominal page for a kategori lainnya jenis tagihan instead of showing a jalur list', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.nominal', $jenisTagihan));
@@ -127,7 +127,7 @@ it('redirects away from the nominal page for a kategori lainnya jenis tagihan in
 it('rejects a direct post to simpan nominal for a kategori lainnya jenis tagihan without creating rows', function () {
     [$lembaga, , $jalur] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.nominal.store', $jenisTagihan), [
@@ -168,7 +168,7 @@ it('still allows creating and reading tagihan_item rows normally after the FK is
 it('blocks deleting a jenis tagihan already billed to a registrant, naming the number of tagihan', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     TagihanItem::factory()->create(['jenis_tagihan_id' => $jenisTagihan->id]);
 
@@ -183,7 +183,7 @@ it('blocks deleting a jenis tagihan already billed to a registrant, naming the n
 it('blocks deleting a jenis tagihan with configured nominal but no real billing yet', function () {
     [$lembaga, , $jalur] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
 
@@ -198,7 +198,7 @@ it('blocks deleting a jenis tagihan with configured nominal but no real billing 
 it('allows deleting a jenis tagihan with no related tagihan or nominal rows', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->delete(route('admin.jenis-tagihan.destroy', $jenisTagihan));
@@ -210,7 +210,7 @@ it('allows deleting a jenis tagihan with no related tagihan or nominal rows', fu
 it('responds with json when deleting a jenis tagihan blocked by real billing rows', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     TagihanItem::factory()->create(['jenis_tagihan_id' => $jenisTagihan->id]);
 
@@ -222,7 +222,7 @@ it('responds with json when deleting a jenis tagihan blocked by real billing row
 it('responds with json on a successful jenis tagihan delete', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->deleteJson(route('admin.jenis-tagihan.destroy', $jenisTagihan));
@@ -233,7 +233,7 @@ it('responds with json on a successful jenis tagihan delete', function () {
 it('rejects creating a jenis tagihan with a name already used in the same lembaga', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
@@ -247,7 +247,7 @@ it('rejects creating a jenis tagihan with a name already used in the same lembag
 it('rejects updating a jenis tagihan to a name already used by another jenis tagihan in the same lembaga, but allows keeping its own name', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     $target = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Daftar Ulang', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => false]);
 
@@ -265,7 +265,7 @@ it('rejects updating a jenis tagihan to a name already used by another jenis tag
 it('responds with json and a nominal redirect url after creating a pendaftaran jenis tagihan', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->postJson(route('admin.jenis-tagihan.store'), [
         'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false,
@@ -281,7 +281,7 @@ it('responds with json and a nominal redirect url after creating a pendaftaran j
 it('responds with json and a null redirect after creating a kategori lainnya jenis tagihan', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->postJson(route('admin.jenis-tagihan.store'), [
         'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false,
@@ -293,7 +293,7 @@ it('responds with json and a null redirect after creating a kategori lainnya jen
 it('responds with json after updating a jenis tagihan', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->putJson(route('admin.jenis-tagihan.update', $jenisTagihan), [
@@ -306,7 +306,7 @@ it('responds with json after updating a jenis tagihan', function () {
 it('includes usage counts in the json response after updating a jenis tagihan already in use', function () {
     [$lembaga] = buatLembagaDenganJalurUntukTagihan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     TagihanItem::factory()->create(['jenis_tagihan_id' => $jenisTagihan->id]);
 

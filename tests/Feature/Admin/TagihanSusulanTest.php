@@ -21,12 +21,12 @@ it('denies buat tagihan susulan without the tagihan.buat-susulan permission', fu
     $this->actingAs($user)->post(route('admin.tagihan.susulan', $pendaftaran), ['kategori' => 'pendaftaran'])->assertForbidden();
 });
 
-it('lets admin_keuangan generate a missing tagihan susulan using current nominal', function () {
+it('lets bendahara_lembaga generate a missing tagihan susulan using current nominal', function () {
     [$lembaga, $jalur, , $pendaftaran] = buatPendaftaranUntukAdmin();
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.tagihan.susulan', $pendaftaran), ['kategori' => 'pendaftaran']);
 
@@ -39,7 +39,7 @@ it('does not create a duplicate tagihan when buat susulan is triggered twice for
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.tagihan.susulan', $pendaftaran), ['kategori' => 'pendaftaran']);
     $this->actingAs($user)->post(route('admin.tagihan.susulan', $pendaftaran), ['kategori' => 'pendaftaran']);
@@ -51,7 +51,7 @@ it('404s when trying to generate a tagihan susulan for a pendaftaran belonging t
     [, , , $pendaftaranLembagaLain] = buatPendaftaranUntukAdmin();
     $lembagaSaya = \App\Models\Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.tagihan.susulan', $pendaftaranLembagaLain), ['kategori' => 'pendaftaran'])
         ->assertNotFound();

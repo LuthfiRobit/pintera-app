@@ -15,13 +15,13 @@ uses(RefreshDatabase::class);
 function buatAdminDanSiswaUntukVirtualAccount(string $label): array
 {
     Permission::firstOrCreate(['name' => 'pembayaran.virtual-account', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'admin_keuangan', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'bendahara_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo('pembayaran.virtual-account');
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $admin->assignRole('admin_keuangan');
+    $admin->assignRole('bendahara_lembaga');
 
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => "Anak {$label}", 'status' => 'aktif']);
     $wallet = $siswa->wallet ?? Wallet::create(['siswa_id' => $siswa->id, 'balance' => 50000]);

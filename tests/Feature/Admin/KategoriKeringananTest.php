@@ -14,11 +14,11 @@ beforeEach(function () {
     (new RolePermissionSeeder)->run();
 });
 
-it('lets admin_keuangan create a kategori keringanan inline, scoped to their own lembaga', function () {
+it('lets bendahara_lembaga create a kategori keringanan inline, scoped to their own lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->postJson(route('admin.kategori-keringanan.store'), [
         'nama' => 'Yatim Piatu',
@@ -44,7 +44,7 @@ it('rejects a duplicate kategori keringanan name within the same lembaga', funct
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     KategoriKeringanan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Yatim Piatu']);
 
     $this->actingAs($user)->postJson(route('admin.kategori-keringanan.store'), ['nama' => 'Yatim Piatu'])

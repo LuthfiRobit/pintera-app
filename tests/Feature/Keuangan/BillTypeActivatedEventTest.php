@@ -23,7 +23,7 @@ beforeEach(function () {
 function buatUserKeuanganBillTypeActivated(int $lembagaId): User
 {
     $user = User::factory()->create(['lembaga_id' => $lembagaId]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     return $user;
 }

@@ -18,7 +18,7 @@ it('renders the create page with the kategori select and mode toggle', function 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
@@ -34,7 +34,7 @@ it('renders the edit page pre-filled with the existing jenis tagihan nama', func
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false]);
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.edit', $jenisTagihan));
@@ -47,7 +47,7 @@ it('shows the tahun ajaran alongside the kelas name in the sasaran kriteria opti
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $tahunAjaranLama = \App\Models\TahunAjaran::create([
         'lembaga_id' => $lembaga->id, 'nama' => '2025/2026',
@@ -78,7 +78,7 @@ it('does not crash when a kelas is linked to a tahun_ajaran belonging to a diffe
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     // TahunAjaran belongs to a DIFFERENT lembaga than the acting user — the exact TenantScope
     // mismatch condition that crashed the page before this fix.
@@ -101,7 +101,7 @@ it('explains what each mode otomatis field controls', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 

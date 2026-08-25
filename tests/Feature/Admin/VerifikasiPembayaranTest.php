@@ -38,7 +38,7 @@ it('labels two pending payments for the same candidate distinguishably by katego
     Pembayaran::create(['tagihan_id' => $tagihanPendaftaran->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     Pembayaran::create(['tagihan_id' => $tagihanDaftarUlang->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->getJson(route('admin.pembayaran.data'));
 
@@ -63,7 +63,7 @@ it('only lists pending payments belonging to the acting user own lembaga', funct
     Pembayaran::create(['tagihan_id' => $tagihanA->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     Pembayaran::create(['tagihan_id' => $tagihanB->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembagaA->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->getJson(route('admin.pembayaran.data'));
 
@@ -72,12 +72,12 @@ it('only lists pending payments belonging to the acting user own lembaga', funct
     expect($names)->not->toContain('Milik B');
 });
 
-it('lets admin_keuangan approve a pending payment', function () {
+it('lets bendahara_lembaga approve a pending payment', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
     $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaran = Pembayaran::create(['tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaran), ['keputusan' => 'lunas']);
 
@@ -91,7 +91,7 @@ it('requires catatan when rejecting a pending payment', function () {
     $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaran = Pembayaran::create(['tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaran), ['keputusan' => 'ditolak']);
 
@@ -105,7 +105,7 @@ it('404s verifying a payment belonging to a pendaftaran in a different lembaga',
     $pembayaranLain = Pembayaran::create(['tagihan_id' => $tagihanLain->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $lembagaSaya = \App\Models\Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaranLain), ['keputusan' => 'lunas'])
         ->assertNotFound();
@@ -115,7 +115,7 @@ it('lists a payment reachable only via the cicilan ownership path, scoped to the
     [$lembagaA, $pembayaranA] = buatPembayaranViaCicilan(namaCalon: 'Cicilan Milik A');
     [, $pembayaranB] = buatPembayaranViaCicilan(namaCalon: 'Cicilan Milik B');
     $user = User::factory()->create(['lembaga_id' => $lembagaA->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->getJson(route('admin.pembayaran.data'));
 
@@ -130,16 +130,16 @@ it('404s verifying a cicilan-reachable payment belonging to a pendaftaran in a d
     [, $pembayaranLain] = buatPembayaranViaCicilan();
     $lembagaSaya = Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaranLain), ['keputusan' => 'lunas'])
         ->assertNotFound();
 });
 
-it('lets admin_keuangan approve a cicilan-reachable pending payment', function () {
+it('lets bendahara_lembaga approve a cicilan-reachable pending payment', function () {
     [$lembaga, $pembayaran] = buatPembayaranViaCicilan();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaran), ['keputusan' => 'lunas']);
 
@@ -155,7 +155,7 @@ it('renders Terima/Tolak verification controls and the bukti transfer link on th
         'file_path' => 'bukti-transfer/contoh.pdf', 'status' => 'menunggu_verifikasi',
     ]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $user->givePermissionTo('spmb-pendaftaran.view');
 
     $response = $this->actingAs($user)->get(route('admin.spmb-pendaftaran.show', $pendaftaran));

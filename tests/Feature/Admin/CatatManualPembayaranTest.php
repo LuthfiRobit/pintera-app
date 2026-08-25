@@ -40,11 +40,11 @@ it('denies catat manual without the pembayaran.catat-manual permission', functio
     $this->actingAs($user)->post(route('admin.tagihan.catat-manual', $tagihan))->assertForbidden();
 });
 
-it('lets admin_keuangan record a lump-sum tagihan payment directly as lunas', function () {
+it('lets bendahara_lembaga record a lump-sum tagihan payment directly as lunas', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
     $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.tagihan.catat-manual', $tagihan));
 
@@ -59,7 +59,7 @@ it('404s catat manual tagihan for a tagihan belonging to a different lembaga', f
 
     $lembagaLain = \App\Models\Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.tagihan.catat-manual', $tagihan))->assertNotFound();
 });
@@ -71,10 +71,10 @@ it('denies catat manual cicilan without the pembayaran.catat-manual permission',
     $this->actingAs($user)->post(route('admin.cicilan.catat-manual', $cicilan))->assertForbidden();
 });
 
-it('lets admin_keuangan record a cicilan termin payment directly as lunas', function () {
+it('lets bendahara_lembaga record a cicilan termin payment directly as lunas', function () {
     [$lembaga, $cicilan] = siapkanCicilanTermin1();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.cicilan.catat-manual', $cicilan));
 
@@ -90,7 +90,7 @@ it('404s catat manual cicilan for a cicilan belonging to a different lembaga', f
 
     $lembagaLain = \App\Models\Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.cicilan.catat-manual', $cicilan))->assertNotFound();
 });

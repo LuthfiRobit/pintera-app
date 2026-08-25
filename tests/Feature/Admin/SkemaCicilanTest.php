@@ -35,10 +35,10 @@ it('denies membuat skema cicilan without the cicilan.kelola permission', functio
         ->assertForbidden();
 });
 
-it('lets admin_keuangan create a skema cicilan for a tagihan', function () {
+it('lets bendahara_lembaga create a skema cicilan for a tagihan', function () {
     [$lembaga, , $tagihan] = siapkanTagihanDaftarUlangBisaDicicil();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.tagihan.skema-cicilan.store', $tagihan), ['jumlah_termin' => 3]);
 
@@ -51,16 +51,16 @@ it('404s creating a skema cicilan for a tagihan belonging to a different lembaga
     [, , $tagihanLembagaLain] = siapkanTagihanDaftarUlangBisaDicicil();
     $lembagaSaya = \App\Models\Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.tagihan.skema-cicilan.store', $tagihanLembagaLain), ['jumlah_termin' => 3])
         ->assertNotFound();
 });
 
-it('lets admin_keuangan edit nominal manually and rejects a mismatched total', function () {
+it('lets bendahara_lembaga edit nominal manually and rejects a mismatched total', function () {
     [$lembaga, , $tagihan] = siapkanTagihanDaftarUlangBisaDicicil();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $this->actingAs($user)->post(route('admin.tagihan.skema-cicilan.store', $tagihan), ['jumlah_termin' => 3]);
     $skema = SkemaCicilan::where('tagihan_id', $tagihan->id)->first();
 
@@ -79,13 +79,13 @@ it('lets admin_keuangan edit nominal manually and rejects a mismatched total', f
 it('404s editing nominal manually for a skema cicilan belonging to a different lembaga', function () {
     [$lembaga, , $tagihan] = siapkanTagihanDaftarUlangBisaDicicil();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $this->actingAs($user)->post(route('admin.tagihan.skema-cicilan.store', $tagihan), ['jumlah_termin' => 3]);
     $skema = SkemaCicilan::where('tagihan_id', $tagihan->id)->first();
 
     $lembagaLain = \App\Models\Lembaga::factory()->create();
     $userLain = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
-    $userLain->assignRole('admin_keuangan');
+    $userLain->assignRole('bendahara_lembaga');
 
     $this->actingAs($userLain)->post(route('admin.skema-cicilan.nominal.store', $skema), [
         'nominal' => [1 => 500000, 2 => 200000, 3 => 200000],

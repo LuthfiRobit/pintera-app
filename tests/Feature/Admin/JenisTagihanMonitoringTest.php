@@ -34,7 +34,7 @@ it('enforces tenant scope on monitoring page', function () {
     $lembaga2 = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     
     $user1 = User::factory()->create(['lembaga_id' => $lembaga1->id]);
-    $user1->assignRole('admin_keuangan');
+    $user1->assignRole('bendahara_lembaga');
 
     $jenisTagihanLembaga2 = JenisTagihan::factory()->create(['lembaga_id' => $lembaga2->id]);
 
@@ -47,7 +47,7 @@ it('allows access to monitoring page with proper permission and tenant', functio
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
@@ -60,7 +60,7 @@ it('calculates ringkasan metrics correctly', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
@@ -131,7 +131,7 @@ it('lists daftar penerima correctly with pagination', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
@@ -161,7 +161,7 @@ it('lists daftar tunggakan correctly with pagination', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
@@ -207,7 +207,7 @@ it('can cancel a tagihan if status is belum_bayar', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
@@ -240,7 +240,7 @@ it('cannot cancel a tagihan if status is not belum_bayar', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
@@ -274,7 +274,7 @@ it('checks tagihan ownership before the status business rule, preventing a cross
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $jenisTagihanOwned = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
     $jenisTagihanOther = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -307,7 +307,7 @@ it('returns 403 (not 422) when batalTagihan targets a tagihan belonging to a dif
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $jenisTagihanA = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP A', 'kategori' => 'spp', 'bisa_dicicil' => false]);
     $jenisTagihanB = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP B', 'kategori' => 'spp', 'bisa_dicicil' => false]);

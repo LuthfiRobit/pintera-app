@@ -18,13 +18,13 @@ uses(RefreshDatabase::class);
 function buatAdminKeuanganUntukIndexManualPayment(): array
 {
     Permission::firstOrCreate(['name' => 'pembayaran.verifikasi', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'admin_keuangan', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'bendahara_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo('pembayaran.verifikasi');
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     return [$user, $lembaga];
 }

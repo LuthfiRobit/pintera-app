@@ -25,7 +25,7 @@ function buatAdminKeuanganUntukManualPayment(): array
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     return [$user, $lembaga];
 }
@@ -134,7 +134,7 @@ it('marks a TOPUP manual request completed (not failed) when AutoAllocationEngin
     expect((float) $siswa->wallet->fresh()->balance)->toBe($balanceAfterApprove);
 });
 
-it('blocks cross-tenant approve/reject: admin_keuangan in lembaga A cannot touch a manual payment request belonging to lembaga B', function () {
+it('blocks cross-tenant approve/reject: bendahara_lembaga in lembaga A cannot touch a manual payment request belonging to lembaga B', function () {
     [$userA, $lembagaA] = buatAdminKeuanganUntukManualPayment();
     $yayasanB = Yayasan::factory()->create();
     $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);

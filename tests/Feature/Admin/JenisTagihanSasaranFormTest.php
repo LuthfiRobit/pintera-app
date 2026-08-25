@@ -18,7 +18,7 @@ it('renders sasaran and tarif section markers on the create page for a non-ppdb 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
@@ -33,7 +33,7 @@ it('pre-fills sasaran kriteria fields from an existing jenis tagihan on the edit
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false]);
     $grup = $jenisTagihan->sasaranGrup()->create(['tipe' => 'sasaran']);
     $grup->kriteria()->create(['field' => 'status_siswa', 'operator' => 'in', 'value' => ['aktif']]);
@@ -48,7 +48,7 @@ it('exposes both the stored kriteria value and the matching reference option id 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
     // Pin the tahun ajaran explicitly (same lembaga, fixed nama) instead of relying on
     // KelasFactory's default `tahun_ajaran_id => TahunAjaran::factory()` — that default creates
     // a TahunAjaran with its own random lembaga_id, which used to crash this page via the
@@ -99,7 +99,7 @@ it('shows human-readable labels for kriteria fields instead of raw keys', functi
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
@@ -114,7 +114,7 @@ it('explains the and/or relationship between kriteria rows and grup cards for bo
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
@@ -132,7 +132,7 @@ it('explains that tarif grup cards are evaluated in priority order', function ()
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 

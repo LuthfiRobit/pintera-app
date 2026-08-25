@@ -29,7 +29,7 @@ it('sends TransferManualDisetujuiNotification to the kontak utama on approve', f
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $admin->assignRole('admin_keuangan');
+    $admin->assignRole('bendahara_lembaga');
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $orangTua = OrangTua::factory()->create();
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
@@ -56,7 +56,7 @@ it('sends TransferManualDitolakNotification to the kontak utama on reject, and i
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $admin->assignRole('admin_keuangan');
+    $admin->assignRole('bendahara_lembaga');
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $orangTua = OrangTua::factory()->create();
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
@@ -85,7 +85,7 @@ it('still redirects successfully (best-effort) when notification dispatch throws
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $admin->assignRole('admin_keuangan');
+    $admin->assignRole('bendahara_lembaga');
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $orangTua = OrangTua::factory()->create();
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);

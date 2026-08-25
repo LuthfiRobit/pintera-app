@@ -24,7 +24,7 @@ it('denies access to the tagihan list without the tagihan.view permission', func
 it('shows the index page with the view permission', function () {
     [$lembaga] = buatPendaftaranUntukAdmin();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->get(route('admin.tagihan.index'))->assertOk();
 });
@@ -37,7 +37,7 @@ it('returns only tagihan belonging to the acting user own lembaga, via the linke
     Tagihan::create(['pendaftaran_id' => $pendaftaranA->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
     Tagihan::create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 200000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembagaA->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->getJson(route('admin.tagihan.data'));
 
@@ -52,7 +52,7 @@ it('filters by search on candidate name or kode pendaftaran', function () {
     Tagihan::create(['pendaftaran_id' => $pendaftaranAhmad->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
     Tagihan::create(['pendaftaran_id' => $pendaftaranBudi->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $responseNama = $this->actingAs($user)->getJson(route('admin.tagihan.data', ['search' => 'Ahmad']));
     expect(collect($responseNama->json('data'))->pluck('nama_calon_murid'))->toContain('Ahmad Fauzan')
@@ -73,7 +73,7 @@ it('filters by status', function () {
     Tagihan::create(['pendaftaran_id' => $pendaftaranLunas->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 0, 'status' => 'lunas']);
     Tagihan::create(['pendaftaran_id' => $pendaftaranBelumBayar->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->getJson(route('admin.tagihan.data', ['status' => 'lunas']));
 
@@ -87,7 +87,7 @@ it('404s on catatManualTagihan when tagihan belongs to a different lembaga', fun
     [$lembagaB, , , $pendaftaranB] = buatPendaftaranUntukAdmin(namaCalon: 'Milik B');
     $tagihanB = Tagihan::create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 200000, 'status' => 'belum_bayar']);
     $userA = User::factory()->create(['lembaga_id' => $lembagaA->id]);
-    $userA->assignRole('admin_keuangan');
+    $userA->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($userA)->post(route('admin.tagihan.catat-manual', $tagihanB));
 
