@@ -56,13 +56,13 @@ class WorkflowDefinitionSeeder extends Seeder
             ]
         );
 
-        $this->assertRoleExists('admin_akademik');
+        $this->assertRoleExists('wakasek_kurikulum');
         WorkflowStep::updateOrCreate(
             ['workflow_definition_id' => $rapor->id, 'step_number' => 1],
             [
                 'step_name' => 'Verifikasi Waka Kurikulum',
                 'approver_type' => ApproverType::Role,
-                'approver_value' => 'admin_akademik',
+                'approver_value' => 'wakasek_kurikulum',
                 'scope_level' => 'lembaga',
                 'is_final_step' => false,
             ]
