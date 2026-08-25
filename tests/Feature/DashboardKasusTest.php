@@ -99,16 +99,16 @@ it('shows an orang tua only kasus belonging to their linked children', function 
     $response->assertOk()->assertSee('Anak Saya')->assertDontSee('Anak Lain');
 });
 
-it('shows a karyawan_pool konselor only kasus they are assigned to', function () {
+it('shows a pegawai_yayasan konselor only kasus they are assigned to', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $karyawanUser = User::factory()->create(['lembaga_id' => null]);
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
-    $karyawanUser->assignRole('karyawan_pool');
+    $karyawanUser->assignRole('pegawai_yayasan');
     $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
     $karyawan = \App\Models\Karyawan::withoutGlobalScopes()->create([
         'user_id' => $karyawanUser->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
@@ -135,21 +135,21 @@ it('shows a karyawan_pool konselor only kasus they are assigned to', function ()
     $response->assertOk()->assertSee('Ditangani Karyawan')->assertDontSee('Kasus Tak Ditugaskan Karyawan');
 });
 
-it('shows a karyawan_pool-roled user with no Karyawan profile row no unassigned kasus', function () {
+it('shows a pegawai_yayasan-roled user with no Karyawan profile row no unassigned kasus', function () {
     // F2: $user->karyawan()->...->first()?->id resolving to null makes
     // where('konselor_karyawan_id', null) compile to IS NULL on a TenantScope-bypassed
     // query, leaking every unassigned kasus across every lembaga/yayasan to a profile-less
-    // karyawan_pool user. The sibling test above always creates a real Karyawan row, so it
+    // pegawai_yayasan user. The sibling test above always creates a real Karyawan row, so it
     // never exercises this null path — this test does.
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
 
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
     $karyawanTanpaProfil = User::factory()->create(['lembaga_id' => null]);
-    $karyawanTanpaProfil->assignRole('karyawan_pool');
+    $karyawanTanpaProfil->assignRole('pegawai_yayasan');
 
     Kasus::create([
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id, 'konselor_karyawan_id' => null,
