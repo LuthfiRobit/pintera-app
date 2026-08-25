@@ -298,11 +298,11 @@
                     </div>
 
                     <div class="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-2">
-                        <x-stat-tile label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
-                        <x-stat-tile label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
-                        <x-stat-tile label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />
-                        <x-stat-tile label="Alpa" :value="$presensiSdmHariIni['alpa']" icon="cancel" />
-                        <x-stat-tile label="Cuti" :value="$presensiSdmHariIni['cuti']" icon="beach_access" />
+                        <x-stat-tile compact tone="green" label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
+                        <x-stat-tile compact tone="blue" label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
+                        <x-stat-tile compact tone="amber" label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />
+                        <x-stat-tile compact tone="red" label="Alpa" :value="$presensiSdmHariIni['alpa']" icon="cancel" />
+                        <x-stat-tile compact tone="indigo" label="Cuti" :value="$presensiSdmHariIni['cuti']" icon="beach_access" />
                     </div>
                 </x-panel>
 
@@ -312,7 +312,7 @@
                         <h3 class="font-display font-bold text-sm uppercase tracking-wider text-slate">Persetujuan Cuti SDM</h3>
                     </div>
                     <div class="mt-4">
-                        <x-stat-tile label="Pending Persetujuan" :value="$izinCutiPendingCount" icon="pending_actions" />
+                        <x-stat-tile :tone="$izinCutiPendingCount > 0 ? 'amber' : 'green'" label="Pending Persetujuan" :value="$izinCutiPendingCount" icon="pending_actions" />
                     </div>
                 </x-panel>
 

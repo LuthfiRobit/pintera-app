@@ -54,11 +54,11 @@
                 <x-panel class="p-6">
                     <p class="mb-3 text-sm font-medium text-ink">Rekap Presensi Bulan Ini</p>
                     <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                        <x-stat-tile label="Hadir" :value="$presensiBulanIni['hadir']" icon="check_circle" />
-                        <x-stat-tile label="Izin" :value="$presensiBulanIni['izin']" icon="hourglass_empty" />
-                        <x-stat-tile label="Sakit" :value="$presensiBulanIni['sakit']" icon="local_hospital" />
-                        <x-stat-tile label="Alpa" :value="$presensiBulanIni['alpa']" icon="cancel" />
-                        <x-stat-tile label="Terlambat" :value="$presensiBulanIni['terlambat']" icon="schedule" />
+                        <x-stat-tile compact tone="green" label="Hadir" :value="$presensiBulanIni['hadir']" icon="check_circle" />
+                        <x-stat-tile compact tone="blue" label="Izin" :value="$presensiBulanIni['izin']" icon="hourglass_empty" />
+                        <x-stat-tile compact tone="amber" label="Sakit" :value="$presensiBulanIni['sakit']" icon="local_hospital" />
+                        <x-stat-tile compact tone="red" label="Alpa" :value="$presensiBulanIni['alpa']" icon="cancel" />
+                        <x-stat-tile compact tone="indigo" label="Terlambat" :value="$presensiBulanIni['terlambat']" icon="schedule" />
                     </div>
                 </x-panel>
 

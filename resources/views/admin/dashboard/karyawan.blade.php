@@ -52,7 +52,7 @@
                             :hint="$jadwalShiftHariIni?->jenisShift ? $jadwalShiftHariIni->jenisShift->jam_masuk . ' - ' . $jadwalShiftHariIni->jenisShift->jam_pulang : 'Libur/Rutin'"
                             icon="schedule"
                         />
-                        <x-stat-tile label="Approval Pending" :value="$izinCutiPending" icon="hourglass_empty" />
+                        <x-stat-tile :tone="$izinCutiPending > 0 ? 'amber' : 'green'" label="Approval Pending" :value="$izinCutiPending" icon="hourglass_empty" />
                     </div>
 
                     {{-- 3. Detail Profil Karyawan Card --}}

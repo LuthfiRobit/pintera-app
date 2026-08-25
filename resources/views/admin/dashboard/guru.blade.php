@@ -36,7 +36,7 @@
                 <div class="grid grid-cols-2 gap-3.5 sm:grid-cols-3">
                     <x-stat-tile label="Jam Mengajar Hari Ini" :value="$jadwalHariIni->count()" icon="school" />
                     <x-stat-tile label="Presensi Diri" :value="$presensiDiriHariIni?->status?->label() ?? 'Belum Absen'" icon="badge" />
-                    <x-stat-tile label="RPP Perlu Tindakan" :value="$rppPerluTindakan" icon="assignment_late" />
+                    <x-stat-tile :tone="$rppPerluTindakan > 0 ? 'amber' : 'green'" label="RPP Perlu Tindakan" :value="$rppPerluTindakan" icon="assignment_late" />
                 </div>
 
                 {{-- 2. Progress Nilai Kelas Wali (If Applicable) --}}
@@ -147,11 +147,11 @@
                             </div>
                         </div>
                         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-                            <x-stat-tile label="Hadir" :value="$rekapPresensiSiswaHariIni['hadir']" icon="check_circle" />
-                            <x-stat-tile label="Izin" :value="$rekapPresensiSiswaHariIni['izin']" icon="hourglass_empty" />
-                            <x-stat-tile label="Sakit" :value="$rekapPresensiSiswaHariIni['sakit']" icon="local_hospital" />
-                            <x-stat-tile label="Alpa" :value="$rekapPresensiSiswaHariIni['alpa']" icon="cancel" />
-                            <x-stat-tile label="Terlambat" :value="$rekapPresensiSiswaHariIni['terlambat']" icon="schedule" />
+                            <x-stat-tile compact tone="green" label="Hadir" :value="$rekapPresensiSiswaHariIni['hadir']" icon="check_circle" />
+                            <x-stat-tile compact tone="blue" label="Izin" :value="$rekapPresensiSiswaHariIni['izin']" icon="hourglass_empty" />
+                            <x-stat-tile compact tone="amber" label="Sakit" :value="$rekapPresensiSiswaHariIni['sakit']" icon="local_hospital" />
+                            <x-stat-tile compact tone="red" label="Alpa" :value="$rekapPresensiSiswaHariIni['alpa']" icon="cancel" />
+                            <x-stat-tile compact tone="indigo" label="Terlambat" :value="$rekapPresensiSiswaHariIni['terlambat']" icon="schedule" />
                         </div>
                     </x-panel>
                 @endif
