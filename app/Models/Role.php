@@ -24,6 +24,10 @@ class Role extends SpatieRole
             if ($role->exists && $role->is_protected && $role->isDirty('scope_level')) {
                 throw new RuntimeException('Scope level role yang dilindungi tidak dapat diubah.');
             }
+
+            if ($role->exists && $role->is_protected && $role->isDirty('name')) {
+                throw new RuntimeException('Nama role yang dilindungi tidak dapat diubah.');
+            }
         });
 
         static::deleting(function (Role $role) {
