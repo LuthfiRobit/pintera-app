@@ -29,6 +29,7 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
    - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung/lembaga, gradient hero banner emerald-teal (`from-emerald-600 via-teal-600 to-cyan-600`), serta sidebar widget kehadiran SDM & mini kalender minggu ini.
 6. **Dashboard Karyawan (`admin/dashboard/karyawan.blade.php`)**:
    - Menampilkan stat tile `Sisa Kuota Cuti` (jatah vs terpakai) dan `Shift Hari Ini` (nama & jam shift).
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG ID badge, gradient hero banner cyan-teal (`from-cyan-600 via-teal-600 to-blue-600`), Profil Kepegawaian dengan avatar inisial nama, serta sidebar widget detail shift kerja & mini kalender minggu ini.
 7. **Dashboard Guru (`admin/dashboard/guru.blade.php`)**:
    - Menampilkan tabel `Jadwal Mengajar Hari Ini` dan widget `Progress Nilai Kelas Wali`.
    - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG toga, gradient hero banner royal indigo-purple (`from-indigo-600 via-purple-600 to-blue-500`), dan sidebar timeline jam mengajar dengan badge lingkaran pastel.
