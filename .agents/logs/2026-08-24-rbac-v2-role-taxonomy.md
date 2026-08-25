@@ -121,6 +121,8 @@ php artisan test
 
 ## 5. Taksonomi Final 18 Role RBAC v2
 
+> **Koreksi (2026-08-25, hasil independent review):** tabel di bawah ini diperbaiki setelah dibandingkan langsung dengan isi `database/seeders/RoleSeeder.php` aktual — versi sebelumnya salah mencatat `scope_level` untuk `wali_kelas`, `guru_bk`, dan `admin_sarpras`. Kode `RoleSeeder.php` sendiri tidak berubah, murni tabel dokumentasi ini yang sebelumnya tidak akurat.
+
 | No | Nama Role | Scope Level | Keterangan |
 |---|---|---|---|
 | 1 | `platform_super_admin` | `platform` | Super administrator platform tingkat global/multi-yayasan |
@@ -135,9 +137,9 @@ php artisan test
 | 10 | `admin_sdm` | `lembaga` | Pengelola data kepegawaian & absensi SDM lembaga |
 | 11 | `bendahara_lembaga` | `lembaga` | Pengelola transaksi tagihan & pembayaran lembaga |
 | 12 | `guru` | `diri_sendiri` | Pendidik/guru mata pelajaran atau guru kelas |
-| 13 | `wali_kelas` | `diri_sendiri` | Capability role guru wali kelas |
-| 14 | `guru_bk` | `diri_sendiri` | Guru Bimbingan Konseling / penanganan kasus siswa |
-| 15 | `admin_sarpras` | `lembaga` | Pengelola sarana dan prasarana lembaga |
+| 13 | `wali_kelas` | `lembaga` | Capability role guru wali kelas (koreksi: bukan `diri_sendiri`) |
+| 14 | `guru_bk` | `lembaga` | Guru Bimbingan Konseling / penanganan kasus siswa (koreksi: bukan `diri_sendiri`) |
+| 15 | `admin_sarpras` | `yayasan` | Pengelola sarana dan prasarana lembaga (koreksi: bukan `lembaga`) |
 | 16 | `admin_administrasi` | `lembaga` | Administrator SPMB & administrasi umum (frozen) |
 | 17 | `siswa` | `diri_sendiri` | Akun peserta didik |
 | 18 | `orang_tua` | `diri_sendiri` | Akun wali murid / orang tua siswa |
