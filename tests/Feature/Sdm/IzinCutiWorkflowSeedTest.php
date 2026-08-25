@@ -34,7 +34,7 @@ it('seeds the 3 kehadiran-sdm.izin.* permissions and grants them to the right ro
     }
 
     expect(Role::where('name', 'guru')->first()->hasPermissionTo('kehadiran-sdm.izin.ajukan'))->toBeTrue();
-    expect(Role::where('name', 'karyawan_lembaga')->first()->hasPermissionTo('kehadiran-sdm.izin.ajukan'))->toBeTrue();
+    expect(Role::where('name', 'pegawai_lembaga')->first()->hasPermissionTo('kehadiran-sdm.izin.ajukan'))->toBeTrue();
     expect(Role::where('name', 'kepala_sekolah')->first()->hasPermissionTo('kehadiran-sdm.izin.approve'))->toBeTrue();
     expect(Role::where('name', 'admin_sdm')->first()->hasPermissionTo('kehadiran-sdm.izin.approve'))->toBeTrue();
 });
