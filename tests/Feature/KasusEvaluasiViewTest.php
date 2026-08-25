@@ -8,7 +8,61 @@ use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use App\Models\Guru;
 use Spatie\Permission\Models\Permission;
+
+if (! function_exists('buatKasusBerjalanDenganKonselor')) {
+    function buatKasusBerjalanDenganKonselor(Lembaga $lembaga): array
+    {
+        $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+        $konselorUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+        $guruRole = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $guruRole->givePermissionTo(['kasus.view']);
+        $konselorUser->assignRole('guru');
+        $guruBk = Guru::withoutGlobalScopes()->create([
+            'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
+            'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
+            'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
+            'status_aktif' => 'aktif',
+        ]);
+
+        $kasus = Kasus::create([
+            'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+            'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+            'status' => StatusKasus::Berjalan, 'konselor_guru_id' => $guruBk->id,
+        ]);
+
+        return [$kasus, $konselorUser, $siswa];
+    }
+}
+
+if (! function_exists('buatKasusEskalasi')) {
+    function buatKasusEskalasi(Lembaga $lembaga): array
+    {
+        [$kasus, $konselorUser, $siswa] = buatKasusBerjalanDenganKonselor($lembaga);
+        $kasus->update(['status' => StatusKasus::Eskalasi]);
+
+        return [$kasus, $konselorUser, $siswa];
+    }
+}
+
+if (! function_exists('buatAdminAkademik')) {
+    function buatAdminAkademik(Lembaga $lembaga): User
+    {
+        foreach (['kasus.view', 'kasus.triase'] as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
+        $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+        $role->givePermissionTo(['kasus.view', 'kasus.triase']);
+
+        $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $admin->assignRole($role);
+
+        return $admin;
+    }
+}
 
 it('lets an assigned konselor submit an evaluasi form from kasus.show and see the history including confidential catatan', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
