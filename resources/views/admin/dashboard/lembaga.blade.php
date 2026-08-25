@@ -1,158 +1,255 @@
 <x-app-layout>
-    <x-slot name="header">
-        <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-brass">Lembaga &middot; Ringkasan</p>
-        <h2 class="mt-1 font-display text-2xl font-semibold text-ink">Dashboard</h2>
-    </x-slot>
+    <div class="mx-auto max-w-7xl space-y-6 pt-2">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+            {{-- Main Content Area (8 Cols) --}}
+            <div class="space-y-6 lg:col-span-7 xl:col-span-8">
+                
+                {{-- 1. Modern Gradient Hero Banner --}}
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-8 text-white shadow-xl shadow-emerald-500/10">
+                    <div class="relative z-10 max-w-xl">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-semibold backdrop-blur-md text-white">
+                                <span class="h-2 w-2 rounded-full bg-emerald-300 animate-pulse"></span>
+                                Panel Administrasi Lembaga
+                            </span>
+                            @if (Auth::user()->widestScopeLevel() === 'yayasan')
+                                <a href="{{ route('dashboard', ['switch_lembaga' => 'all']) }}" class="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white transition hover:bg-white/20">
+                                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Kembali ke Yayasan
+                                </a>
+                            @endif
+                        </div>
+                        <h1 class="mt-4 flex items-center gap-2.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                            <span>Selamat datang, {{ Auth::user()->name }}!</span>
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
+                                <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V5" />
+                                </svg>
+                            </span>
+                        </h1>
+                        <p class="mt-2 text-sm leading-relaxed text-emerald-100">
+                            Ringkasan performa lembaga, data guru, pengguna aktif, keuangan, dan status kehadiran SDM secara realtime.
+                        </p>
+                    </div>
 
-    <div class="mx-auto max-w-6xl space-y-8">
-        <x-hero-banner
-            eyebrow="Panel Administrasi Lembaga"
-            :title="'Halo, ' . Auth::user()->name . '!'"
-            subtitle="Kelola data guru, pengguna, dan tahun ajaran di lembaga Anda."
-        >
-            @if (Auth::user()->widestScopeLevel() === 'yayasan')
-                <x-slot name="actions">
-                    <a href="{{ route('dashboard', ['switch_lembaga' => 'all']) }}" class="inline-flex items-center rounded-xl border border-white/30 px-4 py-2 text-sm text-paper transition hover:bg-white/10">
-                        &larr; Kembali ke Ringkasan Yayasan
-                    </a>
-                </x-slot>
-            @endif
-        </x-hero-banner>
-
-        <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
-            <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar di lembaga Anda" icon="school" />
-            <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif di lembaga Anda" icon="group" />
-            <x-stat-tile label="Tahun Ajaran Aktif" :value="$stats['tahunAjaranAktif']" :hint="$tahunAjaranAktif->nama ?? 'Belum diaktifkan'" icon="calendar_month" />
-        </div>
-
-        @if ($spmbStats)
-            <div>
-                <h3 class="font-display text-lg font-semibold text-ink">SPMB</h3>
-                <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
-                    <x-stat-tile label="Total Pendaftar" :value="$spmbStats['total']" icon="groups" />
-                    <x-stat-tile label="Menunggu Verifikasi" :value="$spmbStats['menunggu_verifikasi']" icon="hourglass_empty" />
-                    <x-stat-tile label="Diterima" :value="$spmbStats['diterima']" icon="check_circle" />
-                    <x-stat-tile label="Ditolak" :value="$spmbStats['ditolak']" icon="cancel" />
+                    {{-- Subtle Right Illustration Overlay --}}
+                    <div class="absolute -right-4 -bottom-8 pointer-events-none hidden sm:block opacity-20">
+                        <div class="h-48 w-48 rounded-full border-8 border-white/30"></div>
+                        <div class="absolute -bottom-10 -right-10 h-64 w-64 rounded-full border-8 border-white/20"></div>
+                    </div>
                 </div>
-                <x-panel class="mt-4 p-6">
-                    <p class="mb-3 text-sm font-medium text-ink">Tren Pendaftaran (30 Hari Terakhir)</p>
-                    <div x-data="trenPendaftaranChart(@js($tren['labels']), @js($tren['data']))">
-                        <canvas x-ref="canvas" height="90"></canvas>
+
+                {{-- 2. Stat Tiles Row --}}
+                <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                    <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar di lembaga Anda" icon="school" />
+                    <x-stat-tile label="Pengguna" :value="$stats['pengguna']" hint="Akun aktif di lembaga Anda" icon="group" />
+                    <x-stat-tile label="Tahun Ajaran Aktif" :value="$stats['tahunAjaranAktif']" :hint="$tahunAjaranAktif->nama ?? 'Belum diaktifkan'" icon="calendar_month" />
+                </div>
+
+                {{-- 3. SPMB Section --}}
+                @if ($spmbStats)
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">SPMB (Penerimaan Siswa Baru)</h3>
+                                <p class="text-xs text-slate">Statistik pendaftaran dan verifikasi calon siswa</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                            <x-stat-tile label="Total Pendaftar" :value="$spmbStats['total']" icon="groups" />
+                            <x-stat-tile label="Menunggu Verifikasi" :value="$spmbStats['menunggu_verifikasi']" icon="hourglass_empty" />
+                            <x-stat-tile label="Diterima" :value="$spmbStats['diterima']" icon="check_circle" />
+                            <x-stat-tile label="Ditolak" :value="$spmbStats['ditolak']" icon="cancel" />
+                        </div>
+                        <div class="mt-6 border-t border-ink/10 pt-4">
+                            <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Tren Pendaftaran (30 Hari Terakhir)</p>
+                            <div x-data="trenPendaftaranChart(@js($tren['labels']), @js($tren['data']))">
+                                <canvas x-ref="canvas" height="90"></canvas>
+                            </div>
+                        </div>
+                    </x-panel>
+                @endif
+
+                {{-- 4. Keuangan Section --}}
+                @if ($keuanganStats)
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">Ringkasan Keuangan</h3>
+                                <p class="text-xs text-slate">Arus pembayaran dan komposisi status tagihan</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                            <x-stat-tile label="Rp Terkumpul" value="Rp {{ number_format($keuanganStats['rpTerkumpul'], 0, ',', '.') }}" icon="payments" />
+                            <x-stat-tile label="Rp Belum Lunas" value="Rp {{ number_format($keuanganStats['rpBelumLunas'], 0, ',', '.') }}" icon="pending_actions" />
+                            <a href="{{ route('admin.pembayaran.index') }}">
+                                <x-stat-tile label="Pembayaran Menunggu Verifikasi" :value="$keuanganStats['pembayaranMenungguVerifikasi']" icon="fact_check" />
+                            </a>
+                        </div>
+                        <div class="mt-6 border-t border-ink/10 pt-4">
+                            <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Komposisi Status Tagihan</p>
+                            <div
+                                x-data="donutTagihanChart(
+                                    ['Belum Bayar', 'Dicicil', 'Lunas'],
+                                    @js([$keuanganStats['donut']['belum_bayar'], $keuanganStats['donut']['dicicil'], $keuanganStats['donut']['lunas']])
+                                )"
+                                class="max-w-xs mx-auto sm:mx-0"
+                            >
+                                <canvas x-ref="canvas"></canvas>
+                            </div>
+                        </div>
+                    </x-panel>
+                @endif
+
+                @unless ($spmbStats || $keuanganStats)
+                    <x-panel class="p-6 text-sm text-slate">
+                        Modul Akademik, E-Sarpra, E-HRD, dan E-BK menyusul di fase berikutnya.
+                    </x-panel>
+                @endunless
+
+                {{-- 5. Progress Pengumpulan Nilai per Kelas --}}
+                @if ($progressRaporPerKelas !== null)
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">Progress Pengumpulan Nilai per Kelas</h3>
+                                <p class="text-xs text-slate">Rekapitulasi persentase pengisian rapor kelas</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                                        <th class="px-4 py-3 font-display font-semibold">Kelas</th>
+                                        <th class="px-4 py-3 font-display font-semibold">Terisi</th>
+                                        <th class="px-4 py-3 font-display font-semibold">Progress</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-ink/10">
+                                    @foreach ($progressRaporPerKelas as $item)
+                                        <tr>
+                                            <td class="px-4 py-3 font-display font-medium text-ink">{{ $item['kelas']->nama }}</td>
+                                            <td class="px-4 py-3">{{ $item['progress']['terisi'] }} / {{ $item['progress']['total'] }}</td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="h-2 w-24 overflow-hidden rounded-full bg-paper">
+                                                        <div class="h-full bg-emerald-500" style="width: {{ min(100, max(0, $item['progress']['persen'])) }}%"></div>
+                                                    </div>
+                                                    <span class="font-semibold text-xs text-ink">{{ $item['progress']['persen'] }}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    @if ($progressRaporPerKelas->isEmpty())
+                                        <tr>
+                                            <td colspan="3" class="px-4 py-8 text-center text-slate">Belum ada kelas di lembaga ini.</td>
+                                        </tr>
+                                    @endif
+                                </tbody>
+                            </table>
+                        </div>
+                    </x-panel>
+                @endif
+
+                {{-- 6. Kasus Pendampingan --}}
+                @if ($kasusList !== null)
+                    <x-panel class="p-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-ink/10">
+                            <div>
+                                <h3 class="font-display font-bold text-lg text-ink">Kasus Pendampingan</h3>
+                                <p class="text-xs text-slate">Ringkasan kasus BK dan konseling siswa lembaga</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
+                            <x-stat-tile label="Diajukan" :value="$kasusStats['diajukan']" icon="assignment_late" />
+                            <x-stat-tile label="Menunggu Consent" :value="$kasusStats['menunggu_consent']" icon="hourglass_empty" />
+                            <x-stat-tile label="Ditugaskan" :value="$kasusStats['ditugaskan']" icon="assignment" />
+                            <x-stat-tile label="Berjalan" :value="$kasusStats['berjalan']" icon="pending_actions" />
+                            <x-stat-tile label="Eskalasi" :value="$kasusStats['eskalasi']" icon="priority_high" />
+                            <x-stat-tile label="Selesai" :value="$kasusStats['selesai']" icon="check_circle" />
+                        </div>
+                        <div class="mt-4">
+                            @if ($kasusList->isEmpty())
+                                <p class="py-6 text-center text-xs text-slate">Belum ada kasus pendampingan di lembaga ini.</p>
+                            @else
+                                <ul class="divide-y divide-ink/10">
+                                    @foreach ($kasusList as $kasus)
+                                        <li class="py-3">
+                                            <a href="{{ route('kasus.show', $kasus) }}" class="flex items-center justify-between hover:text-brass transition">
+                                                <div>
+                                                    <p class="text-sm font-semibold text-ink">{{ $kasus->siswa->nama_lengkap }}</p>
+                                                    <p class="text-xs text-slate">{{ $kasus->kategori_masalah }}</p>
+                                                </div>
+                                                <x-badge tone="{{ $kasus->status->badgeTone() }}">{{ $kasus->status->label() }}</x-badge>
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
+                    </x-panel>
+                @endif
+            </div>
+
+            {{-- Right Sidebar Area (4 Cols) --}}
+            <div class="space-y-6 lg:col-span-5 xl:col-span-4">
+                
+                {{-- 1. Widget Kehadiran SDM Hari Ini --}}
+                <x-panel class="p-6">
+                    <div class="flex items-center justify-between pb-3 border-b border-ink/10">
+                        <h3 class="font-display font-bold text-sm uppercase tracking-wider text-slate">Kehadiran SDM Hari Ini</h3>
+                        <span class="text-xs font-bold text-emerald-600 uppercase">{{ now()->translatedFormat('d F Y') }}</span>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5 lg:grid-cols-2">
+                        <x-stat-tile label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
+                        <x-stat-tile label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
+                        <x-stat-tile label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />
+                        <x-stat-tile label="Alpa" :value="$presensiSdmHariIni['alpa']" icon="cancel" />
+                        <x-stat-tile label="Cuti" :value="$presensiSdmHariIni['cuti']" icon="beach_access" />
                     </div>
                 </x-panel>
-            </div>
-        @endif
 
-        @if ($keuanganStats)
-            <div>
-                <h3 class="font-display text-lg font-semibold text-ink">Keuangan</h3>
-                <div class="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                    <x-stat-tile label="Rp Terkumpul" value="Rp {{ number_format($keuanganStats['rpTerkumpul'], 0, ',', '.') }}" icon="payments" />
-                    <x-stat-tile label="Rp Belum Lunas" value="Rp {{ number_format($keuanganStats['rpBelumLunas'], 0, ',', '.') }}" icon="pending_actions" />
-                    <a href="{{ route('admin.pembayaran.index') }}">
-                        <x-stat-tile label="Pembayaran Menunggu Verifikasi" :value="$keuanganStats['pembayaranMenungguVerifikasi']" icon="fact_check" />
-                    </a>
-                </div>
-                <x-panel class="mt-4 p-6">
-                    <p class="mb-3 text-sm font-medium text-ink">Komposisi Status Tagihan</p>
-                    <div
-                        x-data="donutTagihanChart(
-                            ['Belum Bayar', 'Dicicil', 'Lunas'],
-                            @js([$keuanganStats['donut']['belum_bayar'], $keuanganStats['donut']['dicicil'], $keuanganStats['donut']['lunas']])
-                        )"
-                        class="max-w-xs"
-                    >
-                        <canvas x-ref="canvas"></canvas>
+                {{-- 2. Pengajuan Izin/Cuti Pending --}}
+                <x-panel class="p-6">
+                    <div class="flex items-center justify-between pb-3 border-b border-ink/10">
+                        <h3 class="font-display font-bold text-sm uppercase tracking-wider text-slate">Persetujuan Cuti SDM</h3>
+                    </div>
+                    <div class="mt-4">
+                        <x-stat-tile label="Pending Persetujuan" :value="$izinCutiPendingCount" icon="pending_actions" />
                     </div>
                 </x-panel>
-            </div>
-        @endif
 
-        @unless ($spmbStats || $keuanganStats)
-            <x-panel class="p-6 text-sm text-slate">
-                Modul Akademik, E-Sarpra, E-HRD, dan E-BK menyusul di fase berikutnya.
-            </x-panel>
-        @endunless
+                {{-- 3. Widget Mini Kalender Minggu Ini --}}
+                <x-panel class="p-6">
+                    <div class="flex items-center justify-between pb-3 border-b border-ink/10">
+                        <h3 class="font-display font-bold text-sm uppercase tracking-wider text-slate">Jadwal Minggu Ini</h3>
+                        <span class="text-xs font-bold text-emerald-600 uppercase">{{ now()->translatedFormat('F Y') }}</span>
+                    </div>
 
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <x-panel class="p-6">
-                <p class="mb-3 text-sm font-medium text-ink">Kehadiran SDM Hari Ini</p>
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                    <x-stat-tile label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
-                    <x-stat-tile label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
-                    <x-stat-tile label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />
-                    <x-stat-tile label="Alpa" :value="$presensiSdmHariIni['alpa']" icon="cancel" />
-                    <x-stat-tile label="Cuti" :value="$presensiSdmHariIni['cuti']" icon="beach_access" />
-                </div>
-            </x-panel>
-            <x-panel class="p-6">
-                <p class="mb-3 text-sm font-medium text-ink">Pengajuan Izin/Cuti Menunggu Persetujuan</p>
-                <x-stat-tile label="Pending" :value="$izinCutiPendingCount" icon="pending_actions" />
-            </x-panel>
-        </div>
-
-        @if ($progressRaporPerKelas !== null)
-            <x-panel>
-                <div class="border-b border-ink/10 px-6 py-4">
-                    <h3 class="font-display font-semibold text-ink">Progress Pengumpulan Nilai per Kelas</h3>
-                </div>
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
-                            <th class="px-6 py-3 font-display font-semibold">Kelas</th>
-                            <th class="px-6 py-3 font-display font-semibold">Terisi</th>
-                            <th class="px-6 py-3 font-display font-semibold">Progress</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-ink/10">
-                        @foreach ($progressRaporPerKelas as $item)
-                            <tr>
-                                <td class="px-6 py-3.5 font-display font-medium text-ink">{{ $item['kelas']->nama }}</td>
-                                <td class="px-6 py-3.5">{{ $item['progress']['terisi'] }} / {{ $item['progress']['total'] }}</td>
-                                <td class="px-6 py-3.5">{{ $item['progress']['persen'] }}%</td>
-                            </tr>
+                    @php
+                        $startOfWeek = now()->startOfWeek();
+                    @endphp
+                    <div class="mt-4 grid grid-cols-7 gap-1.5 text-center">
+                        @foreach (['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'] as $dayName)
+                            <div class="text-[10px] font-bold uppercase text-slate/70 py-1">{{ $dayName }}</div>
                         @endforeach
-                        @if ($progressRaporPerKelas->isEmpty())
-                            <tr>
-                                <td colspan="3" class="px-6 py-8 text-center text-slate">Belum ada kelas di lembaga ini.</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </x-panel>
-        @endif
-
-        @if ($kasusList !== null)
-            <div>
-                <h3 class="font-display text-lg font-semibold text-ink">Kasus Pendampingan</h3>
-                <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3">
-                    <x-stat-tile label="Diajukan" :value="$kasusStats['diajukan']" icon="assignment_late" />
-                    <x-stat-tile label="Menunggu Consent" :value="$kasusStats['menunggu_consent']" icon="hourglass_empty" />
-                    <x-stat-tile label="Ditugaskan" :value="$kasusStats['ditugaskan']" icon="assignment" />
-                    <x-stat-tile label="Berjalan" :value="$kasusStats['berjalan']" icon="pending_actions" />
-                    <x-stat-tile label="Eskalasi" :value="$kasusStats['eskalasi']" icon="priority_high" />
-                    <x-stat-tile label="Selesai" :value="$kasusStats['selesai']" icon="check_circle" />
-                </div>
-                <x-panel class="mt-4">
-                    @if ($kasusList->isEmpty())
-                        <p class="px-6 py-8 text-center text-sm text-slate">Belum ada kasus pendampingan di lembaga ini.</p>
-                    @else
-                        <ul class="divide-y divide-ink/10">
-                            @foreach ($kasusList as $kasus)
-                                <li class="px-6 py-3">
-                                    <a href="{{ route('kasus.show', $kasus) }}" class="flex items-center justify-between hover:text-brass">
-                                        <div>
-                                            <p class="text-sm font-semibold text-ink">{{ $kasus->siswa->nama_lengkap }}</p>
-                                            <p class="text-xs text-slate">{{ $kasus->kategori_masalah }}</p>
-                                        </div>
-                                        <x-badge tone="{{ $kasus->status->badgeTone() }}">{{ $kasus->status->label() }}</x-badge>
-                                    </a>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
+                        @for ($i = 0; $i < 7; $i++)
+                            @php
+                                $date = $startOfWeek->copy()->addDays($i);
+                                $isToday = $date->isToday();
+                            @endphp
+                            <div class="flex flex-col items-center py-1.5">
+                                <span class="h-8 w-8 flex items-center justify-center rounded-full text-xs font-bold transition {{ $isToday ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30' : 'text-ink hover:bg-paper' }}">
+                                    {{ $date->format('j') }}
+                                </span>
+                            </div>
+                        @endfor
+                    </div>
                 </x-panel>
             </div>
-        @endif
+        </div>
     </div>
 </x-app-layout>
