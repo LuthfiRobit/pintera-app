@@ -106,7 +106,7 @@ it('notifies the submitting guru and lembaga admins when sesi_pendampingan conse
     [$kasus, $sesiConsent, , $kontakUtamaUser] = siapkanKasusMenungguConsent($guruPengaju, $lembaga);
 
     Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
-    $adminRole = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $adminRole = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $adminRole->givePermissionTo('kasus.triase');
     $lembagaAdmin = User::factory()->create(['lembaga_id' => $kasus->lembaga_id]);
     $lembagaAdmin->assignRole($adminRole);
