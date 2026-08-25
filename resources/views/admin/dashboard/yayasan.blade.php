@@ -131,7 +131,7 @@
             </div>
 
             {{-- Right Sidebar Area (4 Cols) --}}
-            <div class="space-y-6 lg:col-span-5 xl:col-span-4">
+            <div class="space-y-6 lg:col-span-5 xl:col-span-4 lg:sticky lg:top-6 lg:self-start">
                 
                 @if (isset($presensiSdmHariIni))
                     {{-- 1. Widget Kehadiran SDM Hari Ini --}}
