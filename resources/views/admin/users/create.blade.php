@@ -36,9 +36,7 @@
                 </div>
             </div>
 
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-5">
-                @include('admin.users._form', ['targetUser' => null])
-            </div>
+            @include('admin.users._form', ['targetUser' => null])
 
             <div class="flex items-center justify-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
                 <a href="{{ route('admin.users.index') }}" class="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 active:scale-95">
