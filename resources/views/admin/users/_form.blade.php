@@ -10,7 +10,7 @@
     <div class="space-y-6 lg:col-span-5">
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
             <h4 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-                <x-icon name="badge" class="h-4.5 w-4.5 text-brand-500" />
+                <x-icon name="badge" class="h-5 w-5 text-brand-500" />
                 Informasi Utama & Kredensial
             </h4>
 
@@ -42,8 +42,10 @@
 
                     @if (isset($lembaga) && $lembaga->isNotEmpty())
                         <div x-show="needsLembaga()" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" class="mt-4 pt-4 border-t border-gray-100">
-                            <x-input-label for="lembaga_id" value="Lembaga" />
-                            <x-select id="lembaga_id" name="lembaga_id" class="mt-1.5">
+                            <label for="lembaga_id" class="block text-sm font-semibold text-gray-700">
+                                Lembaga <span class="text-red-500" x-show="needsLembaga()">*</span>
+                            </label>
+                            <x-select id="lembaga_id" name="lembaga_id" class="mt-1.5" ::required="needsLembaga()">
                                 <option value="" disabled selected>Pilih lembaga (opsional)</option>
                                 @foreach ($lembaga as $item)
                                     <option value="{{ $item->id }}" @selected(old('lembaga_id') == $item->id)>{{ $item->nama }}</option>
@@ -62,7 +64,7 @@
     <div class="lg:col-span-7">
         <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
             <h4 class="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 flex items-center gap-2">
-                <x-icon name="security" class="h-4.5 w-4.5 text-brand-500" />
+                <x-icon name="security" class="h-5 w-5 text-brand-500" />
                 Hak Akses & Peran (Role)
             </h4>
             <p class="text-xs text-gray-500">Pilih satu atau lebih peran fungsional. Role teknis (scope pegawai) ditambahkan otomatis oleh sistem.</p>
@@ -90,7 +92,7 @@
                                         class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
                                     >
                                     <div class="flex flex-col gap-0.5">
-                                        <span class="text-gray-950 font-semibold leading-tight">{{ $roleOption->name }}</span>
+                                        <span class="text-gray-950 font-semibold leading-tight">{{ ucwords(str_replace('_', ' ', $roleOption->name)) }}</span>
                                         <span class="text-[10px] text-gray-400 font-normal">Scope: {{ $roleOption->scope_level }}</span>
                                     </div>
                                 </label>
