@@ -3,9 +3,11 @@
         filters: {
             search: @js($search),
             role: @js($roleFilter),
+            scope_group: @js($scopeGroup),
         },
         perPage: @js($perPage),
         indexUrlBase: @js(route('admin.users.index')),
+        roleGroups: @js($rolesByGroup),
     })">
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
@@ -76,7 +78,7 @@
                     <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Akun</label>
                     <div class="flex h-[42px] items-center gap-2 rounded-[10px] border border-gray-200 bg-gray-50 px-3.5">
                         <x-icon name="search" class="h-[14px] w-[14px] shrink-0 text-gray-400" />
-                        <input x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()" type="text" placeholder="Cari nama atau email..." class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
+                        <input x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()" type="text" placeholder="Cari nama, email, atau username..." class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
                     </div>
                 </div>
                 <div class="lg:col-span-2">
@@ -88,6 +90,34 @@
                         @endforeach
                     </select>
                 </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 overflow-x-auto border-t border-gray-100 pt-3">
+                @php
+                    $chipLabels = [
+                        '' => 'Semua',
+                        'platform' => 'Platform',
+                        'yayasan' => 'Yayasan',
+                        'lembaga' => 'Lembaga',
+                        'staf' => 'Staf',
+                        'orang_tua' => 'Orang Tua',
+                        'siswa' => 'Siswa',
+                    ];
+                @endphp
+                @foreach ($chipLabels as $chipValue => $chipLabel)
+                    @php $chipCountKey = $chipValue === '' ? 'semua' : $chipValue; @endphp
+                    <button
+                        type="button"
+                        @click="setScopeGroup(@js($chipValue))"
+                        :class="(filters.scope_group ?? '') === @js($chipValue) ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'"
+                        class="flex items-center gap-2 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs transition-all"
+                    >
+                        <span>{{ $chipLabel }}</span>
+                        <span
+                            :class="(filters.scope_group ?? '') === @js($chipValue) ? 'bg-brand-100 text-brand-700' : 'bg-gray-200 text-gray-700'"
+                            class="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        >{{ $scopeCounts[$chipCountKey] ?? 0 }}</span>
+                    </button>
+                @endforeach
             </div>
         </div>
 
