@@ -35,9 +35,9 @@ function buatKaryawanKonselorAkses(Yayasan $yayasan): array
 {
     $user = User::factory()->create(['lembaga_id' => null]);
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
-    $user->assignRole('karyawan_pool');
+    $user->assignRole('pegawai_yayasan');
     $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
     $karyawan = Karyawan::withoutGlobalScopes()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
@@ -64,7 +64,7 @@ it('lets an assigned guru_bk konselor open kasus.index and kasus.show', function
     $this->actingAs($konselorUser)->get(route('kasus.show', $kasus))->assertOk();
 });
 
-it('lets an assigned karyawan_pool konselor open kasus.index and kasus.show', function () {
+it('lets an assigned pegawai_yayasan konselor open kasus.index and kasus.show', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Test Dua']);
@@ -105,7 +105,7 @@ it('lets the siswa a kasus is about open kasus.show, but not a different siswa',
     $this->actingAs($siswaLainUser)->get(route('kasus.show', $kasus))->assertNotFound();
 });
 
-it('lets a karyawan_pool konselor (lembaga_id null) schedule a sesi even with an unrelated active_lembaga_id in session', function () {
+it('lets a pegawai_yayasan konselor (lembaga_id null) schedule a sesi even with an unrelated active_lembaga_id in session', function () {
     Notification::fake();
 
     $yayasan = Yayasan::factory()->create();
@@ -123,7 +123,7 @@ it('lets a karyawan_pool konselor (lembaga_id null) schedule a sesi even with an
 
     $this->actingAs($konselorUser);
     // Put an active_lembaga_id in session that is NOT the konselor's own (they have none,
-    // being karyawan_pool) — this is the state that used to make $user->karyawan resolve
+    // being pegawai_yayasan) — this is the state that used to make $user->karyawan resolve
     // to null via TenantScope and cause a false 403.
     $this->get('/dashboard?switch_lembaga='.$otherLembaga->id);
 
