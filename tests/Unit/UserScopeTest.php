@@ -64,3 +64,23 @@ it('prefers platform over yayasan when a user somehow has both scopes', function
     expect($user->widestScopeLevel())->toBe('platform');
 });
 
+it('excludes scope-carrier roles from functionalRoles()', function () {
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $user = User::factory()->create();
+    $user->assignRole(['guru', 'pegawai_lembaga']);
+
+    expect($user->functionalRoles()->pluck('name')->all())->toBe(['guru']);
+});
+
+it('returns an empty functionalRoles collection when a user only has scope-carrier roles', function () {
+    Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+
+    $user = User::factory()->create();
+    $user->assignRole('pegawai_yayasan');
+
+    expect($user->functionalRoles())->toBeEmpty();
+});
+
+

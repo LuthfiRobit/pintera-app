@@ -105,4 +105,15 @@ class User extends Authenticatable
             default => 'diri_sendiri',
         };
     }
+
+    /**
+     * Role fungsional user (mengecualikan pegawai_lembaga/pegawai_yayasan --
+     * role scope-carrier yang bukan identitas pekerjaan, murni penentu
+     * widestScopeLevel()). Dipakai untuk tampilan UI (daftar Pengguna, form
+     * edit) supaya tidak menampilkan role teknis yang membingungkan.
+     */
+    public function functionalRoles(): \Illuminate\Support\Collection
+    {
+        return $this->roles->whereNotIn('name', ['pegawai_lembaga', 'pegawai_yayasan']);
+    }
 }
