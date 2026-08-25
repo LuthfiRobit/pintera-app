@@ -8,8 +8,48 @@
         <x-hero-banner
             eyebrow="Portal Guru"
             :title="'Halo, ' . Auth::user()->name . '!'"
-            subtitle="Fitur akademik (jadwal mengajar, jurnal, nilai) menyusul di fase berikutnya."
+            subtitle="Ringkasan jadwal mengajar hari ini, tugas wali kelas, dan kasus pendampingan."
         />
+
+        @if ($kelasWali && $progressKelasWali)
+            <x-panel class="p-6">
+                <p class="mb-3 text-sm font-medium text-ink">Progress Nilai Kelas Wali ({{ $kelasWali->nama }})</p>
+                <x-stat-tile
+                    label="Pengumpulan Nilai"
+                    :value="$progressKelasWali['persen'] . '%'"
+                    :hint="$progressKelasWali['terisi'] . ' terisi dari ' . $progressKelasWali['total'] . ' slot komponen'"
+                    icon="fact_check"
+                />
+            </x-panel>
+        @endif
+
+        <x-panel>
+            <div class="border-b border-ink/10 px-6 py-4">
+                <h3 class="font-display font-semibold text-ink">Jadwal Mengajar Hari Ini</h3>
+            </div>
+            @if ($jadwalHariIni->isEmpty())
+                <p class="px-6 py-8 text-center text-sm text-slate">Tidak ada jadwal mengajar hari ini.</p>
+            @else
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                            <th class="px-6 py-3 font-display font-semibold">Jam</th>
+                            <th class="px-6 py-3 font-display font-semibold">Kelas</th>
+                            <th class="px-6 py-3 font-display font-semibold">Mata Pelajaran</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-ink/10">
+                        @foreach ($jadwalHariIni as $jadwal)
+                            <tr>
+                                <td class="px-6 py-3.5">{{ $jadwal->jamPelajaran?->jam_mulai }} - {{ $jadwal->jamPelajaran?->jam_selesai }}</td>
+                                <td class="px-6 py-3.5 font-medium text-ink">{{ $jadwal->kelas?->nama }}</td>
+                                <td class="px-6 py-3.5">{{ $jadwal->mataPelajaran?->nama }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </x-panel>
 
         @if ($jabatanTambahan->isNotEmpty())
             <x-panel>

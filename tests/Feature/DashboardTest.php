@@ -112,3 +112,16 @@ it('shows the yayasan growth trend chart and health columns on the platform dash
     });
 });
 
+it('passes teaching schedule and progressKelasWali to the guru dashboard view', function () {
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $user = User::factory()->create();
+    $user->assignRole('guru');
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('Jadwal Mengajar Hari Ini');
+    $response->assertViewHas('jadwalHariIni');
+});
+
+

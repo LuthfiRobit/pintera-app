@@ -34,12 +34,30 @@ class DashboardController extends BaseController
                 ? collect()
                 : Kasus::with('siswa')->where('konselor_guru_id', $user->guru->id)->latest()->get();
 
+            $hariIni = \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+            $jadwalHariIni = $user->guru === null
+                ? collect()
+                : \App\Models\JadwalPelajaran::where('guru_id', $user->guru->id)
+                    ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
+                    ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
+                    ->get();
+
+            $kelasWali = $user->guru === null
+                ? null
+                : \App\Models\Kelas::where('wali_kelas_guru_id', $user->guru->id)->first();
+            $progressKelasWali = $kelasWali
+                ? $this->dashboardStats->statistikProgressRaporKelas($kelasWali)
+                : null;
+
             return view('admin.dashboard.guru', [
                 'jabatanTambahan' => $user->guru?->jabatanTambahan ?? collect(),
                 'kasusDiajukan' => $kasusDiajukan,
                 'kasusDitangani' => $kasusDitangani,
                 'kasusDiajukanStats' => $this->kasusStatusCounts($kasusDiajukan),
                 'kasusDitanganiStats' => $this->kasusStatusCounts($kasusDitangani),
+                'jadwalHariIni' => $jadwalHariIni,
+                'kelasWali' => $kelasWali,
+                'progressKelasWali' => $progressKelasWali,
             ]);
         }
 
