@@ -336,3 +336,108 @@ it('lets a platform_super_admin assign a yayasan-scoped role to a new user', fun
     expect(User::withoutGlobalScopes()->where('email', 'dariplatform@example.test')->exists())->toBeTrue();
 });
 
+it('does not strip the pegawai_lembaga baseline role when updating a guru account that only ever had "guru" assigned directly', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    $guru = User::factory()->create(['name' => 'Guru Lama', 'email' => 'gurulama@example.test', 'lembaga_id' => $lembaga->id]);
+    $guru->assignRole('guru');
+
+    expect($guru->hasRole('pegawai_lembaga'))->toBeFalse();
+
+    $this->actingAs($manager)->put(route('admin.users.update', $guru), [
+        'name' => 'Guru Baru',
+        'email' => 'gurulama@example.test',
+        'roles' => ['guru'],
+    ])->assertRedirect(route('admin.users.index'));
+
+    $updated = $guru->fresh();
+    expect($updated->hasRole('guru'))->toBeTrue();
+    expect($updated->hasRole('pegawai_lembaga'))->toBeTrue();
+});
+
+it('assigns multiple functional roles at once plus a single shared pegawai_lembaga baseline', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Wakasek Merangkap Guru',
+        'email' => 'wakasekguru@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'lembaga_id' => $lembaga->id,
+        'roles' => ['wakasek_kurikulum', 'guru'],
+    ])->assertRedirect(route('admin.users.index'));
+
+    $created = User::withoutGlobalScopes()->where('email', 'wakasekguru@example.test')->first();
+    expect($created->hasRole('wakasek_kurikulum'))->toBeTrue();
+    expect($created->hasRole('guru'))->toBeTrue();
+    expect($created->hasRole('pegawai_lembaga'))->toBeTrue();
+    expect($created->roles()->count())->toBe(3);
+});
+
+it('does not add any carrier baseline role for a purely yayasan-scoped role selection', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Bendahara Yayasan Baru',
+        'email' => 'bendaharayayasan@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'roles' => ['bendahara_yayasan'],
+    ])->assertRedirect(route('admin.users.index'));
+
+    $created = User::withoutGlobalScopes()->where('email', 'bendaharayayasan@example.test')->first();
+    expect($created->hasRole('pegawai_lembaga'))->toBeFalse();
+    expect($created->hasRole('pegawai_yayasan'))->toBeFalse();
+});
+
+it('rejects siswa, orang_tua, and carrier role names submitted directly via the roles array', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Percobaan Siswa',
+        'email' => 'percobaansiswa@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'roles' => ['siswa'],
+    ])->assertSessionHasErrors('roles.0');
+
+    expect(User::withoutGlobalScopes()->where('email', 'percobaansiswa@example.test')->exists())->toBeFalse();
+});
+
+it('rejects a multi-role selection when any single role exceeds the acting manager\'s scope rank', function () {
+    foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $lembagaRole = Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $lembagaRole->givePermissionTo(['users.view', 'users.create', 'users.edit', 'users.toggle-active']);
+    Role::firstOrCreate(['name' => 'bendahara_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager->assignRole($lembagaRole);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Percobaan Campuran',
+        'email' => 'percobaancampuran@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'lembaga_id' => $lembaga->id,
+        'roles' => ['bendahara_lembaga', 'yayasan_super_admin'],
+    ])->assertSessionHasErrors('roles');
+
+    expect(User::withoutGlobalScopes()->where('email', 'percobaancampuran@example.test')->exists())->toBeFalse();
+});
+
+
