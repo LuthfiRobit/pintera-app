@@ -93,9 +93,20 @@ class DashboardController extends BaseController
                     ->whereHas('approvalRequest', fn ($q) => $q->where('status', ApprovalStatus::Pending->value))
                     ->count();
 
+            $sisaKuotaCuti = $karyawan ? $this->dashboardStats->statistikSisaKuotaCuti($karyawan) : null;
+            $jadwalShiftHariIni = $karyawan ? \App\Domains\Sdm\Models\PenugasanShift::withoutGlobalScope(TenantScope::class)
+                ->where('pegawai_type', Karyawan::class)
+                ->where('pegawai_id', $karyawan->id)
+                ->whereDate('tanggal_mulai', '<=', now()->toDateString())
+                ->whereDate('tanggal_selesai', '>=', now()->toDateString())
+                ->with('jenisShift')
+                ->first() : null;
+
             return view('admin.dashboard.karyawan', [
                 'karyawan' => $karyawan,
                 'presensiHariIni' => $presensiHariIni,
+                'sisaKuotaCuti' => $sisaKuotaCuti,
+                'jadwalShiftHariIni' => $jadwalShiftHariIni,
                 'izinCutiPending' => $izinCutiPending,
                 'kasusDitangani' => $kasusDitangani,
                 'kasusDitanganiStats' => $this->kasusStatusCounts($kasusDitangani),

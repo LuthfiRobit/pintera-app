@@ -12,15 +12,26 @@
         />
 
         @if ($karyawan)
-            <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <x-stat-tile
                     label="Presensi Hari Ini"
-                    :value="$presensiHariIni?->status?->label() ?? 'Belum Absen'"
+                    :value="is_object($presensiHariIni) ? $presensiHariIni->status?->label() : ($presensiHariIni['status'] ?? 'Belum Absen')"
                     :hint="$karyawan->jenisKaryawan?->nama"
                     icon="badge"
                 />
-                <x-stat-tile label="Izin/Cuti Menunggu Persetujuan" :value="$izinCutiPending" icon="hourglass_empty" />
-                <x-stat-tile label="Unit/Lembaga" :value="$karyawan->lembaga?->nama ?? 'Pool Yayasan'" icon="apartment" />
+                <x-stat-tile
+                    label="Sisa Kuota Cuti"
+                    :value="$sisaKuotaCuti ? $sisaKuotaCuti['sisa'] . ' Hari' : 'N/A'"
+                    :hint="$sisaKuotaCuti ? 'Dari total ' . $sisaKuotaCuti['jatah'] . ' hari/tahun' : 'Belum dikonfigurasi'"
+                    icon="beach_access"
+                />
+                <x-stat-tile
+                    label="Shift Hari Ini"
+                    :value="$jadwalShiftHariIni?->jenisShift?->nama_shift ?? 'Tanpa Shift'"
+                    :hint="$jadwalShiftHariIni?->jenisShift ? $jadwalShiftHariIni->jenisShift->jam_masuk . ' - ' . $jadwalShiftHariIni->jenisShift->jam_pulang : 'Libur/Rutin'"
+                    icon="schedule"
+                />
+                <x-stat-tile label="Approval Pending" :value="$izinCutiPending" icon="hourglass_empty" />
             </div>
         @endif
 
