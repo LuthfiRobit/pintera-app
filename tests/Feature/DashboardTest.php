@@ -56,6 +56,32 @@ it('does not show a lembaga belonging to another yayasan on the yayasan dashboar
     $response->assertDontSee('SMA Yayasan Lain');
 });
 
+it('shows the platform dashboard with cross-yayasan aggregates to a platform_super_admin', function () {
+    Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+
+    $yayasanA = Yayasan::factory()->create(['nama' => 'Yayasan Alpha']);
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $yayasanB = Yayasan::factory()->create(['nama' => 'Yayasan Beta']);
+    Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $guru = User::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $guru->assignRole('guru');
+
+    $admin = User::factory()->create();
+    $admin->assignRole('platform_super_admin');
+
+    $response = $this->actingAs($admin)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertViewIs('admin.dashboard.platform');
+    $response->assertSee('Yayasan Alpha');
+    $response->assertSee('Yayasan Beta');
+    $response->assertViewHas('stats', function ($stats) {
+        return $stats['yayasan'] === 2 && $stats['lembaga'] === 2;
+    });
+});
+
 it('shows the generic staff dashboard without a switcher to a lembaga-scoped user', function () {
     Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $yayasan = Yayasan::factory()->create();

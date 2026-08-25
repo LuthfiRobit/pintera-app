@@ -8,8 +8,21 @@
         <x-hero-banner
             eyebrow="Portal Karyawan"
             :title="'Selamat datang, ' . Auth::user()->name . '!'"
-            subtitle="Dashboard khusus untuk peran ini belum tersedia. Hubungi admin yayasan/sekolah untuk informasi lebih lanjut."
+            :subtitle="$karyawan ? 'Ringkasan singkat status kepegawaian Anda hari ini.' : 'Profil karyawan Anda belum tertaut. Hubungi admin yayasan/sekolah untuk informasi lebih lanjut.'"
         />
+
+        @if ($karyawan)
+            <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">
+                <x-stat-tile
+                    label="Presensi Hari Ini"
+                    :value="$presensiHariIni?->status?->label() ?? 'Belum Absen'"
+                    :hint="$karyawan->jenisKaryawan?->nama"
+                    icon="badge"
+                />
+                <x-stat-tile label="Izin/Cuti Menunggu Persetujuan" :value="$izinCutiPending" icon="hourglass_empty" />
+                <x-stat-tile label="Unit/Lembaga" :value="$karyawan->lembaga?->nama ?? 'Pool Yayasan'" icon="apartment" />
+            </div>
+        @endif
 
         @if ($kasusDitangani->isNotEmpty())
             <div class="grid grid-cols-2 gap-4 lg:grid-cols-3">

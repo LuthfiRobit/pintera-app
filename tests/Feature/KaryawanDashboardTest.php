@@ -33,6 +33,8 @@ it('shows a pegawai_yayasan account the karyawan placeholder dashboard, not the 
 
     $response->assertOk();
     $response->assertViewIs('admin.dashboard.karyawan');
+    $response->assertViewHas('karyawan', fn ($k) => $k->id === $karyawan->id);
+    $response->assertViewHas('izinCutiPending', 0);
 });
 
 it('shows a pegawai_lembaga account the karyawan placeholder dashboard, not the lembaga admin dashboard', function () {

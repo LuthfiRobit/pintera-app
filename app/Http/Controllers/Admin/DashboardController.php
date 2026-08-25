@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;
 use App\Models\User;
+use App\Models\Yayasan;
 use App\Services\DashboardStatsService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -71,7 +73,8 @@ class DashboardController extends BaseController
         }
 
         if ($user->hasRole('pegawai_yayasan') || $user->hasRole('pegawai_lembaga')) {
-            $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
+            $karyawan = $user->karyawan()->withoutGlobalScope(TenantScope::class)->with('jenisKaryawan')->first();
+            $karyawanId = $karyawan?->id;
             $kasusDitangani = $karyawanId === null
                 ? collect()
                 : Kasus::withoutGlobalScope(TenantScope::class)
@@ -79,9 +82,52 @@ class DashboardController extends BaseController
                     ->where('konselor_karyawan_id', $karyawanId)
                     ->latest()->get();
 
+            $presensiHariIni = $karyawanId === null
+                ? null
+                : $karyawan->attendanceRecords()->withoutGlobalScope(TenantScope::class)->where('tanggal', now()->toDateString())->first();
+
+            $izinCutiPending = $karyawanId === null
+                ? 0
+                : $karyawan->pengajuanIzinCuti()->withoutGlobalScope(TenantScope::class)
+                    ->whereHas('approvalRequest', fn ($q) => $q->where('status', ApprovalStatus::Pending->value))
+                    ->count();
+
             return view('admin.dashboard.karyawan', [
+                'karyawan' => $karyawan,
+                'presensiHariIni' => $presensiHariIni,
+                'izinCutiPending' => $izinCutiPending,
                 'kasusDitangani' => $kasusDitangani,
                 'kasusDitanganiStats' => $this->kasusStatusCounts($kasusDitangani),
+            ]);
+        }
+
+        if ($user->widestScopeLevel() === 'platform') {
+            $yayasanList = Yayasan::withCount('lembaga')->get();
+
+            $ringkasanPerYayasan = $yayasanList->map(function (Yayasan $yayasan) {
+                $lembagaIds = Lembaga::where('yayasan_id', $yayasan->id)->pluck('id');
+
+                return [
+                    'yayasan' => $yayasan,
+                    'lembaga' => $yayasan->lembaga_count,
+                    'guru' => Guru::whereIn('lembaga_id', $lembagaIds)->count(),
+                    'pengguna' => User::withoutGlobalScope(TenantScope::class)
+                        ->where(fn ($q) => $q->whereIn('lembaga_id', $lembagaIds)->orWhere('yayasan_id', $yayasan->id))
+                        ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
+                        ->count(),
+                ];
+            });
+
+            return view('admin.dashboard.platform', [
+                'ringkasanPerYayasan' => $ringkasanPerYayasan,
+                'stats' => [
+                    'yayasan' => $yayasanList->count(),
+                    'lembaga' => Lembaga::count(),
+                    'guru' => Guru::count(),
+                    'pengguna' => User::withoutGlobalScope(TenantScope::class)
+                        ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
+                        ->count(),
+                ],
             ]);
         }
 
