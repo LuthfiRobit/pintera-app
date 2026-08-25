@@ -37,7 +37,10 @@ Menyelesaikan 11 task perbaikan pada modul manajemen peran (`admin.roles.*`) yan
    - Menyamakan implementasi `RoleController::scopeRank()` dengan `UserController::scopeRank()` sehingga `platform` = 4, `yayasan` = 3, `lembaga` = 2, dan `diri_sendiri` = 1.
 
 3. **Format Tampilan Nama vs Nilai Teknis**:
-   - Tampilan nama role pada UI didekorasi menggunakan `ucwords(str_replace('_', ' ', $role->name))` (Title Case), sedangkan identifier teknis database dan routing tetap mempertahankan nilai string asli `snake_case`.
+   - Tampilan nama role pada UI (Halaman Peran & Halaman Pengguna) didekorasi menggunakan `ucwords(str_replace('_', ' ', $role->name))` (Title Case), sedangkan identifier teknis database dan routing tetap mempertahankan nilai string asli `snake_case`.
+
+4. **Konsistensi Tampilan di Halaman Pengguna**:
+   - Untuk menjaga konsistensi, seluruh tampilan role fungsional di halaman Pengguna (tabel kolom *Role*, dropdown select filter, header hero card profile, dan detail data akses di tab *Profil & Identitas*) telah diselaraskan ke format Title Case yang bersih.
 
 ---
 
