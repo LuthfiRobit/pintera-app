@@ -19,42 +19,78 @@ class UserController extends BaseController
     public function index(Request $request): View|\Illuminate\Http\JsonResponse
     {
         $this->authorize('users.view');
-        
+
         $search = $request->input('search');
         $roleFilter = $request->input('role');
+        $scopeGroup = $request->input('scope_group');
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = User::with('roles', 'lembaga')
-            ->whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))
-            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")))
+        $groups = $this->scopeGroups();
+
+        $query = User::with('roles', 'lembaga', 'yayasan')
+            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%")->orWhere('username', 'like', "%{$search}%")))
             ->when($roleFilter, fn ($q) => $q->whereHas('roles', fn ($q2) => $q2->where('name', $roleFilter)))
+            ->when($scopeGroup && isset($groups[$scopeGroup]), fn ($q) => $q->whereHas('roles', fn ($q2) => $q2->whereIn('name', $groups[$scopeGroup])))
             ->orderBy('name');
 
         $users = $query->paginate($perPage)->withQueryString();
-        
-        $totalUsers = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->count();
-        $totalAktif = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->where('is_active', true)->count();
-        $totalNonaktif = User::whereDoesntHave('roles', fn ($q) => $q->where('name', 'siswa'))->where('is_active', false)->count();
+
+        $totalUsers = User::count();
+        $totalAktif = User::where('is_active', true)->count();
+        $totalNonaktif = User::where('is_active', false)->count();
+
+        $scopeCounts = ['semua' => $totalUsers];
+        foreach ($groups as $groupName => $roleNames) {
+            $scopeCounts[$groupName] = User::whereHas('roles', fn ($q) => $q->whereIn('name', $roleNames))->count();
+        }
+
+        $isPlatformViewer = $request->user()->widestScopeLevel() === 'platform';
 
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return view('admin.users._daftar', [
-                'users' => $users, 
-                'perPage' => $perPage
+                'users' => $users,
+                'perPage' => $perPage,
+                'isPlatformViewer' => $isPlatformViewer,
             ]);
         }
 
-        $availableRoles = Role::where('name', '!=', 'siswa')->orderBy('name')->get();
+        $availableRoles = Role::orderBy('name')->get();
+
+        $rolesByGroup = ['semua' => $availableRoles->pluck('name')->values()];
+        foreach ($groups as $groupName => $roleNames) {
+            $rolesByGroup[$groupName] = $availableRoles->whereIn('name', $roleNames)->pluck('name')->values();
+        }
 
         return view('admin.users.index', [
             'users' => $users,
             'perPage' => $perPage,
             'search' => $search,
             'roleFilter' => $roleFilter,
+            'scopeGroup' => $scopeGroup,
             'availableRoles' => $availableRoles,
+            'rolesByGroup' => $rolesByGroup,
+            'scopeCounts' => $scopeCounts,
+            'isPlatformViewer' => $isPlatformViewer,
             'totalUsers' => $totalUsers,
             'totalAktif' => $totalAktif,
             'totalNonaktif' => $totalNonaktif,
         ]);
+    }
+
+    /**
+     * Peta kategori chip filter ke daftar nama role, sesuai precedence RBAC v2
+     * (spec .agents/specs/2026-08-25-rbac-pengguna-scope-filter.md §4).
+     */
+    private function scopeGroups(): array
+    {
+        return [
+            'platform' => ['platform_super_admin'],
+            'yayasan' => ['yayasan_super_admin', 'bendahara_yayasan', 'pegawai_yayasan'],
+            'lembaga' => ['kepala_sekolah', 'wakasek_kurikulum', 'wakasek_kesiswaan', 'operator_akademik', 'admin_sdm', 'bendahara_lembaga', 'admin_sarpras', 'admin_administrasi', 'pegawai_lembaga'],
+            'staf' => ['guru', 'wali_kelas', 'guru_bk'],
+            'orang_tua' => ['orang_tua'],
+            'siswa' => ['siswa'],
+        ];
     }
 
     public function create(Request $request): View

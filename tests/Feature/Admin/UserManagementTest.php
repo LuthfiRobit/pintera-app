@@ -141,14 +141,14 @@ it('denies access to admin.users.edit for a user without users.edit permission',
     $this->actingAs($viewer)->get(route('admin.users.edit', $staff))->assertForbidden();
 });
 
-it('excludes siswa accounts from the staff Pengguna list', function () {
+it('includes siswa accounts in the default (Semua) Pengguna list', function () {
     $manager = actingAsUserManager();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
 
     Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
 
-    $siswaUser = User::factory()->create(['username' => 'siswa.excluded', 'email' => 'siswa.excluded@example.test', 'lembaga_id' => $lembaga->id]);
+    $siswaUser = User::factory()->create(['username' => 'siswa.included', 'email' => 'siswa.included@example.test', 'lembaga_id' => $lembaga->id]);
     $siswaUser->assignRole('siswa');
 
     $staffUser = User::factory()->create(['username' => 'staff.included', 'email' => 'staff.included@example.test', 'lembaga_id' => $lembaga->id]);
@@ -157,9 +157,48 @@ it('excludes siswa accounts from the staff Pengguna list', function () {
     $response = $this->actingAs($manager)->get(route('admin.users.index'));
 
     $response->assertOk();
-    $response->assertDontSee($siswaUser->username);
-    $response->assertDontSee('siswa.excluded@example.test');
+    $response->assertSee('siswa.included@example.test');
     $response->assertSee('staff.included@example.test');
+});
+
+it('excludes siswa accounts when the lembaga scope chip is active', function () {
+    $manager = actingAsUserManager();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $siswaUser = User::factory()->create(['username' => 'siswa.hidden', 'email' => 'siswa.hidden@example.test', 'lembaga_id' => $lembaga->id]);
+    $siswaUser->assignRole('siswa');
+
+    $staffUser = User::factory()->create(['username' => 'staff.shown', 'email' => 'staff.shown@example.test', 'lembaga_id' => $lembaga->id]);
+    $staffUser->assignRole('admin_administrasi');
+
+    $response = $this->actingAs($manager)->get(route('admin.users.index', ['scope_group' => 'lembaga']));
+
+    $response->assertOk();
+    $response->assertDontSee('siswa.hidden@example.test');
+    $response->assertSee('staff.shown@example.test');
+});
+
+it('shows only siswa accounts when the siswa scope chip is active', function () {
+    $manager = actingAsUserManager();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'admin_administrasi', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $siswaUser = User::factory()->create(['username' => 'siswa.only', 'email' => 'siswa.only@example.test', 'lembaga_id' => $lembaga->id]);
+    $siswaUser->assignRole('siswa');
+
+    $staffUser = User::factory()->create(['username' => 'staff.excluded', 'email' => 'staff.excluded@example.test', 'lembaga_id' => $lembaga->id]);
+    $staffUser->assignRole('admin_administrasi');
+
+    $response = $this->actingAs($manager)->get(route('admin.users.index', ['scope_group' => 'siswa']));
+
+    $response->assertOk();
+    $response->assertSee('siswa.only@example.test');
+    $response->assertDontSee('staff.excluded@example.test');
 });
 
 it('404s on edit, update, and toggle-active for a siswa-role user, since siswa accounts are managed only from the Siswa module', function () {
