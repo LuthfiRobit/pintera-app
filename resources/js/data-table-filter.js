@@ -24,7 +24,14 @@ export function dataTableFilter(config) {
             ts.clear(true);
             ts.clearOptions();
             ts.addOption({ value: '', text: 'Semua Role' });
-            roles.forEach((roleName) => ts.addOption({ value: roleName, text: roleName }));
+            roles.forEach((roleName) => {
+                const titleCased = roleName
+                    .replace(/_/g, ' ')
+                    .split(' ')
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                    .join(' ');
+                ts.addOption({ value: roleName, text: titleCased });
+            });
             ts.refreshOptions(false);
         },
 
