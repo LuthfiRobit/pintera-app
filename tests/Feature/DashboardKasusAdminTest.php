@@ -10,14 +10,14 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
-it('shows an admin_akademik all kasus in their lembaga, with eskalasi first', function () {
+it('shows an operator_akademik all kasus in their lembaga, with eskalasi first', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
 
     foreach (['kasus.view', 'kasus.triase'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['kasus.view', 'kasus.triase']);
     $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $admin->assignRole($role);
