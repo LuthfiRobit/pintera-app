@@ -39,7 +39,7 @@ it('seeds the yayasan admin and per-lembaga staff for the SD institution', funct
     expect($admSd->lembaga_id)->toBe($sdit->id);
 
     $keuanganSd = User::where('email', 'keuangan.sd@demo.test')->first();
-    expect($keuanganSd->hasRole('admin_keuangan'))->toBeTrue();
+    expect($keuanganSd->hasRole('bendahara_lembaga'))->toBeTrue();
     expect($keuanganSd->lembaga_id)->toBe($sdit->id);
 
     $guruSd = User::where('email', 'hendra.gunawan@demo.test')->first();
