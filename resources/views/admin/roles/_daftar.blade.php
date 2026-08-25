@@ -53,7 +53,7 @@
                             </x-table-actions>
                     </td>
                     <td class="px-5 py-3 align-top">
-                        <p class="font-medium text-gray-900">{{ $role->name }}</p>
+                        <p class="font-medium text-gray-900">{{ ucwords(str_replace('_', ' ', $role->name)) }}</p>
                         @if ($role->is_protected)
                             <span class="mt-1 inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700 ring-1 ring-brand-600/20">Protected</span>
                         @endif
@@ -61,8 +61,21 @@
                     <td class="px-5 py-3 align-top">
                         <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-700">{{ ucfirst($role->scope_level) }}</span>
                     </td>
-                    <td class="px-5 py-3 align-top font-mono text-gray-600">{{ $role->users_count }}</td>
-                    <td class="px-5 py-3 align-top font-mono text-gray-600">{{ $role->permissions_count }}</td>
+                    <td class="px-5 py-3 align-top font-mono text-gray-600">
+                        <a href="{{ route('admin.users.index', ['role' => $role->name]) }}" class="text-brand-600 hover:underline">{{ $role->users_count }}</a>
+                    </td>
+                    <td class="px-5 py-3 align-top font-mono text-gray-600">
+                        @php
+                            $previewNames = $role->permissions->pluck('name')->implode(', ');
+                            $sisa = max(0, $role->permissions_count - $role->permissions->count());
+                            $tooltipText = $role->permissions_count > 0
+                                ? $previewNames . ($sisa > 0 ? ", +{$sisa} lainnya" : '')
+                                : 'Belum ada permission';
+                        @endphp
+                        <x-tooltip :text="$tooltipText">
+                            <span class="cursor-help border-b border-dashed border-gray-300">{{ $role->permissions_count }}</span>
+                        </x-tooltip>
+                    </td>
                 </tr>
             @empty
                 <tr>

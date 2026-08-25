@@ -388,3 +388,37 @@ it('counts roles per scope level including platform and diri_sendiri on the inde
     $response->assertViewHas('totalPlatform', 1);
     $response->assertViewHas('totalDiriSendiri', 1);
 });
+
+it('displays the role name in title case while keeping the raw name as the underlying value', function () {
+    $admin = actingAsSuperAdmin();
+    Role::create(['name' => 'admin_perpustakaan', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.index'));
+
+    $response->assertOk();
+    $response->assertSee('Admin Perpustakaan');
+});
+
+it('links the users count to the Pengguna page filtered by this role name', function () {
+    $admin = actingAsSuperAdmin();
+    $role = Role::create(['name' => 'admin_perpustakaan', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.index'));
+
+    $response->assertOk();
+    $response->assertSee(route('admin.users.index', ['role' => $role->name]), false);
+});
+
+it('shows a permissions tooltip listing the first permission names plus a remainder count', function () {
+    $admin = actingAsSuperAdmin();
+    $role = Role::create(['name' => 'admin_perpustakaan', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+    foreach (['a.view', 'b.view', 'c.view', 'd.view', 'e.view', 'f.view'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role->givePermissionTo(['a.view', 'b.view', 'c.view', 'd.view', 'e.view', 'f.view']);
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.index'));
+
+    $response->assertOk();
+    $response->assertSee('+1 lainnya');
+});
