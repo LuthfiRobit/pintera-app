@@ -44,13 +44,13 @@ it('creates all 7 essential accounts when a lembaga exists, attaching the lembag
     expect($adm->hasRole('admin_administrasi'))->toBeTrue();
 
     $keuangan = User::where('email', 'keuangan.sd@demo.test')->first();
-    expect($keuangan->hasRole('admin_keuangan'))->toBeTrue();
+    expect($keuangan->hasRole('bendahara_lembaga'))->toBeTrue();
 
     $guru = User::where('email', 'guru.sd1@demo.test')->first();
     expect($guru->hasRole('guru'))->toBeTrue();
 
     $akademik = User::where('email', 'kurikulum.sd@demo.test')->first();
-    expect($akademik->hasRole('admin_akademik'))->toBeTrue();
+    expect($akademik->hasRole('operator_akademik'))->toBeTrue();
     expect($akademik->lembaga_id)->toBe($lembaga->id);
 
     $sarpras = User::where('email', 'sarpras.sd@demo.test')->first();
