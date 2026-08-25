@@ -72,7 +72,7 @@
                     </td>
                     <td class="px-5 py-3 align-top font-medium text-gray-900">{{ $user->name }}</td>
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->email }}</td>
-                    <td class="px-5 py-3 align-top text-gray-500">{{ $user->functionalRoles()->pluck('name')->implode(', ') ?: '—' }}</td>
+                    <td class="px-5 py-3 align-top text-gray-500">{{ $user->functionalRoles()->pluck('name')->map(fn($name) => ucwords(str_replace('_', ' ', $name)))->implode(', ') ?: '—' }}</td>
                     @if ($isPlatformViewer)
                         <td class="px-5 py-3 align-top text-gray-500">{{ $user->yayasan?->nama ?? $user->lembaga?->yayasan?->nama ?? '—' }}</td>
                     @endif

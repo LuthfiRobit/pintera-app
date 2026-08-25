@@ -60,7 +60,7 @@
                     </div>
                     <div class="flex justify-between py-2.5">
                         <dt class="text-gray-500">Role / Peran Akses</dt>
-                        <dd class="font-mono text-gray-900">{{ $targetUser->functionalRoles()->pluck('name')->implode(', ') ?: 'Tidak Ada Akses' }}</dd>
+                        <dd class="text-gray-900">{{ $targetUser->functionalRoles()->pluck('name')->map(fn($name) => ucwords(str_replace('_', ' ', $name)))->implode(', ') ?: 'Tidak Ada Akses' }}</dd>
                     </div>
                     @if ($targetUser->lembaga_id)
                         <div class="flex justify-between py-2.5">

@@ -88,3 +88,35 @@ it('renders Lembaga Tertaut on the profile tab based on lembaga_id, not the old 
     $response->assertSee('Lembaga Tertaut');
     $response->assertSee('SD Uji Coba');
 });
+
+it('formats role names to Title Case on the users index page list and filter select options', function () {
+    $manager = actingAsUserManagerForFormRedesignTest();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('wakasek_kurikulum');
+
+    $response = $this->actingAs($manager)->get(route('admin.users.index'));
+
+    $response->assertOk();
+    // 1. Check in the dropdown select filter: option label should be Title Case
+    $response->assertSee('<option value="wakasek_kurikulum" >Wakasek Kurikulum</option>', false);
+    // 2. Check in the table list row
+    $response->assertSee('Wakasek Kurikulum');
+});
+
+it('formats role names to Title Case on the user edit and profile view tabs', function () {
+    $manager = actingAsUserManagerForFormRedesignTest();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('wakasek_kurikulum');
+
+    $response = $this->actingAs($manager)->get(route('admin.users.edit', $user));
+
+    $response->assertOk();
+    // Check in the hero role list
+    $response->assertSee('Wakasek Kurikulum');
+    // Check in the Profile tab access info dd list
+    $response->assertSee('Wakasek Kurikulum');
+});

@@ -50,7 +50,7 @@
                         </span>
                         <span class="flex items-center gap-1.5 font-mono">
                             <x-icon name="shield_person" class="h-4 w-4 text-gray-400" />
-                            Role: <strong class="text-gray-900">{{ $targetUser->functionalRoles()->pluck('name')->implode(', ') ?: 'Belum diatur' }}</strong>
+                            Role: <strong class="text-gray-900">{{ $targetUser->functionalRoles()->pluck('name')->map(fn($name) => ucwords(str_replace('_', ' ', $name)))->implode(', ') ?: 'Belum diatur' }}</strong>
                         </span>
                     </div>
                 </div>

@@ -86,7 +86,7 @@
                     <select x-ref="roleSelect" x-init="initFilterSelect($refs.roleSelect, 'role', true)" class="w-full rounded-[10px] border-gray-200 text-sm text-gray-700">
                         <option value="">Semua Role</option>
                         @foreach ($availableRoles as $r)
-                            <option value="{{ $r->name }}" @selected($roleFilter === $r->name)>{{ $r->name }}</option>
+                            <option value="{{ $r->name }}" @selected($roleFilter === $r->name)>{{ ucwords(str_replace('_', ' ', $r->name)) }}</option>
                         @endforeach
                     </select>
                 </div>
