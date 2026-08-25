@@ -18,11 +18,11 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 it('creates a jenis_tagihan scoped to the acting lembaga-scoped user', function () {
-    Role::firstOrCreate(['name' => 'admin_keuangan', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'bendahara_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user);
     $jenisTagihan = JenisTagihan::create([
@@ -33,7 +33,7 @@ it('creates a jenis_tagihan scoped to the acting lembaga-scoped user', function 
 
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $userLain = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
-    $userLain->assignRole('admin_keuangan');
+    $userLain->assignRole('bendahara_lembaga');
     $this->actingAs($userLain);
     expect(JenisTagihan::find($jenisTagihan->id))->toBeNull();
 });
