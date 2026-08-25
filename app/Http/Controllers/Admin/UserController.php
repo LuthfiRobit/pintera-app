@@ -234,40 +234,44 @@ class UserController extends BaseController
     public function edit(Request $request, User $user): View
     {
         $this->authorize('users.edit');
-        abort_if($user->hasRole('siswa'), 404);
+        abort_if($user->hasRole(['siswa', 'orang_tua']), 404);
 
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
-        $roles = Role::all()->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)->values();
 
         return view('admin.users.edit', [
             'targetUser' => $user,
-            'roles' => $roles,
+            'rolesByGroup' => $this->groupRolesForForm($this->assignableRoles($actingRank)),
         ]);
     }
 
     public function update(Request $request, User $user): RedirectResponse
     {
         $this->authorize('users.edit');
-        abort_if($user->hasRole('siswa'), 404);
+        abort_if($user->hasRole(['siswa', 'orang_tua']), 404);
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email,'.$user->id],
-            'role' => ['required', 'exists:roles,name'],
+            'roles' => ['required', 'array', 'min:1'],
+            'roles.*' => ['exists:roles,name', Rule::notIn(['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan'])],
         ]);
 
-        $selectedRole = Role::where('name', $data['role'])->firstOrFail();
+        $selectedRoles = Role::whereIn('name', $data['roles'])->get();
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
-        if ($this->scopeRank($selectedRole->scope_level) > $actingRank) {
-            return back()->withErrors(['role' => 'Anda tidak dapat memberikan role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+        foreach ($selectedRoles as $selectedRole) {
+            if ($this->scopeRank($selectedRole->scope_level) > $actingRank) {
+                return back()->withErrors(['roles' => 'Anda tidak dapat memberikan role dengan scope lebih luas dari scope Anda sendiri.'])->withInput();
+            }
         }
 
         $user->update([
             'name' => $data['name'],
             'email' => $data['email'],
-            'yayasan_id' => $selectedRole->scope_level === 'yayasan' ? $request->user()->yayasan_id : null,
+            'yayasan_id' => $selectedRoles->contains(fn ($role) => $role->scope_level === 'yayasan') ? $request->user()->yayasan_id : null,
         ]);
-        $user->syncRoles([$data['role']]);
+
+        $baselineRole = $this->baselineCarrierRole($selectedRoles, $user->lembaga_id);
+        $user->syncRoles(array_filter([...$data['roles'], $baselineRole]));
 
         return redirect()->route('admin.users.index')->with('status', 'Akun staff berhasil diperbarui.');
     }
@@ -275,7 +279,7 @@ class UserController extends BaseController
     public function toggleActive(User $user): RedirectResponse
     {
         $this->authorize('users.toggle-active');
-        abort_if($user->hasRole('siswa'), 404);
+        abort_if($user->hasRole(['siswa', 'orang_tua']), 404);
 
         $user->update(['is_active' => ! $user->is_active]);
 

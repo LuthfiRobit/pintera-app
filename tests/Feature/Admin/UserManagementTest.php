@@ -118,7 +118,7 @@ it('lets a user manager update an existing staff account\'s name and email', fun
     $this->actingAs($manager)->put(route('admin.users.update', $staff), [
         'name' => 'New Name',
         'email' => 'newemail@example.test',
-        'role' => 'kepala_sekolah',
+        'roles' => ['kepala_sekolah'],
     ])->assertRedirect(route('admin.users.index'));
 
     $updated = $staff->fresh();
@@ -213,7 +213,7 @@ it('404s on edit, update, and toggle-active for a siswa-role user, since siswa a
     $this->actingAs($manager)->put(route('admin.users.update', $siswaUser), [
         'name' => 'Hacked Name',
         'email' => 'hacked@example.test',
-        'role' => 'siswa',
+        'roles' => ['siswa'],
     ])->assertNotFound();
 
     $this->actingAs($manager)->patch(route('admin.users.toggle-active', $siswaUser))->assertNotFound();
@@ -282,7 +282,7 @@ it('sets yayasan_id when updating a staff account to a yayasan-scoped role', fun
     $this->actingAs($manager)->put(route('admin.users.update', $staff), [
         'name' => 'Calon Admin Yayasan',
         'email' => 'calonadminyayasan@example.test',
-        'role' => 'yayasan_super_admin',
+        'roles' => ['yayasan_super_admin'],
     ])->assertRedirect(route('admin.users.index'));
 
     expect($staff->fresh()->yayasan_id)->toBe($yayasan->id);
