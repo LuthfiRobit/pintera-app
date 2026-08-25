@@ -376,3 +376,15 @@ it('renders the name input as disabled when editing a protected role', function 
     $response->assertOk();
     $response->assertSee(':disabled="isProtected"', false);
 });
+
+it('counts roles per scope level including platform and diri_sendiri on the index page', function () {
+    $admin = actingAsSuperAdmin();
+    Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform', 'is_protected' => true]);
+    Role::create(['name' => 'guru_uji', 'guard_name' => 'web', 'scope_level' => 'diri_sendiri']);
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('totalPlatform', 1);
+    $response->assertViewHas('totalDiriSendiri', 1);
+});

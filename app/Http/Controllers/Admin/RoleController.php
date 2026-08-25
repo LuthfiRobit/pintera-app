@@ -25,7 +25,8 @@ class RoleController extends BaseController
     {
         $this->authorize('viewAny', Role::class);
 
-        $query = Role::withCount(['users', 'permissions']);
+        $query = Role::withCount(['users', 'permissions'])
+            ->with(['permissions' => fn ($q) => $q->orderBy('name')->limit(5)]);
 
         if ($search = trim((string) $request->string('search'))) {
             $query->where('name', 'like', '%'.$search.'%');
@@ -38,15 +39,17 @@ class RoleController extends BaseController
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
         $roles = $query->paginate($perPage)->withQueryString();
-        
+
         $totalRoles = Role::count();
+        $totalPlatform = Role::where('scope_level', 'platform')->count();
         $totalYayasan = Role::where('scope_level', 'yayasan')->count();
         $totalLembaga = Role::where('scope_level', 'lembaga')->count();
+        $totalDiriSendiri = Role::where('scope_level', 'diri_sendiri')->count();
 
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return view('admin.roles._daftar', [
-                'roles' => $roles, 
-                'perPage' => $perPage
+                'roles' => $roles,
+                'perPage' => $perPage,
             ]);
         }
 
@@ -56,8 +59,10 @@ class RoleController extends BaseController
             'search' => $search,
             'scope' => $scope,
             'totalRoles' => $totalRoles,
+            'totalPlatform' => $totalPlatform,
             'totalYayasan' => $totalYayasan,
             'totalLembaga' => $totalLembaga,
+            'totalDiriSendiri' => $totalDiriSendiri,
         ]);
     }
 
