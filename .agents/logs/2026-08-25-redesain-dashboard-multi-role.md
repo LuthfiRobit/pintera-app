@@ -25,8 +25,8 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
    - Menampilkan widget `Kehadiran SDM Hari Ini` (Hadir, Izin, Sakit, Alpa, Cuti).
    - Menampilkan tile `Kasus Eskalasi Belum Ditangani` (unassigned eskalasi count).
 5. **Dashboard Lembaga (`admin/dashboard/lembaga.blade.php`)**:
-   - Menampilkan widget `Kehadiran SDM Hari Ini` dan tile `Pengajuan Izin/Cuti Menunggu Persetujuan`.
-   - Menampilkan tabel `Progress Pengumpulan Nilai per Kelas` (gated dengan permission `komponen-penilaian.kelola`).
+   - Menampilkan widget `Kehadiran SDM Hari Ini`, `Pengajuan Izin/Cuti Menunggu Persetujuan`, dan tabel `Progress Pengumpulan Nilai per Kelas` (permission `komponen-penilaian.kelola`).
+   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung/lembaga, gradient hero banner emerald-teal (`from-emerald-600 via-teal-600 to-cyan-600`), serta sidebar widget kehadiran SDM & mini kalender minggu ini.
 6. **Dashboard Karyawan (`admin/dashboard/karyawan.blade.php`)**:
    - Menampilkan stat tile `Sisa Kuota Cuti` (jatah vs terpakai) dan `Shift Hari Ini` (nama & jam shift).
 7. **Dashboard Guru (`admin/dashboard/guru.blade.php`)**:
