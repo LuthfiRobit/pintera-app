@@ -15,10 +15,10 @@ function actingAsKaryawanManager(Lembaga $lembaga): User
     foreach (['karyawan.view', 'karyawan.create', 'karyawan.edit'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['karyawan.view', 'karyawan.create', 'karyawan.edit']);
-    Role::firstOrCreate(['name' => 'karyawan_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
@@ -34,8 +34,8 @@ function actingAsYayasanSuperAdmin(): User
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
     $role->givePermissionTo(['karyawan.view', 'karyawan.create', 'karyawan.edit']);
-    Role::firstOrCreate(['name' => 'karyawan_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    Role::firstOrCreate(['name' => 'karyawan_pool', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $admin->assignRole($role);
 
     return $admin;
@@ -62,7 +62,7 @@ it('lets a lembaga admin create a dedicated karyawan scoped to their own lembaga
     $karyawan = Karyawan::where('nama', 'Konselor Lembaga')->firstOrFail();
     expect($karyawan->lembaga_id)->toBe($lembaga->id);
     expect($karyawan->yayasan_id)->toBe($yayasan->id);
-    expect($karyawan->user->hasRole('karyawan_lembaga'))->toBeTrue();
+    expect($karyawan->user->hasRole('pegawai_lembaga'))->toBeTrue();
     expect(Hash::check('3201234567891234', $karyawan->user->password))->toBeTrue();
 });
 
@@ -102,7 +102,7 @@ it('lets yayasan_super_admin create a pool karyawan', function () {
     $karyawan = Karyawan::where('nama', 'Psikolog Pool')->firstOrFail();
     expect($karyawan->lembaga_id)->toBeNull();
     expect($karyawan->yayasan_id)->toBe($yayasan->id);
-    expect($karyawan->user->hasRole('karyawan_pool'))->toBeTrue();
+    expect($karyawan->user->hasRole('pegawai_yayasan'))->toBeTrue();
 });
 
 it('updates a karyawan profile without touching nik or lembaga_id', function () {
