@@ -45,6 +45,10 @@ class TenantScope implements Scope
             return;
         }
 
+        if ($actingUser->widestScopeLevel() === 'platform' && $model instanceof User) {
+            return;
+        }
+
         if ($actingUser->widestScopeLevel() === 'yayasan') {
             $activeLembagaId = session('active_lembaga_id');
 
