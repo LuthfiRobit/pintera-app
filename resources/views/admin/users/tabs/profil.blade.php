@@ -59,13 +59,13 @@
                         <dd class="font-medium text-gray-900">{{ $targetUser->email }}</dd>
                     </div>
                     <div class="flex justify-between py-2.5">
-                        <dt class="text-gray-500">Role / Peran Utama</dt>
-                        <dd class="font-mono text-gray-900">{{ $targetUser->roles->first()?->name ?: 'Tidak Ada Akses' }}</dd>
+                        <dt class="text-gray-500">Role / Peran Akses</dt>
+                        <dd class="font-mono text-gray-900">{{ $targetUser->functionalRoles()->pluck('name')->implode(', ') ?: 'Tidak Ada Akses' }}</dd>
                     </div>
-                    @if ($targetUser->roles->first()?->name === 'Lembaga / Sekolah')
+                    @if ($targetUser->lembaga_id)
                         <div class="flex justify-between py-2.5">
                             <dt class="text-gray-500">Lembaga Tertaut</dt>
-                            <dd class="text-gray-900">{{ $targetUser->karyawan?->lembaga?->nama ?: 'Bukan Karyawan Aktif' }}</dd>
+                            <dd class="text-gray-900">{{ $targetUser->lembaga?->nama ?: '—' }}</dd>
                         </div>
                     @endif
                 </dl>
