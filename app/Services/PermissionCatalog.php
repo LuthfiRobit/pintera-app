@@ -68,6 +68,33 @@ class PermissionCatalog
         'verifikasi' => 'Verifikasi',
         'catat-manual' => 'Catat Manual',
         'kelola' => 'Kelola',
+        'catat' => 'Catat',
+        'kelola-konfigurasi' => 'Kelola Konfigurasi',
+        'lihat-qr-sendiri' => 'Lihat QR Sendiri',
+        'manage' => 'Kelola',
+        'ajukan' => 'Ajukan',
+        'approve' => 'Setujui',
+        'lihat-sendiri' => 'Lihat Sendiri',
+        'internal' => 'Internal',
+        'yayasan' => 'Yayasan',
+        'submit' => 'Ajukan',
+        'verify' => 'Verifikasi',
+        'export' => 'Ekspor',
+    ];
+
+    private const NOUN_LABELS = [
+        'gedung' => 'Gedung',
+        'ruangan' => 'Ruangan',
+        'kategori' => 'Kategori',
+        'aset' => 'Aset',
+        'mutasi' => 'Mutasi',
+        'kir' => 'KIR',
+        'proposal' => 'Proposal',
+        'approval' => 'Approval',
+        'disbursement' => 'Disbursement',
+        'lpj' => 'LPJ',
+        'config' => 'Konfigurasi',
+        'izin' => 'Izin',
     ];
 
     /**
@@ -82,13 +109,22 @@ class PermissionCatalog
                     'module' => $module,
                     'label' => self::MODULE_LABELS[$module] ?? ucfirst($module),
                     'permissions' => $permissions->map(function (Permission $permission) {
-                        $action = explode('.', $permission->name)[1] ?? $permission->name;
+                        $segments = explode('.', $permission->name);
+                        $action = $segments[1] ?? $permission->name;
+
+                        if (count($segments) >= 3) {
+                            [, $noun, $verb] = $segments;
+                            $action = $verb;
+                            $label = (self::NOUN_LABELS[$noun] ?? ucfirst($noun)).' · '.(self::ACTION_LABELS[$verb] ?? ucfirst($verb));
+                        } else {
+                            $label = self::ACTION_LABELS[$action] ?? ucfirst($action);
+                        }
 
                         return [
                             'id' => $permission->id,
                             'name' => $permission->name,
                             'action' => $action,
-                            'label' => self::ACTION_LABELS[$action] ?? ucfirst($action),
+                            'label' => $label,
                         ];
                     })->values()->all(),
                 ];
