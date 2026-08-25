@@ -1,0 +1,10 @@
+# SDD ledger — plan: .agents/plans/2026-08-25-redesain-dashboard-multi-role.md
+Task 1: complete (commits c63ab1d..51bbaeb, review clean)
+Task 2: complete (commits 51bbaeb..371bc5b, review clean)
+Task 3: complete (commits 371bc5b..49b2f5c, review clean)
+Task 4: complete (commits 49b2f5c..5cd01b9, review clean)
+Task 5: complete (commits 5cd01b9..cab61db, review clean)
+Task 6: complete (commits cab61db..be2e95e, review clean)
+Task 7: complete (commits be2e95e..4e026fc, review clean)
+Task 8: complete (commits 4e026fc..417083d, review clean)
+Task 9: complete (commits 417083d..59eb98d, review clean)
