@@ -35,28 +35,44 @@
                 <tr class="transition hover:bg-gray-50/50">
                     <td class="sticky left-0 z-10 bg-white px-5 py-3 align-top">
                             <x-table-actions>
-                                <a href="{{ route('admin.users.edit', $user) }}" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
-                                    <x-icon name="edit" class="h-4 w-4 text-gray-500" />
-                                    Edit Akun
-                                </a>
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.users.toggle-active', $user) }}"
-                                    x-data
-                                    @submit.prevent="confirmDialog('Ubah Status Akun?', @js('Ubah status akun menjadi ' . ($user->is_active ? 'Nonaktif' : 'Aktif') . '?'), { confirmLabel: 'Ya, Ubah', isDanger: {{ $user->is_active ? 'true' : 'false' }} }).then(confirmed => { if (confirmed) $el.submit() })"
-                                >
-                                    @csrf
-                                    @method('PATCH')
-                                    <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 {{ $user->is_active ? 'text-red-600 hover:bg-red-50 focus:bg-red-50' : 'text-green-600 hover:bg-green-50 focus:bg-green-50' }} transition duration-150 ease-in-out focus:outline-none">
-                                        <x-icon name="{{ $user->is_active ? 'block' : 'check_circle' }}" class="h-4 w-4 {{ $user->is_active ? 'text-red-500' : 'text-green-500' }}" />
-                                        {{ $user->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}
-                                    </button>
-                                </form>
+                                @if ($user->hasRole('siswa'))
+                                    @if ($user->siswa)
+                                        <a href="{{ route('admin.siswa.edit', $user->siswa) }}" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                            <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                            Edit di Data Siswa
+                                        </a>
+                                    @endif
+                                @elseif ($user->hasRole('orang_tua'))
+                                    @if ($user->orangTua)
+                                        <a href="{{ route('admin.orang-tua.edit', $user->orangTua) }}" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                            <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                            Edit di Modul Orang Tua
+                                        </a>
+                                    @endif
+                                @else
+                                    <a href="{{ route('admin.users.edit', $user) }}" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none">
+                                        <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                        Edit Akun
+                                    </a>
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.users.toggle-active', $user) }}"
+                                        x-data
+                                        @submit.prevent="confirmDialog('Ubah Status Akun?', @js('Ubah status akun menjadi ' . ($user->is_active ? 'Nonaktif' : 'Aktif') . '?'), { confirmLabel: 'Ya, Ubah', isDanger: {{ $user->is_active ? 'true' : 'false' }} }).then(confirmed => { if (confirmed) $el.submit() })"
+                                    >
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 {{ $user->is_active ? 'text-red-600 hover:bg-red-50 focus:bg-red-50' : 'text-green-600 hover:bg-green-50 focus:bg-green-50' }} transition duration-150 ease-in-out focus:outline-none">
+                                            <x-icon name="{{ $user->is_active ? 'block' : 'check_circle' }}" class="h-4 w-4 {{ $user->is_active ? 'text-red-500' : 'text-green-500' }}" />
+                                            {{ $user->is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun' }}
+                                        </button>
+                                    </form>
+                                @endif
                             </x-table-actions>
                     </td>
                     <td class="px-5 py-3 align-top font-medium text-gray-900">{{ $user->name }}</td>
                     <td class="px-5 py-3 align-top text-gray-500">{{ $user->email }}</td>
-                    <td class="px-5 py-3 align-top text-gray-500">{{ $user->roles->pluck('name')->implode(', ') }}</td>
+                    <td class="px-5 py-3 align-top text-gray-500">{{ $user->functionalRoles()->pluck('name')->implode(', ') ?: '—' }}</td>
                     @if ($isPlatformViewer)
                         <td class="px-5 py-3 align-top text-gray-500">{{ $user->yayasan?->nama ?? $user->lembaga?->yayasan?->nama ?? '—' }}</td>
                     @endif
