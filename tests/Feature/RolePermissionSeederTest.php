@@ -62,9 +62,9 @@ it('seeds the initial roles with correct scope and protection', function () {
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
-    expect(Role::where('name', 'admin_keuangan')->first()->scope_level)->toBe('lembaga');
+    expect(Role::where('name', 'bendahara_lembaga')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'guru')->first()->scope_level)->toBe('diri_sendiri');
-    expect(Role::where('name', 'admin_akademik')->first()->scope_level)->toBe('lembaga');
+    expect(Role::where('name', 'operator_akademik')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'bendahara_yayasan')->first()->scope_level)->toBe('yayasan');
     expect(Role::where('name', 'admin_sarpras')->first()->scope_level)->toBe('yayasan');
     expect(Role::where('name', 'admin_sdm')->first()->scope_level)->toBe('lembaga');
@@ -111,10 +111,10 @@ it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, inclu
     expect($kepalaSekolah->permissions()->count())->toBe(13);
 });
 
-it('gives admin_keuangan the jenis-tagihan and tagihan permissions by default', function () {
+it('gives bendahara_lembaga the jenis-tagihan and tagihan permissions by default', function () {
     (new RolePermissionSeeder())->run();
 
-    $adminKeuangan = Role::where('name', 'admin_keuangan')->first();
+    $bendahara = Role::where('name', 'bendahara_lembaga')->first();
     $expected = [
         'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
         'tagihan.view', 'tagihan.buat-susulan',
@@ -124,16 +124,16 @@ it('gives admin_keuangan the jenis-tagihan and tagihan permissions by default', 
     ];
 
     foreach ($expected as $name) {
-        expect($adminKeuangan->hasPermissionTo($name))->toBeTrue();
+        expect($bendahara->hasPermissionTo($name))->toBeTrue();
     }
-    expect($adminKeuangan->permissions()->count())->toBe(12);
+    expect($bendahara->permissions()->count())->toBe(12);
 });
 
 it('is idempotent when run twice', function () {
     (new RolePermissionSeeder())->run();
     (new RolePermissionSeeder())->run();
 
-    expect(Role::count())->toBe(13);
+    expect(Role::count())->toBe(18);
     expect(Permission::count())->toBe(141);
 });
 
@@ -145,11 +145,11 @@ it('removes orphaned old flat permission rows on re-seed', function () {
     expect(Permission::where('name', 'manage-guru')->exists())->toBeFalse();
 });
 
-it('gives admin_akademik the kasus audit-log and soft-delete permissions', function () {
+it('gives operator_akademik the kasus audit-log and soft-delete permissions', function () {
     (new RolePermissionSeeder())->run();
 
-    $adminAkademik = Role::where('name', 'admin_akademik')->first();
+    $operatorAkademik = Role::where('name', 'operator_akademik')->first();
     foreach (['kasus.lihat-log-akses', 'kasus.hapus', 'kasus.pulihkan'] as $name) {
-        expect($adminAkademik->hasPermissionTo($name))->toBeTrue();
+        expect($operatorAkademik->hasPermissionTo($name))->toBeTrue();
     }
 });
