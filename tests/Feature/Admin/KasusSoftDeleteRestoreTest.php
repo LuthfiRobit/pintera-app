@@ -21,7 +21,7 @@ function actingAsKasusHapusManager(Lembaga $lembaga): User
     foreach (['kasus.view', 'kasus.hapus', 'kasus.pulihkan'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['kasus.view', 'kasus.hapus', 'kasus.pulihkan']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -89,7 +89,7 @@ it('refuses to soft-delete a kasus that is not Selesai', function () {
     expect(Kasus::find($kasus->id))->not->toBeNull();
 });
 
-it('403s an admin_akademik trying to delete a Selesai kasus from a different lembaga', function () {
+it('403s an operator_akademik trying to delete a Selesai kasus from a different lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -131,7 +131,7 @@ it('restores a soft-deleted kasus and its whole family in one action', function 
     expect(KasusConsent::find($consent->id))->not->toBeNull();
 });
 
-it('403s an admin_akademik trying to restore a kasus from a different lembaga', function () {
+it('403s an operator_akademik trying to restore a kasus from a different lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -157,7 +157,7 @@ it('404s a trashed kasus when a regular authorized viewer tries to open its deta
     $this->actingAs($manager)->delete(route('admin.kasus.destroy', $kasus))->assertRedirect();
 
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
-    Role::where('name', 'admin_akademik')->first()->givePermissionTo('kasus.view');
+    Role::where('name', 'operator_akademik')->first()->givePermissionTo('kasus.view');
 
     $this->actingAs($manager)
         ->get(route('kasus.show', $kasus))
@@ -172,7 +172,7 @@ it('404s a trashed kasus when an authorized admin tries to open its triase page'
     $this->actingAs($manager)->delete(route('admin.kasus.destroy', $kasus))->assertRedirect();
 
     Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
-    Role::where('name', 'admin_akademik')->first()->givePermissionTo('kasus.triase');
+    Role::where('name', 'operator_akademik')->first()->givePermissionTo('kasus.triase');
 
     $this->actingAs($manager)
         ->get(route('admin.kasus.triase', $kasus))
@@ -187,7 +187,7 @@ it('404s a trashed kasus when an authorized admin tries to assign a konselor', f
     $this->actingAs($manager)->delete(route('admin.kasus.destroy', $kasus))->assertRedirect();
 
     Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
-    Role::where('name', 'admin_akademik')->first()->givePermissionTo('kasus.triase');
+    Role::where('name', 'operator_akademik')->first()->givePermissionTo('kasus.triase');
 
     $this->actingAs($manager)
         ->post(route('admin.kasus.assign-konselor', $kasus), [
