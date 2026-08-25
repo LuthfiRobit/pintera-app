@@ -29,15 +29,14 @@ Telah dilakukan redesain dan penyambungan data riil akademik (nilai, presensi, j
 
 4. **Dashboard Yayasan (`admin/dashboard/yayasan.blade.php`)**:
    - Menampilkan widget `Kehadiran SDM Hari Ini` (Hadir, Izin, Sakit, Alpa, Cuti) dan tile `Kasus Eskalasi Belum Ditangani`.
-   - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG gedung/crown yayasan, hero banner gradient executive indigo-blue (`from-indigo-600 via-blue-700 to-purple-800`), tabel tinjau per lembaga dengan avatar inisial berwarna pastel (Blue, Purple, Emerald, Amber, Rose) & filter switcher, serta sidebar widget presensi SDM & mini kalender minggu ini.
+   - **Visual Redesign (Wide Full-Width Layout)**: Menghapus batasan sidebar 8:4 yang memenyetkan konten. Mengubah hero banner, stat tiles (4-kolom luas), konsolidasi SPMB & Keuangan, dan tabel tinjau per lembaga menjadi layout full-width (wide) yang lapang, serta menyusun Kehadiran SDM Hari Ini dalam grid 5-kolom yang simetris tanpa terpotong.
 
 5. **Dashboard Lembaga (`admin/dashboard/lembaga.blade.php`)**:
    - Menampilkan widget `Kehadiran SDM Hari Ini`, `Pengajuan Izin/Cuti Menunggu Persetujuan`, dan tabel `Progress Pengumpulan Nilai per Kelas` (permission `komponen-penilaian.kelola`).
-   - **Visual Redesign (Ref-Driven Modern UI & Responsivitas Detail)**:
-     - Grid responsif fluid (`grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4`) untuk mencegah teks judul stat tile squished pada tablet/screen menengah.
-     - Layout Ringkasan Keuangan Side-by-Side: Donut chart ring di sisi kiri + legenda status tagihan (Belum Bayar, Dicicil, Lunas) lengkap dengan persentase & nominal di sisi kanan (Gambar 3 & 5 fix).
-     - Filter & Scroll Container Progress Nilai Kelas: Input pencarian live nama kelas (`x-model="search"`) dan container scrollable (`max-h-72 overflow-y-auto`) dengan sticky header.
-     - Restyle Kasus Pendampingan: Grid kartu status di sisi kiri (`lg:col-span-5`) dan daftar scrollable kasus aktif di sisi kanan (`lg:col-span-7`).
+   - **Visual Redesign (Wide Full-Width Layout & Filter TA)**:
+     - Mengubah seluruh section (Hero Banner, Stat Tiles, SPMB, Ringkasan Keuangan, Progress Rapor, Kasus Pendampingan) menjadi layout full-width (wide) yang memanfaatkan seluruh lebar layar.
+     - Menambahkan Filter Dropdown **Tahun Ajaran** (`tahunAjaranList`) serta Input Pencarian Live Kelas (`x-model="search"`) pada section Progress Pengumpulan Nilai per Kelas.
+     - Menyusun Kehadiran SDM Hari Ini dalam 5-kolom simetris (`grid-cols-2 sm:grid-cols-5`) sehingga seluruh item (Hadir, Izin, Sakit, Alpa, Cuti) tampil sejajar tanpa baris ke-2 yang janggal.
 6. **Dashboard Karyawan (`admin/dashboard/karyawan.blade.php`)**:
    - Menampilkan stat tile `Sisa Kuota Cuti` (jatah vs terpakai) dan `Shift Hari Ini` (nama & jam shift).
    - **Visual Redesign (Ref-Driven Modern UI)**: Diubah menjadi layout 2-kolom (8:4), hapus slot `<x-slot name="header">`, ganti emotikon 👋 dengan icon SVG ID badge, gradient hero banner cyan-teal (`from-cyan-600 via-teal-600 to-blue-600`), Profil Kepegawaian dengan avatar inisial nama, serta sidebar widget detail shift kerja & mini kalender minggu ini.
