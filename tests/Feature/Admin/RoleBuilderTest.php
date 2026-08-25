@@ -366,3 +366,13 @@ it('shows the Platform scope option to a platform_super_admin actor on the creat
     $response->assertOk();
     $response->assertSee('<option value="platform">Platform</option>', false);
 });
+
+it('renders the name input as disabled when editing a protected role', function () {
+    $admin = actingAsSuperAdmin();
+    $protected = Role::where('name', 'yayasan_super_admin')->first();
+
+    $response = $this->actingAs($admin)->get(route('admin.roles.edit', $protected));
+
+    $response->assertOk();
+    $response->assertSee(':disabled="isProtected"', false);
+});

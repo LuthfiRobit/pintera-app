@@ -44,7 +44,8 @@
                 <div class="space-y-5">
                     <div>
                         <x-input-label value="Nama Role" />
-                        <x-text-input type="text" x-model="name" class="mt-1.5" placeholder="Contoh: Admin Akademik" />
+                        <x-text-input type="text" x-model="name" ::disabled="isProtected" ::class="isProtected ? 'mt-1.5 cursor-not-allowed bg-gray-50 text-gray-500' : 'mt-1.5'" placeholder="Contoh: Admin Akademik" />
+                        <p x-show="isProtected" class="mt-1 text-[11px] text-gray-400">Nama role bawaan sistem tidak dapat diubah.</p>
                         <p x-show="errors.name" class="mt-1.5 text-sm font-medium text-error-600" x-text="errors.name && errors.name[0]"></p>
                     </div>
 
