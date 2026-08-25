@@ -59,6 +59,11 @@ export function roleForm(config) {
             });
         },
 
+        isAllChecked() {
+            const allIds = this.moduleGroups.flatMap((group) => group.permissions.map((p) => p.id));
+            return allIds.length > 0 && allIds.every((id) => this.checkedIds.includes(id));
+        },
+
         selectAll() {
             this.checkedIds = this.moduleGroups.flatMap((group) => group.permissions.map((permission) => permission.id));
         },

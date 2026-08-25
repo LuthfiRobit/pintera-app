@@ -5,19 +5,19 @@
                 <h3 class="font-display text-lg font-bold text-gray-900">Matriks Hak Akses</h3>
                 <p class="text-xs text-gray-500">Pilih izin (permissions) yang diizinkan untuk peran ini.</p>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
-                <div class="relative">
-                    <input type="text" x-model="permissionSearch" placeholder="Cari permission... (mis. tagihan, rapor)" class="w-64 rounded-lg border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-xs focus:border-brand-500 focus:ring-brand-500">
-                    <x-icon name="search" class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-                </div>
-                <button type="button" @click="selectAll()" class="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 transition hover:bg-brand-100">
-                    <x-icon name="check_circle" class="h-3.5 w-3.5" />
-                    Pilih Semua
+            <div class="flex items-center gap-2">
+                <!-- Button Switcher: Pilih Semua / Kosongkan -->
+                <button
+                    type="button"
+                    @click="isAllChecked() ? clearAll() : selectAll()"
+                    :class="isAllChecked() ? 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900' : 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'"
+                    class="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition"
+                >
+                    <x-icon name="cancel" class="h-3.5 w-3.5" x-show="isAllChecked()" />
+                    <x-icon name="check_circle" class="h-3.5 w-3.5" x-show="!isAllChecked()" />
+                    <span x-text="isAllChecked() ? 'Kosongkan' : 'Pilih Semua'"></span>
                 </button>
-                <button type="button" @click="clearAll()" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-600 transition hover:bg-gray-50 hover:text-gray-900">
-                    <x-icon name="cancel" class="h-3.5 w-3.5" />
-                    Kosongkan
-                </button>
+                <!-- Button Sync -->
                 <button
                     type="button"
                     @click="syncPermissions()"
@@ -27,6 +27,14 @@
                     <x-icon name="sync" class="h-3.5 w-3.5" x-bind:class="syncing ? 'animate-spin' : ''" />
                     <span x-text="syncing ? 'Menyegarkan...' : 'Sync Permission'"></span>
                 </button>
+            </div>
+        </div>
+
+        <!-- Row 2: Search Input -->
+        <div class="border-b border-gray-100 pb-4">
+            <div class="relative w-full sm:w-80">
+                <input type="text" x-model="permissionSearch" placeholder="Cari permission... (mis. tagihan, rapor)" class="w-full rounded-lg border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-xs focus:border-brand-500 focus:ring-brand-500">
+                <x-icon name="search" class="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
             </div>
         </div>
 
