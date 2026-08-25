@@ -82,7 +82,7 @@ it('404s admin.kasus.restore when the kasus is not actually trashed', function (
     foreach (['kasus.view', 'kasus.hapus', 'kasus.pulihkan'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['kasus.view', 'kasus.hapus', 'kasus.pulihkan']);
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
