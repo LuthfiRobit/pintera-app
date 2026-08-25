@@ -277,6 +277,72 @@ class UserController extends BaseController
         return redirect()->route('admin.users.index')->with('status', 'Status akun berhasil diperbarui.');
     }
 
+    /**
+     * Daftar role yang boleh ditampilkan/dipilih di form Pengguna (create/edit).
+     * Mengecualikan siswa/orang_tua (punya modul pembuatan akun tersendiri) dan
+     * pegawai_lembaga/pegawai_yayasan (scope-carrier, auto-assign, tidak pernah
+     * dipilih manual) -- lihat baselineCarrierRole(). Filter rank tetap berlaku
+     * per-role individual karena role dalam satu grup checkbox (lihat
+     * formRoleGroups()) bisa punya scope_level berbeda (mis. guru = diri_sendiri).
+     */
+    private function assignableRoles(int $actingRank): \Illuminate\Support\Collection
+    {
+        $excluded = ['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan'];
+
+        return Role::all()
+            ->reject(fn ($role) => in_array($role->name, $excluded, true))
+            ->filter(fn ($role) => $this->scopeRank($role->scope_level) <= $actingRank)
+            ->values();
+    }
+
+    /**
+     * Taksonomi grup checkbox role di form Pengguna -- sama persis dengan
+     * taksonomi chip di halaman list (spec 2026-08-25-rbac-pengguna-scope-filter
+     * §4), MINUS carrier role dan MINUS siswa/orang_tua (tidak pernah muncul di
+     * form ini).
+     */
+    private function formRoleGroups(): array
+    {
+        return [
+            'Platform' => ['platform_super_admin'],
+            'Yayasan' => ['yayasan_super_admin', 'bendahara_yayasan'],
+            'Lembaga' => ['kepala_sekolah', 'wakasek_kurikulum', 'wakasek_kesiswaan', 'operator_akademik', 'admin_sdm', 'bendahara_lembaga', 'admin_sarpras', 'admin_administrasi'],
+            'Staf' => ['guru', 'wali_kelas', 'guru_bk'],
+        ];
+    }
+
+    /**
+     * Kelompokkan $roles (hasil assignableRoles()) ke label grup formRoleGroups(),
+     * membuang grup yang kosong (mis. grup Platform disembunyikan sama sekali
+     * untuk actor lembaga-scope karena role platform_super_admin sudah difilter
+     * habis duluan oleh scopeRank di assignableRoles()).
+     */
+    private function groupRolesForForm(\Illuminate\Support\Collection $roles): \Illuminate\Support\Collection
+    {
+        return collect($this->formRoleGroups())
+            ->map(fn ($names) => $roles->whereIn('name', $names)->values())
+            ->filter(fn ($group) => $group->isNotEmpty());
+    }
+
+    /**
+     * Role scope-carrier yang WAJIB otomatis ditambahkan berdampingan dengan role
+     * fungsional yang dipilih -- meniru invariant AkunKaryawanGenerator (spec RBAC
+     * v2 §5.5, §7). Berbasis scope_level (bukan hardcode nama role) supaya
+     * otomatis berlaku untuk role fungsional baru di masa depan. pegawai_yayasan
+     * TIDAK PERNAH dikembalikan di sini -- form ini untuk staf ber-lembaga_id,
+     * bukan alur pool karyawan yayasan.
+     */
+    private function baselineCarrierRole(\Illuminate\Support\Collection $selectedRoles, ?int $lembagaId): ?string
+    {
+        if ($lembagaId === null) {
+            return null;
+        }
+
+        $needsCarrier = $selectedRoles->contains(fn ($role) => in_array($role->scope_level, ['lembaga', 'diri_sendiri'], true));
+
+        return $needsCarrier ? 'pegawai_lembaga' : null;
+    }
+
     private function scopeRank(string $level): int
     {
         return match ($level) {
