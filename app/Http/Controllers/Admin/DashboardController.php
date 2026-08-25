@@ -227,6 +227,11 @@ class DashboardController extends BaseController
             'spmbStats' => null,
             'tren' => null,
             'keuanganStats' => null,
+            'presensiSdmHariIni' => $this->dashboardStats->statistikPresensiSdm([$lembagaId]),
+            'izinCutiPendingCount' => \App\Domains\Sdm\Models\PengajuanIzinCuti::where('lembaga_id', $lembagaId)
+                ->whereHas('approvalRequest', fn ($q) => $q->where('status', ApprovalStatus::Pending))
+                ->count(),
+            'progressRaporPerKelas' => null,
         ];
 
         if ($user->can('spmb-pendaftaran.view')) {
@@ -236,6 +241,14 @@ class DashboardController extends BaseController
 
         if ($user->can('tagihan.view')) {
             $data['keuanganStats'] = $this->dashboardStats->statistikKeuangan($lembagaId);
+        }
+
+        if ($user->can('komponen-penilaian.kelola')) {
+            $data['progressRaporPerKelas'] = \App\Models\Kelas::where('lembaga_id', $lembagaId)->get()
+                ->map(fn (\App\Models\Kelas $kelas) => [
+                    'kelas' => $kelas,
+                    'progress' => $this->dashboardStats->statistikProgressRaporKelas($kelas),
+                ]);
         }
 
         if ($user->can('kasus.triase')) {

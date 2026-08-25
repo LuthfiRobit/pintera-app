@@ -57,12 +57,6 @@ it('does not leak another lembaga data into the dashboard numbers', function () 
     $response = $this->actingAs($user)->get(route('dashboard'));
 
     $response->assertOk();
-    // Note: assertDontSeeText('3', false) as originally specified false-positives on the
-    // static "(30 Hari Terakhir)" trend panel label, which always renders once the SPMB
-    // section is visible and has nothing to do with tenant leakage. assertDontSee('>3<', ...)
-    // checks the raw HTML for an element whose entire text content is "3" — which is how a
-    // leaked count would actually render in a stat tile (e.g. <p ...>3</p>) — without
-    // tripping on unrelated prose or markup that merely contains the digit 3.
     $response->assertDontSee('>3<', false);
 });
 
@@ -98,4 +92,24 @@ it('does not change the guru dashboard', function () {
     $response->assertOk();
     $response->assertDontSee('Total Pendaftar');
     $response->assertDontSee('Rp Terkumpul');
+});
+
+it('shows the rapor fill progress table only for a user with komponen-penilaian.kelola permission', function () {
+    $lembaga = Lembaga::factory()->create();
+    $kelas = \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Kelas Uji Progress']);
+
+    $userDitolak = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $userDitolak->assignRole('admin_administrasi');
+
+    $resDitolak = $this->actingAs($userDitolak)->get(route('dashboard'));
+    $resDitolak->assertOk();
+    $resDitolak->assertDontSee('Progress Pengumpulan Nilai per Kelas');
+
+    $userDiizinkan = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $userDiizinkan->assignRole('kepala_sekolah');
+
+    $resDiizinkan = $this->actingAs($userDiizinkan)->get(route('dashboard'));
+    $resDiizinkan->assertOk();
+    $resDiizinkan->assertSee('Progress Pengumpulan Nilai per Kelas');
+    $resDiizinkan->assertSee('Kelas Uji Progress');
 });

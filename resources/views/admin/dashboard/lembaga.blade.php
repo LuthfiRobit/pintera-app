@@ -74,6 +74,54 @@
             </x-panel>
         @endunless
 
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <x-panel class="p-6">
+                <p class="mb-3 text-sm font-medium text-ink">Kehadiran SDM Hari Ini</p>
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                    <x-stat-tile label="Hadir" :value="$presensiSdmHariIni['hadir']" icon="check_circle" />
+                    <x-stat-tile label="Izin" :value="$presensiSdmHariIni['izin']" icon="hourglass_empty" />
+                    <x-stat-tile label="Sakit" :value="$presensiSdmHariIni['sakit']" icon="local_hospital" />
+                    <x-stat-tile label="Alpa" :value="$presensiSdmHariIni['alpa']" icon="cancel" />
+                    <x-stat-tile label="Cuti" :value="$presensiSdmHariIni['cuti']" icon="beach_access" />
+                </div>
+            </x-panel>
+            <x-panel class="p-6">
+                <p class="mb-3 text-sm font-medium text-ink">Pengajuan Izin/Cuti Menunggu Persetujuan</p>
+                <x-stat-tile label="Pending" :value="$izinCutiPendingCount" icon="pending_actions" />
+            </x-panel>
+        </div>
+
+        @if ($progressRaporPerKelas !== null)
+            <x-panel>
+                <div class="border-b border-ink/10 px-6 py-4">
+                    <h3 class="font-display font-semibold text-ink">Progress Pengumpulan Nilai per Kelas</h3>
+                </div>
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-ink/10 bg-paper/60 text-left text-xs uppercase tracking-wide text-slate">
+                            <th class="px-6 py-3 font-display font-semibold">Kelas</th>
+                            <th class="px-6 py-3 font-display font-semibold">Terisi</th>
+                            <th class="px-6 py-3 font-display font-semibold">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-ink/10">
+                        @foreach ($progressRaporPerKelas as $item)
+                            <tr>
+                                <td class="px-6 py-3.5 font-display font-medium text-ink">{{ $item['kelas']->nama }}</td>
+                                <td class="px-6 py-3.5">{{ $item['progress']['terisi'] }} / {{ $item['progress']['total'] }}</td>
+                                <td class="px-6 py-3.5">{{ $item['progress']['persen'] }}%</td>
+                            </tr>
+                        @endforeach
+                        @if ($progressRaporPerKelas->isEmpty())
+                            <tr>
+                                <td colspan="3" class="px-6 py-8 text-center text-slate">Belum ada kelas di lembaga ini.</td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </x-panel>
+        @endif
+
         @if ($kasusList !== null)
             <div>
                 <h3 class="font-display text-lg font-semibold text-ink">Kasus Pendampingan</h3>
