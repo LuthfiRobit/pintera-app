@@ -285,3 +285,28 @@ it('renders the edit-role page with the permission-matrix mount point pre-filled
     $response->assertSee('roleForm(', false);
     $response->assertSee((string) Permission::where('name', 'guru.view')->first()->id, false);
 });
+
+it('ignores a submitted name change for a protected role instead of throwing a 500', function () {
+    $admin = actingAsSuperAdmin();
+    $protected = Role::where('name', 'yayasan_super_admin')->first();
+
+    $this->actingAs($admin)->put(route('admin.roles.update', $protected), [
+        'name' => 'Nama Baru Yang Dicoba',
+        'permissions' => [],
+    ])->assertRedirect(route('admin.roles.index'));
+
+    expect($protected->fresh()->name)->toBe('yayasan_super_admin');
+});
+
+it('ignores a submitted name change for a protected role via AJAX, returning 200 not 500', function () {
+    $admin = actingAsSuperAdmin();
+    $protected = Role::where('name', 'yayasan_super_admin')->first();
+
+    $response = $this->actingAs($admin)->putJson(route('admin.roles.update', $protected), [
+        'name' => 'Nama Baru AJAX',
+        'permissions' => [],
+    ]);
+
+    $response->assertOk();
+    expect($protected->fresh()->name)->toBe('yayasan_super_admin');
+});

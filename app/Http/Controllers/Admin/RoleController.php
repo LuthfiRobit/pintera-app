@@ -131,20 +131,20 @@ class RoleController extends BaseController
         $this->authorize('update', $role);
 
         $rules = [
-            'name' => ['required', 'string', 'max:255', 'unique:roles,name,'.$role->id],
             'permissions' => ['array'],
             'permissions.*' => ['integer', 'exists:permissions,id'],
         ];
 
         if (! $role->is_protected) {
-            $rules['scope_level'] = ['required', 'in:yayasan,lembaga,diri_sendiri'];
+            $rules['name'] = ['required', 'string', 'max:255', 'unique:roles,name,'.$role->id];
+            $rules['scope_level'] = ['required', 'in:yayasan,lembaga,diri_sendiri,platform'];
         }
 
         $data = $request->validate($rules);
 
-        $role->name = $data['name'];
-
         if (! $role->is_protected) {
+            $role->name = $data['name'];
+
             $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
             if ($this->scopeRank($data['scope_level']) > $actingRank) {
                 return $this->errorResponse(
