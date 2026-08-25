@@ -16,7 +16,7 @@ function actingAsKasusLogViewer(Lembaga $lembaga): User
     foreach (['kasus.view', 'kasus.lihat-log-akses'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['kasus.view', 'kasus.lihat-log-akses']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -43,7 +43,7 @@ function bukaHalamanKasusSebagaiKonselor(Kasus $kasus, Lembaga $lembaga): User
     return $user;
 }
 
-it('lists akses_klinis log rows scoped to admin_akademik own lembaga', function () {
+it('lists akses_klinis log rows scoped to operator_akademik own lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
