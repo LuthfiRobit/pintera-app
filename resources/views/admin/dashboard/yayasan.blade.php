@@ -6,23 +6,23 @@
             {{-- Main Content Area (8 Cols) --}}
             <div class="space-y-6 lg:col-span-7 xl:col-span-8">
                 
-                {{-- 1. Modern Gradient Hero Banner --}}
-                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 p-8 text-white shadow-xl shadow-slate-900/10">
+                {{-- 1. Executive Gradient Hero Banner --}}
+                <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-blue-700 to-purple-800 p-8 text-white shadow-xl shadow-indigo-600/10">
                     <div class="relative z-10 max-w-xl">
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1 text-xs font-semibold backdrop-blur-md text-amber-300">
+                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-semibold backdrop-blur-md text-amber-300">
                             <span class="h-2 w-2 rounded-full bg-amber-400 animate-pulse"></span>
                             Yayasan &middot; Pengawasan Lintas Lembaga
                         </span>
                         <h1 class="mt-4 flex items-center gap-2.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
                             <span>Selamat datang, {{ Auth::user()->name }}!</span>
-                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 backdrop-blur-md">
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 backdrop-blur-md">
                                 <svg class="h-5 w-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m0 0h4m-4 0V5" />
                                 </svg>
                             </span>
                         </h1>
-                        <p class="mt-2 text-sm leading-relaxed text-slate-300">
-                            Pantau seluruh lembaga pendidikan di bawah yayasan dari satu portal terpadu — konsolidasi data, SDM, dan keuangan berjalan.
+                        <p class="mt-2 text-sm leading-relaxed text-blue-100">
+                            Pantau konsolidasi seluruh unit lembaga pendidikan di bawah yayasan dari satu portal terpadu — data akademik, kepegawaian, dan penerimaan keuangan.
                         </p>
                     </div>
 
@@ -33,7 +33,7 @@
                     </div>
                 </div>
 
-                {{-- 2. Stat Tiles Row --}}
+                {{-- 2. Stat Tiles Grid --}}
                 <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
                     <x-stat-tile label="Lembaga" :value="$stats['lembaga']" hint="Total unit pendidikan" icon="apartment" />
                     <x-stat-tile label="Guru" :value="$stats['guru']" hint="Terdaftar lintas lembaga" icon="school" />
@@ -58,7 +58,7 @@
 
                         @if ($ringkasanPerLembaga->isNotEmpty())
                             <div class="mt-6 border-t border-ink/10 pt-4">
-                                <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Pendaftar per Lembaga</p>
+                                <p class="mb-3 text-xs font-bold uppercase tracking-wider text-slate">Grafik Pendaftar per Lembaga</p>
                                 <div
                                     x-data="perLembagaBarChart(
                                         @js($ringkasanPerLembaga->pluck('lembaga.nama')),
@@ -91,19 +91,30 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-ink/10">
-                                    @foreach ($ringkasanPerLembaga as $ringkasan)
-                                        <tr class="cursor-pointer hover:bg-paper/60 transition" onclick="window.location='{{ route('dashboard', ['switch_lembaga' => $ringkasan['lembaga']->id]) }}'">
-                                            <td class="px-4 py-3.5 font-display font-medium text-ink flex items-center gap-2">
-                                                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600 font-bold text-xs">
+                                    @php
+                                        $badgeColors = ['bg-blue-100 text-blue-700', 'bg-purple-100 text-purple-700', 'bg-emerald-100 text-emerald-700', 'bg-amber-100 text-amber-700', 'bg-rose-100 text-rose-700'];
+                                    @endphp
+                                    @foreach ($ringkasanPerLembaga as $index => $ringkasan)
+                                        @php
+                                            $badgeColor = $badgeColors[$index % count($badgeColors)];
+                                        @endphp
+                                        <tr class="cursor-pointer hover:bg-paper/80 transition" onclick="window.location='{{ route('dashboard', ['switch_lembaga' => $ringkasan['lembaga']->id]) }}'">
+                                            <td class="px-4 py-3.5 font-display font-medium text-ink flex items-center gap-2.5">
+                                                <span class="flex h-8 w-8 items-center justify-center rounded-xl {{ $badgeColor }} font-bold text-xs shadow-sm">
                                                     {{ strtoupper(substr($ringkasan['lembaga']->nama, 0, 1)) }}
                                                 </span>
-                                                {{ $ringkasan['lembaga']->nama }}
+                                                <span>{{ $ringkasan['lembaga']->nama }}</span>
                                             </td>
-                                            <td class="px-4 py-3.5">{{ $ringkasan['spmb']['total'] }}</td>
-                                            <td class="px-4 py-3.5">{{ $ringkasan['spmb']['diterima'] }}</td>
-                                            <td class="px-4 py-3.5 font-medium text-ink">Rp {{ number_format($ringkasan['keuangan']['rpTerkumpul'], 0, ',', '.') }}</td>
+                                            <td class="px-4 py-3.5 font-semibold text-ink">{{ $ringkasan['spmb']['total'] }}</td>
+                                            <td class="px-4 py-3.5 font-semibold text-emerald-600">{{ $ringkasan['spmb']['diterima'] }}</td>
+                                            <td class="px-4 py-3.5 font-semibold text-ink">Rp {{ number_format($ringkasan['keuangan']['rpTerkumpul'], 0, ',', '.') }}</td>
                                             <td class="px-4 py-3.5 text-right text-xs font-semibold text-blue-600">
-                                                Filter &rarr;
+                                                <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-blue-600 hover:bg-blue-100 transition">
+                                                    Filter
+                                                    <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                                    </svg>
+                                                </span>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -127,7 +138,7 @@
                     <x-panel class="p-6">
                         <div class="flex items-center justify-between pb-3 border-b border-ink/10">
                             <h3 class="font-display font-bold text-sm uppercase tracking-wider text-slate">Kehadiran SDM Hari Ini</h3>
-                            <span class="text-xs font-bold text-indigo-600 uppercase">{{ now()->translatedFormat('d F Y') }}</span>
+                            <span class="text-xs font-bold text-blue-600 uppercase">{{ now()->translatedFormat('d F Y') }}</span>
                         </div>
 
                         <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5 lg:grid-cols-2">
