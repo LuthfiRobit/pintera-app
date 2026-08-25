@@ -19,7 +19,7 @@ use Spatie\Permission\Models\Permission;
 function actingAsRaporViewer(Lembaga $lembaga): User
 {
     Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['rapor.view']);
 
     $viewer = User::factory()->create(['lembaga_id' => $lembaga->id]);

@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Permission;
 function actingAsWhatsAppTemplateManager(): User
 {
     Permission::firstOrCreate(['name' => 'whatsapp-template.edit', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['whatsapp-template.edit']);
     $manager = User::factory()->create();
     $manager->assignRole($role);

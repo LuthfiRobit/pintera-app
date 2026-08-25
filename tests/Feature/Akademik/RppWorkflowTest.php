@@ -27,7 +27,7 @@ beforeEach(function () {
     $roleGuru = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $roleGuru->givePermissionTo(['rpp.view', 'rpp.kelola']);
 
-    $roleKurikulum = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $roleKurikulum = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $roleKurikulum->givePermissionTo(['rpp.view', 'rpp.kelola', 'rpp.verify']);
 
     $this->yayasan = Yayasan::factory()->create();

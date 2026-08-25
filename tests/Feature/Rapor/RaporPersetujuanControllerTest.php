@@ -28,7 +28,7 @@ function siapkanAktorPersetujuan(): array
 {
     Permission::firstOrCreate(['name' => 'rapor.verify', 'guard_name' => 'web']);
     Permission::firstOrCreate(['name' => 'rapor.approve', 'guard_name' => 'web']);
-    $roleWaka = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web']);
+    $roleWaka = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web']);
     $roleWaka->givePermissionTo(['rapor.verify']);
     $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
     $roleKepsek->givePermissionTo(['rapor.approve']);

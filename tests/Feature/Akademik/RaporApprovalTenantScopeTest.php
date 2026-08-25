@@ -36,7 +36,7 @@ it('never resolves a PengajuanRapor belonging to another lembaga by id, so its A
     $pengajuanLain = (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelasLain, $semesterLain, $userWaliLain);
 
     $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $roleWaka = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web']);
+    $roleWaka = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web']);
     $userWakaSaya = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
     $userWakaSaya->assignRole($roleWaka);
     $this->actingAs($userWakaSaya);
@@ -67,7 +67,7 @@ it('rejects verify/approve when the acting user role does not match the current 
     (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]));
     $pengajuan = (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $userWali);
 
-    // userKepsek belum punya giliran (step 1 = admin_akademik) - coba approve langsung harus ditolak resolver engine.
+    // userKepsek belum punya giliran (step 1 = wakasek_kurikulum) - coba approve langsung harus ditolak resolver engine.
     $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
     $userKepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $userKepsek->assignRole($roleKepsek);

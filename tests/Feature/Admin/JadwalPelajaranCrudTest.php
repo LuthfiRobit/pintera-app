@@ -17,7 +17,7 @@ use Spatie\Permission\Models\Permission;
 function actingAsJadwalManager(Lembaga $lembaga): User
 {
     Permission::firstOrCreate(['name' => 'jadwal-pelajaran.kelola', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['jadwal-pelajaran.kelola']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);

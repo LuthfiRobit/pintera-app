@@ -147,7 +147,7 @@ it('denies status toggle to a user without orang-tua.edit permission', function 
         ->assertForbidden();
 });
 
-it('shows an admin_akademik an orang tua that has no linked siswa yet', function () {
+it('shows an operator_akademik an orang tua that has no linked siswa yet', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsOrangTuaManager();
@@ -159,7 +159,7 @@ it('shows an admin_akademik an orang tua that has no linked siswa yet', function
     $response->assertOk()->assertSee('Wali Murid Baru');
 });
 
-it('shows an admin_akademik an orang tua linked to a siswa in their own lembaga', function () {
+it('shows an operator_akademik an orang tua linked to a siswa in their own lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsOrangTuaManager();
@@ -173,7 +173,7 @@ it('shows an admin_akademik an orang tua linked to a siswa in their own lembaga'
     $response->assertOk()->assertSee('Wali Lembaga Sendiri');
 });
 
-it('hides from an admin_akademik an orang tua linked only to siswa in a different lembaga', function () {
+it('hides from an operator_akademik an orang tua linked only to siswa in a different lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -207,7 +207,7 @@ it('lets yayasan_super_admin see an orang tua regardless of which lembaga their 
     $response->assertOk()->assertSee('Wali Terlihat Super Admin');
 });
 
-it('404s an admin_akademik trying to edit an orang tua linked only to siswa in a different lembaga', function () {
+it('404s an operator_akademik trying to edit an orang tua linked only to siswa in a different lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -227,7 +227,7 @@ it('404s an admin_akademik trying to edit an orang tua linked only to siswa in a
     ])->assertNotFound();
 });
 
-it('allows an admin_akademik to edit an orang tua that has no linked siswa yet', function () {
+it('allows an operator_akademik to edit an orang tua that has no linked siswa yet', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsOrangTuaManager();

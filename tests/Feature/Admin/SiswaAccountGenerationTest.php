@@ -29,7 +29,7 @@ class SiswaAccountGenerationTest extends TestCase
         foreach (['siswa.view', 'siswa.create', 'siswa.edit'] as $perm) {
             Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
         }
-        $role = Role::firstOrCreate(['name' => 'admin_akademik_test', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+        $role = Role::firstOrCreate(['name' => 'operator_akademik_test', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
         $role->givePermissionTo(['siswa.view', 'siswa.create', 'siswa.edit']);
         Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 

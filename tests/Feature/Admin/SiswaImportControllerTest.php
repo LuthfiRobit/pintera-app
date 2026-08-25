@@ -16,7 +16,7 @@ use Spatie\Permission\Models\Permission;
 function actingAsSiswaImportManager(Lembaga $lembaga): User
 {
     Permission::firstOrCreate(['name' => 'siswa.import', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['siswa.import']);
     Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 

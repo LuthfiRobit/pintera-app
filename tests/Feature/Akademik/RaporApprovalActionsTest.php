@@ -39,7 +39,7 @@ function siapkanPengajuanDiajukan(): array
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
 
-    $roleWaka = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web']);
+    $roleWaka = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web']);
     $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
     $userWaka = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $userWaka->assignRole($roleWaka);

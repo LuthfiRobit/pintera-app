@@ -17,7 +17,7 @@ use Spatie\Permission\Models\Permission;
 function actingAsKomponenManager(Lembaga $lembaga): User
 {
     Permission::firstOrCreate(['name' => 'komponen-penilaian.kelola', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['komponen-penilaian.kelola']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);

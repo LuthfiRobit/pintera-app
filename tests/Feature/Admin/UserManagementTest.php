@@ -66,7 +66,7 @@ it('forces lembaga_id to the acting lembaga-scoped manager\'s own lembaga, ignor
     $manager = User::factory()->create(['lembaga_id' => $ownLembaga->id]);
     $manager->assignRole('admin_administrasi');
 
-    Role::firstOrCreate(['name' => 'admin_keuangan', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'bendahara_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
 
     $this->actingAs($manager)->post(route('admin.users.store'), [
         'name' => 'Staf Keuangan',
@@ -74,7 +74,7 @@ it('forces lembaga_id to the acting lembaga-scoped manager\'s own lembaga, ignor
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'lembaga_id' => $otherLembaga->id,
-        'role' => 'admin_keuangan',
+        'role' => 'bendahara_lembaga',
     ]);
 
     $created = User::withoutGlobalScopes()->where('email', 'keuangan1@example.test')->first();

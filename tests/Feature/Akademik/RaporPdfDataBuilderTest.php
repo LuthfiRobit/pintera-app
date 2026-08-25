@@ -64,7 +64,7 @@ it('builds a complete data array for a siswa with nilai, catatan, and approval',
     $this->seed([RoleSeeder::class, WorkflowDefinitionSeeder::class]);
     ['kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
 
-    $roleWaka = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web']);
+    $roleWaka = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web']);
     $userWaka = User::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
     $userWaka->assignRole($roleWaka);
     $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);

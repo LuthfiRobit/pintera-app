@@ -15,7 +15,7 @@ function actingAsMataPelajaranManager(Lembaga $lembaga): User
     foreach (['mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = Role::firstOrCreate(['name' => 'admin_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $role->givePermissionTo(['mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit']);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);

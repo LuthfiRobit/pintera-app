@@ -25,10 +25,10 @@ it('shows the detail page with calon murid data, dokumen, and nilai panels', fun
         ->assertSee($pendaftaran->calonMurid->nama_lengkap);
 });
 
-it('lets admin_keuangan view the detail page, since the tagihan/pembayaran panel lives here', function () {
+it('lets bendahara_lembaga view the detail page, since the tagihan/pembayaran panel lives here', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $user->assignRole('admin_keuangan');
+    $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->get(route('admin.spmb-pendaftaran.show', $pendaftaran))
         ->assertOk()
