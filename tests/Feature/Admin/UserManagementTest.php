@@ -225,6 +225,28 @@ it('404s on edit, update, and toggle-active for a siswa-role user, since siswa a
     expect($fresh->hasRole('siswa'))->toBeTrue();
 });
 
+it('404s on edit, update, and toggle-active for an orang_tua-role user, since orang tua accounts are managed only from the Orang Tua module', function () {
+    $manager = actingAsUserManager();
+
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser = User::factory()->create(['username' => 'ortu.guarded', 'email' => null]);
+    $orangTuaUser->assignRole('orang_tua');
+
+    $this->actingAs($manager)->get(route('admin.users.edit', $orangTuaUser))->assertNotFound();
+
+    $this->actingAs($manager)->put(route('admin.users.update', $orangTuaUser), [
+        'name' => 'Hacked Name',
+        'email' => 'hacked2@example.test',
+        'roles' => ['orang_tua'],
+    ])->assertNotFound();
+
+    $this->actingAs($manager)->patch(route('admin.users.toggle-active', $orangTuaUser))->assertNotFound();
+
+    $fresh = $orangTuaUser->fresh();
+    expect($fresh->name)->not->toBe('Hacked Name');
+    expect($fresh->hasRole('orang_tua'))->toBeTrue();
+});
+
 it('sets yayasan_id on a newly created yayasan-scoped staff account, inherited from the acting manager', function () {
     $yayasan = Yayasan::factory()->create();
     foreach (['users.view', 'users.create', 'users.edit', 'users.toggle-active'] as $permission) {
