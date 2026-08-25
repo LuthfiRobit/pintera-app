@@ -21,7 +21,7 @@
             </p>
         </div>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
@@ -30,6 +30,17 @@
                     <div>
                         <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Total Roles</p>
                         <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalRoles }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                        <x-icon name="public" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-purple-600">Scope Platform</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalPlatform }}</p>
                     </div>
                 </div>
             </div>
@@ -55,6 +66,17 @@
                     </div>
                 </div>
             </div>
+            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                        <x-icon name="person" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Diri Sendiri</p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $totalDiriSendiri }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
@@ -69,22 +91,46 @@
                     </x-link-button>
                 </x-tooltip>
             </div>
-            <div class="grid grid-cols-1 gap-4 lg:grid-cols-4">
-                <div class="lg:col-span-2">
+            <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Role</label>
                     <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                         <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
                         <input x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()" type="text" placeholder="Cari nama role..." class="w-full border-0 bg-transparent p-0 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0">
                     </div>
                 </div>
-                <div class="lg:col-span-2">
-                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Scope Level</label>
-                    <select x-model="filters.scope" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
-                        <option value="">Semua Scope</option>
-                        <option value="yayasan">Yayasan</option>
-                        <option value="lembaga">Lembaga</option>
-                    </select>
-                </div>
+            </div>
+            <div class="mt-4 flex items-center gap-2 overflow-x-auto border-t border-gray-100 pt-3">
+                @php
+                    $scopeChipLabels = [
+                        '' => 'Semua',
+                        'platform' => 'Platform',
+                        'yayasan' => 'Yayasan',
+                        'lembaga' => 'Lembaga',
+                        'diri_sendiri' => 'Diri Sendiri',
+                    ];
+                    $scopeChipCounts = [
+                        '' => $totalRoles,
+                        'platform' => $totalPlatform,
+                        'yayasan' => $totalYayasan,
+                        'lembaga' => $totalLembaga,
+                        'diri_sendiri' => $totalDiriSendiri,
+                    ];
+                @endphp
+                @foreach ($scopeChipLabels as $chipValue => $chipLabel)
+                    <button
+                        type="button"
+                        @click="filters.scope = @js($chipValue); muatUlangDaftar()"
+                        :class="(filters.scope ?? '') === @js($chipValue) ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border-gray-200'"
+                        class="flex items-center gap-2 whitespace-nowrap rounded-lg border px-3.5 py-1.5 text-xs transition-all"
+                    >
+                        <span>{{ $chipLabel }}</span>
+                        <span
+                            :class="(filters.scope ?? '') === @js($chipValue) ? 'bg-brand-100 text-brand-700' : 'bg-gray-200 text-gray-700'"
+                            class="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        >{{ $scopeChipCounts[$chipValue] }}</span>
+                    </button>
+                @endforeach
             </div>
         </div>
 
