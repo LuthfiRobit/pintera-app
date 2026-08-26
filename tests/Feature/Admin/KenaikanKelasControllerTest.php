@@ -77,8 +77,8 @@ it('only offers kelas and semester belonging to the selected target tahun ajaran
 it('moves siswa to the target kelas when mapped to promotion', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026']);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
     $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '5A']);
     $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => '6A']);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLama->id, 'status' => StatusSiswa::Aktif->value]);
@@ -117,8 +117,8 @@ it('graduates siswa when mapped to lulus, clearing kelas_id', function () {
 it('optionally copies jadwal pelajaran structure to the target kelas and semester', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026']);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
     $semesterLalu = Semester::factory()->create(['tahun_ajaran_id' => $tahunLalu->id]);
     $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $tahunBaru->id]);
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);

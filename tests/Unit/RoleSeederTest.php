@@ -21,7 +21,7 @@ it('seeds roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(141);
+    expect($superAdmin->permissions()->count())->toBe(145);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -119,14 +119,14 @@ it('grants kenaikan-kelas.kelola to kepala_sekolah after permissions sync and ro
     expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
 });
 
-it('seeds operator_akademik with the correct 46 academic-management permissions', function () {
+it('seeds operator_akademik with the correct 50 academic-management permissions', function () {
     (new RoleSeeder())->run();
 
     $operatorAkademik = Role::where('name', 'operator_akademik')->first();
     expect($operatorAkademik)->not->toBeNull();
     expect($operatorAkademik->scope_level)->toBe('lembaga');
     expect($operatorAkademik->is_protected)->toBeFalse();
-    expect($operatorAkademik->permissions()->count())->toBe(46);
+    expect($operatorAkademik->permissions()->count())->toBe(50);
     expect($operatorAkademik->hasPermissionTo('kelas.edit'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('siswa.import'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('jadwal-pelajaran.kelola'))->toBeTrue();

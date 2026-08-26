@@ -12,7 +12,7 @@ class TahunAjaranFactory extends Factory
 
     public function definition(): array
     {
-        $tahunMulai = $this->faker->numberBetween(2020, 2099);
+        $tahunMulai = $this->faker->unique()->numberBetween(1900, 2900);
 
         return [
             'lembaga_id' => Lembaga::factory(),
