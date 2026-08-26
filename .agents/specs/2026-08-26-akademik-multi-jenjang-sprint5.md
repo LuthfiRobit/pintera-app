@@ -69,13 +69,13 @@ Method privat `isTingkatAkhir()` di file yang sama TIDAK diubah (sudah punya whi
 | SMK | `pdf.rapor.smk` |
 | SLB | `pdf.rapor.sd` |
 
-Table-driven test membandingkan hasil baru vs 9 nilai di atas — bukan cuma "tidak error", tapi memastikan behavior lama (termasuk SLB→sd yang sebelumnya silent-default) tetap identik pasca-refactor.
+Table-driven test membandingkan hasil baru vs 9 nilai di atas — bukan cuma "tidak error", tapi memastikan behavior lama tetap identik pasca-refactor. Khusus SLB: **regression compatibility**, bukan keputusan domain absolut — hasil aktual sebelum refactor untuk SLB adalah `pdf.rapor.sd` karena jatuh ke fallback default lama, Sprint 5 mempertahankan hasil tersebut secara eksplisit (bukan klaim baru bahwa SLB "memang seharusnya" sama dengan SD).
 
 **Fail-fast Lapis 1 (dari `AcademicProfile`, mengalir lewat method ini):**
 - `templateUntukJenjang('XYZ')` (atau string di luar whitelist) → `InvalidArgumentException`.
 
-**Fail-fast Lapis 2 (defense-in-depth, baru):**
-- Test ini secara desain SULIT ditulis sbg unit test biasa (tidak ada cara alami membuat `AcademicProfile::reportTemplate` mengembalikan key ke-5 tanpa mengubah `AcademicProfile` itu sendiri). Implementer WAJIB mencatat di kode (komentar) bahwa branch `default => throw LogicException` ini murni defense-in-depth yang TIDAK bisa ditest lewat unit test biasa tanpa mocking/reflection berlebihan — dan itu SAH, bukan berarti kode mati (dead code) yang harus dihapus. Kalau implementer menemukan cara elegan mem-verifikasi ini (mis. lewat reflection atau test terpisah yang sengaja memanggil private helper dgn key palsu), boleh ditambahkan, TAPI TIDAK WAJIB — jangan memaksa coverage 100% dgn cara yang janggal.
+**Fail-fast Lapis 2 (defense-in-depth, baru) — TIDAK PERLU test coverage terpisah.**
+Branch `default => throw LogicException` adalah invariant/defense-in-depth murni, bukan behavior yang perlu dibuktikan test-nya sendiri (tidak ada cara alami membuat `AcademicProfile::reportTemplate` mengembalikan key ke-5 tanpa mengubah `AcademicProfile` itu sendiri, dan memaksa coverage lewat mocking/reflection untuk ini tidak sepadan). Yang penting justru dijaga di tempat lain: test `AcademicProfile` (Sprint 4) HARUS tetap memastikan seluruh key yang SEKARANG valid (`paud`/`sd`/`smp-sma`/`smk`) tercakup lengkap — itulah yang membuktikan lookup normal di `templateUntukJenjang()` tidak akan pernah jatuh ke branch `default` ini dalam operasi wajar.
 
 **Test independen menyusul (harus tetap hijau)**: `AcademicProfileTest.php` (Sprint 4) TIDAK diubah oleh Sprint 5 — dijalankan lagi sbg bagian regresi biasa, bukan ditulis ulang.
 
