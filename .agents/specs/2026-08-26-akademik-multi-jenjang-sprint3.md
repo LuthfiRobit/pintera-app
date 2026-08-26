@@ -35,6 +35,20 @@
 
 7. **Tidak ada curriculum designer, tidak ada versioning kurikulum, tidak ada mapping CP/TP.** Sprint 3 murni fondasi: fase sbg reference, mapping sbg config, assignment per Kelas. Reasoning kurikulum lanjutan (kalau nanti dibutuhkan) dibangun di atas fondasi ini, bukan bagian Sprint 3.
 
+8. **"Tidak ada versioning" berlaku untuk KONFIGURASI mapping, bukan untuk assignment.** Dua hal ini berbeda dan tidak boleh tercampur:
+   - **Versioning mapping** (TIDAK dibangun Sprint 3): tidak ada riwayat "SD tingkat 1 dulu → A, sekarang → B, berlaku sejak tanggal X". Edit mapping langsung menimpa state aktif satu-satunya.
+   - **Snapshot assignment** (SUDAH dibangun via `kelas.fase_id`): setiap Kelas menyimpan hasil resolusi pada saat dibuat, permanen sampai diubah manual. Ini bukan "history" dalam arti audit trail — ini fakta domain biasa (kolom biasa di baris Kelas), sama seperti `nama`/`tingkat`.
+   Rumusan tegas: **tidak ada configuration history, tapi assignment snapshot tetap ada.** Distinction ini penting dipertahankan eksplisit karena Sprint kurikulum lanjutan nanti kemungkinan besar akan butuh membedakan keduanya lagi.
+
+9. **`fase_default_mapping` bukan "konfigurasi kurikulum"** — namanya sengaja spesifik ("default mapping"/assignment policy), bukan `kurikulum_lembaga` atau semacamnya, supaya tidak ada kesan Sprint 3 sudah menyelesaikan domain kurikulum. Struktur kurikulum sesungguhnya (Subjek, CP, TP, Assessment per fase) adalah lapisan terpisah yang BELUM dibangun:
+   ```text
+   Fase (reference)
+     └── FaseDefaultMapping (assignment policy)
+             └── Kelas.fase_id (assignment)
+                     └── [BELUM ADA] Curriculum Structure (Subjek/CP/TP/Assessment per fase)
+   ```
+   Tabel `fase_default_mapping` hanya menjawab "fase apa yang cocok untuk Kelas ini", bukan "apa isi kurikulum fase itu".
+
 ## §1. Skema Database
 
 ### 1a. Tabel `fase` (global, non-tenant)
@@ -44,10 +58,11 @@ Schema::create('fase', function (Blueprint $table) {
     $table->id();
     $table->string('kode', 20)->unique(); // 'foundation', 'a', 'b', 'c', 'd', 'e', 'f'
     $table->string('nama'); // 'Fase Fondasi', 'Fase A', dst.
-    $table->unsignedTinyInteger('urutan'); // 0=foundation, 1=A, ..., 6=F — untuk sorting/perbandingan "lebih tinggi dari"
+    $table->unsignedTinyInteger('urutan'); // 0=foundation, 1=A, ..., 6=F
     $table->timestamps();
 });
 ```
+**Catatan tegas soal `urutan`**: kolom ini murni **display/sort order** (urutan tampil di dropdown/tabel admin), BUKAN semantic level pendidikan. Jangan diasumsikan bahwa `Fase F > Fase E > Fase D` berarti sesuatu secara business logic (mis. "boleh naik dari D ke F langsung", "F selalu lebih tinggi dari D dalam semua reasoning kurikulum") — itu klaim domain yang belum pernah divalidasi dan di luar cakupan Sprint 3. Kalau nanti ada kebutuhan nyata seperti "fase setelah X"/"fase sebelum X" sbg business rule, itu keputusan desain terpisah yang harus dibahas eksplisit saat kebutuhannya muncul, bukan diam-diam diwarisi dari kolom `urutan` yang sekarang hanya untuk sorting UI.
 
 ### 1b. Tabel `fase_default_mapping`
 
@@ -89,6 +104,8 @@ Schema::table('fase_default_mapping', function (Blueprint $table) {
 });
 ```
 (`storedAs` = generated/computed column MySQL — `lembaga_id=NULL` → `lembaga_key=0`, `tingkat=NULL` → `tingkat_key='*'`; kombinasi keduanya sekarang punya nilai konkret yang bisa di-unique-kan.) `0` aman dipakai sebagai sentinel karena `lembaga.id` auto-increment mulai dari `1`; `'*'` aman karena tidak pernah muncul sebagai nilai `tingkat` nyata (whitelist tingkat: digit `1`-`12` atau huruf `A`/`B`).
+
+**Compatibility sudah diverifikasi untuk environment project ini**: server dev memakai MySQL 8.0.30 (`d:/laragon/bin/mysql/mysql-8.0.30-winx64`) — `STORED GENERATED` column dan `UNIQUE` index di atasnya didukung penuh sejak MySQL 5.7, jauh di bawah versi yang dipakai. Tidak ada risiko compatibility yang perlu ditandai sbg unknown di plan; implementer TETAP wajib menjalankan migration ini di environment test project (bukan asumsi) sbg bagian normal siklus TDD migration, tapi tidak perlu riset alternatif engine.
 
 **Application-level validation** (lapis kedua, defense-in-depth — pesan error yang jelas sebelum menyentuh DB constraint):
 `StoreFaseDefaultMappingRequest`/`UpdateFaseDefaultMappingRequest` menolak submit baru/edit kalau kombinasi `(lembaga_id, bentuk_pendidikan, tingkat)` sudah ada di baris lain (query eksplisit `FaseDefaultMapping::where(...)->where('id', '!=', $this->route('mapping')?->id)->exists()`), dengan pesan: *"Sudah ada mapping default untuk kombinasi jenjang dan tingkat ini. Edit baris yang ada, jangan buat duplikat."*
@@ -145,6 +162,13 @@ class FaseDefaultMapping extends Model
 ```
 Model ini SENGAJA tidak pakai `BelongsToTenant` meski punya `lembaga_id` nullable — baris `lembaga_id = NULL` (platform-wide) harus tetap terlihat lintas tenant, yang bertentangan dengan asumsi dasar `TenantScope`. Filtering by lembaga dilakukan eksplisit di `FaseDefaultResolver`, bukan lewat global scope.
 
+**Konsekuensi: karena tidak ada `TenantScope`, authorization manajemen mapping WAJIB eksplisit** (tidak bisa mengandalkan proteksi otomatis tenant scoping seperti model tenant-scoped lain). Mengikuti pola routing existing yang sudah memisahkan platform-level (`routes/admin/*`, mis. `Admin\LembagaController` di `routes/admin/lembaga.php`) dari institution-level (`routes/lembaga/*`):
+
+- **`Admin\FaseDefaultMappingController`** (`routes/admin/*`, middleware/guard platform sama seperti `Admin\LembagaController`) — HANYA bisa create/update/delete baris `lembaga_id = NULL` (platform-wide). Request tidak pernah menerima `lembaga_id` dari input sama sekali di controller ini — selalu dipaksa `null` di server, terlepas apa pun yang dikirim client.
+- **`Lembaga\Akademik\FaseDefaultMappingController`** (`routes/lembaga/*`, middleware/guard institution existing — sama seperti controller Kelas/Mata Pelajaran di namespace ini) — HANYA bisa create/update/delete baris milik lembaga yang sedang login (`lembaga_id = Auth::user()->lembaga_id`, dipaksa dari session, bukan dari input request). Tidak ada endpoint yang menerima `lembaga_id` sembarang dari body/query untuk memilih lembaga siapa yang dimanipulasi — ini pola yang sama dengan controller institution-scoped lain di codebase (mis. `Lembaga\Akademik\KelasController`), bukan mekanisme baru.
+
+Dengan begitu, isolasi tenant untuk mapping tidak bergantung pada logika baru yang berisiko — cukup mengikuti pola routing/guard yang sudah terbukti benar untuk resource institution-scoped lain, hanya field `lembaga_id`-nya yang dipaksa dari session/context, bukan input.
+
 `app/Models/Kelas.php`: tambah `'fase_id'` ke `$fillable`, tambah relasi:
 ```php
 public function fase()
@@ -168,33 +192,27 @@ class FaseDefaultResolver
 {
     public function resolve(string $bentukPendidikan, ?string $tingkat, ?int $lembagaId): ?Fase
     {
-        $kandidat = FaseDefaultMapping::where('bentuk_pendidikan', $bentukPendidikan)
+        $match = FaseDefaultMapping::where('bentuk_pendidikan', $bentukPendidikan)
             ->where(function ($q) use ($lembagaId) {
                 $q->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
             })
-            ->get();
+            ->orderByRaw('lembaga_id IS NULL, tingkat IS NULL')
+            ->when($tingkat !== null, function ($q) use ($tingkat) {
+                $q->orderByRaw('tingkat = ? DESC', [$tingkat]);
+            })
+            ->first();
 
-        $urutanPrioritas = [
-            fn ($m) => $m->lembaga_id === $lembagaId && $m->tingkat === $tingkat,
-            fn ($m) => $m->lembaga_id === $lembagaId && $m->tingkat === null,
-            fn ($m) => $m->lembaga_id === null && $m->tingkat === $tingkat,
-            fn ($m) => $m->lembaga_id === null && $m->tingkat === null,
-        ];
-
-        foreach ($urutanPrioritas as $cocok) {
-            $match = $kandidat->first($cocok);
-            if ($match) {
-                return $match->fase;
-            }
-        }
-
-        return null;
+        return $match?->fase;
     }
 }
 ```
-**Catatan tegas untuk implementer**: fungsi ini TIDAK BOLEH tumbuh jadi `match($bentukPendidikan)`/`if ($tingkat === 'sesuatu')` di masa depan. Kalau ada kebutuhan aturan baru, tambah baris di `fase_default_mapping`, jangan tambah cabang logika di sini. Ini prinsip desain inti Sprint 3, bukan preferensi gaya.
+**Penjelasan precedence sbg urutan `ORDER BY` eksplisit** (bukan filter kandidat di memori — perbaikan dari draft sebelumnya, supaya semantik prioritas hidup di query, bukan tersembunyi di urutan closure yang mudah tergeser saat resolver berkembang):
+- `lembaga_id IS NULL` sbg kunci sort pertama: `0` (false, lembaga-spesifik) diurutkan SEBELUM `1` (true, platform) — baris lembaga-spesifik selalu menang atas platform, apa pun status `tingkat`-nya.
+- `tingkat IS NULL` sbg kunci sort kedua: dalam grup lembaga yang sama, baris ber-`tingkat` (bukan NULL) diurutkan sebelum baris catch-all — exact match menang atas catch-all dalam scope yang sama.
+- `tingkat = ? DESC` (dengan `?` = `$tingkat` yang dicari) sbg penegasan tambahan: baris yang `tingkat`-nya benar-benar sama persis dengan yang dicari naik ke atas, memastikan baris exact-match tidak tertukar urutan dengan baris ber-`tingkat` lain yang kebetulan bukan NULL tapi juga bukan match (query WHERE sudah membatasi ke `bentuk_pendidikan` yang sama, tapi tidak ke `tingkat` yang sama — supaya baris catch-all ikut jadi kandidat).
+- Hasil akhir: urutan baris yang di-`first()`-kan persis mengikuti 4 level precedence di keputusan desain poin 3, dinyatakan langsung sbg `ORDER BY`, bukan logika precedence yang tersembunyi di closure PHP yang bisa diam-diam salah urutan kalau resolver di-refactor nanti.
 
-Query 1x-ambil-semua-kandidat-lalu-filter-di-memori (bukan 4 query terpisah per level prioritas) dipilih karena jumlah baris `fase_default_mapping` per `bentuk_pendidikan` di satu lembaga secara realistis kecil (belasan, bukan ribuan) — tidak ada masalah performa, dan lebih mudah diuji sbg satu unit query.
+**Catatan tegas untuk implementer**: fungsi ini TIDAK BOLEH tumbuh jadi `match($bentukPendidikan)`/`if ($tingkat === 'sesuatu')` di masa depan. Kalau ada kebutuhan aturan baru, tambah baris di `fase_default_mapping`, jangan tambah cabang logika di sini. Ini prinsip desain inti Sprint 3, bukan preferensi gaya. Implementer WAJIB verifikasi sintaks `orderByRaw` dengan parameter binding di atas benar-benar berjalan sesuai Query Builder Laravel 12 (test §8 akan membuktikan urutannya, tapi sintaks persis wajib dicek saat implementasi — bukan diasumsikan benar dari spec).
 
 ## §5. Seed Data Awal
 
@@ -271,6 +289,12 @@ class FaseDefaultMappingSeeder extends Seeder
             // tersendiri di luar cakupan Sprint 3; resolver akan return null,
             // admin isi fase_id manual kalau memang relevan.
         ];
+        // Catatan domain: baris di atas adalah REKOMENDASI PLATFORM SAAT INI
+        // ("platform saat ini merekomendasikan Fase Fondasi untuk KB"), bukan
+        // kebenaran definisional yang tertanam permanen ("KB secara definisi
+        // selalu Fondasi"). Wording ini sengaja dijaga konsisten dengan prinsip
+        // keputusan desain poin 2 — kebijakan bisa berubah tanpa deployment,
+        // termasuk baris seed ini sendiri (lewat UI admin mapping, bukan re-seed).
 
         foreach ($mapping as $m) {
             FaseDefaultMapping::updateOrCreate(
@@ -309,7 +333,17 @@ $faseIdSuggested = $request->filled('tingkat')
     ? optional(app(FaseDefaultResolver::class)->resolve($lembaga->bentuk_pendidikan, $request->query('tingkat'), $lembaga->id))->id
     : null;
 ```
-Karena `tingkat` biasanya diisi lewat form yang sama (bukan query string terpisah), implementasi realistis: pre-fill dilakukan lewat **Alpine.js di sisi klien** (mirip pola `assessmentType` auto-set di Sprint 2 §4) — saat user mengetik/memilih `tingkat`, JS memanggil endpoint kecil `GET /lembaga/akademik/kelas/fase-suggestion?tingkat={tingkat}` yang mengembalikan `{ "fase_id": 3 }` atau `{ "fase_id": null }`, lalu JS men-set value dropdown fase (tetap bisa diganti manual sebelum submit). Endpoint ini murni memanggil `FaseDefaultResolver::resolve()` dengan `bentuk_pendidikan` dari lembaga yang sedang login dan `lembaga_id`-nya sendiri — tidak menyimpan apa pun, hanya query read-only.
+Karena `tingkat` biasanya diisi lewat form yang sama (bukan query string terpisah), implementasi realistis: pre-fill dilakukan lewat **Alpine.js di sisi klien** (mirip pola `assessmentType` auto-set di Sprint 2 §4) — saat user mengetik/memilih `tingkat`, JS memanggil endpoint kecil `GET /lembaga/akademik/kelas/fase-suggestion?tingkat={tingkat}`. Endpoint ini murni memanggil `FaseDefaultResolver::resolve()` dengan `bentuk_pendidikan` dari lembaga yang sedang login (guard middleware existing, `Auth::user()->lembaga_id`) dan `lembaga_id`-nya sendiri — tidak menyimpan apa pun, hanya query read-only.
+
+**Contract response tidak hanya `fase_id` mentah** — supaya UI tidak perlu tahu apa pun soal skema mapping, cukup render field yang diterima:
+```json
+{ "suggestion": { "id": 2, "kode": "a", "nama": "Fase A" } }
+```
+atau, kalau tidak ada mapping yang cocok:
+```json
+{ "suggestion": null }
+```
+Alpine cukup baca `response.suggestion?.id` untuk set value dropdown dan (opsional) `response.suggestion?.nama` untuk teks bantuan — tidak perlu logika tambahan di JS untuk menafsirkan `null` vs objek.
 
 `KelasController@store`/`@update`: `fase_id` diterima apa adanya dari form (nullable FK, divalidasi `['nullable', 'exists:fase,id']`) — **TIDAK** dihitung ulang otomatis di server saat submit. Suggestion adalah UX di sisi klien; nilai final yang disimpan adalah apa pun yang ada di dropdown saat submit (baik hasil suggestion yang diterima maupun override manual). Ini konsisten dengan keputusan desain poin 4 & 5.
 
@@ -341,6 +375,13 @@ Karena `tingkat` biasanya diisi lewat form yang sama (bukan query string terpisa
 - Insert 2 baris catch-all (`tingkat=NULL`) untuk `bentuk_pendidikan` yang sama & `lembaga_id` yang sama → gagal, sama seperti di atas.
 - Insert baris platform + baris lembaga-spesifik dengan `bentuk_pendidikan`+`tingkat` sama tapi `lembaga_id` beda (satu NULL, satu terisi) → **berhasil keduanya** (scope beda, bukan duplikat).
 
+**Authorization/tenant-isolation (feature test, kritis karena model TIDAK pakai `TenantScope` — lihat §3):**
+- Admin lembaga A membuat mapping lewat `Lembaga\Akademik\FaseDefaultMappingController` → baris tersimpan dengan `lembaga_id = lembaga A`, terlepas apa pun yang (kalau dipaksakan) dikirim di payload sbg `lembaga_id` lain — assert server selalu memakai `Auth::user()->lembaga_id`, bukan input.
+- Admin lembaga B mencoba mengedit/menghapus baris milik lembaga A (mis. tebak-tebak ID lewat URL `/lembaga/akademik/fase-mapping/{id}/edit`) → `403`/`404` (mengikuti pola proteksi resource institution-scoped lain di codebase), bukan berhasil.
+- Admin lembaga A mencoba membuat/mengedit baris platform (`lembaga_id = NULL`) lewat rute institution-nya → ditolak (rute ini secara desain tidak pernah menerima `lembaga_id = NULL` sbg pilihan; kalaupun dipaksa lewat payload, server override ke `lembaga_id` sendiri, bukan `NULL`).
+- User tanpa role admin platform mencoba akses `Admin\FaseDefaultMappingController` → ditolak middleware guard platform (sama seperti proteksi existing `Admin\LembagaController`).
+- `FaseDefaultResolver::resolve()` (read-only, dipanggil dari endpoint suggestion §6) tetap bisa membaca baris platform DAN baris lembaga manapun yang relevan dengan `lembagaId` yang diberikan — konfirmasi bahwa larangan di atas murni pada operasi tulis (create/update/delete), bukan pada kemampuan resolver membaca lintas scope (yang memang perlu, itulah alasan model ini sengaja tidak pakai `TenantScope`).
+
 **Immutability `kelas.fase_id` (feature test, kritis — §5 acceptance criterion):**
 - Buat Kelas baru dengan mapping platform SD tingkat 1 → Fase A aktif, assert `fase_id` tersimpan = Fase A.
 - Ubah baris `fase_default_mapping` platform SD tingkat 1 → Fase B (lewat Action/model langsung, simulasi admin platform mengubah kebijakan).
@@ -364,6 +405,7 @@ Karena `tingkat` biasanya diisi lewat form yang sama (bukan query string terpisa
 ## Self-Review
 
 - Semua poin kesepakatan user masuk eksplisit: (1) `fase` global stabil tanpa `lembaga_id` §1a/§3, (2) mapping sbg data bukan kode §1b/§4 dengan penekanan tegas resolver tidak boleh tumbuh jadi if/match, (3) precedence 4 tingkat §2 (keputusan desain)/§4, (4) `kelas.fase_id` snapshot immutable §1c/§5/§8, (5) tidak ada dimensi kurikulum baru sekarang §keputusan desain poin 6/§7, (6) uniqueness/conflict protection lengkap dengan solusi teknis konkret (generated column) §2, ditest §8, (7) seed sbg initial configuration bukan business logic §5 dengan acceptance criterion eksplisit.
+- **Revisi putaran review kedua (4 poin), semua diterapkan**: (a) `urutan` diperjelas sbg display/sort order murni, bukan semantic level pendidikan (§1a); (b) precedence resolver dipindah dari filter in-memory (closure) ke `ORDER BY` eksplisit di query, supaya semantik prioritas tidak tersembunyi (§4); (c) authorization/tenant-isolation untuk `FaseDefaultMapping` dijabarkan eksplisit mengikuti pola routing platform-vs-institution existing, plus 5 test kasus di §8, karena model ini sengaja tidak pakai `TenantScope` (§3/§8); (d) compatibility generated column diverifikasi konkret terhadap MySQL 8.0.30 yang benar-benar dipakai environment ini (§2), bukan dibiarkan sbg risiko tak terverifikasi. Juga ditambahkan: distinction eksplisit "no configuration history, but assignment snapshot exists" (keputusan desain poin 8), penegasan `fase_default_mapping` bukan "kurikulum" (keputusan desain poin 9), contract endpoint suggestion berisi objek fase lengkap bukan `fase_id` mentah (§6), dan wording seed sbg rekomendasi platform saat ini bukan kebenaran definisional (§5).
 - Placeholder scan: path file Blade/Controller Kelas ditandai eksplisit "implementer verifikasi path aktual" (§6) — bukan placeholder isi kode, tapi ketidakpastian lokasi file yang jujur (belum pernah dibaca langsung dalam sesi ini). Plan WAJIB memuat task awal untuk implementer membaca struktur folder `resources/views/portals/lembaga/akademik/kelas/` dan `app/Http/Controllers/Lembaga/Akademik/KelasController.php` (atau path setara) sebelum menulis kode form/controller.
 - Scope check: fokus tunggal pada fondasi Fase (fase, mapping, resolver, assignment Kelas) — tidak melebar ke CP/TP/P5/curriculum designer, sesuai §7.
 - Konsistensi tipe: `FaseDefaultResolver::resolve(string $bentukPendidikan, ?string $tingkat, ?int $lembagaId): ?Fase` dipakai identik di §4 (definisi) dan §6 (pemanggilan dari controller/endpoint) dan §8 (test).
