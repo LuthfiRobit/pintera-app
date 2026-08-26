@@ -15,8 +15,8 @@
             fetch(url, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
                 .then(r => r.json())
                 .then(data => {
-                    if (data.fase_id) {
-                        this.faseId = String(data.fase_id);
+                    if (data.suggestion) {
+                        this.faseId = String(data.suggestion.id);
                     }
                 })
                 .catch(() => {});

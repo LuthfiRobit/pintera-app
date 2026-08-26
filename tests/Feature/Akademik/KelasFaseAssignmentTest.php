@@ -1,6 +1,7 @@
 <?php
 
 use App\Domains\Akademik\Models\Fase;
+use App\Domains\Akademik\Models\FaseDefaultMapping;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Role;
@@ -88,4 +89,37 @@ it('updates existing kelas to assign or change fase_id', function () {
     ])->assertRedirect(route('admin.kelas.index'));
 
     expect($kelas->fresh()->fase_id)->toBe($faseB->id);
+});
+
+it('does not retroactively change an existing Kelas.fase_id when the default mapping is edited afterwards (immutability contract, end-to-end)', function () {
+    [$user, $lembaga, $ta] = buatUserKelas();
+    $faseA = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
+    $faseB = Fase::create(['kode' => 'b', 'nama' => 'Fase B', 'urutan' => 2]);
+    $mapping = FaseDefaultMapping::create(['lembaga_id' => null, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $faseA->id]);
+
+    // Kelas dibuat memakai suggestion saat mapping masih SD+1 -> A.
+    $this->actingAs($user)->post(route('admin.kelas.store'), [
+        'tahun_ajaran_id' => $ta->id,
+        'nama' => 'Kelas 1A',
+        'tingkat' => '1',
+        'fase_id' => $faseA->id,
+    ]);
+    $kelasLama = Kelas::where('nama', 'Kelas 1A')->first();
+
+    // Admin platform mengubah kebijakan mapping SD+1 -> B.
+    $mapping->update(['fase_id' => $faseB->id]);
+
+    // Kelas lama TIDAK ikut berubah.
+    expect($kelasLama->fresh()->fase_id)->toBe($faseA->id);
+
+    // Kelas BARU yang dibuat setelah perubahan mapping mengikuti suggestion baru.
+    $this->actingAs($user)->post(route('admin.kelas.store'), [
+        'tahun_ajaran_id' => $ta->id,
+        'nama' => 'Kelas 1B',
+        'tingkat' => '1',
+        'fase_id' => $faseB->id,
+    ]);
+    $kelasBaru = Kelas::where('nama', 'Kelas 1B')->first();
+
+    expect($kelasBaru->fase_id)->toBe($faseB->id);
 });

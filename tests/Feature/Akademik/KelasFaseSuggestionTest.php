@@ -35,23 +35,16 @@ it('returns suggested fase based on user lembaga bentuk_pendidikan and query par
 
     $response->assertOk()
         ->assertJson([
-            'fase_id' => $faseA->id,
-            'fase_kode' => 'a',
-            'fase_nama' => 'Fase A',
+            'suggestion' => ['id' => $faseA->id, 'kode' => 'a', 'nama' => 'Fase A'],
         ]);
 });
 
-it('returns null fields when no mapping matches', function () {
+it('returns a null suggestion when no mapping matches', function () {
     [$user, $lembaga] = buatUserSuggestion('SLB');
 
     $response = $this->actingAs($user)->getJson(route('admin.kelas.fase-suggestion', ['tingkat' => '6']));
 
-    $response->assertOk()
-        ->assertJson([
-            'fase_id' => null,
-            'fase_kode' => null,
-            'fase_nama' => null,
-        ]);
+    $response->assertOk()->assertJson(['suggestion' => null]);
 });
 
 it('requires authenticated user with kelas.view or kelas.create permission', function () {

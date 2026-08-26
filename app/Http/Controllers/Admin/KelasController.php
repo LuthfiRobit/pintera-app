@@ -34,9 +34,7 @@ class KelasController extends BaseController
         );
 
         return response()->json([
-            'fase_id'   => $fase?->id,
-            'fase_kode' => $fase?->kode,
-            'fase_nama' => $fase?->nama,
+            'suggestion' => $fase ? ['id' => $fase->id, 'kode' => $fase->kode, 'nama' => $fase->nama] : null,
         ]);
     }
 
