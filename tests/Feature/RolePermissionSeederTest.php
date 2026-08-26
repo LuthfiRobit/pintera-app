@@ -66,7 +66,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     expect(Role::where('name', 'guru')->first()->scope_level)->toBe('diri_sendiri');
     expect(Role::where('name', 'operator_akademik')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'bendahara_yayasan')->first()->scope_level)->toBe('yayasan');
-    expect(Role::where('name', 'admin_sarpras')->first()->scope_level)->toBe('yayasan');
+    expect(Role::where('name', 'admin_sarpras')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_sdm')->first()->scope_level)->toBe('lembaga');
 });
 

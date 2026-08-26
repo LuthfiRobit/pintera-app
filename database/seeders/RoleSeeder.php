@@ -36,7 +36,7 @@ class RoleSeeder extends Seeder
             'guru' => ['scope_level' => 'diri_sendiri', 'is_protected' => false],
             'wali_kelas' => ['scope_level' => 'lembaga', 'is_protected' => false],
             'guru_bk' => ['scope_level' => 'lembaga', 'is_protected' => false],
-            'admin_sarpras' => ['scope_level' => 'yayasan', 'is_protected' => false],
+            'admin_sarpras' => ['scope_level' => 'lembaga', 'is_protected' => false],
 
             // SPMB legacy (dibekukan, spec §9 — TIDAK disentuh RBAC v2 ini)
             'admin_administrasi' => ['scope_level' => 'lembaga', 'is_protected' => false],
