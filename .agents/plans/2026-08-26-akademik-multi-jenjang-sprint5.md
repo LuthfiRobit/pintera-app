@@ -37,7 +37,7 @@
 - Consumes: `App\Domains\Akademik\Support\AcademicProfile::fromBentukPendidikan(string): AcademicProfile` (existing, Sprint 4, tidak diubah).
 - Produces: `RaporPdfDataBuilder::templateUntukJenjang(string $bentukPendidikan): string` — signature sama persis dgn sebelumnya, HANYA behavior internal & exception yang berubah untuk input di luar whitelist. Konsumen (`Guru\RaporController`, `Lembaga\Rapor\PersetujuanController`) tidak perlu tahu apa pun tentang perubahan ini.
 
-- [ ] **Step 1: Baca ulang test existing yang HARUS diubah (BUKAN placeholder — file ini sudah ada dan berisi assertion behavior lama yang akan sengaja diubah)**
+- [x] **Step 1: Baca ulang test existing yang HARUS diubah (BUKAN placeholder — file ini sudah ada dan berisi assertion behavior lama yang akan sengaja diubah)**
 
 File `tests/Feature/Akademik/RaporPdfDataBuilderTest.php` baris 1-18 saat ini:
 ```php
@@ -62,7 +62,7 @@ it('maps bentuk_pendidikan to the correct template, defaulting unknown values to
 ```
 Baris terakhir (`'NILAI_TAK_DIKENAL'` → `'pdf.rapor.sd'`) menguji PERSIS behavior lama (silent fallback) yang Sprint 5 SENGAJA ubah jadi throw. **Implementer WAJIB mengubah test ini sbg bagian dari Task 1 — ini bukan "test lain yang kebetulan gagal", ini konsekuensi langsung yang sudah diantisipasi spec.**
 
-- [ ] **Step 2: Ganti isi test (RED dulu — implementasi belum diubah, baris SLB masih akan PASS krn behavior lama belum berubah, tapi baris throw baru akan FAIL krn belum ada exception)**
+- [x] **Step 2: Ganti isi test (RED dulu — implementasi belum diubah, baris SLB masih akan PASS krn behavior lama belum berubah, tapi baris throw baru akan FAIL krn belum ada exception)**
 
 Ganti seluruh isi `tests/Feature/Akademik/RaporPdfDataBuilderTest.php` baris 1-18 menjadi:
 ```php
@@ -100,7 +100,7 @@ it('throws InvalidArgumentException for an unknown bentuk_pendidikan instead of 
 Run: `php artisan test --filter=RaporPdfDataBuilderTest`
 Expected: FAIL pada test kedua (`'throws InvalidArgumentException...'`) — `templateUntukJenjang()` belum diubah, `'NILAI_TAK_DIKENAL'` masih mengembalikan `'pdf.rapor.sd'` (bukan throw). Test pertama (9 mapping table-driven) harus tetap PASS di titik ini (belum ada perubahan implementasi).
 
-- [ ] **Step 3: Ubah `RaporPdfDataBuilder::templateUntukJenjang()`**
+- [x] **Step 3: Ubah `RaporPdfDataBuilder::templateUntukJenjang()`**
 
 Baca file `app/Domains/Akademik/Services/RaporPdfDataBuilder.php` dulu (WAJIB — pastikan baseline sama dgn yang dikutip di sini sebelum edit; kalau berbeda, STOP dan laporkan ke user).
 
@@ -151,12 +151,12 @@ menjadi:
     }
 ```
 
-- [ ] **Step 4: Jalankan test lagi**
+- [x] **Step 4: Jalankan test lagi**
 
 Run: `php artisan test --filter=RaporPdfDataBuilderTest`
 Expected: PASS — 9 test table-driven (kategori) + 1 test throw + seluruh test `build()` lain di file yang sama (tidak disentuh, harus tetap hijau).
 
-- [ ] **Step 5: `php -l` dan commit**
+- [x] **Step 5: `php -l` dan commit**
 
 ```bash
 php -l app/Domains/Akademik/Services/RaporPdfDataBuilder.php
@@ -171,16 +171,16 @@ git commit -m "refactor(akademik): konsolidasi templateUntukJenjang() ke Academi
 
 **Files:** Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Verifikasi 2 consumer TIDAK perlu diubah (baca, jangan edit)**
+- [x] **Step 1: Verifikasi 2 consumer TIDAK perlu diubah (baca, jangan edit)**
 
 Baca `app/Http/Controllers/Guru/RaporController.php` (method `cetak()`) dan `app/Http/Controllers/Lembaga/Rapor/PersetujuanController.php` (method `cetak()`) — konfirmasi keduanya memanggil `$this->raporPdfDataBuilder->templateUntukJenjang(...)` apa adanya, tidak menangkap exception apa pun dari situ (signature return type `string` tidak berubah, jadi tidak ada breaking call-site). Kalau ternyata ada penanganan exception yang perlu ditambah di sana (mis. requirement baru muncul saat baca kode), STOP dan laporkan ke user — jangan diam-diam menambah try/catch di luar scope Task 1.
 
-- [ ] **Step 2: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses `php artisan test`/`migrate` lain berjalan bersamaan**
+- [x] **Step 2: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses `php artisan test`/`migrate` lain berjalan bersamaan**
 
 Run: `php artisan test`
 Expected: 0 failed. Baseline sebelum Sprint 5 adalah **2221 passed, 4 skipped** (state akhir Sprint 4). Task 1 mengubah 1 test existing jadi 2 test baru (net +1 test) — laporkan angka NYATA dari output, jangan asumsikan.
 
-- [ ] **Step 3: Laporkan hasil final ke user**
+- [x] **Step 3: Laporkan hasil final ke user**
 
 Ringkasan: jumlah test pass/fail (angka pasti dari run nyata), commit hash Task 1, konfirmasi hanya 2 file yang tersentuh (implementasi + test), konfirmasi 2 consumer controller tidak diubah sama sekali.
 
