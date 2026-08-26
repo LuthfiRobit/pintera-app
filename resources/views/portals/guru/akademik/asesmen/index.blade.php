@@ -92,7 +92,7 @@
             <div class="divide-y divide-gray-100">
                 @forelse ($asesmenList as $asesmen)
                     <div 
-                        x-show="(!search || '{{ strtolower(addslashes($asesmen->judul . ' ' . $asesmen->kelas->nama . ' ' . $asesmen->mataPelajaran->nama)) }}'.includes(search.toLowerCase())) && (!filterJenis || '{{ $asesmen->jenis->value }}' === filterJenis)"
+                        x-show="(!search || '{{ strtolower(addslashes($asesmen->judul . ' ' . $asesmen->kelas->nama . ' ' . $asesmen->subjek->nama)) }}'.includes(search.toLowerCase())) && (!filterJenis || '{{ $asesmen->jenis->value }}' === filterJenis)"
                         x-transition
                         class="flex flex-col gap-4 p-6 transition duration-150 hover:bg-gray-50/60 sm:flex-row sm:items-center sm:justify-between"
                     >
@@ -120,7 +120,7 @@
                                 </span>
                                 <span class="flex items-center gap-1.5 bg-gray-100 px-2.5 py-1 rounded-md">
                                     <x-icon name="description" class="h-4 w-4 text-gray-500" />
-                                    Mapel: <strong class="text-gray-900">{{ $asesmen->mataPelajaran->nama }}</strong>
+                                    Subjek: <strong class="text-gray-900">{{ $asesmen->subjek->nama }}</strong>
                                 </span>
                             </div>
                         </div>

@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4" x-data="{ selectedMapel: '{{ old('mata_pelajaran_id', '') }}' }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ subjekType: '{{ old('subjek_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'elemen_cp' : 'mata_pelajaran') }}', selectedSubjekId: '{{ old('subjek_id', '') }}' }">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
@@ -25,11 +25,26 @@
                     <x-icon name="assessment" class="h-4 w-4 text-brand-500" />
                     Formulir Kegiatan Asesmen Pembelajaran
                 </p>
-                <p class="mt-0.5 text-xs text-gray-500">Pilih kelas, mata pelajaran, jenis asesmen, dan indikator TP terkait.</p>
+                <p class="mt-0.5 text-xs text-gray-500">Pilih kelas, subjek penilaian, jenis asesmen, dan indikator TP terkait.</p>
             </div>
 
             <form method="POST" action="{{ route('guru.asesmen.store') }}" class="p-6 space-y-6">
                 @csrf
+
+                <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+                    <x-input-label value="Jenis Subjek Penilaian *" />
+                    <div class="flex items-center gap-6">
+                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
+                            <input type="radio" name="subjek_type" value="mata_pelajaran" x-model="subjekType" @change="selectedSubjekId = ''" class="text-brand-600 focus:ring-brand-500">
+                            Mata Pelajaran
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
+                            <input type="radio" name="subjek_type" value="elemen_cp" x-model="subjekType" @change="selectedSubjekId = ''" class="text-brand-600 focus:ring-brand-500">
+                            Elemen CP (PAUD)
+                        </label>
+                    </div>
+                    <x-input-error :messages="$errors->get('subjek_type')" class="mt-1" />
+                </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
@@ -47,11 +62,12 @@
                         <x-input-error :messages="$errors->get('kelas_id')" class="mt-1" />
                     </div>
 
-                    <div>
+                    <div x-show="subjekType === 'mata_pelajaran'">
                         <x-input-label value="Mata Pelajaran *" />
                         <select 
-                            name="mata_pelajaran_id" 
-                            x-model="selectedMapel"
+                            name="subjek_id" 
+                            x-model="selectedSubjekId"
+                            :disabled="subjekType !== 'mata_pelajaran'"
                             required
                             class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
@@ -60,7 +76,24 @@
                                 <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
                             @endforeach
                         </select>
-                        <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1" />
+                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
+                    </div>
+
+                    <div x-show="subjekType === 'elemen_cp'">
+                        <x-input-label value="Elemen CP (PAUD) *" />
+                        <select 
+                            name="subjek_id" 
+                            x-model="selectedSubjekId"
+                            :disabled="subjekType !== 'elemen_cp'"
+                            required
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                        >
+                            <option value="">— Pilih Elemen CP —</option>
+                            @foreach ($elemenCpList as $elemen)
+                                <option value="{{ $elemen->id }}">{{ $elemen->nama }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
                     </div>
                 </div>
 
@@ -127,7 +160,7 @@
                     <div class="flex items-center justify-between mb-3">
                         <div>
                             <x-input-label value="Hubungan Tujuan Pembelajaran (TP) / KKTP" />
-                            <p class="text-xs text-gray-500">Pilih minimal satu indikator TP dari Kurikulum Merdeka yang diasesmen pada kegiatan ini. Nilai siswa dicatat per-TP.</p>
+                            <p class="text-xs text-gray-500">Pilih minimal satu indikator TP yang diasesmen pada kegiatan ini. Nilai siswa dicatat per-TP.</p>
                         </div>
                     </div>
 
@@ -136,7 +169,7 @@
                     <div class="space-y-2 max-h-72 overflow-y-auto pr-2 rounded-xl border border-gray-200 p-4 bg-gray-50/50">
                         @forelse ($komponenList as $komponen)
                             <label 
-                                x-show="!selectedMapel || selectedMapel == '{{ $komponen->mata_pelajaran_id }}'"
+                                x-show="!selectedSubjekId || ('{{ $komponen->subjek_type }}' === subjekType &amp;&amp; '{{ $komponen->subjek_id }}' == selectedSubjekId)"
                                 x-transition
                                 class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 bg-white transition hover:bg-gray-50 cursor-pointer"
                             >
@@ -160,12 +193,8 @@
                                 </div>
                             </label>
                         @empty
-                            <p class="text-xs text-gray-400 text-center py-4">Belum ada data Tujuan Pembelajaran untuk mata pelajaran Anda.</p>
+                            <p class="text-xs text-gray-400 text-center py-4">Belum ada data Tujuan Pembelajaran untuk subjek Anda.</p>
                         @endforelse
-
-                        <p x-show="selectedMapel && !@js($komponenList->groupBy('mata_pelajaran_id')->toArray())[selectedMapel]" class="text-xs text-gray-400 text-center py-4" style="display: none;">
-                            Belum ada Tujuan Pembelajaran yang terdaftar untuk Mata Pelajaran yang Anda pilih.
-                        </p>
                     </div>
                 </div>
 

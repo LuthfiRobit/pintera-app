@@ -35,7 +35,7 @@
                 </div>
                 <div>
                     <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Kelas &amp; Mata Pelajaran</p>
-                    <p class="mt-1 text-base font-bold text-gray-900">{{ $asesmen->kelas->nama }} — {{ $asesmen->mataPelajaran->nama }}</p>
+                    <p class="mt-1 text-base font-bold text-gray-900">{{ $asesmen->kelas->nama }} — {{ $asesmen->subjek->nama }}</p>
                     <p class="text-xs text-gray-500">{{ $asesmen->semester->nama }}</p>
                 </div>
                 <div>

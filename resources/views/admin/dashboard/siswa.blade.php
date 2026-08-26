@@ -114,7 +114,7 @@
                         <ul class="mt-4 divide-y divide-ink/10">
                             @foreach ($nilaiTerbaru as $nilai)
                                 <li class="flex items-center justify-between py-2.5 text-sm">
-                                    <span class="text-ink">{{ $nilai->komponenPenilaian?->mataPelajaran?->nama ?? $nilai->asesmen?->mataPelajaran?->nama ?? '-' }}</span>
+                                    <span class="text-ink">{{ $nilai->komponenPenilaian?->subjek?->nama ?? $nilai->asesmen?->subjek?->nama ?? '-' }}</span>
                                     <x-badge tone="brass">{{ $nilai->nilai_angka }}</x-badge>
                                 </li>
                             @endforeach

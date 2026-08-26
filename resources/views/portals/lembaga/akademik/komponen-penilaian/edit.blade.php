@@ -21,7 +21,7 @@
         @if ($dipakai)
             <div class="flex items-start gap-3 rounded-2xl border border-warning-200 bg-warning-50 p-4 text-sm text-warning-700">
                 <x-icon name="warning" class="mt-0.5 h-5 w-5 shrink-0 text-warning-500" />
-                <p>Komponen ini sudah dipakai pada asesmen atau nilai siswa — Mata Pelajaran dan Semester tidak bisa diubah supaya data nilai yang sudah tercatat tetap konsisten.</p>
+                <p>Komponen ini sudah dipakai pada asesmen atau nilai siswa — Subjek Penilaian dan Semester tidak bisa diubah supaya data nilai yang sudah tercatat tetap konsisten.</p>
             </div>
         @endif
 
@@ -41,45 +41,13 @@
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                        <x-input-label value="Mata Pelajaran *" />
-                        @if ($dipakai)
-                            <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->mataPelajaran->nama }}</p>
-                        @else
-                            <select
-                                name="mata_pelajaran_id"
-                                required
-                                x-ref="mataPelajaranSelect"
-                                x-init="initMataPelajaranSelect($refs.mataPelajaranSelect)"
-                                class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
-                            >
-                                <option value="">— Pilih Mata Pelajaran —</option>
-                                @foreach ($mataPelajaranList as $mapel)
-                                    <option value="{{ $mapel->id }}" @selected(old('mata_pelajaran_id', $komponenPenilaian->mata_pelajaran_id) == $mapel->id)>{{ $mapel->nama }}</option>
-                                @endforeach
-                            </select>
-                            <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1" />
-                        @endif
+                        <x-input-label value="Subjek Penilaian" />
+                        <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->subjek->nama }}</p>
                     </div>
 
                     <div>
-                        <x-input-label value="Semester *" />
-                        @if ($dipakai)
-                            <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->semester->nama }} — {{ $komponenPenilaian->semester->tahunAjaran->nama }}</p>
-                        @else
-                            <select
-                                name="semester_id"
-                                required
-                                x-ref="semesterSelect"
-                                x-init="initSemesterSelect($refs.semesterSelect)"
-                                class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
-                            >
-                                <option value="">— Pilih Semester —</option>
-                                @foreach ($semesterList as $semester)
-                                    <option value="{{ $semester->id }}" @selected(old('semester_id', $komponenPenilaian->semester_id) == $semester->id)>{{ $semester->nama }} — {{ $semester->tahunAjaran->nama }}</option>
-                                @endforeach
-                            </select>
-                            <x-input-error :messages="$errors->get('semester_id')" class="mt-1" />
-                        @endif
+                        <x-input-label value="Semester" />
+                        <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->semester->nama }} — {{ $komponenPenilaian->semester->tahunAjaran->nama }}</p>
                     </div>
                 </div>
 
@@ -108,7 +76,7 @@
                             placeholder="1 - 100" 
                             class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm font-semibold transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
-                        <p class="mt-1 text-xs text-gray-400">Total bobot per Mapel dan Semester maksimal 100% (Guard aktif).</p>
+                        <p class="mt-1 text-xs text-gray-400">Total bobot per Subjek dan Semester maksimal 100% (Guard aktif).</p>
                         <x-input-error :messages="$errors->get('bobot')" class="mt-1" />
                     </div>
                 </div>
@@ -149,23 +117,6 @@
                         <p class="mt-1 text-xs text-gray-400">Ambang skor numerik untuk narasi capaian otomatis (default 75 jika kosong).</p>
                         <x-input-error :messages="$errors->get('kktp_minimal')" class="mt-1" />
                     </div>
-
-                    @if (in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true))
-                        <div>
-                            <x-input-label value="Elemen Capaian Pembelajaran (PAUD)" />
-                            @php($elemenCpSaatIni = old('elemen_cp', $komponenPenilaian->elemen_cp?->value))
-                            <select
-                                name="elemen_cp"
-                                class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
-                            >
-                                <option value="">— Pilih Elemen CP —</option>
-                                <option value="nilai_agama_moral" @selected($elemenCpSaatIni === 'nilai_agama_moral')>Nilai Agama dan Budi Pekerti</option>
-                                <option value="jati_diri" @selected($elemenCpSaatIni === 'jati_diri')>Jati Diri</option>
-                                <option value="literasi_steam" @selected($elemenCpSaatIni === 'literasi_steam')>Literasi, STEAM, Seni, dan Budaya</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('elemen_cp')" class="mt-1" />
-                        </div>
-                    @endif
                 </div>
 
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">

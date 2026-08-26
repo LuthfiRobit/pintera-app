@@ -28,8 +28,23 @@
                 <p class="mt-0.5 text-xs text-gray-500">Isi rincian kode, deskripsi TP, dan kriteria ketuntasan.</p>
             </div>
 
-            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="komponenPenilaianCreateForm({ tahunAjaranId: @js($tahunAjaranId), opsiUrl: @js(route('admin.komponen-penilaian.opsi')) })">
+            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="Object.assign(komponenPenilaianCreateForm({ tahunAjaranId: @js($tahunAjaranId), opsiUrl: @js(route('admin.komponen-penilaian.opsi')) }), { subjekType: '{{ old('subjek_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'elemen_cp' : 'mata_pelajaran') }}' })">
                 @csrf
+
+                <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
+                    <x-input-label value="Jenis Subjek Penilaian *" />
+                    <div class="flex items-center gap-6">
+                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
+                            <input type="radio" name="subjek_type" value="mata_pelajaran" x-model="subjekType" class="text-brand-600 focus:ring-brand-500">
+                            Mata Pelajaran
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
+                            <input type="radio" name="subjek_type" value="elemen_cp" x-model="subjekType" class="text-brand-600 focus:ring-brand-500">
+                            Elemen CP (PAUD)
+                        </label>
+                    </div>
+                    <x-input-error :messages="$errors->get('subjek_type')" class="mt-1" />
+                </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
@@ -65,10 +80,11 @@
                         <x-input-error :messages="$errors->get('semester_id')" class="mt-1" />
                     </div>
 
-                    <div>
+                    <div x-show="subjekType === 'mata_pelajaran'">
                         <x-input-label value="Mata Pelajaran *" />
                         <select
-                            name="mata_pelajaran_id"
+                            name="subjek_id"
+                            :disabled="subjekType !== 'mata_pelajaran'"
                             required
                             x-ref="mataPelajaranSelect"
                             x-init="initMataPelajaranSelect($refs.mataPelajaranSelect)"
@@ -76,10 +92,26 @@
                         >
                             <option value="">— Pilih Mata Pelajaran —</option>
                             @foreach ($mataPelajaranList as $mapel)
-                                <option value="{{ $mapel->id }}" @selected(old('mata_pelajaran_id') == $mapel->id)>{{ $mapel->nama }}</option>
+                                <option value="{{ $mapel->id }}" @selected(old('subjek_type') === 'mata_pelajaran' && old('subjek_id') == $mapel->id)>{{ $mapel->nama }}</option>
                             @endforeach
                         </select>
-                        <x-input-error :messages="$errors->get('mata_pelajaran_id')" class="mt-1" />
+                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
+                    </div>
+
+                    <div x-show="subjekType === 'elemen_cp'">
+                        <x-input-label value="Elemen CP (PAUD) *" />
+                        <select
+                            name="subjek_id"
+                            :disabled="subjekType !== 'elemen_cp'"
+                            required
+                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                        >
+                            <option value="">— Pilih Elemen CP —</option>
+                            @foreach ($elemenCpList as $elemen)
+                                <option value="{{ $elemen->id }}" @selected(old('subjek_type') === 'elemen_cp' && old('subjek_id') == $elemen->id)>{{ $elemen->nama }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
                     </div>
                 </div>
 
@@ -109,7 +141,7 @@
                             placeholder="1 - 100" 
                             class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm font-semibold transition duration-150 focus:border-brand-500 focus:ring-brand-500"
                         >
-                        <p class="mt-1 text-xs text-gray-400">Total bobot per Mapel dan Semester maksimal 100% (Guard aktif).</p>
+                        <p class="mt-1 text-xs text-gray-400">Total bobot per Subjek dan Semester maksimal 100% (Guard aktif).</p>
                         <x-input-error :messages="$errors->get('bobot')" class="mt-1" />
                     </div>
                 </div>
@@ -153,22 +185,6 @@
                         <p class="mt-1 text-xs text-gray-400">Ambang skor numerik untuk narasi capaian otomatis (default 75 jika kosong).</p>
                         <x-input-error :messages="$errors->get('kktp_minimal')" class="mt-1" />
                     </div>
-
-                    @if (in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true))
-                        <div>
-                            <x-input-label value="Elemen Capaian Pembelajaran (PAUD)" />
-                            <select
-                                name="elemen_cp"
-                                class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
-                            >
-                                <option value="">— Pilih Elemen CP —</option>
-                                <option value="nilai_agama_moral" @selected(old('elemen_cp') === 'nilai_agama_moral')>Nilai Agama dan Budi Pekerti</option>
-                                <option value="jati_diri" @selected(old('elemen_cp') === 'jati_diri')>Jati Diri</option>
-                                <option value="literasi_steam" @selected(old('elemen_cp') === 'literasi_steam')>Literasi, STEAM, Seni, dan Budaya</option>
-                            </select>
-                            <x-input-error :messages="$errors->get('elemen_cp')" class="mt-1" />
-                        </div>
-                    @endif
                 </div>
 
                 <div class="flex items-center gap-3 pt-4 border-t border-gray-100">

@@ -15,8 +15,8 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Mapel Tercover</p>
-                    <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->pluck('mata_pelajaran_id')->unique()->count() }}</p>
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Mapel / Subjek Tercover</p>
+                    <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $komponenList->map(fn($k) => $k->subjek_type . ':' . $k->subjek_id)->unique()->count() }}</p>
                 </div>
                 <div class="rounded-xl bg-blue-50 p-3 text-blue-600">
                     <x-icon name="menu_book" class="h-6 w-6" />
@@ -38,14 +38,14 @@
     </div>
 
     @php
-        $weightSummaries = $komponenList->groupBy(fn($k) => $k->mata_pelajaran_id . '-' . $k->semester_id);
+        $weightSummaries = $komponenList->groupBy(fn($k) => $k->subjek_type . '-' . $k->subjek_id . '-' . $k->semester_id);
     @endphp
 
     @if($weightSummaries->count() > 0)
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-3">
             <h3 class="font-display text-xs font-bold uppercase tracking-wider text-gray-600 flex items-center gap-2">
                 <x-icon name="analytics" class="h-4 w-4 text-brand-600" />
-                Live Calculator Bobot Penilaian per Mapel &amp; Semester (Guard 100%)
+                Live Calculator Bobot Penilaian per Subjek &amp; Semester (Guard 100%)
             </h3>
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach($weightSummaries as $group)
@@ -57,7 +57,7 @@
                     <div class="rounded-xl border {{ $isComplete ? 'border-emerald-200 bg-emerald-50/40' : 'border-amber-200 bg-amber-50/40' }} p-3.5 transition">
                         <div class="flex items-center justify-between gap-2 mb-2">
                             <div class="truncate">
-                                <h4 class="font-bold text-gray-900 text-sm truncate">{{ $first->mataPelajaran->nama }}</h4>
+                                <h4 class="font-bold text-gray-900 text-sm truncate">{{ $first->subjek->nama }}</h4>
                                 <p class="text-[11px] text-gray-500">{{ $first->semester->nama }} ({{ $first->semester->tahunAjaran->nama }})</p>
                             </div>
                             <span class="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-black {{ $isComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
@@ -101,7 +101,7 @@
                                     {{ $komponen->kode }}
                                 </span>
                             @endif
-                            <span class="font-bold text-gray-900 text-base">{{ $komponen->mataPelajaran->nama }}</span>
+                            <span class="font-bold text-gray-900 text-base">{{ $komponen->subjek->nama }}</span>
                             <span class="inline-flex items-center rounded-md border border-amber-500/30 bg-amber-50 px-2 py-0.5 text-xs font-extrabold text-amber-800">
                                 Bobot: {{ $komponen->bobot ?? 100 }}%
                             </span>
