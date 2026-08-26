@@ -51,6 +51,19 @@
                     </div>
                 </div>
 
+                <div>
+                    <x-input-label value="Tipe Penilaian *" />
+                    @if ($dipakai)
+                        <input type="hidden" name="assessment_type" value="{{ $komponenPenilaian->assessment_type->value }}">
+                    @endif
+                    <select name="assessment_type" @disabled($dipakai) required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 @if($dipakai) bg-gray-50 @endif">
+                        <option value="numeric" @selected(old('assessment_type', $komponenPenilaian->assessment_type->value) === 'numeric')>Nilai Angka</option>
+                        <option value="narrative" @selected(old('assessment_type', $komponenPenilaian->assessment_type->value) === 'narrative')>Naratif/Deskriptif</option>
+                        <option value="predicate" @selected(old('assessment_type', $komponenPenilaian->assessment_type->value) === 'predicate')>Predikat Capaian (BB/MB/BSH/BSB)</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('assessment_type')" class="mt-1" />
+                </div>
+
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <x-input-label value="Kode Tujuan Pembelajaran (Opsional)" />

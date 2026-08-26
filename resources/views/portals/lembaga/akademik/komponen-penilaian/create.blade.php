@@ -28,22 +28,32 @@
                 <p class="mt-0.5 text-xs text-gray-500">Isi rincian kode, deskripsi TP, dan kriteria ketuntasan.</p>
             </div>
 
-            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="Object.assign(komponenPenilaianCreateForm({ tahunAjaranId: @js($tahunAjaranId), opsiUrl: @js(route('admin.komponen-penilaian.opsi')) }), { subjekType: '{{ old('subjek_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'elemen_cp' : 'mata_pelajaran') }}' })">
+            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="Object.assign(komponenPenilaianCreateForm({ tahunAjaranId: @js($tahunAjaranId), opsiUrl: @js(route('admin.komponen-penilaian.opsi')) }), { subjekType: '{{ old('subjek_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'elemen_cp' : 'mata_pelajaran') }}', assessmentType: '{{ old('assessment_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'narrative' : 'numeric') }}' })">
                 @csrf
 
                 <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
                     <x-input-label value="Jenis Subjek Penilaian *" />
                     <div class="flex items-center gap-6">
                         <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
-                            <input type="radio" name="subjek_type" value="mata_pelajaran" x-model="subjekType" class="text-brand-600 focus:ring-brand-500">
+                            <input type="radio" name="subjek_type" value="mata_pelajaran" x-model="subjekType" @change="assessmentType = 'numeric'" class="text-brand-600 focus:ring-brand-500">
                             Mata Pelajaran
                         </label>
                         <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
-                            <input type="radio" name="subjek_type" value="elemen_cp" x-model="subjekType" class="text-brand-600 focus:ring-brand-500">
+                            <input type="radio" name="subjek_type" value="elemen_cp" x-model="subjekType" @change="assessmentType = 'narrative'" class="text-brand-600 focus:ring-brand-500">
                             Elemen CP (PAUD)
                         </label>
                     </div>
                     <x-input-error :messages="$errors->get('subjek_type')" class="mt-1" />
+                </div>
+
+                <div>
+                    <x-input-label value="Tipe Penilaian *" />
+                    <select name="assessment_type" x-model="assessmentType" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
+                        <option value="numeric">Nilai Angka</option>
+                        <option value="narrative">Naratif/Deskriptif</option>
+                        <option value="predicate">Predikat Capaian (BB/MB/BSH/BSB)</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('assessment_type')" class="mt-1" />
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">

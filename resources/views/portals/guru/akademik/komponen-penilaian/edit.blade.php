@@ -50,6 +50,19 @@
                         <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->semester->nama }} — {{ $komponenPenilaian->semester->tahunAjaran->nama }}</p>
                     </div>
                 </div>
+
+                <div>
+                    <x-input-label value="Tipe Penilaian *" />
+                    @if ($dipakai)
+                        <input type="hidden" name="assessment_type" value="{{ $komponenPenilaian->assessment_type->value }}">
+                    @endif
+                    <select name="assessment_type" @disabled($dipakai) required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 @if($dipakai) bg-gray-50 @endif">
+                        <option value="numeric" @selected(old('assessment_type', $komponenPenilaian->assessment_type->value) === 'numeric')>Nilai Angka</option>
+                        <option value="narrative" @selected(old('assessment_type', $komponenPenilaian->assessment_type->value) === 'narrative')>Naratif/Deskriptif</option>
+                        <option value="predicate" @selected(old('assessment_type', $komponenPenilaian->assessment_type->value) === 'predicate')>Predikat Capaian (BB/MB/BSH/BSB)</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('assessment_type')" class="mt-1" />
+                </div>
                 <p class="text-xs text-gray-400 -mt-3">Subjek Penilaian dan Semester tidak bisa diubah di sini — hapus lalu buat TP baru kalau butuh Subjek/Semester yang berbeda.</p>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
