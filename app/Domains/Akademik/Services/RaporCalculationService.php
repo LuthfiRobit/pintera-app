@@ -6,7 +6,7 @@ namespace App\Domains\Akademik\Services;
 
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\NilaiSiswa;
-use App\Domains\Akademik\Support\SubjekPenilaianKey;
+use App\Domains\Akademik\Services\SubjekPenilaianKey;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\Siswa;

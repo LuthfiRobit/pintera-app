@@ -2,7 +2,7 @@
 
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Support\SubjekPenilaianKey;
+use App\Domains\Akademik\Services\SubjekPenilaianKey;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

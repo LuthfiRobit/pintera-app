@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domains\Akademik\Support;
+namespace App\Domains\Akademik\Services;
 
 use App\Domains\Akademik\Enums\ModePembelajaran;
 use InvalidArgumentException;

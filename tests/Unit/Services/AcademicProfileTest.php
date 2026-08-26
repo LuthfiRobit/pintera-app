@@ -1,7 +1,7 @@
 <?php
 
 use App\Domains\Akademik\Enums\ModePembelajaran;
-use App\Domains\Akademik\Support\AcademicProfile;
+use App\Domains\Akademik\Services\AcademicProfile;
 
 it('derives the correct learningMode and reportTemplate for every known bentuk_pendidikan', function (string $bentukPendidikan, string $expectedMode, string $expectedTemplate) {
     $profile = AcademicProfile::fromBentukPendidikan($bentukPendidikan);
