@@ -72,6 +72,36 @@ Setelah Sprint 4 (Academic Profile Service) selesai, dilakukan audit terhadap se
 
 ---
 
+## 🔵 Roadmap Kurikulum Dinamis — Temuan Audit Menu Akademik (27 Agustus 2026)
+
+Setelah Sprint 1-5 Fondasi Akademik Multi-Jenjang + `TD-AKADEMIK-001`/`002` selesai, dilakukan audit terhadap 17 fitur aktual di menu Ruang Guru/Akademik/Data Induk (dibaca langsung dari kode: controller, route, request, service — bukan dari dokumentasi) untuk menjawab: apakah sistem sudah bisa menghandle berbagai jenis lembaga & kurikulum turunannya secara dinamis?
+
+**Kesimpulan**: BELUM. Fondasi data (subjek polymorphic, `assessment_type`, `Fase`) sudah fleksibel, tapi konsumen di ujung (rekap rapor, label kelulusan, pemilihan kurikulum) belum semuanya ikut fleksibel — sebagian hardcoded per `bentuk_pendidikan`, sebagian (pemilihan kurikulum aktif) belum disentuh sama sekali.
+
+**Fakta bisnis kunci yang mendasari prioritas di bawah** (bukan asumsi — ini SOP resmi rollout kurikulum di Indonesia):
+- Transisi Kurikulum Merdeka nasional (2022-2024) berjalan **bertahap per tingkat, bukan serentak per sekolah** — mis. kelas 1 & 4 duluan pakai Merdeka sementara kelas lain di sekolah yang SAMA masih K13. Artinya "kurikulum aktif" adalah atribut `(lembaga, tahun_ajaran, tingkat)`, bukan atribut per-lembaga polos.
+- K13 (`KI`→`KD` per mapel per semester, 4 domain KI) dan Kurikulum Merdeka (`CP` per Fase →`TP` bebas turunan guru) punya STRUKTUR penilaian berbeda, bukan cuma istilah. `komponen_penilaian` sistem kita sekarang bergaya Merdeka ("TP") — salah sebutan & salah struktur kalau dipakai lembaga K13.
+- KMA 450 (Kemenag/madrasah) adalah LAPISAN TAMBAHAN di atas Merdeka (mapel agama wajib + P5 versi Islami/PPRA), sudah diantisipasi di enum `KelompokMataPelajaran::AgamaKemenag`/`ProjekP5Ppra` tapi belum ada workflow-nya.
+- Data rapor lama harus tetap benar walau kebijakan kurikulum lembaga berubah nanti — sama prinsip `Kelas.fase_id` (snapshot immutable), bukan config yang diam-diam mengubah histori.
+
+### Daftar Prioritas (urutan berdasarkan dependency nyata + dampak operasional, bukan kerapian kode)
+
+| # | Item | Kebutuhan/Alur Bisnis | Flow Penggunaan | Status | Effort |
+|---|---|---|---|---|---|
+| 1 | Entitas `KurikulumFramework` + assignment per `(lembaga, tahun_ajaran, tingkat)`, snapshot immutable ke `Kelas` (sama prinsip `fase_id`) | Fondasi mutlak — tanpa ini sistem tidak pernah tahu satu kelas pakai K13 atau Merdeka, semua keputusan turunan (istilah TP/KD, Fase vs tingkat-linear, template rapor) tidak punya pijakan. Mengakomodasi transisi bertahap per tingkat (fakta SOP nasional di atas). | Awal tahun ajaran, admin yayasan/lembaga tentukan kurikulum berlaku per kombinasi bentuk_pendidikan+tingkat (mirip UI `FaseDefaultMapping` yang sudah ada) → saat `Kelas` dibuat, `kurikulum_id` di-snapshot immutable → seluruh alur berikutnya baca dari snapshot ini. | Belum Ada | Tinggi |
+| 2 | `RaporCalculationService` type-aware (bukan numeric-only) | BLOCKER OPERASIONAL langsung, bukan cuma cacat arsitektur — lembaga PAUD/kelas naratif-predikat melihat Rekap Rapor & Persetujuan Rapor KOSONG TOTAL hari ini. Janji "dibereskan Sprint 5 Report Engine" tidak ditepati krn Sprint 5 berubah scope drastis (jadi cuma konsolidasi `templateUntukJenjang`). | Admin/wali kelas buka Rekap Rapor → sistem deteksi `assessment_type` per komponen → render strategi sesuai (rata-rata utk numeric, distribusi % utk predicate, completion-rate utk narrative) — bukan satu formula rata-rata dipaksa ke semua tipe. | Belum Ada (bug diketahui sejak Sprint 2, sengaja ditunda) | Kecil-Sedang |
+| 3 | Kelulusan/Rapor Akhir untuk PAUD/TK + keputusan sadar soal SLB | "Surat Keterangan Lulus TK" itu dokumen administratif WAJIB (dibutuhkan daftar SD), bukan nice-to-have. `isTingkatAkhir()` sekarang tidak pernah `true` utk KB/TPA/SPS/TK → label "Keterangan Kelulusan" TIDAK PERNAH muncul di rapor PAUD. | Akhir tahun ajaran genap, TK kelompok B (tingkat akhir PAUD) cetak rapor dgn label "Keterangan Kelulusan" — sama alur SD kelas 6/SMP kelas 9/SMA-SMK kelas 12 yg sudah didukung. Soal SLB (tetap pakai template SD, atau bikin sendiri) BUTUH KEPUTUSAN eksplisit user sebelum dikerjakan. | Belum Ada | Kecil (SLB bisa jadi Sedang-Besar tergantung keputusan) |
+| 4 | Struktur ganda KD (K13) vs CP+TP (Merdeka) di form Komponen Penilaian | Begitu #1 ada, sistem tahu kelas mana K13 vs Merdeka — tapi UI/struktur data `komponen_penilaian` sekarang cuma satu bentuk (bergaya Merdeka). Lembaga K13 akan lihat form salah istilah & salah struktur (tidak ada pemisahan domain KI pengetahuan/keterampilan). | Form Komponen Penilaian menyesuaikan label & field berdasar `kurikulum_id` snapshot kelas — "Tambah KD" dgn domain KI utk kelas K13, "Tambah TP" dgn referensi CP-Fase utk kelas Merdeka. | Belum Ada (baru bermakna setelah #1 selesai) | Tinggi |
+| 5 | Workflow Kemenag (KMA 450) — mapel wajib agama + P5/PPRA sbg struktur penilaian terpisah (bukan `subjek_type` baru di `KomponenPenilaian`) | Madrasah butuh mapel wajib tambahan dan proyek P5/PPRA yg dinilai TIM guru lintas mapel kolaboratif per siswa/kelompok — beda total dari asesmen mapel reguler per-subjek. Sudah diputuskan sejak desain awal modul bahwa P5 butuh domain sendiri. | Perlu entitas baru terpisah dari `KomponenPenilaian` (bukan sekadar `subjek_type` ketiga). Relevan HANYA kalau ada pelanggan madrasah/Kemenag nyata. | Belum Ada | Tinggi |
+| 6 | Asesmen Diagnostik & Formatif (bukan cuma 3 varian Sumatif di `JenisAsesmen::v1Didukung()`) | Ironis: Kurikulum Merdeka justru MENEKANKAN asesmen diagnostik (pemetaan kesiapan belajar di awal) dan formatif (selama proses, bukan cuma akhir) — fitur pedagogi inti Merdeka ini belum ada sama sekali di form guru. | Guru buat asesmen diagnostik awal semester (kognitif/non-kognitif) dan formatif di tengah proses belajar (bukan utk nilai rapor, utk penyesuaian metode ajar). | Belum Ada | Sedang |
+| 7 | Kejelasan UI Mata Pelajaran vs `ElemenCp` utk admin PAUD | Sejak `TipeMataPelajaran::AspekPerkembangan` dihapus (`TD-AKADEMIK-001`), admin PAUD yang buka menu "Mata Pelajaran" akan bingung kenapa tidak bisa dipakai utk aspek perkembangan — tidak ada indikasi UI yang menjelaskan. | Tambah petunjuk/catatan di UI: kalau `bentuk_pendidikan` lembaga PAUD, menu Mata Pelajaran arahkan ke "kelola Elemen Capaian lewat Komponen Penilaian". | Belum Ada | Kecil (UX polish) |
+
+**Urutan kerja disarankan**: 1 → 2 → 3 → (4, 5, 6 urutannya tergantung siapa customer nyata — kalau semua Kemendikbud/umum, 6 lebih mendesak drpd 5; kalau ada madrasah, sebaliknya) → 7 kapan saja (tidak mengganggu apa pun).
+
+**Catatan lain dari audit yang sama** (tidak masuk 7 prioritas di atas, cukup diketahui): `Kelas.tingkat` tetap string bebas tanpa validasi enum ketat per `bentuk_pendidikan` — fleksibel tapi tidak ada guard rail data salah input; `mata_pelajaran_id`/`komponen` sudah nullable di Jadwal Pelajaran & RPP sehingga sudah kompatibel kelas tematik tanpa perubahan lebih lanjut.
+
+---
+
 ## 1. Platform / Admin SaaS
 *Dikelola tim penyedia, di atas semua Yayasan. Level paling kosong dari audit — identitas (`platform_super_admin`, `scope_level='platform'`) sudah ada sejak RBAC v2, tapi PRODUKnya (onboarding, feature-gating, billing, dashboard agregat) sebagian besar belum.*
 
