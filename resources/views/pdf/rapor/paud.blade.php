@@ -28,12 +28,16 @@
         ];
         foreach ($mapelList as $mapel) {
             $narasi = $narasiPerMapel[$mapel->id] ?? ['tertinggi' => null, 'terendah' => null];
-            $komponenTerkait = \App\Domains\Akademik\Models\KomponenPenilaian::where('subjek_type', 'mata_pelajaran')
-                ->where('subjek_id', $mapel->id)
-                ->where('semester_id', $semester->id)
-                ->whereNotNull('elemen_cp')
-                ->first();
-            $elemen = $komponenTerkait?->elemen_cp?->value;
+            $elemen = $mapel instanceof \App\Domains\Akademik\Models\ElemenCp ? $mapel->kode : null;
+            if (! $elemen && $mapel instanceof \App\Domains\Akademik\Models\MataPelajaran) {
+                $komponenTerkait = \App\Domains\Akademik\Models\KomponenPenilaian::where('subjek_type', 'elemen_cp')
+                    ->where('semester_id', $semester->id)
+                    ->first();
+                if ($komponenTerkait) {
+                    $elemenModel = \App\Domains\Akademik\Models\ElemenCp::find($komponenTerkait->subjek_id);
+                    $elemen = $elemenModel?->kode;
+                }
+            }
             if ($elemen && isset($keranjangElemenCp[$elemen])) {
                 if ($narasi['tertinggi']) { $keranjangElemenCp[$elemen]['kalimat'][] = $narasi['tertinggi']; }
                 if ($narasi['terendah']) { $keranjangElemenCp[$elemen]['kalimat'][] = $narasi['terendah']; }

@@ -159,10 +159,10 @@ it('shows a siswa their latest recorded grade on their own dashboard', function 
     $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = \App\Models\Semester::factory()->create(['lembaga_id' => $lembaga->id]);
     $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create([
-        'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
     $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create([
-        'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
     \App\Domains\Akademik\Models\NilaiSiswa::create([
         'siswa_id' => $siswa->id, 'asesmen_id' => $asesmen->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 92,
@@ -187,10 +187,10 @@ it('shows an orang tua the latest recorded grade for their linked child', functi
     $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika Dashboard Ortu']);
     $semester = \App\Models\Semester::factory()->create(['lembaga_id' => $lembaga->id]);
     $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create([
-        'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
     $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create([
-        'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
     \App\Domains\Akademik\Models\NilaiSiswa::create([
         'siswa_id' => $siswa->id, 'asesmen_id' => $asesmen->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 85,
