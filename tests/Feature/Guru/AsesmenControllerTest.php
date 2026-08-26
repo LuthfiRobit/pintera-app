@@ -17,7 +17,10 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
+
+uses(RefreshDatabase::class);
 
 function actingAsGuruAsesmen(Guru $guru): User
 {

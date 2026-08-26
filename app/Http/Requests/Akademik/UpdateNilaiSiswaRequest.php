@@ -32,6 +32,13 @@ final class UpdateNilaiSiswaRequest extends FormRequest
                 $tipe = $tipePerKomponen->get((int) $komponenId)?->value;
                 $prefix = "nilai.{$siswaId}.{$komponenId}";
 
+                if ($tipe === null) {
+                    $rules["{$prefix}.nilai_angka"] = ['nullable', 'integer', 'min:0', 'max:100'];
+                    $rules["{$prefix}.predikat"] = ['nullable', Rule::in(array_column(PredikatPaud::cases(), 'value'))];
+                    $rules["{$prefix}.catatan"] = ['nullable', 'string'];
+                    continue;
+                }
+
                 $rules["{$prefix}.nilai_angka"] = $tipe === 'numeric'
                     ? ['nullable', 'integer', 'min:0', 'max:100']
                     : ['prohibited'];
