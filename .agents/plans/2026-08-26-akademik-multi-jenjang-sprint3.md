@@ -35,7 +35,7 @@
 **Interfaces:**
 - Produces: `Fase` model (`id`, `kode`, `nama`, `urutan`), tabel `fase` — dipakai Task 2 (FK dari `fase_default_mapping`) dan Task 3 (FK dari `kelas`).
 
-- [ ] **Step 1: Migration tabel `fase`**
+- [x] **Step 1: Migration tabel `fase`**
 
 ```php
 <?php
@@ -65,7 +65,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 2: Model `Fase`**
+- [x] **Step 2: Model `Fase`**
 
 ```php
 <?php
@@ -83,7 +83,7 @@ class Fase extends Model
 }
 ```
 
-- [ ] **Step 3: Test model dasar (RED dulu, lalu jalankan migration)**
+- [x] **Step 3: Test model dasar (RED dulu, lalu jalankan migration)**
 
 ```php
 <?php
@@ -113,7 +113,7 @@ it('enforces unique kode', function () {
 Run: `php artisan test --filter=FaseTest`
 Expected: PASS (2/2) setelah migration jalan.
 
-- [ ] **Step 4: Seeder `FaseSeeder`**
+- [x] **Step 4: Seeder `FaseSeeder`**
 
 ```php
 <?php
@@ -145,7 +145,7 @@ class FaseSeeder extends Seeder
 }
 ```
 
-- [ ] **Step 5: Test seeder idempotent**
+- [x] **Step 5: Test seeder idempotent**
 
 ```php
 <?php
@@ -172,7 +172,7 @@ it('seeds exactly 7 fase rows and stays idempotent on re-run', function () {
 Run: `php artisan test --filter=FaseSeederTest`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add database/migrations/2026_08_27_090000_create_fase_table.php app/Domains/Akademik/Models/Fase.php database/seeders/FaseSeeder.php tests/Unit/Models/FaseTest.php tests/Unit/Seeders/FaseSeederTest.php
@@ -194,7 +194,7 @@ git commit -m "feat(akademik): tambah tabel fase (reference global Kurikulum Mer
 - Consumes: `Fase` (Task 1).
 - Produces: `FaseDefaultMapping` model (`lembaga_id` nullable, `bentuk_pendidikan`, `tingkat` nullable, `fase_id`), unique constraint `fase_default_mapping_scope_unique` — dipakai Task 4 (resolver) dan Task 6 (controller CRUD).
 
-- [ ] **Step 1: Migration tabel `fase_default_mapping` dgn generated column uniqueness**
+- [x] **Step 1: Migration tabel `fase_default_mapping` dgn generated column uniqueness**
 
 ```php
 <?php
@@ -234,7 +234,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 2: Model `FaseDefaultMapping`**
+- [x] **Step 2: Model `FaseDefaultMapping`**
 
 ```php
 <?php
@@ -263,7 +263,7 @@ class FaseDefaultMapping extends Model
 }
 ```
 
-- [ ] **Step 3: Test uniqueness (RED dulu, lalu jalankan migration)**
+- [x] **Step 3: Test uniqueness (RED dulu, lalu jalankan migration)**
 
 ```php
 <?php
@@ -331,7 +331,7 @@ it('allows the same bentuk_pendidikan+tingkat scope for two different lembaga', 
 Run: `php artisan test --filter=FaseDefaultMappingTest`
 Expected: PASS (5/5) setelah migration jalan.
 
-- [ ] **Step 4: Seeder `FaseDefaultMappingSeeder`**
+- [x] **Step 4: Seeder `FaseDefaultMappingSeeder`**
 
 ```php
 <?php
@@ -384,7 +384,7 @@ class FaseDefaultMappingSeeder extends Seeder
 }
 ```
 
-- [ ] **Step 5: Test seeder idempotent + tidak menyentuh assignment Kelas (immutability dasar)**
+- [x] **Step 5: Test seeder idempotent + tidak menyentuh assignment Kelas (immutability dasar)**
 
 ```php
 <?php
@@ -437,7 +437,7 @@ it('re-running the seeder with a changed mapping definition updates only the map
 Run: `php artisan test --filter=FaseDefaultMappingSeederTest`
 Expected: PASS (3/3).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add database/migrations/2026_08_27_090100_create_fase_default_mapping_table.php app/Domains/Akademik/Models/FaseDefaultMapping.php database/seeders/FaseDefaultMappingSeeder.php tests/Unit/Models/FaseDefaultMappingTest.php tests/Unit/Seeders/FaseDefaultMappingSeederTest.php
@@ -457,7 +457,7 @@ git commit -m "feat(akademik): tambah tabel fase_default_mapping dgn generated-c
 - Consumes: `Fase` (Task 1).
 - Produces: `Kelas.fase_id` (nullable FK), `Kelas::fase()` relation — dipakai Task 8 (form Kelas).
 
-- [ ] **Step 1: Migration kolom `fase_id`**
+- [x] **Step 1: Migration kolom `fase_id`**
 
 ```php
 <?php
@@ -485,7 +485,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 2: Modify `Kelas` model**
+- [x] **Step 2: Modify `Kelas` model**
 
 Tambah `'fase_id'` ke `$fillable` dan tambah relasi `fase()`:
 
@@ -504,7 +504,7 @@ public function fase()
 }
 ```
 
-- [ ] **Step 3: Test relasi + immutability dasar (RED dulu, lalu jalankan migration)**
+- [x] **Step 3: Test relasi + immutability dasar (RED dulu, lalu jalankan migration)**
 
 ```php
 <?php
@@ -553,7 +553,7 @@ it('keeps Kelas.fase_id unchanged even after the Fase row it points to is edited
 Run: `php artisan test --filter=KelasFaseTest`
 Expected: PASS (3/3) setelah migration jalan.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add database/migrations/2026_08_27_090200_add_fase_id_to_kelas_table.php app/Models/Kelas.php tests/Unit/Models/KelasFaseTest.php
@@ -572,7 +572,7 @@ git commit -m "feat(akademik): tambah kelas.fase_id sbg snapshot assignment fase
 - Consumes: `FaseDefaultMapping` (Task 2), `Fase` (Task 1).
 - Produces: `FaseDefaultResolver::resolve(string $bentukPendidikan, ?string $tingkat, ?int $lembagaId): ?Fase` — dipakai Task 7 (endpoint suggestion).
 
-- [ ] **Step 1: Test precedence (RED dulu — resolver belum ada)**
+- [x] **Step 1: Test precedence (RED dulu — resolver belum ada)**
 
 ```php
 <?php
@@ -663,7 +663,7 @@ it('does not leak another lembaga override into this lembaga resolution', functi
 Run: `php artisan test --filter=FaseDefaultResolverTest`
 Expected: FAIL — `Class "App\Domains\Akademik\Services\FaseDefaultResolver" not found`.
 
-- [ ] **Step 2: Implementasi `FaseDefaultResolver`**
+- [x] **Step 2: Implementasi `FaseDefaultResolver`**
 
 ```php
 <?php
@@ -700,12 +700,12 @@ class FaseDefaultResolver
 }
 ```
 
-- [ ] **Step 3: Jalankan test lagi**
+- [x] **Step 3: Jalankan test lagi**
 
 Run: `php artisan test --filter=FaseDefaultResolverTest`
 Expected: PASS (6/6).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/Domains/Akademik/Services/FaseDefaultResolver.php tests/Unit/Services/FaseDefaultResolverTest.php
@@ -729,7 +729,7 @@ Permission ini TIDAK perlu didaftarkan manual di `PermissionSeeder` — project 
 
 **Catatan urutan eksekusi**: task ini secara teknis butuh Task 6 (controller) sudah ada supaya `permissions:sync` menemukan string `fase-mapping.*` — tapi baris `RoleSeeder`/`DatabaseSeeder` ditulis sekarang (Task 5) supaya Task 6 tidak perlu menyentuh file seeder lagi. Test task ini dijalankan SETELAH Task 6 selesai (ditandai eksplisit di Step 3 di bawah) — implementer TIDAK menjalankan test Step 3 sampai Task 6 commit.
 
-- [ ] **Step 1: Tambah permission ke `operator_akademik` di `RoleSeeder`**
+- [x] **Step 1: Tambah permission ke `operator_akademik` di `RoleSeeder`**
 
 Cari blok `if ($name === 'operator_akademik') { $role->givePermissionTo([...]); }` di `database/seeders/RoleSeeder.php` dan tambah baris berikut tepat setelah baris `'kelas.view', 'kelas.create', 'kelas.edit',`:
 
@@ -738,7 +738,7 @@ Cari blok `if ($name === 'operator_akademik') { $role->givePermissionTo([...]); 
                     'fase-mapping.view', 'fase-mapping.create', 'fase-mapping.edit', 'fase-mapping.delete',
 ```
 
-- [ ] **Step 2: Daftarkan `FaseSeeder` dan `FaseDefaultMappingSeeder` di `DatabaseSeeder`**
+- [x] **Step 2: Daftarkan `FaseSeeder` dan `FaseDefaultMappingSeeder` di `DatabaseSeeder`**
 
 Di `database/seeders/DatabaseSeeder.php`, tambah 2 baris tepat setelah `ElemenCpSeeder::class,`:
 
@@ -748,7 +748,7 @@ Di `database/seeders/DatabaseSeeder.php`, tambah 2 baris tepat setelah `ElemenCp
             FaseDefaultMappingSeeder::class,
 ```
 
-- [ ] **Step 3 (jalankan HANYA setelah Task 6 selesai): Test permission ter-assign & ter-sync**
+- [x] **Step 3 (jalankan HANYA setelah Task 6 selesai): Test permission ter-assign & ter-sync**
 
 ```php
 <?php
@@ -791,7 +791,7 @@ it('grants all fase-mapping permissions to yayasan_super_admin via blanket Permi
 Run: `php artisan test --filter=FaseMappingPermissionSeederTest`
 Expected: PASS (2/2) — HANYA setelah Task 6 (controller dgn `$this->authorize('fase-mapping.*')`) sudah commit, karena `permissions:sync` butuh string itu benar-benar dipanggil di kode utk auto-create baris `Permission`.
 
-- [ ] **Step 4: Commit (setelah Step 3 PASS)**
+- [x] **Step 4: Commit (setelah Step 3 PASS)**
 
 ```bash
 git add database/seeders/RoleSeeder.php database/seeders/DatabaseSeeder.php tests/Feature/Akademik/FaseMappingPermissionSeederTest.php
@@ -815,7 +815,7 @@ git commit -m "feat(akademik): daftarkan permission fase-mapping utk operator_ak
 - Consumes: `FaseDefaultMapping`, `Fase` (Task 1, 2), `User::widestScopeLevel()` (existing).
 - Produces: rute `admin.fase-mapping.{index,create,store,edit,update,destroy}` — dipakai manual oleh admin, TIDAK dikonsumsi task lain secara langsung (Task 7/8 hanya konsumsi `FaseDefaultResolver`, bukan controller ini).
 
-- [ ] **Step 1: Test feature CRUD + authorization/tenant-isolation (RED dulu)**
+- [x] **Step 1: Test feature CRUD + authorization/tenant-isolation (RED dulu)**
 
 ```php
 <?php
@@ -976,7 +976,7 @@ it('lets a yayasan-scope user delete any lembaga\'s mapping', function () {
 Run: `php artisan test --filter=FaseDefaultMappingControllerTest`
 Expected: FAIL — route `admin.fase-mapping.*` belum terdaftar.
 
-- [ ] **Step 2: Tambah rute di `routes/admin/akademik-master.php`**
+- [x] **Step 2: Tambah rute di `routes/admin/akademik-master.php`**
 
 Tambah blok berikut (di mana pun dalam file, konsisten dgn gaya rute `pola-jam` yang sudah ada — pakai `use` baru di atas file):
 
@@ -993,7 +993,7 @@ Route::put('fase-mapping/{faseMapping}', [FaseDefaultMappingController::class, '
 Route::delete('fase-mapping/{faseMapping}', [FaseDefaultMappingController::class, 'destroy'])->name('fase-mapping.destroy');
 ```
 
-- [ ] **Step 3: Implementasi `Admin\FaseDefaultMappingController`**
+- [x] **Step 3: Implementasi `Admin\FaseDefaultMappingController`**
 
 ```php
 <?php
@@ -1147,7 +1147,7 @@ class FaseDefaultMappingController extends BaseController
 }
 ```
 
-- [ ] **Step 4: Views**
+- [x] **Step 4: Views**
 
 ```blade
 {{-- resources/views/admin/fase-mapping/_form.blade.php --}}
@@ -1302,17 +1302,17 @@ class FaseDefaultMappingController extends BaseController
 </x-app-layout>
 ```
 
-- [ ] **Step 5: Jalankan test lagi**
+- [x] **Step 5: Jalankan test lagi**
 
 Run: `php artisan test --filter=FaseDefaultMappingControllerTest`
 Expected: PASS (9/9).
 
-- [ ] **Step 6: Jalankan test Task 5 Step 3 (permission sync, sekarang string `fase-mapping.*` sudah ada di kode)**
+- [x] **Step 6: Jalankan test Task 5 Step 3 (permission sync, sekarang string `fase-mapping.*` sudah ada di kode)**
 
 Run: `php artisan test --filter=FaseMappingPermissionSeederTest`
 Expected: PASS (2/2).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/FaseDefaultMappingController.php resources/views/admin/fase-mapping routes/admin/akademik-master.php tests/Feature/Akademik/FaseDefaultMappingControllerTest.php
@@ -1332,7 +1332,7 @@ git commit -m "feat(akademik): CRUD Admin\FaseDefaultMappingController dgn autho
 - Consumes: `FaseDefaultResolver` (Task 4).
 - Produces: `GET admin/kelas/fase-suggestion?tingkat=...` → `{"suggestion": {"id":..,"kode":..,"nama":..}}` atau `{"suggestion": null}` — dikonsumsi Task 8 (Alpine di form Kelas).
 
-- [ ] **Step 1: Test endpoint (RED dulu)**
+- [x] **Step 1: Test endpoint (RED dulu)**
 
 ```php
 <?php
@@ -1399,7 +1399,7 @@ it('never uses bentuk_pendidikan or lembaga from the request, only from the logg
 Run: `php artisan test --filter=KelasFaseSuggestionTest`
 Expected: FAIL — route belum terdaftar.
 
-- [ ] **Step 2: Tambah rute (SEBELUM `Route::resource('kelas', ...)` supaya tidak tertutup `{kelas}`)**
+- [x] **Step 2: Tambah rute (SEBELUM `Route::resource('kelas', ...)` supaya tidak tertutup `{kelas}`)**
 
 Di `routes/admin/akademik-master.php`, ubah:
 ```php
@@ -1411,7 +1411,7 @@ Route::get('kelas/fase-suggestion', [KelasController::class, 'faseSuggestion'])-
 Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
 ```
 
-- [ ] **Step 3: Tambah method `faseSuggestion` di `Admin\KelasController`**
+- [x] **Step 3: Tambah method `faseSuggestion` di `Admin\KelasController`**
 
 Tambah `use` di atas file:
 ```php
@@ -1435,12 +1435,12 @@ public function faseSuggestion(Request $request, FaseDefaultResolver $resolver):
 }
 ```
 
-- [ ] **Step 4: Jalankan test lagi**
+- [x] **Step 4: Jalankan test lagi**
 
 Run: `php artisan test --filter=KelasFaseSuggestionTest`
 Expected: PASS (3/3).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KelasController.php routes/admin/akademik-master.php tests/Feature/Akademik/KelasFaseSuggestionTest.php
@@ -1460,7 +1460,7 @@ git commit -m "feat(akademik): endpoint suggestion fase read-only utk pre-fill f
 - Consumes: `Fase` (Task 1), endpoint suggestion (Task 7).
 - Produces: `Kelas.fase_id` bisa diisi lewat form create/edit — akhir rantai Sprint 3.
 
-- [ ] **Step 1: Test create/update dgn `fase_id` + immutability end-to-end (RED dulu)**
+- [x] **Step 1: Test create/update dgn `fase_id` + immutability end-to-end (RED dulu)**
 
 ```php
 <?php
@@ -1594,7 +1594,7 @@ it('does not retroactively change an existing Kelas.fase_id when the default map
 Run: `php artisan test --filter=KelasFaseAssignmentTest`
 Expected: FAIL — `store()`/`update()` belum menerima `fase_id`.
 
-- [ ] **Step 2: Modify `KelasController::store()`/`update()` menerima `fase_id`**
+- [x] **Step 2: Modify `KelasController::store()`/`update()` menerima `fase_id`**
 
 Di `app/Http/Controllers/Admin/KelasController.php`, tambah `'fase_id' => ['nullable', 'integer', 'exists:fase,id'],` ke array validasi di KEDUA method `store()` dan `update()` (tepat setelah baris `'tingkat' => ['nullable', 'string', 'max:20'],`):
 
@@ -1605,12 +1605,12 @@ Di `app/Http/Controllers/Admin/KelasController.php`, tambah `'fase_id' => ['null
 
 Tidak ada logika tambahan lain — `fase_id` masuk `$data` apa adanya dan tersimpan lewat `Kelas::create($data)`/`$kelas->update($data)` yang sudah ada, persis seperti field lain (`tingkat`, `nama`).
 
-- [ ] **Step 3: Jalankan test lagi**
+- [x] **Step 3: Jalankan test lagi**
 
 Run: `php artisan test --filter=KelasFaseAssignmentTest`
 Expected: PASS (5/5).
 
-- [ ] **Step 4: Integrasi UI — tambah dropdown Fase + Alpine suggestion fetch di `_form.blade.php`**
+- [x] **Step 4: Integrasi UI — tambah dropdown Fase + Alpine suggestion fetch di `_form.blade.php`**
 
 Di `resources/views/admin/kelas/_form.blade.php`, bungkus grid dgn `x-data` dan tambah field Fase tepat setelah field "Tingkat (opsional)":
 
@@ -1661,7 +1661,7 @@ Ubah input `tingkat` existing supaya memicu `fetchSuggestion()` dan sinkron dgn 
 
 Controller `create()`/`edit()` (`Admin\KelasController`) perlu mengirim `$faseList` ke view — tambah `'faseList' => \App\Domains\Akademik\Models\Fase::orderBy('urutan')->get(),` ke array data yang dikirim `view('admin.kelas.create', [...])` dan `view('admin.kelas.edit', [...])`, lalu tambah `'faseList' => $faseList` di kedua pemanggilan `@include('admin.kelas._form', [...])` pada `create.blade.php`/`edit.blade.php`.
 
-- [ ] **Step 5: Verifikasi manual di browser (WAJIB, bukan opsional — UI/UX & Alpine tidak tercakup test Pest)**
+- [x] **Step 5: Verifikasi manual di browser (WAJIB, bukan opsional — UI/UX & Alpine tidak tercakup test Pest)**
 
 1. Jalankan `php artisan serve` (atau pastikan Laragon jalan) dan `npm run dev` kalau build asset diperlukan.
 2. Login sbg user `operator_akademik`, buka `admin/kelas/create`.
@@ -1670,7 +1670,7 @@ Controller `create()`/`edit()` (`Admin\KelasController`) perlu mengirim `$faseLi
 5. Submit form → assert Kelas tersimpan dgn `fase_id` sesuai pilihan terakhir di dropdown.
 6. Screenshot atau catat hasil di commit message / laporan kalau ada penyimpangan dari yang diharapkan.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kelas/_form.blade.php resources/views/admin/kelas/create.blade.php resources/views/admin/kelas/edit.blade.php app/Http/Controllers/Admin/KelasController.php tests/Feature/Akademik/KelasFaseAssignmentTest.php
@@ -1684,16 +1684,16 @@ git commit -m "feat(akademik): integrasi fase_id di form Kelas dgn suggestion Al
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses `php artisan test`/`migrate` lain berjalan bersamaan**
+- [x] **Step 1: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses `php artisan test`/`migrate` lain berjalan bersamaan**
 
 Run: `php artisan test`
 Expected: 0 failed. Catat jumlah pass persis (bukan "tampak hijau") sebelum lanjut.
 
-- [ ] **Step 2: Kalau ada failure, klasifikasi dulu sebelum memperbaiki apa pun**
+- [x] **Step 2: Kalau ada failure, klasifikasi dulu sebelum memperbaiki apa pun**
 
 Bedakan: (a) regresi nyata dari Sprint 3 → perbaiki di task terkait, jangan tambal di Task 9; (b) flaky pre-existing (mis. `TahunAjaranFactory` collision — pola sudah dikenal, lihat memori project) → re-run sekali lagi utk konfirmasi, JANGAN diabaikan tanpa re-run pembuktian.
 
-- [ ] **Step 3: Migrasi database dev nyata (Laragon/MySQL, bukan cuma test DB)**
+- [x] **Step 3: Migrasi database dev nyata (Laragon/MySQL, bukan cuma test DB)**
 
 ```bash
 php artisan migrate
@@ -1703,7 +1703,7 @@ php artisan permissions:sync
 ```
 (Bukan `migrate:fresh` — dev database sudah berisi data nyata, migration baru bersifat aditif/nullable, aman dijalankan tanpa fresh.)
 
-- [ ] **Step 4: Laporkan hasil final ke user**
+- [x] **Step 4: Laporkan hasil final ke user**
 
 Ringkasan: jumlah test pass/fail, commit terakhir, konfirmasi dev database sudah dimigrasi+diseed, dan link ke plan/spec ini utk referensi.
 
