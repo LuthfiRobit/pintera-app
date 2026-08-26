@@ -20,7 +20,7 @@
         </div>
 
         {{-- KPI Compact Horizontal Statistic Cards (Samakan dengan Jabatan Tambahan) --}}
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
                 <div class="flex items-center gap-3">
                     <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
@@ -45,19 +45,6 @@
                     </div>
                 </div>
                 <span class="text-[11px] font-medium text-gray-400">SD - SMK</span>
-            </div>
-
-            <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
-                <div class="flex items-center gap-3">
-                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                        <x-icon name="extension" class="h-5 w-5" />
-                    </span>
-                    <div>
-                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Aspek Perkembangan</p>
-                        <p class="font-display text-lg font-bold text-gray-900 leading-tight">{{ $countAspek ?? 0 }}</p>
-                    </div>
-                </div>
-                <span class="text-[11px] font-medium text-gray-400">PAUD / TK</span>
             </div>
         </div>
 

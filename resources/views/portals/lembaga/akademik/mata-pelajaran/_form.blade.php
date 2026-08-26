@@ -40,7 +40,6 @@
                 <x-input-label value="Tipe Kurikulum *" />
                 <select name="tipe" required x-ref="tipeInput" x-init="initSelect($refs.tipeInput)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
                     <option value="mapel" @selected($val('tipe', 'mapel') === 'mapel')>Mata Pelajaran (SD - SMK)</option>
-                    <option value="aspek_perkembangan" @selected($val('tipe') === 'aspek_perkembangan')>Aspek Perkembangan (PAUD / TK)</option>
                 </select>
                 <x-input-error :messages="$errors->get('tipe')" class="mt-1.5" />
             </div>

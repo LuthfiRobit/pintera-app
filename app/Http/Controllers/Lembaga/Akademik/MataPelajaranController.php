@@ -64,7 +64,6 @@ class MataPelajaranController extends BaseController
             'perPage'           => $perPage,
             'totalMapel'        => MataPelajaran::count(),
             'countKurikulum'    => MataPelajaran::where('tipe', TipeMataPelajaran::Mapel->value)->count(),
-            'countAspek'        => MataPelajaran::where('tipe', TipeMataPelajaran::AspekPerkembangan->value)->count(),
         ]);
     }
 
@@ -95,7 +94,7 @@ class MataPelajaranController extends BaseController
             ],
             'nama' => ['required', 'string', 'max:255'],
             'no_urut' => ['required', 'integer', 'min:1', 'max:9999'],
-            'tipe' => ['required', 'in:mapel,aspek_perkembangan'],
+            'tipe' => ['required', 'in:mapel'],
             'kelompok' => ['nullable', 'string', Rule::enum(KelompokMataPelajaran::class)],
             'status' => ['required', 'string', Rule::enum(StatusMataPelajaran::class)],
         ]);
@@ -130,7 +129,7 @@ class MataPelajaranController extends BaseController
             ],
             'nama' => ['required', 'string', 'max:255'],
             'no_urut' => ['required', 'integer', 'min:1', 'max:9999'],
-            'tipe' => ['required', 'in:mapel,aspek_perkembangan'],
+            'tipe' => ['required', 'in:mapel'],
             'kelompok' => ['nullable', 'string', Rule::enum(KelompokMataPelajaran::class)],
             'status' => ['required', 'string', Rule::enum(StatusMataPelajaran::class)],
         ]);

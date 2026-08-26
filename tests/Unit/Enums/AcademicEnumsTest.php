@@ -16,5 +16,5 @@ it('defines the expected StatusSiswa cases', function () {
 
 it('defines the expected TipeMataPelajaran cases', function () {
     expect(array_column(TipeMataPelajaran::cases(), 'value'))
-        ->toBe(['mapel', 'aspek_perkembangan']);
+        ->toBe(['mapel']);
 });

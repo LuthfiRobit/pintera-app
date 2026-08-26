@@ -33,16 +33,16 @@ it('casts tipe, kelompok, and status to their respective enums', function () {
     expect($fresh->no_urut)->toBe(1);
 });
 
-it('allows nullable kelompok for aspek perkembangan paud', function () {
+it('allows nullable kelompok for a mata pelajaran without a formal kelompok', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $mapel = MataPelajaran::create([
         'lembaga_id' => $lembaga->id,
-        'kode' => 'PAUD-01',
-        'nama' => 'Nilai Agama dan Moral',
+        'kode' => 'MULOK-01',
+        'nama' => 'Muatan Lokal',
         'no_urut' => 1,
-        'tipe' => TipeMataPelajaran::AspekPerkembangan->value,
+        'tipe' => TipeMataPelajaran::Mapel->value,
         'kelompok' => null,
         'status' => StatusMataPelajaran::Aktif->value,
     ]);

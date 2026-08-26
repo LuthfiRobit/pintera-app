@@ -125,21 +125,10 @@ it('calculates executive KPI statistics accurately in index view', function () {
         'kelompok' => KelompokMataPelajaran::Umum->value,
         'status' => StatusMataPelajaran::Aktif->value,
     ]);
-    MataPelajaran::create([
-        'lembaga_id' => $lembaga->id,
-        'kode' => 'PAUD-01',
-        'nama' => 'Motorik Halus',
-        'no_urut' => 2,
-        'tipe' => TipeMataPelajaran::AspekPerkembangan->value,
-        'kelompok' => null,
-        'status' => StatusMataPelajaran::Aktif->value,
-    ]);
-
     $response = $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'));
     $response->assertOk();
-    $response->assertViewHas('totalMapel', 2);
+    $response->assertViewHas('totalMapel', 1);
     $response->assertViewHas('countKurikulum', 1);
-    $response->assertViewHas('countAspek', 1);
 });
 
 it('returns only table partial view when requested via AJAX XMLHttpRequest', function () {
