@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Actions\Kelas\CreateKelasAction;
+use App\Domains\Akademik\Actions\Kelas\UpdateKelasAction;
+use App\Domains\Akademik\DataTransferObjects\KelasData;
 use App\Domains\Akademik\Models\Fase;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Akademik\Services\FaseDefaultResolver;
+use App\Http\Requests\Akademik\StoreKelasRequest;
+use App\Http\Requests\Akademik\UpdateKelasRequest;
 use App\Models\Guru;
 use App\Models\Kelas;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -84,46 +89,22 @@ class KelasController extends BaseController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreKelasRequest $request, CreateKelasAction $action): RedirectResponse
     {
         $this->authorize('kelas.create');
 
-        $data = $request->validate([
-            'tahun_ajaran_id' => ['required', 'integer'],
-            'nama' => ['required', 'string', 'max:255'],
-            'tingkat' => ['nullable', 'string', 'max:20'],
-            'fase_id' => ['nullable', 'integer', 'exists:fase,id'],
-            'wali_kelas_guru_id' => ['nullable', 'integer'],
-            'pola_jam_id' => ['nullable', 'integer'],
-        ]);
+        $data = KelasData::fromValidated($request->validated());
 
-        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
-        abort_if($tahunAjaran === null, 404);
-        $data['tahun_ajaran_id'] = $tahunAjaran->id;
-
-        if (! empty($data['wali_kelas_guru_id'])) {
-            $guru = Guru::find($data['wali_kelas_guru_id']);
-            abort_if($guru === null || $guru->lembaga_id !== $tahunAjaran->lembaga_id, 404);
-            $data['wali_kelas_guru_id'] = $guru->id;
-        }
-
-        if (! empty($data['pola_jam_id'])) {
-            $polaJam = PolaJam::find($data['pola_jam_id']);
-            abort_if($polaJam === null || $polaJam->lembaga_id !== $tahunAjaran->lembaga_id, 404);
-            $data['pola_jam_id'] = $polaJam->id;
-        }
-
+        $lembagaIdOverride = null;
         if ($request->user()->widestScopeLevel() === 'yayasan') {
-            $lembagaId = session('active_lembaga_id');
+            $lembagaIdOverride = session('active_lembaga_id');
 
-            if ($lembagaId === null) {
+            if ($lembagaIdOverride === null) {
                 return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat kelas.'])->withInput();
             }
-
-            $data['lembaga_id'] = $lembagaId;
         }
 
-        Kelas::create($data);
+        $action->execute($data, $lembagaIdOverride);
 
         return redirect()->route('admin.kelas.index')->with('status', 'Kelas berhasil disimpan.');
     }
@@ -141,36 +122,13 @@ class KelasController extends BaseController
         ]);
     }
 
-    public function update(Request $request, Kelas $kelas): RedirectResponse
+    public function update(UpdateKelasRequest $request, Kelas $kelas, UpdateKelasAction $action): RedirectResponse
     {
         $this->authorize('kelas.edit');
 
-        $data = $request->validate([
-            'tahun_ajaran_id' => ['required', 'integer'],
-            'nama' => ['required', 'string', 'max:255'],
-            'tingkat' => ['nullable', 'string', 'max:20'],
-            'fase_id' => ['nullable', 'integer', 'exists:fase,id'],
-            'wali_kelas_guru_id' => ['nullable', 'integer'],
-            'pola_jam_id' => ['nullable', 'integer'],
-        ]);
+        $data = KelasData::fromValidated($request->validated());
 
-        $tahunAjaran = TahunAjaran::find($data['tahun_ajaran_id']);
-        abort_if($tahunAjaran === null || $tahunAjaran->lembaga_id !== $kelas->lembaga_id, 404);
-        $data['tahun_ajaran_id'] = $tahunAjaran->id;
-
-        if (! empty($data['wali_kelas_guru_id'])) {
-            $guru = Guru::find($data['wali_kelas_guru_id']);
-            abort_if($guru === null || $guru->lembaga_id !== $kelas->lembaga_id, 404);
-            $data['wali_kelas_guru_id'] = $guru->id;
-        }
-
-        if (! empty($data['pola_jam_id'])) {
-            $polaJam = PolaJam::find($data['pola_jam_id']);
-            abort_if($polaJam === null || $polaJam->lembaga_id !== $kelas->lembaga_id, 404);
-            $data['pola_jam_id'] = $polaJam->id;
-        }
-
-        $kelas->update($data);
+        $action->execute($kelas, $data);
 
         return redirect()->route('admin.kelas.index')->with('status', 'Kelas berhasil diperbarui.');
     }
