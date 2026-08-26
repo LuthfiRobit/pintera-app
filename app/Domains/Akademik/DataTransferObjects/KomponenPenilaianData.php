@@ -15,6 +15,7 @@ final readonly class KomponenPenilaianData
         public int $bobot,
         public ?string $kktp,
         public ?int $kktpMinimal,
+        public ?string $assessmentType,
     ) {
     }
 
@@ -29,6 +30,9 @@ final readonly class KomponenPenilaianData
             bobot: isset($data['bobot']) ? (int) $data['bobot'] : 10,
             kktp: $data['kktp'] ?? null,
             kktpMinimal: isset($data['kktp_minimal']) ? (int) $data['kktp_minimal'] : null,
+            assessmentType: isset($data['assessment_type']) && $data['assessment_type'] !== ''
+                ? (string) $data['assessment_type']
+                : null,
         );
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Akademik\Actions\Penilaian;
 
 use App\Domains\Akademik\DataTransferObjects\KomponenPenilaianData;
+use App\Domains\Akademik\Enums\AssessmentType;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Models\Semester;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +29,11 @@ final class CreateKomponenPenilaianAction
             ]);
         }
 
+        $assessmentType = $data->assessmentType ?? match ($data->subjekType) {
+            'elemen_cp' => AssessmentType::Narrative->value,
+            'mata_pelajaran' => AssessmentType::Numeric->value,
+        };
+
         return KomponenPenilaian::create([
             'subjek_type' => $data->subjekType,
             'subjek_id' => $data->subjekId,
@@ -41,6 +47,7 @@ final class CreateKomponenPenilaianAction
             'bobot' => $data->bobot,
             'kktp' => $data->kktp,
             'kktp_minimal' => $data->kktpMinimal,
+            'assessment_type' => $assessmentType,
         ]);
     }
 }

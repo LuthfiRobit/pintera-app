@@ -21,6 +21,9 @@ final class UpdateKomponenPenilaianAction
             $komponen->subjek_type = $data->subjekType;
             $komponen->subjek_id = $data->subjekId;
             $komponen->semester_id = $data->semesterId;
+            if ($data->assessmentType !== null) {
+                $komponen->assessment_type = $data->assessmentType;
+            }
         }
 
         $newBobot = $data->bobot ?? $komponen->bobot;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\UpdateKomponenPenilaianData;
+use App\Domains\Akademik\Enums\AssessmentType;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Foundation\Http\FormRequest;
@@ -46,6 +47,7 @@ final class UpdateKomponenPenilaianRequest extends FormRequest
                 }
             }];
             $rules['semester_id'] = ['required', 'integer'];
+            $rules['assessment_type'] = ['nullable', Rule::enum(AssessmentType::class)];
         }
 
         return $rules;

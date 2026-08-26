@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\KomponenPenilaianData;
+use App\Domains\Akademik\Enums\AssessmentType;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Foundation\Http\FormRequest;
@@ -40,6 +41,7 @@ final class StoreKomponenPenilaianSendiriRequest extends FormRequest
             'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
             'kktp' => ['nullable', 'string'],
             'kktp_minimal' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'assessment_type' => ['nullable', Rule::enum(AssessmentType::class)],
         ];
     }
 
