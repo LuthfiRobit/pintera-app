@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Services\FaseDefaultResolver;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Domains\Akademik\Models\PolaJam;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -15,6 +17,27 @@ use Illuminate\View\View;
 class KelasController extends BaseController
 {
     use AuthorizesRequests;
+
+    public function faseSuggestion(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('kelas.view') || $request->user()->can('kelas.create'), 403);
+
+        $lembaga = $request->user()->lembaga;
+        $bentukPendidikan = $lembaga?->bentuk_pendidikan ?? '';
+        $tingkat = $request->query('tingkat') ?: null;
+
+        $fase = app(FaseDefaultResolver::class)->resolve(
+            $bentukPendidikan,
+            $tingkat,
+            $lembaga?->id
+        );
+
+        return response()->json([
+            'fase_id'   => $fase?->id,
+            'fase_kode' => $fase?->kode,
+            'fase_nama' => $fase?->nama,
+        ]);
+    }
 
     public function index(Request $request): View
     {

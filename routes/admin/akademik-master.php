@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\TahunAjaranController;
 use Illuminate\Support\Facades\Route;
 
 Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
+Route::get('kelas/fase-suggestion', [KelasController::class, 'faseSuggestion'])->name('kelas.fase-suggestion');
 Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
 
 Route::get('fase-mapping', [FaseDefaultMappingController::class, 'index'])->name('fase-mapping.index');
