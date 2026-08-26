@@ -3,6 +3,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -39,12 +40,12 @@ class EssentialUserSeeder extends Seeder
         }
 
         $akunLembagaScoped = [
-            'kepsek.sd@demo.test' => ['name' => 'Abdullah, M.Pd.', 'role' => 'kepala_sekolah'],
-            'adm.sd@demo.test' => ['name' => 'Lukman, S.Kom.', 'role' => 'admin_administrasi'],
-            'keuangan.sd@demo.test' => ['name' => 'Hasan, S.E.', 'role' => 'bendahara_lembaga'],
-            'kurikulum.sd@demo.test' => ['name' => 'Kurikulum (Contoh)', 'role' => 'operator_akademik'],
-            'guru.sd1@demo.test' => ['name' => 'Sari Wulandari, S.Pd.', 'role' => 'guru'],
-            'sarpras.sd@demo.test' => ['name' => 'Sarpras (Contoh)', 'role' => 'admin_sarpras'],
+            'kepsek.sd@demo.test' => ['name' => 'Abdullah, M.Pd.', 'role' => 'kepala_sekolah', 'jenis_ptk' => 'kepala_sekolah', 'jenis_kelamin' => 'L', 'nik' => '3273019900010001'],
+            'adm.sd@demo.test' => ['name' => 'Lukman, S.Kom.', 'role' => 'admin_administrasi', 'jenis_ptk' => 'tenaga_administrasi', 'jenis_kelamin' => 'L', 'nik' => '3273019900010002'],
+            'keuangan.sd@demo.test' => ['name' => 'Hasan, S.E.', 'role' => 'bendahara_lembaga', 'jenis_ptk' => 'tenaga_administrasi', 'jenis_kelamin' => 'L', 'nik' => '3273019900010003'],
+            'kurikulum.sd@demo.test' => ['name' => 'Kurikulum (Contoh)', 'role' => 'operator_akademik', 'jenis_ptk' => 'tenaga_administrasi', 'jenis_kelamin' => 'L', 'nik' => '3273019900010004'],
+            'guru.sd1@demo.test' => ['name' => 'Sari Wulandari, S.Pd.', 'role' => 'guru', 'jenis_ptk' => 'guru_kelas', 'jenis_kelamin' => 'P', 'nik' => '3273019900010005'],
+            'sarpras.sd@demo.test' => ['name' => 'Sarpras (Contoh)', 'role' => 'admin_sarpras', 'jenis_ptk' => 'tenaga_administrasi', 'jenis_kelamin' => 'L', 'nik' => '3273019900010006'],
         ];
 
         foreach ($akunLembagaScoped as $email => $data) {
@@ -64,6 +65,25 @@ class EssentialUserSeeder extends Seeder
             // lembaga-affiliated (lembaga_id terisi), jadi pegawai_lembaga, bukan
             // pegawai_yayasan.
             $user->assignRole('pegawai_lembaga');
+
+            // pegawai_lembaga membawa permission self-service SDM (QR kehadiran sendiri,
+            // ajukan izin/cuti) yang butuh baris data kepegawaian (tabel `guru`, dipakai
+            // juga untuk PTK non-guru via jenis_ptk). Tanpa ini, akun demo di atas kena
+            // 404 "Data kepegawaian Anda tidak ditemukan" begitu membuka fitur tsb.
+            Guru::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'lembaga_id' => $lembaga->id,
+                    'nik' => $data['nik'],
+                    'nama' => $data['name'],
+                    'jenis_kelamin' => $data['jenis_kelamin'],
+                    'kewarganegaraan' => 'WNI',
+                    'email' => $email,
+                    'jenis_ptk' => $data['jenis_ptk'],
+                    'status_kepegawaian' => 'PTY',
+                    'status_aktif' => 'aktif',
+                ]
+            );
         }
     }
 }

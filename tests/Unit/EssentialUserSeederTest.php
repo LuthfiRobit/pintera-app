@@ -1,6 +1,7 @@
 <?php
 // tests/Unit/EssentialUserSeederTest.php
 
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -65,4 +66,35 @@ it('is idempotent when run twice', function () {
     (new EssentialUserSeeder())->run();
 
     expect(User::count())->toBe(7);
+    expect(Guru::count())->toBe(6);
+});
+
+it('creates a matching Guru row for every lembaga-scoped account so self-service SDM features do not 404', function () {
+    // Setiap akun di $akunLembagaScoped diberi role 'pegawai_lembaga', yang membawa
+    // permission self-service kehadiran-sdm.lihat-qr-sendiri & izin.*. Fitur itu
+    // (EmployeeQrCodeController, PengajuanIzinCutiController) me-resolve pegawai via
+    // Guru::where('user_id', ...) -- tanpa baris ini, akun kena 404 "Data kepegawaian
+    // Anda tidak ditemukan" begitu membuka menu "QR Kehadiran Saya"/"Izin/Cuti Saya".
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    (new EssentialUserSeeder())->run();
+
+    $expectedJenisPtk = [
+        'kepsek.sd@demo.test' => 'kepala_sekolah',
+        'adm.sd@demo.test' => 'tenaga_administrasi',
+        'keuangan.sd@demo.test' => 'tenaga_administrasi',
+        'kurikulum.sd@demo.test' => 'tenaga_administrasi',
+        'guru.sd1@demo.test' => 'guru_kelas',
+        'sarpras.sd@demo.test' => 'tenaga_administrasi',
+    ];
+
+    foreach ($expectedJenisPtk as $email => $jenisPtk) {
+        $user = User::where('email', $email)->first();
+        $guru = Guru::where('user_id', $user->id)->first();
+
+        expect($guru)->not->toBeNull("Guru row missing for {$email}");
+        expect($guru->lembaga_id)->toBe($lembaga->id);
+        expect($guru->jenis_ptk)->toBe($jenisPtk);
+    }
 });
