@@ -38,7 +38,7 @@
                             :tone="$presensiHariIni?->status?->badgeTone() ?? 'amber'"
                             label="Presensi Hari Ini"
                             :value="is_object($presensiHariIni) ? $presensiHariIni->status?->label() : ($presensiHariIni['status'] ?? 'Belum Absen')"
-                            :hint="$karyawan->jenisKaryawan?->nama"
+                            :hint="$jabatanLabel"
                             icon="badge"
                         />
                         <x-stat-tile
@@ -78,7 +78,7 @@
                                 <h4 class="font-display font-bold text-lg text-ink">{{ $name }}</h4>
                                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                                     <span class="rounded-full bg-cyan-50 px-3 py-1 font-semibold text-cyan-700">
-                                        {{ $karyawan->jenisKaryawan?->nama ?? 'Staf Karyawan' }}
+                                        {{ $jabatanLabel ?? 'Staf Karyawan' }}
                                     </span>
                                     @if($karyawan->nip)
                                         <span class="rounded-full bg-paper border border-ink/10 px-3 py-1 font-medium text-slate">

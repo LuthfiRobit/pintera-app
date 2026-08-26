@@ -13,6 +13,7 @@ use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Enums\Hari;
 use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;
@@ -246,8 +247,20 @@ class DashboardController extends BaseController
         }
 
         if ($user->hasRole('pegawai_yayasan') || $user->hasRole('pegawai_lembaga')) {
-            $karyawan = $user->karyawan()->withoutGlobalScope(TenantScope::class)->with('jenisKaryawan')->first();
+            // Resolusi pegawai mendukung KEDUA tabel profil kepegawaian: Guru
+            // (PTK -- guru, kepsek, tenaga administrasi, dll, punya jenis_ptk)
+            // dan Karyawan (staf umum non-PTK spt satpam/cleaning service).
+            // Role pegawai_lembaga/pegawai_yayasan sendiri tidak menentukan
+            // tabel mana yang dipakai -- sama seperti pola resolvePegawai() di
+            // EmployeeQrCodeController/PengajuanIzinCutiController.
+            $karyawan = Guru::where('user_id', $user->id)->withoutGlobalScope(TenantScope::class)->first()
+                ?? Karyawan::where('user_id', $user->id)->withoutGlobalScope(TenantScope::class)->with('jenisKaryawan')->first();
             $karyawanId = $karyawan?->id;
+            $jabatanLabel = match (true) {
+                $karyawan instanceof Karyawan => $karyawan->jenisKaryawan?->nama,
+                $karyawan instanceof Guru => $karyawan->jenis_ptk ? str($karyawan->jenis_ptk)->replace('_', ' ')->title()->toString() : null,
+                default => null,
+            };
             $kasusDitangani = $karyawanId === null
                 ? collect()
                 : Kasus::withoutGlobalScope(TenantScope::class)
@@ -265,9 +278,14 @@ class DashboardController extends BaseController
                     ->whereHas('approvalRequest', fn ($q) => $q->where('status', ApprovalStatus::Pending->value))
                     ->count();
 
-            $sisaKuotaCuti = $karyawan ? $this->dashboardStats->statistikSisaKuotaCuti($karyawan) : null;
+            // statistikSisaKuotaCuti() saat ini cuma mendukung lookup KuotaCutiConfig
+            // via jenis_karyawan_id (jalur Karyawan) -- skema-nya sudah siapkan kolom
+            // jenis_ptk untuk jalur Guru juga, tapi belum diimplementasikan di service
+            // ini. Untuk Guru, kuota cuti tampil "Belum dikonfigurasi" sampai jalur itu
+            // dibangun (bukan bug baru, cuma belum menjangkau kasus Guru-sbg-staf).
+            $sisaKuotaCuti = $karyawan instanceof Karyawan ? $this->dashboardStats->statistikSisaKuotaCuti($karyawan) : null;
             $jadwalShiftHariIni = $karyawan ? \App\Domains\Sdm\Models\PenugasanShift::withoutGlobalScope(TenantScope::class)
-                ->where('pegawai_type', Karyawan::class)
+                ->where('pegawai_type', $karyawan::class)
                 ->where('pegawai_id', $karyawan->id)
                 ->whereDate('tanggal_mulai', '<=', now()->toDateString())
                 ->whereDate('tanggal_selesai', '>=', now()->toDateString())
@@ -294,6 +312,7 @@ class DashboardController extends BaseController
 
             return view('admin.dashboard.karyawan', [
                 'karyawan' => $karyawan,
+                'jabatanLabel' => $jabatanLabel,
                 'presensiHariIni' => $presensiHariIni,
                 'sisaKuotaCuti' => $sisaKuotaCuti,
                 'jadwalShiftHariIni' => $jadwalShiftHariIni,
