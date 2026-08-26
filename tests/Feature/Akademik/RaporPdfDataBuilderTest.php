@@ -2,19 +2,29 @@
 
 use App\Domains\Akademik\Services\RaporPdfDataBuilder;
 
-it('maps bentuk_pendidikan to the correct template, defaulting unknown values to sd', function () {
+it('maps every known bentuk_pendidikan to its correct report template', function (string $bentukPendidikan, string $expectedTemplate) {
     $builder = app(RaporPdfDataBuilder::class);
 
-    expect($builder->templateUntukJenjang('KB'))->toBe('pdf.rapor.paud');
-    expect($builder->templateUntukJenjang('TPA'))->toBe('pdf.rapor.paud');
-    expect($builder->templateUntukJenjang('SPS'))->toBe('pdf.rapor.paud');
-    expect($builder->templateUntukJenjang('TK'))->toBe('pdf.rapor.paud');
-    expect($builder->templateUntukJenjang('SMK'))->toBe('pdf.rapor.smk');
-    expect($builder->templateUntukJenjang('SMP'))->toBe('pdf.rapor.smp-sma');
-    expect($builder->templateUntukJenjang('SMA'))->toBe('pdf.rapor.smp-sma');
-    expect($builder->templateUntukJenjang('SD'))->toBe('pdf.rapor.sd');
-    expect($builder->templateUntukJenjang('SLB'))->toBe('pdf.rapor.sd');
-    expect($builder->templateUntukJenjang('NILAI_TAK_DIKENAL'))->toBe('pdf.rapor.sd');
+    expect($builder->templateUntukJenjang($bentukPendidikan))->toBe($expectedTemplate);
+})->with([
+    ['KB', 'pdf.rapor.paud'],
+    ['TPA', 'pdf.rapor.paud'],
+    ['SPS', 'pdf.rapor.paud'],
+    ['TK', 'pdf.rapor.paud'],
+    ['SD', 'pdf.rapor.sd'],
+    ['SMP', 'pdf.rapor.smp-sma'],
+    ['SMA', 'pdf.rapor.smp-sma'],
+    ['SMK', 'pdf.rapor.smk'],
+    // SLB -> sd adalah regression compatibility (hasil lama krn fallback default),
+    // BUKAN keputusan domain baru bahwa SLB "memang seharusnya" sama dgn SD.
+    ['SLB', 'pdf.rapor.sd'],
+]);
+
+it('throws InvalidArgumentException for an unknown bentuk_pendidikan instead of silently falling back to sd', function () {
+    $builder = app(RaporPdfDataBuilder::class);
+
+    expect(fn () => $builder->templateUntukJenjang('NILAI_TAK_DIKENAL'))
+        ->toThrow(InvalidArgumentException::class);
 });
 
 use App\Domains\Akademik\Actions\Rapor\SimpanCatatanWaliKelasAction;

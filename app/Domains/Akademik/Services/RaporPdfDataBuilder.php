@@ -7,11 +7,13 @@ namespace App\Domains\Akademik\Services;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
+use App\Domains\Akademik\Support\AcademicProfile;
 use App\Domains\Akademik\Support\SubjekPenilaianKey;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
+use LogicException;
 
 final class RaporPdfDataBuilder
 {
@@ -149,21 +151,19 @@ final class RaporPdfDataBuilder
         return isset($tingkatAkhirPerJenjang[$bentukPendidikan]) && $tingkatAkhirPerJenjang[$bentukPendidikan] === $tingkat;
     }
 
-    /** Whitelist sama seperti field kondisional 04c — literal duplikasi disengaja (YAGNI). */
     public function templateUntukJenjang(string $bentukPendidikan): string
     {
-        if (in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true)) {
-            return 'pdf.rapor.paud';
-        }
-
-        if ($bentukPendidikan === 'SMK') {
-            return 'pdf.rapor.smk';
-        }
-
-        if (in_array($bentukPendidikan, ['SMP', 'SMA'], true)) {
-            return 'pdf.rapor.smp-sma';
-        }
-
-        return 'pdf.rapor.sd';
+        return match (AcademicProfile::fromBentukPendidikan($bentukPendidikan)->reportTemplate) {
+            'paud' => 'pdf.rapor.paud',
+            'sd' => 'pdf.rapor.sd',
+            'smp-sma' => 'pdf.rapor.smp-sma',
+            'smk' => 'pdf.rapor.smk',
+            // Defense-in-depth: AcademicProfile saat ini hanya mengembalikan 4 key
+            // di atas (dibuktikan test AcademicProfileTest, Sprint 4). Branch ini
+            // TIDAK bisa dites lewat unit test biasa (tidak ada cara alami membuat
+            // reportTemplate mengembalikan key ke-5 tanpa mengubah AcademicProfile
+            // itu sendiri) -- itu SAH, bukan dead code yang harus dihapus.
+            default => throw new LogicException('Unsupported academic report template key.'),
+        };
     }
 }
