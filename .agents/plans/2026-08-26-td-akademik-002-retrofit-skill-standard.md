@@ -37,19 +37,19 @@
 **Interfaces:**
 - Produces: `App\Domains\Akademik\Services\SubjekPenilaianKey`, `App\Domains\Akademik\Services\AcademicProfile` — namespace baru dipakai Task 2 (Action baru akan `use` `SubjekPenilaianKey` kalau perlu — cek per task, tapi tidak wajib).
 
-- [ ] **Step 1: Baca isi 2 file yang akan dipindah (WAJIB — verifikasi baseline sebelum pindah)**
+- [x] **Step 1: Baca isi 2 file yang akan dipindah (WAJIB — verifikasi baseline sebelum pindah)**
 
 Baca `app/Domains/Akademik/Support/SubjekPenilaianKey.php` dan `app/Domains/Akademik/Support/AcademicProfile.php` — catat isi lengkapnya (hanya baris `namespace` yang berubah, isi lain PERSIS sama).
 
-- [ ] **Step 2: Pindahkan `SubjekPenilaianKey.php`**
+- [x] **Step 2: Pindahkan `SubjekPenilaianKey.php`**
 
 Buat `app/Domains/Akademik/Services/SubjekPenilaianKey.php` dgn isi PERSIS file lama, HANYA baris `namespace App\Domains\Akademik\Support;` diganti `namespace App\Domains\Akademik\Services;`. Hapus file lama `app/Domains/Akademik/Support/SubjekPenilaianKey.php`.
 
-- [ ] **Step 3: Pindahkan `AcademicProfile.php`**
+- [x] **Step 3: Pindahkan `AcademicProfile.php`**
 
 Buat `app/Domains/Akademik/Services/AcademicProfile.php` dgn isi PERSIS file lama, HANYA baris `namespace App\Domains\Akademik\Support;` diganti `namespace App\Domains\Akademik\Services;`. Hapus file lama `app/Domains/Akademik/Support/AcademicProfile.php`.
 
-- [ ] **Step 4: Update 2 file consumer**
+- [x] **Step 4: Update 2 file consumer**
 
 `app/Domains/Akademik/Services/RaporPdfDataBuilder.php`: ganti
 ```php
@@ -79,11 +79,11 @@ use App\Domains\Akademik\Services\SubjekPenilaianKey;
 
 **Catatan**: kedua file consumer sudah berada di namespace `App\Domains\Akademik\Services` — secara teknis `use` bisa dihapus total (class di namespace sama tidak perlu `use`), TAPI pertahankan `use` eksplisit apa adanya (cuma ganti path) supaya diff minimal dan mudah direview — jangan sekalian "membersihkan" `use` yang jadi redundan, itu di luar scope task ini.
 
-- [ ] **Step 5: Pindahkan 2 file test**
+- [x] **Step 5: Pindahkan 2 file test**
 
 Sama polanya: copy isi, ganti `namespace`/`use` yang merujuk `Support` jadi `Services`, hapus file lama di `tests/Unit/Support/`.
 
-- [ ] **Step 6: Hapus folder kosong**
+- [x] **Step 6: Hapus folder kosong**
 
 ```bash
 rmdir app/Domains/Akademik/Support 2>/dev/null || true
@@ -91,14 +91,14 @@ rmdir tests/Unit/Support 2>/dev/null || true
 ```
 Verifikasi kedua folder benar-benar kosong sebelum ini (`ls app/Domains/Akademik/Support` harus "No such file or directory" atau kosong) — kalau ternyata masih ada file lain di situ yang tidak disebut plan ini, STOP dan laporkan ke user.
 
-- [ ] **Step 7: Verifikasi tidak ada referensi tersisa**
+- [x] **Step 7: Verifikasi tidak ada referensi tersisa**
 
 ```bash
 grep -rn "Domains\\\\Akademik\\\\Support" app/ tests/
 ```
 Expected: nol hasil.
 
-- [ ] **Step 8: Jalankan test scoped**
+- [x] **Step 8: Jalankan test scoped**
 
 ```bash
 php artisan test --filter=SubjekPenilaianKeyTest
@@ -108,7 +108,7 @@ php artisan test --filter=RaporCalculationServiceTest
 ```
 Expected: semua PASS, jumlah test sama persis dgn sebelum dipindah (murni pindah lokasi, bukan tambah/kurang test).
 
-- [ ] **Step 9: `php -l` dan commit**
+- [x] **Step 9: `php -l` dan commit**
 
 ```bash
 php -l app/Domains/Akademik/Services/SubjekPenilaianKey.php
@@ -137,11 +137,11 @@ git commit -m "refactor(akademik): pindahkan Support/ ke Services/ - Support/ bu
 - Consumes: `App\Domains\Akademik\Models\FaseDefaultMapping` (existing, Sprint 3).
 - Produces: `FaseDefaultMappingData(string $bentukPendidikan, ?string $tingkat, int $faseId, ?int $lembagaId)`, `CreateFaseDefaultMappingAction::execute(FaseDefaultMappingData): FaseDefaultMapping`, `UpdateFaseDefaultMappingAction::execute(FaseDefaultMapping, FaseDefaultMappingData): FaseDefaultMapping` — dipakai controller Step 6.
 
-- [ ] **Step 1: Baca isi controller existing (WAJIB — verifikasi baseline)**
+- [x] **Step 1: Baca isi controller existing (WAJIB — verifikasi baseline)**
 
 Baca `app/Http/Controllers/Admin/FaseDefaultMappingController.php` lengkap. Bandingkan `store()`/`update()` dengan kutipan di spec §Bagian B — kalau berbeda, STOP dan laporkan ke user.
 
-- [ ] **Step 2: Buat DTO `FaseDefaultMappingData`**
+- [x] **Step 2: Buat DTO `FaseDefaultMappingData`**
 
 ```php
 <?php
@@ -161,7 +161,7 @@ final readonly class FaseDefaultMappingData
 }
 ```
 
-- [ ] **Step 3: Test Action (RED dulu)**
+- [x] **Step 3: Test Action (RED dulu)**
 
 ```php
 <?php
@@ -242,7 +242,7 @@ Run: `php artisan test --filter=CreateFaseDefaultMappingActionTest`
 Run: `php artisan test --filter=UpdateFaseDefaultMappingActionTest`
 Expected: FAIL — Action belum ada.
 
-- [ ] **Step 4: Implementasi Action**
+- [x] **Step 4: Implementasi Action**
 
 ```php
 <?php
@@ -295,13 +295,13 @@ final class UpdateFaseDefaultMappingAction
 }
 ```
 
-- [ ] **Step 5: Jalankan test Action lagi**
+- [x] **Step 5: Jalankan test Action lagi**
 
 Run: `php artisan test --filter=CreateFaseDefaultMappingActionTest`
 Run: `php artisan test --filter=UpdateFaseDefaultMappingActionTest`
 Expected: PASS.
 
-- [ ] **Step 6: Buat 2 FormRequest**
+- [x] **Step 6: Buat 2 FormRequest**
 
 ```php
 <?php
@@ -364,7 +364,7 @@ final class UpdateFaseDefaultMappingRequest extends FormRequest
 }
 ```
 
-- [ ] **Step 7: Ubah controller — `store()` dan `update()`**
+- [x] **Step 7: Ubah controller — `store()` dan `update()`**
 
 Baca file `app/Http/Controllers/Admin/FaseDefaultMappingController.php` (sudah dibaca Step 1). Tambah `use` baru:
 ```php
@@ -432,14 +432,14 @@ public function update(UpdateFaseDefaultMappingRequest $request, FaseDefaultMapp
 ```
 Method `index()`, `create()`, `edit()`, `destroy()`, `isPlatformOrYayasan()`, `authorizeMappingScope()`, `private const BENTUK_PENDIDIKAN` (kalau masih dipakai `create()`/`edit()` untuk kirim `$bentukPendidikanList` ke view — TETAP DIPERTAHANKAN di controller, TIDAK dihapus, HANYA `store()`/`update()` yang berubah).
 
-- [ ] **Step 8: Jalankan test existing**
+- [x] **Step 8: Jalankan test existing**
 
 ```bash
 php artisan test --filter=FaseDefaultMappingControllerTest
 ```
 Expected: PASS — SEMUA 9 test dari Sprint 3 harus tetap hijau TANPA perubahan assertion (kalau ada yang gagal, itu berarti behavior berubah — STOP, jangan ubah test untuk "menyesuaikan", cari kenapa Action/FormRequest tidak persis meniru logic lama).
 
-- [ ] **Step 9: `php -l` dan commit**
+- [x] **Step 9: `php -l` dan commit**
 
 ```bash
 php -l app/Domains/Akademik/DataTransferObjects/FaseDefaultMappingData.php
@@ -470,11 +470,11 @@ git commit -m "refactor(akademik): retrofit FaseDefaultMappingController ke Form
 - Consumes: `App\Models\Kelas`, `App\Models\TahunAjaran`, `App\Models\Guru`, `App\Domains\Akademik\Models\PolaJam` (semua existing, tidak diubah).
 - Produces: `KelasData(int $tahunAjaranId, string $nama, ?string $tingkat, ?int $faseId, ?int $waliKelasGuruId, ?int $polaJamId)` dgn static factory `KelasData::fromValidated(array): self`, `CreateKelasAction::execute(KelasData, ?int $lembagaIdOverride = null): Kelas`, `UpdateKelasAction::execute(Kelas, KelasData): Kelas`.
 
-- [ ] **Step 1: Baca isi controller existing (WAJIB — verifikasi baseline)**
+- [x] **Step 1: Baca isi controller existing (WAJIB — verifikasi baseline)**
 
 Baca `app/Http/Controllers/Admin/KelasController.php` lengkap. Bandingkan `store()`/`update()` dengan kutipan di spec §Bagian C — kalau berbeda, STOP dan laporkan ke user.
 
-- [ ] **Step 2: Buat DTO `KelasData`**
+- [x] **Step 2: Buat DTO `KelasData`**
 
 ```php
 <?php
@@ -509,7 +509,7 @@ final readonly class KelasData
 ```
 **Catatan penting**: cek `!== ''` untuk `waliKelasGuruId`/`polaJamId` MENIRU perilaku `empty($data['wali_kelas_guru_id'])` di kode lama (`empty()` menganggap `''`, `null`, `0`, `'0'` semua kosong) — kalau implementer menemukan bahwa `id` `0` sebenarnya valid di suatu skenario (harusnya tidak mungkin krn auto-increment mulai dari 1), pola `empty()` lama sengaja ditiru apa adanya, JANGAN "diperbaiki" jadi `!== null` murni tanpa melaporkan dulu ke user (itu akan mengubah behavior utk kasus edge `'0'` yang mungkin tidak pernah terjadi tapi tetap merupakan perubahan behavior diam-diam).
 
-- [ ] **Step 3: Test Action (RED dulu)**
+- [x] **Step 3: Test Action (RED dulu)**
 
 ```php
 <?php
@@ -640,7 +640,7 @@ Run: `php artisan test --filter=CreateKelasActionTest`
 Run: `php artisan test --filter=UpdateKelasActionTest`
 Expected: FAIL — Action belum ada.
 
-- [ ] **Step 4: Implementasi Action**
+- [x] **Step 4: Implementasi Action**
 
 ```php
 <?php
@@ -739,13 +739,13 @@ final class UpdateKelasAction
 }
 ```
 
-- [ ] **Step 5: Jalankan test Action lagi**
+- [x] **Step 5: Jalankan test Action lagi**
 
 Run: `php artisan test --filter=CreateKelasActionTest`
 Run: `php artisan test --filter=UpdateKelasActionTest`
 Expected: PASS.
 
-- [ ] **Step 6: Buat 2 FormRequest**
+- [x] **Step 6: Buat 2 FormRequest**
 
 ```php
 <?php
@@ -809,7 +809,7 @@ final class UpdateKelasRequest extends FormRequest
 }
 ```
 
-- [ ] **Step 7: Ubah controller — `store()` dan `update()`**
+- [x] **Step 7: Ubah controller — `store()` dan `update()`**
 
 Baca file `app/Http/Controllers/Admin/KelasController.php` (sudah dibaca Step 1). Tambah `use` baru:
 ```php
@@ -859,7 +859,7 @@ public function update(UpdateKelasRequest $request, Kelas $kelas, UpdateKelasAct
 ```
 Method `index()`, `create()`, `edit()`, `faseSuggestion()` TIDAK berubah.
 
-- [ ] **Step 8: Jalankan SEMUA test existing yang menyentuh Kelas CRUD**
+- [x] **Step 8: Jalankan SEMUA test existing yang menyentuh Kelas CRUD**
 
 ```bash
 php artisan test --filter=KelasCrudTest
@@ -869,7 +869,7 @@ php artisan test --filter=KelasFaseSuggestionTest
 ```
 Expected: PASS — SEMUA test dari sebelum retrofit (termasuk 10 test `KelasCrudTest` yang menguji ownership-check 404 utk lintas lembaga) harus tetap hijau TANPA perubahan assertion. Kalau ada yang gagal, STOP — itu tandanya ada perbedaan behavior yang tidak sengaja, JANGAN ubah test untuk menyesuaikan.
 
-- [ ] **Step 9: `php -l` dan commit**
+- [x] **Step 9: `php -l` dan commit**
 
 ```bash
 php -l app/Domains/Akademik/DataTransferObjects/KelasData.php
@@ -888,19 +888,19 @@ git commit -m "refactor(akademik): retrofit KelasController ke FormRequest+DTO+A
 
 **Files:** Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses lain berjalan bersamaan**
+- [x] **Step 1: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses lain berjalan bersamaan**
 
 Run: `php artisan test`
 Expected: 0 failed. Baseline sebelum retrofit adalah **2230 passed, 4 skipped** (state akhir Sprint 5). Task 2-3 menambah 5 test Action baru (2+3). Laporkan angka NYATA, jangan asumsikan.
 
-- [ ] **Step 2: Verifikasi manual tambahan — cek tidak ada `Support\` yang tersisa di seluruh codebase (bukan cuma app/tests)**
+- [x] **Step 2: Verifikasi manual tambahan — cek tidak ada `Support\` yang tersisa di seluruh codebase (bukan cuma app/tests)**
 
 ```bash
 grep -rn "Domains\\\\Akademik\\\\Support" --include=*.php .
 ```
 Expected: nol hasil (kalau ada hasil di `.agents/` — itu arsip dokumentasi historis, BOLEH tetap ada, JANGAN diubah; hanya file `.php` aktif yang harus nol).
 
-- [ ] **Step 3: Laporkan hasil final ke user**
+- [x] **Step 3: Laporkan hasil final ke user**
 
 Ringkasan: jumlah test pass/fail (angka pasti), commit hash tiap task (4 commit), konfirmasi tidak ada behavior/HTTP-status yang berubah (dibuktikan test existing 100% tetap hijau tanpa assertion diubah), konfirmasi folder `Support/` sudah tidak ada lagi.
 
