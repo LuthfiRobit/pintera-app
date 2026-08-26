@@ -37,7 +37,7 @@ class AsesmenController extends BaseController
         $guru = $request->user()->guru;
 
         $asesmenList = $guru
-            ? Asesmen::where('guru_id', $guru->id)->with(['kelas', 'mataPelajaran', 'semester'])->orderByDesc('tanggal')->get()
+            ? Asesmen::where('guru_id', $guru->id)->with(['kelas', 'subjek', 'semester'])->orderByDesc('tanggal')->get()
             : collect();
 
         return view('portals.guru.akademik.asesmen.index', [
@@ -64,7 +64,7 @@ class AsesmenController extends BaseController
             'kelasList' => Kelas::whereIn('id', $kelasIds)->orderBy('nama')->get(),
             'mataPelajaranList' => MataPelajaran::whereIn('id', $mapelIds)->orderBy('nama')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->orderByDesc('id')->get(),
-            'komponenList' => KomponenPenilaian::whereIn('mata_pelajaran_id', $mapelIds)->get(),
+            'komponenList' => KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->whereIn('subjek_id', $mapelIds)->get(),
             'jenisAsesmenList' => JenisAsesmen::v1Didukung(),
         ]);
     }
@@ -75,13 +75,15 @@ class AsesmenController extends BaseController
         abort_if(! $guru, 403, 'Profil guru tidak ditemukan.');
 
         $data = $request->validated();
-        $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
-            ->where('kelas_id', $data['kelas_id'])
-            ->where('mata_pelajaran_id', $data['mata_pelajaran_id'])
-            ->where('semester_id', $data['semester_id'])
-            ->exists();
+        if ($data['subjek_type'] === 'mata_pelajaran') {
+            $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
+                ->where('kelas_id', $data['kelas_id'])
+                ->where('mata_pelajaran_id', $data['subjek_id'])
+                ->where('semester_id', $data['semester_id'])
+                ->exists();
 
-        abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi kelas dan mata pelajaran ini.');
+            abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi kelas dan mata pelajaran ini.');
+        }
 
         $asesmen = $this->createAsesmenAction->execute($guru, $request->toDTO());
 
@@ -127,7 +129,7 @@ class AsesmenController extends BaseController
             ->keyBy(fn ($n) => $n->siswa_id.'-'.$n->komponen_penilaian_id);
 
         return view('portals.guru.akademik.asesmen.show', [
-            'asesmen' => $asesmen->load(['kelas', 'mataPelajaran', 'semester']),
+            'asesmen' => $asesmen->load(['kelas', 'subjek', 'semester']),
             'komponenList' => $komponenList,
             'siswaList' => $siswaList,
             'nilaiMatrix' => $nilaiMatrix,

@@ -2,10 +2,10 @@
 
 namespace App\Domains\Akademik\Models;
 
-use App\Domains\Akademik\Enums\ElemenCapaianPembelajaran;
+use App\Domains\Akademik\Models\ElemenCp;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Database\Factories\KomponenPenilaianFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class KomponenPenilaian extends Model
 {
@@ -20,14 +21,7 @@ class KomponenPenilaian extends Model
 
     protected $table = 'komponen_penilaian';
 
-    protected $fillable = ['mata_pelajaran_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp', 'kktp_minimal', 'elemen_cp'];
-
-    protected function casts(): array
-    {
-        return [
-            'elemen_cp' => ElemenCapaianPembelajaran::class,
-        ];
-    }
+    protected $fillable = ['subjek_type', 'subjek_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp', 'kktp_minimal'];
 
     protected static function newFactory(): KomponenPenilaianFactory
     {
@@ -37,11 +31,15 @@ class KomponenPenilaian extends Model
     protected static function booted(): void
     {
         static::creating(function (self $komponenPenilaian) {
-            if (empty($komponenPenilaian->lembaga_id)) {
+            if (empty($komponenPenilaian->lembaga_id) && $komponenPenilaian->subjek_type === 'mata_pelajaran') {
                 $komponenPenilaian->lembaga_id = MataPelajaran::withoutGlobalScopes()
-                    ->findOrFail($komponenPenilaian->mata_pelajaran_id)
+                    ->findOrFail($komponenPenilaian->subjek_id)
                     ->lembaga_id;
             }
+            // subjek_type === 'elemen_cp': ElemenCp global, tidak punya
+            // lembaga_id sendiri -- lembaga_id WAJIB sudah di-set eksplisit
+            // oleh caller (CreateKomponenPenilaianAction) dari Semester
+            // sebelum sampai sini.
         });
     }
 
@@ -50,9 +48,9 @@ class KomponenPenilaian extends Model
         return $this->belongsTo(Lembaga::class);
     }
 
-    public function mataPelajaran(): BelongsTo
+    public function subjek(): MorphTo
     {
-        return $this->belongsTo(MataPelajaran::class);
+        return $this->morphTo();
     }
 
     public function semester(): BelongsTo

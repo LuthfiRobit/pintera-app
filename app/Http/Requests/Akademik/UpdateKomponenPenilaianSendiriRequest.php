@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\UpdateKomponenPenilaianData;
-use App\Domains\Akademik\Enums\ElemenCapaianPembelajaran;
+use App\Domains\Akademik\Models\ElemenCp;
+use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,7 +28,6 @@ final class UpdateKomponenPenilaianSendiriRequest extends FormRequest
             'bobot' => ['nullable', 'integer', 'min:1', 'max:100'],
             'kktp' => ['nullable', 'string'],
             'kktp_minimal' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'elemen_cp' => ['nullable', Rule::enum(ElemenCapaianPembelajaran::class)],
         ];
     }
 

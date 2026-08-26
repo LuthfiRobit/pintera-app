@@ -6,6 +6,7 @@ use App\Models\JadwalPelajaran;
 use App\Domains\Akademik\Actions\Penilaian\CreateKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\DeleteKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
+use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Http\Requests\Akademik\StoreKomponenPenilaianSendiriRequest;
 use App\Http\Requests\Akademik\UpdateKomponenPenilaianSendiriRequest;
@@ -43,11 +44,12 @@ class KomponenPenilaianController extends BaseController
         $mataPelajaranId = $request->query('mata_pelajaran_id');
         $search = $request->query('search');
 
-        $komponenList = KomponenPenilaian::whereIn('mata_pelajaran_id', $mapelIds)
-            ->with(['mataPelajaran', 'semester.tahunAjaran'])
+        $komponenList = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')
+            ->whereIn('subjek_id', $mapelIds)
+            ->with(['subjek', 'semester.tahunAjaran'])
             ->when($tahunAjaranId, fn ($q) => $q->whereHas('semester', fn ($q2) => $q2->where('tahun_ajaran_id', $tahunAjaranId)))
             ->when($semesterId, fn ($q) => $q->where('semester_id', $semesterId))
-            ->when($mataPelajaranId, fn ($q) => $q->where('mata_pelajaran_id', $mataPelajaranId))
+            ->when($mataPelajaranId, fn ($q) => $q->where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mataPelajaranId))
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('kode', 'like', "%{$search}%")->orWhere('deskripsi', 'like', "%{$search}%")))
             ->orderByDesc('id')
             ->get();
@@ -68,7 +70,6 @@ class KomponenPenilaianController extends BaseController
         ]);
     }
 
-
     public function create(Request $request): View
     {
         $this->authorize('komponen-penilaian.kelola-sendiri');
@@ -82,6 +83,7 @@ class KomponenPenilaianController extends BaseController
 
         return view('portals.guru.akademik.komponen-penilaian.create', [
             'mataPelajaranList' => MataPelajaran::whereIn('id', $mapelIds)->orderBy('nama')->get(),
+            'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->with('tahunAjaran')->orderByDesc('id')->get(),
             'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
         ]);
@@ -93,12 +95,14 @@ class KomponenPenilaianController extends BaseController
         abort_if(! $guru, 403, 'Profil guru tidak ditemukan untuk akun ini.');
 
         $data = $request->validated();
-        $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
-            ->where('mata_pelajaran_id', $data['mata_pelajaran_id'])
-            ->where('semester_id', $data['semester_id'])
-            ->exists();
+        if ($data['subjek_type'] === 'mata_pelajaran') {
+            $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
+                ->where('mata_pelajaran_id', $data['subjek_id'])
+                ->where('semester_id', $data['semester_id'])
+                ->exists();
 
-        abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi mata pelajaran dan semester ini.');
+            abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi mata pelajaran dan semester ini.');
+        }
 
         try {
             $this->createKomponenPenilaianAction->execute($request->toDTO());
@@ -125,8 +129,9 @@ class KomponenPenilaianController extends BaseController
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
         return view('portals.guru.akademik.komponen-penilaian.edit', [
-            'komponenPenilaian' => $komponenPenilaian->load(['mataPelajaran', 'semester.tahunAjaran']),
+            'komponenPenilaian' => $komponenPenilaian->load(['subjek', 'semester.tahunAjaran']),
             'dipakai' => $dipakai,
+            'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'bentukPendidikan' => auth()->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
@@ -182,10 +187,12 @@ class KomponenPenilaianController extends BaseController
     private function authorizeMengajarMapel(KomponenPenilaian $komponenPenilaian): void
     {
         $guru = auth()->user()->guru;
-        $mengajar = $guru && JadwalPelajaran::where('guru_id', $guru->id)
-            ->where('mata_pelajaran_id', $komponenPenilaian->mata_pelajaran_id)
-            ->exists();
+        if ($komponenPenilaian->subjek_type === 'mata_pelajaran') {
+            $mengajar = $guru && JadwalPelajaran::where('guru_id', $guru->id)
+                ->where('mata_pelajaran_id', $komponenPenilaian->subjek_id)
+                ->exists();
 
-        abort_unless($mengajar, 403, 'Anda tidak mengajar mata pelajaran ini.');
+            abort_unless($mengajar, 403, 'Anda tidak mengajar mata pelajaran ini.');
+        }
     }
 }

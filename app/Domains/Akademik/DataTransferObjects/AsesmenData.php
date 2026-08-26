@@ -11,7 +11,8 @@ final readonly class AsesmenData
      */
     public function __construct(
         public int $kelasId,
-        public int $mataPelajaranId,
+        public string $subjekType,
+        public int $subjekId,
         public int $semesterId,
         public string $jenis,
         public string $judul,
@@ -24,7 +25,8 @@ final readonly class AsesmenData
     {
         return new self(
             kelasId: (int) $data['kelas_id'],
-            mataPelajaranId: (int) $data['mata_pelajaran_id'],
+            subjekType: (string) $data['subjek_type'],
+            subjekId: (int) $data['subjek_id'],
             semesterId: (int) $data['semester_id'],
             jenis: (string) $data['jenis'],
             judul: (string) $data['judul'],

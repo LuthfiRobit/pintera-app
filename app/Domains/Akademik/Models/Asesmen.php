@@ -7,7 +7,6 @@ use App\Models\Concerns\BelongsToTenant;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Database\Factories\AsesmenFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Asesmen extends Model
 {
@@ -25,7 +25,8 @@ class Asesmen extends Model
     protected $fillable = [
         'guru_id',
         'kelas_id',
-        'mata_pelajaran_id',
+        'subjek_type',
+        'subjek_id',
         'semester_id',
         'lembaga_id',
         'jenis',
@@ -69,9 +70,9 @@ class Asesmen extends Model
         return $this->belongsTo(Kelas::class);
     }
 
-    public function mataPelajaran(): BelongsTo
+    public function subjek(): MorphTo
     {
-        return $this->belongsTo(MataPelajaran::class);
+        return $this->morphTo();
     }
 
     public function semester(): BelongsTo

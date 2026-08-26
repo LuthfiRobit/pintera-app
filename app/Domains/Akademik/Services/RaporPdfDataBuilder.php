@@ -7,6 +7,7 @@ namespace App\Domains\Akademik\Services;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
+use App\Domains\Akademik\Support\SubjekPenilaianKey;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -24,15 +25,15 @@ final class RaporPdfDataBuilder
     /**
      * @return array{
      *   siswa: Siswa, kelas: \App\Models\Kelas, semester: Semester, lembaga: \App\Models\Lembaga,
-     *   rekapNilai: array<int, float|null>, mapelList: \Illuminate\Support\Collection,
-     *   narasiPerMapel: array<int, array{tertinggi: ?string, terendah: ?string}>,
+     *   rekapNilai: array<string, float|null>, mapelList: \Illuminate\Support\Collection,
+     *   narasiPerMapel: array<string, array{tertinggi: ?string, terendah: ?string}>,
      *   catatan: ?CatatanWaliKelas,
      *   absensi: array{hadir:int, izin:int, sakit:int, alpa:int, terlambat:int},
      *   pengajuanRapor: ?PengajuanRapor, isDraft: bool,
      *   namaWaliKelas: ?string, namaKepalaSekolah: ?string, namaOrangTua: ?string,
      *   isGenap: bool, isTingkatAkhir: bool, labelKenaikan: string, judulDokumen: string,
      *   absensiTahunan: ?array{hadir:int, izin:int, sakit:int, alpa:int, terlambat:int},
-     *   nilaiRataRataTahunan: ?array<int, float|null>,
+     *   nilaiRataRataTahunan: ?array<string, float|null>,
      * }
      */
     public function build(Siswa $siswa, Semester $semester): array
@@ -46,7 +47,7 @@ final class RaporPdfDataBuilder
 
         $narasiPerMapel = [];
         foreach ($mapelList as $mapel) {
-            $narasiPerMapel[$mapel->id] = $this->capaianKompetensiGenerator->generateNarasi($siswa, $mapel, $semester);
+            $narasiPerMapel[SubjekPenilaianKey::dari($mapel)] = $this->capaianKompetensiGenerator->generateNarasi($siswa, $mapel, $semester);
         }
 
         $catatan = CatatanWaliKelas::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->first();
@@ -97,10 +98,11 @@ final class RaporPdfDataBuilder
 
                 $nilaiRataRataTahunan = [];
                 foreach ($mapelList as $mapel) {
-                    $nilaiGenap = $rekapNilaiSiswa[$mapel->id] ?? null;
-                    $nilaiGanjil = $rekapNilaiGanjilSiswa[$mapel->id] ?? null;
+                    $key = SubjekPenilaianKey::dari($mapel);
+                    $nilaiGenap = $rekapNilaiSiswa[$key] ?? null;
+                    $nilaiGanjil = $rekapNilaiGanjilSiswa[$key] ?? null;
 
-                    $nilaiRataRataTahunan[$mapel->id] = match (true) {
+                    $nilaiRataRataTahunan[$key] = match (true) {
                         $nilaiGenap !== null && $nilaiGanjil !== null => round(($nilaiGenap + $nilaiGanjil) / 2, 1),
                         $nilaiGenap !== null => $nilaiGenap,
                         $nilaiGanjil !== null => $nilaiGanjil,

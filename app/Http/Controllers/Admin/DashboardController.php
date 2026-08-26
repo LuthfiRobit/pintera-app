@@ -133,7 +133,7 @@ class DashboardController extends BaseController
 
                 $nilaiTerbaru = NilaiSiswa::where('siswa_id', $siswa->id)
                     ->whereNotNull('nilai_angka')
-                    ->with(['komponenPenilaian.mataPelajaran', 'asesmen.mataPelajaran'])
+                    ->with(['komponenPenilaian.subjek', 'asesmen.subjek'])
                     ->latest('id')
                     ->limit(5)
                     ->get();
@@ -204,8 +204,8 @@ class DashboardController extends BaseController
                 $nilaiTerbaru = NilaiSiswa::withoutGlobalScope(TenantScope::class)->whereIn('siswa_id', $siswaIds)
                     ->whereNotNull('nilai_angka')
                     ->with([
-                        'komponenPenilaian' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['mataPelajaran' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
-                        'asesmen' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['mataPelajaran' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
+                        'komponenPenilaian' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['subjek' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
+                        'asesmen' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['subjek' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
                         'siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
                     ])
                     ->latest('id')
@@ -247,12 +247,6 @@ class DashboardController extends BaseController
         }
 
         if ($user->hasRole('pegawai_yayasan') || $user->hasRole('pegawai_lembaga')) {
-            // Resolusi pegawai mendukung KEDUA tabel profil kepegawaian: Guru
-            // (PTK -- guru, kepsek, tenaga administrasi, dll, punya jenis_ptk)
-            // dan Karyawan (staf umum non-PTK spt satpam/cleaning service).
-            // Role pegawai_lembaga/pegawai_yayasan sendiri tidak menentukan
-            // tabel mana yang dipakai -- sama seperti pola resolvePegawai() di
-            // EmployeeQrCodeController/PengajuanIzinCutiController.
             $karyawan = Guru::where('user_id', $user->id)->withoutGlobalScope(TenantScope::class)->first()
                 ?? Karyawan::where('user_id', $user->id)->withoutGlobalScope(TenantScope::class)->with('jenisKaryawan')->first();
             $karyawanId = $karyawan?->id;
@@ -278,11 +272,6 @@ class DashboardController extends BaseController
                     ->whereHas('approvalRequest', fn ($q) => $q->where('status', ApprovalStatus::Pending->value))
                     ->count();
 
-            // statistikSisaKuotaCuti() saat ini cuma mendukung lookup KuotaCutiConfig
-            // via jenis_karyawan_id (jalur Karyawan) -- skema-nya sudah siapkan kolom
-            // jenis_ptk untuk jalur Guru juga, tapi belum diimplementasikan di service
-            // ini. Untuk Guru, kuota cuti tampil "Belum dikonfigurasi" sampai jalur itu
-            // dibangun (bukan bug baru, cuma belum menjangkau kasus Guru-sbg-staf).
             $sisaKuotaCuti = $karyawan instanceof Karyawan ? $this->dashboardStats->statistikSisaKuotaCuti($karyawan) : null;
             $jadwalShiftHariIni = $karyawan ? \App\Domains\Sdm\Models\PenugasanShift::withoutGlobalScope(TenantScope::class)
                 ->where('pegawai_type', $karyawan::class)
@@ -366,14 +355,6 @@ class DashboardController extends BaseController
                 return view('admin.dashboard.lembaga', $this->lembagaViewData((int) $lembagaAktifId, $user));
             }
 
-            // Deliberate trade-off vs. the design spec's "single groupBy('lembaga_id')
-            // query" wording: this calls DashboardStatsService once per lembaga instead,
-            // so the yayasan view reuses the exact same aggregation methods as the lembaga
-            // view (one definition of every metric, per the plan's Architecture section).
-            // A dedicated batched-aggregation variant would satisfy the spec's query-count
-            // wording but require a second, parallel implementation of the same metrics.
-            // Negligible at pilot scale (a yayasan has a handful of lembaga); revisit if a
-            // yayasan ever grows to dozens.
             $lembagaList = Lembaga::where('yayasan_id', $user->yayasan_id)->get();
             $ringkasanPerLembaga = $lembagaList->map(function (Lembaga $lembaga) use ($user) {
                 return [

@@ -4,33 +4,31 @@ declare(strict_types=1);
 
 namespace App\Domains\Akademik\DataTransferObjects;
 
-use App\Domains\Akademik\Enums\ElemenCapaianPembelajaran;
-
 final readonly class KomponenPenilaianData
 {
     public function __construct(
-        public int $mataPelajaranId,
+        public string $subjekType,
+        public int $subjekId,
         public int $semesterId,
         public ?string $kode,
         public string $deskripsi,
         public int $bobot,
         public ?string $kktp,
         public ?int $kktpMinimal,
-        public ?ElemenCapaianPembelajaran $elemenCp,
     ) {
     }
 
     public static function fromArray(array $data): self
     {
         return new self(
-            mataPelajaranId: (int) $data['mata_pelajaran_id'],
+            subjekType: (string) $data['subjek_type'],
+            subjekId: (int) $data['subjek_id'],
             semesterId: (int) $data['semester_id'],
             kode: $data['kode'] ?? null,
             deskripsi: $data['deskripsi'],
             bobot: isset($data['bobot']) ? (int) $data['bobot'] : 10,
             kktp: $data['kktp'] ?? null,
             kktpMinimal: isset($data['kktp_minimal']) ? (int) $data['kktp_minimal'] : null,
-            elemenCp: isset($data['elemen_cp']) && $data['elemen_cp'] !== '' ? ElemenCapaianPembelajaran::from($data['elemen_cp']) : null,
         );
     }
 }

@@ -5,10 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Akademik\Actions\Penilaian\CreateKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\DeleteKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
+use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Http\Requests\Akademik\StoreKomponenPenilaianRequest;
 use App\Http\Requests\Akademik\UpdateKomponenPenilaianRequest;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -42,11 +43,11 @@ class KomponenPenilaianController extends BaseController
         $mataPelajaranId = $request->query('mata_pelajaran_id');
         $search = $request->query('search');
 
-        $komponenList = KomponenPenilaian::whereHas('mataPelajaran')
-            ->with(['mataPelajaran', 'semester.tahunAjaran'])
+        $komponenList = KomponenPenilaian::whereNotNull('subjek_id')
+            ->with(['subjek', 'semester.tahunAjaran'])
             ->when($tahunAjaranId, fn ($q) => $q->whereHas('semester', fn ($q2) => $q2->where('tahun_ajaran_id', $tahunAjaranId)))
             ->when($semesterId, fn ($q) => $q->where('semester_id', $semesterId))
-            ->when($mataPelajaranId, fn ($q) => $q->where('mata_pelajaran_id', $mataPelajaranId))
+            ->when($mataPelajaranId, fn ($q) => $q->where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mataPelajaranId))
             ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('kode', 'like', "%{$search}%")->orWhere('deskripsi', 'like', "%{$search}%")))
             ->orderByDesc('id')
             ->get();
@@ -95,6 +96,7 @@ class KomponenPenilaianController extends BaseController
             'tahunAjaranId' => $tahunAjaranId,
             'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
+            'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
@@ -103,10 +105,15 @@ class KomponenPenilaianController extends BaseController
     {
         $data = $request->validated();
 
-        $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
+        $subjek = match ($data['subjek_type']) {
+            'mata_pelajaran' => MataPelajaran::withoutGlobalScopes()->find($data['subjek_id']),
+            'elemen_cp' => ElemenCp::find($data['subjek_id']),
+        };
         $semester = Semester::find($data['semester_id']);
-        abort_if($mataPelajaran === null || $semester === null, 404);
-        abort_if($mataPelajaran->lembaga_id !== $semester->lembaga_id, 404);
+        abort_if($subjek === null || $semester === null, 404);
+        if ($data['subjek_type'] === 'mata_pelajaran') {
+            abort_if($subjek->lembaga_id !== $semester->lembaga_id, 404);
+        }
 
         try {
             $this->createKomponenPenilaianAction->execute($request->toDTO());
@@ -129,17 +136,18 @@ class KomponenPenilaianController extends BaseController
     {
         $this->authorize('komponen-penilaian.kelola');
 
-        $mataPelajaran = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
-        if (! $mataPelajaran) {
+        $subjek = $komponenPenilaian->subjek;
+        if (! $subjek) {
             abort(404);
         }
 
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
         return view('portals.lembaga.akademik.komponen-penilaian.edit', [
-            'komponenPenilaian' => $komponenPenilaian->load(['mataPelajaran', 'semester.tahunAjaran']),
+            'komponenPenilaian' => $komponenPenilaian->load(['subjek', 'semester.tahunAjaran']),
             'dipakai' => $dipakai,
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
+            'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'semesterList' => Semester::with('tahunAjaran')->orderByDesc('id')->get(),
             'bentukPendidikan' => auth()->user()->lembaga?->bentuk_pendidikan,
         ]);
@@ -147,19 +155,24 @@ class KomponenPenilaianController extends BaseController
 
     public function update(UpdateKomponenPenilaianRequest $request, KomponenPenilaian $komponenPenilaian): RedirectResponse|JsonResponse
     {
-        $mataPelajaranSaatIni = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
-        if (! $mataPelajaranSaatIni) {
+        $subjekSaatIni = $komponenPenilaian->subjek;
+        if (! $subjekSaatIni) {
             abort(404);
         }
 
         $data = $request->validated();
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
-        if (! $dipakai && isset($data['mata_pelajaran_id'], $data['semester_id'])) {
-            $mataPelajaran = MataPelajaran::find($data['mata_pelajaran_id']);
+        if (! $dipakai && isset($data['subjek_type'], $data['subjek_id'], $data['semester_id'])) {
+            $subjek = match ($data['subjek_type']) {
+                'mata_pelajaran' => MataPelajaran::withoutGlobalScopes()->find($data['subjek_id']),
+                'elemen_cp' => ElemenCp::find($data['subjek_id']),
+            };
             $semester = Semester::find($data['semester_id']);
-            abort_if($mataPelajaran === null || $semester === null, 404);
-            abort_if($mataPelajaran->lembaga_id !== $semester->lembaga_id, 404);
+            abort_if($subjek === null || $semester === null, 404);
+            if ($data['subjek_type'] === 'mata_pelajaran') {
+                abort_if($subjek->lembaga_id !== $semester->lembaga_id, 404);
+            }
         }
 
         try {
@@ -183,8 +196,8 @@ class KomponenPenilaianController extends BaseController
     {
         $this->authorize('komponen-penilaian.kelola');
 
-        $mataPelajaran = MataPelajaran::find($komponenPenilaian->mata_pelajaran_id);
-        if (! $mataPelajaran) {
+        $subjek = $komponenPenilaian->subjek;
+        if (! $subjek) {
             abort(404);
         }
 

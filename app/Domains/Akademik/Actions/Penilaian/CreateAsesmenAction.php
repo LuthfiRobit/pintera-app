@@ -17,14 +17,18 @@ final class CreateAsesmenAction
     public function execute(Guru $guru, AsesmenData $data): Asesmen
     {
         $komponenIds = ! empty($data->komponenId)
-            ? KomponenPenilaian::whereIn('id', $data->komponenId)->where('mata_pelajaran_id', $data->mataPelajaranId)->pluck('id')
+            ? KomponenPenilaian::whereIn('id', $data->komponenId)
+                ->where('subjek_type', $data->subjekType)
+                ->where('subjek_id', $data->subjekId)
+                ->pluck('id')
             : collect();
 
         return DB::transaction(function () use ($guru, $data, $komponenIds) {
             $asesmen = Asesmen::create([
                 'guru_id' => $guru->id,
                 'kelas_id' => $data->kelasId,
-                'mata_pelajaran_id' => $data->mataPelajaranId,
+                'subjek_type' => $data->subjekType,
+                'subjek_id' => $data->subjekId,
                 'semester_id' => $data->semesterId,
                 'jenis' => JenisAsesmen::from($data->jenis),
                 'judul' => $data->judul,

@@ -3,19 +3,20 @@
 
 namespace App\Services;
 
+use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\TahunAjaran;
 use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Domains\Sdm\Models\KuotaCutiConfig;
 use App\Domains\Workflow\Enums\ApprovalStatus;
-use App\Domains\Akademik\Models\KomponenPenilaian;
-use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Karyawan;
 use App\Models\Kelas;
+use App\Models\Pendaftaran;
 use App\Models\Semester;
 use App\Models\Siswa;
+use App\Models\TahunAjaran;
 use App\Models\Yayasan;
 
 class DashboardStatsService
@@ -134,7 +135,7 @@ class DashboardStatsService
 
         $totalSiswa = Siswa::where('kelas_id', $kelas->id)->count();
         $totalKomponen = KomponenPenilaian::where('semester_id', $semester->id)
-            ->whereHas('mataPelajaran', fn ($q) => $q->where('lembaga_id', $kelas->lembaga_id))
+            ->whereHasMorph('subjek', [MataPelajaran::class], fn ($q) => $q->where('lembaga_id', $kelas->lembaga_id))
             ->count();
 
         $totalTerisi = NilaiSiswa::whereHas('siswa', fn ($q) => $q->where('kelas_id', $kelas->id))

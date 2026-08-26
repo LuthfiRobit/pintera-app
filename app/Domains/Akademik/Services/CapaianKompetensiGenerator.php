@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\Akademik\Services;
 
+use App\Domains\Akademik\Contracts\SubjekPenilaian;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\NilaiSiswa;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\Siswa;
+use Illuminate\Database\Eloquent\Model;
 
 final class CapaianKompetensiGenerator
 {
@@ -18,9 +19,11 @@ final class CapaianKompetensiGenerator
     /**
      * @return array{tertinggi: ?string, terendah: ?string}
      */
-    public function generateNarasi(Siswa $siswa, MataPelajaran $mapel, Semester $semester): array
+    public function generateNarasi(Siswa $siswa, SubjekPenilaian $subjek, Semester $semester): array
     {
-        $komponenList = KomponenPenilaian::where('mata_pelajaran_id', $mapel->id)
+        /** @var Model $subjek */
+        $komponenList = KomponenPenilaian::where('subjek_type', $subjek->getMorphClass())
+            ->where('subjek_id', $subjek->getKey())
             ->where('semester_id', $semester->id)
             ->get();
 
@@ -28,7 +31,8 @@ final class CapaianKompetensiGenerator
             return ['tertinggi' => null, 'terendah' => null];
         }
 
-        $asesmenIds = Asesmen::where('mata_pelajaran_id', $mapel->id)
+        $asesmenIds = Asesmen::where('subjek_type', $subjek->getMorphClass())
+            ->where('subjek_id', $subjek->getKey())
             ->where('semester_id', $semester->id)
             ->pluck('id');
 
