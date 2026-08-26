@@ -25,6 +25,7 @@ final class CapaianKompetensiGenerator
         $komponenList = KomponenPenilaian::where('subjek_type', $subjek->getMorphClass())
             ->where('subjek_id', $subjek->getKey())
             ->where('semester_id', $semester->id)
+            ->where('assessment_type', 'numeric')
             ->get();
 
         if ($komponenList->isEmpty()) {

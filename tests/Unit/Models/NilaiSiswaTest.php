@@ -53,11 +53,11 @@ it('allows nilai_angka to be null with only predikat/catatan for narrative-style
 
     $nilai = NilaiSiswa::create([
         'asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id,
-        'nilai_angka' => null, 'predikat' => 'Berkembang Sesuai Harapan', 'catatan' => 'Aktif berinteraksi dengan teman sebaya',
+        'nilai_angka' => null, 'predikat' => 'BSH', 'catatan' => 'Aktif berinteraksi dengan teman sebaya',
     ]);
 
     expect($nilai->fresh()->nilai_angka)->toBeNull();
-    expect($nilai->fresh()->predikat)->toBe('Berkembang Sesuai Harapan');
+    expect($nilai->fresh()->predikat)->toBe(\App\Domains\Akademik\Enums\PredikatPaud::BSH);
 });
 
 it('enforces one nilai row per siswa per komponen per asesmen', function () {

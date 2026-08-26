@@ -45,7 +45,7 @@ final class RaporCalculationService
                 $subjekAsesmenIds = ($asesmenByKey->get($key) ?? collect())->pluck('id');
                 $scores = $allNilai->whereIn('asesmen_id', $subjekAsesmenIds)
                     ->where('siswa_id', $siswa->id)
-                    ->whereNotNull('nilai_angka');
+                    ->filter(fn ($n) => $n->komponenPenilaian?->assessment_type?->value === 'numeric' && $n->nilai_angka !== null);
 
                 if ($scores->count() > 0) {
                     $totalWeight = 0;

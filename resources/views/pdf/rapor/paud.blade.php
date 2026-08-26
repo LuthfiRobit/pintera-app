@@ -41,20 +41,6 @@
             if ($elemen && isset($keranjangElemenCp[$elemen])) {
                 if ($narasi['tertinggi']) { $keranjangElemenCp[$elemen]['kalimat'][] = $narasi['tertinggi']; }
                 if ($narasi['terendah']) { $keranjangElemenCp[$elemen]['kalimat'][] = $narasi['terendah']; }
-
-                if ($mapel instanceof \App\Domains\Akademik\Models\ElemenCp) {
-                    $nilaiDirect = \App\Domains\Akademik\Models\NilaiSiswa::where('siswa_id', $siswa->id)
-                        ->whereHas('komponenPenilaian', fn ($q) => $q->where('subjek_type', 'elemen_cp')->where('subjek_id', $mapel->id)->where('semester_id', $semester->id))
-                        ->get();
-                    foreach ($nilaiDirect as $n) {
-                        if ($n->predikat) {
-                            $t = trim(($n->catatan ?? ''));
-                            $keranjangElemenCp[$elemen]['kalimat'][] = "[{$n->predikat->value} - {$n->predikat->label()}]" . ($t !== '' ? " {$t}" : '');
-                        } elseif ($n->catatan && !$narasi['tertinggi'] && !$narasi['terendah']) {
-                            $keranjangElemenCp[$elemen]['kalimat'][] = $n->catatan;
-                        }
-                    }
-                }
             }
         }
     @endphp
