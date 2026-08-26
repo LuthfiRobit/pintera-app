@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\FaseDefaultMappingController;
 use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
@@ -13,6 +14,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
 Route::resource('kelas', KelasController::class)->parameters(['kelas' => 'kelas'])->except(['show', 'destroy']);
+
+Route::get('fase-mapping', [FaseDefaultMappingController::class, 'index'])->name('fase-mapping.index');
+Route::get('fase-mapping/create', [FaseDefaultMappingController::class, 'create'])->name('fase-mapping.create');
+Route::post('fase-mapping', [FaseDefaultMappingController::class, 'store'])->name('fase-mapping.store');
+Route::get('fase-mapping/{faseMapping}/edit', [FaseDefaultMappingController::class, 'edit'])->name('fase-mapping.edit');
+Route::put('fase-mapping/{faseMapping}', [FaseDefaultMappingController::class, 'update'])->name('fase-mapping.update');
+Route::delete('fase-mapping/{faseMapping}', [FaseDefaultMappingController::class, 'destroy'])->name('fase-mapping.destroy');
 
 Route::post('kalender-akademik', [KalenderAkademikController::class, 'store'])->name('kalender-akademik.store');
 Route::put('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'update'])->name('kalender-akademik.update');
