@@ -162,12 +162,31 @@ class FaseDefaultMapping extends Model
 ```
 Model ini SENGAJA tidak pakai `BelongsToTenant` meski punya `lembaga_id` nullable — baris `lembaga_id = NULL` (platform-wide) harus tetap terlihat lintas tenant, yang bertentangan dengan asumsi dasar `TenantScope`. Filtering by lembaga dilakukan eksplisit di `FaseDefaultResolver`, bukan lewat global scope.
 
-**Konsekuensi: karena tidak ada `TenantScope`, authorization manajemen mapping WAJIB eksplisit** (tidak bisa mengandalkan proteksi otomatis tenant scoping seperti model tenant-scoped lain). Mengikuti pola routing existing yang sudah memisahkan platform-level (`routes/admin/*`, mis. `Admin\LembagaController` di `routes/admin/lembaga.php`) dari institution-level (`routes/lembaga/*`):
+**Konsekuensi: karena tidak ada `TenantScope`, authorization manajemen mapping WAJIB eksplisit** (tidak bisa mengandalkan proteksi otomatis tenant scoping seperti model tenant-scoped lain).
 
-- **`Admin\FaseDefaultMappingController`** (`routes/admin/*`, middleware/guard platform sama seperti `Admin\LembagaController`) — HANYA bisa create/update/delete baris `lembaga_id = NULL` (platform-wide). Request tidak pernah menerima `lembaga_id` dari input sama sekali di controller ini — selalu dipaksa `null` di server, terlepas apa pun yang dikirim client.
-- **`Lembaga\Akademik\FaseDefaultMappingController`** (`routes/lembaga/*`, middleware/guard institution existing — sama seperti controller Kelas/Mata Pelajaran di namespace ini) — HANYA bisa create/update/delete baris milik lembaga yang sedang login (`lembaga_id = Auth::user()->lembaga_id`, dipaksa dari session, bukan dari input request). Tidak ada endpoint yang menerima `lembaga_id` sembarang dari body/query untuk memilih lembaga siapa yang dimanipulasi — ini pola yang sama dengan controller institution-scoped lain di codebase (mis. `Lembaga\Akademik\KelasController`), bukan mekanisme baru.
+**Koreksi hasil verifikasi struktur routing project (routing yang sebenarnya dipakai, bukan asumsi awal)**: project ini TIDAK punya pemisahan `routes/admin/*` (platform) vs `routes/lembaga/*` (institution) — SEMUA route (termasuk `Admin\LembagaController` yang platform-wide dan `Admin\KelasController`/`Lembaga\Akademik\MataPelajaranController` yang institution-scoped) hidup dalam satu grup `Route::middleware(['auth','verified'])->prefix('admin')->name('admin.')` di `routes/admin.php`. Pemisahan platform vs institution dilakukan lewat **permission string + scope check di dalam controller**, bukan lewat namespace/prefix route berbeda — persis pola `Admin\LembagaController::authorizeOwnLembaga()` (`app/Http/Controllers/Admin/LembagaController.php:131-137`), yang memakai `$request->user()->widestScopeLevel()` (`app/Models/User.php:97-107`, mengembalikan `'platform'`/`'yayasan'`/`'lembaga'`/`'diri_sendiri'`, dari widest ke sempit) dikombinasikan dengan `abort_unless(...)`.
 
-Dengan begitu, isolasi tenant untuk mapping tidak bergantung pada logika baru yang berisiko — cukup mengikuti pola routing/guard yang sudah terbukti benar untuk resource institution-scoped lain, hanya field `lembaga_id`-nya yang dipaksa dari session/context, bukan input.
+Mengikuti pola yang sudah terbukti benar itu, bukan pola baru:
+
+- **Satu controller**: `Admin\FaseDefaultMappingController` (`routes/admin/akademik-master.php`, grup `admin.` yang sama dengan `KelasController`/`MataPelajaranController`), pakai trait `AuthorizesRequests` (sama seperti `LembagaController`).
+- **Permission Spatie baru**: `fase-mapping.view`, `fase-mapping.create`, `fase-mapping.edit` — didaftarkan di `PermissionSeeder` dan diberikan ke role yang sama dengan yang sudah punya `kelas.view`/`kelas.create`/`kelas.edit` (`operator_akademik`, `wakasek_kurikulum`, `kepala_sekolah`, `yayasan_super_admin`, `platform_super_admin` — daftar persis diverifikasi implementer dari `RoleSeeder` saat ini).
+- **Scope enforcement eksplisit** lewat method privat `authorizeMappingScope()`, dipanggil dari `store()`/`update()`/`destroy()` setelah `$this->authorize('fase-mapping.*')`:
+  ```php
+  private function authorizeMappingScope(Request $request, ?int $lembagaIdDiminta): void
+  {
+      $isPlatformOrYayasan = in_array($request->user()->widestScopeLevel(), ['platform', 'yayasan'], true);
+
+      if ($lembagaIdDiminta === null) {
+          abort_unless($isPlatformOrYayasan, 403); // hanya platform/yayasan boleh kelola baris platform-wide
+          return;
+      }
+
+      abort_unless($isPlatformOrYayasan || $lembagaIdDiminta === $request->user()->lembaga_id, 403);
+  }
+  ```
+  Dipakai dengan `$lembagaIdDiminta` diambil dari record existing saat `update`/`destroy` (`$mapping->lembaga_id`, BUKAN dari input body — mencegah user mengubah `lembaga_id` record orang lain lewat payload), dan dari **hasil paksa server** saat `store()`: user ber-scope `lembaga` SELALU dipaksa `lembaga_id = $request->user()->lembaga_id` apa pun yang dikirim di body (field `lembaga_id` di form untuk user ber-scope lembaga di-disable/hidden, bukan cuma div tersembunyi — server tidak pernah membaca `lembaga_id` dari request untuk role scope `lembaga`). User ber-scope `platform`/`yayasan` boleh memilih `lembaga_id` (termasuk `NULL` untuk platform-wide) lewat dropdown di form create.
+
+Dengan begitu, isolasi tenant untuk mapping mengikuti pola authorization yang sudah terbukti benar di controller sejenis (`LembagaController`), bukan mekanisme routing baru yang tidak ada presedennya di codebase ini.
 
 `app/Models/Kelas.php`: tambah `'fase_id'` ke `$fillable`, tambah relasi:
 ```php
@@ -312,7 +331,9 @@ Kedua seeder didaftarkan di `DatabaseSeeder::run()` (setelah seeder yang sudah a
 
 ## §6. UI — Form Create/Edit Kelas
 
-`resources/views/portals/lembaga/akademik/kelas/_form.blade.php` (atau file form Kelas yang berlaku saat ini — implementer verifikasi path aktual): tambah dropdown Fase, berdampingan dengan input `tingkat` existing:
+**Koreksi hasil verifikasi (path nyata, bukan asumsi)**: Kelas dikelola oleh `App\Http\Controllers\Admin\KelasController` (`routes/admin/akademik-master.php:15`, `Route::resource('kelas', ...)`), dengan view di `resources/views/admin/kelas/_form.blade.php` (dipakai bersama oleh `create.blade.php`/`edit.blade.php` — pola yang sama dengan `admin/lembaga/*`). BUKAN di `portals/lembaga/akademik/kelas/` seperti dugaan draft sebelumnya — direktori itu tidak ada. Path ini sudah diverifikasi langsung (`find`/`grep` terhadap struktur project), bukan lagi ditandai "perlu verifikasi implementer" seperti draft sebelumnya.
+
+`resources/views/admin/kelas/_form.blade.php`: tambah dropdown Fase, berdampingan dengan input `tingkat` existing:
 
 ```blade
 <div>
@@ -327,13 +348,24 @@ Kedua seeder didaftarkan di `DatabaseSeeder::run()` (setelah seeder yang sudah a
 </div>
 ```
 
-Controller (`KelasController@create`/`@store`, path aktual diverifikasi implementer saat eksekusi): saat form create dibuka (bukan submit), panggil resolver untuk pre-fill:
+Karena `tingkat` diisi lewat form yang sama secara interaktif (bukan diketahui di awal request `create`), pre-fill dilakukan lewat **Alpine.js di sisi klien** (mirip pola `assessmentType` auto-set di Sprint 2 §4) — saat user mengetik/memilih `tingkat`, JS memanggil endpoint kecil baru: route `GET admin/kelas/fase-suggestion` (nama route `admin.kelas.fase-suggestion`, didaftarkan di `routes/admin/akademik-master.php` sebelum `Route::resource('kelas', ...)` supaya tidak tertutup route model binding `{kelas}`), diarahkan ke `KelasController::faseSuggestion(Request $request)`:
 ```php
-$faseIdSuggested = $request->filled('tingkat')
-    ? optional(app(FaseDefaultResolver::class)->resolve($lembaga->bentuk_pendidikan, $request->query('tingkat'), $lembaga->id))->id
-    : null;
+public function faseSuggestion(Request $request): JsonResponse
+{
+    $lembaga = $request->user()->lembaga;
+
+    $fase = app(FaseDefaultResolver::class)->resolve(
+        $lembaga->bentuk_pendidikan,
+        $request->query('tingkat'),
+        $lembaga->id
+    );
+
+    return response()->json([
+        'suggestion' => $fase ? ['id' => $fase->id, 'kode' => $fase->kode, 'nama' => $fase->nama] : null,
+    ]);
+}
 ```
-Karena `tingkat` biasanya diisi lewat form yang sama (bukan query string terpisah), implementasi realistis: pre-fill dilakukan lewat **Alpine.js di sisi klien** (mirip pola `assessmentType` auto-set di Sprint 2 §4) — saat user mengetik/memilih `tingkat`, JS memanggil endpoint kecil `GET /lembaga/akademik/kelas/fase-suggestion?tingkat={tingkat}`. Endpoint ini murni memanggil `FaseDefaultResolver::resolve()` dengan `bentuk_pendidikan` dari lembaga yang sedang login (guard middleware existing, `Auth::user()->lembaga_id`) dan `lembaga_id`-nya sendiri — tidak menyimpan apa pun, hanya query read-only.
+`bentuk_pendidikan` dan `lembaga_id` diambil dari lembaga milik user yang sedang login (`Auth::user()->lembaga`, via `BelongsToTenant` yang sudah otomatis scope query lain di controller ini) — TIDAK PERNAH dari input request, supaya user tidak bisa minta suggestion untuk `bentuk_pendidikan`/`lembaga_id` lembaga lain. Endpoint ini read-only, tidak menyimpan apa pun.
 
 **Contract response tidak hanya `fase_id` mentah** — supaya UI tidak perlu tahu apa pun soal skema mapping, cukup render field yang diterima:
 ```json
@@ -376,11 +408,13 @@ Alpine cukup baca `response.suggestion?.id` untuk set value dropdown dan (opsion
 - Insert baris platform + baris lembaga-spesifik dengan `bentuk_pendidikan`+`tingkat` sama tapi `lembaga_id` beda (satu NULL, satu terisi) → **berhasil keduanya** (scope beda, bukan duplikat).
 
 **Authorization/tenant-isolation (feature test, kritis karena model TIDAK pakai `TenantScope` — lihat §3):**
-- Admin lembaga A membuat mapping lewat `Lembaga\Akademik\FaseDefaultMappingController` → baris tersimpan dengan `lembaga_id = lembaga A`, terlepas apa pun yang (kalau dipaksakan) dikirim di payload sbg `lembaga_id` lain — assert server selalu memakai `Auth::user()->lembaga_id`, bukan input.
-- Admin lembaga B mencoba mengedit/menghapus baris milik lembaga A (mis. tebak-tebak ID lewat URL `/lembaga/akademik/fase-mapping/{id}/edit`) → `403`/`404` (mengikuti pola proteksi resource institution-scoped lain di codebase), bukan berhasil.
-- Admin lembaga A mencoba membuat/mengedit baris platform (`lembaga_id = NULL`) lewat rute institution-nya → ditolak (rute ini secara desain tidak pernah menerima `lembaga_id = NULL` sbg pilihan; kalaupun dipaksa lewat payload, server override ke `lembaga_id` sendiri, bukan `NULL`).
-- User tanpa role admin platform mencoba akses `Admin\FaseDefaultMappingController` → ditolak middleware guard platform (sama seperti proteksi existing `Admin\LembagaController`).
-- `FaseDefaultResolver::resolve()` (read-only, dipanggil dari endpoint suggestion §6) tetap bisa membaca baris platform DAN baris lembaga manapun yang relevan dengan `lembagaId` yang diberikan — konfirmasi bahwa larangan di atas murni pada operasi tulis (create/update/delete), bukan pada kemampuan resolver membaca lintas scope (yang memang perlu, itulah alasan model ini sengaja tidak pakai `TenantScope`).
+- User scope `lembaga` (mis. `operator_akademik` di lembaga A) membuat mapping lewat `Admin\FaseDefaultMappingController@store` dengan payload memaksa `lembaga_id` = lembaga B → tersimpan tetap dengan `lembaga_id = lembaga A` (server override dari `Auth::user()->lembaga_id`, field `lembaga_id` di body diabaikan total untuk scope ini).
+- User scope `lembaga` di lembaga B mencoba `update`/`destroy` baris milik lembaga A (tebak ID lewat URL `admin/fase-mapping/{id}/edit`) → `403` dari `authorizeMappingScope()`.
+- User scope `lembaga` mencoba `store`/`update` dengan `lembaga_id = null` (mencoba menyamar sbg mapping platform) → `403` dari `authorizeMappingScope()` (poin 1 di method: `$lembagaIdDiminta === null` mensyaratkan `$isPlatformOrYayasan`).
+- User scope `yayasan`/`platform` (mis. `yayasan_super_admin`) membuat/mengedit baris `lembaga_id = NULL` (platform-wide) → berhasil.
+- User scope `yayasan`/`platform` membuat/mengedit baris milik lembaga manapun (bukan cuma lembaga sendiri) → berhasil (scope ini melihat lintas lembaga, sama seperti `LembagaController::authorizeOwnLembaga()`).
+- User tanpa permission `fase-mapping.*` sama sekali mencoba akses controller ini → `403` dari `$this->authorize(...)`, sebelum sempat mencapai `authorizeMappingScope()`.
+- `FaseDefaultResolver::resolve()` (read-only, dipanggil dari endpoint suggestion §6) tetap bisa membaca baris platform DAN baris lembaga manapun yang relevan dengan `lembagaId` yang diberikan — konfirmasi bahwa larangan di atas murni pada operasi tulis (create/update/destroy), bukan pada kemampuan resolver membaca lintas scope (yang memang perlu, itulah alasan model ini sengaja tidak pakai `TenantScope`).
 
 **Immutability `kelas.fase_id` (feature test, kritis — §5 acceptance criterion):**
 - Buat Kelas baru dengan mapping platform SD tingkat 1 → Fase A aktif, assert `fase_id` tersimpan = Fase A.
@@ -406,6 +440,6 @@ Alpine cukup baca `response.suggestion?.id` untuk set value dropdown dan (opsion
 
 - Semua poin kesepakatan user masuk eksplisit: (1) `fase` global stabil tanpa `lembaga_id` §1a/§3, (2) mapping sbg data bukan kode §1b/§4 dengan penekanan tegas resolver tidak boleh tumbuh jadi if/match, (3) precedence 4 tingkat §2 (keputusan desain)/§4, (4) `kelas.fase_id` snapshot immutable §1c/§5/§8, (5) tidak ada dimensi kurikulum baru sekarang §keputusan desain poin 6/§7, (6) uniqueness/conflict protection lengkap dengan solusi teknis konkret (generated column) §2, ditest §8, (7) seed sbg initial configuration bukan business logic §5 dengan acceptance criterion eksplisit.
 - **Revisi putaran review kedua (4 poin), semua diterapkan**: (a) `urutan` diperjelas sbg display/sort order murni, bukan semantic level pendidikan (§1a); (b) precedence resolver dipindah dari filter in-memory (closure) ke `ORDER BY` eksplisit di query, supaya semantik prioritas tidak tersembunyi (§4); (c) authorization/tenant-isolation untuk `FaseDefaultMapping` dijabarkan eksplisit mengikuti pola routing platform-vs-institution existing, plus 5 test kasus di §8, karena model ini sengaja tidak pakai `TenantScope` (§3/§8); (d) compatibility generated column diverifikasi konkret terhadap MySQL 8.0.30 yang benar-benar dipakai environment ini (§2), bukan dibiarkan sbg risiko tak terverifikasi. Juga ditambahkan: distinction eksplisit "no configuration history, but assignment snapshot exists" (keputusan desain poin 8), penegasan `fase_default_mapping` bukan "kurikulum" (keputusan desain poin 9), contract endpoint suggestion berisi objek fase lengkap bukan `fase_id` mentah (§6), dan wording seed sbg rekomendasi platform saat ini bukan kebenaran definisional (§5).
-- Placeholder scan: path file Blade/Controller Kelas ditandai eksplisit "implementer verifikasi path aktual" (§6) — bukan placeholder isi kode, tapi ketidakpastian lokasi file yang jujur (belum pernah dibaca langsung dalam sesi ini). Plan WAJIB memuat task awal untuk implementer membaca struktur folder `resources/views/portals/lembaga/akademik/kelas/` dan `app/Http/Controllers/Lembaga/Akademik/KelasController.php` (atau path setara) sebelum menulis kode form/controller.
+- Placeholder scan: path file Blade/Controller Kelas sebelumnya ditandai "perlu verifikasi implementer" — sekarang sudah diverifikasi langsung terhadap struktur project (`Admin\KelasController`, `resources/views/admin/kelas/_form.blade.php`, `routes/admin/akademik-master.php`) dan dikoreksi di §6. Verifikasi struktur routing (`routes/admin.php` satu grup untuk platform+institution, bukan `routes/admin/*` vs `routes/lembaga/*` terpisah) juga sudah dilakukan dan mengoreksi desain authorization di §3 supaya sesuai pola nyata `LembagaController::authorizeOwnLembaga()`. Tidak ada lagi placeholder path yang belum diverifikasi.
 - Scope check: fokus tunggal pada fondasi Fase (fase, mapping, resolver, assignment Kelas) — tidak melebar ke CP/TP/P5/curriculum designer, sesuai §7.
 - Konsistensi tipe: `FaseDefaultResolver::resolve(string $bentukPendidikan, ?string $tingkat, ?int $lembagaId): ?Fase` dipakai identik di §4 (definisi) dan §6 (pemanggilan dari controller/endpoint) dan §8 (test).
