@@ -442,7 +442,6 @@ git commit -m "feat(akademik): tambah kolom subjek_type/subjek_id nullable ke ko
 <?php
 // database/migrations/2026_08_26_100200_backfill_subjek_penilaian.php
 
-use App\Domains\Akademik\Models\ElemenCp;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
@@ -464,7 +463,10 @@ return new class extends Migration
             if ($elemenCpKode !== null) {
                 // Precedence: elemen_cp menang kalau terisi -- lebih bermakna
                 // untuk PAUD daripada mata_pelajaran_id dummy.
-                $elemenCpId = ElemenCp::where('kode', $elemenCpKode)->value('id');
+                // Query builder murni (DB::table), BUKAN Eloquent model --
+                // migration tidak boleh bergantung pada definisi model yang
+                // bisa berubah di masa depan (global scope, cast, dst).
+                $elemenCpId = DB::table('elemen_cp')->where('kode', $elemenCpKode)->value('id');
 
                 if ($elemenCpId === null) {
                     throw new \RuntimeException(
