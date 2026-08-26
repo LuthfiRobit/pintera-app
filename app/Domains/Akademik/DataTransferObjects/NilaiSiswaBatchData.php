@@ -7,7 +7,7 @@ namespace App\Domains\Akademik\DataTransferObjects;
 final readonly class NilaiSiswaBatchData
 {
     /**
-     * @param  array<int|string, array<int|string, array{nilai_angka?: int|string|null, catatan?: string|null}>>  $nilai  siswa_id => komponen_penilaian_id => [nilai_angka, catatan]
+     * @param  array<int|string, array<int|string, array{nilai_angka?: int|string|null, predikat?: string|null, catatan?: string|null}>>  $nilai  siswa_id => komponen_penilaian_id => [nilai_angka, predikat, catatan]
      */
     public function __construct(
         public array $nilai,

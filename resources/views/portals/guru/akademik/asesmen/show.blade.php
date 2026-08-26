@@ -1,7 +1,7 @@
 <x-app-layout>
     @php
         $totalCells = $siswaList->count() * max($komponenList->count(), 1);
-        $filledCount = $nilaiMatrix->filter(fn ($n) => $n->nilai_angka !== null)->count();
+        $filledCount = $nilaiMatrix->filter(fn ($n) => $n->nilai_angka !== null || $n->predikat !== null || !empty($n->catatan))->count();
         $progressPct = $totalCells > 0 ? round(($filledCount / $totalCells) * 100) : 0;
     @endphp
 
@@ -122,25 +122,58 @@
                                         <div class="text-xs font-medium text-gray-400">{{ $siswa->nis ?: ($siswa->nisn ?: 'Tanpa NIS') }}</div>
                                     </td>
                                     @foreach ($komponenList as $komponen)
-                                        @php $nilai = $nilaiMatrix->get($siswa->id.'-'.$komponen->id); @endphp
+                                        @php
+                                            $nilai = $nilaiMatrix->get($siswa->id.'-'.$komponen->id);
+                                            $tipe = $komponen->assessment_type->value ?? 'numeric';
+                                        @endphp
                                         <td class="px-4 py-4 space-y-1.5">
-                                            <input
-                                                type="number"
-                                                step="1"
-                                                min="0"
-                                                max="100"
-                                                name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][nilai_angka]"
-                                                value="{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.nilai_angka', $nilai?->nilai_angka) }}"
-                                                placeholder="0 - 100"
-                                                class="w-24 text-center font-extrabold text-base rounded-lg border-gray-300 py-1.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-300 placeholder:font-normal {{ $nilai?->nilai_angka !== null ? 'bg-emerald-50/50 text-emerald-800 border-emerald-300' : 'text-gray-900' }}"
-                                            >
-                                            <input
-                                                type="text"
-                                                name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][catatan]"
-                                                value="{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.catatan', $nilai?->catatan) }}"
-                                                placeholder="Catatan..."
-                                                class="w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm py-1.5 px-2.5 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
-                                            >
+                                            @if ($tipe === 'numeric')
+                                                <input
+                                                    type="number"
+                                                    step="1"
+                                                    min="0"
+                                                    max="100"
+                                                    name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][nilai_angka]"
+                                                    value="{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.nilai_angka', $nilai?->nilai_angka) }}"
+                                                    placeholder="0 - 100"
+                                                    class="w-24 text-center font-extrabold text-base rounded-lg border-gray-300 py-1.5 shadow-sm focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-300 placeholder:font-normal {{ $nilai?->nilai_angka !== null ? 'bg-emerald-50/50 text-emerald-800 border-emerald-300' : 'text-gray-900' }}"
+                                                >
+                                                <input
+                                                    type="text"
+                                                    name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][catatan]"
+                                                    value="{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.catatan', $nilai?->catatan) }}"
+                                                    placeholder="Catatan opsional..."
+                                                    class="w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm py-1.5 px-2.5 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
+                                                >
+                                            @elseif ($tipe === 'predicate')
+                                                <select
+                                                    name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][predikat]"
+                                                    required
+                                                    class="w-full rounded-lg border-gray-300 text-sm font-semibold text-gray-900 py-1.5 shadow-sm focus:border-brand-500 focus:ring-brand-500"
+                                                >
+                                                    <option value="">— Pilih Predikat —</option>
+                                                    @foreach (\App\Domains\Akademik\Enums\PredikatPaud::cases() as $pred)
+                                                        <option value="{{ $pred->value }}" @selected(old('nilai.'.$siswa->id.'.'.$komponen->id.'.predikat', $nilai?->predikat?->value) === $pred->value)>
+                                                            {{ $pred->value }} ({{ $pred->label() }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                                <input
+                                                    type="text"
+                                                    name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][catatan]"
+                                                    value="{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.catatan', $nilai?->catatan) }}"
+                                                    placeholder="Catatan opsional..."
+                                                    class="w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm py-1.5 px-2.5 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
+                                                >
+                                            @elseif ($tipe === 'narrative')
+                                                <textarea
+                                                    name="nilai[{{ $siswa->id }}][{{ $komponen->id }}][catatan]"
+                                                    rows="2"
+                                                    required
+                                                    placeholder="Tulis deskripsi capaian..."
+                                                    class="w-full rounded-lg border-gray-300 text-xs text-gray-900 shadow-sm py-1.5 px-2.5 focus:border-brand-500 focus:ring-brand-500 placeholder:text-gray-400"
+                                                >{{ old('nilai.'.$siswa->id.'.'.$komponen->id.'.catatan', $nilai?->catatan) }}</textarea>
+                                            @endif
                                         </td>
                                     @endforeach
                                 </tr>

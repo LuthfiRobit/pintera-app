@@ -30,26 +30,47 @@ final class SimpanNilaiSiswaAction
             ]);
         }
 
-        $komponenIds = $asesmen->komponenPenilaian()->pluck('komponen_penilaian.id');
+        $tipePerKomponen = $asesmen->komponenPenilaian()->pluck('assessment_type', 'komponen_penilaian.id');
         $siswaIds = $asesmen->kelas->siswa()->pluck('id');
 
-        DB::transaction(function () use ($asesmen, $data, $komponenIds, $siswaIds) {
+        DB::transaction(function () use ($asesmen, $data, $tipePerKomponen, $siswaIds) {
             foreach ($data->nilai as $siswaId => $perKomponen) {
                 if (! $siswaIds->contains((int) $siswaId)) {
                     continue;
                 }
 
                 foreach ($perKomponen as $komponenId => $values) {
-                    if (! $komponenIds->contains((int) $komponenId)) {
+                    $tipe = $tipePerKomponen->get((int) $komponenId)?->value;
+                    if ($tipe === null) {
+                        continue;
+                    }
+
+                    $payload = match ($tipe) {
+                        'numeric' => [
+                            'nilai_angka' => isset($values['nilai_angka']) && $values['nilai_angka'] !== '' ? (int) $values['nilai_angka'] : null,
+                            'predikat' => null,
+                            'catatan' => $values['catatan'] ?? null,
+                        ],
+                        'narrative' => [
+                            'nilai_angka' => null,
+                            'predikat' => null,
+                            'catatan' => $values['catatan'] ?? null,
+                        ],
+                        'predicate' => [
+                            'nilai_angka' => null,
+                            'predikat' => $values['predikat'] ?? null,
+                            'catatan' => $values['catatan'] ?? null,
+                        ],
+                        default => null,
+                    };
+
+                    if ($payload === null) {
                         continue;
                     }
 
                     NilaiSiswa::updateOrCreate(
                         ['asesmen_id' => $asesmen->id, 'siswa_id' => $siswaId, 'komponen_penilaian_id' => $komponenId],
-                        [
-                            'nilai_angka' => isset($values['nilai_angka']) && $values['nilai_angka'] !== '' ? (int) $values['nilai_angka'] : null,
-                            'catatan' => $values['catatan'] ?? null,
-                        ]
+                        $payload
                     );
                 }
             }
