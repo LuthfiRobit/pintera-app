@@ -14,14 +14,16 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ## 🔴 Temuan Bug Prioritas Tinggi (26 Agustus 2026)
 
-**Akun staf lembaga via form Pengguna generik jadi "profil belum tertaut"**
-`Admin → Pengguna → Tambah` membiarkan admin mencentang role fungsional lembaga (Kepala Sekolah, Admin Administrasi, Bendahara Lembaga, Operator Akademik, Admin SDM, Admin Sarpras, dll) TANPA pernah membuat baris `Guru` atau `Karyawan` yang menyertainya (`UserController::store()` nol pemanggilan `Guru::create`/`Karyawan::create`). Akibatnya begitu login, dashboard staf (`DashboardController.php:248-295`, cuma cek `$user->karyawan()`) menampilkan "Profil karyawan Anda belum tertaut" dan fitur self-service SDM (QR presensi, ajukan izin/cuti) 404.
+**Akun staf lembaga via form Pengguna generik jadi "profil belum tertaut"** — ✅ **Bagian dashboard SUDAH DIPERBAIKI 26 Agustus 2026.**
+`Admin → Pengguna → Tambah` membiarkan admin mencentang role fungsional lembaga (Kepala Sekolah, Admin Administrasi, Bendahara Lembaga, Operator Akademik, Admin SDM, Admin Sarpras, dll) TANPA pernah membuat baris `Guru` atau `Karyawan` yang menyertainya (`UserController::store()` nol pemanggilan `Guru::create`/`Karyawan::create`). Ini masih **bug produk nyata** yang belum tertutup — form Pengguna generik masih bisa membuat akun cacat kalau admin tidak lewat jalur resmi (`Admin → Guru`/`Admin → Karyawan`).
 
-Ini **bug real produksi**, bukan cuma artefak seeder — jalur resmi yang benar (`Admin → Guru` untuk PTK: guru/kepsek/tenaga administrasi/guru BK; `Admin → Karyawan` untuk staf umum non-PTK spt satpam/cleaning service, pakai `AkunKaryawanGenerator`) TIDAK dipaksakan; form Pengguna generik jadi jalur pintas yang membuat akun cacat.
+**Yang sudah diperbaiki**: `DashboardController` (branch `pegawai_lembaga`/`pegawai_yayasan`, `DashboardController.php:249`) sekarang resolve profil pegawai lewat `Guru` ATAU `Karyawan` — sama seperti pola `resolvePegawai()` di `EmployeeQrCodeController`/`PengajuanIzinCutiController`. Akun sarpras.sd@demo.test (profilnya di `Guru`, jenis_ptk=tenaga_administrasi) sekarang tampil benar, bukan lagi "belum tertaut". Ikut ketemu & diperbaiki 2 bug turunan: `PenugasanShift` query hardcode morph type ke `Karyawan::class` (sekarang dinamis `$karyawan::class`), dan `Karyawan::class` dipakai tanpa `use` import (diam-diam resolve ke namespace controller yang salah, bikin filter shift selalu kosong tanpa error).
 
-**Fix yang direkomendasikan** (BUKAN auto-create profil — butuh NIK asli + jenis_karyawan_id yang tidak tersedia di form Pengguna, berisiko fabrikasi data & duplikasi profil paralel dgn Guru): ubah `DashboardController` (dan pola serupa lain) supaya resolusi pegawai cek `Guru` ATAU `Karyawan` — sama seperti pola `resolvePegawai()` di `EmployeeQrCodeController`/`PengajuanIzinCutiController` yang sudah benar.
+**Keterbatasan yang masih ada**: `DashboardStatsService::statistikSisaKuotaCuti()` masih Karyawan-only (skema `KuotaCutiConfig` sudah siapkan kolom `jenis_ptk` untuk jalur Guru, tapi service-nya belum diimplementasikan) — staf ber-profil Guru akan selalu tampil "Sisa Kuota Cuti: Belum dikonfigurasi", bukan crash, tapi juga bukan data nyata. Effort Kecil kalau mau dilengkapi.
 
-Lokasi: `app/Http/Controllers/Admin/DashboardController.php:248-295`, `app/Http/Controllers/Admin/UserController.php::store()`.
+**Yang BELUM diperbaiki**: root cause di `UserController::store()` sendiri — form Pengguna generik masih bisa dipakai untuk membuat akun ber-role fungsional lembaga tanpa profil kepegawaian apa pun. Rekomendasi tetap BUKAN auto-create profil (butuh NIK asli + jenis_karyawan_id yang tidak tersedia di form ini, berisiko fabrikasi data), tapi guardrail/validasi di form tsb — belum dikerjakan.
+
+Lokasi: `app/Http/Controllers/Admin/DashboardController.php:248-295` (sudah fix), `app/Http/Controllers/Admin/UserController.php::store()` (belum fix).
 
 **Peta tabel PTK vs Karyawan** (referensi arsitektur):
 | Jenis staf | Tabel profil benar | Cara buat |
