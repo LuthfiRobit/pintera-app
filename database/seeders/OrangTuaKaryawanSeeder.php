@@ -11,6 +11,7 @@ use App\Models\OrangTua;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use App\Services\AkunKaryawanGenerator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -34,7 +35,10 @@ class OrangTuaKaryawanSeeder extends Seeder
         // ── 2. Karyawan Pool Yayasan (Psikolog) ─────────────────────────────
         $this->seedKaryawanPool($yayasan);
 
-        // ── 3. Orang Tua siswa SDIT ───────────────────────────────────────────
+        // ── 3. Karyawan Staf Umum Lembaga (Satpam, Petugas Kebersihan) ───────
+        $this->seedKaryawanStafUmum($sdit, $yayasan);
+
+        // ── 4. Orang Tua siswa SDIT ───────────────────────────────────────────
         $this->seedOrangTua($sdit);
     }
 
@@ -89,6 +93,39 @@ class OrangTuaKaryawanSeeder extends Seeder
             'status_aktif'         => 'aktif',
             'kapasitas_kasus_aktif' => null,
         ]);
+    }
+
+    // ── Karyawan Staf Umum Lembaga ────────────────────────────────────────────
+
+    private function seedKaryawanStafUmum(Lembaga $sdit, Yayasan $yayasan): void
+    {
+        // Dibuat lewat AkunKaryawanGenerator yang SAMA dipakai KaryawanController
+        // (jalur resmi Admin -> Karyawan), supaya data demo mencerminkan alur
+        // produksi nyata: username = NIK, password awal = NIK, role otomatis
+        // pegawai_lembaga -- BUKAN lewat form Pengguna generik.
+        $generator = app(AkunKaryawanGenerator::class);
+
+        $stafUmum = [
+            ['nama' => 'Slamet Riyadi', 'nik' => '3273019900020001', 'jenis' => 'Satpam', 'no_hp' => '081234570001'],
+            ['nama' => 'Warsiti', 'nik' => '3273019900020002', 'jenis' => 'Petugas Kebersihan', 'no_hp' => '081234570002'],
+        ];
+
+        foreach ($stafUmum as $data) {
+            if (User::where('username', $data['nik'])->exists()) {
+                continue;
+            }
+
+            $jenisKaryawan = JenisKaryawanMaster::where('nama', $data['jenis'])->firstOrFail();
+
+            $generator->buat(
+                $data['nama'],
+                $data['nik'],
+                $yayasan->id,
+                $sdit->id,
+                $jenisKaryawan->id,
+                $data['no_hp'],
+            );
+        }
     }
 
     // ── Orang Tua SDIT ─────────────────────────────────────────────────────

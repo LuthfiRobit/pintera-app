@@ -17,5 +17,16 @@ class JenisKaryawanMasterSeeder extends Seeder
         foreach ($jenisKonselor as $nama) {
             JenisKaryawanMaster::firstOrCreate(['nama' => $nama], ['is_konselor' => true]);
         }
+
+        // Staf umum non-PTK (bukan konselor) -- pola Karyawan yang tepat untuk
+        // pegawai di luar tabel Guru/PTK, mis. satpam & cleaning service.
+        $jenisStafUmum = [
+            'Satpam',
+            'Petugas Kebersihan',
+        ];
+
+        foreach ($jenisStafUmum as $nama) {
+            JenisKaryawanMaster::firstOrCreate(['nama' => $nama], ['is_konselor' => false]);
+        }
     }
 }
