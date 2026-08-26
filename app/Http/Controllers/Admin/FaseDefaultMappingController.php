@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Actions\FaseMapping\CreateFaseDefaultMappingAction;
+use App\Domains\Akademik\Actions\FaseMapping\UpdateFaseDefaultMappingAction;
+use App\Domains\Akademik\DataTransferObjects\FaseDefaultMappingData;
 use App\Domains\Akademik\Models\Fase;
 use App\Domains\Akademik\Models\FaseDefaultMapping;
+use App\Http\Requests\Akademik\StoreFaseDefaultMappingRequest;
+use App\Http\Requests\Akademik\UpdateFaseDefaultMappingRequest;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class FaseDefaultMappingController extends BaseController
@@ -50,33 +54,28 @@ class FaseDefaultMappingController extends BaseController
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreFaseDefaultMappingRequest $request, CreateFaseDefaultMappingAction $action): RedirectResponse
     {
         $this->authorize('fase-mapping.create');
 
-        $data = $request->validate([
-            'bentuk_pendidikan' => ['required', Rule::in(self::BENTUK_PENDIDIKAN)],
-            'tingkat' => ['nullable', 'string', 'max:10'],
-            'fase_id' => ['required', 'exists:fase,id'],
-            'lembaga_id' => ['nullable', 'integer', 'exists:lembaga,id'],
-        ]);
-        $tingkat = $data['tingkat'] !== '' ? ($data['tingkat'] ?? null) : null;
+        $validated = $request->validated();
+        $tingkat = $validated['tingkat'] !== '' ? ($validated['tingkat'] ?? null) : null;
 
         $isPlatformOrYayasan = $this->isPlatformOrYayasan($request);
-        $lembagaId = $isPlatformOrYayasan ? ($data['lembaga_id'] ?? null) : $request->user()->lembaga_id;
+        $lembagaId = $isPlatformOrYayasan ? ($validated['lembaga_id'] ?? null) : $request->user()->lembaga_id;
 
         $this->authorizeMappingScope($request, $lembagaId);
 
-        if (FaseDefaultMapping::where('lembaga_id', $lembagaId)->where('bentuk_pendidikan', $data['bentuk_pendidikan'])->where('tingkat', $tingkat)->exists()) {
+        if (FaseDefaultMapping::where('lembaga_id', $lembagaId)->where('bentuk_pendidikan', $validated['bentuk_pendidikan'])->where('tingkat', $tingkat)->exists()) {
             return back()->withErrors(['bentuk_pendidikan' => 'Sudah ada mapping default untuk kombinasi jenjang dan tingkat ini. Edit baris yang ada, jangan buat duplikat.'])->withInput();
         }
 
-        FaseDefaultMapping::create([
-            'lembaga_id' => $lembagaId,
-            'bentuk_pendidikan' => $data['bentuk_pendidikan'],
-            'tingkat' => $tingkat,
-            'fase_id' => $data['fase_id'],
-        ]);
+        $action->execute(new FaseDefaultMappingData(
+            bentukPendidikan: $validated['bentuk_pendidikan'],
+            tingkat: $tingkat,
+            faseId: (int) $validated['fase_id'],
+            lembagaId: $lembagaId,
+        ));
 
         return redirect()->route('admin.fase-mapping.index')->with('status', 'Mapping default berhasil disimpan.');
     }
@@ -93,27 +92,24 @@ class FaseDefaultMappingController extends BaseController
         ]);
     }
 
-    public function update(Request $request, FaseDefaultMapping $faseMapping): RedirectResponse
+    public function update(UpdateFaseDefaultMappingRequest $request, FaseDefaultMapping $faseMapping, UpdateFaseDefaultMappingAction $action): RedirectResponse
     {
         $this->authorize('fase-mapping.edit');
         $this->authorizeMappingScope($request, $faseMapping->lembaga_id);
 
-        $data = $request->validate([
-            'bentuk_pendidikan' => ['required', Rule::in(self::BENTUK_PENDIDIKAN)],
-            'tingkat' => ['nullable', 'string', 'max:10'],
-            'fase_id' => ['required', 'exists:fase,id'],
-        ]);
-        $tingkat = $data['tingkat'] !== '' ? ($data['tingkat'] ?? null) : null;
+        $validated = $request->validated();
+        $tingkat = $validated['tingkat'] !== '' ? ($validated['tingkat'] ?? null) : null;
 
-        if (FaseDefaultMapping::where('id', '!=', $faseMapping->id)->where('lembaga_id', $faseMapping->lembaga_id)->where('bentuk_pendidikan', $data['bentuk_pendidikan'])->where('tingkat', $tingkat)->exists()) {
+        if (FaseDefaultMapping::where('id', '!=', $faseMapping->id)->where('lembaga_id', $faseMapping->lembaga_id)->where('bentuk_pendidikan', $validated['bentuk_pendidikan'])->where('tingkat', $tingkat)->exists()) {
             return back()->withErrors(['bentuk_pendidikan' => 'Sudah ada mapping default untuk kombinasi jenjang dan tingkat ini. Edit baris yang ada, jangan buat duplikat.'])->withInput();
         }
 
-        $faseMapping->update([
-            'bentuk_pendidikan' => $data['bentuk_pendidikan'],
-            'tingkat' => $tingkat,
-            'fase_id' => $data['fase_id'],
-        ]);
+        $action->execute($faseMapping, new FaseDefaultMappingData(
+            bentukPendidikan: $validated['bentuk_pendidikan'],
+            tingkat: $tingkat,
+            faseId: (int) $validated['fase_id'],
+            lembagaId: $faseMapping->lembaga_id,
+        ));
 
         return redirect()->route('admin.fase-mapping.index')->with('status', 'Mapping default berhasil diperbarui.');
     }
