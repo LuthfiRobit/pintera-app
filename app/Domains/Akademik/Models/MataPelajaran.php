@@ -2,6 +2,7 @@
 
 namespace App\Domains\Akademik\Models;
 
+use App\Domains\Akademik\Contracts\SubjekPenilaian;
 use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class MataPelajaran extends Model
+class MataPelajaran extends Model implements SubjekPenilaian
 {
     use HasFactory, BelongsToTenant;
 

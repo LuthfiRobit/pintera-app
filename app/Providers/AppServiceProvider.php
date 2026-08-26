@@ -24,6 +24,9 @@ use App\Domains\Keuangan\Listeners\GenerateTagihanForUpdatedClass;
 use App\Events\StudentCreated;
 use App\Events\StudentUpdatedClass;
 use App\Domains\Keuangan\Services\BriInbound\SimpleBriInboundAuthenticator;
+use App\Domains\Akademik\Models\ElemenCp;
+use App\Domains\Akademik\Models\MataPelajaran;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Event;
 
 class AppServiceProvider extends ServiceProvider
@@ -56,6 +59,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Relation::morphMap([
+            'mata_pelajaran' => MataPelajaran::class,
+            'elemen_cp' => ElemenCp::class,
+        ]);
+
         Auth::provider('tenant-aware', function ($app, array $config) {
             return new TenantAwareUserProvider($app['hash'], $config['model']);
         });
