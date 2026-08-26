@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Models\Fase;
 use App\Domains\Akademik\Services\FaseDefaultResolver;
 use App\Models\Guru;
 use App\Models\Kelas;
@@ -81,6 +82,7 @@ class KelasController extends BaseController
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
             'guruList' => Guru::orderBy('nama')->get(),
             'polaJamList' => PolaJam::orderBy('nama')->get(),
+            'faseList' => Fase::orderBy('urutan')->get(),
         ]);
     }
 
@@ -92,6 +94,7 @@ class KelasController extends BaseController
             'tahun_ajaran_id' => ['required', 'integer'],
             'nama' => ['required', 'string', 'max:255'],
             'tingkat' => ['nullable', 'string', 'max:20'],
+            'fase_id' => ['nullable', 'integer', 'exists:fase,id'],
             'wali_kelas_guru_id' => ['nullable', 'integer'],
             'pola_jam_id' => ['nullable', 'integer'],
         ]);
@@ -136,6 +139,7 @@ class KelasController extends BaseController
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
             'guruList' => Guru::orderBy('nama')->get(),
             'polaJamList' => PolaJam::orderBy('nama')->get(),
+            'faseList' => Fase::orderBy('urutan')->get(),
         ]);
     }
 
@@ -147,6 +151,7 @@ class KelasController extends BaseController
             'tahun_ajaran_id' => ['required', 'integer'],
             'nama' => ['required', 'string', 'max:255'],
             'tingkat' => ['nullable', 'string', 'max:20'],
+            'fase_id' => ['nullable', 'integer', 'exists:fase,id'],
             'wali_kelas_guru_id' => ['nullable', 'integer'],
             'pola_jam_id' => ['nullable', 'integer'],
         ]);
