@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             JabatanTambahanMasterSeeder::class,
             JenisKaryawanMasterSeeder::class,
             ElemenCpSeeder::class,
+            FaseSeeder::class,
+            FaseDefaultMappingSeeder::class,
             WhatsAppTemplateSeeder::class,
             LembagaSeeder::class,
             EssentialUserSeeder::class,

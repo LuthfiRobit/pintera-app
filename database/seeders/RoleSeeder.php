@@ -134,6 +134,7 @@ class RoleSeeder extends Seeder
             if ($name === 'operator_akademik') {
                 $role->givePermissionTo([
                     'kelas.view', 'kelas.create', 'kelas.edit',
+                    'fase-mapping.view', 'fase-mapping.create', 'fase-mapping.edit', 'fase-mapping.delete',
                     'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
                     'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
                     'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',
