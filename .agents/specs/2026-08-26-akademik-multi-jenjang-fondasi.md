@@ -334,6 +334,7 @@ public function elemenCp(): static
 - [ ] Portal Guru punya toggle Elemen CP yang sebelumnya tidak ada, tervalidasi di backend (bukan cuma UI hiding).
 - [ ] Semua 26 file test diperbarui + 6 test baru di atas, full suite akademik hijau.
 - [ ] `git grep "mata_pelajaran_id"` di `komponen_penilaian`/`asesmen`-related code (bukan `jadwal_pelajaran`/`rpp`/`sesi_pembelajaran`) menghasilkan nol hasil.
+- [ ] **Verifikasi final sebelum migration ketiga (drop kolom) dijalankan**: `git grep` untuk `mata_pelajaran_id`, `elemen_cp`, dan `->mataPelajaran` di seluruh `app/` dan `resources/views/` (kecuali `JadwalPelajaran`/`Rpp`/`SesiPembelajaran` yang di luar cakupan) menghasilkan **nol hasil** — refactor kode HARUS selesai lebih dulu, baru migration drop dijalankan. Urutan ini wajib, bukan opsional: migration final yang menghapus kolom lama TIDAK BOLEH dijalankan selama masih ada satu pun kode yang bergantung padanya, karena begitu dijalankan tidak ada jalan mundur tanpa restore dari backup.
 
 ---
 
