@@ -2,6 +2,7 @@
 
 namespace App\Domains\Akademik\Models;
 
+use App\Domains\Akademik\Enums\PredikatPaud;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Lembaga;
 use App\Models\Siswa;
@@ -30,6 +31,7 @@ class NilaiSiswa extends Model
     {
         return [
             'nilai_angka' => 'integer',
+            'predikat' => PredikatPaud::class,
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Domains\Akademik\Models;
 
+use App\Domains\Akademik\Enums\AssessmentType;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Concerns\BelongsToTenant;
@@ -21,7 +22,14 @@ class KomponenPenilaian extends Model
 
     protected $table = 'komponen_penilaian';
 
-    protected $fillable = ['subjek_type', 'subjek_id', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp', 'kktp_minimal'];
+    protected $fillable = ['subjek_type', 'subjek_id', 'assessment_type', 'semester_id', 'lembaga_id', 'kode', 'deskripsi', 'bobot', 'kktp', 'kktp_minimal'];
+
+    protected function casts(): array
+    {
+        return [
+            'assessment_type' => AssessmentType::class,
+        ];
+    }
 
     protected static function newFactory(): KomponenPenilaianFactory
     {
