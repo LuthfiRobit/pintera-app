@@ -50,6 +50,20 @@ Saat mengerjakan Sprint 1 fondasi akademik multi-jenjang (subjek polymorphic `Ma
 
 ---
 
+## 🟡 Technical Debt (`TD-AKADEMIK-002`) — Sprint 1-4 Fondasi Akademik Multi-Jenjang menyimpang dari `.agents/skills/laravel-feature-standard/SKILL.md` (ditemukan 26 Agustus 2026)
+
+Setelah Sprint 4 (Academic Profile Service) selesai, dilakukan audit terhadap seluruh kode Sprint 1-4 (`ElemenCp`/subjek polymorphic, `AssessmentType`, `Fase`/`FaseDefaultMapping`, `AcademicProfile`) dibandingkan skill arsitektur resmi project (`laravel-feature-standard`). Hasilnya: struktur besar (Domain-Oriented, `Actions/`/`DataTransferObjects/`/`Models/`/`Services/`, tenant isolation eksplisit, test authorization+tenant-isolation) sudah konsisten dengan skill — TAPI ada beberapa deviasi nyata:
+
+1. **Folder `Support/`** (`app/Domains/Akademik/Support/SubjekPenilaianKey.php`, `AcademicProfile.php`) bukan folder resmi di skill (skill cuma daftar `Actions/DataTransferObjects/Events/Listeners/Models/Services/ViewModels`). Perlu diputuskan: resmikan `Support/` sbg folder ke-8 di skill (kalau memang polanya berulang dan valid — stateless helper tanpa side-effect), atau pindahkan isinya ke `Services/`.
+2. **Tidak ada DTO** untuk `FaseDefaultMapping`/`Kelas.fase_id` (Sprint 3-4) — `FaseDefaultMappingController`/`KelasController` pakai `$request->validate()` inline lalu array langsung ke Eloquent, melanggar §4 skill (DTO sbg boundary HTTP↔domain).
+3. **Tidak ada Form Request class terpisah** untuk kedua controller itu — melanggar §5 skill (semua validasi HTTP wajib lewat Form Request).
+
+**Kenapa dibiarkan saat itu**: poin 2-3 murni mengikuti pola `Admin\KelasController` yang **sudah begitu sebelum Sprint 1 ada** (tidak pernah pakai DTO/FormRequest sama sekali) — bukan pelanggaran baru yang diperkenalkan sprint ini, tapi konsistensi dengan kode existing yang sudah lebih dulu menyimpang dari skill. Poin 1 (`Support/`) murni keputusan baru di Sprint 1 & 4.
+
+**Keputusan (26 Agustus 2026)**: TIDAK diretrofit sekarang. Sprint 5 (Report Engine) WAJIB mengikuti skill secara ketat (FormRequest eksplisit + DTO + tidak menambah `Support/` lagi tanpa persetujuan). Retrofit Sprint 1-4 (resmikan/hapus `Support/`, tambah FormRequest+DTO ke `FaseDefaultMappingController` & bagian `KelasController` yang disentuh) jadi task/sprint TERPISAH setelah Sprint 5 — bukan dikerjakan sambil lalu di Sprint 5.
+
+---
+
 ## 1. Platform / Admin SaaS
 *Dikelola tim penyedia, di atas semua Yayasan. Level paling kosong dari audit — identitas (`platform_super_admin`, `scope_level='platform'`) sudah ada sejak RBAC v2, tapi PRODUKnya (onboarding, feature-gating, billing, dashboard agregat) sebagian besar belum.*
 
