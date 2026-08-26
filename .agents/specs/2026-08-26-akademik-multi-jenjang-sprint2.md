@@ -118,16 +118,27 @@ Alpine: saat radio `subjekType` diganti ke `elemen_cp`, `assessmentType` auto-di
 
 ## §5. `KomponenPenilaianData` DTO, `CreateKomponenPenilaianAction`, `UpdateKomponenPenilaianAction`
 
-DTO tambah `public string $assessmentType` (required, dari input form — TIDAK ada default tersembunyi di DTO, defaulting adalah tanggung jawab Action seperti dijelaskan berikut).
-
-`CreateKomponenPenilaianAction::execute()`: kalau `$data->assessmentType` kosong/tidak dikirim (mis. dari test lama yang belum update), hitung default dari `$data->subjekType`:
+DTO tambah `public ?string $assessmentType` (**nullable**, bukan required-tapi-boleh-kosong). Prinsip tegas 3 kondisi:
+```text
+null       → tidak diberikan sama sekali → domain layer hitung default
+valid enum → override eksplisit dihormati apa adanya
+invalid    → DITOLAK di FormRequest/DTO boundary (bukan diperlakukan sbg "kosong")
+```
+`KomponenPenilaianData::fromArray()`:
 ```php
-$assessmentType = $data->assessmentType !== '' ? $data->assessmentType : match ($data->subjekType) {
+assessmentType: isset($data['assessment_type']) && $data['assessment_type'] !== ''
+    ? (string) $data['assessment_type']
+    : null,
+```
+Validasi enum-validity (`Rule::enum(AssessmentType::class)`) tetap di `StoreKomponenPenilaianRequest`/`UpdateKomponenPenilaianRequest` sbg `nullable` — jadi input invalid (mis. `'foobar'`) sudah ditolak SEBELUM sampai ke DTO/Action sama sekali; DTO/Action hanya pernah menerima `null` (tidak diisi) atau nilai enum valid, tidak pernah nilai invalid.
+
+`CreateKomponenPenilaianAction::execute()`: hitung default HANYA saat `null`:
+```php
+$assessmentType = $data->assessmentType ?? match ($data->subjekType) {
     'elemen_cp' => AssessmentType::Narrative->value,
     'mata_pelajaran' => AssessmentType::Numeric->value,
 };
 ```
-(Detail lengkap parameter opsional vs required di DTO ditentukan saat plan ditulis — prinsipnya: form SELALU mengirim field ini karena selalu ada di UI §4, jadi secara praktik `assessmentType` akan selalu terisi dari request; fallback di atas murni jaring pengaman untuk pemanggilan programatik/test lama yang belum tahu field baru ini.)
 
 `UpdateKomponenPenilaianAction`: tambah `$komponen->assessment_type = $data->assessmentType ?? $komponen->assessment_type;` (pertahankan nilai lama kalau tidak dikirim).
 
@@ -167,6 +178,8 @@ public function rules(): array
 Catatan: `nilai.*.{$komponenId}` memakai wildcard `*` untuk segmen siswa (index array pertama tetap dinamis per siswa) dan `{$komponenId}` literal untuk segmen komponen (karena komponen per-asesmen jumlahnya tetap & diketahui di server) — detail keakuratan pola wildcard Laravel untuk struktur nested-per-key-dinamis ini WAJIB diverifikasi saat implementasi (lihat catatan implementer di plan).
 
 `required`/`prohibited` bukan `nullable` polos untuk `narrative` — supaya guru tidak bisa submit sel narrative kosong lalu lolos begitu saja (beda dari `numeric` yang boleh dikosongkan dulu = belum dinilai).
+
+**Acceptance criterion eksplisit (regression/security test)**: payload `nilai.*.*` TIDAK PERNAH punya field `assessment_type` di dalamnya — field itu murni properti `KomponenPenilaian` yang sudah tersimpan di DB, bukan bagian dari struktur payload nilai sama sekali. Kalau browser/client secara paksa mengirim `nilai[siswaId][komponenId][assessment_type]=numeric` (mis. lewat DevTools, mencoba menyamarkan komponen `predicate` seolah `numeric` supaya validasi `prohibited` tidak berlaku), field itu WAJIB diabaikan total — tidak pernah dibaca `UpdateNilaiSiswaRequest` maupun `SimpanNilaiSiswaAction`, dan tidak mempengaruhi validasi maupun penyimpanan. Rules di atas sudah otomatis memenuhi ini (rules dibangun dari `$tipePerKomponen` hasil query DB, bukan dari input request) — tapi test eksplisit WAJIB ada utk mengunci perilaku ini sbg kontrak, bukan kebetulan.
 
 ## §7. `SimpanNilaiSiswaAction` — Konsistensi Data per Tipe (Bukan Cuma Simpan Apa Adanya)
 
@@ -242,23 +255,37 @@ Render kondisional per kolom komponen berdasar `$komponen->assessment_type`:
 
 ## §9. Test Matrix (Acceptance Criteria WAJIB, bukan cuma happy path)
 
+**Layer 1 — `UpdateNilaiSiswaRequest` (HTTP validation, via `$this->post(...)`):**
+
 | Tipe | nilai_angka | predikat | catatan | Hasil |
 |---|---|---|---|---|
-| Numeric | 85 | — | opsional | ✅ tersimpan |
-| Numeric | kosong | — | — | ✅ tersimpan (null, belum dinilai) |
-| Numeric | 85 | BSH (dipaksa kirim) | — | ✅ tersimpan TAPI `predikat` dipaksa `null` oleh Action (§7) |
-| Narrative | — | — | wajib diisi | ✅ tersimpan |
-| Narrative | — | — | kosong | ❌ ditolak validasi (`catatan` required) |
-| Narrative | 85 (dipaksa kirim) | — | diisi | ✅ tersimpan TAPI `nilai_angka` dipaksa `null` |
-| Predicate | — | BSH | opsional | ✅ tersimpan |
-| Predicate | — | kosong | — | ❌ ditolak validasi (`predikat` wajib) |
-| Predicate | — | `"invalid_value"` | — | ❌ ditolak validasi (bukan salah satu BB/MB/BSH/BSB) |
+| Numeric | 85 | — | opsional | ✅ lolos |
+| Numeric | kosong | — | — | ✅ lolos (null, belum dinilai) |
+| Numeric | 85 | BSH | — | ❌ ditolak — `predikat` `prohibited` untuk tipe numeric |
+| Narrative | — | — | wajib diisi | ✅ lolos |
+| Narrative | — | — | kosong | ❌ ditolak — `catatan` `required` |
+| Narrative | 85 | — | diisi | ❌ ditolak — `nilai_angka` `prohibited` untuk tipe narrative |
+| Predicate | — | BSH | opsional | ✅ lolos |
+| Predicate | — | kosong | — | ❌ ditolak — `predikat` wajib |
+| Predicate | — | `"invalid_value"` | — | ❌ ditolak — bukan salah satu BB/MB/BSH/BSB |
+
+**Layer 2 — `SimpanNilaiSiswaAction` (unit test, panggil Action langsung dgn `NilaiSiswaBatchData` buatan tangan, MELEWATI validasi HTTP sepenuhnya):**
+
+Menguji invariant §7 sbg defense-in-depth murni — payload sengaja "kotor" (field yang seharusnya `prohibited` tetap diisi) untuk membuktikan Action membersihkannya sendiri terlepas dari apakah Request sempat memvalidasi atau tidak:
+
+| Tipe komponen | Payload dipaksa | Hasil tersimpan di `NilaiSiswa` |
+|---|---|---|
+| numeric | `nilai_angka=85, predikat='BSH', catatan='x'` | `nilai_angka=85, predikat=NULL, catatan='x'` |
+| narrative | `nilai_angka=85, predikat='BSH', catatan='y'` | `nilai_angka=NULL, predikat=NULL, catatan='y'` |
+| predicate | `nilai_angka=85, predikat='BSH', catatan='z'` | `nilai_angka=NULL, predikat='BSH', catatan='z'` |
+
+Dua layer ini SENGAJA diuji terpisah (bukan cuma satu test HTTP end-to-end) — Layer 1 membuktikan "request menolak input salah", Layer 2 membuktikan "Action tidak pernah bisa menyimpan kombinasi tidak konsisten, bahkan kalau suatu saat dipanggil dari jalur lain yang melewati Request sama sekali (mis. import/seed programatik)".
 
 Ditambah:
 - Create `KomponenPenilaian` dengan `subjek_type=elemen_cp` tanpa `assessment_type` eksplisit → default `narrative`.
 - Create `KomponenPenilaian` dengan `subjek_type=mata_pelajaran` tanpa `assessment_type` eksplisit → default `numeric`.
 - Create dengan `assessment_type` eksplisit override (mis. `elemen_cp` + `predicate`) → override dihormati, TIDAK dipaksa ke default.
-- **Regresi wajib**: `KomponenPenilaian` existing (dari data Sprint 1 / sebelum Sprint 2) otomatis `assessment_type='numeric'` dan seluruh alur lama (input nilai, rekap, rapor) tetap berjalan tanpa perubahan perilaku.
+- **Regresi wajib**: `KomponenPenilaian` existing (dari data Sprint 1 / sebelum Sprint 2) otomatis `assessment_type='numeric'`, dan seluruh alur numeric existing (input nilai, rekap, rapor) tetap berjalan tanpa perubahan perilaku **yang tidak disengaja**. Catatan penting: C1/C2/C3 (§3) MEMANG sengaja diubah supaya hanya memperhitungkan komponen `assessment_type=numeric` secara eksplisit (bukan lagi via `whereNotNull('nilai_angka')`) — test regresi untuk 3 service itu HARUS memverifikasi hasil hitungnya identik dengan sebelumnya UNTUK KASUS yang seluruh komponennya numeric (tidak ada perubahan angka di skenario itu), BUKAN menguji bahwa kode/implementasinya tidak berubah sama sekali.
 - C1/C2/C3 (§3): test yang membuktikan rekap/narasi/progress **angka-nya benar** saat ada campuran komponen numeric+narrative+predicate dalam satu kelas/semester (bukan cuma "tidak error").
 
 ## Non-Goals Sprint 2 (eksplisit)
@@ -271,4 +298,4 @@ Ditambah:
 ## Self-Review
 
 - Semua 8 poin syarat dari review Sprint 2 masuk eksplisit: (1) default domain-layer bukan DB §5, (2) AssessmentType vs PredikatPaud dipisah §2, (3) audit lengkap §3 dgn 3 Bucket C + 2 Bucket B dijelaskan alasannya, (4) validasi server-side dari KomponenPenilaian bukan trust-request §6, (5) konsistensi data di Action §7, (6) test matrix eksplisit §9, (7) non-goal report PDF ditegaskan ulang.
-- Placeholder scan: satu titik ditandai eksplisit sbg "perlu diverifikasi saat implementasi" (pola wildcard Laravel `nilai.*.{id}` di §6) — bukan placeholder, tapi ketidakpastian teknis yang jujur dan spesifik, akan diverifikasi dgn test nyata di plan.
+- Placeholder scan: satu titik ditandai eksplisit sbg "perlu diverifikasi saat implementasi" (pola wildcard Laravel `nilai.*.{id}` di §6) — bukan placeholder, tapi ketidakpastian teknis yang jujur dan spesifik. Plan WAJIB memuat task RED eksplisit lebih dulu: minimal 2 siswa × 2 komponen (tipe berbeda) dikirim dalam satu request, buktikan tiap kombinasi baris/kolom tervalidasi sesuai `assessment_type` komponennya masing-masing (bukan tercampur/salah sasaran antar siswa atau antar komponen) — SEBELUM rule di §6 dianggap final/GREEN.
