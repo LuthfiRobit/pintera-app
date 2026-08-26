@@ -14,7 +14,12 @@ class Kelas extends Model
 
     protected $table = 'kelas';
 
-    protected $fillable = ['lembaga_id', 'tahun_ajaran_id', 'nama', 'tingkat', 'wali_kelas_guru_id', 'pola_jam_id', 'ruangan_id'];
+    protected $fillable = ['lembaga_id', 'tahun_ajaran_id', 'nama', 'tingkat', 'fase_id', 'wali_kelas_guru_id', 'pola_jam_id', 'ruangan_id'];
+
+    public function fase(): BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Akademik\Models\Fase::class);
+    }
 
     public function ruangan(): BelongsTo
     {
