@@ -5,6 +5,9 @@ use App\Models\JalurPpdb;
 use App\Models\Lembaga;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 function buatGelombangDenganDuaJalur(): array
 {
