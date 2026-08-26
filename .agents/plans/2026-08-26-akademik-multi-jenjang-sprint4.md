@@ -35,7 +35,7 @@
 - Consumes: `App\Domains\Akademik\Enums\ModePembelajaran::fromBentukPendidikan(string): ModePembelajaran` (existing, tidak diubah).
 - Produces: `AcademicProfile::fromBentukPendidikan(string $bentukPendidikan): self` dengan property readonly `learningMode` (`ModePembelajaran`) dan `reportTemplate` (`string`). Tidak dikonsumsi task/sprint lain di dalam Sprint 4 ini (sengaja, lihat Global Constraints) — Sprint 5 nanti yang akan mengonsumsi `reportTemplate`.
 
-- [ ] **Step 1: Tulis test table-driven (RED dulu — class belum ada)**
+- [x] **Step 1: Tulis test table-driven (RED dulu — class belum ada)**
 
 ```php
 <?php
@@ -81,7 +81,7 @@ it('throws for an empty string bentuk_pendidikan', function () {
 Run: `php artisan test --filter=AcademicProfileTest`
 Expected: FAIL — `Class "App\Domains\Akademik\Support\AcademicProfile" not found`.
 
-- [ ] **Step 2: Implementasi `AcademicProfile`**
+- [x] **Step 2: Implementasi `AcademicProfile`**
 
 ```php
 <?php
@@ -126,12 +126,12 @@ final class AcademicProfile
 }
 ```
 
-- [ ] **Step 3: Jalankan test lagi (harus PASS setelah implementasi Step 2)**
+- [x] **Step 3: Jalankan test lagi (harus PASS setelah implementasi Step 2)**
 
 Run: `php artisan test --filter=AcademicProfileTest`
 Expected: PASS — Pest melaporkan tiap baris `->with()` sbg test terpisah, jadi 4 `it()` di atas (9 baris + 9 baris + 1 + 1) akan tampak sbg 20 test individual, semua PASS.
 
-- [ ] **Step 4: Verifikasi manual encapsulation (bukan test runtime — sesuai Global Constraints)**
+- [x] **Step 4: Verifikasi manual encapsulation (bukan test runtime — sesuai Global Constraints)**
 
 Baca ulang `app/Domains/Akademik/Support/AcademicProfile.php` yang baru ditulis, konfirmasi:
 - `__construct` bertanda `private` (bukan `public`/tanpa modifier).
@@ -140,7 +140,7 @@ Baca ulang `app/Domains/Akademik/Support/AcademicProfile.php` yang baru ditulis,
 
 Ini bukan langkah otomatis — cukup baca file dan centang manual, TIDAK PERLU menulis test Pest yang mencoba `new AcademicProfile(...)` dari luar class untuk membuktikan itu gagal (sesuai keputusan eksplisit di spec §2).
 
-- [ ] **Step 5: `php -l` dan commit**
+- [x] **Step 5: `php -l` dan commit**
 
 ```bash
 php -l app/Domains/Akademik/Support/AcademicProfile.php
@@ -155,12 +155,12 @@ git commit -m "feat(akademik): tambah AcademicProfile - platform default preset 
 
 **Files:** Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses `php artisan test`/`migrate` lain berjalan bersamaan**
+- [x] **Step 1: Jalankan full test suite (TANPA filter), sekali, foreground, tidak ada proses `php artisan test`/`migrate` lain berjalan bersamaan**
 
 Run: `php artisan test`
 Expected: 0 failed. Catat jumlah pass persis (bukan "tampak hijau") — baseline sebelum Sprint 4 adalah 2201 passed, 4 skipped (dari Sprint 3 setelah fix review). Task 1 menambah 20 test baru (lihat Step 3 Task 1), jadi ekspektasi akhir kira-kira 2221 passed, 4 skipped — TAPI jangan asumsikan angka pasti ini benar tanpa menjalankan; laporkan angka NYATA dari output.
 
-- [ ] **Step 2: Laporkan hasil final ke user**
+- [x] **Step 2: Laporkan hasil final ke user**
 
 Ringkasan: jumlah test pass/fail (angka pasti dari run nyata), commit hash Task 1, konfirmasi tidak ada file lain yang tersentuh selain 2 file di Task 1.
 
