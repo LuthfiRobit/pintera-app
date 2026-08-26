@@ -135,12 +135,16 @@ class DashboardStatsService
 
         $totalSiswa = Siswa::where('kelas_id', $kelas->id)->count();
         $totalKomponen = KomponenPenilaian::where('semester_id', $semester->id)
-            ->whereHasMorph('subjek', [MataPelajaran::class], fn ($q) => $q->where('lembaga_id', $kelas->lembaga_id))
+            ->where('lembaga_id', $kelas->lembaga_id)
             ->count();
 
         $totalTerisi = NilaiSiswa::whereHas('siswa', fn ($q) => $q->where('kelas_id', $kelas->id))
             ->whereHas('komponenPenilaian', fn ($q) => $q->where('semester_id', $semester->id))
-            ->whereNotNull('nilai_angka')
+            ->where(function ($q) {
+                $q->whereNotNull('nilai_angka')
+                    ->orWhereNotNull('predikat')
+                    ->orWhere(fn ($sub) => $sub->whereNotNull('catatan')->where('catatan', '!=', ''));
+            })
             ->count();
 
         $totalSlot = $totalSiswa * $totalKomponen;
