@@ -33,7 +33,11 @@ Lokasi: `app/Http/Controllers/Admin/DashboardController.php:248-295` (sudah fix)
 
 ---
 
-## 🟡 Technical Debt — `ElemenCp` (Sprint 1 Akademik) kemungkinan tumpang tindih dengan `MataPelajaran.tipe=aspek_perkembangan` (ditemukan 26 Agustus 2026)
+## 🟢 Technical Debt `TD-AKADEMIK-001` — SELESAI (27 Agustus 2026) — `ElemenCp` vs `MataPelajaran.tipe=aspek_perkembangan`
+
+**Resolusi**: audit lanjutan (26-27 Agustus 2026, dikoreksi 2x) menemukan `aspek_perkembangan` BUKAN sistem aktif yang bersaing dengan `ElemenCp` — CRUD-nya berfungsi & diuji, TAPI tidak pernah terintegrasi ke defaulting `assessment_type` (`CreateKomponenPenilaianAction` cuma lihat `subjek_type`, buta terhadap `MataPelajaran.tipe`) dan tidak pernah dipakai data nyata (seluruh seeder demo cuma `bentuk_pendidikan=SD`, tidak ada lembaga PAUD sama sekali). Keputusan: **hapus total** `TipeMataPelajaran::AspekPerkembangan` sampai level `ENUM` database (bukan cuma kode aplikasi), `ElemenCp` jadi satu-satunya jalur resmi. Dieksekusi lewat `.agents/plans/2026-08-27-td-akademik-001-hapus-aspek-perkembangan.md`, full suite 2240 passed/0 failed, handoff log `.agents/logs/2026-08-27-td-akademik-001-hapus-aspek-perkembangan.md`.
+
+**Catatan lama (arsip, sebelum resolusi di atas):**
 
 Saat mengerjakan Sprint 1 fondasi akademik multi-jenjang (subjek polymorphic `MataPelajaran`|`ElemenCp`), ternyata desain ASLI modul Akademik (`docs/superpowers/specs/2026-07-24-presensi-asesmen-design.md`, ditulis 1 bulan sebelum Sprint 1) **sudah** merancang solusi untuk PAUD-tanpa-mata-pelajaran: `MataPelajaran.tipe = 'aspek_perkembangan'` (per-lembaga, dibuat lewat halaman Mata Pelajaran biasa yang sudah ada — `app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php`), dengan kutipan eksplisit *"struktur relasi ke Jadwal, Sesi Pembelajaran, dan Asesmen tetap satu jalur untuk keduanya"* — artinya cukup satu FK `MataPelajaran` biasa untuk semua jenjang, tidak perlu model terpisah.
 
@@ -50,7 +54,11 @@ Saat mengerjakan Sprint 1 fondasi akademik multi-jenjang (subjek polymorphic `Ma
 
 ---
 
-## 🟡 Technical Debt (`TD-AKADEMIK-002`) — Sprint 1-4 Fondasi Akademik Multi-Jenjang menyimpang dari `.agents/skills/laravel-feature-standard/SKILL.md` (ditemukan 26 Agustus 2026)
+## 🟢 Technical Debt `TD-AKADEMIK-002` — SELESAI (26 Agustus 2026)
+
+Retrofit `FaseDefaultMappingController` + `KelasController` (full, termasuk field pre-existing) ke FormRequest+DTO+Action, `Support/` dipindah ke `Services/`. Dieksekusi lewat `.agents/plans/2026-08-26-td-akademik-002-retrofit-skill-standard.md`, full suite 2238 passed/0 failed, tanpa satu pun perubahan behavior/HTTP-status (dibuktikan seluruh test existing termasuk 10 test ownership-check `KelasCrudTest` tetap hijau tanpa assertion diubah). Handoff log `.agents/logs/2026-08-26-td-akademik-002-retrofit-skill-standard.md`.
+
+**Catatan lama (arsip, sebelum resolusi di atas):**
 
 Setelah Sprint 4 (Academic Profile Service) selesai, dilakukan audit terhadap seluruh kode Sprint 1-4 (`ElemenCp`/subjek polymorphic, `AssessmentType`, `Fase`/`FaseDefaultMapping`, `AcademicProfile`) dibandingkan skill arsitektur resmi project (`laravel-feature-standard`). Hasilnya: struktur besar (Domain-Oriented, `Actions/`/`DataTransferObjects/`/`Models/`/`Services/`, tenant isolation eksplisit, test authorization+tenant-isolation) sudah konsisten dengan skill — TAPI ada beberapa deviasi nyata:
 
