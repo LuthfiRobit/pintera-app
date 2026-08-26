@@ -28,13 +28,13 @@ it('concatenates narasi across every mapel the kelas has an asesmen for', functi
     ['kelas' => $kelas, 'semester' => $semester, 'siswa' => $siswa] = siapkanKelasSemesterUntukNarasi();
 
     $matematika = MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'nama' => 'Matematika']);
-    $asesmenMtk = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $matematika->id, 'semester_id' => $semester->id]);
-    $komponenMtk = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $matematika->id, 'semester_id' => $semester->id, 'deskripsi' => 'operasi bilangan bulat', 'kktp_minimal' => 75]);
+    $asesmenMtk = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $matematika->id, 'semester_id' => $semester->id]);
+    $komponenMtk = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $matematika->id, 'semester_id' => $semester->id, 'deskripsi' => 'operasi bilangan bulat', 'kktp_minimal' => 75]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmenMtk->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenMtk->id, 'nilai_angka' => 90]);
 
     $ipa = MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'nama' => 'IPA']);
-    $asesmenIpa = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $ipa->id, 'semester_id' => $semester->id]);
-    $komponenIpa = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $ipa->id, 'semester_id' => $semester->id, 'deskripsi' => 'siklus air', 'kktp_minimal' => 75]);
+    $asesmenIpa = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $ipa->id, 'semester_id' => $semester->id]);
+    $komponenIpa = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $ipa->id, 'semester_id' => $semester->id, 'deskripsi' => 'siklus air', 'kktp_minimal' => 75]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmenIpa->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenIpa->id, 'nilai_angka' => 50]);
 
     $narasi = app(GenerateNarasiPerkembanganAction::class)->execute($siswa, $kelas, $semester);

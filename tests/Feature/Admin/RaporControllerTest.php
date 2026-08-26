@@ -45,12 +45,13 @@ it('displays the rapor recap page for selected class and semester', function () 
     $asesmen = Asesmen::factory()->create([
         'guru_id' => $guru->id,
         'kelas_id' => $kelas->id,
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'jenis' => JenisAsesmen::SumatifLingkupMateri,
     ]);
 
-    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
     $asesmen->komponenPenilaian()->attach($komponen->id);
 
     NilaiSiswa::create([
@@ -295,11 +296,11 @@ it('calculates rapor grade using weighted component averages instead of unweight
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
 
     // Komponen A (bobot 80%) & Komponen B (bobot 20%)
-    $kompA = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 80]);
-    $kompB = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 20]);
+    $kompA = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 80]);
+    $kompB = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 20]);
 
-    $asesmenA = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
-    $asesmenB = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmenA = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmenB = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
 
     $asesmenA->komponenPenilaian()->attach($kompA->id);
     $asesmenB->komponenPenilaian()->attach($kompB->id);

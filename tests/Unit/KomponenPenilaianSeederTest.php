@@ -45,15 +45,15 @@ it('seeds assessment components for the SD institution', function () {
 
     foreach (Lembaga::all() as $lembaga) {
         $mapelIds = MataPelajaran::where('lembaga_id', $lembaga->id)->pluck('id');
-        $komponenCount = KomponenPenilaian::whereIn('mata_pelajaran_id', $mapelIds)->count();
+        $komponenCount = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->whereIn('subjek_id', $mapelIds)->count();
 
         expect($komponenCount)->toBeGreaterThan(0);
     }
 
     $sdit = Lembaga::where('npsn', '20223333')->first();
     $mtk = MataPelajaran::where('lembaga_id', $sdit->id)->where('nama', 'Matematika')->first();
-    expect(KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('kode', 'TP.1')->where('bobot', 100)->exists())->toBeTrue();
-    expect((int) KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->sum('bobot'))->toBe(100);
+    expect(KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->where('kode', 'TP.1')->where('bobot', 100)->exists())->toBeTrue();
+    expect((int) KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->sum('bobot'))->toBe(100);
 });
 
 it('is idempotent when run twice', function () {

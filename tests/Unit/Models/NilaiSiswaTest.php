@@ -27,9 +27,9 @@ function siapkanAsesmenUntukNilaiSiswaTest(): array
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
-    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
     $asesmen = Asesmen::create([
-        'guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id,
+        'guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id,
         'jenis' => JenisAsesmen::SumatifAkhirSemester, 'judul' => 'UAS', 'tanggal' => '2026-12-10',
     ]);
 

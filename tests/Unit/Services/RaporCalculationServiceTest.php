@@ -23,10 +23,10 @@ it('computes a weighted average per siswa per mapel using komponen bobot', funct
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
 
-    $komponenBerat = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 70]);
-    $komponenRingan = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 30]);
+    $komponenBerat = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 70]);
+    $komponenRingan = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'bobot' => 30]);
 
-    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenBerat->id, 'nilai_angka' => 80]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenRingan->id, 'nilai_angka' => 90]);
 
@@ -34,7 +34,7 @@ it('computes a weighted average per siswa per mapel using komponen bobot', funct
     $rekap = $service->hitungRekapKelas($kelas, $semester);
 
     // (80*70 + 90*30) / 100 = 83.0
-    expect($rekap['rekapNilai'][$siswa->id][$mapel->id])->toBe(83.0);
+    expect($rekap['rekapNilai'][$siswa->id]['mata_pelajaran:'.$mapel->id])->toBe(83.0);
     expect($rekap['classAvg'])->toBe(83.0);
     expect($rekap['highestScore'])->toBe(83.0);
     expect($rekap['siswaList']->pluck('id')->all())->toBe([$siswa->id]);
@@ -49,12 +49,12 @@ it('returns null score for a siswa with no nilai on that mapel', function () {
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswaTanpaNilai = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
-    Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
 
     $service = new RaporCalculationService();
     $rekap = $service->hitungRekapKelas($kelas, $semester);
 
-    expect($rekap['rekapNilai'][$siswaTanpaNilai->id][$mapel->id])->toBeNull();
+    expect($rekap['rekapNilai'][$siswaTanpaNilai->id]['mata_pelajaran:'.$mapel->id])->toBeNull();
     expect($rekap['classAvg'])->toBeNull();
     expect($rekap['highestScore'])->toBeNull();
 });
@@ -84,7 +84,7 @@ it('returns no data when kelas and semester belong to different lembaga, even wh
     $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
     $kelasA = Kelas::factory()->create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $tahunAjaranA->id]);
     $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembagaA->id]);
-    Asesmen::factory()->create(['kelas_id' => $kelasA->id, 'mata_pelajaran_id' => $mapelA->id, 'semester_id' => $semesterA->id]);
+    Asesmen::factory()->create(['kelas_id' => $kelasA->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelA->id, 'semester_id' => $semesterA->id]);
 
     $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
     $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);

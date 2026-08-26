@@ -28,7 +28,8 @@
         ];
         foreach ($mapelList as $mapel) {
             $narasi = $narasiPerMapel[$mapel->id] ?? ['tertinggi' => null, 'terendah' => null];
-            $komponenTerkait = \App\Domains\Akademik\Models\KomponenPenilaian::where('mata_pelajaran_id', $mapel->id)
+            $komponenTerkait = \App\Domains\Akademik\Models\KomponenPenilaian::where('subjek_type', 'mata_pelajaran')
+                ->where('subjek_id', $mapel->id)
                 ->where('semester_id', $semester->id)
                 ->whereNotNull('elemen_cp')
                 ->first();

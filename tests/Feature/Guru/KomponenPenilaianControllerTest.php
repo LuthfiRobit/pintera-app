@@ -63,8 +63,8 @@ it('only lists komponen penilaian for mata pelajaran the guru actually teaches',
     mengajar($lembaga, $guru, $mapelDiajar, $semester, $kelas);
     $user = actingAsGuruKomponenPenilaian($guru);
 
-    $tpDiajar = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelDiajar->id, 'semester_id' => $semester->id]);
-    $tpLain = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelLain->id, 'semester_id' => $semester->id]);
+    $tpDiajar = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelDiajar->id, 'semester_id' => $semester->id]);
+    $tpLain = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelLain->id, 'semester_id' => $semester->id]);
 
     $response = $this->actingAs($user)->get(route('guru.komponen-penilaian.index'));
 
@@ -84,13 +84,15 @@ it('allows guru to create a komponen penilaian for a mata pelajaran and semester
     $user = actingAsGuruKomponenPenilaian($guru);
 
     $this->actingAs($user)->post(route('guru.komponen-penilaian.store'), [
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'kode' => 'TP 1.1',
         'deskripsi' => 'Peserta didik dapat menjumlahkan pecahan.',
+        'bobot' => 100,
     ])->assertRedirect(route('guru.komponen-penilaian.index'));
 
-    expect(KomponenPenilaian::where('mata_pelajaran_id', $mapel->id)->where('semester_id', $semester->id)->where('kode', 'TP 1.1')->exists())->toBeTrue();
+    expect(KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mapel->id)->where('semester_id', $semester->id)->where('kode', 'TP 1.1')->exists())->toBeTrue();
 });
 
 it('rejects creating a komponen penilaian for a mata pelajaran the guru does not teach', function () {
@@ -103,12 +105,14 @@ it('rejects creating a komponen penilaian for a mata pelajaran the guru does not
     $user = actingAsGuruKomponenPenilaian($guru);
 
     $this->actingAs($user)->post(route('guru.komponen-penilaian.store'), [
-        'mata_pelajaran_id' => $mapelTidakDiajar->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapelTidakDiajar->id,
         'semester_id' => $semester->id,
         'deskripsi' => 'Coba TP untuk mapel yang bukan miliknya.',
+        'bobot' => 100,
     ])->assertForbidden();
 
-    expect(KomponenPenilaian::where('mata_pelajaran_id', $mapelTidakDiajar->id)->exists())->toBeFalse();
+    expect(KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mapelTidakDiajar->id)->exists())->toBeFalse();
 });
 
 it('allows guru to edit a komponen penilaian for a mata pelajaran they teach, even one created by someone else', function () {
@@ -122,7 +126,7 @@ it('allows guru to edit a komponen penilaian for a mata pelajaran they teach, ev
     mengajar($lembaga, $guru, $mapel, $semester, $kelas);
     $user = actingAsGuruKomponenPenilaian($guru);
 
-    $tp = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'Deskripsi lama']);
+    $tp = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'Deskripsi lama']);
 
     $this->actingAs($user)->get(route('guru.komponen-penilaian.edit', $tp))->assertOk();
 
@@ -142,7 +146,7 @@ it('rejects editing or deleting a komponen penilaian for a mata pelajaran the gu
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $user = actingAsGuruKomponenPenilaian($guru);
 
-    $tp = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelTidakDiajar->id, 'semester_id' => $semester->id]);
+    $tp = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelTidakDiajar->id, 'semester_id' => $semester->id]);
 
     $this->actingAs($user)->get(route('guru.komponen-penilaian.edit', $tp))->assertForbidden();
     $this->actingAs($user)->put(route('guru.komponen-penilaian.update', $tp), ['deskripsi' => 'Coba ubah'])->assertForbidden();
@@ -162,7 +166,7 @@ it('blocks deleting a komponen penilaian already used by nilai siswa, same guard
     mengajar($lembaga, $guru, $mapel, $semester, $kelas);
     $user = actingAsGuruKomponenPenilaian($guru);
 
-    $tp = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $tp = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
     NilaiSiswa::factory()->create(['komponen_penilaian_id' => $tp->id, 'siswa_id' => $siswa->id]);
 
@@ -184,7 +188,8 @@ it('rejects storing a new assessment component when total bobot exceeds 100 perc
 
     KomponenPenilaian::create([
         'lembaga_id' => $lembaga->id,
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'kode' => 'G-1',
         'deskripsi' => 'Existing Guru',
@@ -192,7 +197,8 @@ it('rejects storing a new assessment component when total bobot exceeds 100 perc
     ]);
 
     $response = $this->actingAs($user)->postJson(route('guru.komponen-penilaian.store'), [
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'kode' => 'G-2',
         'deskripsi' => 'Overload Guru',
@@ -203,7 +209,7 @@ it('rejects storing a new assessment component when total bobot exceeds 100 perc
     expect(KomponenPenilaian::where('kode', 'G-2')->exists())->toBeFalse();
 });
 
-it('shows the elemen_cp select on the guru create form for a PAUD lembaga but not for an SD lembaga, with kktp_minimal always visible', function () {
+it('shows the subjek_type radio options on the guru create form', function () {
     $yayasan = Yayasan::factory()->create();
 
     $lembagaPaud = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
@@ -212,16 +218,6 @@ it('shows the elemen_cp select on the guru create form for a PAUD lembaga but no
 
     $responsePaud = $this->actingAs($userPaud)->get(route('guru.komponen-penilaian.create'));
     $responsePaud->assertOk();
-    $responsePaud->assertSee('name="elemen_cp"', false);
+    $responsePaud->assertSee('name="subjek_type"', false);
     $responsePaud->assertSee('name="kktp_minimal"', false);
-
-    $lembagaSd = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
-    $guruSd = Guru::factory()->create(['lembaga_id' => $lembagaSd->id]);
-    $userSd = actingAsGuruKomponenPenilaian($guruSd);
-
-    $responseSd = $this->actingAs($userSd)->get(route('guru.komponen-penilaian.create'));
-    $responseSd->assertOk();
-    $responseSd->assertDontSee('name="elemen_cp"', false);
-    $responseSd->assertSee('name="kktp_minimal"', false);
 });
-

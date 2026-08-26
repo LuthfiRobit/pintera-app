@@ -51,8 +51,8 @@ class NilaiSiswaSeeder extends Seeder
         ];
 
         if ($mtk && $siswaA->isNotEmpty()) {
-            $asesmenMtk = Asesmen::where('kelas_id', $kelasA->id)->where('mata_pelajaran_id', $mtk->id)->first();
-            $tpMtk1 = KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->first();
+            $asesmenMtk = Asesmen::where('kelas_id', $kelasA->id)->where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->first();
+            $tpMtk1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->first();
 
             if ($asesmenMtk && $tpMtk1) {
                 foreach ($siswaA as $i => $siswa) {
@@ -66,8 +66,8 @@ class NilaiSiswaSeeder extends Seeder
         }
 
         if ($ipas && $siswaA->isNotEmpty()) {
-            $asesmenIpas = Asesmen::where('kelas_id', $kelasA->id)->where('mata_pelajaran_id', $ipas->id)->first();
-            $tpIpas1 = KomponenPenilaian::where('mata_pelajaran_id', $ipas->id)->first();
+            $asesmenIpas = Asesmen::where('kelas_id', $kelasA->id)->where('subjek_type', 'mata_pelajaran')->where('subjek_id', $ipas->id)->first();
+            $tpIpas1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $ipas->id)->first();
 
             if ($asesmenIpas && $tpIpas1) {
                 foreach ($siswaA as $i => $siswa) {

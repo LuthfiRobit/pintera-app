@@ -42,18 +42,18 @@ class KomponenPenilaianSeeder extends Seeder
 
         if ($mtk) {
             KomponenPenilaian::firstOrCreate(
-                ['mata_pelajaran_id' => $mtk->id, 'semester_id' => $semester->id, 'kode' => 'TP.1.1'],
+                ['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mtk->id, 'semester_id' => $semester->id, 'kode' => 'TP.1.1'],
                 ['deskripsi' => 'Peserta didik dapat menyelesaikan operasi aritmetika pada bilangan bulat dan pecahan.', 'bobot' => 50, 'kktp' => 'Minimal 75% benar', 'kktp_minimal' => 75]
             );
             KomponenPenilaian::firstOrCreate(
-                ['mata_pelajaran_id' => $mtk->id, 'semester_id' => $semester->id, 'kode' => 'TP.1.2'],
+                ['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mtk->id, 'semester_id' => $semester->id, 'kode' => 'TP.1.2'],
                 ['deskripsi' => 'Peserta didik mendeskripsikan dan mengekspresikan relasi serta fungsi dengan representasi grafik.', 'bobot' => 50, 'kktp' => 'Mampu menggambar grafik linier', 'kktp_minimal' => 75]
             );
         }
 
         if ($ipa) {
             KomponenPenilaian::firstOrCreate(
-                ['mata_pelajaran_id' => $ipa->id, 'semester_id' => $semester->id, 'kode' => 'TP.IPA.1'],
+                ['subjek_type' => 'mata_pelajaran', 'subjek_id' => $ipa->id, 'semester_id' => $semester->id, 'kode' => 'TP.IPA.1'],
                 ['deskripsi' => 'Peserta didik memahami besaran pokok dan besaran turunan dalam satuan internasional.', 'bobot' => 100, 'kktp' => 'Tepat menggunakan alat ukur', 'kktp_minimal' => 75]
             );
         }
@@ -65,7 +65,7 @@ class KomponenPenilaianSeeder extends Seeder
 
         foreach ($mapelList as $mapel) {
             KomponenPenilaian::firstOrCreate(
-                ['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'kode' => 'TP.1'],
+                ['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'kode' => 'TP.1'],
                 ['deskripsi' => "Tujuan Pembelajaran Dasar untuk mata pelajaran {$mapel->nama}.", 'bobot' => 100, 'kktp' => 'Tercapai Sesuai Kriteria', 'kktp_minimal' => 75]
             );
         }

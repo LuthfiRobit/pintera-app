@@ -12,7 +12,7 @@ use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
-it('can create an asesmen and relate to guru, kelas, mapel, semester, and komponen penilaian', function () {
+it('can create an asesmen and relate to guru, kelas, subjek, semester, and komponen penilaian', function () {
     $asesmen = Asesmen::factory()->create([
         'jenis' => JenisAsesmen::SumatifLingkupMateri,
         'judul' => 'Ulangan Harian Bab 1',
@@ -20,12 +20,13 @@ it('can create an asesmen and relate to guru, kelas, mapel, semester, and kompon
 
     expect($asesmen->guru)->toBeInstanceOf(Guru::class);
     expect($asesmen->kelas)->toBeInstanceOf(Kelas::class);
-    expect($asesmen->mataPelajaran)->toBeInstanceOf(MataPelajaran::class);
+    expect($asesmen->subjek)->toBeInstanceOf(MataPelajaran::class);
     expect($asesmen->semester)->toBeInstanceOf(Semester::class);
     expect($asesmen->jenis)->toBe(JenisAsesmen::SumatifLingkupMateri);
 
     $komponen = KomponenPenilaian::factory()->create([
-        'mata_pelajaran_id' => $asesmen->mata_pelajaran_id,
+        'subjek_type' => $asesmen->subjek_type,
+        'subjek_id' => $asesmen->subjek_id,
         'semester_id' => $asesmen->semester_id,
     ]);
 

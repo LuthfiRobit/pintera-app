@@ -21,14 +21,14 @@ function siapkanSiswaMapelSemester(): array
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
-    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
 
     return compact('siswa', 'mapel', 'semester', 'asesmen');
 }
 
 it('generates a positive sentence when the highest-scoring TP meets its kktp_minimal', function () {
     ['siswa' => $siswa, 'mapel' => $mapel, 'semester' => $semester, 'asesmen' => $asesmen] = siapkanSiswaMapelSemester();
-    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'operasi bilangan bulat', 'kktp_minimal' => 75]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'operasi bilangan bulat', 'kktp_minimal' => 75]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 90]);
 
     $hasil = (new CapaianKompetensiGenerator())->generateNarasi($siswa, $mapel, $semester);
@@ -39,7 +39,7 @@ it('generates a positive sentence when the highest-scoring TP meets its kktp_min
 
 it('generates a needs-guidance sentence when the lowest-scoring TP is below its kktp_minimal', function () {
     ['siswa' => $siswa, 'mapel' => $mapel, 'semester' => $semester, 'asesmen' => $asesmen] = siapkanSiswaMapelSemester();
-    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'relasi dan fungsi', 'kktp_minimal' => 75]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'relasi dan fungsi', 'kktp_minimal' => 75]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 60]);
 
     $hasil = (new CapaianKompetensiGenerator())->generateNarasi($siswa, $mapel, $semester);
@@ -50,8 +50,8 @@ it('generates a needs-guidance sentence when the lowest-scoring TP is below its 
 
 it('generates both sentences when there are at least two TP spanning both conditions', function () {
     ['siswa' => $siswa, 'mapel' => $mapel, 'semester' => $semester, 'asesmen' => $asesmen] = siapkanSiswaMapelSemester();
-    $komponenTinggi = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'TP kuat', 'kktp_minimal' => 75]);
-    $komponenRendah = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'TP lemah', 'kktp_minimal' => 75]);
+    $komponenTinggi = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'TP kuat', 'kktp_minimal' => 75]);
+    $komponenRendah = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'TP lemah', 'kktp_minimal' => 75]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenTinggi->id, 'nilai_angka' => 95]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenRendah->id, 'nilai_angka' => 50]);
 
@@ -63,7 +63,7 @@ it('generates both sentences when there are at least two TP spanning both condit
 
 it('returns null for both when no TP has any nilai at all', function () {
     ['siswa' => $siswa, 'mapel' => $mapel, 'semester' => $semester] = siapkanSiswaMapelSemester();
-    KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
 
     $hasil = (new CapaianKompetensiGenerator())->generateNarasi($siswa, $mapel, $semester);
 
@@ -73,7 +73,7 @@ it('returns null for both when no TP has any nilai at all', function () {
 
 it('falls back to a default 75 threshold when kktp_minimal is null', function () {
     ['siswa' => $siswa, 'mapel' => $mapel, 'semester' => $semester, 'asesmen' => $asesmen] = siapkanSiswaMapelSemester();
-    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'TP tanpa ambang eksplisit', 'kktp_minimal' => null]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'TP tanpa ambang eksplisit', 'kktp_minimal' => null]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 80]);
 
     $hasil = (new CapaianKompetensiGenerator())->generateNarasi($siswa, $mapel, $semester);

@@ -6,6 +6,7 @@ use App\Domains\Akademik\Actions\Penilaian\CreateAsesmenAction;
 use App\Domains\Akademik\Actions\Penilaian\SimpanNilaiSiswaAction;
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Http\Requests\Akademik\StoreAsesmenRequest;
@@ -63,9 +64,11 @@ class AsesmenController extends BaseController
         return view('portals.guru.akademik.asesmen.create', [
             'kelasList' => Kelas::whereIn('id', $kelasIds)->orderBy('nama')->get(),
             'mataPelajaranList' => MataPelajaran::whereIn('id', $mapelIds)->orderBy('nama')->get(),
+            'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->orderByDesc('id')->get(),
             'komponenList' => KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->whereIn('subjek_id', $mapelIds)->get(),
             'jenisAsesmenList' => JenisAsesmen::v1Didukung(),
+            'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
 

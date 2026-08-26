@@ -68,7 +68,8 @@ it('allows guru to create an asesmen and grade students per komponen', function 
     ]);
 
     $komponen = KomponenPenilaian::factory()->create([
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
     ]);
 
@@ -77,7 +78,8 @@ it('allows guru to create an asesmen and grade students per komponen', function 
 
     $response = $this->actingAs($user)->post(route('guru.asesmen.store'), [
         'kelas_id' => $kelas->id,
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'jenis' => JenisAsesmen::SumatifLingkupMateri->value,
         'judul' => 'Ulangan Bab 1',
@@ -169,11 +171,12 @@ it('rejects creating an asesmen for a kelas/mapel/semester combination the guru 
     $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
     $mapelLain = MataPelajaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
 
-    $komponenLain = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapelLain->id]);
+    $komponenLain = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelLain->id]);
 
     $this->actingAs($user)->post(route('guru.asesmen.store'), [
         'kelas_id' => $kelasLain->id,
-        'mata_pelajaran_id' => $mapelLain->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapelLain->id,
         'semester_id' => $semesterSaya->id,
         'jenis' => JenisAsesmen::SumatifLingkupMateri->value,
         'judul' => 'Coba Asesmen Kelas Lain',
@@ -206,7 +209,8 @@ it('rejects creating an asesmen with no komponen_id selected', function () {
 
     $this->actingAs($user)->post(route('guru.asesmen.store'), [
         'kelas_id' => $kelas->id,
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'jenis' => JenisAsesmen::SumatifLingkupMateri->value,
         'judul' => 'Asesmen Tanpa TP',
@@ -235,7 +239,8 @@ it('rejects a jenis outside the v1-supported sumatif options', function () {
 
     $this->actingAs($user)->post(route('guru.asesmen.store'), [
         'kelas_id' => $kelas->id,
-        'mata_pelajaran_id' => $mapel->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'jenis' => JenisAsesmen::Formatif->value,
         'judul' => 'Coba Jenis Formatif',

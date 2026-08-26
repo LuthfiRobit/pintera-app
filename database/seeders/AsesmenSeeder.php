@@ -52,10 +52,10 @@ class AsesmenSeeder extends Seeder
         $guruMaya = Guru::where('email', 'maya.anggraini@demo.test')->first();
 
         if ($mtk && $guruHendra) {
-            $tpMtk1 = KomponenPenilaian::where('mata_pelajaran_id', $mtk->id)->where('semester_id', $semester->id)->first();
+            $tpMtk1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->where('semester_id', $semester->id)->first();
 
             $asesmenMtk = Asesmen::firstOrCreate(
-                ['guru_id' => $guruHendra->id, 'kelas_id' => $kelasA->id, 'mata_pelajaran_id' => $mtk->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Bilangan Cacah'],
+                ['guru_id' => $guruHendra->id, 'kelas_id' => $kelasA->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mtk->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Bilangan Cacah'],
                 ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(5)->toDateString()]
             );
 
@@ -65,10 +65,10 @@ class AsesmenSeeder extends Seeder
         }
 
         if ($ipas && $guruMaya) {
-            $tpIpas1 = KomponenPenilaian::where('mata_pelajaran_id', $ipas->id)->where('semester_id', $semester->id)->first();
+            $tpIpas1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $ipas->id)->where('semester_id', $semester->id)->first();
 
             $asesmenIpas = Asesmen::firstOrCreate(
-                ['guru_id' => $guruMaya->id, 'kelas_id' => $kelasA->id, 'mata_pelajaran_id' => $ipas->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Pengenalan Ekosistem'],
+                ['guru_id' => $guruMaya->id, 'kelas_id' => $kelasA->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $ipas->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Pengenalan Ekosistem'],
                 ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(3)->toDateString()]
             );
 
@@ -88,11 +88,11 @@ class AsesmenSeeder extends Seeder
             return;
         }
 
-        $tp = KomponenPenilaian::where('mata_pelajaran_id', $mapel->id)->first();
+        $tp = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mapel->id)->first();
 
         foreach ($kelasList as $kelas) {
             $asesmen = Asesmen::firstOrCreate(
-                ['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'judul' => "Sumatif Lingkup Materi 1: Evaluasi Dasar {$kelas->nama}"],
+                ['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'judul' => "Sumatif Lingkup Materi 1: Evaluasi Dasar {$kelas->nama}"],
                 ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(4)->toDateString()]
             );
 

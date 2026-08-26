@@ -69,7 +69,7 @@ it('completes the full happy path: submit -> verify -> approve, locking nilai af
     expect($disetujui->status)->toBe(StatusPengajuanRapor::Disetujui);
     expect($disetujui->disetujui_oleh)->toBe($userKepsek->id);
 
-    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
 
     expect(fn () => (new SimpanNilaiSiswaAction())->execute($asesmen, NilaiSiswaBatchData::fromArray(['nilai' => []])))
         ->toThrow(ValidationException::class);
@@ -86,7 +86,7 @@ it('does not lock nilai for a different kelas or semester', function () {
     $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
     $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $asesmenLain = Asesmen::factory()->create(['kelas_id' => $kelasLain->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semesterLain->id]);
+    $asesmenLain = Asesmen::factory()->create(['kelas_id' => $kelasLain->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterLain->id]);
 
     (new SimpanNilaiSiswaAction())->execute($asesmenLain, NilaiSiswaBatchData::fromArray(['nilai' => []]));
     expect(true)->toBeTrue(); // tidak throw = lulus

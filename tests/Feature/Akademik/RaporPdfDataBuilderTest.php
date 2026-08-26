@@ -50,8 +50,8 @@ function siapkanSiswaLengkapUntukPdf(): array
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'status' => 'aktif']);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id]);
-    $komponen = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semester->id, 'kktp_minimal' => 75]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'kktp_minimal' => 75]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 90]);
 
     $orangTua = OrangTua::factory()->create(['nama_lengkap' => 'Budi Orang Tua']);
@@ -122,8 +122,8 @@ it('sums absensi and averages nilai across Ganjil+Genap when the pair exists', f
         'tahun_ajaran_id' => $tahunAjaran->id, 'urutan' => 2, 'nama' => 'Genap',
         'tanggal_mulai' => now(), 'tanggal_selesai' => now()->addMonths(6),
     ]);
-    $asesmenGenap = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'mata_pelajaran_id' => $mapel->id, 'semester_id' => $semesterGenap->id]);
-    $komponenGenap = KomponenPenilaian::factory()->create(['mata_pelajaran_id' => $mapel->id, 'semester_id' => $semesterGenap->id]);
+    $asesmenGenap = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterGenap->id]);
+    $komponenGenap = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterGenap->id]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmenGenap->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenGenap->id, 'nilai_angka' => 80]);
 
     $sesiGanjil = \App\Domains\Akademik\Models\SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()->subMonths(3)]);
@@ -134,7 +134,7 @@ it('sums absensi and averages nilai across Ganjil+Genap when the pair exists', f
     $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semesterGenap);
 
     expect($data['isGenap'])->toBeTrue();
-    expect($data['nilaiRataRataTahunan'][$mapel->id])->toBe(85.0);
+    expect($data['nilaiRataRataTahunan']['mata_pelajaran:'.$mapel->id])->toBe(85.0);
     expect($data['absensi']['izin'])->toBe(1);
     expect($data['absensiTahunan']['hadir'])->toBe(1);
     expect($data['absensiTahunan']['izin'])->toBe(1);
