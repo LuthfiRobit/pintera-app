@@ -12,7 +12,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Mata Pelajaran</h1>
-                <p class="mt-0.5 text-xs text-gray-500">Kelola daftar mata pelajaran dan aspek perkembangan untuk kurikulum lembaga.</p>
+                <p class="mt-0.5 text-xs text-gray-500">Kelola daftar mata pelajaran untuk kurikulum lembaga.</p>
             </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Mata Pelajaran</b>
