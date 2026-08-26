@@ -33,6 +33,23 @@ Lokasi: `app/Http/Controllers/Admin/DashboardController.php:248-295` (sudah fix)
 
 ---
 
+## 🟡 Technical Debt — `ElemenCp` (Sprint 1 Akademik) kemungkinan tumpang tindih dengan `MataPelajaran.tipe=aspek_perkembangan` (ditemukan 26 Agustus 2026)
+
+Saat mengerjakan Sprint 1 fondasi akademik multi-jenjang (subjek polymorphic `MataPelajaran`|`ElemenCp`), ternyata desain ASLI modul Akademik (`docs/superpowers/specs/2026-07-24-presensi-asesmen-design.md`, ditulis 1 bulan sebelum Sprint 1) **sudah** merancang solusi untuk PAUD-tanpa-mata-pelajaran: `MataPelajaran.tipe = 'aspek_perkembangan'` (per-lembaga, dibuat lewat halaman Mata Pelajaran biasa yang sudah ada — `app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php`), dengan kutipan eksplisit *"struktur relasi ke Jadwal, Sesi Pembelajaran, dan Asesmen tetap satu jalur untuk keduanya"* — artinya cukup satu FK `MataPelajaran` biasa untuk semua jenjang, tidak perlu model terpisah.
+
+**Implikasi**: solusi Sprint 1 (bikin model `ElemenCp` baru + polymorphic `subjek_type`/`subjek_id`) mungkin lebih rumit dari yang seharusnya — desain minimal yang konsisten dengan arsitektur asli adalah cukup jadikan `mata_pelajaran_id` nullable-tapi-tetap-FK-biasa ke `MataPelajaran`, buang kolom `elemen_cp` enum yang redundan, TANPA perlu morph sama sekali.
+
+**Bonus temuan**: `ElemenCp` Sprint 1 cuma punya **3 elemen** (nilai_agama_moral, jati_diri, literasi_steam), padahal desain asli menyebut **"6 aspek STPPA"** (Standar Tingkat Pencapaian Perkembangan Anak, standar resmi PAUD Indonesia) — jadi selain kemungkinan arsitektur berlebih, datanya sendiri juga tidak lengkap dibanding standar resminya.
+
+**Konteks kurikulum lain yang sudah diantisipasi tim sebelumnya** (dari desain yang sama, §10 Out of Scope):
+- **K13/KTSP**: *"`komponen_penilaian` sudah dinamai generik supaya siap menampung KD, tapi alur/agregasi nilai KD belum dirancang detail"* — multi-kurikulum (bukan cuma Kurikulum Merdeka) sudah diantisipasi, belum dibangun.
+- **Kemenag (madrasah)**: enum `KelompokMataPelajaran` sudah ada `AgamaKemenag` ("KMA 450") dan `ProjekP5Ppra` (PPRA = versi Kemenag dari P5) — variasi kurikulum antar naungan sudah nyata di kode, belum ada alur kerja penuh.
+- **P5**: *"struktur penilaian per Dimensi P5, lintas mapel/kolaboratif, berbeda dari asesmen mapel reguler"* — konsisten dengan keputusan sebelumnya bahwa P5 butuh domain terpisah (bukan sekadar subjek baru di bawah KomponenPenilaian).
+
+**Keputusan (26 Agustus 2026)**: TIDAK dibongkar sekarang — `ElemenCp` tetap dipakai apa adanya (sudah jalan, sudah full-test-covered). Dicatat sbg technical debt untuk direview nanti (kemungkinan konsolidasi `ElemenCp` → `MataPelajaran.tipe=aspek_perkembangan`, atau sebaliknya memperkaya `ElemenCp` jadi 6 aspek + dukungan tambahan). Sprint 3 (Curriculum Phase) tetap lanjut di atas fondasi Sprint 1 yang ada, dengan catatan desainnya WAJIB config-driven (bukan hardcoded) mengingat variasi kurikulum yang sekarang terkonfirmasi nyata dari riset ini.
+
+---
+
 ## 1. Platform / Admin SaaS
 *Dikelola tim penyedia, di atas semua Yayasan. Level paling kosong dari audit — identitas (`platform_super_admin`, `scope_level='platform'`) sudah ada sejak RBAC v2, tapi PRODUKnya (onboarding, feature-gating, billing, dashboard agregat) sebagian besar belum.*
 
