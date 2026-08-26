@@ -1,6 +1,6 @@
 # Spec: Fondasi Akademik Multi-Jenjang — Sprint 4 (Academic Profile Service)
 
-**Status:** Draft untuk review — belum masuk plan eksekusi.
+**Status:** Ready for Plan — disetujui user, siap masuk plan eksekusi.
 **Branch:** `akademik-v2`
 **Bergantung pada:** Tidak bergantung teknis pada Sprint 1-3. `learningMode` reuse `ModePembelajaran` (existing, sudah ada sebelum Sprint 1). Diurutkan setelah Sprint 3 sesuai roadmap, bukan dependency nyata.
 
@@ -104,7 +104,12 @@ Table-driven test membuktikan seluruh whitelist 9 nilai `bentuk_pendidikan` resm
 Ditambah:
 - **Konsistensi dgn `ModePembelajaran`**: untuk seluruh 9 nilai di atas, `AcademicProfile::fromBentukPendidikan($bp)->learningMode` HARUS identik dgn `ModePembelajaran::fromBentukPendidikan($bp)` dipanggil langsung — test eksplisit membandingkan keduanya (bukan cuma hardcode expected value yang bisa diam-diam divergen dari sumber aslinya kalau `ModePembelajaran` berubah nanti).
 - **Unknown `bentuk_pendidikan` throws**: `AcademicProfile::fromBentukPendidikan('XYZ')` (atau string sembarang di luar whitelist) HARUS melempar `InvalidArgumentException`, bukan mengembalikan default apa pun.
-- **Immutability**: property `learningMode`/`reportTemplate` bertipe `readonly` — tidak ada test khusus untuk ini (dijamin bahasa PHP sendiri), tapi constructor `private` WAJIB diverifikasi mencegah instansiasi langsung dari luar (`new AcademicProfile(...)` di luar class harus gagal saat compile/lint, bukan cuma diasumsikan).
+- **Immutability & encapsulation**: property `learningMode`/`reportTemplate` bertipe `readonly` (dijamin bahasa PHP, tidak perlu test runtime). Constructor `private` cukup diverifikasi lewat **pembacaan source/static inspection saat code review** (baca langsung `app/Domains/Akademik/Support/AcademicProfile.php`, pastikan tidak ada `public function __construct`) — TIDAK PERLU dipaksakan jadi test Pest/PHPUnit yang mencoba `new AcademicProfile(...)` dari luar class untuk membuktikan itu gagal. Fokus automated test HANYA pada 4 hal yang bernilai: (1) seluruh 9 input valid sesuai tabel di atas, (2) konsistensi `learningMode` dgn `ModePembelajaran`, (3) unknown value → `InvalidArgumentException`, (4) SLB → `sd`.
+- **`reportTemplate` tetap `string` polos, BUKAN enum.** Jangan buat `enum ReportTemplate` di Sprint 4 — key `'paud'`/`'sd'`/`'smp-sma'`/`'smk'` memang kontrak yang akan dikonsumsi Sprint 5, tapi keputusan enum/builder-registry adalah concern Sprint 5 sendiri, bukan Sprint 4.
+
+## Kontrak untuk Sprint 5 (dicatat di sini, bukan keputusan final Sprint 4)
+
+`'sd'` untuk SLB (§Keputusan Desain poin 5) adalah **compatibility mapping** yang meniru behavior `RaporPdfDataBuilder::templateUntukJenjang()` production saat ini — BUKAN keputusan domain final bahwa SLB akan selamanya memakai builder/template SD. Saat Sprint 5 (Report Engine) dirancang, WAJIB ada evaluasi eksplisit: apakah SLB tetap memakai `DikdasReportBuilder` (key `'sd'`) atau mendapat builder tersendiri — SEBELUM `ReportEngine` memperlakukan key `'sd'` utk SLB sbg kontrak permanen yang sulit diubah lagi. Sprint 4 sengaja tidak memutuskan ini karena scope-nya murni platform default, bukan desain Report Engine.
 
 ## Non-Goals Sprint 4 (eksplisit)
 
@@ -112,11 +117,12 @@ Ditambah:
 - Tidak ada refactor consumer existing (`GenerateSesiHarianAction` dkk tetap pakai `ModePembelajaran` langsung).
 - Tidak menyentuh/refactor `RaporPdfDataBuilder::templateUntukJenjang()` — tetap hidup berdampingan, konsolidasi eksplisit Sprint 5.
 - Tidak ada `ReportEngine`/`ReportBuilder` interface — itu Sprint 5.
+- Tidak ada enum `ReportTemplate` — `reportTemplate` tetap `string` polos di Sprint 4.
 - Tidak ada tabel/migration/konfigurasi apa pun — murni kode statis.
 
 ## Self-Review
 
-- Semua keputusan hasil diskusi masuk eksplisit: (1) prinsip "preset bukan policy" §Keputusan Desain poin 1 dgn tabel perbandingan vs `FaseDefaultMapping`, (2) `defaultAssessmentType`/`subjectRequired` di-drop dgn alasan masing-masing (bukan alasan yang sama disamaratakan) §Latar Belakang, (3) `reportTemplate` sbg key abstrak terpisah dari `templateUntukJenjang()` §Keputusan Desain poin 4, (4) SLB→'sd' eksplisit dgn justifikasi compatibility, bukan klaim domain §Keputusan Desain poin 5 + komentar kode di §1, (5) unknown `bentuk_pendidikan` throw bukan silent fallback §Keputusan Desain poin 6, (6) tidak ada refactor consumer §Keputusan Desain poin 7.
+- Semua keputusan hasil diskusi masuk eksplisit: (1) prinsip "preset bukan policy" §Keputusan Desain poin 1 dgn tabel perbandingan vs `FaseDefaultMapping`, (2) `defaultAssessmentType`/`subjectRequired` di-drop dgn alasan masing-masing (bukan alasan yang sama disamaratakan) §Latar Belakang, (3) `reportTemplate` sbg key abstrak terpisah dari `templateUntukJenjang()` §Keputusan Desain poin 4, (4) SLB→'sd' eksplisit dgn justifikasi compatibility, bukan klaim domain §Keputusan Desain poin 5 + komentar kode di §1 + kontrak eksplisit utk Sprint 5 di §Kontrak untuk Sprint 5, (5) unknown `bentuk_pendidikan` throw bukan silent fallback §Keputusan Desain poin 6, (6) tidak ada refactor consumer §Keputusan Desain poin 7, (7) `reportTemplate` tetap `string` bukan enum §2 & Non-Goals, (8) private constructor cukup diverifikasi via code review bukan test runtime §2.
 - Placeholder scan: tidak ada. Whitelist 9 nilai `bentuk_pendidikan` diverifikasi langsung dari `Admin\LembagaController.php:164` (sumber kebenaran validasi), bukan ditebak.
 - Scope check: fokus tunggal pada 1 value object + factory + test. Tidak melebar ke Report Engine (Sprint 5) atau refactor consumer.
 - Konsistensi tipe: `AcademicProfile::fromBentukPendidikan(string $bentukPendidikan): self` dgn 2 property readonly (`ModePembelajaran $learningMode`, `string $reportTemplate`) konsisten dipakai di §1 (implementasi) dan §2 (test).
