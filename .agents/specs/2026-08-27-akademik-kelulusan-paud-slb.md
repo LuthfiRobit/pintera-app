@@ -53,7 +53,17 @@ Tambahkan tepat sebelum `@include('pdf.rapor._tanda-tangan')` (baris terakhir se
     @include('pdf.rapor._tanda-tangan')
 ```
 
-Pola identik `sd.blade.php` baris 93-96 — `$labelKenaikan` dan `$catatan` SUDAH tersedia di data yang di-passing `RaporPdfDataBuilder::build()` (tidak perlu perubahan builder utk section ini, cuma `isTingkatAkhir()` yang perlu fix di §3). Section ini tampil kalau semester genap, ISI JUDULNYA berbeda tergantung `$isTingkatAkhir` (dihitung builder): `"Keterangan Kelulusan"` kalau TK-B, `"Keterangan Kenaikan Kelas"` kalau TK-A atau PAUD lain.
+Pola identik `sd.blade.php` baris 93-96.
+
+**Verifikasi fakta kode (bukan asumsi)**: `RaporPdfDataBuilder::build()` baris 74-76 menghitung `$labelKenaikan` SECARA UNIVERSAL utk semua jenjang (bukan cuma SD), dikutip persis:
+
+```php
+$isGenap = $semester->urutan === 2;
+$isTingkatAkhir = $this->isTingkatAkhir($lembaga->bentuk_pendidikan, $kelas->tingkat);
+$labelKenaikan = ($isGenap && $isTingkatAkhir) ? 'Keterangan Kelulusan' : 'Keterangan Kenaikan Kelas';
+```
+
+Baris ini TIDAK bercabang per template/jenjang — dipanggil sebelum `templateUntukJenjang()` bahkan menentukan view mana yang dipakai. Jadi `$labelKenaikan` dan `$catatan` (var `CatatanWaliKelas` yang sudah di-query di baris 56) SUDAH tersedia utk kasus PAUD tanpa perubahan builder apa pun — TIDAK PERLU perubahan builder selain fix `isTingkatAkhir()` di §3. Section ini tampil kalau semester genap, ISI JUDULNYA berbeda tergantung `$isTingkatAkhir`: `"Keterangan Kelulusan"` kalau TK-B, `"Keterangan Kenaikan Kelas"` kalau TK-A/KB/TPA/SPS.
 
 ## 5. Perubahan #3 — Formalkan Keputusan SLB (Komentar Saja, Tanpa Logic Baru)
 
@@ -122,10 +132,19 @@ TIDAK ADA perubahan logic/behavior — murni dokumentasi yang menutup keputusan 
 
 (Tabel ini persis permintaan user — regresi SD/SLB/SMP/SMA/SMK WAJIB dibuktikan tetap `true`, bukan diasumsikan "tidak berubah jadi tidak perlu dites".)
 
-**Feature test render `paud.blade.php`** — HARUS menguji KONDISI genap, bukan sekadar keberadaan teks di halaman manapun:
-1. `isGenap=true` + kelas TK tingkat B (→ `isTingkatAkhir=true` dari builder) → render mengandung teks `"Keterangan Kelulusan"`, DAN mengandung isi `keterangan_kenaikan` yang diisi di fixture test (mis. `"Siap melanjutkan ke SD"`) — buktikan section membaca sumber data yang benar, bukan cuma judul yang muncul kebetulan.
-2. `isGenap=false` (semester ganjil) → section (baik judul maupun isi `keterangan_kenaikan`) TIDAK muncul sama sekali di render.
-3. (Opsional tapi disarankan) `isGenap=true` + kelas TK tingkat A (→ `isTingkatAkhir=false`) → render mengandung `"Keterangan Kenaikan Kelas"`, BUKAN `"Keterangan Kelulusan"`.
+**Feature test INTEGRASI penuh builder → view** — WAJIB lewat `RaporPdfDataBuilder::build($siswa, $semester)` sungguhan (bukan menyuntik `$labelKenaikan`/`$isGenap` manual ke `view('pdf.rapor.paud', [...])`) — supaya perubahan `isTingkatAkhir()` di §3 benar-benar ter-cover end-to-end, bukan cuma dianggap benar krn variabel dipasang manual di test:
+
+```text
+fixture Kelas(bentuk_pendidikan=TK, tingkat=B) + Siswa + Semester(urutan=2, genap)
+    → RaporPdfDataBuilder::build($siswa, $semester)
+    → view('pdf.rapor.paud', $data)->render()
+    → assert HTML
+```
+
+1. `isGenap=true` (semester `urutan=2`) + kelas TK tingkat B → render mengandung teks `"Keterangan Kelulusan"`, DAN mengandung isi `keterangan_kenaikan` yang diisi di fixture test (mis. `"Siap melanjutkan ke SD"`) — buktikan section membaca sumber data yang benar, bukan cuma judul yang muncul kebetulan.
+2. `isGenap=false` (semester `urutan=1`, ganjil) + kelas TK tingkat B → section (baik judul `"Keterangan Kelulusan"`/`"Keterangan Kenaikan Kelas"` maupun isi `keterangan_kenaikan`) TIDAK muncul sama sekali di render.
+3. `isGenap=true` + kelas TK tingkat A → render mengandung `"Keterangan Kenaikan Kelas"`, BUKAN `"Keterangan Kelulusan"`.
+4. **Boundary KB/TPA/SPS eksplisit** — `isGenap=true` + kelas `bentuk_pendidikan` masing-masing `KB`/`TPA`/`SPS` tingkat `B` → render mengandung `"Keterangan Kenaikan Kelas"`, TIDAK PERNAH mengandung `"Keterangan Kelulusan"`. Test ini mendokumentasikan business rule secara eksplisit di level integrasi (bukan cuma unit test `isTingkatAkhir()`) — mencegah regresi kalau kelak seseorang menyederhanakan kondisi Blade jadi `@if ($isGenap)` polos tanpa sadar itu tidak otomatis berarti "semua PAUD genap = lulus". Bisa ditulis sbg satu test ber-`->with([...])` (Pest dataset) mencakup ketiga bentuk_pendidikan, tidak perlu 3 test terpisah.
 
 ## 8. Ringkasan Alur
 
