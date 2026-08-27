@@ -75,8 +75,8 @@ Implementasi menyeluruh untuk Prioritas 1 Roadmap Kurikulum Dinamis sesuai spesi
 
 - **Kandidat Technical Debt `TD-AKADEMIK-003`**:
   - String `bentuk_pendidikan` masih di-hardcode di 4 lokasi lama (`StoreFaseDefaultMappingRequest.php`, `LembagaController.php`, `AcademicProfile.php`, `RaporPdfDataBuilder.php`). Enum `BentukPendidikan` baru (`app/Domains/Akademik/Enums/BentukPendidikan.php`) sudah siap dijadikan single source of truth jika hendak diretrofit di masa depan.
-- **Git State**:
-  - Branch: `akademik-v2`
+- **Git State & Decision**:
+  - Branch: `akademik-v2` (kept as-is per user decision; user will handle push/merge independently)
   - Working tree: Clean (seluruh file telah di-commit)
   - Commits:
     - `854fcf77`: `feat(akademik): tambah enum KurikulumFramework dan BentukPendidikan`
@@ -85,3 +85,4 @@ Implementasi menyeluruh untuk Prioritas 1 Roadmap Kurikulum Dinamis sesuai spesi
     - `e29674f6`: `feat(akademik): snapshot Kelas.kurikulum otomatis saat create, terkunci setelahnya`
     - `991f923b`: `feat(akademik): CRUD admin Pengaturan Kurikulum (KurikulumAssignment)`
     - `5fdbf4bc`: `docs: tandai Prioritas 1 Roadmap Kurikulum Dinamis SELESAI, catat TD-AKADEMIK-003`
+    - `e2ff29b2`: `docs(log): tulis handoff log Prioritas 1 Roadmap Kurikulum Dinamis`
