@@ -1,9 +1,11 @@
 <?php
 
 use App\Domains\Akademik\Enums\StatusRpp;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\Rpp;
 use App\Models\Guru;
+use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Role;
@@ -11,6 +13,7 @@ use App\Models\Semester;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 
@@ -116,4 +119,88 @@ it('allows Guru A to download their own RPP as before', function () {
     [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
 
     $this->actingAs($userGuruA)->get(route('admin.rpp.download', $rppMilikA))->assertOk();
+});
+
+it('rejects store when the guru does not teach the selected kelas+mapel+semester combination', function () {
+    [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
+    $kelas = Kelas::find($rppMilikA->kelas_id);
+    $mapel = MataPelajaran::find($rppMilikA->mata_pelajaran_id);
+    $semester = Semester::find($rppMilikA->semester_id);
+    $file = UploadedFile::fake()->create('rpp-baru.pdf', 100, 'application/pdf');
+
+    // Guru B tidak punya JadwalPelajaran untuk kombinasi kelas+mapel+semester ini.
+    $this->actingAs($userGuruB)->post(route('admin.rpp.store'), [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'judul_topik' => 'RPP Tidak Sah',
+        'alokasi_waktu' => '2 JP',
+        'file' => $file,
+    ])->assertForbidden();
+
+    expect(Rpp::where('judul_topik', 'RPP Tidak Sah')->exists())->toBeFalse();
+});
+
+it('allows store when the guru actually teaches the selected combination (via JadwalPelajaran)', function () {
+    [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
+    $kelas = Kelas::find($rppMilikA->kelas_id);
+    $mapel = MataPelajaran::find($rppMilikA->mata_pelajaran_id);
+    $semester = Semester::find($rppMilikA->semester_id);
+    $guruB = Guru::where('user_id', $userGuruB->id)->first();
+    $jamPelajaran = JamPelajaran::factory()->create();
+    JadwalPelajaran::create([
+        'kelas_id' => $kelas->id, 'guru_id' => $guruB->id, 'mata_pelajaran_id' => $mapel->id,
+        'semester_id' => $semester->id, 'jam_pelajaran_id' => $jamPelajaran->id,
+    ]);
+    $file = UploadedFile::fake()->create('rpp-sah.pdf', 100, 'application/pdf');
+
+    $this->actingAs($userGuruB)->post(route('admin.rpp.store'), [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'mata_pelajaran_id' => $mapel->id,
+        'judul_topik' => 'RPP Sah Guru B',
+        'alokasi_waktu' => '2 JP',
+        'file' => $file,
+    ])->assertRedirect();
+
+    expect(Rpp::where('judul_topik', 'RPP Sah Guru B')->exists())->toBeTrue();
+});
+
+it('rejects store of a tematik RPP (no mata_pelajaran_id) when the guru is not the wali kelas', function () {
+    [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
+    $kelas = Kelas::find($rppMilikA->kelas_id);
+    $semester = Semester::find($rppMilikA->semester_id);
+    // $kelas belum punya wali_kelas_guru_id (default null dari factory) -- guru mana pun BUKAN wali kelasnya.
+    $file = UploadedFile::fake()->create('rpp-tematik.pdf', 100, 'application/pdf');
+
+    $this->actingAs($userGuruB)->post(route('admin.rpp.store'), [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'mata_pelajaran_id' => null,
+        'judul_topik' => 'RPP Tematik Tidak Sah',
+        'alokasi_waktu' => '1 Pekan',
+        'file' => $file,
+    ])->assertForbidden();
+
+    expect(Rpp::where('judul_topik', 'RPP Tematik Tidak Sah')->exists())->toBeFalse();
+});
+
+it('allows store of a tematik RPP when the guru IS the wali kelas', function () {
+    [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
+    $kelas = Kelas::find($rppMilikA->kelas_id);
+    $semester = Semester::find($rppMilikA->semester_id);
+    $guruB = Guru::where('user_id', $userGuruB->id)->first();
+    $kelas->update(['wali_kelas_guru_id' => $guruB->id]);
+    $file = UploadedFile::fake()->create('rpp-tematik-sah.pdf', 100, 'application/pdf');
+
+    $this->actingAs($userGuruB)->post(route('admin.rpp.store'), [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'mata_pelajaran_id' => null,
+        'judul_topik' => 'RPP Tematik Sah Wali Kelas',
+        'alokasi_waktu' => '1 Pekan',
+        'file' => $file,
+    ])->assertRedirect();
+
+    expect(Rpp::where('judul_topik', 'RPP Tematik Sah Wali Kelas')->exists())->toBeTrue();
 });

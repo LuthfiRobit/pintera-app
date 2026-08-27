@@ -33,6 +33,7 @@ function siapkanRppRequestFixture(): array
     $userGuru = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $userGuru->assignRole($role);
     $guru = Guru::factory()->create(['user_id' => $userGuru->id, 'lembaga_id' => $lembaga->id]);
+    $kelasTahunA->update(['wali_kelas_guru_id' => $guru->id]);
 
     return [$userGuru, $semesterTahunA, $kelasTahunA, $kelasTahunB];
 }

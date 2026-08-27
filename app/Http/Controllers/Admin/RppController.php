@@ -18,6 +18,7 @@ use App\Http\Requests\Akademik\StoreRppRequest;
 use App\Http\Requests\Akademik\UpdateRppRequest;
 use App\Http\Requests\Akademik\VerifyRppRequest;
 use App\Models\Guru;
+use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -147,6 +148,20 @@ class RppController extends BaseController
 
         if (! $guruId) {
             abort(422, 'Profil guru pengampu tidak ditemukan.');
+        }
+
+        if ($guru !== null) {
+            if ($request->filled('mata_pelajaran_id')) {
+                $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
+                    ->where('kelas_id', $kelas->id)
+                    ->where('mata_pelajaran_id', $request->input('mata_pelajaran_id'))
+                    ->where('semester_id', $semester->id)
+                    ->exists();
+
+                abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi kelas dan mata pelajaran ini.');
+            } else {
+                abort_unless((int) $kelas->wali_kelas_guru_id === $guru->id, 403, 'RPP tematik tanpa mata pelajaran hanya dapat dibuat oleh wali kelas.');
+            }
         }
 
         $dto = $request->toDTO((int) $guruId, $kelas, $semester);
