@@ -2,17 +2,19 @@
 
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Akademik\Services\RaporCalculationService;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
-uses(Tests\TestCase::class, Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 it('computes a weighted average per siswa per mapel using komponen bobot', function () {
     $yayasan = Yayasan::factory()->create();
@@ -30,11 +32,13 @@ it('computes a weighted average per siswa per mapel using komponen bobot', funct
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenBerat->id, 'nilai_angka' => 80]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenRingan->id, 'nilai_angka' => 90]);
 
-    $service = new RaporCalculationService();
+    $service = new RaporCalculationService;
     $rekap = $service->hitungRekapKelas($kelas, $semester);
 
     // (80*70 + 90*30) / 100 = 83.0
-    expect($rekap['rekapNilai'][$siswa->id]['mata_pelajaran:'.$mapel->id])->toBe(83.0);
+    $sel = $rekap['rekapNilai'][$siswa->id]['mata_pelajaran:'.$mapel->id];
+    expect($sel->label)->toBe('83');
+    expect($sel->tuntas)->toBeBool();
     expect($rekap['classAvg'])->toBe(83.0);
     expect($rekap['highestScore'])->toBe(83.0);
     expect($rekap['siswaList']->pluck('id')->all())->toBe([$siswa->id]);
@@ -51,7 +55,7 @@ it('returns null score for a siswa with no nilai on that mapel', function () {
     $siswaTanpaNilai = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
     Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
 
-    $service = new RaporCalculationService();
+    $service = new RaporCalculationService;
     $rekap = $service->hitungRekapKelas($kelas, $semester);
 
     expect($rekap['rekapNilai'][$siswaTanpaNilai->id]['mata_pelajaran:'.$mapel->id])->toBeNull();
@@ -67,7 +71,7 @@ it('returns empty structure when kelas has no asesmen in the semester', function
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
 
-    $service = new RaporCalculationService();
+    $service = new RaporCalculationService;
     $rekap = $service->hitungRekapKelas($kelas, $semester);
 
     expect($rekap['mapelList'])->toBeEmpty();
@@ -89,7 +93,7 @@ it('returns no data when kelas and semester belong to different lembaga, even wh
     $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
     $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
 
-    $service = new RaporCalculationService();
+    $service = new RaporCalculationService;
     $rekap = $service->hitungRekapKelas($kelasA, $semesterB);
 
     expect($rekap['mapelList'])->toBeEmpty();

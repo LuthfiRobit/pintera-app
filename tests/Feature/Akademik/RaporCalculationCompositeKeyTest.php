@@ -5,13 +5,13 @@ namespace Tests\Feature\Akademik;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
-use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Akademik\Services\RaporCalculationService;
+use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\Siswa;
-use App\Models\Guru;
 
 it('does not collide rekap between a MataPelajaran and an ElemenCp sharing the same numeric id', function () {
     $kelas = Kelas::factory()->create();
@@ -40,6 +40,6 @@ it('does not collide rekap between a MataPelajaran and an ElemenCp sharing the s
     $rekap = app(RaporCalculationService::class)->hitungRekapKelas($kelas, $semester);
 
     expect($rekap['mapelList'])->toHaveCount(2);
-    expect($rekap['rekapNilai'][$siswa->id]['mata_pelajaran:'.$mapel->id])->toBe(80.0);
-    expect($rekap['rekapNilai'][$siswa->id]['elemen_cp:'.$elemen->id])->toBe(95.0);
+    expect($rekap['rekapNilai'][$siswa->id]['mata_pelajaran:'.$mapel->id]->label)->toBe('80');
+    expect($rekap['rekapNilai'][$siswa->id]['elemen_cp:'.$elemen->id]->label)->toBe('95');
 });

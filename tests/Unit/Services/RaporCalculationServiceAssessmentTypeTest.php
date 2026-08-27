@@ -1,4 +1,5 @@
 <?php
+
 // tests/Unit/Services/RaporCalculationServiceAssessmentTypeTest.php
 
 use App\Domains\Akademik\Models\Asesmen;
@@ -44,7 +45,9 @@ it('excludes non-numeric komponen from the weighted average entirely, keeping th
     $rekap = app(RaporCalculationService::class)->hitungRekapKelas($kelas, $semester);
 
     $key = 'mata_pelajaran:'.$mapel->id;
-    expect($rekap['rekapNilai'][$siswa->id][$key])->toBe(80.0);
+    $sel = $rekap['rekapNilai'][$siswa->id][$key];
+    expect($sel->label)->toBe('80');
+    expect($sel->assessmentType->value)->toBe('numeric');
 });
 
 it('still excludes a narrative komponen from the weighted average even if its nilai_angka was set by dirty/legacy data (defense-in-depth, not reliant on SimpanNilaiSiswaAction invariant alone)', function () {
@@ -84,7 +87,7 @@ it('still excludes a narrative komponen from the weighted average even if its ni
     // Kalau filter masih pakai whereNotNull('nilai_angka') murni, hasilnya akan
     // jadi (80*100 + 20*100) / 200 = 50.0 -- salah, karena komponen narrative
     // ikut dihitung sbg numeric hanya krn nilai_angka-nya kebetulan terisi.
-    // Dengan filter assessment_type=numeric eksplisit, hasilnya tetap 80.0.
+    // Dengan filter assessment_type=numeric eksplisit, hasilnya tetap 80.
     $key = 'mata_pelajaran:'.$mapel->id;
-    expect($rekap['rekapNilai'][$siswa->id][$key])->toBe(80.0);
+    expect($rekap['rekapNilai'][$siswa->id][$key]->label)->toBe('80');
 });
