@@ -3,11 +3,13 @@
 declare(strict_types=1);
 
 use App\Domains\Akademik\Enums\StatusRpp;
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\Rpp;
 use App\Models\Guru;
+use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -41,6 +43,15 @@ beforeEach(function () {
     $this->userGuru = User::factory()->create(['lembaga_id' => $this->lembaga->id]);
     $this->userGuru->assignRole($roleGuru);
     $this->guru = Guru::factory()->create(['user_id' => $this->userGuru->id, 'lembaga_id' => $this->lembaga->id, 'nama' => 'Ustadzah Maya']);
+    $this->kelas->update(['wali_kelas_guru_id' => $this->guru->id]);
+    $jamPelajaran = JamPelajaran::factory()->create();
+    JadwalPelajaran::create([
+        'kelas_id' => $this->kelas->id,
+        'guru_id' => $this->guru->id,
+        'mata_pelajaran_id' => $this->mapel->id,
+        'semester_id' => $this->semester->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
+    ]);
 
     // User Kurikulum / Kepsek
     $this->userKurikulum = User::factory()->create(['lembaga_id' => $this->lembaga->id]);
