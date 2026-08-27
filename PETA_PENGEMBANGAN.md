@@ -129,7 +129,15 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-b.md`
   - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-b.md`
 
-- **Kelompok C (RPP Reporting & Test Coverage)** — 🟡 Menunggu pengerjaan terpisah (reporting kurikulum, validasi kelas-semester).
+- **Kelompok C (RPP Reporting & Test Coverage) — ✅ SELESAI (27 Agustus 2026)**:
+  1. **Badge & Filter Kurikulum di Daftar RPP**: Menampilkan badge kurikulum scoped per baris RPP (termasuk "Belum Diketahui" untuk data legacy) dan filter kurikulum dua arah (`KurikulumFramework`) di `ListRppAction` & `RppController` yang konsisten di full-page maupun AJAX fragment dengan fallback aman untuk input invalid.
+  2. **Validasi Konsistensi Kelas-Semester Form RPP**: Menambahkan `withValidator()` di `StoreRppRequest` dan `UpdateRppRequest` untuk memastikan kelas dan semester yang dipilih selalu berasal dari tahun ajaran yang sama.
+  3. **Test Regresi Cross-Tenant IDOR Ekstrakurikuler**: Menambahkan 2 test pembuktian di `LembagaRelationalManagementTest` yang memverifikasi bahwa update/delete ekstrakurikuler lintas-lembaga ditolak 404 tanpa merusak data asli.
+  - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-c.md`
+  - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-c.md`
+
+> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, dan C)**. Full test suite: **2355 passed, 4 skipped, 0 failed (6459 assertions)**.
+
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
 **Technical debt baru dicatat — `TD-AKADEMIK-003` (kandidat)**: `bentuk_pendidikan` masih di-hardcode terpisah di 4 lokasi lama (`StoreFaseDefaultMappingRequest.php`, `LembagaController.php`, `AcademicProfile.php`, `RaporPdfDataBuilder.php`) dengan daftar yang tidak selalu identik. Enum `BentukPendidikan` baru (`app/Domains/Akademik/Enums/BentukPendidikan.php`, dibuat khusus utk fitur ini) bisa jadi sumber tunggal kalau 4 lokasi ini di-retrofit — effort Kecil-Sedang, tidak urgent.
