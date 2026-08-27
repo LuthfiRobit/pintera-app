@@ -11,7 +11,7 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         if (Permission::count() === 0) {
-            (new PermissionSeeder())->run();
+            (new PermissionSeeder)->run();
         }
 
         $roles = [
@@ -135,6 +135,7 @@ class RoleSeeder extends Seeder
                 $role->givePermissionTo([
                     'kelas.view', 'kelas.create', 'kelas.edit',
                     'fase-mapping.view', 'fase-mapping.create', 'fase-mapping.edit', 'fase-mapping.delete',
+                    'kurikulum-assignment.view', 'kurikulum-assignment.create', 'kurikulum-assignment.edit', 'kurikulum-assignment.delete',
                     'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
                     'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
                     'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',

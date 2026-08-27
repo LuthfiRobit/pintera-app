@@ -5,11 +5,12 @@ use App\Http\Controllers\Admin\JadwalPelajaranController;
 use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
-use App\Http\Controllers\Lembaga\Akademik\MataPelajaranController;
+use App\Http\Controllers\Admin\KurikulumAssignmentController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\SemesterController;
 use App\Http\Controllers\Admin\TahunAjaranController;
+use App\Http\Controllers\Lembaga\Akademik\MataPelajaranController;
 use Illuminate\Support\Facades\Route;
 
 Route::resource('mata-pelajaran', MataPelajaranController::class)->except(['show', 'destroy']);
@@ -22,6 +23,13 @@ Route::post('fase-mapping', [FaseDefaultMappingController::class, 'store'])->nam
 Route::get('fase-mapping/{faseMapping}/edit', [FaseDefaultMappingController::class, 'edit'])->name('fase-mapping.edit');
 Route::put('fase-mapping/{faseMapping}', [FaseDefaultMappingController::class, 'update'])->name('fase-mapping.update');
 Route::delete('fase-mapping/{faseMapping}', [FaseDefaultMappingController::class, 'destroy'])->name('fase-mapping.destroy');
+
+Route::get('kurikulum-assignment', [KurikulumAssignmentController::class, 'index'])->name('kurikulum-assignment.index');
+Route::get('kurikulum-assignment/create', [KurikulumAssignmentController::class, 'create'])->name('kurikulum-assignment.create');
+Route::post('kurikulum-assignment', [KurikulumAssignmentController::class, 'store'])->name('kurikulum-assignment.store');
+Route::get('kurikulum-assignment/{kurikulumAssignment}/edit', [KurikulumAssignmentController::class, 'edit'])->name('kurikulum-assignment.edit');
+Route::put('kurikulum-assignment/{kurikulumAssignment}', [KurikulumAssignmentController::class, 'update'])->name('kurikulum-assignment.update');
+Route::delete('kurikulum-assignment/{kurikulumAssignment}', [KurikulumAssignmentController::class, 'destroy'])->name('kurikulum-assignment.destroy');
 
 Route::post('kalender-akademik', [KalenderAkademikController::class, 'store'])->name('kalender-akademik.store');
 Route::put('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'update'])->name('kalender-akademik.update');
