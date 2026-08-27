@@ -1,9 +1,22 @@
 <?php
 
+use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Enums\Hari;
+use App\Models\JadwalPelajaran;
+use App\Models\Kelas;
 use App\Models\Lembaga;
+use App\Models\OrangTua;
 use App\Models\Role;
+use App\Models\Semester;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use App\Services\AkunKaryawanGenerator;
 
 it('shows the guru placeholder dashboard to a user with only the guru role', function () {
     Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
@@ -154,17 +167,17 @@ it('shows a siswa their latest recorded grade on their own dashboard', function 
     Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 
     $lembaga = Lembaga::factory()->create();
-    $kelas = \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
-    $siswa = \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
-    $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $semester = \App\Models\Semester::factory()->create(['lembaga_id' => $lembaga->id]);
-    $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create([
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create([
         'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
-    $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create([
+    $asesmen = Asesmen::factory()->create([
         'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
-    \App\Domains\Akademik\Models\NilaiSiswa::create([
+    NilaiSiswa::create([
         'siswa_id' => $siswa->id, 'asesmen_id' => $asesmen->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 92,
     ]);
 
@@ -182,24 +195,24 @@ it('shows an orang tua the latest recorded grade for their linked child', functi
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 
     $lembaga = Lembaga::factory()->create();
-    $kelas = \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
-    $siswa = \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Anak Dashboard Ortu']);
-    $mapel = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika Dashboard Ortu']);
-    $semester = \App\Models\Semester::factory()->create(['lembaga_id' => $lembaga->id]);
-    $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create([
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Anak Dashboard Ortu']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika Dashboard Ortu']);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create([
         'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
-    $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create([
+    $asesmen = Asesmen::factory()->create([
         'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
     ]);
-    \App\Domains\Akademik\Models\NilaiSiswa::create([
+    NilaiSiswa::create([
         'siswa_id' => $siswa->id, 'asesmen_id' => $asesmen->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 85,
     ]);
 
-    $jamPelajaran = \App\Domains\Akademik\Models\JamPelajaran::factory()->create([
-        'hari' => \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek),
+    $jamPelajaran = JamPelajaran::factory()->create([
+        'hari' => Hari::fromCarbonDayOfWeek(now()->dayOfWeek),
     ]);
-    \App\Models\JadwalPelajaran::factory()->create([
+    JadwalPelajaran::factory()->create([
         'lembaga_id' => $lembaga->id,
         'kelas_id' => $kelas->id,
         'mata_pelajaran_id' => $mapel->id,
@@ -208,7 +221,7 @@ it('shows an orang tua the latest recorded grade for their linked child', functi
 
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+    $orangTua = OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
     $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
 
     $response = $this->actingAs($orangTuaUser)->get('/dashboard');
@@ -224,9 +237,9 @@ it('shows the 30-day attendance chart on the karyawan dashboard', function () {
     Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->create();
 
-    $karyawan = app(\App\Services\AkunKaryawanGenerator::class)->buat(
+    $karyawan = app(AkunKaryawanGenerator::class)->buat(
         'Karyawan Chart Test', '3201234567894444', $yayasan->id, $lembaga->id, $jenis->id
     );
     $karyawan->user()->update(['must_change_password' => false, 'email_verified_at' => now()]);
@@ -237,6 +250,84 @@ it('shows the 30-day attendance chart on the karyawan dashboard', function () {
     $response->assertSee('presensiBulananChart(', false);
 });
 
+it('excludes a Formatif nilai from the siswa dashboard latest-grade widget, even if it is more recent than the Sumatif nilai', function () {
+    Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
 
+    $lembaga = Lembaga::factory()->create();
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nis' => '20260001', 'nisn' => '0011111111']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create([
+        'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+    ]);
 
+    $asesmenSumatif = Asesmen::factory()->create([
+        'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'jenis' => 'sumatif_lingkup_materi',
+    ]);
+    NilaiSiswa::create([
+        'siswa_id' => $siswa->id, 'asesmen_id' => $asesmenSumatif->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 77,
+    ]);
 
+    // Dibuat SETELAH nilai Sumatif -> id lebih besar -> akan "menang" di latest('id') kalau filter jenis tidak ada.
+    $asesmenFormatif = Asesmen::factory()->create([
+        'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'jenis' => 'formatif',
+    ]);
+    NilaiSiswa::create([
+        'siswa_id' => $siswa->id, 'asesmen_id' => $asesmenFormatif->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 40,
+    ]);
+
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('siswa');
+    $siswa->update(['user_id' => $user->id]);
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('77');
+    $response->assertDontSeeText('40');
+    $response->assertViewHas('nilaiTerbaru', fn ($nilai) => $nilai->count() === 1 && $nilai->first()->nilai_angka == 77);
+});
+
+it('excludes a Formatif nilai from the orang tua dashboard latest-grade widget for a linked child', function () {
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $lembaga = Lembaga::factory()->create();
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Anak Dashboard Ortu Formatif', 'nis' => '20260001', 'nisn' => '0011111111']);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create([
+        'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+    ]);
+
+    $asesmenSumatif = Asesmen::factory()->create([
+        'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'jenis' => 'sumatif_lingkup_materi',
+    ]);
+    NilaiSiswa::create([
+        'siswa_id' => $siswa->id, 'asesmen_id' => $asesmenSumatif->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 77,
+    ]);
+
+    $asesmenFormatif = Asesmen::factory()->create([
+        'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id,
+        'jenis' => 'formatif',
+    ]);
+    NilaiSiswa::create([
+        'siswa_id' => $siswa->id, 'asesmen_id' => $asesmenFormatif->id, 'komponen_penilaian_id' => $komponen->id, 'lembaga_id' => $lembaga->id, 'nilai_angka' => 40,
+    ]);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+    $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($orangTuaUser)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertSee('77');
+    $response->assertDontSeeText('40');
+    $response->assertViewHas('nilaiTerbaru', fn ($nilai) => $nilai->count() === 1 && $nilai->first()->nilai_angka == 77);
+});

@@ -2,33 +2,38 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Enums\StatusRpp;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Akademik\Models\Presensi;
 use App\Domains\Akademik\Models\Rpp;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Kasus\Enums\StatusKasus;
+use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Sdm\Models\PengajuanIzinCuti;
+use App\Domains\Sdm\Models\PenugasanShift;
 use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Enums\Hari;
 use App\Models\Guru;
-use App\Domains\Kasus\Models\Kasus;
+use App\Models\JadwalPelajaran;
 use App\Models\Karyawan;
+use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
+use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
 use App\Services\DashboardStatsService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends BaseController
 {
-    public function __construct(private DashboardStatsService $dashboardStats)
-    {
-    }
+    public function __construct(private DashboardStatsService $dashboardStats) {}
 
     public function index(Request $request): View
     {
@@ -42,17 +47,17 @@ class DashboardController extends BaseController
                 ? collect()
                 : Kasus::with('siswa')->where('konselor_guru_id', $user->guru->id)->latest()->get();
 
-            $hariIni = \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+            $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
             $jadwalHariIni = $user->guru === null
                 ? collect()
-                : \App\Models\JadwalPelajaran::where('guru_id', $user->guru->id)
+                : JadwalPelajaran::where('guru_id', $user->guru->id)
                     ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
                     ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
                     ->get();
 
             $kelasWali = $user->guru === null
                 ? null
-                : \App\Models\Kelas::where('wali_kelas_guru_id', $user->guru->id)->first();
+                : Kelas::where('wali_kelas_guru_id', $user->guru->id)->first();
             $progressKelasWali = $kelasWali
                 ? $this->dashboardStats->statistikProgressRaporKelas($kelasWali)
                 : null;
@@ -113,8 +118,8 @@ class DashboardController extends BaseController
 
             if ($siswa !== null) {
                 if ($siswa->kelas_id !== null) {
-                    $hariIni = \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
-                    $jadwalHariIni = \App\Models\JadwalPelajaran::withoutGlobalScope(TenantScope::class)
+                    $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+                    $jadwalHariIni = JadwalPelajaran::withoutGlobalScope(TenantScope::class)
                         ->where('kelas_id', $siswa->kelas_id)
                         ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
                         ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
@@ -123,7 +128,7 @@ class DashboardController extends BaseController
 
                 $tagihanBelumLunas = (int) Tagihan::withoutGlobalScope(TenantScope::class)
                     ->where(function ($q) use ($siswa) {
-                        $q->where(fn ($q2) => $q2->where('tagihable_type', \App\Models\Siswa::class)->where('tagihable_id', $siswa->id));
+                        $q->where(fn ($q2) => $q2->where('tagihable_type', Siswa::class)->where('tagihable_id', $siswa->id));
                         if ($siswa->pendaftaran_asal_id !== null) {
                             $q->orWhere('pendaftaran_id', $siswa->pendaftaran_asal_id);
                         }
@@ -133,6 +138,7 @@ class DashboardController extends BaseController
 
                 $nilaiTerbaru = NilaiSiswa::where('siswa_id', $siswa->id)
                     ->whereNotNull('nilai_angka')
+                    ->whereHas('asesmen', fn ($q) => $q->whereIn('jenis', JenisAsesmen::masukRapor()))
                     ->with(['komponenPenilaian.subjek', 'asesmen.subjek'])
                     ->latest('id')
                     ->limit(5)
@@ -193,7 +199,7 @@ class DashboardController extends BaseController
 
                 $tagihanBelumLunas = (int) Tagihan::withoutGlobalScope(TenantScope::class)
                     ->where(function ($q) use ($siswaIds, $pendaftaranIds) {
-                        $q->where(fn ($q2) => $q2->where('tagihable_type', \App\Models\Siswa::class)->whereIn('tagihable_id', $siswaIds));
+                        $q->where(fn ($q2) => $q2->where('tagihable_type', Siswa::class)->whereIn('tagihable_id', $siswaIds));
                         if (! empty($pendaftaranIds)) {
                             $q->orWhereIn('pendaftaran_id', $pendaftaranIds);
                         }
@@ -203,6 +209,7 @@ class DashboardController extends BaseController
 
                 $nilaiTerbaru = NilaiSiswa::withoutGlobalScope(TenantScope::class)->whereIn('siswa_id', $siswaIds)
                     ->whereNotNull('nilai_angka')
+                    ->whereHas('asesmen', fn ($q) => $q->withoutGlobalScope(TenantScope::class)->whereIn('jenis', JenisAsesmen::masukRapor()))
                     ->with([
                         'komponenPenilaian' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['subjek' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
                         'asesmen' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with(['subjek' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)]),
@@ -220,10 +227,10 @@ class DashboardController extends BaseController
                     ->get();
 
                 $kelasIds = $anakList->pluck('kelas_id')->filter()->all();
-                $hariIni = \App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+                $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
                 $jadwalAnakHariIni = empty($kelasIds)
                     ? collect()
-                    : \App\Models\JadwalPelajaran::withoutGlobalScope(TenantScope::class)
+                    : JadwalPelajaran::withoutGlobalScope(TenantScope::class)
                         ->whereIn('kelas_id', $kelasIds)
                         ->whereHas('jamPelajaran', fn ($q) => $q->withoutGlobalScope(TenantScope::class)->where('hari', $hariIni))
                         ->with([
@@ -273,7 +280,7 @@ class DashboardController extends BaseController
                     ->count();
 
             $sisaKuotaCuti = $karyawan instanceof Karyawan ? $this->dashboardStats->statistikSisaKuotaCuti($karyawan) : null;
-            $jadwalShiftHariIni = $karyawan ? \App\Domains\Sdm\Models\PenugasanShift::withoutGlobalScope(TenantScope::class)
+            $jadwalShiftHariIni = $karyawan ? PenugasanShift::withoutGlobalScope(TenantScope::class)
                 ->where('pegawai_type', $karyawan::class)
                 ->where('pegawai_id', $karyawan->id)
                 ->whereDate('tanggal_mulai', '<=', now()->toDateString())
@@ -431,7 +438,7 @@ class DashboardController extends BaseController
             'tren' => null,
             'keuanganStats' => null,
             'presensiSdmHariIni' => $this->dashboardStats->statistikPresensiSdm([$lembagaId]),
-            'izinCutiPendingCount' => \App\Domains\Sdm\Models\PengajuanIzinCuti::where('lembaga_id', $lembagaId)
+            'izinCutiPendingCount' => PengajuanIzinCuti::where('lembaga_id', $lembagaId)
                 ->whereHas('approvalRequest', fn ($q) => $q->where('status', ApprovalStatus::Pending))
                 ->count(),
             'progressRaporPerKelas' => null,
@@ -447,8 +454,8 @@ class DashboardController extends BaseController
         }
 
         if ($user->can('komponen-penilaian.kelola')) {
-            $data['progressRaporPerKelas'] = \App\Models\Kelas::where('lembaga_id', $lembagaId)->get()
-                ->map(fn (\App\Models\Kelas $kelas) => [
+            $data['progressRaporPerKelas'] = Kelas::where('lembaga_id', $lembagaId)->get()
+                ->map(fn (Kelas $kelas) => [
                     'kelas' => $kelas,
                     'progress' => $this->dashboardStats->statistikProgressRaporKelas($kelas),
                 ]);
@@ -471,7 +478,7 @@ class DashboardController extends BaseController
         return $data;
     }
 
-    private function kasusStatusCounts(\Illuminate\Support\Collection $kasusList): array
+    private function kasusStatusCounts(Collection $kasusList): array
     {
         return [
             'diajukan' => $kasusList->filter(fn (Kasus $k) => $k->status->value === 'diajukan')->count(),
