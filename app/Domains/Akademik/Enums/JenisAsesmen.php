@@ -24,15 +24,22 @@ enum JenisAsesmen: string
     }
 
     /**
-     * Jenis asesmen yang secara semantik merupakan SUMBER PERHITUNGAN RAPOR
-     * (dipakai RaporCalculationService::hitungRekapKelas() sebagai satu-satunya
-     * filter). Diagnostik dan Formatif SENGAJA tidak termasuk -- keduanya
-     * asesmen untuk proses pembelajaran (pemetaan kesiapan belajar, penyesuaian
+     * Jenis asesmen yang secara semantik merupakan SUMBER PERHITUNGAN RAPOR.
+     * Dipakai sbg filter di SEMUA tempat yang mengagregasi/menampilkan nilai
+     * sbg representasi rapor: RaporCalculationService::hitungRekapKelas(),
+     * CapaianKompetensiGenerator::generateNarasi(),
+     * DashboardStatsService::statistikProgressRaporKelas(), dan widget
+     * "Nilai Terbaru" siswa/orang tua di Admin\DashboardController.
+     * Diagnostik dan Formatif SENGAJA tidak termasuk -- keduanya asesmen
+     * untuk proses pembelajaran (pemetaan kesiapan belajar, penyesuaian
      * metode ajar), bukan komponen nilai rapor.
      *
      * Kalau menambah case baru ke enum ini di masa depan, WAJIB secara sadar
      * memutuskan apakah case itu masuk daftar ini atau tidak -- jangan
-     * dibiarkan default masuk/keluar tanpa keputusan eksplisit.
+     * dibiarkan default masuk/keluar tanpa keputusan eksplisit. Kalau
+     * menambah CONSUMER BARU yang membaca nilai sbg representasi rapor,
+     * WAJIB pakai method ini sbg filter -- lihat riwayat 3 consumer yang
+     * sempat lolos audit awal Priority #6 (27 Agustus 2026).
      *
      * @return array<int, self>
      */
