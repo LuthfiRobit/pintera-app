@@ -1,6 +1,6 @@
 # UX Mata Pelajaran vs ElemenCp PAUD Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Tambah banner informatif di halaman Mata Pelajaran, tampil HANYA untuk lembaga PAUD, menjelaskan bahwa aspek perkembangan dikelola lewat Elemen CP di Komponen Penilaian.
 
@@ -29,7 +29,7 @@
 **Interfaces:**
 - Produces: view `portals.lembaga.akademik.mata-pelajaran.index` menerima key baru `isPaud: bool` — tidak ada interface lain yang berubah.
 
-- [ ] **Step 1: Tulis test (akan gagal — banner belum ada)**
+- [x] **Step 1: Tulis test (akan gagal — banner belum ada)**
 
 Tambahkan ke akhir `tests/Feature/Admin/MataPelajaranCrudTest.php`:
 
@@ -59,12 +59,12 @@ it('does not show the PAUD note banner for a non-PAUD bentuk_pendidikan', functi
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Admin/MataPelajaranCrudTest.php --filter="PAUD"`
 Expected: FAIL — `assertSee('Catatan untuk PAUD')` gagal (banner belum ada di view). Test kedua (`'does not show...'`) kemungkinan PASS kebetulan (krn banner memang belum ada sama sekali) — itu wajar, akan tetap PASS setelah fix krn memang tidak boleh muncul utk SD.
 
-- [ ] **Step 3: Tambah `isPaud` ke controller**
+- [x] **Step 3: Tambah `isPaud` ke controller**
 
 Baca dulu `app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php` baris 1-68 penuh sebelum edit, konfirmasi struktur masih sama seperti kutipan di bawah. Tambahkan import setelah `use App\Domains\Akademik\DataTransferObjects\MataPelajaranData;`:
 
@@ -89,7 +89,7 @@ Ubah `index()` — tambahkan key `isPaud` ke array yang dioper ke `view('portals
 
 Method `create()`/`store()`/`edit()`/`update()` TIDAK DISENTUH.
 
-- [ ] **Step 4: Tambah banner ke view**
+- [x] **Step 4: Tambah banner ke view**
 
 Baca dulu `resources/views/portals/lembaga/akademik/mata-pelajaran/index.blade.php` baris 1-22 penuh sebelum edit. Tambahkan blok berikut TEPAT SETELAH baris `</div>` penutup blok "Header & Breadcrumb" (baris 20), SEBELUM komentar `{{-- KPI Compact Horizontal Statistic Cards ... --}}` (baris 22):
 
@@ -109,12 +109,12 @@ Baca dulu `resources/views/portals/lembaga/akademik/mata-pelajaran/index.blade.p
 
 Tidak ada baris lain di file yang berubah.
 
-- [ ] **Step 5: Jalankan test, pastikan semua lulus**
+- [x] **Step 5: Jalankan test, pastikan semua lulus**
 
 Run: `php artisan test tests/Feature/Admin/MataPelajaranCrudTest.php`
 Expected: PASS (semua test di file, termasuk 4 dataset PAUD + 1 test non-PAUD + semua test existing lain di file yang sama tidak terpengaruh)
 
-- [ ] **Step 6: Lint & commit**
+- [x] **Step 6: Lint & commit**
 
 Run: `php -l app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php`
 Expected: `No syntax errors detected`
@@ -131,12 +131,12 @@ git commit -m "feat(akademik): tambah banner PAUD di halaman Mata Pelajaran, ara
 **Files:**
 - Modify: `PETA_PENGEMBANGAN.md`
 
-- [ ] **Step 1: Jalankan full test suite tanpa filter**
+- [x] **Step 1: Jalankan full test suite tanpa filter**
 
 Run: `php artisan test --compact`
 Expected: 0 failed. Catat angka pasti (passed/skipped/assertions).
 
-- [ ] **Step 2: Update `PETA_PENGEMBANGAN.md`**
+- [x] **Step 2: Update `PETA_PENGEMBANGAN.md`**
 
 Di bagian `## 🔵 Roadmap Kurikulum Dinamis`, ubah baris tabel Prioritas #7 kolom "Status" dari `Belum Ada` menjadi:
 
@@ -150,7 +150,7 @@ Tambahkan paragraf baru setelah tabel prioritas:
 **Prioritas #7 SELESAI (27 Agustus 2026)**: Halaman Mata Pelajaran sekarang menampilkan banner "Catatan untuk PAUD" (hanya utk lembaga `KB`/`TPA`/`SPS`/`TK`) yang menjelaskan aspek perkembangan dikelola lewat Elemen CP di Komponen Penilaian, dengan link langsung ke halaman itu. Seluruh 7 prioritas Roadmap Kurikulum Dinamis kini tuntas ditangani (1/2/3/6/7 SELESAI, 4/5 sengaja ditunda menunggu pelanggan nyata). Dieksekusi lewat `.agents/plans/2026-08-27-akademik-ux-mapel-vs-elemencp-paud.md`.
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add PETA_PENGEMBANGAN.md
