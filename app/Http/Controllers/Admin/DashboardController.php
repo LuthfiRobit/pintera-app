@@ -51,6 +51,7 @@ class DashboardController extends BaseController
             $jadwalHariIni = $user->guru === null
                 ? collect()
                 : JadwalPelajaran::where('guru_id', $user->guru->id)
+                    ->semesterAktif()
                     ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
                     ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
                     ->get();

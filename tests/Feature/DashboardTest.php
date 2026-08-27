@@ -7,6 +7,7 @@ use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Enums\Hari;
+use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -330,4 +331,71 @@ it('excludes a Formatif nilai from the orang tua dashboard latest-grade widget f
     $response->assertSee('77');
     $response->assertDontSeeText('40');
     $response->assertViewHas('nilaiTerbaru', fn ($nilai) => $nilai->count() === 1 && $nilai->first()->nilai_angka == 77);
+});
+
+it('excludes jadwal pelajaran from a non-active semester from the guru today-schedule widget', function () {
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $lembaga = Lembaga::factory()->create();
+    $guruUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guruUser->assignRole('guru');
+    $guru = Guru::factory()->create(['user_id' => $guruUser->id, 'lembaga_id' => $lembaga->id]);
+
+    $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+    $jamPelajaran = JamPelajaran::factory()->create(['hari' => $hariIni]);
+
+    $semesterLama = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Kelas Lama 2025']);
+    $jadwalLama = JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelasLama->id,
+        'guru_id' => $guru->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
+        'semester_id' => $semesterLama->id,
+    ]);
+
+    $semesterAktif = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $kelasAktif = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Kelas Aktif 2026']);
+    JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelasAktif->id,
+        'guru_id' => $guru->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
+        'semester_id' => $semesterAktif->id,
+    ]);
+
+    // Buktikan dulu jadwal lama benar-benar tersimpan sebelum assert exclusion.
+    expect(JadwalPelajaran::where('id', $jadwalLama->id)->exists())->toBeTrue();
+
+    $response = $this->actingAs($guruUser)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertViewHas('jadwalHariIni', function ($jadwalHariIni) use ($kelasAktif, $kelasLama) {
+        return $jadwalHariIni->pluck('kelas_id')->contains($kelasAktif->id)
+            && ! $jadwalHariIni->pluck('kelas_id')->contains($kelasLama->id);
+    });
+});
+
+it('shows an empty today-schedule widget for a guru whose lembaga has no active semester', function () {
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $lembaga = Lembaga::factory()->create();
+    $guruUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guruUser->assignRole('guru');
+    $guru = Guru::factory()->create(['user_id' => $guruUser->id, 'lembaga_id' => $lembaga->id]);
+
+    $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+    $jamPelajaran = JamPelajaran::factory()->create(['hari' => $hariIni]);
+    $semesterTidakAktif = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'guru_id' => $guru->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
+        'semester_id' => $semesterTidakAktif->id,
+    ]);
+
+    $response = $this->actingAs($guruUser)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertViewHas('jadwalHariIni', fn ($jadwalHariIni) => $jadwalHariIni->isEmpty());
 });

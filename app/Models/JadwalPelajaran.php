@@ -2,14 +2,18 @@
 
 namespace App\Models;
 
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Sarpras\Models\Ruangan;
 use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class JadwalPelajaran extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $table = 'jadwal_pelajaran';
 
@@ -28,7 +32,7 @@ class JadwalPelajaran extends Model
 
     public function ruangan(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Sarpras\Models\Ruangan::class, 'ruangan_id');
+        return $this->belongsTo(Ruangan::class, 'ruangan_id');
     }
 
     public function lembaga(): BelongsTo
@@ -43,12 +47,12 @@ class JadwalPelajaran extends Model
 
     public function jamPelajaran(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Akademik\Models\JamPelajaran::class);
+        return $this->belongsTo(JamPelajaran::class);
     }
 
     public function mataPelajaran(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Akademik\Models\MataPelajaran::class);
+        return $this->belongsTo(MataPelajaran::class);
     }
 
     public function guru(): BelongsTo
@@ -59,5 +63,16 @@ class JadwalPelajaran extends Model
     public function semester(): BelongsTo
     {
         return $this->belongsTo(Semester::class);
+    }
+
+    /**
+     * Filter ke jadwal yang semester-nya berstatus aktif. Semua consumer BARU
+     * yang menampilkan jadwal "saat ini" (bukan laporan histori) WAJIB
+     * memakai scope ini -- lihat riwayat bug widget "Jadwal Hari Ini" guru
+     * yang bocor lintas tahun ajaran (audit 27 Agustus 2026).
+     */
+    public function scopeSemesterAktif(Builder $query): Builder
+    {
+        return $query->whereHas('semester', fn (Builder $q) => $q->where('status_aktif', true));
     }
 }
