@@ -4,10 +4,16 @@ use App\Domains\Akademik\Actions\Rapor\SimpanCatatanWaliKelasAction;
 use App\Domains\Akademik\Actions\Rapor\SubmitPengajuanRaporAction;
 use App\Domains\Akademik\Actions\Rapor\VerifyPengajuanRaporAction;
 use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
+use App\Domains\Akademik\Enums\StatusPengajuanRapor;
+use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Akademik\Models\PengajuanRapor;
 use App\Domains\Workflow\Actions\InitializeApprovalRequestAction;
 use App\Domains\Workflow\Actions\ProcessApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalAction;
+use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Role;
@@ -21,7 +27,7 @@ use Database\Seeders\WorkflowDefinitionSeeder;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 });
 
 function siapkanAktorPersetujuan(): array
@@ -45,7 +51,7 @@ function siapkanAktorPersetujuan(): array
     $userKepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $userKepsek->assignRole($roleKepsek);
 
-    (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]));
+    (new SimpanCatatanWaliKelasAction)->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]));
     $pengajuan = (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $userWali);
 
     return compact('lembaga', 'kelas', 'semester', 'siswa', 'userWaka', 'userKepsek', 'pengajuan');
@@ -100,7 +106,7 @@ it('is tenant-scoped: PengajuanRapor from another lembaga 404s via route model b
     $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
     $pengajuanLain = PengajuanRapor::withoutGlobalScopes()->create([
         'lembaga_id' => $lembagaLain->id, 'kelas_id' => $kelasLain->id, 'semester_id' => $semesterLain->id,
-        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Diajukan,
+        'status' => StatusPengajuanRapor::Diajukan,
     ]);
 
     $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.show', $pengajuanLain))->assertNotFound();
@@ -117,7 +123,7 @@ it('lets Waka approve, advancing status to Diverifikasi', function () {
     $response->assertRedirect(route('admin.rapor.persetujuan.index'));
     $this->assertDatabaseHas('pengajuan_rapor', [
         'id' => $pengajuan->id,
-        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Diverifikasi->value,
+        'status' => StatusPengajuanRapor::Diverifikasi->value,
     ]);
 });
 
@@ -131,7 +137,7 @@ it('lets Waka reject, setting status to Ditolak with catatan_revisi', function (
 
     $this->assertDatabaseHas('pengajuan_rapor', [
         'id' => $pengajuan->id,
-        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Ditolak->value,
+        'status' => StatusPengajuanRapor::Ditolak->value,
         'catatan_revisi' => 'Nilai belum lengkap.',
     ]);
 });
@@ -145,7 +151,7 @@ it('lets Kepsek approve a Diverifikasi pengajuan, advancing status to Disetujui'
 
     $this->assertDatabaseHas('pengajuan_rapor', [
         'id' => $pengajuan->id,
-        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui->value,
+        'status' => StatusPengajuanRapor::Disetujui->value,
     ]);
 });
 
@@ -209,10 +215,27 @@ it('is tenant-scoped: printing a PengajuanRapor from another lembaga 404s via ro
     $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id, 'kelas_id' => $kelasLain->id]);
     $pengajuanLain = PengajuanRapor::withoutGlobalScopes()->create([
         'lembaga_id' => $lembagaLain->id, 'kelas_id' => $kelasLain->id, 'semester_id' => $semesterLain->id,
-        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Diajukan,
+        'status' => StatusPengajuanRapor::Diajukan,
     ]);
 
     $this->actingAs($userWaka)
         ->get(route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuanLain->id, 'siswa' => $siswaLain->id]))
         ->assertNotFound();
+});
+
+it('renders the score inside the per-mapel matrix cell on the persetujuan show page (key-mismatch regression)', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'kelas' => $kelas, 'semester' => $semester, 'siswa' => $siswa, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $asesmen = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+    NilaiSiswa::create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 65]);
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.show', $pengajuan));
+
+    $response->assertOk();
+    $response->assertSeeText('65');
 });

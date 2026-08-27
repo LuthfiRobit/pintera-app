@@ -71,7 +71,7 @@
                         <tr class="border-b border-gray-200 bg-gray-100 text-xs font-bold uppercase tracking-wider text-gray-600">
                             <th class="py-3 pl-6 pr-3 w-12 text-center">No</th>
                             <th class="px-4 py-3 min-w-[220px]">Nama Peserta Didik</th>
-                            @forelse ($mapelList as $mapel)
+                            @forelse ($mapelList as $subjekKey => $mapel)
                                 <th class="px-3 py-3 text-center min-w-[120px]">
                                     <span class="block text-gray-900 font-extrabold">{{ $mapel->nama }}</span>
                                 </th>
@@ -84,7 +84,9 @@
                     <tbody class="divide-y divide-gray-100">
                         @forelse ($siswaList as $index => $siswa)
                             @php
-                                $studentScores = collect($rekapNilai[$siswa->id] ?? [])->filter(fn ($v) => $v !== null);
+                                $studentScores = collect($rekapNilai[$siswa->id] ?? [])
+                                    ->filter(fn ($sel) => $sel !== null && $sel->tuntas !== null)
+                                    ->map(fn ($sel) => (float) $sel->label);
                                 $generalAvg = $studentScores->count() > 0 ? round($studentScores->avg(), 1) : null;
                             @endphp
                             <tr class="transition hover:bg-gray-50/60">
@@ -95,17 +97,21 @@
                                     <div class="font-bold text-gray-900 text-base">{{ $siswa->nama_lengkap }}</div>
                                     <div class="text-xs text-gray-400">{{ $siswa->nis ?: ($siswa->nisn ?: 'Tanpa NIS') }}</div>
                                 </td>
-                                @forelse ($mapelList as $mapel)
+                                @forelse ($mapelList as $subjekKey => $mapel)
                                     @php
-                                        $skor = $rekapNilai[$siswa->id][$mapel->id] ?? null;
+                                        $sel = $rekapNilai[$siswa->id][$subjekKey] ?? null;
                                     @endphp
                                     <td class="px-3 py-4 text-center font-extrabold text-base">
-                                        @if ($skor !== null)
-                                            <span class="inline-block rounded-lg px-2.5 py-1 {{ $skor >= config('akademik.ambang_tuntas') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
-                                                {{ $skor }}
+                                        @if ($sel === null)
+                                            <span class="text-gray-300 font-normal text-xs">—</span>
+                                        @elseif ($sel->tuntas !== null)
+                                            <span class="inline-block rounded-lg px-2.5 py-1 {{ $sel->tuntas ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                                {{ $sel->label }}
                                             </span>
                                         @else
-                                            <span class="text-gray-300 font-normal text-xs">—</span>
+                                            <span class="inline-block rounded-lg px-2.5 py-1 bg-gray-100 text-gray-700 border border-gray-200">
+                                                {{ $sel->label }}
+                                            </span>
                                         @endif
                                     </td>
                                 @empty

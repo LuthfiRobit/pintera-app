@@ -28,7 +28,7 @@
                     <thead>
                         <tr class="border-b border-gray-200 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-600">
                             <th class="px-4 py-3">Nama Siswa</th>
-                            @foreach ($mapelList as $mapel)
+                            @foreach ($mapelList as $subjekKey => $mapel)
                                 <th class="px-3 py-3 text-center">{{ $mapel->nama }}</th>
                             @endforeach
                         </tr>
@@ -37,8 +37,17 @@
                         @foreach ($siswaList as $siswa)
                             <tr>
                                 <td class="px-4 py-3 font-medium text-gray-900">{{ $siswa->nama_lengkap }}</td>
-                                @foreach ($mapelList as $mapel)
-                                    <td class="px-3 py-3 text-center">{{ $rekapNilai[$siswa->id][$mapel->id] ?? '—' }}</td>
+                                @foreach ($mapelList as $subjekKey => $mapel)
+                                    @php $sel = $rekapNilai[$siswa->id][$subjekKey] ?? null; @endphp
+                                    <td class="px-3 py-3 text-center">
+                                        @if ($sel === null)
+                                            —
+                                        @elseif ($sel->tuntas !== null)
+                                            <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-semibold {{ $sel->tuntas ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700' }}">{{ $sel->label }}</span>
+                                        @else
+                                            <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-700">{{ $sel->label }}</span>
+                                        @endif
+                                    </td>
                                 @endforeach
                             </tr>
                         @endforeach

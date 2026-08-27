@@ -3,11 +3,11 @@
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -63,10 +63,16 @@ it('displays the rapor recap page for selected class and semester', function () 
 
     $viewer = actingAsRaporViewer($lembaga);
 
-    $this->actingAs($viewer)
+    $response = $this->actingAs($viewer)
         ->get(route('admin.rapor.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]))
         ->assertOk()
         ->assertSee('88');
+
+    // Bug key-mismatch (mapel->id vs SubjekPenilaianKey composite): sebelum fix,
+    // kolom PER-MAPEL selalu kosong ("—") meski Rata-Rata Umum kebetulan menampilkan
+    // angka yang sama -- assert badge muncul persis di sel per-mapel, bukan cuma
+    // di kolom ringkasan.
+    $response->assertSee('bg-emerald-50', false);
 });
 
 it('defaults to the active tahun ajaran, first kelas, and latest semester when none is selected', function () {
@@ -317,4 +323,32 @@ it('calculates rapor grade using weighted component averages instead of unweight
     $response->assertSee('90');
 });
 
+it('renders the score inside the per-mapel matrix cell, not only in the class summary column (key-mismatch regression)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika']);
+    $mapelB = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Bahasa Indonesia']);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
 
+    $asesmenA = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelA->id, 'semester_id' => $semester->id]);
+    $komponenA = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelA->id, 'semester_id' => $semester->id]);
+    $asesmenA->komponenPenilaian()->attach($komponenA->id);
+    NilaiSiswa::create(['asesmen_id' => $asesmenA->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenA->id, 'nilai_angka' => 70]);
+
+    // mapelB TIDAK punya nilai sama sekali -- sel-nya harus tetap "-", bukan ikut menampilkan 70.
+    Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelB->id, 'semester_id' => $semester->id]);
+
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)
+        ->get(route('admin.rapor.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]))
+        ->assertOk();
+
+    // Sebelum fix: SEMUA sel per-mapel kosong ("—") krn key mismatch, jadi assertion
+    // di bawah ini akan GAGAL pada kode lama (0 badge ter-render), membuktikan regresi tertutup.
+    $response->assertSeeText('70');
+});
