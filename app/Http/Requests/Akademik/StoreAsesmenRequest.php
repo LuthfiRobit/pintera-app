@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\AsesmenData;
+use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Foundation\Http\FormRequest;
@@ -36,7 +37,7 @@ final class StoreAsesmenRequest extends FormRequest
                 }
             }],
             'semester_id' => ['required', 'integer'],
-            'jenis' => ['required', 'in:sumatif_lingkup_materi,sumatif_akhir_semester,sumatif_akhir_jenjang'],
+            'jenis' => ['required', Rule::enum(JenisAsesmen::class)],
             'judul' => ['required', 'string', 'max:255'],
             'tanggal' => ['required', 'date'],
             'komponen_id' => ['required', 'array', 'min:1'],

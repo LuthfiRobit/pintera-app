@@ -2,15 +2,15 @@
 
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -223,7 +223,7 @@ it('rejects creating an asesmen with no komponen_id selected', function () {
     expect(Asesmen::where('judul', 'Asesmen Tanpa TP')->exists())->toBeFalse();
 });
 
-it('rejects a jenis outside the v1-supported sumatif options', function () {
+it('allows creating an asesmen with jenis Diagnostik Kognitif', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -232,6 +232,71 @@ it('rejects a jenis outside the v1-supported sumatif options', function () {
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
     $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id]);
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user = actingAsGuruAsesmen($guru);
+
+    JadwalPelajaran::create([
+        'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'mata_pelajaran_id' => $mapel->id,
+        'guru_id' => $guru->id, 'semester_id' => $semester->id,
+    ]);
+
+    $this->actingAs($user)->post(route('guru.asesmen.store'), [
+        'kelas_id' => $kelas->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'jenis' => JenisAsesmen::DiagnostikKognitif->value,
+        'judul' => 'Diagnostik Awal Semester',
+        'tanggal' => now()->toDateString(),
+        'komponen_id' => [$komponen->id],
+    ])->assertRedirect();
+
+    expect(Asesmen::where('judul', 'Diagnostik Awal Semester')->where('jenis', JenisAsesmen::DiagnostikKognitif)->exists())->toBeTrue();
+});
+
+it('allows creating an asesmen with jenis Diagnostik Non-Kognitif', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user = actingAsGuruAsesmen($guru);
+
+    JadwalPelajaran::create([
+        'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'mata_pelajaran_id' => $mapel->id,
+        'guru_id' => $guru->id, 'semester_id' => $semester->id,
+    ]);
+
+    $this->actingAs($user)->post(route('guru.asesmen.store'), [
+        'kelas_id' => $kelas->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'jenis' => JenisAsesmen::DiagnostikNonKognitif->value,
+        'judul' => 'Survei Minat Belajar',
+        'tanggal' => now()->toDateString(),
+        'komponen_id' => [$komponen->id],
+    ])->assertRedirect();
+
+    expect(Asesmen::where('judul', 'Survei Minat Belajar')->where('jenis', JenisAsesmen::DiagnostikNonKognitif)->exists())->toBeTrue();
+});
+
+it('allows creating an asesmen with jenis Formatif', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $user = actingAsGuruAsesmen($guru);
 
@@ -246,9 +311,10 @@ it('rejects a jenis outside the v1-supported sumatif options', function () {
         'subjek_id' => $mapel->id,
         'semester_id' => $semester->id,
         'jenis' => JenisAsesmen::Formatif->value,
-        'judul' => 'Coba Jenis Formatif',
+        'judul' => 'Latihan Formatif Bab 1',
         'tanggal' => now()->toDateString(),
-    ])->assertSessionHasErrors('jenis');
+        'komponen_id' => [$komponen->id],
+    ])->assertRedirect();
 
-    expect(Asesmen::where('judul', 'Coba Jenis Formatif')->exists())->toBeFalse();
+    expect(Asesmen::where('judul', 'Latihan Formatif Bab 1')->where('jenis', JenisAsesmen::Formatif)->exists())->toBeTrue();
 });

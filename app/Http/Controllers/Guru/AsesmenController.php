@@ -8,12 +8,12 @@ use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Http\Requests\Akademik\StoreAsesmenRequest;
 use App\Http\Requests\Akademik\UpdateNilaiSiswaRequest;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -28,8 +28,7 @@ class AsesmenController extends BaseController
     public function __construct(
         private readonly CreateAsesmenAction $createAsesmenAction,
         private readonly SimpanNilaiSiswaAction $simpanNilaiSiswaAction,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -51,7 +50,7 @@ class AsesmenController extends BaseController
         $this->authorize('asesmen.kelola');
 
         $guru = $request->user()->guru;
-        abort_if(!$guru, 403, 'Profil guru tidak ditemukan untuk akun ini.');
+        abort_if(! $guru, 403, 'Profil guru tidak ditemukan untuk akun ini.');
 
         $jadwalList = JadwalPelajaran::where('guru_id', $guru->id)
             ->with(['kelas', 'mataPelajaran', 'semester'])
@@ -67,7 +66,7 @@ class AsesmenController extends BaseController
             'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->orderByDesc('id')->get(),
             'komponenList' => KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->whereIn('subjek_id', $mapelIds)->get(),
-            'jenisAsesmenList' => JenisAsesmen::v1Didukung(),
+            'jenisAsesmenList' => JenisAsesmen::cases(),
             'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
         ]);
     }
@@ -111,7 +110,7 @@ class AsesmenController extends BaseController
         foreach ($siswaList as $siswa) {
             foreach ($komponenList as $komponen) {
                 $key = $siswa->id.'-'.$komponen->id;
-                if (!$existingKeys->has($key)) {
+                if (! $existingKeys->has($key)) {
                     $missingRows[] = [
                         'asesmen_id' => $asesmen->id,
                         'siswa_id' => $siswa->id,
@@ -123,7 +122,7 @@ class AsesmenController extends BaseController
             }
         }
 
-        if (!empty($missingRows)) {
+        if (! empty($missingRows)) {
             NilaiSiswa::insertOrIgnore($missingRows);
         }
 
