@@ -30,7 +30,7 @@
 **Interfaces:**
 - Produces: `JadwalPelajaran::scopeSemesterAktif(Builder $query): Builder` — query scope baru yang bisa dipakai consumer lain ke depan sbg default guard.
 
-- [ ] **Step 1: Tulis test yang gagal — jadwal semester lama tidak boleh muncul di widget**
+- [x] **Step 1: Tulis test yang gagal — jadwal semester lama tidak boleh muncul di widget**
 
 Tambahkan di akhir `tests/Feature/DashboardTest.php` (gunakan import yang sudah ada di file: `JadwalPelajaran`, `Semester`, `Guru`, `Role`, `User`, `Lembaga`, `Kelas`, `JamPelajaran`, `Hari`):
 
@@ -103,12 +103,12 @@ it('shows an empty today-schedule widget for a guru whose lembaga has no active 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="excludes jadwal pelajaran from a non-active semester" --compact`
 Expected: FAIL — `jadwalHariIni` masih berisi `$kelasLama` karena belum ada filter semester aktif.
 
-- [ ] **Step 3: Tambah query scope `semesterAktif` di model `JadwalPelajaran`**
+- [x] **Step 3: Tambah query scope `semesterAktif` di model `JadwalPelajaran`**
 
 Edit `app/Models/JadwalPelajaran.php` — tambah import dan method (setelah method `semester()`, sebelum penutup class):
 
@@ -129,7 +129,7 @@ use Illuminate\Database\Eloquent\Builder;
     }
 ```
 
-- [ ] **Step 4: Terapkan scope di `DashboardController`**
+- [x] **Step 4: Terapkan scope di `DashboardController`**
 
 Edit `app/Http/Controllers/Admin/DashboardController.php:51-56`, ubah dari:
 
@@ -156,7 +156,7 @@ menjadi:
 
 (Tidak perlu import baru — `JadwalPelajaran` sudah di-import di baris 19.)
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="today-schedule widget" --compact`
 Expected: PASS (2 test baru), dan pastikan test existing baris 128-138 (`'passes teaching schedule and progressKelasWali to the guru dashboard view'`) dan baris 194+ (`'shows an orang tua the latest recorded grade for their linked child'`, yang juga membuat `JadwalPelajaran` tanpa `semester_id` eksplisit — factory default `Semester::factory()` membuat semester baru dengan `status_aktif` default) TETAP PASS:
@@ -166,7 +166,7 @@ Expected: semua test di file PASS, 0 failed.
 
 **PERINGATAN**: kalau test existing di baris 194+ gagal karena `Semester::factory()` default TIDAK membuat `status_aktif=true`, cek `database/factories/SemesterFactory.php` — kalau defaultnya `false`, test itu sendiri (bukan kode Task 1) yang perlu diperbaiki dengan menambahkan `'status_aktif' => true` eksplisit pada baris pembuatan `JadwalPelajaran`/`Semester` terkait test tsb (test itu memang harus mensimulasikan semester aktif, jadi ini perbaikan test yang sah, bukan penyimpangan dari plan — laporkan di report akhir task ini).
 
-- [ ] **Step 6: Format & commit**
+- [x] **Step 6: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -190,7 +190,7 @@ git commit -m "fix(akademik): widget jadwal hari ini guru filter semester aktif"
 - Consumes: `KurikulumAssignmentResolver::resolve(int $tahunAjaranId, string $bentukPendidikan, ?string $tingkat, ?int $lembagaId): KurikulumFramework` (throws `KurikulumAssignmentNotFoundException`), `FaseDefaultResolver::resolve(string $bentukPendidikan, ?string $tingkat, ?int $lembagaId): ?Fase` — keduanya sudah ada, tidak diubah.
 - Produces: `ResyncKurikulumFaseKelasAction::hitungDiff(int $lembagaId, int $tahunAjaranId): array<int, array{kelas: Kelas, kurikulumLama: ?string, kurikulumBaru: ?string, faseLamaId: ?int, faseBaruId: ?int, faseBaruNama: ?string}>` dan `ResyncKurikulumFaseKelasAction::terapkan(array $kelasIds): void`.
 
-- [ ] **Step 1: Tulis test yang gagal — hitungDiff mendeteksi kelas yang driftnya sudah tidak sesuai**
+- [x] **Step 1: Tulis test yang gagal — hitungDiff mendeteksi kelas yang driftnya sudah tidak sesuai**
 
 Buat `tests/Feature/Akademik/ResyncKurikulumFaseKelasTest.php`:
 
@@ -310,12 +310,12 @@ it('applies resync only to the selected kelas ids, recomputing values on the ser
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/ResyncKurikulumFaseKelasTest.php --compact`
 Expected: FAIL — class `ResyncKurikulumFaseKelasAction` belum ada.
 
-- [ ] **Step 3: Buat Action**
+- [x] **Step 3: Buat Action**
 
 Buat `app/Domains/Akademik/Actions/Kelas/ResyncKurikulumFaseKelasAction.php`:
 
@@ -426,12 +426,12 @@ final class ResyncKurikulumFaseKelasAction
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/ResyncKurikulumFaseKelasTest.php --compact`
 Expected: PASS, 5/5 test.
 
-- [ ] **Step 5: Tulis test controller (route + otorisasi + tampilan diff)**
+- [x] **Step 5: Tulis test controller (route + otorisasi + tampilan diff)**
 
 Tambahkan di file test yang sama, sebelum penutup (atau file baru `tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php` — pakai file baru ini supaya lebih jelas terpisah dari test Action):
 
@@ -514,12 +514,12 @@ it('rejects resync for a kelas belonging to a different lembaga (cross-tenant gu
 });
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan gagal**
+- [x] **Step 6: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php --compact`
 Expected: FAIL — route `admin.kurikulum-assignment.resync` belum ada.
 
-- [ ] **Step 7: Buat Controller**
+- [x] **Step 7: Buat Controller**
 
 Buat `app/Http/Controllers/Admin/ResyncKurikulumFaseController.php`:
 
@@ -609,7 +609,7 @@ class ResyncKurikulumFaseController extends BaseController
 }
 ```
 
-- [ ] **Step 8: Tambah route**
+- [x] **Step 8: Tambah route**
 
 Edit `routes/admin/akademik-master.php`, tambahkan setelah blok `kurikulum-assignment.*` (setelah baris `destroy`):
 
@@ -620,7 +620,7 @@ Route::post('kurikulum-assignment/resync', [ResyncKurikulumFaseController::class
 
 Tambahkan import di bagian atas file: `use App\Http\Controllers\Admin\ResyncKurikulumFaseController;`
 
-- [ ] **Step 9: Buat view resync**
+- [x] **Step 9: Buat view resync**
 
 Buat `resources/views/admin/kurikulum-assignment/resync.blade.php`:
 
@@ -699,7 +699,7 @@ Buat `resources/views/admin/kurikulum-assignment/resync.blade.php`:
 </x-app-layout>
 ```
 
-- [ ] **Step 10: Tambah link dari halaman index kurikulum-assignment**
+- [x] **Step 10: Tambah link dari halaman index kurikulum-assignment**
 
 Edit `resources/views/admin/kurikulum-assignment/index.blade.php`, tambahkan link baru di sebelah tombol "Tambah Assignment" (baris 12-17):
 
@@ -711,12 +711,12 @@ Edit `resources/views/admin/kurikulum-assignment/index.blade.php`, tambahkan lin
             @endcan
 ```
 
-- [ ] **Step 11: Jalankan test, pastikan lulus**
+- [x] **Step 11: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/ResyncKurikulumFase --compact`
 Expected: PASS, semua test (Action + Controller) lulus.
 
-- [ ] **Step 12: Format & commit**
+- [x] **Step 12: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -738,7 +738,7 @@ git commit -m "feat(akademik): aksi resync manual drift kurikulum/fase kelas"
 - Consumes: `App\Models\EkstrakurikulerLembaga` (existing model, `nama_ekskul` fillable field).
 - Produces: view `portals.guru.rapor.catatan.edit` menerima variabel baru `ekskulOptions` (Collection<string>).
 
-- [ ] **Step 1: Tulis test yang gagal — submit nama ekskul tak terdaftar harus ditolak**
+- [x] **Step 1: Tulis test yang gagal — submit nama ekskul tak terdaftar harus ditolak**
 
 Buat `tests/Feature/Akademik/CatatanWaliKelasEkstrakurikulerValidationTest.php`:
 
@@ -823,12 +823,12 @@ it('rejects an ekskul name that belongs to a different lembaga (tenant isolation
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/CatatanWaliKelasEkstrakurikulerValidationTest.php --compact`
 Expected: FAIL — 3 dari 4 test gagal (form belum kirim `ekskulOptions`, validasi belum ada).
 
-- [ ] **Step 3: Update `StoreCatatanWaliKelasRequest`**
+- [x] **Step 3: Update `StoreCatatanWaliKelasRequest`**
 
 Edit `app/Http/Requests/Akademik/StoreCatatanWaliKelasRequest.php`. Tambah import:
 
@@ -864,7 +864,7 @@ Tambah method baru di akhir class (sebelum `}` penutup), sebelum method `toDTO`:
     }
 ```
 
-- [ ] **Step 4: Update `Guru\RaporController::edit()`**
+- [x] **Step 4: Update `Guru\RaporController::edit()`**
 
 Edit `app/Http/Controllers/Guru/RaporController.php`. Tambah import: `use App\Models\EkstrakurikulerLembaga;`
 
@@ -897,7 +897,7 @@ menjadi:
         ]);
 ```
 
-- [ ] **Step 5: Update view — ganti input teks jadi select**
+- [x] **Step 5: Update view — ganti input teks jadi select**
 
 Edit `resources/views/portals/guru/rapor/catatan/edit.blade.php:67`, ubah dari:
 
@@ -921,19 +921,19 @@ menjadi:
                         </select>
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/CatatanWaliKelasEkstrakurikulerValidationTest.php --compact`
 Expected: PASS, 4/4 test.
 
-- [ ] **Step 7: Jalankan full test suite (WAJIB tanpa filter — ini adalah task terakhir Kelompok A)**
+- [x] **Step 7: Jalankan full test suite (WAJIB tanpa filter — ini adalah task terakhir Kelompok A)**
 
 Run: `php artisan test --compact`
 Expected: 0 failed. Catat angka pasti (passed/skipped/assertions) di laporan akhir.
 
 **PERHATIAN**: kalau ada test existing lain yang memakai `StoreCatatanWaliKelasRequest`/form catatan wali kelas dengan nama ekskul bebas (bukan dari master data) dan jadi gagal, JANGAN diam-diam melonggarkan validasi baru — perbaiki test tsb supaya memakai `EkstrakurikulerLembaga::create(...)` dulu untuk data yang valid, konsisten dengan pola existence-then-exclusion proyek ini.
 
-- [ ] **Step 8: Format & commit**
+- [x] **Step 8: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -941,7 +941,7 @@ git add app/Http/Controllers/Guru/RaporController.php app/Http/Requests/Akademik
 git commit -m "fix(akademik): validasi nama ekskul di catatan wali kelas terhadap master data lembaga"
 ```
 
-- [ ] **Step 9: Catat penyelesaian Kelompok A di PETA_PENGEMBANGAN.md**
+- [x] **Step 9: Catat penyelesaian Kelompok A di PETA_PENGEMBANGAN.md**
 
 Baca dulu bagian existing terkait audit sistematis tahap 2 (dicatat sebelumnya sbg temuan 10 poin), tambahkan catatan bahwa Kelompok A (poin #1-3: widget jadwal, drift kurikulum/fase, validasi ekskul) SELESAI dengan tanggal hari ini, dan Kelompok B (Kenaikan Kelas UX) + Kelompok C (RPP reporting + test coverage) masih menyusul terpisah.
 
