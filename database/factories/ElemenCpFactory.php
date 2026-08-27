@@ -12,7 +12,7 @@ class ElemenCpFactory extends Factory
     public function definition(): array
     {
         return [
-            'kode' => $this->faker->unique()->slug(2),
+            'kode' => substr($this->faker->unique()->slug(2), 0, 30),
             'nama' => $this->faker->words(3, true),
             'no_urut' => $this->faker->numberBetween(1, 10),
         ];

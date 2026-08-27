@@ -12,16 +12,16 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    (new PermissionSeeder())->run();
+    (new PermissionSeeder)->run();
 });
 
 it('seeds roles with correct scope and protection', function () {
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(145);
+    expect($superAdmin->permissions()->count())->toBe(149);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -35,7 +35,7 @@ it('seeds roles with correct scope and protection', function () {
 });
 
 it('gives admin_administrasi the correct 20 SPMB-related permissions', function () {
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 
     $adminAdministrasi = Role::where('name', 'admin_administrasi')->first();
     expect($adminAdministrasi->permissions()->count())->toBe(20);
@@ -43,7 +43,7 @@ it('gives admin_administrasi the correct 20 SPMB-related permissions', function 
 });
 
 it('gives kepala_sekolah the correct 13 permissions', function () {
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 
     $kepalaSekolah = Role::where('name', 'kepala_sekolah')->first();
     expect($kepalaSekolah->permissions()->count())->toBe(13);
@@ -58,7 +58,7 @@ it('gives kepala_sekolah the correct 13 permissions', function () {
 });
 
 it('gives bendahara_lembaga the correct 12 permissions', function () {
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 
     $bendahara = Role::where('name', 'bendahara_lembaga')->first();
     expect($bendahara->permissions()->count())->toBe(12);
@@ -67,7 +67,7 @@ it('gives bendahara_lembaga the correct 12 permissions', function () {
 });
 
 it('gives guru the presensi, asesmen, and komponen-penilaian-sendiri permissions', function () {
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 
     $guru = Role::where('name', 'guru')->first();
     expect($guru->permissions()->count())->toBe(12);
@@ -84,14 +84,14 @@ it('gives guru the presensi, asesmen, and komponen-penilaian-sendiri permissions
 });
 
 it('is idempotent when run twice', function () {
-    (new RoleSeeder())->run();
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
+    (new RoleSeeder)->run();
 
     expect(Role::count())->toBe(18);
 });
 
 it('grants kalender-akademik.kelola-nasional to yayasan_super_admin via bulk permission sync, but not to operator_akademik', function () {
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 
     expect(Permission::where('name', 'kalender-akademik.kelola-nasional')->exists())->toBeTrue();
 
@@ -103,8 +103,8 @@ it('grants kalender-akademik.kelola-nasional to yayasan_super_admin via bulk per
 });
 
 it('also gets the full permission set re-synced by RolePermissionAssignmentSeeder at the end of the full seed chain', function () {
-    (new RoleSeeder())->run();
-    (new RolePermissionAssignmentSeeder())->run();
+    (new RoleSeeder)->run();
+    (new RolePermissionAssignmentSeeder)->run();
 
     $superAdmin = Role::where('name', 'yayasan_super_admin')->firstOrFail();
     expect($superAdmin->permissions()->count())->toBe(Permission::count());
@@ -112,22 +112,23 @@ it('also gets the full permission set re-synced by RolePermissionAssignmentSeede
 
 it('grants kenaikan-kelas.kelola to kepala_sekolah after permissions sync and role seeding', function () {
     Artisan::call('permissions:sync');
-    (new RoleSeeder())->run();
+    (new RoleSeeder)->run();
 
     $kepalaSekolah = Role::where('name', 'kepala_sekolah')->firstOrFail();
 
     expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
 });
 
-it('seeds operator_akademik with the correct 50 academic-management permissions', function () {
-    (new RoleSeeder())->run();
+it('seeds operator_akademik with the correct 54 academic-management permissions', function () {
+    (new RoleSeeder)->run();
 
     $operatorAkademik = Role::where('name', 'operator_akademik')->first();
     expect($operatorAkademik)->not->toBeNull();
     expect($operatorAkademik->scope_level)->toBe('lembaga');
     expect($operatorAkademik->is_protected)->toBeFalse();
-    expect($operatorAkademik->permissions()->count())->toBe(50);
+    expect($operatorAkademik->permissions()->count())->toBe(54);
     expect($operatorAkademik->hasPermissionTo('kelas.edit'))->toBeTrue();
+    expect($operatorAkademik->hasPermissionTo('kurikulum-assignment.view'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('siswa.import'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('jadwal-pelajaran.kelola'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('komponen-penilaian.kelola'))->toBeTrue();

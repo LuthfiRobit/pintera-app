@@ -5,7 +5,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Spatie\Permission\Models\Permission;
 
 it('seeds the initial permissions', function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     $expected = [
         'roles.view', 'roles.create', 'roles.edit', 'roles.delete',
@@ -34,6 +34,7 @@ it('seeds the initial permissions', function () {
         'rapor.input-wali', 'rapor.ajukan', 'rapor.verify', 'rapor.approve',
         'kenaikan-kelas.kelola',
         'kelas.view', 'kelas.create', 'kelas.edit',
+        'kurikulum-assignment.view', 'kurikulum-assignment.create', 'kurikulum-assignment.edit', 'kurikulum-assignment.delete',
         'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
         'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
         'pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete',
@@ -49,16 +50,16 @@ it('seeds the initial permissions', function () {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(145);
+    expect(Permission::count())->toBe(149);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(145);
+    expect($superAdmin->permissions()->count())->toBe(149);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -71,7 +72,7 @@ it('seeds the initial roles with correct scope and protection', function () {
 });
 
 it('gives admin_administrasi the SPMB-related granular permissions by default', function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     $adminAdministrasi = Role::where('name', 'admin_administrasi')->first();
     $expected = [
@@ -92,7 +93,7 @@ it('gives admin_administrasi the SPMB-related granular permissions by default', 
 });
 
 it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, including tetapkan-keputusan and terbitkan-sk', function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     $kepalaSekolah = Role::where('name', 'kepala_sekolah')->first();
     $expected = [
@@ -112,7 +113,7 @@ it('gives kepala_sekolah all five spmb-pendaftaran permissions by default, inclu
 });
 
 it('gives bendahara_lembaga the jenis-tagihan and tagihan permissions by default', function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     $bendahara = Role::where('name', 'bendahara_lembaga')->first();
     $expected = [
@@ -130,23 +131,23 @@ it('gives bendahara_lembaga the jenis-tagihan and tagihan permissions by default
 });
 
 it('is idempotent when run twice', function () {
-    (new RolePermissionSeeder())->run();
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
+    (new RolePermissionSeeder)->run();
 
     expect(Role::count())->toBe(18);
-    expect(Permission::count())->toBe(145);
+    expect(Permission::count())->toBe(149);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {
     Permission::firstOrCreate(['name' => 'manage-guru', 'guard_name' => 'web']);
 
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     expect(Permission::where('name', 'manage-guru')->exists())->toBeFalse();
 });
 
 it('gives operator_akademik the kasus audit-log and soft-delete permissions', function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 
     $operatorAkademik = Role::where('name', 'operator_akademik')->first();
     foreach (['kasus.lihat-log-akses', 'kasus.hapus', 'kasus.pulihkan'] as $name) {
