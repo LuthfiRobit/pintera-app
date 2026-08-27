@@ -14,9 +14,13 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Domains/*/Models/** | .ai/rules/domains-models.md |
 | app/Domains/** | .ai/rules/domains.md |
 | app/Enums/** | .ai/rules/enums.md |
+| app/Events/** | .ai/rules/events.md |
 | resources/js/** | .ai/rules/js.md |
+| app/Listeners/** | .ai/rules/listeners.md |
+| app/Mail/** | .ai/rules/mail.md |
 | database/migrations/** | .ai/rules/migrations.md |
 | app/Models/** | .ai/rules/models.md |
+| app/Notifications/** | .ai/rules/notifications.md |
 | app/Policies/** | .ai/rules/policies.md |
 | app/Http/Requests/** | .ai/rules/requests.md |
 | routes/** | .ai/rules/routes.md |
