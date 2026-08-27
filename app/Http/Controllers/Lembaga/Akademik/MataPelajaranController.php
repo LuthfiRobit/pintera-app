@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lembaga\Akademik;
 use App\Domains\Akademik\Actions\MataPelajaran\CreateMataPelajaranAction;
 use App\Domains\Akademik\Actions\MataPelajaran\UpdateMataPelajaranAction;
 use App\Domains\Akademik\DataTransferObjects\MataPelajaranData;
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
@@ -30,8 +31,8 @@ class MataPelajaranController extends BaseController
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('nama', 'like', '%' . $search . '%')
-                  ->orWhere('kode', 'like', '%' . $search . '%');
+                $q->where('nama', 'like', '%'.$search.'%')
+                    ->orWhere('kode', 'like', '%'.$search.'%');
             });
         }
 
@@ -52,18 +53,28 @@ class MataPelajaranController extends BaseController
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return view('portals.lembaga.akademik.mata-pelajaran._daftar', [
                 'mataPelajaranList' => $paginated,
-                'perPage'           => $perPage,
+                'perPage' => $perPage,
             ]);
         }
 
         return view('portals.lembaga.akademik.mata-pelajaran.index', [
             'mataPelajaranList' => $paginated,
-            'tipeList'          => TipeMataPelajaran::cases(),
-            'kelompokList'      => KelompokMataPelajaran::cases(),
-            'statusList'        => StatusMataPelajaran::cases(),
-            'perPage'           => $perPage,
-            'totalMapel'        => MataPelajaran::count(),
-            'countKurikulum'    => MataPelajaran::where('tipe', TipeMataPelajaran::Mapel->value)->count(),
+            'tipeList' => TipeMataPelajaran::cases(),
+            'kelompokList' => KelompokMataPelajaran::cases(),
+            'statusList' => StatusMataPelajaran::cases(),
+            'perPage' => $perPage,
+            'totalMapel' => MataPelajaran::count(),
+            'countKurikulum' => MataPelajaran::where('tipe', TipeMataPelajaran::Mapel->value)->count(),
+            'isPaud' => in_array(
+                auth()->user()->lembaga?->bentuk_pendidikan,
+                [
+                    BentukPendidikan::Kb->value,
+                    BentukPendidikan::Tpa->value,
+                    BentukPendidikan::Sps->value,
+                    BentukPendidikan::Tk->value,
+                ],
+                true
+            ),
         ]);
     }
 
@@ -72,9 +83,9 @@ class MataPelajaranController extends BaseController
         $this->authorize('mata-pelajaran.create');
 
         return view('portals.lembaga.akademik.mata-pelajaran.create', [
-            'tipeList'     => TipeMataPelajaran::cases(),
+            'tipeList' => TipeMataPelajaran::cases(),
             'kelompokList' => KelompokMataPelajaran::cases(),
-            'statusList'   => StatusMataPelajaran::cases(),
+            'statusList' => StatusMataPelajaran::cases(),
         ]);
     }
 
@@ -110,9 +121,9 @@ class MataPelajaranController extends BaseController
 
         return view('portals.lembaga.akademik.mata-pelajaran.edit', [
             'mataPelajaran' => $mataPelajaran,
-            'tipeList'      => TipeMataPelajaran::cases(),
-            'kelompokList'  => KelompokMataPelajaran::cases(),
-            'statusList'    => StatusMataPelajaran::cases(),
+            'tipeList' => TipeMataPelajaran::cases(),
+            'kelompokList' => KelompokMataPelajaran::cases(),
+            'statusList' => StatusMataPelajaran::cases(),
         ]);
     }
 

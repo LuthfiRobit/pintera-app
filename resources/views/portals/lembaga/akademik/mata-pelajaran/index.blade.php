@@ -19,6 +19,17 @@
             </p>
         </div>
 
+        {{-- Catatan PAUD: aspek perkembangan dikelola lewat Elemen CP, bukan Mata Pelajaran --}}
+        @if ($isPaud)
+            <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4 text-sm text-indigo-800">
+                <p class="font-semibold">Catatan untuk PAUD</p>
+                <p class="mt-1">Untuk PAUD, aspek perkembangan/Capaian Pembelajaran dikelola melalui <strong>Elemen CP</strong> pada Komponen Penilaian, bukan melalui menu Mata Pelajaran.</p>
+                <a href="{{ route('admin.komponen-penilaian.index') }}" class="mt-2 inline-block font-semibold text-indigo-700 hover:text-indigo-900">
+                    Kelola Komponen Penilaian &rarr;
+                </a>
+            </div>
+        @endif
+
         {{-- KPI Compact Horizontal Statistic Cards (Samakan dengan Jabatan Tambahan) --}}
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">

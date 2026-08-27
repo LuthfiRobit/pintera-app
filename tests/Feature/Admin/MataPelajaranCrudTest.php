@@ -1,10 +1,10 @@
 <?php
 
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -155,3 +155,26 @@ it('returns only table partial view when requested via AJAX XMLHttpRequest', fun
     $response->assertSee('Mapel AJAX');
 });
 
+it('shows the PAUD note banner with a link to Komponen Penilaian for KB/TPA/SPS/TK', function (string $bentukPendidikan) {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => $bentukPendidikan]);
+    $manager = actingAsMataPelajaranManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'));
+
+    $response->assertOk();
+    $response->assertSee('Catatan untuk PAUD');
+    $response->assertSee('Elemen CP');
+    $response->assertSee(e(route('admin.komponen-penilaian.index')), false);
+})->with(['KB', 'TPA', 'SPS', 'TK']);
+
+it('does not show the PAUD note banner for a non-PAUD bentuk_pendidikan', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $manager = actingAsMataPelajaranManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('Catatan untuk PAUD');
+});
