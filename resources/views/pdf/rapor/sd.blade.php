@@ -34,12 +34,16 @@
         </thead>
         <tbody>
             @forelse ($mapelList as $mapel)
-                @php($narasi = $narasiPerMapel[$mapel->id] ?? ['tertinggi' => null, 'terendah' => null])
+                @php
+                    $subjekKey = \App\Domains\Akademik\Services\SubjekPenilaianKey::dari($mapel);
+                    $narasi = $narasiPerMapel[$subjekKey] ?? ['tertinggi' => null, 'terendah' => null];
+                    $sel = $rekapNilai[$subjekKey] ?? null;
+                @endphp
                 <tr>
                     <td class="nama">{{ $mapel->nama }}</td>
-                    <td>{{ $rekapNilai[$mapel->id] ?? '-' }}</td>
+                    <td>{{ $sel?->label ?? '-' }}</td>
                     @if ($isGenap && $nilaiRataRataTahunan !== null)
-                        <td>{{ $nilaiRataRataTahunan[$mapel->id] ?? '-' }}</td>
+                        <td>{{ $nilaiRataRataTahunan[$subjekKey] ?? '-' }}</td>
                     @endif
                     <td class="narasi">{{ trim(($narasi['tertinggi'] ?? '').' '.($narasi['terendah'] ?? '')) ?: '-' }}</td>
                 </tr>

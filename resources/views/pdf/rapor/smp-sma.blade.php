@@ -22,7 +22,9 @@
     @include('pdf.rapor._identitas')
 
     <h2>Nilai Akademik</h2>
-    @php($mapelPerKelompok = $mapelList->groupBy(fn ($mapel) => $mapel->kelompok?->label() ?? 'Lainnya'))
+    @php
+        $mapelPerKelompok = $mapelList->groupBy(fn ($mapel) => $mapel->kelompok?->label() ?? 'Lainnya');
+    @endphp
     @foreach ($mapelPerKelompok as $namaKelompok => $mapelDalamKelompok)
         <h3 class="kelompok">{{ $namaKelompok }}</h3>
         <table>
@@ -38,12 +40,16 @@
             </thead>
             <tbody>
                 @foreach ($mapelDalamKelompok as $mapel)
-                    @php($narasi = $narasiPerMapel[$mapel->id] ?? ['tertinggi' => null, 'terendah' => null])
+                    @php
+                        $subjekKey = \App\Domains\Akademik\Services\SubjekPenilaianKey::dari($mapel);
+                        $narasi = $narasiPerMapel[$subjekKey] ?? ['tertinggi' => null, 'terendah' => null];
+                        $sel = $rekapNilai[$subjekKey] ?? null;
+                    @endphp
                     <tr>
                         <td class="nama">{{ $mapel->nama }}</td>
-                        <td>{{ $rekapNilai[$mapel->id] ?? '-' }}</td>
+                        <td>{{ $sel?->label ?? '-' }}</td>
                         @if ($isGenap && $nilaiRataRataTahunan !== null)
-                            <td>{{ $nilaiRataRataTahunan[$mapel->id] ?? '-' }}</td>
+                            <td>{{ $nilaiRataRataTahunan[$subjekKey] ?? '-' }}</td>
                         @endif
                         <td class="narasi">{{ trim(($narasi['tertinggi'] ?? '').' '.($narasi['terendah'] ?? '')) ?: '-' }}</td>
                     </tr>

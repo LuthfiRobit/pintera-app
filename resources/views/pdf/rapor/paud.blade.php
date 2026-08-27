@@ -27,7 +27,8 @@
             'literasi_steam' => ['label' => 'Literasi, STEAM, Seni, dan Budaya', 'kalimat' => []],
         ];
         foreach ($mapelList as $mapel) {
-            $narasi = $narasiPerMapel[$mapel->id] ?? ['tertinggi' => null, 'terendah' => null];
+            $subjekKey = \App\Domains\Akademik\Services\SubjekPenilaianKey::dari($mapel);
+            $narasi = $narasiPerMapel[$subjekKey] ?? ['tertinggi' => null, 'terendah' => null];
             $elemen = $mapel instanceof \App\Domains\Akademik\Models\ElemenCp ? $mapel->kode : null;
             if (! $elemen && $mapel instanceof \App\Domains\Akademik\Models\MataPelajaran) {
                 $komponenTerkait = \App\Domains\Akademik\Models\KomponenPenilaian::where('subjek_type', 'elemen_cp')

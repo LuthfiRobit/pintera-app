@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\Domains\Akademik\Services;
 
+use App\Domains\Akademik\DataTransferObjects\RekapNilaiSel;
+use App\Domains\Akademik\Enums\AssessmentType;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
-use App\Domains\Akademik\Services\AcademicProfile;
-use App\Domains\Akademik\Services\SubjekPenilaianKey;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use LogicException;
 
 final class RaporPdfDataBuilder
@@ -21,13 +23,12 @@ final class RaporPdfDataBuilder
         private readonly RaporCalculationService $raporCalculationService,
         private readonly CapaianKompetensiGenerator $capaianKompetensiGenerator,
         private readonly PresensiAggregationService $presensiAggregationService,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{
-     *   siswa: Siswa, kelas: \App\Models\Kelas, semester: Semester, lembaga: \App\Models\Lembaga,
-     *   rekapNilai: array<string, float|null>, mapelList: \Illuminate\Support\Collection,
+     *   siswa: Siswa, kelas: Kelas, semester: Semester, lembaga: Lembaga,
+     *   rekapNilai: array<string, ?RekapNilaiSel>, mapelList: Collection,
      *   narasiPerMapel: array<string, array{tertinggi: ?string, terendah: ?string}>,
      *   catatan: ?CatatanWaliKelas,
      *   absensi: array{hadir:int, izin:int, sakit:int, alpa:int, terlambat:int},
@@ -101,13 +102,16 @@ final class RaporPdfDataBuilder
                 $nilaiRataRataTahunan = [];
                 foreach ($mapelList as $mapel) {
                     $key = SubjekPenilaianKey::dari($mapel);
-                    $nilaiGenap = $rekapNilaiSiswa[$key] ?? null;
-                    $nilaiGanjil = $rekapNilaiGanjilSiswa[$key] ?? null;
+                    $selGenap = $rekapNilaiSiswa[$key] ?? null;
+                    $selGanjil = $rekapNilaiGanjilSiswa[$key] ?? null;
+
+                    $numGenap = ($selGenap !== null && $selGenap->assessmentType === AssessmentType::Numeric) ? (float) $selGenap->label : null;
+                    $numGanjil = ($selGanjil !== null && $selGanjil->assessmentType === AssessmentType::Numeric) ? (float) $selGanjil->label : null;
 
                     $nilaiRataRataTahunan[$key] = match (true) {
-                        $nilaiGenap !== null && $nilaiGanjil !== null => round(($nilaiGenap + $nilaiGanjil) / 2, 1),
-                        $nilaiGenap !== null => $nilaiGenap,
-                        $nilaiGanjil !== null => $nilaiGanjil,
+                        $numGenap !== null && $numGanjil !== null => round(($numGenap + $numGanjil) / 2, 1),
+                        $numGenap !== null => $numGenap,
+                        $numGanjil !== null => $numGanjil,
                         default => null,
                     };
                 }
