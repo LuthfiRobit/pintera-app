@@ -162,7 +162,16 @@ Tambahkan `use App\Domains\Akademik\Enums\JenisAsesmen;` di import file ini. Bar
    - Asesmen Formatif dgn nilai 100 (subjek+siswa+semester SAMA).
    - Asesmen Diagnostik Kognitif dgn nilai 100 (subjek+siswa+semester SAMA).
 
-   → `rekapNilai` utk siswa+subjek itu HARUS tetap `88` (bukan rata-rata campuran ketiganya, bukan 100) — membuktikan nilai non-rapor benar-benar tidak ikut memengaruhi agregasi, bukan cuma "tidak muncul di daftar terpisah".
+   **WAJIB assert dulu bahwa ketiga `Asesmen` dan `NilaiSiswa` non-rapor benar-benar tersimpan di DB dengan nilai yang benar** (`Asesmen::where('jenis', ...)->exists()`, `NilaiSiswa::where(...)->first()->nilai_angka === 100`) SEBELUM memanggil `hitungRekapKelas()` — supaya test tidak bisa false-positive krn data non-rapor ternyata gagal dibuat sama sekali (exclusion yang dibuktikan harus exclusion SUNGGUHAN, bukan absennya data). BARU SETELAH ITU assert `rekapNilai` utk siswa+subjek itu tetap `88` (bukan rata-rata campuran ketiganya, bukan 100).
+
+5. **Test usability end-to-end** (BARU, di file feature guru) — buktikan Diagnostik/Formatif bukan sekadar record yang bisa dibuat, tapi benar-benar bisa dipakai guru lewat alur existing tanpa modifikasi apa pun:
+   - Guru `store()` Asesmen berjenis Formatif → berhasil.
+   - Guru buka `show()` Asesmen itu → halaman matrix tampil (asersi `assertOk()`).
+   - Guru `updateNilai()` mengisi nilai siswa → berhasil tersimpan.
+   - Guru buka kembali `show()` → nilai yang tadi diisi TERLIHAT di response (assert nilai muncul di halaman, bukan cuma tersimpan di DB).
+   - Panggil `hitungRekapKelas()` utk kelas+semester yang sama → nilai Formatif itu TIDAK muncul di `rekapNilai`.
+
+   Test ini membuktikan siklus penuh create → input nilai → show/read-back → exclusion dari rapor, bukan cuma satu tahap saja.
 
 ## 9. Ringkasan Alur
 
