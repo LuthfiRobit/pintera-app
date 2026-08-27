@@ -8,12 +8,12 @@ use App\Domains\Akademik\Actions\Rapor\GenerateNarasiPerkembanganAction;
 use App\Domains\Akademik\Actions\Rapor\SimpanCatatanWaliKelasAction;
 use App\Domains\Akademik\Actions\Rapor\SubmitPengajuanRaporAction;
 use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
-use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
 use App\Domains\Akademik\Services\RaporPdfDataBuilder;
 use App\Http\Requests\Akademik\StoreCatatanWaliKelasRequest;
 use App\Http\Requests\Akademik\SubmitPengajuanRaporRequest;
+use App\Models\EkstrakurikulerLembaga;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -39,8 +39,7 @@ class RaporController extends BaseController
         private readonly SubmitPengajuanRaporAction $submitPengajuanRaporAction,
         private readonly GenerateNarasiPerkembanganAction $generateNarasiPerkembanganAction,
         private readonly RaporPdfDataBuilder $raporPdfDataBuilder,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -150,6 +149,7 @@ class RaporController extends BaseController
             'siswaBerikutnya' => $siswaBerikutnya,
             'tampilkanAntropometri' => in_array($bentukPendidikan, self::JENJANG_ANTROPOMETRI, true),
             'tampilkanPklInfo' => $bentukPendidikan === 'SMK',
+            'ekskulOptions' => EkstrakurikulerLembaga::where('lembaga_id', $siswa->lembaga_id)->orderBy('nama_ekskul')->pluck('nama_ekskul'),
         ]);
     }
 

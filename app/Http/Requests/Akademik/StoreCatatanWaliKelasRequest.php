@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
+use App\Models\EkstrakurikulerLembaga;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StoreCatatanWaliKelasRequest extends FormRequest
 {
@@ -27,7 +29,10 @@ final class StoreCatatanWaliKelasRequest extends FormRequest
             'berat_badan_kg' => ['nullable', 'numeric', 'min:0'],
             'lingkar_kepala_cm' => ['nullable', 'numeric', 'min:0'],
             'ekstrakurikuler' => ['nullable', 'array'],
-            'ekstrakurikuler.*.nama' => ['required_with:ekstrakurikuler', 'string', 'max:255'],
+            'ekstrakurikuler.*.nama' => [
+                'required_with:ekstrakurikuler',
+                Rule::in($this->ekskulOptionsUntukSiswa()),
+            ],
             'ekstrakurikuler.*.peran' => ['nullable', 'string', 'max:255'],
             'prestasi' => ['nullable', 'array'],
             'prestasi.*.nama' => ['required_with:prestasi', 'string', 'max:255'],
@@ -44,5 +49,19 @@ final class StoreCatatanWaliKelasRequest extends FormRequest
     public function toDTO(int $siswaId): CatatanWaliKelasData
     {
         return CatatanWaliKelasData::fromArray([...$this->validated(), 'siswa_id' => $siswaId]);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function ekskulOptionsUntukSiswa(): array
+    {
+        $siswa = $this->route('siswa');
+
+        if ($siswa === null) {
+            return [];
+        }
+
+        return EkstrakurikulerLembaga::where('lembaga_id', $siswa->lembaga_id)->pluck('nama_ekskul')->all();
     }
 }

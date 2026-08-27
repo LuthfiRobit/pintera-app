@@ -64,7 +64,17 @@
                 </div>
                 <template x-for="(row, index) in ekstrakurikuler" :key="index">
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-5 items-center">
-                        <input type="text" :name="`ekstrakurikuler[${index}][nama]`" x-model="row.nama" placeholder="Nama kegiatan" class="sm:col-span-2 rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500">
+                        <select :name="`ekstrakurikuler[${index}][nama]`" x-model="row.nama" class="sm:col-span-2 rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">— Pilih Ekskul —</option>
+                            @foreach ($ekskulOptions as $namaEkskul)
+                                <option value="{{ $namaEkskul }}">{{ $namaEkskul }}</option>
+                            @endforeach
+                            @if ($catatan->ekstrakurikuler)
+                                @foreach (collect($catatan->ekstrakurikuler)->pluck('nama')->diff($ekskulOptions)->filter() as $namaLama)
+                                    <option value="{{ $namaLama }}">{{ $namaLama }} (tidak terdaftar lagi)</option>
+                                @endforeach
+                            @endif
+                        </select>
                         <input type="text" :name="`ekstrakurikuler[${index}][peran]`" x-model="row.peran" placeholder="Peran (mis. Anggota)" class="sm:col-span-2 rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500">
                         <button type="button" @click="ekstrakurikuler.splice(index, 1)" class="text-xs font-medium text-error-600 hover:underline">Hapus</button>
                     </div>

@@ -1,7 +1,12 @@
 <?php
 
+use App\Domains\Akademik\Enums\StatusPengajuanRapor;
+use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
+use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Models\EkstrakurikulerLembaga;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -11,12 +16,14 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\RoleSeeder;
+use Database\Seeders\WorkflowDefinitionSeeder;
 use Spatie\Permission\Models\Permission;
 
 function siapkanWaliKelasUntukRapor(string $bentukPendidikan = 'SD'): array
 {
-    (new \Database\Seeders\RoleSeeder())->run();
-    (new \Database\Seeders\WorkflowDefinitionSeeder())->run();
+    (new RoleSeeder)->run();
+    (new WorkflowDefinitionSeeder)->run();
     Permission::firstOrCreate(['name' => 'rapor.input-wali', 'guard_name' => 'web']);
     Permission::firstOrCreate(['name' => 'rapor.ajukan', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'guru_wali_rapor', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
@@ -118,7 +125,8 @@ it('requires a semester_id query param to open the edit form', function () {
 });
 
 it('saves catatan wali kelas via update and redirects back to the index', function () {
-    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    EkstrakurikulerLembaga::create(['lembaga_id' => $lembaga->id, 'jenis_ekskul' => 'wajib', 'nama_ekskul' => 'Pramuka']);
 
     $response = $this->actingAs($guruUser)->put(route('guru.rapor.catatan.update', $siswa), [
         'semester_id' => $semester->id,
@@ -159,9 +167,9 @@ it('rejects updating catatan for a siswa the guru is not wali kelas of', functio
 it('generates a narasi draft via AJAX for a siswa with nilai', function () {
     ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
     $mapel = MataPelajaran::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
-    $asesmen = \App\Domains\Akademik\Models\Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
-    $komponen = \App\Domains\Akademik\Models\KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'membaca lancar', 'kktp_minimal' => 75]);
-    \App\Domains\Akademik\Models\NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 88]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'deskripsi' => 'membaca lancar', 'kktp_minimal' => 75]);
+    NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 88]);
 
     $response = $this->actingAs($guruUser)->post(route('guru.rapor.catatan.generate-narasi', ['siswa' => $siswa->id, 'semester_id' => $semester->id]));
     $response->assertOk();
@@ -181,7 +189,7 @@ it('submits the pengajuan rapor when every siswa has a CatatanWaliKelas', functi
     $this->assertDatabaseHas('pengajuan_rapor', [
         'kelas_id' => $kelas->id,
         'semester_id' => $semester->id,
-        'status' => \App\Domains\Akademik\Enums\StatusPengajuanRapor::Diajukan->value,
+        'status' => StatusPengajuanRapor::Diajukan->value,
     ]);
 });
 
