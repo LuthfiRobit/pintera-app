@@ -120,6 +120,9 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   3. **Validasi Master Data Ekstrakurikuler**: Diubah form catatan wali kelas dari input teks bebas menjadi `<select>` terikat ke master data `EkstrakurikulerLembaga` per-lembaga dengan validasi backend `Rule::in` di `StoreCatatanWaliKelasRequest` serta dukungan backward-compat untuk nama historis lama.
   - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-a.md`
   - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-a.md`
+  - **Tindak Lanjut Fix Susulan (27 Agustus 2026)**: Audit lanjutan khusus layer siswa/orang tua menemukan 2 widget jadwal di `DashboardController` (siswa & orang tua) yang belum difilter semester aktif. `JadwalPelajaran::scopeSemesterAktif()` diperbaiki membypass `TenantScope` pada subquery semester agar tenant-safe saat diakses akun orang tua lintas-lembaga, dan filter `semesterAktif()` diterapkan pada query siswa & orang tua (terverifikasi pada 22 test `DashboardTest.php` lulus penuh).
+    - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-a-lanjutan.md`
+    - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-a-lanjutan.md`
 
 - **Kelompok B (Kenaikan Kelas UX Safety-Net) — ✅ SELESAI (27 Agustus 2026)**:
   1. **Source of Truth Semantik Tingkat Akhir**: Method `isTingkatAkhir(?string $tingkat)` diekstrak ke enum `BentukPendidikan` dengan `match` eksplisit (menjaga isolasi permanen KB/TPA/SPS bukan tingkat akhir per Priority #3) dan didelegasikan dari `RaporPdfDataBuilder`.
