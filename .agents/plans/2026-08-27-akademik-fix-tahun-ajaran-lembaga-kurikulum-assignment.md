@@ -28,11 +28,11 @@
 **Interfaces:**
 - Tidak ada — perubahan murni internal ke satu method controller.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Http/Controllers/Admin/KurikulumAssignmentController.php` baris 1-84 penuh dan `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php` baris 1-111 penuh — pastikan method `store()` dan helper `actingAsKurikulumAssignmentManager()` persis seperti kutipan di plan ini. Kalau beda, STOP dan laporkan ke user.
 
-- [ ] **Step 2: Tulis test yang gagal — matrix admin lembaga + platform/yayasan**
+- [x] **Step 2: Tulis test yang gagal — matrix admin lembaga + platform/yayasan**
 
 Tambahkan di akhir `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php`. Tambah import di bagian atas file kalau belum ada: `use App\Models\Yayasan;`.
 
@@ -117,7 +117,7 @@ it('does not reject a platform/yayasan store for ownership when lembaga_id is le
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal sesuai ekspektasi**
+- [x] **Step 3: Jalankan test, pastikan gagal sesuai ekspektasi**
 
 Run: `php artisan test --filter="tahun_ajaran belongs to another lembaga|explicit lembaga_id does not match" --compact`
 Expected: KEDUA test FAIL — saat ini `store()` belum menolak kombinasi ownership yang salah (bug yang sedang diperbaiki).
@@ -125,7 +125,7 @@ Expected: KEDUA test FAIL — saat ini `store()` belum menolak kombinasi ownersh
 Run: `php artisan test --filter="matches that lembaga|left null" --compact`
 Expected: KEDUA test ini sudah PASS bahkan SEBELUM fix (baseline: kombinasi valid & kasus null memang belum pernah ditolak) — konfirmasi ini regresi-negatif yang sudah hijau dari awal, bukan hasil fix.
 
-- [ ] **Step 4: Tambah validasi ownership di `store()`**
+- [x] **Step 4: Tambah validasi ownership di `store()`**
 
 Edit `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, ubah `store()` dari:
 
@@ -179,17 +179,17 @@ menjadi:
 
 (`App\Models\TahunAjaran` sudah di-import di file ini — dipakai `tahunAjaranListForScope()` — tidak perlu import baru.)
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="tahun_ajaran belongs to another lembaga|explicit lembaga_id does not match|matches that lembaga|left null" --compact`
 Expected: PASS, 4/4 test.
 
-- [ ] **Step 6: Jalankan seluruh `KurikulumAssignmentControllerTest.php` supaya tidak regresi**
+- [x] **Step 6: Jalankan seluruh `KurikulumAssignmentControllerTest.php` supaya tidak regresi**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua (7 test existing + 4 baru = 11 test), 0 failed. Test existing baris 28-41 (`'creates a kurikulum assignment'`) sudah menjadi bukti hidup untuk baris #1 matrix spec (admin lembaga + tahun ajaran lembaga sendiri → sukses) — WAJIB tetap lulus tanpa modifikasi.
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -197,7 +197,7 @@ git add app/Http/Controllers/Admin/KurikulumAssignmentController.php tests/Featu
 git commit -m "fix(akademik): validasi konsistensi ownership tahun_ajaran vs lembaga pada kurikulum assignment"
 ```
 
-- [ ] **Step 8: Catat di `PETA_PENGEMBANGAN.md`**
+- [x] **Step 8: Catat di `PETA_PENGEMBANGAN.md`**
 
 Tambahkan entri baru singkat (bukan sub-item Kelompok A/B/C yang sudah ditutup, dan bukan bagian dari entri Fix IDOR RPP — ini temuan Data Master terpisah dari audit yang sama): judul "Fix: Konsistensi Ownership Tahun Ajaran vs Lembaga pada Kurikulum Assignment (27 Agustus 2026)", 1-2 kalimat ringkasan, link ke spec/plan.
 
