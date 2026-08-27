@@ -234,6 +234,7 @@ class DashboardController extends BaseController
                     ? collect()
                     : JadwalPelajaran::withoutGlobalScope(TenantScope::class)
                         ->whereIn('kelas_id', $kelasIds)
+                        ->semesterAktif()
                         ->whereHas('jamPelajaran', fn ($q) => $q->withoutGlobalScope(TenantScope::class)->where('hari', $hariIni))
                         ->with([
                             'kelas' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),

@@ -464,3 +464,125 @@ it('shows an empty today-schedule widget for a siswa whose lembaga has no active
     $response->assertOk();
     $response->assertViewHas('jadwalHariIni', fn ($jadwalHariIni) => $jadwalHariIni->isEmpty());
 });
+
+it('excludes jadwal pelajaran from a non-active semester from the orang tua children-schedule widget', function () {
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $lembaga = Lembaga::factory()->create();
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+    $jamPelajaran = JamPelajaran::factory()->create(['hari' => $hariIni]);
+
+    $semesterLama = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $jadwalLama = JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelas->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
+        'semester_id' => $semesterLama->id,
+    ]);
+
+    $semesterAktif = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $jadwalAktif = JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => $kelas->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
+        'semester_id' => $semesterAktif->id,
+    ]);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+    $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    expect(JadwalPelajaran::where('id', $jadwalLama->id)->exists())->toBeTrue();
+
+    $response = $this->actingAs($orangTuaUser)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertViewHas('jadwalAnakHariIni', function ($jadwalAnakHariIni) use ($jadwalAktif, $jadwalLama) {
+        return $jadwalAnakHariIni->pluck('id')->contains($jadwalAktif->id)
+            && ! $jadwalAnakHariIni->pluck('id')->contains($jadwalLama->id);
+    });
+});
+
+it('includes active-semester jadwal for children in two DIFFERENT lembaga (cross-tenant orang tua)', function () {
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+    $jamPelajaran = JamPelajaran::factory()->create(['hari' => $hariIni]);
+
+    $lembagaX = Lembaga::factory()->create();
+    $kelasX = Kelas::factory()->create(['lembaga_id' => $lembagaX->id]);
+    $siswaX = Siswa::factory()->create(['lembaga_id' => $lembagaX->id, 'kelas_id' => $kelasX->id]);
+    $semesterAktifX = Semester::factory()->create(['lembaga_id' => $lembagaX->id, 'status_aktif' => true]);
+    $jadwalAktifX = JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembagaX->id, 'kelas_id' => $kelasX->id,
+        'jam_pelajaran_id' => $jamPelajaran->id, 'semester_id' => $semesterAktifX->id,
+    ]);
+
+    $lembagaY = Lembaga::factory()->create();
+    $kelasY = Kelas::factory()->create(['lembaga_id' => $lembagaY->id]);
+    $siswaY = Siswa::factory()->create(['lembaga_id' => $lembagaY->id, 'kelas_id' => $kelasY->id]);
+    $semesterAktifY = Semester::factory()->create(['lembaga_id' => $lembagaY->id, 'status_aktif' => true]);
+    $jadwalAktifY = JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembagaY->id, 'kelas_id' => $kelasY->id,
+        'jam_pelajaran_id' => $jamPelajaran->id, 'semester_id' => $semesterAktifY->id,
+    ]);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+    $orangTua->siswa()->attach($siswaX->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+    $orangTua->siswa()->attach($siswaY->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($orangTuaUser)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertViewHas('jadwalAnakHariIni', function ($jadwalAnakHariIni) use ($jadwalAktifX, $jadwalAktifY) {
+        return $jadwalAnakHariIni->pluck('id')->contains($jadwalAktifX->id)
+            && $jadwalAnakHariIni->pluck('id')->contains($jadwalAktifY->id);
+    });
+});
+
+it('excludes only the non-active-semester jadwal of one child while keeping the other child active jadwal (cross-tenant orang tua)', function () {
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
+    $jamPelajaran = JamPelajaran::factory()->create(['hari' => $hariIni]);
+
+    $lembagaX = Lembaga::factory()->create();
+    $kelasX = Kelas::factory()->create(['lembaga_id' => $lembagaX->id]);
+    $siswaX = Siswa::factory()->create(['lembaga_id' => $lembagaX->id, 'kelas_id' => $kelasX->id]);
+    $semesterLamaX = Semester::factory()->create(['lembaga_id' => $lembagaX->id, 'status_aktif' => false]);
+    $jadwalLamaX = JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembagaX->id, 'kelas_id' => $kelasX->id,
+        'jam_pelajaran_id' => $jamPelajaran->id, 'semester_id' => $semesterLamaX->id,
+    ]);
+
+    $lembagaY = Lembaga::factory()->create();
+    $kelasY = Kelas::factory()->create(['lembaga_id' => $lembagaY->id]);
+    $siswaY = Siswa::factory()->create(['lembaga_id' => $lembagaY->id, 'kelas_id' => $kelasY->id]);
+    $semesterAktifY = Semester::factory()->create(['lembaga_id' => $lembagaY->id, 'status_aktif' => true]);
+    $jadwalAktifY = JadwalPelajaran::factory()->create([
+        'lembaga_id' => $lembagaY->id, 'kelas_id' => $kelasY->id,
+        'jam_pelajaran_id' => $jamPelajaran->id, 'semester_id' => $semesterAktifY->id,
+    ]);
+
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser->assignRole('orang_tua');
+    $orangTua = OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+    $orangTua->siswa()->attach($siswaX->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+    $orangTua->siswa()->attach($siswaY->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+
+    expect(JadwalPelajaran::where('id', $jadwalLamaX->id)->exists())->toBeTrue();
+
+    $response = $this->actingAs($orangTuaUser)->get('/dashboard');
+
+    $response->assertOk();
+    $response->assertViewHas('jadwalAnakHariIni', function ($jadwalAnakHariIni) use ($jadwalAktifY, $jadwalLamaX) {
+        return $jadwalAnakHariIni->pluck('id')->contains($jadwalAktifY->id)
+            && ! $jadwalAnakHariIni->pluck('id')->contains($jadwalLamaX->id);
+    });
+});
