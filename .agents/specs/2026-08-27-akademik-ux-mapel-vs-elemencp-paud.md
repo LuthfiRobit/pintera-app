@@ -22,6 +22,8 @@ Sejak `TipeMataPelajaran::AspekPerkembangan` dihapus total (`TD-AKADEMIK-001`), 
 3. **Link langsung** ke `route('admin.komponen-penilaian.index')` (dikonfirmasi persis: `routes/admin/penilaian-rapor.php:8`, di dalam group `prefix('admin')->name('admin.')` — `routes/admin.php:5,16`).
 4. **Controller mengirim boolean `isPaud`, bukan raw `bentuk_pendidikan`** — View tidak melakukan daftar enum sendiri, logic "apa saja yang dianggap PAUD" hidup satu tempat di controller.
 
+**Verifikasi tipe data (bukan asumsi)**: `Lembaga::casts()` (`app/Models/Lembaga.php:32-46`) TIDAK meng-cast `bentuk_pendidikan` ke enum apa pun — kolom ini tetap `string` polos. Jadi `auth()->user()->lembaga?->bentuk_pendidikan` mengembalikan `string`, dan perbandingan `in_array(..., [BentukPendidikan::Kb->value, ...], true)` di §3 di bawah SUDAH BENAR apa adanya — tidak perlu diubah jadi perbandingan enum instance.
+
 ## 3. Perubahan #1 — Controller
 
 `app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php` — tambahkan import:
