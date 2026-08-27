@@ -1,8 +1,10 @@
 <?php
+
 // app/Services/DashboardStatsService.php
 
 namespace App\Services;
 
+use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
@@ -141,6 +143,7 @@ class DashboardStatsService
 
         $totalTerisi = NilaiSiswa::whereHas('siswa', fn ($q) => $q->where('kelas_id', $kelas->id))
             ->whereHas('komponenPenilaian', fn ($q) => $q->where('semester_id', $semester->id))
+            ->whereHas('asesmen', fn ($q) => $q->whereIn('jenis', JenisAsesmen::masukRapor()))
             ->whereNotNull('nilai_angka')
             ->count();
 
