@@ -8,6 +8,7 @@ use App\Domains\Akademik\DataTransferObjects\RppData;
 use App\Models\Kelas;
 use App\Models\Semester;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 final class StoreRppRequest extends FormRequest
 {
@@ -30,6 +31,23 @@ final class StoreRppRequest extends FormRequest
             'pertemuan_ke' => ['nullable', 'string', 'max:50'],
             'file' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $kelasId = $this->input('kelas_id');
+            $semesterId = $this->input('semester_id');
+            if (! $kelasId || ! $semesterId) {
+                return;
+            }
+
+            $kelas = Kelas::find($kelasId);
+            $semester = Semester::find($semesterId);
+            if ($kelas && $semester && $kelas->tahun_ajaran_id !== $semester->tahun_ajaran_id) {
+                $validator->errors()->add('kelas_id', 'Kelas yang dipilih bukan berasal dari tahun ajaran yang sama dengan semester ini.');
+            }
+        });
     }
 
     /**

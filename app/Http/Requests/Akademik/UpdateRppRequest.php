@@ -8,6 +8,7 @@ use App\Domains\Akademik\DataTransferObjects\RppData;
 use App\Domains\Akademik\Models\Rpp;
 use App\Models\Kelas;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 final class UpdateRppRequest extends FormRequest
 {
@@ -29,6 +30,22 @@ final class UpdateRppRequest extends FormRequest
             'pertemuan_ke' => ['nullable', 'string', 'max:50'],
             'file' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            $kelasId = $this->input('kelas_id');
+            $rpp = $this->route('rpp');
+            if (! $kelasId || ! $rpp) {
+                return;
+            }
+
+            $kelas = Kelas::find($kelasId);
+            if ($kelas && $kelas->tahun_ajaran_id !== $rpp->semester->tahun_ajaran_id) {
+                $validator->errors()->add('kelas_id', 'Kelas yang dipilih bukan berasal dari tahun ajaran yang sama dengan semester dokumen RPP ini.');
+            }
+        });
     }
 
     /**
