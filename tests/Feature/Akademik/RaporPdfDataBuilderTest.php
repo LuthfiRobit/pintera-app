@@ -195,17 +195,17 @@ it('renders paud and sd blade templates successfully', function () {
 
     $renderedPaud = view('pdf.rapor.paud', $data)->render();
     expect($renderedPaud)->toContain('Capaian Pembelajaran');
-    expect($renderedPaud)->toContain($siswa->nama_lengkap);
+    expect($renderedPaud)->toContain(e($siswa->nama_lengkap));
 
     $renderedSd = view('pdf.rapor.sd', $data)->render();
     expect($renderedSd)->toContain('Nilai Akademik');
-    expect($renderedSd)->toContain($siswa->nama_lengkap);
+    expect($renderedSd)->toContain(e($siswa->nama_lengkap));
 
     $renderedSmpSma = view('pdf.rapor.smp-sma', $data)->render();
     expect($renderedSmpSma)->toContain('Nilai Akademik');
-    expect($renderedSmpSma)->toContain($siswa->nama_lengkap);
+    expect($renderedSmpSma)->toContain(e($siswa->nama_lengkap));
 
     $renderedSmk = view('pdf.rapor.smk', $data)->render();
     expect($renderedSmk)->toContain('Keterangan PKL');
-    expect($renderedSmk)->toContain($siswa->nama_lengkap);
+    expect($renderedSmk)->toContain(e($siswa->nama_lengkap));
 });
