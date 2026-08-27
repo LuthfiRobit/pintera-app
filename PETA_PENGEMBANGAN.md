@@ -108,6 +108,23 @@ Setelah Sprint 1-5 Fondasi Akademik Multi-Jenjang + `TD-AKADEMIK-001`/`002` sele
 
 **Prioritas #7 SELESAI (27 Agustus 2026)**: Halaman Mata Pelajaran sekarang menampilkan banner "Catatan untuk PAUD" (hanya utk lembaga `KB`/`TPA`/`SPS`/`TK`) yang menjelaskan aspek perkembangan dikelola lewat Elemen CP di Komponen Penilaian, dengan link langsung ke halaman itu. Seluruh 7 prioritas Roadmap Kurikulum Dinamis kini tuntas ditangani (1/2/3/6/7 SELESAI, 4/5 sengaja ditunda menunggu pelanggan nyata). Dieksekusi lewat `.agents/plans/2026-08-27-akademik-ux-mapel-vs-elemencp-paud.md`.
 
+---
+
+### 🔵 Audit Sistematis Akademik Tahap 2 (27 Agustus 2026)
+
+Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang belum pernah diaudit dengan lensa multi-kurikulum/multi-jenjang (Kenaikan Kelas, Jadwal Pelajaran/Pola Jam/Kalender, RPP, Ekstrakurikuler, konsistensi KurikulumAssignment/FaseDefaultMapping, notifikasi Akademik). Menghasilkan 10 temuan yang dikelompokkan ke dalam 3 kelompok pengerjaan:
+
+- **Kelompok A (Kritis) — ✅ SELESAI (27 Agustus 2026)**:
+  1. **Widget "Jadwal Hari Ini" Guru**: Ditambahkan query scope `JadwalPelajaran::scopeSemesterAktif()` dan filter `semesterAktif()` pada `DashboardController`, mencegah tercampurnya jadwal historis lintas tahun ajaran tanpa menghapus data (menjaga integritas riwayat presensi siswa).
+  2. **Koreksi Drift Snapshot `kelas.kurikulum`/`fase_id`**: Dibuat Action `ResyncKurikulumFaseKelasAction`, Controller `ResyncKurikulumFaseController`, dan halaman view admin "Cek & Perbaiki Kurikulum/Fase" (`admin.kurikulum-assignment.resync`) dengan proteksi otorisasi + tenant-isolation & kalkulasi live ulang di server tanpa mengubah sifat snapshot beku default.
+  3. **Validasi Master Data Ekstrakurikuler**: Diubah form catatan wali kelas dari input teks bebas menjadi `<select>` terikat ke master data `EkstrakurikulerLembaga` per-lembaga dengan validasi backend `Rule::in` di `StoreCatatanWaliKelasRequest` serta dukungan backward-compat untuk nama historis lama.
+  - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-a.md`
+  - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-a.md`
+
+- **Kelompok B (Kenaikan Kelas UX Safety-Net)** — 🟡 Menunggu pengerjaan terpisah (validasi kecocokan kurikulum kelas tujuan, saran otomatis "lulus" di tingkat akhir, guard `bentuk_pendidikan`).
+- **Kelompok C (RPP Reporting & Test Coverage)** — 🟡 Menunggu pengerjaan terpisah (reporting kurikulum, validasi kelas-semester).
+- **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
+
 **Technical debt baru dicatat — `TD-AKADEMIK-003` (kandidat)**: `bentuk_pendidikan` masih di-hardcode terpisah di 4 lokasi lama (`StoreFaseDefaultMappingRequest.php`, `LembagaController.php`, `AcademicProfile.php`, `RaporPdfDataBuilder.php`) dengan daftar yang tidak selalu identik. Enum `BentukPendidikan` baru (`app/Domains/Akademik/Enums/BentukPendidikan.php`, dibuat khusus utk fitur ini) bisa jadi sumber tunggal kalau 4 lokasi ini di-retrofit — effort Kecil-Sedang, tidak urgent.
 
 **Urutan kerja disarankan**: 1 → 2 → 3 → (4, 5, 6 urutannya tergantung siapa customer nyata — kalau semua Kemendikbud/umum, 6 lebih mendesak drpd 5; kalau ada madrasah, sebaliknya) → 7 kapan saja (tidak mengganggu apa pun).
