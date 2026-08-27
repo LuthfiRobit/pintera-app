@@ -64,3 +64,77 @@ it('pre-selects Lulus for a kelas at the terminal tingkat of its jenjang', funct
     expect(selectedOptionValue($selectTingkatAkhir))->toBe('lulus');
     expect(selectedOptionValue($selectBukanTingkatAkhir))->toBe('naik');
 });
+
+it('renders the kurikulum-asal value and matching data-kurikulum options for the JS warning to compare', function () {
+    [$manager, $lembaga] = siapkanKenaikanKelasUxUser();
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLama = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id,
+        'nama' => 'Kelas Asal K13', 'tingkat' => '3', 'kurikulum' => 'k13',
+    ]);
+    $kelasTujuanBerbeda = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id,
+        'nama' => 'Kelas Tujuan Merdeka', 'tingkat' => '4', 'kurikulum' => 'merdeka',
+    ]);
+    $kelasTujuanSama = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id,
+        'nama' => 'Kelas Tujuan K13 Juga', 'tingkat' => '4', 'kurikulum' => 'k13',
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunLalu->id,
+        'tahun_ajaran_tujuan_id' => $tahunBaru->id,
+    ]));
+    $response->assertOk();
+    $html = $response->getContent();
+
+    // Existence dulu: kedua kelas tujuan benar-benar muncul di dropdown sebelum assert data attribute-nya.
+    expect($html)->toContain('Kelas Tujuan Merdeka');
+    expect($html)->toContain('Kelas Tujuan K13 Juga');
+
+    // Server/Blade contract: kurikulum asal ter-serialize benar di x-data baris kelas ini.
+    // Cari posisi <tr sungguhan sebelum nama kelas, BUKAN offset karakter tebakan --
+    // atribut x-data berisi beberapa baris JS + indentasi Blade, bisa >400 karakter.
+    $namaPos = strpos($html, 'Kelas Asal K13');
+    expect($namaPos)->not->toBeFalse();
+    $trOpenPos = strrpos(substr($html, 0, $namaPos), '<tr');
+    expect($trOpenPos)->not->toBeFalse();
+    $trChunk = substr($html, $trOpenPos, ($namaPos - $trOpenPos) + 3000);
+    expect($trChunk)->toContain('kurikulumAsal');
+    expect($trChunk)->toContain('k13');
+
+    // data-kurikulum pada option kelas tujuan sesuai nilai kurikulum sungguhan.
+    expect($trChunk)->toContain('data-kurikulum="merdeka"');
+    expect($trChunk)->toContain('data-kurikulum="k13"');
+
+    // Expression perbandingan warning ada di markup (bukan typo/operator salah).
+    expect($trChunk)->toContain('kurikulumTujuan !== null');
+    expect($trChunk)->toContain('kurikulumAsal !== null');
+    expect($trChunk)->toContain('kurikulumTujuan !== kurikulumAsal');
+});
+
+it('renders kurikulumAsal as null in x-data when the source kelas has no kurikulum value', function () {
+    [$manager, $lembaga] = siapkanKenaikanKelasUxUser();
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLamaTanpaKurikulum = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id,
+        'nama' => 'Kelas Legacy Tanpa Kurikulum', 'tingkat' => '2', 'kurikulum' => null,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunLalu->id,
+        'tahun_ajaran_tujuan_id' => $tahunBaru->id,
+    ]));
+    $response->assertOk();
+    $html = $response->getContent();
+
+    $namaPos = strpos($html, 'Kelas Legacy Tanpa Kurikulum');
+    expect($namaPos)->not->toBeFalse();
+    $trOpenPos = strrpos(substr($html, 0, $namaPos), '<tr');
+    expect($trOpenPos)->not->toBeFalse();
+    $trChunk = substr($html, $trOpenPos, ($namaPos - $trOpenPos) + 3000);
+    expect($trChunk)->toContain('kurikulumAsal');
+    expect($trChunk)->toContain('null');
+});

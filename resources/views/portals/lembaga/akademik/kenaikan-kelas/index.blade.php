@@ -71,8 +71,17 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @foreach ($kelasLamaList as $kelasLama)
-                                    <tr class="transition hover:bg-gray-50/60">
-                                        <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }}</td>
+                                    <tr class="transition hover:bg-gray-50/60" x-data="{
+                                        kurikulumAsal: {{ Js::from($kelasLama->kurikulum?->value) }},
+                                        kurikulumTujuan: null,
+                                        tingkatTujuan: null,
+                                        onKelasTujuanChange(event) {
+                                            const opt = event.target.selectedOptions[0];
+                                            this.kurikulumTujuan = opt?.dataset.kurikulum || null;
+                                            this.tingkatTujuan = opt?.dataset.tingkat || null;
+                                        },
+                                    }">
+                                        <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }} <span class="text-xs font-normal text-gray-400">(Tingkat {{ $kelasLama->tingkat ?? '-' }})</span></td>
                                         <td class="px-4 py-4 text-center text-gray-500">{{ $kelasLama->siswa_count }}</td>
                                         @php
                                             $isTingkatAkhir = $kelasLama->lembaga
@@ -89,12 +98,16 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-4">
-                                            <select name="mapping[{{ $kelasLama->id }}][kelas_baru_id]" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                            <select name="mapping[{{ $kelasLama->id }}][kelas_baru_id]" x-on:change="onKelasTujuanChange($event)" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                 <option value="">—</option>
                                                 @foreach ($kelasTujuanList as $kelasBaru)
-                                                    <option value="{{ $kelasBaru->id }}">{{ $kelasBaru->nama }}</option>
+                                                    <option value="{{ $kelasBaru->id }}" data-kurikulum="{{ $kelasBaru->kurikulum?->value }}" data-tingkat="{{ $kelasBaru->tingkat }}">{{ $kelasBaru->nama }}</option>
                                                 @endforeach
                                             </select>
+                                            <p x-show="tingkatTujuan !== null" class="mt-1 text-xs text-gray-400" x-text="'Tingkat tujuan: ' + tingkatTujuan"></p>
+                                            <p x-show="kurikulumTujuan !== null && kurikulumAsal !== null && kurikulumTujuan !== kurikulumAsal"
+                                               class="mt-1 text-xs font-medium text-amber-600"
+                                               x-text="'⚠ Kurikulum berbeda: kelas asal ' + kurikulumAsal + ', kelas tujuan ' + kurikulumTujuan"></p>
                                         </td>
                                         <td class="px-4 py-4">
                                             <label class="flex items-center gap-2">
