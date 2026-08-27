@@ -13,15 +13,22 @@ it('defines all 6 cases from the design spec', function () {
     ]);
 });
 
-it('exposes only the 3 sumatif cases as v1-supported', function () {
-    expect(JenisAsesmen::v1Didukung())->toBe([
+it('exposes exactly the 3 sumatif cases as sources of rapor calculation', function () {
+    expect(JenisAsesmen::masukRapor())->toBe([
         JenisAsesmen::SumatifLingkupMateri,
         JenisAsesmen::SumatifAkhirSemester,
         JenisAsesmen::SumatifAkhirJenjang,
     ]);
 });
 
-it('returns correct Indonesian labels for all cases', function () {
+it('no longer has the retired v1Didukung() method', function () {
+    expect(method_exists(JenisAsesmen::class, 'v1Didukung'))->toBeFalse();
+});
+
+it('returns correct Indonesian labels for all 6 cases', function () {
+    expect(JenisAsesmen::DiagnostikKognitif->label())->toBe('Diagnostik Kognitif');
+    expect(JenisAsesmen::DiagnostikNonKognitif->label())->toBe('Diagnostik Non-Kognitif');
+    expect(JenisAsesmen::Formatif->label())->toBe('Formatif');
     expect(JenisAsesmen::SumatifLingkupMateri->label())->toBe('Sumatif Lingkup Materi');
     expect(JenisAsesmen::SumatifAkhirSemester->label())->toBe('Sumatif Akhir Semester');
     expect(JenisAsesmen::SumatifAkhirJenjang->label())->toBe('Sumatif Akhir Jenjang');

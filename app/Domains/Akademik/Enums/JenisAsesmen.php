@@ -24,9 +24,19 @@ enum JenisAsesmen: string
     }
 
     /**
+     * Jenis asesmen yang secara semantik merupakan SUMBER PERHITUNGAN RAPOR
+     * (dipakai RaporCalculationService::hitungRekapKelas() sebagai satu-satunya
+     * filter). Diagnostik dan Formatif SENGAJA tidak termasuk -- keduanya
+     * asesmen untuk proses pembelajaran (pemetaan kesiapan belajar, penyesuaian
+     * metode ajar), bukan komponen nilai rapor.
+     *
+     * Kalau menambah case baru ke enum ini di masa depan, WAJIB secara sadar
+     * memutuskan apakah case itu masuk daftar ini atau tidak -- jangan
+     * dibiarkan default masuk/keluar tanpa keputusan eksplisit.
+     *
      * @return array<int, self>
      */
-    public static function v1Didukung(): array
+    public static function masukRapor(): array
     {
         return [
             self::SumatifLingkupMateri,
