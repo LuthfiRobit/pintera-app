@@ -122,6 +122,7 @@ class DashboardController extends BaseController
                     $hariIni = Hari::fromCarbonDayOfWeek(now()->dayOfWeek);
                     $jadwalHariIni = JadwalPelajaran::withoutGlobalScope(TenantScope::class)
                         ->where('kelas_id', $siswa->kelas_id)
+                        ->semesterAktif()
                         ->whereHas('jamPelajaran', fn ($q) => $q->where('hari', $hariIni))
                         ->with(['kelas', 'mataPelajaran', 'jamPelajaran'])
                         ->get();
