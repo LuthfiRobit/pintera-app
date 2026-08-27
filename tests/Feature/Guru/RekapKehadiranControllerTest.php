@@ -76,6 +76,34 @@ it('shows attendance recap with NIS and filter options for the kelas the guru is
     });
 });
 
+it('flags isSemuaSemester true when no semester filter is applied', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'tahunAjaran' => $tahunAjaran] = siapkanWaliKelasDenganSiswa();
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.rekap', [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'semester_id' => '',
+        'kelas_id' => $kelas->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('isSemuaSemester', true);
+    $response->assertSee('Menampilkan rekap gabungan SEMUA semester');
+});
+
+it('flags isSemuaSemester false when a specific semester filter is applied', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'tahunAjaran' => $tahunAjaran, 'semester' => $semester] = siapkanWaliKelasDenganSiswa();
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.rekap', [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'semester_id' => $semester->id,
+        'kelas_id' => $kelas->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('isSemuaSemester', false);
+    $response->assertDontSee('Menampilkan rekap gabungan SEMUA semester');
+});
+
 it('does not show a kelas the guru is not wali kelas of, even from their own lembaga', function () {
     ['guruUser' => $guruUser, 'lembaga' => $lembaga] = siapkanWaliKelasDenganSiswa();
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);

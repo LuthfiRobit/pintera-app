@@ -17,8 +17,7 @@ class RekapKehadiranController extends BaseController
 
     public function __construct(
         private readonly PresensiAggregationService $aggregationService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -88,6 +87,7 @@ class RekapKehadiranController extends BaseController
             'kelas' => $kelas,
             'semester' => $selectedSemester,
             'rekap' => $rekap,
+            'isSemuaSemester' => $selectedSemester === null,
         ]);
     }
 }
