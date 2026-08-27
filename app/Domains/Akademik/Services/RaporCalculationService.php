@@ -6,6 +6,7 @@ namespace App\Domains\Akademik\Services;
 
 use App\Domains\Akademik\DataTransferObjects\RekapNilaiSel;
 use App\Domains\Akademik\Enums\AssessmentType;
+use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Enums\PredikatPaud;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\NilaiSiswa;
@@ -27,6 +28,7 @@ final class RaporCalculationService
 
         $asesmenList = Asesmen::where('kelas_id', $kelas->id)
             ->where('semester_id', $semester->id)
+            ->whereIn('jenis', JenisAsesmen::masukRapor())
             ->with(['subjek', 'komponenPenilaian'])
             ->get();
 
