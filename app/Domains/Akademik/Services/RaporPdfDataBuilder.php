@@ -145,6 +145,7 @@ final class RaporPdfDataBuilder
     private function isTingkatAkhir(?string $bentukPendidikan, ?string $tingkat): bool
     {
         $tingkatAkhirPerJenjang = [
+            'TK' => 'B',
             'SD' => '6',
             'SLB' => '6',
             'SMP' => '9',
