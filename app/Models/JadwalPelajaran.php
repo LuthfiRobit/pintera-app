@@ -6,6 +6,7 @@ use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Sarpras\Models\Ruangan;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -69,10 +70,18 @@ class JadwalPelajaran extends Model
      * Filter ke jadwal yang semester-nya berstatus aktif. Semua consumer BARU
      * yang menampilkan jadwal "saat ini" (bukan laporan histori) WAJIB
      * memakai scope ini -- lihat riwayat bug widget "Jadwal Hari Ini" guru
-     * yang bocor lintas tahun ajaran (audit 27 Agustus 2026).
+     * yang bocor lintas tahun ajaran (audit 27 Agustus 2026), dan susulannya
+     * utk siswa/orang tua (audit lanjutan 27 Agustus 2026).
+     *
+     * Subquery semester SENGAJA membypass TenantScope: semester_id sudah FK
+     * langsung ke satu baris semester tertentu (bukan query terbuka lintas
+     * tenant), jadi tidak butuh tenant-scope tambahan utk memvalidasi
+     * status_aktif-nya -- dan MEMANG HARUS di-bypass supaya scope ini tetap
+     * benar dipakai di konteks withoutGlobalScope(TenantScope::class)
+     * (mis. widget jadwal anak orang tua lintas-lembaga).
      */
     public function scopeSemesterAktif(Builder $query): Builder
     {
-        return $query->whereHas('semester', fn (Builder $q) => $q->where('status_aktif', true));
+        return $query->whereHas('semester', fn (Builder $q) => $q->withoutGlobalScope(TenantScope::class)->where('status_aktif', true));
     }
 }
