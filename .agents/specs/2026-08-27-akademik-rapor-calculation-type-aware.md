@@ -75,6 +75,8 @@ Sel matriks kosong (tidak ada komponen apa pun untuk siswa+subjek itu) tetap dir
 
 Kalau satu subjek (edge case, tidak dilarang skema DB) punya campuran tipe komponen untuk siswa yang sama, urutan prioritas tampilan: **numeric diutamakan** (paling informatif, backward-compatible dgn perilaku lama), lalu **predicate**, baru **narrative**. Precedence dicek per siswa per subjek — bukan precedence global per kelas.
 
+**Ketegasan soal `mapelList`/`subjekList`**: collection `$subjekList` yang dikembalikan sebagai `mapelList` HARUS di-`keyBy(fn ($s) => SubjekPenilaianKey::dari($s))` sebagai langkah TERAKHIR pembentukannya (menggantikan `->values()` yang ada sekarang) — jangan ada `->values()` lagi setelah `keyBy()` di titik mana pun, karena itu akan membuang key composite yang justru jadi inti perbaikan §3. Key hasil `keyBy()` ini adalah SATU-SATUNYA identifier yang dipakai view untuk lookup sel (`$rekapNilai[$siswa->id][$subjekKey]`) — tidak ada mekanisme lookup lain.
+
 ### 4.3 Strategi per tipe
 
 **Numeric** (TIDAK BERUBAH dari kode existing):
@@ -84,20 +86,22 @@ Kalau satu subjek (edge case, tidak dilarang skema DB) punya campuran tipe kompo
 
 **Predicate**:
 - Ambil seluruh `NilaiSiswa` siswa itu untuk subjek itu (semester berjalan) yang `komponenPenilaian.assessment_type === Predicate` dan `predikat !== null`.
+- **Kalau tidak ada satu pun `NilaiSiswa` yang lolos filter itu** (subjek punya komponen predicate tapi siswa belum punya satu pun `predikat` valid) → sel = `null`. JANGAN hasilkan `RekapNilaiSel` kosong/badge tanpa isi.
 - Hitung frekuensi tiap `PredikatPaud` case.
 - Predikat dgn frekuensi terbesar menang. **Tie-break eksplisit**: kalau ada 2+ predikat dgn frekuensi sama, menangkan yang rankingnya lebih tinggi — `BSB=4, BSH=3, MB=2, BB=1`.
 - `label` = kode predikat pemenang (mis. `"BSH"`).
 - `tuntas` = `null` (tidak ada konsep ambang tuntas utk predikat).
 
 **Narrative**:
-- Ambil seluruh pasangan (asesmen, komponen) dgn `assessment_type === Narrative` yang terdaftar utk subjek+semester itu (via `Asesmen->komponenPenilaian()` pivot) — ini `$total`, SAMA utk semua siswa di kelas (bukan bergantung siswa).
+- `$total` = jumlah pasangan (asesmen, komponen) dgn `assessment_type === Narrative` yang **terdaftar/relevan untuk subjek dan semester tersebut secara spesifik** (via `Asesmen->komponenPenilaian()` pivot, difilter `kelas_id`+`semester_id`+`subjek` yang sama dgn konteks rekap ini) — BUKAN seluruh komponen narrative yang ada di database. `$total` SAMA utk semua siswa di kelas itu (tidak bergantung siswa).
+- **Kalau `$total === 0`** (subjek itu tidak punya komponen narrative sama sekali utk semester ini) → sel = `null`. JANGAN hasilkan label `"0/0"` — itu sel benar-benar kosong, konsisten dgn aturan "tidak ada komponen apa pun = null".
 - `$terisi` = dari `$total` itu, berapa yang siswa ybs punya `NilaiSiswa` dgn **`trim($catatan ?? '') !== ''`**. Definisi "terisi" ini eksplisit: `null`, `""`, dan string berisi whitespace semua dianggap BELUM terisi — mencegah inkonsistensi.
-- `label` = `"{$terisi}/{$total}"` (mis. `"3/4"`).
+- `label` = `"{$terisi}/{$total}"` (mis. `"3/4"`), hanya dibentuk kalau `$total > 0`.
 - `tuntas` = `null`.
 
 ### 4.4 `classAvg` dan `highestScore` — TIDAK BERUBAH SEMANTIK
 
-Tetap dihitung HANYA dari sel bertipe `AssessmentType::Numeric` (persis logic lama: `collect($rekapNilai)->flatMap(...)->filter($v !== null)->avg()/max()`), diadaptasi utk membaca `->value`/`->label` dari `RekapNilaiSel` instance yang `assessmentType === Numeric`, mengabaikan sel predicate/narrative sepenuhnya. Kelas PAUD murni (semua sel predicate/narrative, nol numeric) akan tetap menampilkan `classAvg = null`/`"—"` — TIDAK diberi kartu ringkasan baru utk predicate/narrative (Non-Goal eksplisit, lihat §6).
+`RekapNilaiSel` TIDAK punya field `value` — DTO cuma `assessmentType`, `label`, `tuntas` (lihat §4.1). Nilai numeric mentah (float hasil rata-rata berbobot, sebelum di-`round()`/diformat jadi `label` string) dipertahankan sbg variabel terpisah SELAMA proses agregasi di dalam service (mis. array bantu `$rekapNumericMentah[siswa_id][subjekKey] = float`, tidak diekspos ke luar service). `classAvg`/`highestScore` dihitung dari array bantu numeric mentah ini — PERSIS logic lama (`collect(...)->flatMap(...)->filter($v !== null)->avg()/max()`), tidak pernah membaca balik dari `RekapNilaiSel::$label` (yang sudah berupa string terformat, bukan angka). Kelas PAUD murni (semua sel predicate/narrative, nol numeric) akan tetap menampilkan `classAvg = null`/`"—"` — TIDAK diberi kartu ringkasan baru utk predicate/narrative (Non-Goal eksplisit, lihat §6).
 
 ## 5. View — Rendering per Tipe
 
@@ -132,12 +136,15 @@ Kedua view (`_hasil.blade.php`, `persetujuan/show.blade.php`) menerima `$sel` (i
 ## 7. Testing (acceptance criteria wajib)
 
 1. **Fix key-mismatch terbukti via feature test**: render `_hasil.blade.php` dgn 1 siswa + 1 mapel numeric bernilai 88 → assert badge SPESIFIK per-mapel muncul (bukan cuma "Rata-Rata Umum"), mis. via `assertSeeInOrder` atau query DOM-like string match yang membedakan kolom mapel dari kolom rata-rata umum. Test existing yang cuma `assertSee('88')` TIDAK cukup (itulah kenapa bug lolos) — test baru harus lebih presisi.
-2. **Numeric behavior tidak berubah**: test existing `RaporCalculationServiceTest.php` dan `RaporCalculationServiceAssessmentTypeTest.php` tetap PASS tanpa modifikasi assertion (kecuali cara akses return value berubah dari `float` langsung ke `->label`/`->assessmentType` pada DTO — lihat Non-Goal: perilaku angkanya sendiri tidak berubah).
+2. **Numeric behavior tidak berubah**: `RaporCalculationServiceTest.php` dan `RaporCalculationServiceAssessmentTypeTest.php` — SEMUA assertion yang memverifikasi HASIL numeric (angka rata-rata berbobot, exclusion narrative dari rata-rata, isolasi lembaga, dll) harus tetap menghasilkan nilai yang identik dgn sebelumnya. Assertion BOLEH disesuaikan HANYA untuk mengikuti kontrak DTO baru (mis. `expect($rekap['rekapNilai'][$id][$key])->toBe(80.0)` menjadi `expect($rekap['rekapNilai'][$id][$key]->label)->toBe('80')` atau serupa) — TIDAK BOLEH mengubah nilai numeric yang diharapkan itu sendiri.
 3. **Predicate modus + tie-break**: test dgn 3 nilai predikat (`BSH, BSH, MB`) → menang `BSH` (frekuensi terbesar, 2 vs 1). Test tie-break terpisah: 4 nilai predikat `BSH, BSH, BSB, BSB` (frekuensi seri 2-2) → menang `BSB` (ranking lebih tinggi: `BSB=4 > BSH=3`).
-4. **Narrative completion-rate + definisi "terisi"**: test dgn 4 slot narrative, 3 punya `catatan` non-kosong, 1 `catatan=null` → label `"3/4"`. Test terpisah tegas: `catatan=""` dan `catatan="   "` (whitespace) dihitung SAMA sbg belum-terisi seperti `null`.
-5. **Precedence numeric > predicate > narrative**: test dgn satu subjek yang komponennya sengaja dicampur (1 numeric + 1 predicate utk siswa yg sama) → sel menampilkan hasil numeric, bukan predicate.
-6. **`classAvg`/`highestScore` tidak berubah utk kelas PAUD murni**: kelas dgn HANYA komponen predicate/narrative → `classAvg === null`, `highestScore === null` (sama seperti perilaku lama, bukan crash/error).
-7. **Sel null tetap null**: siswa tanpa nilai apa pun utk subjek tertentu → `$rekapNilai[$siswa][$subjekKey]` tetap `null`, bukan DTO kosong.
+4. **Predicate tanpa nilai valid → sel null**: subjek punya komponen `assessment_type=Predicate` tapi siswa ybs tidak punya satu pun `NilaiSiswa` dgn `predikat` terisi → sel = `null`, bukan `RekapNilaiSel` dgn label kosong.
+5. **Narrative completion-rate + definisi "terisi"**: test dgn 4 slot narrative (spesifik utk subjek+semester itu), 3 punya `catatan` non-kosong, 1 `catatan=null` → label `"3/4"`. Test terpisah tegas: `catatan=""` dan `catatan="   "` (whitespace) dihitung SAMA sbg belum-terisi seperti `null`.
+6. **Narrative tanpa slot sama sekali → sel null, bukan "0/0"**: subjek tidak punya komponen narrative terdaftar utk semester itu → sel = `null`.
+7. **Precedence numeric > predicate**: test dgn satu subjek yang komponennya sengaja dicampur (1 numeric + 1 predicate utk siswa yg sama) → sel menampilkan hasil numeric, bukan predicate.
+8. **Precedence predicate > narrative**: test dgn satu subjek yang komponennya dicampur (1 predicate `BSH` + 1 narrative terisi, TANPA komponen numeric) utk siswa yg sama → sel menampilkan hasil predicate (`"BSH"`), bukan narrative completion-rate. Ini membuktikan sisi kedua dari precedence penuh `numeric > predicate > narrative` (test #7 di atas cuma membuktikan sisi numeric>predicate).
+9. **`classAvg`/`highestScore` tidak berubah utk kelas PAUD murni**: kelas dgn HANYA komponen predicate/narrative → `classAvg === null`, `highestScore === null` (sama seperti perilaku lama, bukan crash/error).
+10. **Sel null tetap null**: siswa tanpa nilai apa pun utk subjek tertentu → `$rekapNilai[$siswa][$subjekKey]` tetap `null`, bukan DTO kosong.
 
 ## 8. Ringkasan Alur
 
