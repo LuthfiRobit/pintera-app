@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Akademik\Actions\Rpp\VerifyRppAction;
 use App\Domains\Akademik\Enums\StatusRpp;
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\MataPelajaran;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 
 function siapkanRppIdorFixture(): array
@@ -203,4 +205,40 @@ it('allows store of a tematik RPP when the guru IS the wali kelas', function () 
     ])->assertRedirect();
 
     expect(Rpp::where('judul_topik', 'RPP Tematik Sah Wali Kelas')->exists())->toBeTrue();
+});
+
+it('rejects verify from a verifier belonging to a different lembaga than the RPP', function () {
+    [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
+
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
+    $userKurikulumLembagaLain = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $userKurikulumLembagaLain->assignRole('wakasek_idor_test');
+
+    $rppMilikA->update(['status' => StatusRpp::Diajukan]);
+
+    // Lapis 1: HTTP route-model-binding terisolasi otomatis via TenantScope (404)
+    $this->actingAs($userKurikulumLembagaLain)->post(route('admin.rpp.verify', $rppMilikA), [
+        'status' => StatusRpp::Disetujui->value,
+    ])->assertNotFound();
+
+    // Lapis 2: Action defense-in-depth cross-check melempar ValidationException
+    expect(fn () => (new VerifyRppAction)->execute(
+        rpp: $rppMilikA,
+        targetStatus: StatusRpp::Disetujui,
+        verifierUserId: (int) $userKurikulumLembagaLain->id,
+        verifierLembagaId: (int) $userKurikulumLembagaLain->lembaga_id
+    ))->toThrow(ValidationException::class);
+
+    expect($rppMilikA->fresh()->status)->toBe(StatusRpp::Diajukan);
+});
+
+it('allows verify from a verifier in the same lembaga as before', function () {
+    [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
+    $rppMilikA->update(['status' => StatusRpp::Diajukan]);
+
+    $this->actingAs($userKurikulum)->post(route('admin.rpp.verify', $rppMilikA), [
+        'status' => StatusRpp::Disetujui->value,
+    ])->assertRedirect();
+
+    expect($rppMilikA->fresh()->status)->toBe(StatusRpp::Disetujui);
 });

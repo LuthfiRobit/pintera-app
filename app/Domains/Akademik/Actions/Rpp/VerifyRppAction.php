@@ -13,8 +13,14 @@ final class VerifyRppAction
     /**
      * @throws ValidationException
      */
-    public function execute(Rpp $rpp, StatusRpp $targetStatus, int $verifierUserId, ?string $catatanRevisi = null): Rpp
+    public function execute(Rpp $rpp, StatusRpp $targetStatus, int $verifierUserId, int $verifierLembagaId, ?string $catatanRevisi = null): Rpp
     {
+        if ((int) $rpp->lembaga_id !== $verifierLembagaId) {
+            throw ValidationException::withMessages([
+                'lembaga' => 'Anda tidak berwenang memverifikasi dokumen RPP lembaga lain.',
+            ]);
+        }
+
         if ($rpp->status !== StatusRpp::Diajukan) {
             throw ValidationException::withMessages([
                 'status' => 'Hanya dokumen yang berstatus Menunggu Verifikasi (Diajukan) yang dapat diproses oleh kurikulum.',

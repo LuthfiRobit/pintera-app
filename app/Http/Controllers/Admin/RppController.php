@@ -266,6 +266,7 @@ class RppController extends BaseController
                 rpp: $rpp,
                 targetStatus: $targetStatus,
                 verifierUserId: (int) $request->user()->id,
+                verifierLembagaId: (int) $request->user()->lembaga_id,
                 catatanRevisi: $catatanRevisi
             );
         } catch (ValidationException $e) {
