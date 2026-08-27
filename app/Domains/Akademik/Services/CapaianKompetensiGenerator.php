@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Akademik\Services;
 
 use App\Domains\Akademik\Contracts\SubjekPenilaian;
+use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\NilaiSiswa;
@@ -35,6 +36,7 @@ final class CapaianKompetensiGenerator
         $asesmenIds = Asesmen::where('subjek_type', $subjek->getMorphClass())
             ->where('subjek_id', $subjek->getKey())
             ->where('semester_id', $semester->id)
+            ->whereIn('jenis', JenisAsesmen::masukRapor())
             ->pluck('id');
 
         $skorPerKomponen = [];
