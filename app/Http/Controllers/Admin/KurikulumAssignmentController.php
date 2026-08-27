@@ -67,6 +67,16 @@ class KurikulumAssignmentController extends BaseController
 
         $this->authorizeAssignmentScope($request, $lembagaId);
 
+        if ($lembagaId !== null) {
+            $tahunAjaranValid = TahunAjaran::whereKey($validated['tahun_ajaran_id'])
+                ->where('lembaga_id', $lembagaId)
+                ->exists();
+
+            if (! $tahunAjaranValid) {
+                return back()->withErrors(['tahun_ajaran_id' => 'Tahun ajaran yang dipilih bukan milik lembaga ini.'])->withInput();
+            }
+        }
+
         if (KurikulumAssignment::where('lembaga_id', $lembagaId)->where('tahun_ajaran_id', $validated['tahun_ajaran_id'])->where('bentuk_pendidikan', $validated['bentuk_pendidikan'])->where('tingkat', $tingkat)->exists()) {
             return back()->withErrors(['bentuk_pendidikan' => 'Sudah ada assignment kurikulum untuk kombinasi tahun ajaran, jenjang, dan tingkat ini. Edit baris yang ada, jangan buat duplikat.'])->withInput();
         }
