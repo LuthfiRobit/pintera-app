@@ -31,11 +31,11 @@
 **Interfaces:**
 - Produces: `BentukPendidikan::isTingkatAkhir(?string $tingkat): bool` — dipakai Task 2.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Domains/Akademik/Enums/BentukPendidikan.php` dan `app/Domains/Akademik/Services/RaporPdfDataBuilder.php` baris 145-157 — pastikan isinya persis seperti kutipan di Step 3 & 4 di bawah. Kalau berbeda, STOP dan laporkan ke user.
 
-- [ ] **Step 2: Tulis test data-driven yang gagal**
+- [x] **Step 2: Tulis test data-driven yang gagal**
 
 Tambahkan di akhir `tests/Unit/Domains/Akademik/Enums/BentukPendidikanTest.php`:
 
@@ -90,12 +90,12 @@ it('treats null tingkat as NOT tingkat akhir for every case', function () {
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/Enums/BentukPendidikanTest.php --compact`
 Expected: FAIL — method `isTingkatAkhir` belum ada di enum (`Call to undefined method`).
 
-- [ ] **Step 4: Tambah method `isTingkatAkhir()` ke enum**
+- [x] **Step 4: Tambah method `isTingkatAkhir()` ke enum**
 
 Edit `app/Domains/Akademik/Enums/BentukPendidikan.php`, tambah method baru setelah `validTingkatValues()` (sebelum penutup `}` enum):
 
@@ -126,12 +126,12 @@ Edit `app/Domains/Akademik/Enums/BentukPendidikan.php`, tambah method baru setel
     }
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/Enums/BentukPendidikanTest.php --compact`
 Expected: PASS, semua test di file (existing + baru) lulus.
 
-- [ ] **Step 6: Refactor `RaporPdfDataBuilder::isTingkatAkhir()` jadi delegasi**
+- [x] **Step 6: Refactor `RaporPdfDataBuilder::isTingkatAkhir()` jadi delegasi**
 
 Edit `app/Domains/Akademik/Services/RaporPdfDataBuilder.php`. Tambah import di bagian atas file (cek dulu apakah `App\Domains\Akademik\Enums\BentukPendidikan` sudah di-import — kalau belum, tambahkan):
 
@@ -172,7 +172,7 @@ menjadi:
 
 Signature method TIDAK BERUBAH (masih private, masih dipanggil internal saja) — perubahan murni implementasi.
 
-- [ ] **Step 7: Jalankan test regresi existing — WAJIB tetap pass tanpa modifikasi assertion**
+- [x] **Step 7: Jalankan test regresi existing — WAJIB tetap pass tanpa modifikasi assertion**
 
 Run: `php artisan test tests/Feature/Akademik/RaporPdfDataBuilderIsTingkatAkhirTest.php --compact`
 Expected: PASS, semua 10 test (termasuk yang eksplisit menguji KB/TPA/SPS tetap `false` di tingkat B) lulus TANPA perlu mengubah satu assertion pun. File ini SUDAH ADA sebelum plan ini dan sudah menguji skenario regresi yang persis sama — kalau ada yang gagal, itu tanda refactor Step 6 salah, JANGAN ubah test-nya, perbaiki kode Step 6.
@@ -180,7 +180,7 @@ Expected: PASS, semua 10 test (termasuk yang eksplisit menguji KB/TPA/SPS tetap 
 Run juga: `php artisan test tests/Feature/Akademik/RaporPdfDataBuilderTest.php --compact`
 Expected: PASS, tidak ada regresi ke test builder utama.
 
-- [ ] **Step 8: Format & commit**
+- [x] **Step 8: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -200,11 +200,11 @@ git commit -m "refactor(akademik): ekstrak isTingkatAkhir() ke enum BentukPendid
 **Interfaces:**
 - Consumes: `BentukPendidikan::isTingkatAkhir(?string $tingkat): bool` (Task 1).
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Http/Controllers/Admin/KenaikanKelasController.php` baris 20-41 dan `resources/views/portals/lembaga/akademik/kenaikan-kelas/index.blade.php` baris 72-81 — pastikan cocok dengan kutipan di Step 3/4. Kalau beda, STOP dan laporkan.
 
-- [ ] **Step 2: Tulis test yang gagal — pre-select scoped per baris kelas**
+- [x] **Step 2: Tulis test yang gagal — pre-select scoped per baris kelas**
 
 Buat `tests/Feature/Akademik/KenaikanKelasControllerUxTest.php`:
 
@@ -273,12 +273,12 @@ it('pre-selects Lulus for a kelas at the terminal tingkat of its jenjang', funct
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/KenaikanKelasControllerUxTest.php --compact`
 Expected: FAIL — `selectedOptionValue($selectTingkatAkhir)` masih `null`/`'naik'` karena belum ada logic pre-select.
 
-- [ ] **Step 4: Eager-load `lembaga` di controller**
+- [x] **Step 4: Eager-load `lembaga` di controller**
 
 Edit `app/Http/Controllers/Admin/KenaikanKelasController.php`, ubah `kelasLamaList` (baris 29-31) dari:
 
@@ -296,7 +296,7 @@ menjadi:
                 : collect(),
 ```
 
-- [ ] **Step 5: Update view — pre-select "Lulus" untuk tingkat akhir**
+- [x] **Step 5: Update view — pre-select "Lulus" untuk tingkat akhir**
 
 Edit `resources/views/portals/lembaga/akademik/kenaikan-kelas/index.blade.php`. Tambah `use` statement Blade di baris paling atas file (baris 1, sebelum `<x-app-layout>`):
 
@@ -336,7 +336,7 @@ menjadi:
 
 **PENTING**: `$kelasLama->lembaga->bentuk_pendidikan` mengembalikan STRING (bukan enum) karena `Lembaga` model tidak meng-cast kolom itu ke enum (dikonfirmasi Priority #7 sebelumnya) — panggilan `BentukPendidikan::from(...)` di atas benar menerima string.
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/KenaikanKelasControllerUxTest.php --compact`
 Expected: PASS.
@@ -344,7 +344,7 @@ Expected: PASS.
 Run juga test existing supaya tidak regresi: `php artisan test tests/Feature/Admin/KenaikanKelasControllerTest.php --compact`
 Expected: PASS, semua 9 test lama tetap lulus (perubahan Step 4/5 tidak mengubah struktur data yang mereka assert).
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -363,7 +363,7 @@ git commit -m "feat(akademik): saran otomatis Lulus di tingkat akhir pada Kenaik
 **Interfaces:**
 - Consumes: `$kelasLama->kurikulum` (enum `KurikulumFramework`, nullable), `$kelasBaru->kurikulum` (sama) — sudah ada di model `Kelas`, tidak ada perubahan skema.
 
-- [ ] **Step 1: Tulis test yang gagal — server/Blade contract untuk peringatan kurikulum**
+- [x] **Step 1: Tulis test yang gagal — server/Blade contract untuk peringatan kurikulum**
 
 Tambahkan di akhir `tests/Feature/Akademik/KenaikanKelasControllerUxTest.php`:
 
@@ -439,12 +439,12 @@ it('renders kurikulumAsal as null in x-data when the source kelas has no kurikul
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/KenaikanKelasControllerUxTest.php --compact`
 Expected: FAIL — `data-kurikulum`, `kurikulumAsal`, dan expression warning belum ada di markup.
 
-- [ ] **Step 3: Update view — tambah `x-data` per baris + data attribute + elemen peringatan**
+- [x] **Step 3: Update view — tambah `x-data` per baris + data attribute + elemen peringatan**
 
 Edit `resources/views/portals/lembaga/akademik/kenaikan-kelas/index.blade.php`. Ubah pembuka `<tr>` di dalam `@foreach ($kelasLamaList as $kelasLama)` (saat ini `<tr class="transition hover:bg-gray-50/60">`) menjadi:
 
@@ -497,17 +497,17 @@ Juga tambahkan tingkat kelas asal sbg info di kolom "Kelas Lama" (baris `<td cla
                                         <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }} <span class="text-xs font-normal text-gray-400">(Tingkat {{ $kelasLama->tingkat ?? '-' }})</span></td>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/KenaikanKelasControllerUxTest.php --compact`
 Expected: PASS, semua 3 test (pre-select + 2 kurikulum) lulus.
 
-- [ ] **Step 5: Jalankan seluruh test scoped Kelompok B sbg checkpoint akhir**
+- [x] **Step 5: Jalankan seluruh test scoped Kelompok B sbg checkpoint akhir**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/Enums/BentukPendidikanTest.php tests/Feature/Akademik/RaporPdfDataBuilderIsTingkatAkhirTest.php tests/Feature/Akademik/RaporPdfDataBuilderTest.php tests/Feature/Akademik/KenaikanKelasControllerUxTest.php tests/Feature/Admin/KenaikanKelasControllerTest.php --compact`
 Expected: 0 failed. Catat angka pasti di laporan akhir. (Full suite TIDAK dijalankan di sini — sesuai Global Constraints, ditunda sampai checkpoint gabungan akhir Kelompok C.)
 
-- [ ] **Step 6: Format & commit**
+- [x] **Step 6: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -515,7 +515,7 @@ git add resources/views/portals/lembaga/akademik/kenaikan-kelas/index.blade.php 
 git commit -m "feat(akademik): peringatan live kurikulum berbeda saat kenaikan kelas"
 ```
 
-- [ ] **Step 7: Catat penyelesaian Kelompok B di PETA_PENGEMBANGAN.md**
+- [x] **Step 7: Catat penyelesaian Kelompok B di PETA_PENGEMBANGAN.md**
 
 Baca dulu bagian "Audit Sistematis Akademik Tahap 2" yang sudah ada (ditambahkan saat Kelompok A selesai), lalu update baris Kelompok B dari "🟡 Menunggu pengerjaan terpisah" jadi "✅ SELESAI (tanggal hari ini)" dengan ringkasan singkat (saran otomatis Lulus + peringatan kurikulum, keduanya non-blocking; temuan #3 dikonfirmasi bukan gap nyata).
 
