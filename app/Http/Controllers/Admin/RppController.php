@@ -171,7 +171,9 @@ class RppController extends BaseController
 
     public function download(Request $request, Rpp $rpp): Response
     {
-        $this->authorize('rpp.view');
+        $guru = auth()->user()->guru;
+        $isPemilik = $guru !== null && $rpp->guru_id === $guru->id;
+        abort_unless($isPemilik || auth()->user()->can('rpp.verify'), 403);
 
         if (! Storage::disk('public')->exists($rpp->file_path)) {
             abort(404, 'Berkas fisik tidak ditemukan di server.');
@@ -191,6 +193,8 @@ class RppController extends BaseController
 
     public function update(UpdateRppRequest $request, Rpp $rpp): RedirectResponse|JsonResponse
     {
+        $this->authorizeMilikGuru($rpp);
+
         $kelas = Kelas::findOrFail($request->input('kelas_id'));
 
         $dto = $request->toDTO($rpp, $kelas);
@@ -216,6 +220,7 @@ class RppController extends BaseController
     public function submit(Request $request, Rpp $rpp): RedirectResponse|JsonResponse
     {
         $this->authorize('rpp.kelola');
+        $this->authorizeMilikGuru($rpp);
 
         try {
             $this->submitRppAction->execute($rpp);
@@ -269,6 +274,7 @@ class RppController extends BaseController
     public function destroy(Request $request, Rpp $rpp): RedirectResponse|JsonResponse
     {
         $this->authorize('rpp.kelola');
+        $this->authorizeMilikGuru($rpp);
 
         try {
             $this->deleteRppAction->execute($rpp);
@@ -286,5 +292,11 @@ class RppController extends BaseController
         }
 
         return redirect()->route('admin.rpp.index', ['tab' => 'saya'])->with('success', $msg);
+    }
+
+    private function authorizeMilikGuru(Rpp $rpp): void
+    {
+        $guru = auth()->user()->guru;
+        abort_if($guru === null || $rpp->guru_id !== $guru->id, 403);
     }
 }
