@@ -15,8 +15,7 @@ final class ListRppAction
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{rppList: LengthAwarePaginator, stats: array<string, int>, status: ?string, targetLembagaId: ?int}
@@ -31,6 +30,7 @@ final class ListRppAction
         ?int $mapelId,
         ?string $status,
         int $perPage,
+        ?string $kurikulum = null,
     ): array {
         $targetLembagaId = $this->tenantContext->activeLembagaId();
 
@@ -77,6 +77,9 @@ final class ListRppAction
         }
         if ($mapelId) {
             $query->where('mata_pelajaran_id', $mapelId);
+        }
+        if ($kurikulum) {
+            $query->whereHas('kelas', fn ($q) => $q->where('kurikulum', $kurikulum));
         }
         if ($status && in_array($status, array_column(StatusRpp::cases(), 'value'), true)) {
             $query->where('status', $status);

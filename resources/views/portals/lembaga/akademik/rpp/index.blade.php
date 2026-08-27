@@ -9,7 +9,8 @@
                 semester_id: @js($semesterId ?? ''),
                 kelas_id: @js($kelasId ?? ''),
                 mata_pelajaran_id: @js($mapelId ?? ''),
-                status: @js($status ?? '')
+                status: @js($status ?? ''),
+                kurikulum: @js($kurikulum ?? '')
             },
             perPage: @js($perPage ?? 20),
             indexUrlBase: @js(route('admin.rpp.index'))
@@ -193,6 +194,17 @@
                     <option value="">— Semua Mata Pelajaran (Termasuk PAUD) —</option>
                     @foreach ($mataPelajaranList as $m)
                         <option value="{{ $m->id }}">{{ $m->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Kurikulum Filter (Row 2) --}}
+            <div class="pt-2 flex items-center gap-3">
+                <span class="text-xs font-semibold text-gray-500 whitespace-nowrap">Kurikulum:</span>
+                <select x-model="filters.kurikulum" @change="muatUlangDaftar()" class="block w-full max-w-sm rounded-lg border-gray-200 text-xs text-gray-800 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-1.5">
+                    <option value="">— Semua Kurikulum —</option>
+                    @foreach (\App\Domains\Akademik\Enums\KurikulumFramework::cases() as $kf)
+                        <option value="{{ $kf->value }}">{{ $kf->label() }}</option>
                     @endforeach
                 </select>
             </div>

@@ -187,6 +187,11 @@
                         <td class="px-5 py-3.5 text-gray-700 text-xs">
                             <span class="font-bold text-gray-900">{{ $rpp->kelas->nama }}</span>
                             <p class="text-gray-500 text-[11px]">{{ $rpp->semester->nama }} &bull; {{ $rpp->tahunAjaran->nama ?? '' }}</p>
+                            @if ($rpp->kelas->kurikulum)
+                                <x-badge tone="{{ $rpp->kelas->kurikulum->value === 'merdeka' ? 'green' : 'blue' }}">{{ $rpp->kelas->kurikulum->label() }}</x-badge>
+                            @else
+                                <x-badge tone="slate">Belum Diketahui</x-badge>
+                            @endif
                         </td>
 
                         {{-- Guru Pengampu --}}

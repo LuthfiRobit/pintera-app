@@ -10,15 +10,15 @@ use App\Domains\Akademik\Actions\Rpp\ListRppAction;
 use App\Domains\Akademik\Actions\Rpp\SubmitRppAction;
 use App\Domains\Akademik\Actions\Rpp\UpdateRppAction;
 use App\Domains\Akademik\Actions\Rpp\VerifyRppAction;
+use App\Domains\Akademik\Enums\KurikulumFramework;
 use App\Domains\Akademik\Enums\StatusRpp;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\Rpp;
 use App\Http\Requests\Akademik\StoreRppRequest;
 use App\Http\Requests\Akademik\UpdateRppRequest;
 use App\Http\Requests\Akademik\VerifyRppRequest;
 use App\Models\Guru;
 use App\Models\Kelas;
-use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -29,7 +29,7 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class RppController extends BaseController
 {
@@ -60,6 +60,10 @@ class RppController extends BaseController
         $kelasId = $request->query('kelas_id');
         $mapelId = $request->query('mata_pelajaran_id');
         $status = $request->query('status');
+        $kurikulum = $request->query('kurikulum');
+        if ($kurikulum !== null && ! in_array($kurikulum, array_column(KurikulumFramework::cases(), 'value'), true)) {
+            $kurikulum = null;
+        }
 
         if ($tab === 'verifikasi') {
             $this->authorize('rpp.verify');
@@ -80,6 +84,7 @@ class RppController extends BaseController
             mapelId: $mapelId ? (int) $mapelId : null,
             status: $status,
             perPage: $perPage,
+            kurikulum: $kurikulum,
         );
 
         if ($request->ajax()) {
@@ -123,6 +128,7 @@ class RppController extends BaseController
             'semesterId' => $semesterId,
             'kelasId' => $kelasId,
             'mapelId' => $mapelId,
+            'kurikulum' => $kurikulum,
             'status' => $status,
             'search' => $search,
             'perPage' => $perPage,
@@ -151,6 +157,7 @@ class RppController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return back()->withErrors($e->errors())->withInput();
         }
 
@@ -162,7 +169,7 @@ class RppController extends BaseController
         return redirect()->route('admin.rpp.index', ['tab' => 'saya'])->with('success', $msg);
     }
 
-    public function download(Request $request, Rpp $rpp): \Symfony\Component\HttpFoundation\Response
+    public function download(Request $request, Rpp $rpp): Response
     {
         $this->authorize('rpp.view');
 
@@ -172,9 +179,10 @@ class RppController extends BaseController
 
         if ($request->boolean('inline') || $request->has('preview')) {
             $mime = Storage::disk('public')->mimeType($rpp->file_path) ?: 'application/pdf';
+
             return response()->file(Storage::disk('public')->path($rpp->file_path), [
                 'Content-Type' => $mime,
-                'Content-Disposition' => 'inline; filename="' . $rpp->file_name . '"',
+                'Content-Disposition' => 'inline; filename="'.$rpp->file_name.'"',
             ]);
         }
 
@@ -193,6 +201,7 @@ class RppController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return back()->withErrors($e->errors())->withInput();
         }
 
@@ -214,6 +223,7 @@ class RppController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return back()->withErrors($e->errors());
         }
 
@@ -242,6 +252,7 @@ class RppController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return back()->withErrors($e->errors());
         }
 
@@ -265,6 +276,7 @@ class RppController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return back()->withErrors($e->errors());
         }
 
