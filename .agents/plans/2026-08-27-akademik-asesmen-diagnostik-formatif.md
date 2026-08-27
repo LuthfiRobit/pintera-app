@@ -1,6 +1,6 @@
 # Asesmen Diagnostik & Formatif Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Buka 3 jenis Asesmen yang belum pernah bisa dibuat guru (Diagnostik Kognitif, Diagnostik Non-Kognitif, Formatif) sambil memastikan `RaporCalculationService` tidak pernah mengagregasi ketiganya ke rapor.
 
@@ -28,7 +28,7 @@
 **Interfaces:**
 - Produces: `JenisAsesmen::masukRapor(): array` (3 case Sumatif) — dipakai Task 3 (`RaporCalculationService`). `JenisAsesmen::cases()` (bawaan PHP enum, 6 case) — dipakai Task 2.
 
-- [ ] **Step 1: Retrofit test enum ke kontrak baru (akan gagal — `masukRapor()` belum ada, `v1Didukung()` masih ada)**
+- [x] **Step 1: Retrofit test enum ke kontrak baru (akan gagal — `masukRapor()` belum ada, `v1Didukung()` masih ada)**
 
 Ganti isi `tests/Unit/Enums/JenisAsesmenTest.php` jadi:
 
@@ -70,12 +70,12 @@ it('returns correct Indonesian labels for all 6 cases', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/Enums/JenisAsesmenTest.php`
 Expected: FAIL — `masukRapor()` tidak ditemukan (test 2), `v1Didukung()` masih ada (test 3 gagal krn `method_exists` masih `true`)
 
-- [ ] **Step 3: Retire `v1Didukung()`, tambah `masukRapor()`**
+- [x] **Step 3: Retire `v1Didukung()`, tambah `masukRapor()`**
 
 Ganti isi `app/Domains/Akademik/Enums/JenisAsesmen.php` jadi:
 
@@ -129,12 +129,12 @@ enum JenisAsesmen: string
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/Enums/JenisAsesmenTest.php`
 Expected: PASS (4 test)
 
-- [ ] **Step 5: Lint & commit**
+- [x] **Step 5: Lint & commit**
 
 Run: `php -l app/Domains/Akademik/Enums/JenisAsesmen.php`
 Expected: `No syntax errors detected`
@@ -159,7 +159,7 @@ git commit -m "feat(akademik): retire JenisAsesmen::v1Didukung(), tambah masukRa
 
 **PENTING**: `Rule::enum(JenisAsesmen::class)` menerima SEMUA 6 case begitu diterapkan — ini SATU-SATUNYA perubahan validasi yang dibutuhkan, tidak perlu daftar hardcode baru menyebut 6 nilai.
 
-- [ ] **Step 1: Retrofit test guru — ganti test penolakan Formatif jadi 3 test sukses (akan gagal — form masih terbatas 3 Sumatif)**
+- [x] **Step 1: Retrofit test guru — ganti test penolakan Formatif jadi 3 test sukses (akan gagal — form masih terbatas 3 Sumatif)**
 
 Baca dulu `tests/Feature/Guru/AsesmenControllerTest.php` baris 226-254 (test `'rejects a jenis outside the v1-supported sumatif options'`) — HAPUS test itu, ganti dengan 3 test baru di posisi yang sama:
 
@@ -261,12 +261,12 @@ it('allows creating an asesmen with jenis Formatif', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan 3 test baru gagal (form masih tolak jenis selain Sumatif)**
+- [x] **Step 2: Jalankan test, pastikan 3 test baru gagal (form masih tolak jenis selain Sumatif)**
 
 Run: `php artisan test tests/Feature/Guru/AsesmenControllerTest.php --filter="Diagnostik|Formatif"`
 Expected: FAIL — `assertRedirect()` gagal krn `StoreAsesmenRequest` masih menolak `jenis` selain 3 Sumatif (redirect balik dgn session error, bukan ke `guru.asesmen.show`)
 
-- [ ] **Step 3: Buka form guru ke semua 6 jenis**
+- [x] **Step 3: Buka form guru ke semua 6 jenis**
 
 Ubah `app/Http/Controllers/Guru/AsesmenController.php` baris 70:
 
@@ -274,7 +274,7 @@ Ubah `app/Http/Controllers/Guru/AsesmenController.php` baris 70:
             'jenisAsesmenList' => JenisAsesmen::cases(),
 ```
 
-- [ ] **Step 4: Validasi ikut enum, bukan hardcode**
+- [x] **Step 4: Validasi ikut enum, bukan hardcode**
 
 Ubah `app/Http/Requests/Akademik/StoreAsesmenRequest.php` — tambahkan import:
 
@@ -290,12 +290,12 @@ lalu ganti baris `'jenis' => ['required', 'in:sumatif_lingkup_materi,sumatif_akh
 
 `komponen_id` (baris `'komponen_id' => ['required', 'array', 'min:1']`) TIDAK BERUBAH.
 
-- [ ] **Step 5: Jalankan test, pastikan semua lulus**
+- [x] **Step 5: Jalankan test, pastikan semua lulus**
 
 Run: `php artisan test tests/Feature/Guru/AsesmenControllerTest.php`
 Expected: PASS (semua test di file, termasuk 3 test baru dan test lain yang sudah ada — `'rejects creating an asesmen with no komponen_id selected'` dkk TIDAK terpengaruh krn masih pakai `JenisAsesmen::SumatifLingkupMateri`)
 
-- [ ] **Step 6: Lint & commit**
+- [x] **Step 6: Lint & commit**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: exit sukses
@@ -317,7 +317,7 @@ git commit -m "feat(akademik): buka 6 jenis asesmen ke form guru, validasi ikut 
 - Consumes: `JenisAsesmen::masukRapor()` (Task 1).
 - Produces: `RaporCalculationService::hitungRekapKelas()` — signature TIDAK BERUBAH, hanya perilaku internal (Asesmen berjenis Diagnostik/Formatif tidak pernah diagregasi).
 
-- [ ] **Step 1: Tulis test exclusion (akan gagal — filter belum ada)**
+- [x] **Step 1: Tulis test exclusion (akan gagal — filter belum ada)**
 
 ```php
 <?php
@@ -422,12 +422,12 @@ it('keeps rekap at the Sumatif value even when Formatif and Diagnostik nilai exi
 
 Simpan sebagai `tests/Feature/Akademik/RaporCalculationJenisAsesmenTest.php`.
 
-- [ ] **Step 2: Jalankan test, pastikan 3 test exclusion pertama gagal (belum ada filter), test ke-4 gagal juga (nilai jadi campuran, bukan 88)**
+- [x] **Step 2: Jalankan test, pastikan 3 test exclusion pertama gagal (belum ada filter), test ke-4 gagal juga (nilai jadi campuran, bukan 88)**
 
 Run: `php artisan test tests/Feature/Akademik/RaporCalculationJenisAsesmenTest.php`
 Expected: FAIL pada 4 test (semua Asesmen apa pun jenisnya ikut teragregasi saat ini)
 
-- [ ] **Step 3: Tambah filter ke `RaporCalculationService`**
+- [x] **Step 3: Tambah filter ke `RaporCalculationService`**
 
 Tambahkan import di `app/Domains/Akademik/Services/RaporCalculationService.php` (setelah `use App\Domains\Akademik\Enums\AssessmentType;`):
 
@@ -447,17 +447,17 @@ Ganti query `$asesmenList` (baris 28-31):
 
 Tidak ada baris lain di file ini yang berubah.
 
-- [ ] **Step 4: Jalankan test, pastikan semua lulus**
+- [x] **Step 4: Jalankan test, pastikan semua lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RaporCalculationJenisAsesmenTest.php`
 Expected: PASS (4 test)
 
-- [ ] **Step 5: Jalankan seluruh test `RaporCalculationService` existing — pastikan tidak ada regresi (Sumatif tetap masuk seperti biasa)**
+- [x] **Step 5: Jalankan seluruh test `RaporCalculationService` existing — pastikan tidak ada regresi (Sumatif tetap masuk seperti biasa)**
 
 Run: `php artisan test tests/Unit/Services/RaporCalculationServiceTest.php tests/Unit/Services/RaporCalculationServiceAssessmentTypeTest.php tests/Unit/Services/RaporCalculationServiceTypeAwareTest.php tests/Feature/Akademik/RaporCalculationCompositeKeyTest.php tests/Feature/Admin/RaporControllerTest.php`
 Expected: PASS (semua test — `database/factories/AsesmenFactory.php:26` sudah diverifikasi default `jenis` ke `JenisAsesmen::SumatifLingkupMateri`, termasuk `masukRapor()`, jadi test-test existing yang pakai `Asesmen::factory()` tanpa `jenis` eksplisit TIDAK terpengaruh filter baru ini)
 
-- [ ] **Step 6: Lint & commit**
+- [x] **Step 6: Lint & commit**
 
 Run: `php -l app/Domains/Akademik/Services/RaporCalculationService.php`
 Expected: `No syntax errors detected`
@@ -479,7 +479,7 @@ git commit -m "fix(akademik): RaporCalculationService kecualikan Diagnostik & Fo
 
 Task ini murni test — TIDAK ADA perubahan kode produksi. Tujuannya membuktikan siklus penuh, bukan cuma satu tahap (create SAJA, atau filter rapor SAJA).
 
-- [ ] **Step 1: Tulis test siklus penuh**
+- [x] **Step 1: Tulis test siklus penuh**
 
 ```php
 <?php
@@ -574,12 +574,12 @@ Simpan sebagai `tests/Feature/Guru/AsesmenDiagnostikFormatifUsabilityTest.php`.
 
 Route `guru.asesmen.update-nilai` sudah diverifikasi persis di `routes/guru.php:19` (`Route::put('asesmen/{asesmen}/nilai', ...)->name('asesmen.update-nilai')`, di dalam group `->name('guru.')`) — nama di atas sudah benar, tidak perlu dicek ulang.
 
-- [ ] **Step 2: Jalankan test, pastikan lulus (semua kode produksi sudah benar dari Task 1-3, task ini murni verifikasi)**
+- [x] **Step 2: Jalankan test, pastikan lulus (semua kode produksi sudah benar dari Task 1-3, task ini murni verifikasi)**
 
 Run: `php artisan test tests/Feature/Guru/AsesmenDiagnostikFormatifUsabilityTest.php`
 Expected: PASS (1 test)
 
-- [ ] **Step 3: Lint & commit**
+- [x] **Step 3: Lint & commit**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: exit sukses
@@ -596,17 +596,17 @@ git commit -m "test(akademik): buktikan siklus penuh Asesmen Formatif (create-in
 **Files:**
 - Modify: `PETA_PENGEMBANGAN.md`
 
-- [ ] **Step 1: Grep referensi liar ke `v1Didukung`**
+- [x] **Step 1: Grep referensi liar ke `v1Didukung`**
 
 Run: `grep -rn "v1Didukung" app/ resources/ tests/ --include="*.php" --include="*.blade.php"`
 Expected: 0 hasil (kalau ada sisa, STOP dan laporkan ke user)
 
-- [ ] **Step 2: Jalankan full test suite tanpa filter**
+- [x] **Step 2: Jalankan full test suite tanpa filter**
 
 Run: `php artisan test --compact`
 Expected: 0 failed. Catat angka pasti (passed/skipped/assertions).
 
-- [ ] **Step 3: Update `PETA_PENGEMBANGAN.md`**
+- [x] **Step 3: Update `PETA_PENGEMBANGAN.md`**
 
 Di bagian `## 🔵 Roadmap Kurikulum Dinamis`, ubah baris tabel Prioritas #6 kolom "Status" dari `Belum Ada` menjadi:
 
@@ -620,7 +620,7 @@ Tambahkan paragraf baru setelah tabel prioritas:
 **Prioritas #6 SELESAI (27 Agustus 2026)**: Guru sekarang bisa membuat Asesmen Diagnostik Kognitif, Diagnostik Non-Kognitif, dan Formatif (sebelumnya cuma 3 varian Sumatif). `JenisAsesmen::v1Didukung()` di-retire, diganti `cases()` (form/validasi, semua 6 jenis) dan `masukRapor()` (filter rapor, tetap 3 Sumatif). Ikut ditemukan & diperbaiki blocker kritis: `RaporCalculationService::hitungRekapKelas()` sebelumnya sama sekali tidak memfilter `jenis` Asesmen — sudah diperbaiki sekaligus supaya Diagnostik/Formatif tidak pernah mencemari rapor. Dieksekusi lewat `.agents/plans/2026-08-27-akademik-asesmen-diagnostik-formatif.md`.
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add PETA_PENGEMBANGAN.md
