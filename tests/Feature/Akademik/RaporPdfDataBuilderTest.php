@@ -15,8 +15,8 @@ it('maps every known bentuk_pendidikan to its correct report template', function
     ['SMP', 'pdf.rapor.smp-sma'],
     ['SMA', 'pdf.rapor.smp-sma'],
     ['SMK', 'pdf.rapor.smk'],
-    // SLB -> sd adalah regression compatibility (hasil lama krn fallback default),
-    // BUKAN keputusan domain baru bahwa SLB "memang seharusnya" sama dgn SD.
+    // SLB -> sd adalah keputusan final yang disengaja (Prioritas #3, 27 Agustus 2026),
+    // bukan lagi fallback compatibility -- lihat AcademicProfile.php.
     ['SLB', 'pdf.rapor.sd'],
 ]);
 

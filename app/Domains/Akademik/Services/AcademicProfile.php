@@ -27,10 +27,10 @@ final class AcademicProfile
                 $bentukPendidikan === 'SMK' => 'smk',
                 in_array($bentukPendidikan, ['SMP', 'SMA'], true) => 'smp-sma',
                 $bentukPendidikan === 'SD' => 'sd',
-                // SLB tidak punya cabang eksplisit di RaporPdfDataBuilder::templateUntukJenjang()
-                // production saat ini -- jatuh ke default yang sama dgn SD. Baris ini SENGAJA
-                // meniru compatibility behavior itu, BUKAN klaim kebutuhan pelaporan SLB identik
-                // dgn SD. Re-evaluasi/pemisahan template SLB didorong ke desain Sprint 5.
+                // SLB memakai template SD sbg KEPUTUSAN FINAL yang disengaja (diformalkan
+                // Prioritas #3 Roadmap Kurikulum Dinamis, 27 Agustus 2026) -- bukan fallback
+                // diam-diam. Tidak ada pelanggan SLB nyata dgn kebutuhan struktur rapor
+                // berbeda saat ini; keputusan ini revisable kalau itu berubah.
                 $bentukPendidikan === 'SLB' => 'sd',
                 default => throw new InvalidArgumentException("Unsupported bentuk_pendidikan: {$bentukPendidikan}"),
             },
