@@ -121,7 +121,14 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-a.md`
   - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-a.md`
 
-- **Kelompok B (Kenaikan Kelas UX Safety-Net)** — 🟡 Menunggu pengerjaan terpisah (validasi kecocokan kurikulum kelas tujuan, saran otomatis "lulus" di tingkat akhir, guard `bentuk_pendidikan`).
+- **Kelompok B (Kenaikan Kelas UX Safety-Net) — ✅ SELESAI (27 Agustus 2026)**:
+  1. **Source of Truth Semantik Tingkat Akhir**: Method `isTingkatAkhir(?string $tingkat)` diekstrak ke enum `BentukPendidikan` dengan `match` eksplisit (menjaga isolasi permanen KB/TPA/SPS bukan tingkat akhir per Priority #3) dan didelegasikan dari `RaporPdfDataBuilder`.
+  2. **Saran Otomatis "Lulus"**: Dropdown tindakan di halaman Kenaikan Kelas (`admin.kenaikan-kelas.index`) otomatis pre-select "Lulus" jika kelas asal berada di tingkat akhir jenjangnya, disertai label saran informatif.
+  3. **Peringatan Live Kurikulum Berbeda**: Penambahan Alpine.js inline pada tabel kenaikan kelas yang memberikan peringatan instan (non-blocking) jika kurikulum kelas tujuan yang dipilih berbeda dari kurikulum kelas asal (hanya jika kedua sisi non-null).
+  - *Catatan*: Temuan #3 (guard `bentuk_pendidikan`) terkonfirmasi bukan gap nyata karena skema `lembaga.bentuk_pendidikan` bersifat tunggal dan telah terproteksi oleh guard lintas-`lembaga_id` existing.
+  - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-b.md`
+  - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-b.md`
+
 - **Kelompok C (RPP Reporting & Test Coverage)** — 🟡 Menunggu pengerjaan terpisah (reporting kurikulum, validasi kelas-semester).
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
