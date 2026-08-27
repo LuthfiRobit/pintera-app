@@ -1,3 +1,4 @@
+@php use App\Domains\Akademik\Enums\BentukPendidikan; @endphp
 <x-app-layout>
     <div class="mx-auto max-w-6xl space-y-4">
         {{-- Flash Messages & Toast Integrations --}}
@@ -73,11 +74,19 @@
                                     <tr class="transition hover:bg-gray-50/60">
                                         <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }}</td>
                                         <td class="px-4 py-4 text-center text-gray-500">{{ $kelasLama->siswa_count }}</td>
+                                        @php
+                                            $isTingkatAkhir = $kelasLama->lembaga
+                                                ? BentukPendidikan::from($kelasLama->lembaga->bentuk_pendidikan)->isTingkatAkhir($kelasLama->tingkat)
+                                                : false;
+                                        @endphp
                                         <td class="px-4 py-4">
                                             <select name="mapping[{{ $kelasLama->id }}][tindakan]" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                <option value="naik">Naik Kelas</option>
-                                                <option value="lulus">Lulus</option>
+                                                <option value="naik" @selected(! $isTingkatAkhir)>Naik Kelas</option>
+                                                <option value="lulus" @selected($isTingkatAkhir)>Lulus</option>
                                             </select>
+                                            @if ($isTingkatAkhir)
+                                                <p class="mt-1 text-xs text-amber-600">Disarankan: tingkat akhir jenjang</p>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-4">
                                             <select name="mapping[{{ $kelasLama->id }}][kelas_baru_id]" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
