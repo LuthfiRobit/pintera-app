@@ -5,6 +5,7 @@ use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Services\RaporCalculationService;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -203,6 +204,55 @@ it('streams a pdf for the selected kelas and semester via the cetak endpoint', f
 
     $response->assertOk();
     expect($response->headers->get('Content-Type'))->toContain('application/pdf');
+});
+
+it('does not crash when streaming a pdf for a kelas that has real nilai data (RekapNilaiSel regression)', function () {
+    // Sebelum fix: pdf/rekap-rapor.blade.php belum dimigrasi ke kontrak RekapNilaiSel --
+    // baris "Rata-Rata Umum" mencoba collect(...)->avg() langsung terhadap objek DTO
+    // (bukan float), yang fatal error begitu kelas punya nilai asli. Test lama di atas
+    // tidak menangkap ini krn kelasnya sengaja tanpa nilai sama sekali.
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $asesmen = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+    NilaiSiswa::create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 92]);
+
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toContain('application/pdf');
+});
+
+it('renders the score inside the per-mapel matrix cell of the printable pdf rekap (key-mismatch regression)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $asesmen = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+    NilaiSiswa::create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 92]);
+
+    $rekap = app(RaporCalculationService::class)->hitungRekapKelas($kelas, $semester);
+
+    $html = view('pdf.rekap-rapor', array_merge(['selectedKelas' => $kelas, 'selectedSemester' => $semester], $rekap))->render();
+
+    expect($html)->toContain('92');
 });
 
 it('rejects a kelas_id belonging to another lembaga on the cetak endpoint', function () {

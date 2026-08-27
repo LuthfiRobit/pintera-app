@@ -36,16 +36,18 @@
         <tbody>
             @forelse ($siswaList as $index => $siswa)
                 @php
-                    $studentScores = collect($rekapNilai[$siswa->id] ?? [])->filter(fn ($v) => $v !== null);
+                    $studentScores = collect($rekapNilai[$siswa->id] ?? [])
+                        ->filter(fn ($sel) => $sel !== null && $sel->tuntas !== null)
+                        ->map(fn ($sel) => (float) $sel->label);
                     $generalAvg = $studentScores->count() > 0 ? round($studentScores->avg(), 1) : null;
                 @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
                     <td class="nama">{{ $siswa->nama_lengkap }}</td>
-                    @forelse ($mapelList as $mapel)
-                        @php $skor = $rekapNilai[$siswa->id][$mapel->id] ?? null; @endphp
-                        <td class="{{ $skor === null ? '' : ($skor >= config('akademik.ambang_tuntas') ? 'tuntas' : 'bimbingan') }}">
-                            {{ $skor ?? '—' }}
+                    @forelse ($mapelList as $subjekKey => $mapel)
+                        @php $sel = $rekapNilai[$siswa->id][$subjekKey] ?? null; @endphp
+                        <td class="{{ $sel !== null && $sel->tuntas !== null ? ($sel->tuntas ? 'tuntas' : 'bimbingan') : '' }}">
+                            {{ $sel->label ?? '—' }}
                         </td>
                     @empty
                         <td>—</td>
