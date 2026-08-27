@@ -1,9 +1,10 @@
 <?php
 
+use App\Domains\Akademik\Models\KurikulumAssignment;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\TahunAjaran;
 use App\Models\User;
@@ -30,8 +31,9 @@ it('denies access to a user without kelas.view permission', function () {
 
 it('creates a kelas', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $tahunAjaran->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
     $manager = actingAsKelasManager($lembaga);
 
     $this->actingAs($manager)->post(route('admin.kelas.store'), [

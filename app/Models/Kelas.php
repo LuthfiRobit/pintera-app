@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+use App\Domains\Akademik\Enums\KurikulumFramework;
+use App\Domains\Akademik\Models\Fase;
+use App\Domains\Akademik\Models\PolaJam;
+use App\Domains\Sarpras\Models\Ruangan;
 use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,20 +14,27 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Kelas extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $table = 'kelas';
 
-    protected $fillable = ['lembaga_id', 'tahun_ajaran_id', 'nama', 'tingkat', 'fase_id', 'wali_kelas_guru_id', 'pola_jam_id', 'ruangan_id'];
+    protected $fillable = ['lembaga_id', 'tahun_ajaran_id', 'nama', 'tingkat', 'fase_id', 'kurikulum', 'wali_kelas_guru_id', 'pola_jam_id', 'ruangan_id'];
+
+    protected function casts(): array
+    {
+        return [
+            'kurikulum' => KurikulumFramework::class,
+        ];
+    }
 
     public function fase(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Akademik\Models\Fase::class);
+        return $this->belongsTo(Fase::class);
     }
 
     public function ruangan(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Sarpras\Models\Ruangan::class, 'ruangan_id');
+        return $this->belongsTo(Ruangan::class, 'ruangan_id');
     }
 
     public function lembaga(): BelongsTo
@@ -38,7 +49,7 @@ class Kelas extends Model
 
     public function polaJam(): BelongsTo
     {
-        return $this->belongsTo(\App\Domains\Akademik\Models\PolaJam::class);
+        return $this->belongsTo(PolaJam::class);
     }
 
     public function waliKelas(): BelongsTo

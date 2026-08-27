@@ -2,6 +2,7 @@
 
 use App\Domains\Akademik\Models\Fase;
 use App\Domains\Akademik\Models\FaseDefaultMapping;
+use App\Domains\Akademik\Models\KurikulumAssignment;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Role;
@@ -23,6 +24,7 @@ function buatUserKelas(): array
 
     $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $tahunAjaran->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
 

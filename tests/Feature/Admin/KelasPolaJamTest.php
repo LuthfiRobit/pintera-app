@@ -1,8 +1,9 @@
 <?php
 
+use App\Domains\Akademik\Models\KurikulumAssignment;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\TahunAjaran;
 use App\Models\User;
@@ -11,8 +12,9 @@ use Spatie\Permission\Models\Permission;
 
 it('assigns a pola jam to a kelas on create', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $tahunAjaran->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
 
     foreach (['kelas.view', 'kelas.create', 'kelas.edit'] as $permission) {

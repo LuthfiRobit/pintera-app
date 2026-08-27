@@ -6,12 +6,18 @@ namespace App\Domains\Akademik\Actions\Kelas;
 
 use App\Domains\Akademik\DataTransferObjects\KelasData;
 use App\Domains\Akademik\Models\PolaJam;
+use App\Domains\Akademik\Services\KurikulumAssignmentResolver;
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\TahunAjaran;
 
 final class CreateKelasAction
 {
+    public function __construct(
+        private readonly KurikulumAssignmentResolver $kurikulumResolver,
+    ) {}
+
     public function execute(KelasData $data, ?int $lembagaIdOverride = null): Kelas
     {
         $tahunAjaran = TahunAjaran::find($data->tahunAjaranId);
@@ -31,11 +37,22 @@ final class CreateKelasAction
             $polaJamId = $polaJam->id;
         }
 
+        $lembaga = Lembaga::find($tahunAjaran->lembaga_id);
+        abort_if($lembaga === null, 404);
+
+        $kurikulum = $this->kurikulumResolver->resolve(
+            tahunAjaranId: $tahunAjaran->id,
+            bentukPendidikan: $lembaga->bentuk_pendidikan,
+            tingkat: $data->tingkat,
+            lembagaId: $tahunAjaran->lembaga_id,
+        );
+
         return Kelas::create([
             'tahun_ajaran_id' => $tahunAjaran->id,
             'nama' => $data->nama,
             'tingkat' => $data->tingkat,
             'fase_id' => $data->faseId,
+            'kurikulum' => $kurikulum,
             'wali_kelas_guru_id' => $waliKelasGuruId,
             'pola_jam_id' => $polaJamId,
             'lembaga_id' => $lembagaIdOverride,

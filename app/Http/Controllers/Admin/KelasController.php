@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Akademik\Actions\Kelas\CreateKelasAction;
 use App\Domains\Akademik\Actions\Kelas\UpdateKelasAction;
 use App\Domains\Akademik\DataTransferObjects\KelasData;
+use App\Domains\Akademik\Exceptions\KurikulumAssignmentNotFoundException;
 use App\Domains\Akademik\Models\Fase;
 use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Akademik\Services\FaseDefaultResolver;
@@ -52,7 +53,7 @@ class KelasController extends BaseController
         $query = Kelas::with(['tahunAjaran', 'waliKelas'])->orderBy('nama');
 
         if ($search = $request->input('search')) {
-            $query->where('nama', 'like', '%' . $search . '%');
+            $query->where('nama', 'like', '%'.$search.'%');
         }
 
         if ($tahunAjaranId = $request->input('tahun_ajaran_id')) {
@@ -69,11 +70,11 @@ class KelasController extends BaseController
         }
 
         return view('admin.kelas.index', [
-            'kelasList'       => $kelasList,
+            'kelasList' => $kelasList,
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
-            'perPage'         => $perPage,
-            'totalKelas'      => Kelas::count(),
-            'totalTaAktif'    => Kelas::whereHas('tahunAjaran', fn($q) => $q->where('status_aktif', true))->count(),
+            'perPage' => $perPage,
+            'totalKelas' => Kelas::count(),
+            'totalTaAktif' => Kelas::whereHas('tahunAjaran', fn ($q) => $q->where('status_aktif', true))->count(),
         ]);
     }
 
@@ -104,7 +105,13 @@ class KelasController extends BaseController
             }
         }
 
-        $action->execute($data, $lembagaIdOverride);
+        try {
+            $action->execute($data, $lembagaIdOverride);
+        } catch (KurikulumAssignmentNotFoundException $e) {
+            return back()->withErrors([
+                'tingkat' => 'Kurikulum belum diatur untuk kombinasi jenjang dan tingkat ini. Atur dulu di menu Pengaturan Kurikulum.',
+            ])->withInput();
+        }
 
         return redirect()->route('admin.kelas.index')->with('status', 'Kelas berhasil disimpan.');
     }
