@@ -9,12 +9,19 @@
                 <h1 class="font-display text-lg font-bold text-gray-900">Pengaturan Kurikulum</h1>
                 <p class="text-xs text-gray-500">Kurikulum yang berlaku per jenjang, tingkat, dan tahun ajaran. Kelas baru mengikuti ini otomatis saat dibuat.</p>
             </div>
-            @can('kurikulum-assignment.create')
-                <a href="{{ route('admin.kurikulum-assignment.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
-                    <x-icon name="plus" class="h-4 w-4" />
-                    Tambah Assignment
-                </a>
-            @endcan
+            <div class="flex items-center gap-2">
+                @can('kurikulum-assignment.view')
+                    <a href="{{ route('admin.kurikulum-assignment.resync') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                        Cek & Perbaiki Kurikulum/Fase
+                    </a>
+                @endcan
+                @can('kurikulum-assignment.create')
+                    <a href="{{ route('admin.kurikulum-assignment.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                        <x-icon name="plus" class="h-4 w-4" />
+                        Tambah Assignment
+                    </a>
+                @endcan
+            </div>
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">

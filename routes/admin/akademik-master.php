@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\KurikulumAssignmentController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Http\Controllers\Admin\PolaJamController;
+use App\Http\Controllers\Admin\ResyncKurikulumFaseController;
 use App\Http\Controllers\Admin\SemesterController;
 use App\Http\Controllers\Admin\TahunAjaranController;
 use App\Http\Controllers\Lembaga\Akademik\MataPelajaranController;
@@ -30,6 +31,8 @@ Route::post('kurikulum-assignment', [KurikulumAssignmentController::class, 'stor
 Route::get('kurikulum-assignment/{kurikulumAssignment}/edit', [KurikulumAssignmentController::class, 'edit'])->name('kurikulum-assignment.edit');
 Route::put('kurikulum-assignment/{kurikulumAssignment}', [KurikulumAssignmentController::class, 'update'])->name('kurikulum-assignment.update');
 Route::delete('kurikulum-assignment/{kurikulumAssignment}', [KurikulumAssignmentController::class, 'destroy'])->name('kurikulum-assignment.destroy');
+Route::get('kurikulum-assignment/resync', [ResyncKurikulumFaseController::class, 'index'])->name('kurikulum-assignment.resync');
+Route::post('kurikulum-assignment/resync', [ResyncKurikulumFaseController::class, 'apply'])->name('kurikulum-assignment.resync.apply');
 
 Route::post('kalender-akademik', [KalenderAkademikController::class, 'store'])->name('kalender-akademik.store');
 Route::put('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'update'])->name('kalender-akademik.update');
