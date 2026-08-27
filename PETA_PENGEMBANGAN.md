@@ -148,7 +148,14 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Handoff Log: `.agents/logs/2026-08-27-akademik-fix-idor-rpp-controller.md`
   - Full Test Suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**
 
-> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, dan Fix Kritis IDOR RPP)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
+- **Fix Data Master — Konsistensi Ownership Tahun Ajaran vs Lembaga pada Kurikulum Assignment — ✅ SELESAI (27 Agustus 2026)**:
+  - `KurikulumAssignmentController::store()` kini memvalidasi bahwa jika `$lembagaId` efektif terisi (baik dipaksa controller untuk admin lembaga, maupun dipilih eksplisit oleh user platform/yayasan), `tahun_ajaran_id` wajib milik lembaga yang sama (`TahunAjaran::whereKey($id)->where('lembaga_id', $lembagaId)->exists()`).
+  - Kasus default nasional (`$lembagaId === null`) sengaja tidak divalidasi ownership tambahan.
+  - Plan: `.agents/plans/2026-08-27-akademik-fix-tahun-ajaran-lembaga-kurikulum-assignment.md`
+  - Handoff Log: `.agents/logs/2026-08-27-akademik-fix-tahun-ajaran-lembaga-kurikulum-assignment.md`
+  - Test: 11 passed di `KurikulumAssignmentControllerTest.php`.
+
+> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, dan Fix Data Master Kurikulum Assignment)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
