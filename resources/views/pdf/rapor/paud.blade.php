@@ -68,6 +68,11 @@
     <p>{{ $catatan?->catatan_sikap ?: '-' }}</p>
     <p>{{ $catatan?->catatan_perkembangan ?: '-' }}</p>
 
+    @if ($isGenap)
+        <h2 style="font-size: 13px; margin-top: 14px;">{{ $labelKenaikan }}</h2>
+        <p>{{ $catatan?->keterangan_kenaikan ?: '-' }}</p>
+    @endif
+
     @include('pdf.rapor._tanda-tangan')
 </body>
 </html>
