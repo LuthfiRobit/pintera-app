@@ -6,6 +6,7 @@ namespace App\Domains\Akademik\Services;
 
 use App\Domains\Akademik\DataTransferObjects\RekapNilaiSel;
 use App\Domains\Akademik\Enums\AssessmentType;
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
@@ -144,16 +145,11 @@ final class RaporPdfDataBuilder
 
     private function isTingkatAkhir(?string $bentukPendidikan, ?string $tingkat): bool
     {
-        $tingkatAkhirPerJenjang = [
-            'TK' => 'B',
-            'SD' => '6',
-            'SLB' => '6',
-            'SMP' => '9',
-            'SMA' => '12',
-            'SMK' => '12',
-        ];
+        if ($bentukPendidikan === null) {
+            return false;
+        }
 
-        return isset($tingkatAkhirPerJenjang[$bentukPendidikan]) && $tingkatAkhirPerJenjang[$bentukPendidikan] === $tingkat;
+        return BentukPendidikan::from($bentukPendidikan)->isTingkatAkhir($tingkat);
     }
 
     public function templateUntukJenjang(string $bentukPendidikan): string
