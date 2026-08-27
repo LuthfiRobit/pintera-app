@@ -34,11 +34,11 @@
 **Interfaces:**
 - Produces: `ListRppAction::execute(..., ?string $kurikulum = null)` — parameter baru, opsional, ditambahkan di AKHIR daftar parameter existing supaya tidak mengubah urutan named-argument call yang sudah ada di `RppController::index()`.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Domains/Akademik/Actions/Rpp/ListRppAction.php`, `app/Http/Controllers/Admin/RppController.php` baris 47-129, `resources/views/portals/lembaga/akademik/rpp/_daftar.blade.php` baris 186-190, dan `resources/views/portals/lembaga/akademik/rpp/index.blade.php` baris 1-16 & 189-198 — pastikan cocok dengan kutipan di step-step berikutnya. Kalau beda, STOP dan laporkan ke user.
 
-- [ ] **Step 2: Tulis test yang gagal — filter dua arah + badge scoped + kontrak AJAX + nilai invalid**
+- [x] **Step 2: Tulis test yang gagal — filter dua arah + badge scoped + kontrak AJAX + nilai invalid**
 
 Buat `tests/Feature/Akademik/RppKurikulumReportingTest.php`:
 
@@ -167,12 +167,12 @@ it('treats an unknown kurikulum value as no filter at all, without erroring', fu
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/RppKurikulumReportingTest.php --compact`
 Expected: FAIL — belum ada badge kurikulum di markup, belum ada parameter `kurikulum` di `ListRppAction`.
 
-- [ ] **Step 4: Tambah parameter `kurikulum` ke `ListRppAction`**
+- [x] **Step 4: Tambah parameter `kurikulum` ke `ListRppAction`**
 
 Edit `app/Domains/Akademik/Actions/Rpp/ListRppAction.php`. Ubah signature `execute()` (tambah parameter baru di AKHIR daftar, sebelum `int $perPage`):
 
@@ -199,7 +199,7 @@ Tambah filter setelah blok `if ($mapelId) { ... }` (sebelum blok `if ($status &&
         }
 ```
 
-- [ ] **Step 5: Update `RppController::index()` — validasi enum + teruskan filter**
+- [x] **Step 5: Update `RppController::index()` — validasi enum + teruskan filter**
 
 Edit `app/Http/Controllers/Admin/RppController.php`. Tambah import:
 
@@ -244,7 +244,7 @@ Tambah `'kurikulum' => $kurikulum,` ke array data view (baik untuk cabang `$requ
             'kurikulum' => $kurikulum,
 ```
 
-- [ ] **Step 6: Update view — badge kurikulum di `_daftar.blade.php`**
+- [x] **Step 6: Update view — badge kurikulum di `_daftar.blade.php`**
 
 Edit `resources/views/portals/lembaga/akademik/rpp/_daftar.blade.php`, ubah blok "Kelas & Semester" (baris 186-190) dari:
 
@@ -271,7 +271,7 @@ menjadi:
                         </td>
 ```
 
-- [ ] **Step 7: Update view — dropdown filter kurikulum di `index.blade.php`**
+- [x] **Step 7: Update view — dropdown filter kurikulum di `index.blade.php`**
 
 Edit `resources/views/portals/lembaga/akademik/rpp/index.blade.php`. Tambah `kurikulum` ke objek `filters` di `x-data` (baris 4-16), setelah baris `status: @js($status ?? '')`:
 
@@ -309,17 +309,17 @@ Tambah dropdown baru setelah blok filter Mata Pelajaran (baris 189-198), sebelum
 
 **Tidak perlu ubah `resources/js/rpp.js`** — `muatUlangDaftar()` sudah men-generik-kan iterasi `Object.entries(this.filters)`, jadi key `kurikulum` otomatis ikut terkirim di query string tanpa perubahan JS.
 
-- [ ] **Step 8: Jalankan test, pastikan lulus**
+- [x] **Step 8: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RppKurikulumReportingTest.php --compact`
 Expected: PASS, 4/4 test.
 
-- [ ] **Step 9: Jalankan test RPP existing supaya tidak regresi**
+- [x] **Step 9: Jalankan test RPP existing supaya tidak regresi**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS, semua test lama tetap lulus (parameter `kurikulum` opsional dgn default `null` tidak mengubah pemanggilan lain).
 
-- [ ] **Step 10: Format & commit**
+- [x] **Step 10: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -339,11 +339,11 @@ git commit -m "feat(akademik): badge dan filter kurikulum di daftar RPP"
 **Interfaces:**
 - Tidak ada perubahan interface publik — `withValidator()` adalah hook standar Laravel `FormRequest`, dipanggil otomatis oleh framework.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Http/Requests/Akademik/StoreRppRequest.php` dan `app/Http/Requests/Akademik/UpdateRppRequest.php` penuh — pastikan cocok dengan kutipan Step 3/5. Kalau beda, STOP dan laporkan.
 
-- [ ] **Step 2: Tulis test yang gagal**
+- [x] **Step 2: Tulis test yang gagal**
 
 Buat `tests/Feature/Akademik/StoreRppRequestKelasSemesterTest.php`:
 
@@ -462,12 +462,12 @@ it('allows update when the new kelas shares the same tahun ajaran as the RPP sem
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/StoreRppRequestKelasSemesterTest.php --compact`
 Expected: FAIL — 2 dari 4 test gagal (kombinasi tidak konsisten masih diterima karena belum ada validasi relasional).
 
-- [ ] **Step 4: Tambah `withValidator()` ke `StoreRppRequest`**
+- [x] **Step 4: Tambah `withValidator()` ke `StoreRppRequest`**
 
 Edit `app/Http/Requests/Akademik/StoreRppRequest.php`. Tambah import:
 
@@ -500,7 +500,7 @@ Tambah method baru setelah `rules()`, sebelum `messages()`:
     }
 ```
 
-- [ ] **Step 5: Tambah `withValidator()` ke `UpdateRppRequest`**
+- [x] **Step 5: Tambah `withValidator()` ke `UpdateRppRequest`**
 
 Edit `app/Http/Requests/Akademik/UpdateRppRequest.php`. Tambah import:
 
@@ -530,17 +530,17 @@ Tambah method baru setelah `rules()`, sebelum `messages()`:
     }
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/StoreRppRequestKelasSemesterTest.php --compact`
 Expected: PASS, 4/4 test.
 
-- [ ] **Step 7: Jalankan test RPP existing supaya tidak regresi**
+- [x] **Step 7: Jalankan test RPP existing supaya tidak regresi**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS — SEMUA test existing memakai kombinasi kelas+semester yang konsisten (dari `beforeEach` yang sama), jadi validasi baru tidak boleh menolaknya. Kalau ada yang gagal, itu tanda validasi baru terlalu ketat — perbaiki kode Step 4/5, JANGAN ubah test existing.
 
-- [ ] **Step 8: Format & commit**
+- [x] **Step 8: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -558,11 +558,11 @@ git commit -m "feat(akademik): validasi konsistensi kelas-semester pada form RPP
 **Interfaces:**
 - Tidak ada — murni test tambahan terhadap `EkstrakurikulerController` existing.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `tests/Feature/Admin/LembagaRelationalManagementTest.php` baris 1-53 dan `app/Http/Controllers/Admin/Lembaga/EkstrakurikulerController.php` penuh — pastikan cocok dengan pemahaman di plan ini (guard `abort_unless($ekstrakurikuler->lembaga_id === $lembaga->id, 404)` di `update()`/`destroy()`). Kalau beda, STOP dan laporkan.
 
-- [ ] **Step 2: Tulis test yang gagal — 2 lembaga + 2 manager terpisah**
+- [x] **Step 2: Tulis test yang gagal — 2 lembaga + 2 manager terpisah**
 
 Tambahkan di akhir `tests/Feature/Admin/LembagaRelationalManagementTest.php` (gunakan import yang sudah ada di file: `EkstrakurikulerLembaga`, `Lembaga`, `Role`, `User`, `Yayasan`, `Permission`):
 
@@ -614,12 +614,12 @@ it('rejects deleting an ekstrakurikuler that belongs to a different lembaga (cro
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan lulus (bukti kode existing sudah benar)**
+- [x] **Step 3: Jalankan test, pastikan lulus (bukti kode existing sudah benar)**
 
 Run: `php artisan test tests/Feature/Admin/LembagaRelationalManagementTest.php --compact`
 Expected: PASS, semua test di file (existing + 2 baru) lulus TANPA perlu mengubah kode produksi — kalau salah satu dari 2 test baru GAGAL, itu berarti audit sebelumnya salah menilai kode `EkstrakurikulerController` sudah benar; STOP dan laporkan ke user, JANGAN memperbaiki kode produksi tanpa konfirmasi (di luar scope plan ini kalau ternyata memang ada bug).
 
-- [ ] **Step 4: Format & commit**
+- [x] **Step 4: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -627,7 +627,7 @@ git add tests/Feature/Admin/LembagaRelationalManagementTest.php
 git commit -m "test(akademik): tambah regresi cross-tenant IDOR ekstrakurikuler_lembaga"
 ```
 
-- [ ] **Step 5: CHECKPOINT — Jalankan full test suite gabungan Kelompok B+C (WAJIB, tanpa filter)**
+- [x] **Step 5: CHECKPOINT — Jalankan full test suite gabungan Kelompok B+C (WAJIB, tanpa filter)**
 
 Ini SATU-SATUNYA titik di seluruh audit sistematis tahap 2 di mana full suite dijalankan — bukan per-kelompok.
 
@@ -636,7 +636,7 @@ Expected: 0 failed. Catat angka pasti (passed/skipped/assertions/durasi) di lapo
 
 **Kalau ada test GAGAL yang TIDAK terkait file yang disentuh Kelompok B/C** (mis. flaky test pre-existing yang tidak berhubungan): STOP, laporkan detail kegagalannya ke user dengan nama test + pesan error lengkap — JANGAN diam-diam mengabaikan atau "menganggap tidak terkait" tanpa investigasi, dan JANGAN mengubah test yang gagal itu tanpa izin eksplisit.
 
-- [ ] **Step 6: Catat penyelesaian Kelompok C + penutup audit tahap 2 di PETA_PENGEMBANGAN.md**
+- [x] **Step 6: Catat penyelesaian Kelompok C + penutup audit tahap 2 di PETA_PENGEMBANGAN.md**
 
 Baca dulu bagian "Audit Sistematis Akademik Tahap 2" yang sudah ada, update baris Kelompok C dari "🟡 Menunggu pengerjaan terpisah" jadi "✅ SELESAI (tanggal hari ini)" dengan ringkasan singkat (badge/filter kurikulum RPP, validasi kelas-semester, test regresi IDOR ekskul), dan tambahkan satu baris penutup bahwa SELURUH audit sistematis tahap 2 (Kelompok A, B, C) kini selesai, dengan angka full suite final dari Step 5.
 
