@@ -29,11 +29,11 @@
 **Interfaces:**
 - Tidak ada — murni penyesuaian fixture test.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `tests/Feature/Akademik/RppWorkflowTest.php` baris 1-96 penuh — pastikan `beforeEach` (baris 20-48) dan test "mendukung upload RPP tematik PAUD tanpa mata pelajaran" (baris 80-96) persis seperti kutipan di Step 2. Kalau beda, STOP dan laporkan ke user.
 
-- [ ] **Step 2: Tambah `wali_kelas_guru_id` ke fixture `$this->kelas`**
+- [x] **Step 2: Tambah `wali_kelas_guru_id` ke fixture `$this->kelas`**
 
 `$this->kelas` dibuat SEBELUM `$this->guru` di `beforeEach` (baris 37, 43), dengan `wali_kelas_guru_id` default `null` dari factory. Test "RPP tematik PAUD tanpa mata pelajaran" (baris 80-96) mengasumsikan guru boleh membuat RPP tanpa `mata_pelajaran_id` untuk kelas itu — begitu Task 3 (§2.3 spec) menambah verifikasi "hanya wali kelas boleh membuat RPP tematik", test ini akan gagal kecuali `$this->kelas->wali_kelas_guru_id` benar-benar diisi guru itu.
 
@@ -43,12 +43,12 @@ Edit `tests/Feature/Akademik/RppWorkflowTest.php`, tambahkan SATU BARIS setelah 
     $this->kelas->update(['wali_kelas_guru_id' => $this->guru->id]);
 ```
 
-- [ ] **Step 3: Jalankan test existing, pastikan masih PASS (baseline belum berubah perilaku)**
+- [x] **Step 3: Jalankan test existing, pastikan masih PASS (baseline belum berubah perilaku)**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS, semua test existing tetap lulus — perubahan ini hanya melengkapi data fixture, belum ada logic baru yang bergantung padanya sampai Task 3.
 
-- [ ] **Step 4: Format & commit**
+- [x] **Step 4: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -67,11 +67,11 @@ git commit -m "test(akademik): lengkapi fixture wali_kelas_guru_id di RppWorkflo
 **Interfaces:**
 - Produces: `RppController::authorizeMilikGuru(Rpp $rpp): void` (private) — dipakai internal saja.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Http/Controllers/Admin/RppController.php` penuh — pastikan method `update()` (baris 192-214), `submit()` (216-236), `destroy()` (269-289), `download()` (172-190) persis seperti kutipan di plan ini (lihat Step 3-5). Kalau beda, STOP dan laporkan.
 
-- [ ] **Step 2: Tulis test yang gagal**
+- [x] **Step 2: Tulis test yang gagal**
 
 Buat `tests/Feature/Akademik/RppControllerIdorTest.php`:
 
@@ -197,12 +197,12 @@ it('allows Guru A to download their own RPP as before', function () {
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Akademik/RppControllerIdorTest.php --compact`
 Expected: FAIL — Guru B saat ini masih BISA update/submit/destroy/download RPP milik Guru A (bug yang sedang diperbaiki).
 
-- [ ] **Step 4: Tambah `authorizeMilikGuru()` dan pasang di `update()`/`submit()`/`destroy()`**
+- [x] **Step 4: Tambah `authorizeMilikGuru()` dan pasang di `update()`/`submit()`/`destroy()`**
 
 Edit `app/Http/Controllers/Admin/RppController.php`. Ubah `update()` (baris 192-196) dari:
 
@@ -278,7 +278,7 @@ Tambah private method baru di akhir class (sebelum `}` penutup):
     }
 ```
 
-- [ ] **Step 5: Ubah `download()` — guard guru pemilik ATAU `rpp.verify`**
+- [x] **Step 5: Ubah `download()` — guard guru pemilik ATAU `rpp.verify`**
 
 Ubah `download()` (baris 172-175) dari:
 
@@ -302,17 +302,17 @@ menjadi:
         if (! Storage::disk('public')->exists($rpp->file_path)) {
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RppControllerIdorTest.php --compact`
 Expected: PASS, 7/7 test.
 
-- [ ] **Step 7: Jalankan test RPP existing supaya tidak regresi**
+- [x] **Step 7: Jalankan test RPP existing supaya tidak regresi**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php tests/Feature/Akademik/StoreRppRequestKelasSemesterTest.php tests/Feature/Akademik/RppKurikulumReportingTest.php --compact`
 Expected: PASS semua — kalau ada yang gagal, cek apakah test itu memanipulasi RPP milik guru lain tanpa acting sbg pemiliknya (kalau ya, itu test lama yang kebetulan lolos karena bug ini, WAJIB diperbaiki fixture-nya bukan kode Task 2 — laporkan temuan ini di report akhir).
 
-- [ ] **Step 8: Format & commit**
+- [x] **Step 8: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -331,7 +331,7 @@ git commit -m "fix(akademik): cegah IDOR lintas-guru pada update/submit/destroy/
 **Interfaces:**
 - Consumes: variabel `$guru` yang SUDAH ADA di `store()` (baris 141, `$guru = Guru::where('user_id', $user->id)->first();`) — TIDAK membuat pemanggilan baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan di akhir `tests/Feature/Akademik/RppControllerIdorTest.php`:
 
@@ -421,12 +421,12 @@ it('allows store of a tematik RPP when the guru IS the wali kelas', function () 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="teach the selected|actually teaches|wali kelas" --compact`
 Expected: FAIL — `store()` belum memverifikasi kombinasi mengajar, semua kombinasi (sah maupun tidak) sama-sama diterima saat ini.
 
-- [ ] **Step 3: Tambah verifikasi kombinasi mengajar di `store()`**
+- [x] **Step 3: Tambah verifikasi kombinasi mengajar di `store()`**
 
 Edit `app/Http/Controllers/Admin/RppController.php`. Tambah import:
 
@@ -468,12 +468,12 @@ Ubah `store()` (baris 138-152), sisipkan blok verifikasi SETELAH resolusi `$guru
         $dto = $request->toDTO((int) $guruId, $kelas, $semester);
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RppControllerIdorTest.php --compact`
 Expected: PASS, 11/11 test (7 dari Task 2 + 4 baru).
 
-- [ ] **Step 5: Jalankan test RPP existing supaya tidak regresi**
+- [x] **Step 5: Jalankan test RPP existing supaya tidak regresi**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php tests/Feature/Akademik/StoreRppRequestKelasSemesterTest.php tests/Feature/Akademik/RppKurikulumReportingTest.php --compact`
 Expected: sebelum diperbaiki, 2 test di `StoreRppRequestKelasSemesterTest.php` akan GAGAL — sudah diketahui sebelumnya, perbaiki SEKARANG (bukan sekadar "cek"):
@@ -513,7 +513,7 @@ function siapkanRppRequestFixture(): array
 Setelah itu jalankan ulang: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php tests/Feature/Akademik/StoreRppRequestKelasSemesterTest.php tests/Feature/Akademik/RppKurikulumReportingTest.php --compact`
 Expected: PASS semua. `RppKurikulumReportingTest.php` tidak terpengaruh sama sekali karena fixture-nya membuat `Rpp::create()` langsung (bypass endpoint `store()`), tidak pernah memanggil `RppController::store()`.
 
-- [ ] **Step 6: Format & commit**
+- [x] **Step 6: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -533,12 +533,12 @@ git commit -m "fix(akademik): verifikasi kombinasi mengajar guru pada store RPP"
 **Interfaces:**
 - Produces: `VerifyRppAction::execute(Rpp $rpp, StatusRpp $targetStatus, int $verifierUserId, int $verifierLembagaId, ?string $catatanRevisi = null): Rpp` — signature BERTAMBAH 1 parameter wajib `int $verifierLembagaId` (disisipkan SEBELUM `$catatanRevisi` yang punya default value, supaya parameter tanpa default tidak berada setelah parameter dgn default).
 
-- [ ] **Step 1: Cek SEMUA pemanggil `VerifyRppAction::execute()` sebelum ubah signature**
+- [x] **Step 1: Cek SEMUA pemanggil `VerifyRppAction::execute()` sebelum ubah signature**
 
 Run: `grep -rn "verifyRppAction->execute\|VerifyRppAction::execute" app/ tests/`
 Expected: hanya ditemukan di `RppController::verify()` (produksi) dan mungkin di test lain yang memanggil Action ini langsung (bukan lewat HTTP). Kalau ditemukan pemanggil lain di luar yang disebut plan ini, STOP dan laporkan ke user sebelum lanjut.
 
-- [ ] **Step 2: Tulis test yang gagal**
+- [x] **Step 2: Tulis test yang gagal**
 
 Tambahkan di akhir `tests/Feature/Akademik/RppControllerIdorTest.php`:
 
@@ -571,12 +571,12 @@ it('allows verify from a verifier in the same lembaga as before', function () {
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="different lembaga than the RPP|verifier in the same lembaga" --compact`
 Expected: test pertama FAIL (verifier lembaga lain saat ini masih bisa verify), test kedua kemungkinan PASS (regresi, boleh sudah lulus di titik ini).
 
-- [ ] **Step 4: Tambah parameter & cross-check di `VerifyRppAction`**
+- [x] **Step 4: Tambah parameter & cross-check di `VerifyRppAction`**
 
 Edit `app/Domains/Akademik/Actions/Rpp/VerifyRppAction.php`, ubah dari:
 
@@ -600,7 +600,7 @@ menjadi:
         if ($rpp->status !== StatusRpp::Diajukan) {
 ```
 
-- [ ] **Step 5: Update pemanggil di `RppController::verify()`**
+- [x] **Step 5: Update pemanggil di `RppController::verify()`**
 
 Edit `app/Http/Controllers/Admin/RppController.php`, ubah pemanggilan (baris 244-250) dari:
 
@@ -625,12 +625,12 @@ menjadi:
             );
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RppControllerIdorTest.php --compact`
 Expected: PASS, 13/13 test (11 dari Task 2-3 + 2 baru).
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -645,14 +645,14 @@ git commit -m "fix(akademik): tambah cross-check lembaga eksplisit di VerifyRppA
 **Files:**
 - Tidak ada file produksi baru — murni verifikasi + docs.
 
-- [ ] **Step 1: Jalankan full test suite TANPA filter**
+- [x] **Step 1: Jalankan full test suite TANPA filter**
 
 Run: `php artisan test --compact`
 Expected: 0 failed. Fix ini menyentuh otorisasi yang dipakai lintas fitur — WAJIB dijalankan penuh sbg pengaman terakhir, bukan cuma test scoped.
 
 **Kalau ada test GAGAL di luar file yang sudah disebutkan plan ini**: itu tanda ada test lain (di luar domain RPP) yang membuat/memanipulasi `Rpp` model langsung tanpa acting sbg pemilik yang benar, atau memanggil `VerifyRppAction::execute()` langsung tanpa parameter baru. STOP, investigasi test yang gagal, JANGAN melonggarkan guard baru untuk "meloloskan" test — perbaiki fixture test tsb (tambah kepemilikan yang benar / parameter yang hilang), laporkan di report akhir sbg penyesuaian yang diperlukan.
 
-- [ ] **Step 2: Catat fix ini di `PETA_PENGEMBANGAN.md`**
+- [x] **Step 2: Catat fix ini di `PETA_PENGEMBANGAN.md`**
 
 Tambahkan entri baru (bukan sub-item dari "Audit Sistematis Akademik Tahap 2" yang sudah ditutup — ini temuan dari audit ulang total terpisah) dengan judul singkat "Fix Kritis: IDOR Lintas-Guru RppController (27 Agustus 2026)", ringkasan 2-3 kalimat (celah yang ditemukan, 4 titik yang diperbaiki: update/submit/destroy/download + store + VerifyRppAction), dan link ke spec/plan/log.
 
