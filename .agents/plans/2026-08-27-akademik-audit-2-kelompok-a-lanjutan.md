@@ -28,7 +28,7 @@
 **Interfaces:**
 - Produces: `JadwalPelajaran::scopeSemesterAktif(Builder $query): Builder` — signature TIDAK BERUBAH, hanya implementasi internal.
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Models/JadwalPelajaran.php` penuh — pastikan method `scopeSemesterAktif()` masih persis seperti hasil Kelompok A:
 
@@ -41,12 +41,12 @@ Baca `app/Models/JadwalPelajaran.php` penuh — pastikan method `scopeSemesterAk
 
 Kalau berbeda, STOP dan laporkan ke user.
 
-- [ ] **Step 2: Jalankan test regresi existing dulu, catat baseline PASS**
+- [x] **Step 2: Jalankan test regresi existing dulu, catat baseline PASS**
 
 Run: `php artisan test tests/Feature/DashboardTest.php --filter="today-schedule widget" --compact`
 Expected: PASS (2 test, dari Kelompok A) — ini baseline SEBELUM perubahan, memastikan kita mulai dari kondisi hijau.
 
-- [ ] **Step 3: Ubah implementasi `scopeSemesterAktif()`**
+- [x] **Step 3: Ubah implementasi `scopeSemesterAktif()`**
 
 Edit `app/Models/JadwalPelajaran.php`. Tambah import:
 
@@ -77,12 +77,12 @@ Ubah method (cari method `semester()`, method `scopeSemesterAktif()` ada tepat s
     }
 ```
 
-- [ ] **Step 4: Jalankan ulang test regresi, pastikan MASIH pass (proof perubahan tidak mengubah hasil guru)**
+- [x] **Step 4: Jalankan ulang test regresi, pastikan MASIH pass (proof perubahan tidak mengubah hasil guru)**
 
 Run: `php artisan test tests/Feature/DashboardTest.php --filter="today-schedule widget" --compact`
 Expected: PASS, 2/2 test, HASIL SAMA seperti Step 2 — membuktikan perubahan implementasi tidak mengubah perilaku untuk kasus guru (single-tenant).
 
-- [ ] **Step 5: Format & commit**
+- [x] **Step 5: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -101,7 +101,7 @@ git commit -m "fix(akademik): scopeSemesterAktif bypass TenantScope agar aman li
 **Interfaces:**
 - Consumes: `JadwalPelajaran::scopeSemesterAktif()` (Task 1).
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Http/Controllers/Admin/DashboardController.php` baris 113-170 (branch `if ($user->hasRole('siswa'))`) — pastikan baris 123-127 persis:
 
@@ -115,7 +115,7 @@ Baca `app/Http/Controllers/Admin/DashboardController.php` baris 113-170 (branch 
 
 Kalau berbeda, STOP dan laporkan.
 
-- [ ] **Step 2: Tulis test yang gagal**
+- [x] **Step 2: Tulis test yang gagal**
 
 Tambahkan di akhir `tests/Feature/DashboardTest.php` (gunakan import yang sudah ada di file: `JadwalPelajaran`, `Semester`, `Kelas`, `Siswa`, `JamPelajaran`, `Hari`, `Role`, `User`, `Lembaga`):
 
@@ -186,12 +186,12 @@ it('shows an empty today-schedule widget for a siswa whose lembaga has no active
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="siswa today-schedule widget" --compact`
 Expected: FAIL — `jadwalHariIni` masih berisi `$jadwalLama` karena belum ada filter.
 
-- [ ] **Step 4: Terapkan `->semesterAktif()` di controller**
+- [x] **Step 4: Terapkan `->semesterAktif()` di controller**
 
 Edit `app/Http/Controllers/Admin/DashboardController.php:123-127`, ubah dari:
 
@@ -214,7 +214,7 @@ menjadi:
                         ->get();
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="siswa today-schedule widget" --compact`
 Expected: PASS, 2/2 test.
@@ -222,7 +222,7 @@ Expected: PASS, 2/2 test.
 Run juga test existing supaya tidak regresi: `php artisan test tests/Feature/DashboardTest.php --compact`
 Expected: semua test di file PASS, 0 failed (termasuk test siswa lama seperti `'passes profile, schedule, and unpaid bills to the siswa dashboard view'` dan `'shows a siswa their latest recorded grade on their own dashboard'`).
 
-- [ ] **Step 6: Format & commit**
+- [x] **Step 6: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -241,7 +241,7 @@ git commit -m "fix(akademik): widget jadwal hari ini siswa filter semester aktif
 **Interfaces:**
 - Consumes: `JadwalPelajaran::scopeSemesterAktif()` (Task 1).
 
-- [ ] **Step 1: Baca file existing untuk konfirmasi baseline**
+- [x] **Step 1: Baca file existing untuk konfirmasi baseline**
 
 Baca `app/Http/Controllers/Admin/DashboardController.php` baris 172-255 (branch `if ($user->hasRole('orang_tua'))`) — pastikan baris 230-243 persis:
 
@@ -263,7 +263,7 @@ Baca `app/Http/Controllers/Admin/DashboardController.php` baris 172-255 (branch 
 
 Kalau berbeda, STOP dan laporkan.
 
-- [ ] **Step 2: Tulis test yang gagal — termasuk skenario kritis lintas-lembaga**
+- [x] **Step 2: Tulis test yang gagal — termasuk skenario kritis lintas-lembaga**
 
 Tambahkan di akhir `tests/Feature/DashboardTest.php` (gunakan import yang sudah ada: `OrangTua` — cek dulu apakah sudah di-import, kalau belum tambahkan `use App\Models\OrangTua;`):
 
@@ -391,12 +391,12 @@ it('excludes only the non-active-semester jadwal of one child while keeping the 
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="orang tua children-schedule widget|cross-tenant orang tua" --compact`
 Expected: FAIL — ketiga test gagal karena belum ada filter `semesterAktif()`, dan skenario lintas-lembaga belum teruji sama sekali.
 
-- [ ] **Step 4: Terapkan `->semesterAktif()` di controller**
+- [x] **Step 4: Terapkan `->semesterAktif()` di controller**
 
 Edit `app/Http/Controllers/Admin/DashboardController.php:230-243`, ubah dari:
 
@@ -435,19 +435,19 @@ menjadi:
                         ->get();
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="orang tua children-schedule widget|cross-tenant orang tua" --compact`
 Expected: PASS, 3/3 test — termasuk kedua skenario lintas-lembaga, yang membuktikan fix Task 1 (bypass TenantScope pada subquery semester) benar-benar diperlukan dan bekerja.
 
-- [ ] **Step 6: Jalankan seluruh `DashboardTest.php` sbg checkpoint akhir (test scoped, BUKAN full suite)**
+- [x] **Step 6: Jalankan seluruh `DashboardTest.php` sbg checkpoint akhir (test scoped, BUKAN full suite)**
 
 Run: `php artisan test tests/Feature/DashboardTest.php --compact`
 Expected: 0 failed. Catat angka pasti (jumlah test/assertion) di laporan akhir — file ini sekarang berisi test guru (Kelompok A) + siswa + orang tua (termasuk lintas-lembaga) untuk widget jadwal, semuanya harus hijau bersamaan.
 
 **Tidak perlu full suite** — perubahan plan ini sempit (1 method + 2 query di 1 controller), dan `DashboardTest.php` sudah menjadi regression suite yang representatif untuk seluruh permukaan yang tersentuh.
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -455,7 +455,7 @@ git add app/Http/Controllers/Admin/DashboardController.php tests/Feature/Dashboa
 git commit -m "fix(akademik): widget jadwal hari ini orang tua filter semester aktif per anak"
 ```
 
-- [ ] **Step 8: Catat penyelesaian fix susulan di PETA_PENGEMBANGAN.md**
+- [x] **Step 8: Catat penyelesaian fix susulan di PETA_PENGEMBANGAN.md**
 
 Baca dulu bagian "Audit Sistematis Akademik Tahap 2" existing (paragraf Kelompok A), tambahkan 1 kalimat tindak lanjut bahwa widget jadwal siswa & orang tua (yang sempat terlewat saat Kelompok A) sudah diperbaiki pada tanggal hari ini, termasuk perbaikan `scopeSemesterAktif()` agar tenant-safe untuk skenario orang tua lintas-lembaga.
 
