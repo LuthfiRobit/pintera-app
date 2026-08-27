@@ -139,7 +139,16 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Plan: `.agents/plans/2026-08-27-akademik-audit-2-kelompok-c.md`
   - Handoff Log: `.agents/logs/2026-08-27-akademik-audit-2-kelompok-c.md`
 
-> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, dan C)**. Full test suite: **2355 passed, 4 skipped, 0 failed (6459 assertions)**.
+- **Fix Kritis Keamanan — IDOR Lintas-Guru pada RppController — ✅ SELESAI (27 Agustus 2026)**:
+  1. **Ownership Check `update()`, `submit()`, `destroy()`**: Ditambahkan method `authorizeMilikGuru(Rpp $rpp)` yang memastikan bahwa guru yang login hanya dapat memodifikasi/mengajukan/menghapus RPP miliknya sendiri (`$rpp->guru_id === $guru->id`), mengembalikan 403 Forbidden bila dilanggar.
+  2. **Dual-Actor Guard pada `download()`**: Proteksi unduh berkas fisik diperbarui sehingga hanya dapat diakses oleh guru pemilik sah ATAU user yang memiliki permission verifikator (`rpp.verify`) di lembaga yang sama.
+  3. **Verifikasi Kombinasi Mengajar pada `store()`**: Validasi backend pada pembuatan RPP memastikan bahwa guru pembuat benar-benar memiliki jadwal mengajar (`JadwalPelajaran`) untuk kombinasi `(guru_id, kelas_id, mata_pelajaran_id, semester_id)`, atau berstatus sebagai `wali_kelas_guru_id` jika RPP bertipe tematik (`mata_pelajaran_id` null).
+  4. **Explicit Verifier Lembaga Cross-Check di `VerifyRppAction`**: Menambahkan parameter `verifierLembagaId` dan validasi defense-in-depth eksplisit di level Action untuk memastikan verifikator tidak dapat memproses RPP lintas-lembaga.
+  - Plan: `.agents/plans/2026-08-27-akademik-fix-idor-rpp-controller.md`
+  - Handoff Log: `.agents/logs/2026-08-27-akademik-fix-idor-rpp-controller.md`
+  - Full Test Suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**
+
+> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, dan Fix Kritis IDOR RPP)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
