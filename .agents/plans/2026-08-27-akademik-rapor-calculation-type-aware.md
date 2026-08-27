@@ -1,6 +1,6 @@
 # RaporCalculationService Type-Aware + Fix Key-Mismatch Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Perbaiki bug key-mismatch di Rekap Rapor & Persetujuan Rapor (kolom per-mapel selalu kosong utk SEMUA jenjang) SEKALIGUS bangun agregasi type-aware (numeric/predicate/narrative) di `RaporCalculationService` supaya kelas PAUD/naratif-predikat tidak lagi melihat rekap kosong total.
 
@@ -30,7 +30,7 @@
 **Interfaces:**
 - Produces: `RekapNilaiSel(assessmentType: AssessmentType, label: string, tuntas: ?bool)` — dipakai Task 2 (`RaporCalculationService`) dan Task 3 (kedua view).
 
-- [ ] **Step 1: Tulis test dasar**
+- [x] **Step 1: Tulis test dasar**
 
 ```php
 <?php
@@ -63,12 +63,12 @@ it('allows tuntas to be null for non-numeric assessment types', function () {
 
 Simpan sebagai `tests/Unit/DataTransferObjects/RekapNilaiSelTest.php`.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/DataTransferObjects/RekapNilaiSelTest.php`
 Expected: FAIL — `Class "App\Domains\Akademik\DataTransferObjects\RekapNilaiSel" not found`
 
-- [ ] **Step 3: Buat DTO**
+- [x] **Step 3: Buat DTO**
 
 ```php
 <?php
@@ -91,12 +91,12 @@ final readonly class RekapNilaiSel
 
 Simpan sebagai `app/Domains/Akademik/DataTransferObjects/RekapNilaiSel.php`.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/DataTransferObjects/RekapNilaiSelTest.php`
 Expected: PASS (2 test)
 
-- [ ] **Step 5: Lint & commit**
+- [x] **Step 5: Lint & commit**
 
 Run: `php -l app/Domains/Akademik/DataTransferObjects/RekapNilaiSel.php`
 Expected: `No syntax errors detected`
@@ -122,7 +122,7 @@ git commit -m "feat(akademik): tambah DTO RekapNilaiSel"
 
 **PENTING — kenapa 2 file test lama harus diretrofit**: sebelumnya `rekapNilai[$siswa][$key]` adalah `float|null` langsung. Sekarang jadi `?RekapNilaiSel`. Assertion yang tadinya `expect(...)->toBe(83.0)` harus jadi `expect(...->label)->toBe('83')` — NILAI NUMERIC YANG DIHARAPKAN TIDAK BOLEH BERUBAH, cuma cara aksesnya.
 
-- [ ] **Step 1: Retrofit `RaporCalculationServiceTest.php` ke kontrak DTO baru**
+- [x] **Step 1: Retrofit `RaporCalculationServiceTest.php` ke kontrak DTO baru**
 
 Ganti isi file jadi:
 
@@ -228,7 +228,7 @@ it('returns no data when kelas and semester belong to different lembaga, even wh
 });
 ```
 
-- [ ] **Step 2: Retrofit `RaporCalculationServiceAssessmentTypeTest.php` ke kontrak DTO baru**
+- [x] **Step 2: Retrofit `RaporCalculationServiceAssessmentTypeTest.php` ke kontrak DTO baru**
 
 Ganti kedua assertion terakhir (baris 47 dan 89 di file lama) — ganti isi lengkap file jadi:
 
@@ -327,7 +327,7 @@ it('still excludes a narrative komponen from the weighted average even if its ni
 });
 ```
 
-- [ ] **Step 3: Tulis test type-aware baru (predicate, narrative, precedence, edge cases) — akan gagal krn service belum diubah**
+- [x] **Step 3: Tulis test type-aware baru (predicate, narrative, precedence, edge cases) — akan gagal krn service belum diubah**
 
 ```php
 <?php
@@ -491,12 +491,12 @@ it('keeps classAvg and highestScore null for a class with only predicate/narrati
 
 Simpan sebagai `tests/Unit/Services/RaporCalculationServiceTypeAwareTest.php`.
 
-- [ ] **Step 4: Jalankan ketiga file test, pastikan SEMUA gagal (service belum diubah)**
+- [x] **Step 4: Jalankan ketiga file test, pastikan SEMUA gagal (service belum diubah)**
 
 Run: `php artisan test tests/Unit/Services/RaporCalculationServiceTest.php tests/Unit/Services/RaporCalculationServiceAssessmentTypeTest.php tests/Unit/Services/RaporCalculationServiceTypeAwareTest.php`
 Expected: FAIL — assertion mismatch (DTO belum dikembalikan, `->label` di null/float error)
 
-- [ ] **Step 5: Tulis ulang `RaporCalculationService`**
+- [x] **Step 5: Tulis ulang `RaporCalculationService`**
 
 ```php
 <?php
@@ -670,17 +670,17 @@ final class RaporCalculationService
 
 Simpan sebagai `app/Domains/Akademik/Services/RaporCalculationService.php` (timpa isi lama sepenuhnya).
 
-- [ ] **Step 6: Jalankan ketiga file test, pastikan SEMUA lulus**
+- [x] **Step 6: Jalankan ketiga file test, pastikan SEMUA lulus**
 
 Run: `php artisan test tests/Unit/Services/RaporCalculationServiceTest.php tests/Unit/Services/RaporCalculationServiceAssessmentTypeTest.php tests/Unit/Services/RaporCalculationServiceTypeAwareTest.php`
 Expected: PASS (4 + 2 + 9 = 15 test)
 
-- [ ] **Step 7: Jalankan test `RaporCalculationCompositeKeyTest.php` existing (harus tetap lulus, memverifikasi keyBy tidak merusak isolasi key)**
+- [x] **Step 7: Jalankan test `RaporCalculationCompositeKeyTest.php` existing (harus tetap lulus, memverifikasi keyBy tidak merusak isolasi key)**
 
 Run: `php artisan test tests/Feature/Akademik/RaporCalculationCompositeKeyTest.php`
 Expected: PASS (1 test) — assertion di file ini akses `$rekap['rekapNilai'][$siswa->id]['mata_pelajaran:'.$mapel->id]` dgn `->toBe(80.0)`/`->toBe(95.0)` LANGSUNG ke float, BUKAN DTO — file ini PERLU disesuaikan juga (lihat Step 8).
 
-- [ ] **Step 8: Retrofit `RaporCalculationCompositeKeyTest.php` ke kontrak DTO**
+- [x] **Step 8: Retrofit `RaporCalculationCompositeKeyTest.php` ke kontrak DTO**
 
 Ubah 2 baris assertion terakhir di file (`tests/Feature/Akademik/RaporCalculationCompositeKeyTest.php`):
 
@@ -691,12 +691,12 @@ Ubah 2 baris assertion terakhir di file (`tests/Feature/Akademik/RaporCalculatio
 
 (baris `expect($rekap['mapelList'])->toHaveCount(2);` di atasnya TIDAK BERUBAH — `mapelList` yang ter-`keyBy()` tetap punya `count()` yang sama.)
 
-- [ ] **Step 9: Jalankan ulang test itu, pastikan lulus**
+- [x] **Step 9: Jalankan ulang test itu, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RaporCalculationCompositeKeyTest.php`
 Expected: PASS (1 test)
 
-- [ ] **Step 10: Lint & commit**
+- [x] **Step 10: Lint & commit**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: exit sukses
@@ -719,7 +719,7 @@ git commit -m "feat(akademik): RaporCalculationService type-aware (numeric/predi
 **Interfaces:**
 - Consumes: `mapelList: Collection<string,Model>` (ter-`keyBy` composite key, Task 2), `rekapNilai[siswa_id][subjekKey]: ?RekapNilaiSel` (Task 1 & 2).
 
-- [ ] **Step 1: Perbaiki `_hasil.blade.php` — loop pakai key composite, render badge per tipe**
+- [x] **Step 1: Perbaiki `_hasil.blade.php` — loop pakai key composite, render badge per tipe**
 
 Ganti baris 74-77 (header) dan baris 98-113 (body) di `resources/views/portals/lembaga/akademik/rapor/_hasil.blade.php`:
 
@@ -767,7 +767,7 @@ Baris `$studentScores = collect($rekapNilai[$siswa->id] ?? [])->filter(fn ($v) =
                             @endphp
 ```
 
-- [ ] **Step 2: Perbaiki `persetujuan/show.blade.php` — key composite + badge**
+- [x] **Step 2: Perbaiki `persetujuan/show.blade.php` — key composite + badge**
 
 File ini punya 2 loop `@foreach ($mapelList as $mapel)` (baris 31, header; baris 40, body) dan 1 lookup `$rekapNilai[$siswa->id][$mapel->id]` (baris 41). Ganti baris 29-34 (header) dan baris 40-42 (body dalam `@foreach ($siswaList as $siswa)`):
 
@@ -797,7 +797,7 @@ File ini punya 2 loop `@foreach ($mapelList as $mapel)` (baris 31, header; baris
 
 Baris lain di file ini (judul, catatan revisi, catatan wali kelas per siswa di baris 50 ke bawah) TIDAK BERUBAH.
 
-- [ ] **Step 3: Perkuat test existing `RaporControllerTest.php` — buktikan bug key-mismatch sudah tidak ada**
+- [x] **Step 3: Perkuat test existing `RaporControllerTest.php` — buktikan bug key-mismatch sudah tidak ada**
 
 Ubah test `it('displays the rapor recap page for selected class and semester', ...)` (baris 35-70) — tambahkan assertion presisi SETELAH `assertSee('88')` yang sudah ada:
 
@@ -850,12 +850,12 @@ it('renders the score inside the per-mapel matrix cell, not only in the class su
 });
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php`
 Expected: PASS (semua test di file ini)
 
-- [ ] **Step 5: Tambah 1 test di `RaporPersetujuanControllerTest.php` — buktikan fix di halaman Persetujuan juga**
+- [x] **Step 5: Tambah 1 test di `RaporPersetujuanControllerTest.php` — buktikan fix di halaman Persetujuan juga**
 
 Baca dulu isi lengkap `tests/Feature/Rapor/RaporPersetujuanControllerTest.php` (khususnya helper `siapkanAktorPersetujuan()`) sebelum menulis, lalu tambahkan test baru di akhir file:
 
@@ -880,12 +880,12 @@ it('renders the score inside the per-mapel matrix cell on the persetujuan show p
 
 Tambahkan `use` import yang diperlukan di atas file (`Asesmen`, `Guru`, `KomponenPenilaian`, `MataPelajaran`, `NilaiSiswa`) kalau belum ada.
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Rapor/RaporPersetujuanControllerTest.php`
 Expected: PASS (semua test di file ini)
 
-- [ ] **Step 7: Lint & commit**
+- [x] **Step 7: Lint & commit**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: exit sukses
@@ -902,17 +902,17 @@ git commit -m "fix(akademik): perbaiki key-mismatch matriks rekap rapor, render 
 **Files:**
 - Modify: `PETA_PENGEMBANGAN.md`
 
-- [ ] **Step 1: Grep referensi liar ke pola lama yang mestinya sudah hilang**
+- [x] **Step 1: Grep referensi liar ke pola lama yang mestinya sudah hilang**
 
 Run: `grep -rn '\$mapel->id\]' resources/views/portals/lembaga/akademik/rapor/ resources/views/portals/lembaga/rapor/`
 Expected: 0 hasil (kalau ada, berarti masih ada view lain dgn bug yang sama yang terlewat audit — STOP dan laporkan ke user).
 
-- [ ] **Step 2: Jalankan full test suite tanpa filter**
+- [x] **Step 2: Jalankan full test suite tanpa filter**
 
 Run: `php artisan test --compact`
 Expected: 0 failed. Catat angka pasti (passed/skipped/assertions).
 
-- [ ] **Step 3: Update `PETA_PENGEMBANGAN.md`**
+- [x] **Step 3: Update `PETA_PENGEMBANGAN.md`**
 
 Di bagian `## 🔵 Roadmap Kurikulum Dinamis`, ubah baris tabel Prioritas #2 kolom "Status" dari `Belum Ada (bug diketahui sejak Sprint 2, sengaja ditunda)` menjadi:
 
@@ -926,7 +926,7 @@ Tambahkan paragraf baru setelah tabel prioritas:
 **Prioritas #2 SELESAI (27 Agustus 2026)**: `RaporCalculationService` sekarang type-aware (numeric=rata-rata berbobot, predicate=modus dgn tie-break, narrative=completion-rate), precedence numeric>predicate>narrative per sel. Ikut ditemukan & diperbaiki bug independen yang lebih luas dari catatan awal: kolom per-mapel di Rekap Rapor & Persetujuan Rapor selalu kosong utk SEMUA jenjang (bukan cuma PAUD) krn key-mismatch (`$mapel->id` vs composite `SubjekPenilaianKey`) — sudah diperbaiki sekaligus. Dieksekusi lewat `.agents/plans/2026-08-27-akademik-rapor-calculation-type-aware.md`.
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add PETA_PENGEMBANGAN.md
