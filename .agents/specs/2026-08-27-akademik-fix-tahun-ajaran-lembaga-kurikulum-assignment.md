@@ -23,7 +23,7 @@ Untuk admin lembaga biasa (non-platform/yayasan), `lembaga_id` dari request **se
 - **`lembaga_id` efektif TERISI** (baik dipaksa controller ke lembaga aktor non-platform, MAUPUN dipilih eksplisit oleh platform/yayasan) → `tahun_ajaran_id` WAJIB menunjuk `tahun_ajaran` dengan `lembaga_id` yang SAMA. Beda → tolak.
 - **`lembaga_id` efektif NULL** (kasus "default nasional", keputusan disengaja mendukung lintas-lembaga) → TIDAK ADA validasi ownership tambahan, perilaku existing dipertahankan apa adanya.
 
-**Scope ketat**: HANYA menambah 1 pengecekan konsistensi/otorisasi data. TIDAK mengubah `KurikulumAssignmentResolver`, TIDAK mengubah semantik "default nasional", TIDAK mengubah `UpdateKurikulumAssignmentRequest` (update tidak mengizinkan ganti `tahun_ajaran_id`/`lembaga_id` sama sekali — sudah aman, dikonfirmasi di audit sebelumnya).
+**Scope ketat**: HANYA menambah satu validasi konsistensi ownership antara `kurikulum_assignment.lembaga_id` dan `tahun_ajaran.lembaga_id` — bukan perubahan otorisasi aktor (otorisasi siapa-boleh-apa tetap sepenuhnya ditangani `authorize()`/`authorizeAssignmentScope()` yang sudah ada, tidak disentuh). TIDAK mengubah `KurikulumAssignmentResolver`, TIDAK mengubah semantik "default nasional", TIDAK mengubah `UpdateKurikulumAssignmentRequest` (update tidak mengizinkan ganti `tahun_ajaran_id`/`lembaga_id` sama sekali — sudah aman, dikonfirmasi di audit sebelumnya).
 
 **Implementasi** — ditambahkan di `KurikulumAssignmentController::store()`, konsisten dengan gaya inline-validation yang SUDAH ADA di method yang sama (cek duplikat assignment via `back()->withErrors(...)->withInput()`), BUKAN di `StoreKurikulumAssignmentRequest` — karena nilai `$lembagaId` efektif hanya bisa dihitung setelah logic `isPlatformOrYayasan()` di controller, memindahkannya ke FormRequest akan menduplikasi logic tsb:
 
@@ -41,8 +41,11 @@ public function store(StoreKurikulumAssignmentRequest $request, CreateKurikulumA
     $this->authorizeAssignmentScope($request, $lembagaId);
 
     if ($lembagaId !== null) {
-        $tahunAjaran = TahunAjaran::find($validated['tahun_ajaran_id']);
-        if ($tahunAjaran === null || (int) $tahunAjaran->lembaga_id !== (int) $lembagaId) {
+        $tahunAjaranValid = TahunAjaran::whereKey($validated['tahun_ajaran_id'])
+            ->where('lembaga_id', $lembagaId)
+            ->exists();
+
+        if (! $tahunAjaranValid) {
             return back()->withErrors(['tahun_ajaran_id' => 'Tahun ajaran yang dipilih bukan milik lembaga ini.'])->withInput();
         }
     }
@@ -63,12 +66,23 @@ public function store(StoreKurikulumAssignmentRequest $request, CreateKurikulumA
 - Tidak mengubah `UpdateKurikulumAssignmentRequest`/`KurikulumAssignmentController::update()` — sudah dikonfirmasi aman (tidak mengizinkan ganti `tahun_ajaran_id`).
 - Tidak menyelidiki/memperbaiki potensi bug fungsional "default nasional tidak benar-benar lintas lembaga" yang disinggung saat diskusi (`KurikulumAssignmentResolver` mencocokkan `tahun_ajaran_id` eksak, bukan periode) — dicatat sbg technical debt terpisah, BUKAN bagian fix ini.
 - Tidak mengubah skema, tidak ada migration.
+- **Race condition pada cek duplikat existing** (`if (KurikulumAssignment::where(...)->exists())`, baris terpisah dari fix ini) — dua request bersamaan bisa sama-sama lolos `exists()` sebelum salah satunya insert, menghasilkan duplikat. Diketahui dan disadari, TAPI eksplisit di luar scope fix ini (tidak terkait dengan bug ownership yang sedang diperbaiki) — dicatat sbg technical debt terpisah.
 
 ## 4. Testing (acceptance criteria wajib)
 
-1. `lembaga_id` efektif terisi + `tahun_ajaran_id` milik lembaga yang SAMA → sukses tersimpan (regresi negatif, kombinasi valid tidak boleh ditolak).
-2. `lembaga_id` efektif terisi + `tahun_ajaran_id` milik lembaga LAIN → ditolak, `assertSessionHasErrors(['tahun_ajaran_id'])`, tidak ada baris `kurikulum_assignment` baru tersimpan.
-3. `lembaga_id` efektif NULL (platform/yayasan membuat default nasional, sengaja tidak isi `lembaga_id`) + `tahun_ajaran_id` dari lembaga mana pun → tetap sukses seperti perilaku existing (regresi negatif, memastikan fix ini tidak diam-diam mengetatkan kasus yang sengaja dibiarkan longgar).
+Karena keputusan desain digeneralisasi berbasis nilai `lembaga_id` (bukan jenis aktor), matrix test WAJIB mencakup baik aktor admin lembaga maupun platform/yayasan — supaya implementasi tidak diam-diam jadi role-specific meski desainnya sudah digeneralisasi:
+
+| # | Aktor | `lembaga_id` efektif | Tahun ajaran milik | Ekspektasi |
+|---|---|---|---|---|
+| 1 | Admin lembaga A | A (dipaksa controller) | Lembaga A | ✅ sukses tersimpan |
+| 2 | Admin lembaga A | A (dipaksa controller) | Lembaga B | ❌ ditolak |
+| 3 | Platform/yayasan | A (dipilih eksplisit di form) | Lembaga A | ✅ sukses tersimpan |
+| 4 | Platform/yayasan | A (dipilih eksplisit di form) | Lembaga B | ❌ ditolak |
+| 5 | Platform/yayasan | NULL (default nasional, sengaja tidak isi `lembaga_id`) | Lembaga mana pun | Tidak ditolak KARENA ownership — lihat catatan di bawah |
+
+**Baris 1 (Admin lembaga A + tahun ajaran A) SUDAH punya test existing** (`it('creates a kurikulum assignment', ...)` di `KurikulumAssignmentControllerTest.php` baris 28-41) — cukup pastikan tetap PASS, tidak perlu test baru untuk baris ini.
+
+**Baris 5 — catatan penting soal klaim test**: fix ini menambah SATU pengecekan (`if ($lembagaId !== null) { ... }`) yang secara desain SAMA SEKALI TIDAK DIEKSEKUSI ketika `$lembagaId` null — jadi tidak mungkin ada penolakan yang BERASAL dari validasi baru ini untuk kasus tsb. Test untuk baris 5 TIDAK BOLEH mengklaim "tetap sukses seperti sebelumnya" secara umum (itu overclaim — bisa saja ada rule LAIN yang sudah ada sebelumnya yang menolak request untuk alasan tak terkait, di luar kendali fix ini). Klaim yang benar dan sempit: **"request tidak ditolak karena ownership mismatch tahun_ajaran_id"** — dibuktikan dengan memastikan TIDAK ADA pesan error pada field `tahun_ajaran_id` di response (`assertSessionDoesntHaveErrors(['tahun_ajaran_id'])`), bukan `assertRedirect()`/klaim sukses total. Kalau ternyata request itu sukses total juga (redirect ke index), itu bonus temuan, bukan yang divalidasi test.
 
 ## 5. Ringkasan Perubahan File
 
