@@ -27,7 +27,7 @@
 - Consumes: `JenisAsesmen::masukRapor()` (sudah ada sejak Priority #6).
 - Produces: `CapaianKompetensiGenerator::generateNarasi(Siswa $siswa, SubjekPenilaian $subjek, Semester $semester): array{tertinggi: ?string, terendah: ?string}` — signature TIDAK BERUBAH, dipakai `GenerateNarasiPerkembanganAction` (tidak disentuh task ini).
 
-- [ ] **Step 1: Tulis test (akan gagal — filter belum ada, narasi masih tercampur Formatif)**
+- [x] **Step 1: Tulis test (akan gagal — filter belum ada, narasi masih tercampur Formatif)**
 
 ```php
 <?php
@@ -86,12 +86,12 @@ it('generates a positive narasi from Sumatif nilai only, ignoring a lower Format
 
 Simpan sebagai `tests/Unit/Services/CapaianKompetensiGeneratorTest.php`.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/Services/CapaianKompetensiGeneratorTest.php`
 Expected: FAIL — `$narasi['terendah']` berisi teks "perlu bimbingan" (rata-rata tercampur 65, di bawah KKTP 75), bukan `null`
 
-- [ ] **Step 3: Tambah filter jenis**
+- [x] **Step 3: Tambah filter jenis**
 
 Tambahkan import di `app/Domains/Akademik/Services/CapaianKompetensiGenerator.php` (setelah `use App\Domains\Akademik\Models\Asesmen;`):
 
@@ -111,12 +111,12 @@ Ubah query `$asesmenIds` (baris 35-38):
 
 Baris lain di method TIDAK BERUBAH.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/Services/CapaianKompetensiGeneratorTest.php`
 Expected: PASS (1 test)
 
-- [ ] **Step 5: Lint & commit**
+- [x] **Step 5: Lint & commit**
 
 Run: `php -l app/Domains/Akademik/Services/CapaianKompetensiGenerator.php`
 Expected: `No syntax errors detected`
@@ -138,7 +138,7 @@ git commit -m "fix(akademik): CapaianKompetensiGenerator kecualikan Diagnostik/F
 - Consumes: `JenisAsesmen::masukRapor()`.
 - Produces: `DashboardStatsService::statistikProgressRaporKelas(Kelas $kelas): array{persen: float, terisi: int, total: int}` — signature TIDAK BERUBAH.
 
-- [ ] **Step 1: Tambah test (akan gagal — Formatif masih dihitung "terisi")**
+- [x] **Step 1: Tambah test (akan gagal — Formatif masih dihitung "terisi")**
 
 Tambahkan ke akhir `tests/Feature/DashboardStatsServiceAssessmentTypeTest.php`:
 
@@ -179,12 +179,12 @@ it('does not count a Formatif nilai as filled progress toward rapor readiness', 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/DashboardStatsServiceAssessmentTypeTest.php`
 Expected: FAIL pada test baru — `$hasilSebelumSumatif['terisi']` bernilai `1` (Formatif ikut dihitung), bukan `0`
 
-- [ ] **Step 3: Tambah filter jenis**
+- [x] **Step 3: Tambah filter jenis**
 
 Tambahkan import di `app/Services/DashboardStatsService.php` (setelah `use App\Domains\Akademik\Models\KomponenPenilaian;`):
 
@@ -204,12 +204,12 @@ Ubah query `$totalTerisi` di `statistikProgressRaporKelas()` (baris 142-145):
 
 Baris lain di method (`$totalSiswa`, `$totalKomponen`, `$totalSlot`, return array) TIDAK BERUBAH.
 
-- [ ] **Step 4: Jalankan test, pastikan semua lulus**
+- [x] **Step 4: Jalankan test, pastikan semua lulus**
 
 Run: `php artisan test tests/Feature/DashboardStatsServiceAssessmentTypeTest.php`
 Expected: PASS (semua test di file, termasuk test existing `'reaches 100 percent progress...'`)
 
-- [ ] **Step 5: Lint & commit**
+- [x] **Step 5: Lint & commit**
 
 Run: `php -l app/Services/DashboardStatsService.php`
 Expected: `No syntax errors detected`
@@ -231,7 +231,7 @@ git commit -m "fix(akademik): DashboardStatsService kecualikan Diagnostik/Format
 - Consumes: `JenisAsesmen::masukRapor()`.
 - Produces: tidak ada interface baru — key `nilaiTerbaru` di kedua view TIDAK BERUBAH strukturnya, cuma isinya sekarang difilter.
 
-- [ ] **Step 1: Tambah test (akan gagal — Formatif masih muncul di widget)**
+- [x] **Step 1: Tambah test (akan gagal — Formatif masih muncul di widget)**
 
 Tambahkan ke akhir `tests/Feature/DashboardTest.php`:
 
@@ -317,12 +317,12 @@ it('excludes a Formatif nilai from the orang tua dashboard latest-grade widget f
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/DashboardTest.php --filter="Formatif"`
 Expected: FAIL pada kedua test baru — `assertDontSee('40')` gagal krn nilai Formatif (id lebih besar) muncul duluan di widget, nilai Sumatif (77) malah tidak ke-render krn kalah di `limit(5)` — atau setidaknya `'40'` tetap terlihat.
 
-- [ ] **Step 3: Tambah filter jenis ke kedua branch**
+- [x] **Step 3: Tambah filter jenis ke kedua branch**
 
 Tambahkan import di `app/Http/Controllers/Admin/DashboardController.php` (setelah `use App\Domains\Akademik\Enums\StatusRpp;`):
 
@@ -360,12 +360,12 @@ Ubah branch orang tua (baris 204-213):
 
 Baris lain di kedua branch (tagihan, presensi, dll) TIDAK BERUBAH.
 
-- [ ] **Step 4: Jalankan test, pastikan semua lulus**
+- [x] **Step 4: Jalankan test, pastikan semua lulus**
 
 Run: `php artisan test tests/Feature/DashboardTest.php`
 Expected: PASS (semua test di file, termasuk 2 test existing `'shows a siswa their latest recorded grade...'` dan `'shows an orang tua the latest recorded grade...'` yang TIDAK BOLEH berubah hasilnya — keduanya pakai `Asesmen::factory()` tanpa `jenis` eksplisit, default `SumatifLingkupMateri`, jadi tetap lolos filter baru ini)
 
-- [ ] **Step 5: Lint & commit**
+- [x] **Step 5: Lint & commit**
 
 Run: `php -l app/Http/Controllers/Admin/DashboardController.php`
 Expected: `No syntax errors detected`
@@ -383,7 +383,7 @@ git commit -m "fix(akademik): DashboardController kecualikan Diagnostik/Formatif
 - Modify: `app/Domains/Akademik/Enums/JenisAsesmen.php`
 - Modify: `PETA_PENGEMBANGAN.md`
 
-- [ ] **Step 1: Perbarui docblock `masukRapor()`**
+- [x] **Step 1: Perbarui docblock `masukRapor()`**
 
 Ganti docblock method `masukRapor()` di `app/Domains/Akademik/Enums/JenisAsesmen.php` dari:
 
@@ -428,12 +428,12 @@ menjadi:
      */
 ```
 
-- [ ] **Step 2: Jalankan full test suite tanpa filter**
+- [x] **Step 2: Jalankan full test suite tanpa filter**
 
 Run: `php artisan test --compact`
 Expected: 0 failed. Catat angka pasti (passed/skipped/assertions).
 
-- [ ] **Step 3: Update `PETA_PENGEMBANGAN.md`**
+- [x] **Step 3: Update `PETA_PENGEMBANGAN.md`**
 
 Cari paragraf `**Prioritas #6 SELESAI (27 Agustus 2026)**: ...` di bagian `## 🔵 Roadmap Kurikulum Dinamis`, tambahkan kalimat baru di akhir paragraf itu (sebelum titik akhir kalimat terakhir "Dieksekusi lewat..."):
 
@@ -441,7 +441,7 @@ Cari paragraf `**Prioritas #6 SELESAI (27 Agustus 2026)**: ...` di bagian `## �
 **Tindak lanjut (27 Agustus 2026)**: audit sistematis penuh (Laravel Boost `database-schema` + grep menyeluruh seluruh `app/`, termasuk Jobs/Console/Notifications/Exports) menemukan 3 consumer lain yang belum ikut filter `JenisAsesmen::masukRapor()` saat Prioritas #6 dibuka: `CapaianKompetensiGenerator` (narasi rapor resmi), `DashboardStatsService::statistikProgressRaporKelas()` (progress kesiapan rapor guru), `Admin\DashboardController` (widget nilai terbaru siswa/orang tua). Ketiganya sudah diperbaiki, dikonfirmasi tidak ada consumer tersembunyi lain. Dieksekusi lewat `.agents/plans/2026-08-27-akademik-fix-filter-jenis-asesmen-consumer-lain.md`.
 ```
 
-- [ ] **Step 4: Lint & commit**
+- [x] **Step 4: Lint & commit**
 
 Run: `php -l app/Domains/Akademik/Enums/JenisAsesmen.php`
 Expected: `No syntax errors detected`
