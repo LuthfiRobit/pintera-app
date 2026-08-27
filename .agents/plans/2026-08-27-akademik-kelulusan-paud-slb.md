@@ -1,6 +1,6 @@
 # Kelulusan/Rapor Akhir PAUD + Keputusan SLB Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Perbaiki `isTingkatAkhir()` supaya TK tingkat B dianggap tingkat akhir, tambahkan section "Keterangan Kelulusan" yang belum pernah ada di rapor PDF PAUD, dan formalkan keputusan SLB memakai template SD sbg final (bukan fallback compatibility).
 
@@ -27,7 +27,7 @@
 **Interfaces:**
 - Produces: `RaporPdfDataBuilder::isTingkatAkhir(?string $bentukPendidikan, ?string $tingkat): bool` (private method, tidak berubah signature) — dipakai internal `build()`, hasilnya menentukan `$labelKenaikan` yang dikonsumsi Task 2.
 
-- [ ] **Step 1: Tulis test regresi 10-baris via `build()` publik (akan gagal utk TK-B krn belum di-fix)**
+- [x] **Step 1: Tulis test regresi 10-baris via `build()` publik (akan gagal utk TK-B krn belum di-fix)**
 
 Pola ini konsisten dgn test existing `RaporPdfDataBuilderTest.php` (`'labels kelulusan for a Genap semester at the final tingkat of SD'`) yang menguji `isTingkatAkhir()` secara TIDAK LANGSUNG lewat `build()['isTingkatAkhir']` — method private tidak boleh dites via reflection, harus lewat API publik.
 
@@ -99,12 +99,12 @@ it('still treats SMK tingkat 12 as tingkat akhir (regression)', function () {
 
 Simpan sebagai `tests/Feature/Akademik/RaporPdfDataBuilderIsTingkatAkhirTest.php` (Feature, bukan Unit — memakai `RefreshDatabase` implisit krn butuh factory model asli, konsisten konvensi project `.ai/rules/tests.md`: "RefreshDatabase: implisit di Feature").
 
-- [ ] **Step 2: Jalankan test, pastikan hanya test TK-B yang gagal**
+- [x] **Step 2: Jalankan test, pastikan hanya test TK-B yang gagal**
 
 Run: `php artisan test tests/Feature/Akademik/RaporPdfDataBuilderIsTingkatAkhirTest.php`
 Expected: FAIL pada `'treats TK tingkat B as tingkat akhir'` (`expected true, got false`), 9 test lain PASS (perilaku lama sudah benar utk semuanya)
 
-- [ ] **Step 3: Tambah `'TK' => 'B'` ke map**
+- [x] **Step 3: Tambah `'TK' => 'B'` ke map**
 
 Ubah method `isTingkatAkhir()` di `app/Domains/Akademik/Services/RaporPdfDataBuilder.php`:
 
@@ -124,12 +124,12 @@ Ubah method `isTingkatAkhir()` di `app/Domains/Akademik/Services/RaporPdfDataBui
     }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan semua lulus**
+- [x] **Step 4: Jalankan test, pastikan semua lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RaporPdfDataBuilderIsTingkatAkhirTest.php`
 Expected: PASS (10 test)
 
-- [ ] **Step 5: Lint & commit**
+- [x] **Step 5: Lint & commit**
 
 Run: `php -l app/Domains/Akademik/Services/RaporPdfDataBuilder.php`
 Expected: `No syntax errors detected`
@@ -152,7 +152,7 @@ git commit -m "fix(akademik): TK tingkat B dianggap tingkat akhir utk Keterangan
 
 **PENTING**: `RaporPdfDataBuilder::build()` TIDAK PERLU diubah sama sekali di task ini — `$isGenap`, `$labelKenaikan`, `$catatan` sudah dihitung/di-query universal utk semua jenjang (baris 56, 74-76 file tsb, sudah diverifikasi di spec §4). Task ini MURNI perubahan Blade.
 
-- [ ] **Step 1: Tulis test integrasi penuh builder→view (akan gagal — section belum ada di template)**
+- [x] **Step 1: Tulis test integrasi penuh builder→view (akan gagal — section belum ada di template)**
 
 ```php
 <?php
@@ -233,12 +233,12 @@ it('never renders Keterangan Kelulusan for KB/TPA/SPS at tingkat B, even on Gena
 
 Simpan sebagai `tests/Feature/Akademik/RaporPdfPaudKelulusanTest.php`.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal (section belum ada)**
+- [x] **Step 2: Jalankan test, pastikan gagal (section belum ada)**
 
 Run: `php artisan test tests/Feature/Akademik/RaporPdfPaudKelulusanTest.php`
 Expected: FAIL pada semua test yang mengharapkan `'Keterangan Kelulusan'`/`'Keterangan Kenaikan Kelas'` muncul (section belum ada sama sekali di template — assertion `toContain` gagal). Test kedua (`'does not render ... on Ganjil semester'`) mungkin PASS kebetulan (krn section memang belum ada), itu tidak masalah — akan tetap PASS setelah fix krn section-nya memang tidak boleh muncul di kondisi itu.
 
-- [ ] **Step 3: Tambah section ke `paud.blade.php`**
+- [x] **Step 3: Tambah section ke `paud.blade.php`**
 
 Baca dulu isi lengkap `resources/views/pdf/rapor/paud.blade.php` (73 baris) untuk konfirmasi baris terakhir sebelum `@include('pdf.rapor._tanda-tangan')` — lalu tambahkan section baru TEPAT SEBELUM baris `@include('pdf.rapor._tanda-tangan')`:
 
@@ -253,17 +253,17 @@ Baca dulu isi lengkap `resources/views/pdf/rapor/paud.blade.php` (73 baris) untu
 
 Baris lain di file (Capaian Pembelajaran, Pertumbuhan Fisik, Catatan Wali Kelas) TIDAK BERUBAH.
 
-- [ ] **Step 4: Jalankan test, pastikan semua lulus**
+- [x] **Step 4: Jalankan test, pastikan semua lulus**
 
 Run: `php artisan test tests/Feature/Akademik/RaporPdfPaudKelulusanTest.php`
 Expected: PASS (6 test — 3 test biasa + 1 test dataset `->with(['KB','TPA','SPS'])` yang jalan 3x)
 
-- [ ] **Step 5: Jalankan test existing `RaporPdfDataBuilderTest.php` — pastikan render PAUD lama tidak rusak**
+- [x] **Step 5: Jalankan test existing `RaporPdfDataBuilderTest.php` — pastikan render PAUD lama tidak rusak**
 
 Run: `php artisan test tests/Feature/Akademik/RaporPdfDataBuilderTest.php`
 Expected: PASS (semua test existing, termasuk `'renders paud and sd blade templates successfully'`)
 
-- [ ] **Step 6: Lint & commit**
+- [x] **Step 6: Lint & commit**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: exit sukses
@@ -284,7 +284,7 @@ git commit -m "feat(akademik): tambah section Keterangan Kelulusan ke rapor PDF 
 
 **PENTING**: task ini TIDAK mengubah logic/behavior apa pun — murni komentar kode + dokumentasi. Tidak ada step TDD (tidak ada test baru yang gagal/lulus, krn tidak ada behavior yang berubah).
 
-- [ ] **Step 1: Update komentar di `AcademicProfile.php`**
+- [x] **Step 1: Update komentar di `AcademicProfile.php`**
 
 Ganti baris 30-34 (blok komentar sebelum `$bentukPendidikan === 'SLB' => 'sd',`):
 
@@ -296,7 +296,7 @@ Ganti baris 30-34 (blok komentar sebelum `$bentukPendidikan === 'SLB' => 'sd',`)
                 $bentukPendidikan === 'SLB' => 'sd',
 ```
 
-- [ ] **Step 2: Update komentar dataset test di `RaporPdfDataBuilderTest.php`**
+- [x] **Step 2: Update komentar dataset test di `RaporPdfDataBuilderTest.php`**
 
 Ganti baris 18-19 (komentar sebelum `['SLB', 'pdf.rapor.sd'],`):
 
@@ -306,22 +306,22 @@ Ganti baris 18-19 (komentar sebelum `['SLB', 'pdf.rapor.sd'],`):
     ['SLB', 'pdf.rapor.sd'],
 ```
 
-- [ ] **Step 3: Jalankan test yang disentuh, pastikan tetap lulus (murni komentar, tidak ada perubahan assertion)**
+- [x] **Step 3: Jalankan test yang disentuh, pastikan tetap lulus (murni komentar, tidak ada perubahan assertion)**
 
 Run: `php artisan test tests/Feature/Akademik/RaporPdfDataBuilderTest.php`
 Expected: PASS (semua test, sama seperti Task 2 Step 5 — tidak ada regresi)
 
-- [ ] **Step 4: Grep akhir — pastikan tidak ada komentar basi lain yang terlewat**
+- [x] **Step 4: Grep akhir — pastikan tidak ada komentar basi lain yang terlewat**
 
 Run: `grep -rn "Sprint 5\|regression compatibility" app/ tests/ --include="*.php"`
 Expected: 0 hasil (kalau ada sisa, STOP dan laporkan ke user — berarti ada lokasi lain yang tidak tercatat di spec)
 
-- [ ] **Step 5: Jalankan full test suite tanpa filter**
+- [x] **Step 5: Jalankan full test suite tanpa filter**
 
 Run: `php artisan test --compact`
 Expected: 0 failed. Catat angka pasti (passed/skipped/assertions).
 
-- [ ] **Step 6: Update `PETA_PENGEMBANGAN.md`**
+- [x] **Step 6: Update `PETA_PENGEMBANGAN.md`**
 
 Di bagian `## 🔵 Roadmap Kurikulum Dinamis`, ubah baris tabel Prioritas #3 kolom "Status" dari `Belum Ada` menjadi:
 
@@ -335,7 +335,7 @@ Tambahkan paragraf baru setelah tabel prioritas:
 **Prioritas #3 SELESAI (27 Agustus 2026)**: `isTingkatAkhir()` sekarang mengenali TK tingkat B sbg tingkat akhir (Keterangan Kelulusan PAUD) — `KB`/`TPA`/`SPS` sengaja tetap tidak pernah dianggap tingkat akhir. Ikut ditemukan & diperbaiki gap yang lebih mendasar: template PDF `paud.blade.php` ternyata belum pernah punya section "Keterangan Kelulusan"/"Keterangan Kenaikan Kelas" sama sekali (beda dari SD/SMP-SMA/SMK) — sudah ditambahkan. Keputusan SLB tetap pakai template SD diformalkan jadi final (bukan fallback compatibility). Dieksekusi lewat `.agents/plans/2026-08-27-akademik-kelulusan-paud-slb.md`.
 ```
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Domains/Akademik/Services/AcademicProfile.php tests/Feature/Akademik/RaporPdfDataBuilderTest.php PETA_PENGEMBANGAN.md
