@@ -1,11 +1,14 @@
 <?php
 
+use App\Domains\Akademik\Actions\Penilaian\CreateKomponenPenilaianAction;
+use App\Domains\Akademik\DataTransferObjects\KomponenPenilaianData;
 use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -538,8 +541,8 @@ it('preserves the selected tahun ajaran and semester after a validation failure 
 
     $followUp = $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'));
 
-    $followUp->assertSee('value="' . $tahunAjaran->id . '" selected', false);
-    $followUp->assertSee('value="' . $semester->id . '" selected', false);
+    $followUp->assertSee('value="'.$tahunAjaran->id.'" selected', false);
+    $followUp->assertSee('value="'.$semester->id.'" selected', false);
 });
 
 it('rejects storing a new assessment component when total bobot exceeds 100 percent in Admin portal', function () {
@@ -571,4 +574,133 @@ it('rejects storing a new assessment component when total bobot exceeds 100 perc
 
     $response->assertStatus(422)->assertJson(['status' => 'error']);
     expect(KomponenPenilaian::where('kode', 'K-2')->exists())->toBeFalse();
+});
+
+function actingAsYayasanKomponenManager(Yayasan $yayasan): User
+{
+    Permission::firstOrCreate(['name' => 'komponen-penilaian.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_admin_komponen', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['komponen-penilaian.kelola']);
+
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    return $manager;
+}
+
+it('recomputes lembaga_id to follow the new semester for elemen_cp when a yayasan actor moves it across lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+    $elemenCp = ElemenCp::factory()->create();
+
+    $createAction = app(CreateKomponenPenilaianAction::class);
+    $komponen = $createAction->execute(new KomponenPenilaianData(
+        subjekType: 'elemen_cp',
+        subjekId: $elemenCp->id,
+        semesterId: $semesterA->id,
+        kode: 'ECP-1',
+        deskripsi: 'Deskripsi awal',
+        bobot: 100,
+        kktp: null,
+        kktpMinimal: null,
+        assessmentType: null,
+    ));
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
+        'subjek_type' => 'elemen_cp',
+        'subjek_id' => $elemenCp->id,
+        'semester_id' => $semesterB->id,
+        'kode' => 'ECP-1',
+        'deskripsi' => 'Deskripsi awal',
+        'bobot' => 100,
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    $komponen->refresh();
+    expect($komponen->semester_id)->toBe($semesterB->id);
+    expect($komponen->lembaga_id)->toBe($lembagaB->id);
+});
+
+it('recomputes lembaga_id to follow the new semester for mata_pelajaran when a yayasan actor moves it across lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $mapelB = MataPelajaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+
+    $createAction = app(CreateKomponenPenilaianAction::class);
+    $komponen = $createAction->execute(new KomponenPenilaianData(
+        subjekType: 'mata_pelajaran',
+        subjekId: $mapelA->id,
+        semesterId: $semesterA->id,
+        kode: 'MP-1',
+        deskripsi: 'Deskripsi awal',
+        bobot: 100,
+        kktp: null,
+        kktpMinimal: null,
+        assessmentType: null,
+    ));
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapelB->id,
+        'semester_id' => $semesterB->id,
+        'kode' => 'MP-1',
+        'deskripsi' => 'Deskripsi awal',
+        'bobot' => 100,
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    $komponen->refresh();
+    expect($komponen->subjek_id)->toBe($mapelB->id);
+    expect($komponen->semester_id)->toBe($semesterB->id);
+    expect($komponen->lembaga_id)->toBe($lembagaB->id);
+});
+
+it('does not touch lembaga_id when updating a komponen without changing semester_id', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $createAction = app(CreateKomponenPenilaianAction::class);
+    $komponen = $createAction->execute(new KomponenPenilaianData(
+        subjekType: 'mata_pelajaran',
+        subjekId: $mapel->id,
+        semesterId: $semester->id,
+        kode: 'MP-STABIL',
+        deskripsi: 'Deskripsi awal',
+        bobot: 50,
+        kktp: null,
+        kktpMinimal: null,
+        assessmentType: null,
+    ));
+    $lembagaIdSebelum = $komponen->lembaga_id;
+
+    $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'deskripsi' => 'Deskripsi diubah tanpa ganti semester',
+        'bobot' => 50,
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    $komponen->refresh();
+    expect($komponen->deskripsi)->toBe('Deskripsi diubah tanpa ganti semester');
+    expect($komponen->lembaga_id)->toBe($lembagaIdSebelum);
 });

@@ -6,6 +6,7 @@ namespace App\Domains\Akademik\Actions\Penilaian;
 
 use App\Domains\Akademik\DataTransferObjects\UpdateKomponenPenilaianData;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Models\Semester;
 use Illuminate\Validation\ValidationException;
 
 final class UpdateKomponenPenilaianAction
@@ -21,6 +22,7 @@ final class UpdateKomponenPenilaianAction
             $komponen->subjek_type = $data->subjekType;
             $komponen->subjek_id = $data->subjekId;
             $komponen->semester_id = $data->semesterId;
+            $komponen->lembaga_id = Semester::findOrFail($data->semesterId)->lembaga_id;
             if ($data->assessmentType !== null) {
                 $komponen->assessment_type = $data->assessmentType;
             }
