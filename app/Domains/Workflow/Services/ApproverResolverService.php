@@ -30,8 +30,15 @@ class ApproverResolverService
 
         if ($step->scope_level === 'lembaga') {
             $targetLembagaId = $request->approvable?->lembaga_id ?? $request->requester?->lembaga_id;
-            if ($targetLembagaId && $user->lembaga_id && (int) $targetLembagaId !== (int) $user->lembaga_id) {
-                return false;
+
+            if ($targetLembagaId !== null) {
+                $effectiveLembagaId = $user->widestScopeLevel() === 'yayasan'
+                    ? session('active_lembaga_id')
+                    : $user->lembaga_id;
+
+                if ($effectiveLembagaId === null || (int) $targetLembagaId !== (int) $effectiveLembagaId) {
+                    return false;
+                }
             }
         }
 
@@ -46,6 +53,7 @@ class ApproverResolverService
             $siswa = $request->requester;
             if ($siswa && method_exists($siswa, 'kelasAktif')) {
                 $kelas = $siswa->kelasAktif();
+
                 return $kelas && $kelas->wali_kelas_guru_id === $user->guru?->id;
             }
         }
