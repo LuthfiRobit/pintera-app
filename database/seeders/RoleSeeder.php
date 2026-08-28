@@ -168,7 +168,7 @@ class RoleSeeder extends Seeder
             }
 
             if (in_array($name, ['pegawai_lembaga', 'pegawai_yayasan'], true)) {
-                $role->givePermissionTo(['kasus.view', 'kehadiran-sdm.lihat-qr-sendiri', 'kehadiran-sdm.izin.ajukan', 'kehadiran-sdm.izin.lihat-sendiri']);
+                $role->givePermissionTo(['kehadiran-sdm.lihat-qr-sendiri', 'kehadiran-sdm.izin.ajukan', 'kehadiran-sdm.izin.lihat-sendiri']);
             }
 
             if ($name === 'admin_sdm') {

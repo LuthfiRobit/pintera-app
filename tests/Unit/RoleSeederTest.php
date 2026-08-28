@@ -144,3 +144,67 @@ it('seeds operator_akademik with the correct 54 academic-management permissions'
     expect($operatorAkademik->hasPermissionTo('rpp.kelola'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('rpp.verify'))->toBeTrue();
 });
+
+it('gives guru EXACTLY the self-service baseline permission set', function () {
+    (new RoleSeeder)->run();
+
+    $guru = Role::where('name', 'guru')->firstOrFail();
+    expect($guru->permissions()->pluck('name')->sort()->values()->all())->toBe([
+        'asesmen.kelola',
+        'kasus.ajukan',
+        'kasus.view',
+        'kehadiran-sdm.izin.ajukan',
+        'kehadiran-sdm.izin.lihat-sendiri',
+        'kehadiran-sdm.lihat-qr-sendiri',
+        'komponen-penilaian.kelola-sendiri',
+        'presensi.isi',
+        'rapor.ajukan',
+        'rapor.input-wali',
+        'rpp.kelola',
+        'rpp.view',
+    ]);
+});
+
+it('gives pegawai_lembaga EXACTLY the self-service baseline permission set (no kasus.view)', function () {
+    (new RoleSeeder)->run();
+
+    $role = Role::where('name', 'pegawai_lembaga')->firstOrFail();
+    expect($role->permissions()->pluck('name')->sort()->values()->all())->toBe([
+        'kehadiran-sdm.izin.ajukan',
+        'kehadiran-sdm.izin.lihat-sendiri',
+        'kehadiran-sdm.lihat-qr-sendiri',
+    ]);
+});
+
+it('gives pegawai_yayasan EXACTLY the self-service baseline permission set (no kasus.view)', function () {
+    (new RoleSeeder)->run();
+
+    $role = Role::where('name', 'pegawai_yayasan')->firstOrFail();
+    expect($role->permissions()->pluck('name')->sort()->values()->all())->toBe([
+        'kehadiran-sdm.izin.ajukan',
+        'kehadiran-sdm.izin.lihat-sendiri',
+        'kehadiran-sdm.lihat-qr-sendiri',
+    ]);
+});
+
+it('gives siswa EXACTLY the self-service baseline permission set', function () {
+    (new RoleSeeder)->run();
+
+    $siswa = Role::where('name', 'siswa')->firstOrFail();
+    expect($siswa->permissions()->pluck('name')->sort()->values()->all())->toBe([
+        'kasus.view',
+    ]);
+});
+
+it('gives orang_tua EXACTLY the self-service baseline permission set', function () {
+    (new RoleSeeder)->run();
+
+    $orangTua = Role::where('name', 'orang_tua')->firstOrFail();
+    expect($orangTua->permissions()->pluck('name')->sort()->values()->all())->toBe([
+        'kasus.ajukan',
+        'kasus.consent',
+        'kasus.view',
+        'keuangan.akses',
+    ]);
+});
+
