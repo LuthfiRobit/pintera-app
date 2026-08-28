@@ -125,7 +125,7 @@ Urutan pengecekan (identitas → grup tampilan personal):
 ],
 ```
 
-**(e) Grup `Akademik`** — hapus item RPP (baris 37 lama), TIDAK ADA perubahan lain. Item RPP untuk kepsek/wakasek_kurikulum/operator_akademik (yang tidak `hasRole('guru')`) tetap tampil di sini via kondisi `! Auth::user()->hasRole('guru') && Auth::user()->can('rpp.view')`.
+**(e) Grup `Akademik`** — hapus definisi RPP lama yang unconditional (`Auth::user()->can('rpp.view') ? [...] : null` di baris 37), GANTI dengan definisi baru berguard `! Auth::user()->hasRole('guru') && Auth::user()->can('rpp.view')`. TIDAK ADA perubahan lain di grup ini. Hasilnya: kepsek/wakasek_kurikulum/operator_akademik (yang tidak `hasRole('guru')`) tetap melihat RPP di `Akademik` seperti sebelumnya; guru (yang RPP-nya sudah dipindah ke `Ruang Guru` di §2.2(a)) tidak lagi melihatnya di sini — mencegah duplikat.
 
 **(f) Grup `Pendampingan`** — hapus item Kasus Pendampingan self-service (baris 49 lama), sisakan HANYA item staf (`admin.kasus.*`): Triase Kasus, Log Akses Klinis, Kasus Terhapus. TIDAK ADA perubahan guard pada ketiganya.
 
@@ -163,7 +163,7 @@ View `resources/views/shared/dalam-pengembangan.blade.php` — tampilan sederhan
 
 **4.5** — Siswa (`hasRole('siswa')`) melihat grup `Ruang Siswa` dengan 3 item mengarah ke `route('dalam-pengembangan', ['fitur' => ...])`, masing-masing menampilkan judul fitur yang sesuai di halaman tujuan.
 
-**4.6** — Orang tua (`orangTua !== null`) melihat grup `Ruang Orang Tua` dengan 3 item "Dalam Pengembangan" + 3 item keuangan (dipindah dari grup `Keuangan` lama) — grup `Keuangan` (domain) TIDAK lagi menampilkan item-item ini untuk siapa pun.
+**4.6** — Orang tua (`orangTua !== null`) melihat grup `Ruang Orang Tua` dengan 3 item "Dalam Pengembangan" + 3 item keuangan (dipindah dari grup `Keuangan` lama). Item self-service orang tua (Dompet & Tagihan Saya/Tagihan/Riwayat) TIDAK LAGI DIDEFINISIKAN di grup `Keuangan` (domain) sama sekali — ditegaskan sebagai fakta struktur kode (definisi itemnya sudah dipindah, bukan diduplikasi), bukan klaim runtime "tidak pernah muncul untuk kombinasi role apa pun di masa depan".
 
 **4.7 — Regresi kritis (Kasus Pendampingan, guard `viewAny`)**:
 - Guru/siswa/orang_tua baseline (dari `RoleSeeder` sungguhan, TANPA pernah jadi konselor) → TETAP melihat menu Kasus Pendampingan di grup masing-masing (cabang `can('kasus.view')` di `viewAny()` tetap `true`, TIDAK BERUBAH dari sebelumnya).
