@@ -271,4 +271,3 @@ it('rejects printing a pdf when semester_id belongs to a different tahun ajaran 
         ->get(route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semesterLain->id]))
         ->assertNotFound();
 });
-
