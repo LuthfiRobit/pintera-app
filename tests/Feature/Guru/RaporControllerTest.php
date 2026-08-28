@@ -271,3 +271,21 @@ it('rejects printing a pdf when semester_id belongs to a different tahun ajaran 
         ->get(route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semesterLain->id]))
         ->assertNotFound();
 });
+
+it('rejects saving catatan wali kelas when semester_id belongs to a different tahun ajaran than the siswa kelas', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+
+    $this->actingAs($guruUser)
+        ->put(route('guru.rapor.catatan.update', $siswa), [
+            'semester_id' => $semesterLain->id,
+            'catatan_sikap' => 'Percobaan mismatch semester.',
+        ])
+        ->assertNotFound();
+
+    $this->assertDatabaseMissing('catatan_wali_kelas', [
+        'siswa_id' => $siswa->id,
+        'semester_id' => $semesterLain->id,
+    ]);
+});

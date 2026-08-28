@@ -160,6 +160,9 @@ class RaporController extends BaseController
         abort_if($guru === null, 403);
         abort_unless($siswa->kelas && $siswa->kelas->wali_kelas_guru_id === $guru->id, 403);
 
+        $semester = Semester::find($request->validated('semester_id'));
+        abort_if($semester === null || $semester->tahun_ajaran_id !== $siswa->kelas->tahun_ajaran_id, 404);
+
         $this->simpanCatatanWaliKelasAction->execute(
             CatatanWaliKelasData::fromArray([...$request->validated(), 'siswa_id' => $siswa->id])
         );
