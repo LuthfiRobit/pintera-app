@@ -17,6 +17,20 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
+    Route::get('/dalam-pengembangan', function (\Illuminate\Http\Request $request) {
+        $labelMap = [
+            'nilai-rapor' => 'Nilai & Rapor',
+            'jadwal-pelajaran' => 'Jadwal Pelajaran',
+            'presensi-saya' => 'Presensi Saya',
+            'nilai-anak' => 'Nilai Anak',
+            'jadwal-anak' => 'Jadwal Anak',
+            'riwayat-izin-sakit-anak' => 'Riwayat Izin/Sakit Anak',
+        ];
+        $fitur = $labelMap[$request->query('fitur')] ?? 'Fitur Ini';
+
+        return view('shared.dalam-pengembangan', ['fitur' => $fitur]);
+    })->name('dalam-pengembangan');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::patch('/profile/notification-preference', [ProfileController::class, 'updateNotificationPreference'])->name('profile.notification-preference.update');
