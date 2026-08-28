@@ -9,6 +9,8 @@ use App\Domains\Kasus\Models\KasusTugasSubmission;
 use App\Models\Siswa;
 use App\Models\User;
 
+use App\Models\Scopes\TenantScope;
+
 final class KasusPolicy
 {
     /**
@@ -68,5 +70,30 @@ final class KasusPolicy
     public function kelolaSesiTugas(User $user, Kasus $kasus): bool
     {
         return $this->isKonselor($user, $kasus);
+    }
+
+    /**
+     * Gate collection-level untuk kasus.index. True kalau user punya capability
+     * kasus.view (lewat role apa pun — guru/siswa/orang_tua baseline, atau
+     * guru_bk/wakasek_kesiswaan/operator_akademik assignment eksplisit) ATAU
+     * minimal satu Kasus punya konselor_karyawan_id = karyawan user ini —
+     * fakta domain, bukan role/permission. withoutGlobalScope dipakai sengaja
+     * karena karyawan pool level-yayasan (lembaga_id null) valid menangani
+     * kasus lintas lembaga dalam yayasannya; validitas hubungan tetap dijaga
+     * oleh konselor_karyawan_id itu sendiri, bukan TenantScope. Tidak ada
+     * filter status — assignment konselor bersifat historis mengikuti
+     * perilaku ListKasusUntukUserAction yang sudah ada.
+     */
+    public function viewAny(User $user): bool
+    {
+        if ($user->can('kasus.view')) {
+            return true;
+        }
+
+        $karyawanId = $user->karyawan()->withoutGlobalScope(TenantScope::class)->first()?->id;
+
+        return $karyawanId !== null && Kasus::withoutGlobalScope(TenantScope::class)
+            ->where('konselor_karyawan_id', $karyawanId)
+            ->exists();
     }
 }

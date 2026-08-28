@@ -2,6 +2,7 @@
 
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Policies\KasusPolicy;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
@@ -9,6 +10,8 @@ use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Models\Yayasan;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Tests\TestCase;
@@ -133,3 +136,73 @@ it('resolves KasusPolicy via auto-discovery or explicit registration', function 
     $kasus = Kasus::factory()->create();
     expect(Gate::getPolicyFor($kasus))->toBeInstanceOf(KasusPolicy::class);
 });
+
+it('viewAny returns true when user has kasus.view capability, regardless of konselor history', function () {
+    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'guru_bk', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['kasus.view']);
+
+    $lembaga = Lembaga::factory()->create();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('guru_bk');
+
+    expect((new KasusPolicy)->viewAny($user))->toBeTrue();
+});
+
+it('viewAny returns true when karyawan is konselor on at least one kasus, without kasus.view capability', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::withoutGlobalScopes()->create([
+        'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool',
+        'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
+    ]);
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+        'status' => App\Domains\Kasus\Enums\StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+    ]);
+
+    expect((new KasusPolicy)->viewAny($user))->toBeTrue();
+});
+
+it('viewAny returns false for karyawan with no kasus.view capability and never assigned as konselor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
+    Karyawan::withoutGlobalScopes()->create([
+        'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id,
+        'jenis_karyawan_id' => $jenis->id, 'nama' => 'Satpam',
+        'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
+    ]);
+
+    expect((new KasusPolicy)->viewAny($user))->toBeFalse();
+});
+
+it('viewAny returns true for karyawan whose only konselor assignment is on a Selesai kasus (no status filter)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::withoutGlobalScopes()->create([
+        'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool Selesai',
+        'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
+    ]);
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+        'status' => App\Domains\Kasus\Enums\StatusKasus::Selesai, 'konselor_karyawan_id' => $karyawan->id,
+    ]);
+
+    expect((new KasusPolicy)->viewAny($user))->toBeTrue();
+});
+
