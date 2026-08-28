@@ -28,7 +28,7 @@
 - Consumes: `App\Models\Semester::findOrFail(int $id): Semester` (sudah dipakai identik di `CreateKomponenPenilaianAction.php:44`). `App\Domains\Akademik\DataTransferObjects\UpdateKomponenPenilaianData` sudah ada dengan properti `?string $subjekType`, `?int $subjekId`, `?int $semesterId`, `?string $assessmentType`, `?float $bobot`, `string $kode`, `?string $deskripsi`, `?string $kktp`, `?float $kktpMinimal` — tidak berubah.
 - Produces: `UpdateKomponenPenilaianAction::execute()` tetap `(KomponenPenilaian $komponen, UpdateKomponenPenilaianData $data): KomponenPenilaian` — signature tidak berubah, hanya efek sampingnya (kini juga menulis `lembaga_id`) yang bertambah.
 
-- [ ] **Step 1: Baca baseline file yang akan diubah**
+- [x] **Step 1: Baca baseline file yang akan diubah**
 
 File `app/Domains/Akademik/Actions/Penilaian/UpdateKomponenPenilaianAction.php` saat ini (baseline, JANGAN diasumsikan — baca ulang file di repo sebelum edit untuk memastikan tidak ada drift):
 
@@ -89,7 +89,7 @@ final class UpdateKomponenPenilaianAction
 
 Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutkan.
 
-- [ ] **Step 2: Tulis test yang gagal (regresi negatif dulu, paling mudah dibuktikan)**
+- [x] **Step 2: Tulis test yang gagal (regresi negatif dulu, paling mudah dibuktikan)**
 
 Tambahkan helper `actingAsYayasanKomponenManager()` dan 3 test baru di akhir `tests/Feature/Admin/KomponenPenilaianCrudTest.php` (setelah test terakhir, baris 575). Helper mengikuti pola `actingAsPlatformKurikulumManager()` di `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php:113-125`: aktor `scope_level: 'yayasan'`, `lembaga_id` NULL, `yayasan_id` terisi, TANPA `session('active_lembaga_id')` (mode "Semua Lembaga" pada `TenantScope`).
 
@@ -238,7 +238,7 @@ public function __construct(
 
 Di ketiga pemanggilan `new \App\Domains\Akademik\DataTransferObjects\KomponenPenilaianData(...)` pada Step 2, ganti `bobot: 100.0` → `bobot: 100`, `bobot: 50.0` → `bobot: 50`, dan `kktpMinimal: null` tetap `null` (sudah benar). Gunakan named arguments persis seperti signature di atas.
 
-- [ ] **Step 3: Jalankan test untuk memastikan 2 test reproduksi GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan 2 test reproduksi GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --filter="recomputes lembaga_id" --compact`
 Expected: FAIL — `expect($komponen->lembaga_id)->toBe($lembagaB->id)` gagal karena `lembaga_id` aktual masih `$lembagaA->id`.
@@ -247,7 +247,7 @@ Run juga test regresi negatif untuk memastikan itu PASS dari awal (karena `semes
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --filter="does not touch lembaga_id" --compact`
 Expected: PASS (ini bukan bukti bug, hanya baseline aman).
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
 Edit `app/Domains/Akademik/Actions/Penilaian/UpdateKomponenPenilaianAction.php`:
 
@@ -310,14 +310,14 @@ final class UpdateKomponenPenilaianAction
 
 Satu-satunya perubahan dari baseline: `use App\Models\Semester;` ditambah, dan baris `$komponen->lembaga_id = Semester::findOrFail($data->semesterId)->lembaga_id;` ditambah di dalam blok `if`. Tidak ada baris lain yang berubah.
 
-- [ ] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (baseline + 3 test baru), termasuk 4 test update existing di baris 254-352 yang harus tetap PASS tanpa modifikasi assertion.
 
 Jika ada test lain di file ini yang FAIL, cek dulu apakah kegagalan itu terkait fix (misal ada test lain yang secara implisit mengasumsikan `lembaga_id` TIDAK berubah saat `semester_id` berubah lewat action ini) sebelum melanjutkan — laporkan sebagai temuan BLOCKED jika ditemukan, jangan diam-diam mengubah assertion test existing untuk membuatnya lolos.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/Penilaian/UpdateKomponenPenilaianAction.php tests/Feature/Admin/KomponenPenilaianCrudTest.php
