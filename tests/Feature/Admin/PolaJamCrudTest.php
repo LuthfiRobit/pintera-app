@@ -1,11 +1,11 @@
 <?php
 
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -428,7 +428,7 @@ it('displays pola jam index with eager loaded kelas and tahun ajaran without n+1
     $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'status_aktif' => true]);
     $manager = actingAsPolaJamManager($lembaga);
     $manager->roles->first()->givePermissionTo(Permission::firstOrCreate(['name' => 'kelas.edit', 'guard_name' => 'web']));
-    
+
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Reguler']);
     $kelas = Kelas::factory()->create([
         'lembaga_id' => $lembaga->id,
@@ -438,7 +438,7 @@ it('displays pola jam index with eager loaded kelas and tahun ajaran without n+1
     ]);
 
     $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
-    
+
     $response->assertOk();
     $response->assertSee('Pola Reguler');
     $response->assertSee('VII-A');
@@ -452,7 +452,7 @@ it('duplicates a pola jam along with all its jam pelajaran slots without copying
 
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Reguler']);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'pola_jam_id' => $pola->id]);
-    
+
     JamPelajaran::create([
         'pola_jam_id' => $pola->id,
         'hari' => 'senin',
@@ -529,12 +529,10 @@ it('renders timetable matrix headers and slot chips on pola jam index', function
     ]);
 
     $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
-    
+
     $response->assertOk();
     $response->assertSee('Matriks Mingguan');
     $response->assertSee('Jam Ke- / Waktu');
     $response->assertSee('Kegiatan Literasi');
     $response->assertSee('08:45 - 09:20');
 });
-
-
