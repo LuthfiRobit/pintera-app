@@ -25,7 +25,11 @@ Telah diimplementasikan komponen **Bottom Navigation Bar (Mobile/Tablet)** denga
    - Menambahkan `@include('layouts.bottom-nav')` di dalam root Alpine `div`.
    - Menambahkan clearance kondisional pada area `<main>`: `{{ $hasBottomNav ? 'pb-28 lg:pb-6' : '' }}` untuk mencegah konten dan tombol submit tertutup bar.
 3. **Pengujian Komprehensif `tests/Feature/BottomNavTest.php`**:
-   - 5 skenario Feature Test: render Guru (5 slot + QR FAB), render Orang Tua (5 flat slots), render Siswa (5 flat slots), eksklusi akun non-personal, dan validasi active state query parameter `fitur`.
+   - 6 skenario Feature Test: render Guru (5 slot + QR FAB), render Orang Tua (5 flat slots), render Siswa (5 flat slots), eksklusi akun non-personal, active state query parameter `fitur`, dan identitas logo topbar mobile.
+4. **Penyelarasan Mobile Topbar (`resources/views/layouts/topbar.blade.php`)**:
+   - Menghilangkan tombol burger hamburger yang redundan di mobile untuk pengguna yang memiliki Bottom Nav (Guru, Orang Tua, Siswa).
+   - Menampilkan logo dan teks aplikasi **[P] Pintera** di pojok kiri atas topbar mobile untuk memberikan pengalaman visual *native app* yang elegan dan konsisten dengan tombol Slot 5 (Menu) di Bottom Nav.
+   - Tombol toggle collapse tetap dipertahankan di desktop (`lg:flex`), dan tombol burger tetap aktif bagi akun administratif/non-personal yang tidak memiliki Bottom Nav.
 
 ---
 
