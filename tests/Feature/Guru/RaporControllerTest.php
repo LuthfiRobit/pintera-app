@@ -231,3 +231,44 @@ it('rejects printing a pdf for a siswa the guru is not wali kelas of', function 
         ->get(route('guru.rapor.cetak', ['siswa' => $siswaLain->id, 'semester_id' => $semester->id]))
         ->assertForbidden();
 });
+
+it('rejects opening the edit form when semester_id belongs to a different tahun ajaran than the siswa kelas', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+
+    $this->actingAs($guruUser)
+        ->get(route('guru.rapor.catatan.edit', ['siswa' => $siswa->id, 'semester_id' => $semesterLain->id]))
+        ->assertNotFound();
+});
+
+it('rejects generating narasi when semester_id belongs to a different tahun ajaran than the siswa kelas', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+
+    $this->actingAs($guruUser)
+        ->post(route('guru.rapor.catatan.generate-narasi', ['siswa' => $siswa->id, 'semester_id' => $semesterLain->id]))
+        ->assertNotFound();
+});
+
+it('rejects submitting a pengajuan when semester_id belongs to a different tahun ajaran than the kelas', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+
+    $this->actingAs($guruUser)
+        ->post(route('guru.rapor.pengajuan.submit'), ['kelas_id' => $kelas->id, 'semester_id' => $semesterLain->id])
+        ->assertNotFound();
+});
+
+it('rejects printing a pdf when semester_id belongs to a different tahun ajaran than the siswa kelas', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLain->id]);
+
+    $this->actingAs($guruUser)
+        ->get(route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semesterLain->id]))
+        ->assertNotFound();
+});
+

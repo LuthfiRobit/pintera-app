@@ -130,6 +130,7 @@ class RaporController extends BaseController
         abort_if($semesterId === 0, 404, 'Konteks semester wajib disertakan untuk membuka form catatan wali kelas.');
         $semester = Semester::find($semesterId);
         abort_if($semester === null, 404);
+        abort_if($semester->tahun_ajaran_id !== $siswa->kelas->tahun_ajaran_id, 404);
 
         $catatan = CatatanWaliKelas::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->first()
             ?? new CatatanWaliKelas(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]);
@@ -185,6 +186,7 @@ class RaporController extends BaseController
 
         $semester = Semester::find((int) $request->query('semester_id'));
         abort_if($semester === null, 404);
+        abort_if($semester->tahun_ajaran_id !== $siswa->kelas->tahun_ajaran_id, 404);
 
         $narasi = $this->generateNarasiPerkembanganAction->execute($siswa, $siswa->kelas, $semester);
 
@@ -202,6 +204,7 @@ class RaporController extends BaseController
 
         $semester = Semester::find($request->validated('semester_id'));
         abort_if($semester === null, 404);
+        abort_if($semester->tahun_ajaran_id !== $kelas->tahun_ajaran_id, 404);
 
         $this->submitPengajuanRaporAction->execute($kelas, $semester, $request->user());
 
@@ -220,6 +223,7 @@ class RaporController extends BaseController
 
         $semester = Semester::find((int) $request->query('semester_id'));
         abort_if($semester === null, 404);
+        abort_if($semester->tahun_ajaran_id !== $siswa->kelas->tahun_ajaran_id, 404);
 
         $data = $this->raporPdfDataBuilder->build($siswa, $semester);
         $template = $this->raporPdfDataBuilder->templateUntukJenjang($siswa->kelas->lembaga->bentuk_pendidikan);
