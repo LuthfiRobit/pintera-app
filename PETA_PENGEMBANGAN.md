@@ -2,7 +2,7 @@
 
 > **Cermin dari Artifact**: https://claude.ai/code/artifact/ee114dde-1058-4bff-a43a-be904f90d667
 > Baca file ini dulu sebelum fetch artifact via network — hanya fetch ulang kalau ada perubahan besar yang belum tercermin di sini (dan update file ini + artifact bersamaan setelahnya).
-> Terakhir disinkronkan: 2026-08-26.
+> Terakhir disinkronkan: 2026-08-28.
 
 Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/direfaktor, dan yang belum ada sama sekali. Disusun dari pembacaan kode & spec/plan langsung, bukan asumsi.
 
@@ -278,7 +278,7 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
 *Satu hal sudah beres nyata (WhatsApp Gateway). Sisanya investasi diferensiasi jangka menengah-panjang.*
 
 - **WhatsApp Gateway** — ✅ Ada & nyata (Fonnte API sungguhan).
-- **Multi-kurikulum** (K13/Kurmer/Cambridge/Pesantren) — Belum Ada. Besar, Prioritas Rendah kecuali target pasar spesifik.
+- **Multi-kurikulum** (K13/Kurmer/Cambridge/Pesantren) — **Parsial** (koreksi 28 Agustus 2026: K13 & Kurikulum Merdeka SUDAH ADA lewat `KurikulumAssignment`/`KurikulumFramework` — lihat Prioritas #1 Roadmap Kurikulum Dinamis di atas, SELESAI 27 Agustus 2026). Sisa cakupan hanya Cambridge/Pesantren. Besar, Prioritas Rendah kecuali target pasar spesifik.
 - **Integrasi Dapodik/EMIS/Dukcapil/BPJS** — Parsial (cuma field `kode_dapodik`, bukan integrasi API). Prioritas Rendah–Sedang.
 - **AI Asisten** — Belum Ada, butuh kematangan data dulu. Prioritas Rendah untuk saat ini.
 - **White-label** — Belum Ada, butuh Manajemen Tenant dulu. Prioritas Rendah–Sedang.
@@ -309,7 +309,7 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
 
 **Fase 9 — Refactor UI kosmetik** (aman dicicil kapan saja): Halaman lama Pembayaran/Tagihan/SPMB-Pendaftaran/Tahun Ajaran create.
 
-**Fase 10 — Diferensiator SaaS jangka panjang** (paling akhir secara sengaja): Multi-kurikulum, Integrasi Dapodik/EMIS/dst, AI Asisten, White-label, Offline Mode, Public API.
+**Fase 10 — Diferensiator SaaS jangka panjang** (paling akhir secara sengaja): Cambridge/Pesantren (K13 & Kurikulum Merdeka sudah ada, lihat Fase 0/Prioritas #1), Integrasi Dapodik/EMIS/dst, AI Asisten, White-label, Offline Mode, Public API.
 
 ---
 
