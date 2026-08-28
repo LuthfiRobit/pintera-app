@@ -260,7 +260,23 @@ class UserController extends BaseController
             'roles.*' => ['exists:roles,name', Rule::notIn(['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan'])],
         ]);
 
-        $selectedRoles = Role::whereIn('name', $data['roles'])->get();
+        if (in_array('guru', $data['roles'], true)) {
+            return back()->withErrors(['roles' => 'Role Guru harus dibuat melalui Admin → Guru agar profil Guru dibuat dan tertaut dengan benar.'])->withInput();
+        }
+
+        // Form ini tidak pernah menampilkan checkbox 'guru' (lihat assignableRoles()),
+        // jadi request TIDAK BISA merepresentasikan niat "cabut role guru". Kalau user
+        // sudah punya 'guru', paksa tetap ikut disertakan -- baik ke perhitungan
+        // carrier maupun ke syncRoles() -- supaya form fungsional ini tidak pernah
+        // diam-diam mencabut identitas guru. Lifecycle 'guru' HANYA dikelola lewat
+        // Admin -> Guru (GuruController), tidak pernah lewat sini, baik untuk
+        // menambah maupun mencabut.
+        $rolesToPersist = $data['roles'];
+        if ($user->hasRole('guru')) {
+            $rolesToPersist[] = 'guru';
+        }
+
+        $selectedRoles = Role::whereIn('name', $rolesToPersist)->get();
         $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
         foreach ($selectedRoles as $selectedRole) {
             if ($this->scopeRank($selectedRole->scope_level) > $actingRank) {
@@ -275,7 +291,7 @@ class UserController extends BaseController
         ]);
 
         $baselineRole = $this->baselineCarrierRole($selectedRoles, $user->lembaga_id);
-        $user->syncRoles(array_filter([...$data['roles'], $baselineRole]));
+        $user->syncRoles(array_filter([...$rolesToPersist, $baselineRole]));
 
         return redirect()->route('admin.users.index')->with('status', 'Akun staff berhasil diperbarui.');
     }

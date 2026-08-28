@@ -512,6 +512,52 @@ it('rejects creating a user when guru is combined with another role', function (
     expect(User::withoutGlobalScopes()->where('email', 'percobaangurukombinasi@example.test')->exists())->toBeFalse();
 });
 
+it('rejects adding the guru role to an existing user via update', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'guru_bk', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    $staff = User::factory()->create(['name' => 'Staf BK', 'email' => 'stafbk@example.test', 'lembaga_id' => $lembaga->id]);
+    $staff->assignRole('guru_bk');
+
+    $this->actingAs($manager)->put(route('admin.users.update', $staff), [
+        'name' => 'Staf BK',
+        'email' => 'stafbk@example.test',
+        'roles' => ['guru_bk', 'guru'],
+    ])->assertSessionHasErrors('roles');
+
+    $errors = session('errors');
+    expect($errors->get('roles')[0])->toBe('Role Guru harus dibuat melalui Admin → Guru agar profil Guru dibuat dan tertaut dengan benar.');
+
+    $fresh = $staff->fresh();
+    expect($fresh->hasRole('guru_bk'))->toBeTrue();
+    expect($fresh->hasRole('guru'))->toBeFalse();
+});
+
+it('preserves the guru role and its pegawai_lembaga carrier when updating with unrelated roles, since the guru checkbox no longer exists', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    $guru = User::factory()->create(['name' => 'Guru Rangkap', 'email' => 'gururangkap@example.test', 'lembaga_id' => $lembaga->id]);
+    $guru->assignRole(['guru', 'pegawai_lembaga']);
+
+    $this->actingAs($manager)->put(route('admin.users.update', $guru), [
+        'name' => 'Guru Rangkap',
+        'email' => 'gururangkap@example.test',
+        'roles' => ['wakasek_kurikulum'],
+    ])->assertRedirect(route('admin.users.index'));
+
+    $fresh = $guru->fresh();
+    expect($fresh->hasRole('guru'))->toBeTrue();
+    expect($fresh->hasRole('pegawai_lembaga'))->toBeTrue();
+    expect($fresh->hasRole('wakasek_kurikulum'))->toBeTrue();
+});
+
+
 
 
 
