@@ -47,13 +47,12 @@ class PolaJamController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
         ]);
 
-        $lembagaId = null;
-        if ($request->user()->widestScopeLevel() === 'yayasan') {
-            $lembagaId = session('active_lembaga_id');
+        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+            ? session('active_lembaga_id')
+            : $request->user()->lembaga_id;
 
-            if ($lembagaId === null) {
-                return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat pola jam.'])->withInput();
-            }
+        if ($lembagaId === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat pola jam.'])->withInput();
         }
 
         $action->execute(new PolaJamData(nama: $data['nama'], lembagaId: $lembagaId));

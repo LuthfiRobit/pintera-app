@@ -40,7 +40,59 @@ it('creates a pola jam', function () {
         'nama' => 'Kelas Tinggi 4-6',
     ])->assertRedirect(route('admin.pola-jam.index'));
 
-    expect(PolaJam::where('nama', 'Kelas Tinggi 4-6')->exists())->toBeTrue();
+    $polaJam = PolaJam::where('nama', 'Kelas Tinggi 4-6')->first();
+    expect($polaJam)->not->toBeNull();
+    expect($polaJam->lembaga_id)->toBe($lembaga->id);
+});
+
+it('lets the lembaga-scoped manager see the pola jam they just created in the index', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    $this->actingAs($manager)->post(route('admin.pola-jam.store'), [
+        'nama' => 'Kelas Rendah 1-3',
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertSee('Kelas Rendah 1-3');
+});
+
+it('creates a pola jam with the active lembaga for a yayasan-scoped manager', function () {
+    Permission::firstOrCreate(['name' => 'pola-jam.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_create_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->post(route('admin.pola-jam.store'), ['nama' => 'Pola Yayasan'])
+        ->assertRedirect(route('admin.pola-jam.index'));
+
+    $polaJam = PolaJam::where('nama', 'Pola Yayasan')->first();
+    expect($polaJam)->not->toBeNull();
+    expect($polaJam->lembaga_id)->toBe($lembaga->id);
+});
+
+it('rejects creating a pola jam for a yayasan-scoped manager with no active lembaga', function () {
+    Permission::firstOrCreate(['name' => 'pola-jam.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_no_active_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)
+        ->post(route('admin.pola-jam.store'), ['nama' => 'Pola Tanpa Lembaga'])
+        ->assertSessionHasErrors('lembaga_id');
+
+    expect(PolaJam::where('nama', 'Pola Tanpa Lembaga')->exists())->toBeFalse();
 });
 
 it('adds a jam pelajaran slot to an existing pola jam', function () {
