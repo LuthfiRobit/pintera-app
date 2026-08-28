@@ -8,6 +8,7 @@ use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
+use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
@@ -23,9 +24,10 @@ function siapkanWaliKelasUser(): array
     $guruUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $guruUser->assignRole($role);
     $guru = Guru::factory()->create(['user_id' => $guruUser->id, 'lembaga_id' => $lembaga->id]);
-    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'wali_kelas_guru_id' => $guru->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'wali_kelas_guru_id' => $guru->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
-    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
 
     return [$guruUser, $lembaga, $siswa, $semester];
 }
