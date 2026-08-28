@@ -16,16 +16,40 @@
         : collect();
     $activeSiswaId = session('active_siswa_id');
     $activeSiswaId = $activeSiswaId ?? (isset($resolvedActiveSiswaId) ? $resolvedActiveSiswaId : null);
+    $hasBottomNav = Auth::check() && (
+        Auth::user()->hasRole('guru') || 
+        Auth::user()->hasRole('siswa') || 
+        Auth::user()->orangTua !== null
+    );
 @endphp
 
 <header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-300 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">
-    <button
-        @click="window.innerWidth >= 1024 ? sidebarCollapsed = !sidebarCollapsed : sidebarOpen = true"
-        class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50"
-        aria-label="Buka/tutup sidebar"
-    >
-        <x-icon name="menu" class="h-5 w-5" />
-    </button>
+    @if ($hasBottomNav)
+        <div class="flex items-center gap-2.5 lg:hidden">
+            <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 font-display text-base font-bold text-white shadow-sm">
+                {{ Str::of(config('app.name', 'P'))->substr(0, 1) }}
+            </span>
+            <div class="leading-tight">
+                <p class="font-display text-base font-bold text-gray-900">{{ config('app.name', 'Pintera') }}</p>
+            </div>
+        </div>
+
+        <button
+            @click="sidebarCollapsed = !sidebarCollapsed"
+            class="hidden h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50 lg:flex"
+            aria-label="Buka/tutup sidebar"
+        >
+            <x-icon name="menu" class="h-5 w-5" />
+        </button>
+    @else
+        <button
+            @click="window.innerWidth >= 1024 ? sidebarCollapsed = !sidebarCollapsed : sidebarOpen = true"
+            class="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-lg border border-gray-200 text-gray-500 transition hover:bg-gray-50"
+            aria-label="Buka/tutup sidebar"
+        >
+            <x-icon name="menu" class="h-5 w-5" />
+        </button>
+    @endif
 
     <div class="hidden min-w-0 flex-1 max-w-[320px] items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-400 sm:flex">
         <x-icon name="search" class="h-[15px] w-[15px] shrink-0" />

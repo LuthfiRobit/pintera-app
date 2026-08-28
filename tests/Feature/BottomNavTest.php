@@ -113,3 +113,20 @@ it('correctly matches active state for placeholder routes based on fitur query p
     $response->assertDontSee('data-active="presensi-saya"', false);
     $response->assertDontSee('data-active="nilai-rapor"', false);
 });
+
+it('shows Pintera brand logo in topbar on mobile for personal accounts and burger button for non-personal accounts', function () {
+    $guru = siapkanUserPersonal('guru');
+
+    $responseGuru = $this->actingAs($guru)->get(route('dashboard'));
+    $responseGuru->assertOk();
+    $responseGuru->assertSee('lg:hidden', false);
+    $responseGuru->assertSee(config('app.name', 'Pintera'));
+
+    $admin = User::factory()->create();
+    $adminRole = Role::firstOrCreate(['name' => 'platform_super_admin', 'guard_name' => 'web'], ['scope_level' => 'platform']);
+    $admin->assignRole($adminRole);
+
+    $responseAdmin = $this->actingAs($admin)->get(route('dashboard'));
+    $responseAdmin->assertOk();
+    $responseAdmin->assertSee('aria-label="Buka/tutup sidebar"', false);
+});
