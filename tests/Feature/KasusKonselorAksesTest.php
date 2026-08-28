@@ -155,3 +155,131 @@ it('404s a guru_bk who is not assigned to the kasus', function () {
 
     $this->actingAs($unrelatedKonselorUser)->get(route('kasus.show', $kasus))->assertNotFound();
 });
+
+function buatKaryawanPoolViaRoleSeederAsli(Yayasan $yayasan): array
+{
+    (new \Database\Seeders\RoleSeeder)->run();
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('pegawai_yayasan');
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::withoutGlobalScopes()->create([
+        'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool Asli',
+        'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
+    ]);
+
+    return [$user, $karyawan];
+}
+
+it('lets a real RoleSeeder-baseline pool karyawan (no manual permission grant) access all 8 kasus endpoints once assigned as konselor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $siswaUser->id]);
+    [$konselorUser, $karyawan] = buatKaryawanPoolViaRoleSeederAsli($yayasan);
+
+    $kasus = Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+        'status' => StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+    ]);
+    $tugas = \App\Domains\Kasus\Models\KasusTugas::create([
+        'kasus_id' => $kasus->id, 'judul' => 'Tugas', 'instruksi' => 'Kerjakan',
+        'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(),
+        'batas_selesai_pada' => now()->addDays(3)->toDateString(), 'status' => 'ditugaskan',
+    ]);
+
+    $this->actingAs($konselorUser);
+
+    $this->get(route('kasus.index'))->assertOk();
+    $this->get(route('kasus.show', $kasus))->assertOk();
+    $this->post(route('kasus.sesi.store', $kasus), [
+        'sesi' => [['dijadwalkan_pada' => now()->addDay()->format('Y-m-d H:i:s'), 'peserta' => 'siswa', 'lokasi_mode' => 'Ruang BK']],
+    ])->assertRedirect(route('kasus.show', $kasus));
+    $this->postJson(route('kasus.tugas.preview', $kasus), [
+        'judul' => 'Preview', 'instruksi' => 'x', 'frekuensi' => 'sekali',
+        'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(3)->toDateString(),
+    ])->assertOk();
+    $this->post(route('kasus.tugas.store', $kasus), [
+        'judul' => 'Tugas Baru', 'instruksi' => 'x', 'frekuensi' => 'sekali',
+        'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(3)->toDateString(),
+    ])->assertRedirect(route('kasus.show', $kasus));
+    $this->patch(route('kasus.tugas.selesai', [$kasus, $tugas]))->assertRedirect(route('kasus.show', $kasus));
+    $this->post(route('kasus.evaluasi.store', $kasus), [
+        'tanggal' => now()->format('Y-m-d H:i:s'), 'catatan' => 'Evaluasi', 'keputusan' => 'lanjut',
+    ])->assertRedirect(route('kasus.show', $kasus));
+});
+
+it('lets a yayasan-pool konselor open their assigned kasus but not an unrelated kasus in a sibling lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswaX = Siswa::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $siswaY = Siswa::factory()->create(['lembaga_id' => $lembagaB->id]);
+    [$konselorUser, $karyawan] = buatKaryawanPoolViaRoleSeederAsli($yayasan);
+
+    $kasusX = Kasus::create([
+        'siswa_id' => $siswaX->id, 'lembaga_id' => $lembagaA->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Kasus X.',
+        'status' => StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+    ]);
+    $kasusY = Kasus::create([
+        'siswa_id' => $siswaY->id, 'lembaga_id' => $lembagaB->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Kasus Y, tidak ditugaskan ke karyawan ini.',
+        'status' => StatusKasus::Diajukan,
+    ]);
+
+    $this->actingAs($konselorUser);
+    $this->get(route('kasus.index'))->assertOk();
+    $this->get(route('kasus.show', $kasusX))->assertOk();
+    $this->get(route('kasus.show', $kasusY))->assertNotFound();
+});
+
+it('403s a pegawai_lembaga karyawan who was never assigned as a konselor on any kasus', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    (new \Database\Seeders\RoleSeeder)->run();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('pegawai_lembaga');
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
+    Karyawan::withoutGlobalScopes()->create([
+        'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id,
+        'jenis_karyawan_id' => $jenis->id, 'nama' => 'Satpam',
+        'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
+    ]);
+
+    $this->actingAs($user)->get(route('kasus.index'))->assertForbidden();
+});
+
+it('lets a karyawan whose only konselor assignment is on a Selesai kasus still open kasus.index', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    [$konselorUser, $karyawan] = buatKaryawanPoolViaRoleSeederAsli($yayasan);
+
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Kasus lama, sudah selesai.',
+        'status' => StatusKasus::Selesai, 'konselor_karyawan_id' => $karyawan->id,
+    ]);
+
+    $this->actingAs($konselorUser)->get(route('kasus.index'))->assertOk();
+});
+
+it('lets a karyawan with kasus.view granted via an explicit extra role open kasus.index even with zero konselor history', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    (new \Database\Seeders\RoleSeeder)->run();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('pegawai_lembaga');
+    $user->assignRole('guru_bk');
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
+    Karyawan::withoutGlobalScopes()->create([
+        'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id,
+        'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Guru BK Tambahan',
+        'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
+    ]);
+
+    $this->actingAs($user)->get(route('kasus.index'))->assertOk();
+});
+
