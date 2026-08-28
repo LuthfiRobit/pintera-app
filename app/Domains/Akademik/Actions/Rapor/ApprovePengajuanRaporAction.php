@@ -17,15 +17,18 @@ final class ApprovePengajuanRaporAction
 {
     public function __construct(
         private readonly ProcessApprovalAction $processApprovalAction,
-    ) {
-    }
+    ) {}
 
     /**
      * @throws ValidationException
      */
     public function execute(PengajuanRapor $pengajuanRapor, User $user, ApprovalAction $action, ?string $catatan = null): PengajuanRapor
     {
-        if ((int) $pengajuanRapor->lembaga_id !== (int) $user->lembaga_id) {
+        $effectiveLembagaId = $user->widestScopeLevel() === 'yayasan'
+            ? session('active_lembaga_id')
+            : $user->lembaga_id;
+
+        if ($effectiveLembagaId === null || (int) $pengajuanRapor->lembaga_id !== (int) $effectiveLembagaId) {
             throw ValidationException::withMessages([
                 'approval' => 'Anda tidak berwenang menyetujui pengajuan rapor lembaga lain.',
             ]);
