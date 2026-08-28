@@ -2,7 +2,7 @@
 
 > **Cermin dari Artifact**: https://claude.ai/code/artifact/ee114dde-1058-4bff-a43a-be904f90d667
 > Baca file ini dulu sebelum fetch artifact via network — hanya fetch ulang kalau ada perubahan besar yang belum tercermin di sini (dan update file ini + artifact bersamaan setelahnya).
-> Terakhir disinkronkan: 2026-08-28.
+> Terakhir disinkronkan: 2026-08-28 (bug "profil belum tertaut" ditutup total, +backlog kandidat PHP Backed Enum).
 
 Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/direfaktor, dan yang belum ada sama sekali. Disusun dari pembacaan kode & spec/plan langsung, bukan asumsi.
 
@@ -12,18 +12,17 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ---
 
-## 🔴 Temuan Bug Prioritas Tinggi (26 Agustus 2026)
+## 🟢 Temuan Bug Prioritas Tinggi — SELESAI TOTAL (28 Agustus 2026)
 
-**Akun staf lembaga via form Pengguna generik jadi "profil belum tertaut"** — ✅ **Bagian dashboard SUDAH DIPERBAIKI 26 Agustus 2026.**
-`Admin → Pengguna → Tambah` membiarkan admin mencentang role fungsional lembaga (Kepala Sekolah, Admin Administrasi, Bendahara Lembaga, Operator Akademik, Admin SDM, Admin Sarpras, dll) TANPA pernah membuat baris `Guru` atau `Karyawan` yang menyertainya (`UserController::store()` nol pemanggilan `Guru::create`/`Karyawan::create`). Ini masih **bug produk nyata** yang belum tertutup — form Pengguna generik masih bisa membuat akun cacat kalau admin tidak lewat jalur resmi (`Admin → Guru`/`Admin → Karyawan`).
+**Akun staf lembaga via form Pengguna generik jadi "profil belum tertaut"** — ✅ **SELESAI TOTAL 28 Agustus 2026** (dashboard sudah fix 26 Agustus, root cause di `UserController` fix 28 Agustus).
 
-**Yang sudah diperbaiki**: `DashboardController` (branch `pegawai_lembaga`/`pegawai_yayasan`, `DashboardController.php:249`) sekarang resolve profil pegawai lewat `Guru` ATAU `Karyawan` — sama seperti pola `resolvePegawai()` di `EmployeeQrCodeController`/`PengajuanIzinCutiController`. Akun sarpras.sd@demo.test (profilnya di `Guru`, jenis_ptk=tenaga_administrasi) sekarang tampil benar, bukan lagi "belum tertaut". Ikut ketemu & diperbaiki 2 bug turunan: `PenugasanShift` query hardcode morph type ke `Karyawan::class` (sekarang dinamis `$karyawan::class`), dan `Karyawan::class` dipakai tanpa `use` import (diam-diam resolve ke namespace controller yang salah, bikin filter shift selalu kosong tanpa error).
+**Root cause yang sudah diperbaiki (28 Agustus 2026, branch `rbac-v2`)**: `UserController::assignableRoles()` sekarang mengeluarkan role `guru` dari daftar yang bisa dipilih di form Pengguna generik — role ini HANYA bisa didapat lewat `Admin → Guru` (`GuruController::store()`, sudah transactional: `User`+`Guru`+role sekaligus). `store()`/`update()` menolak eksplisit kalau `roles` mengandung `guru` (pesan mengarahkan ke `Admin → Guru`). Fix kritis tambahan di `update()`: role `guru` milik user existing dipaksa tetap disertakan ke `syncRoles()` (`$rolesToPersist`) supaya admin yang sekadar menambah role fungsional lain tidak diam-diam mencabut identitas guru + carrier `pegawai_lembaga`-nya. `guru_bk`/`wali_kelas`/8 role administratif lain SENGAJA tidak ikut dibatasi — audit kode (`grep hasRole(...)`, 0 hasil untuk semuanya) membuktikan tidak satu pun butuh profil `Guru`/`Karyawan`. Full suite 2426 passed, 0 failed.
 
-**Keterbatasan yang masih ada**: `DashboardStatsService::statistikSisaKuotaCuti()` masih Karyawan-only (skema `KuotaCutiConfig` sudah siapkan kolom `jenis_ptk` untuk jalur Guru, tapi service-nya belum diimplementasikan) — staf ber-profil Guru akan selalu tampil "Sisa Kuota Cuti: Belum dikonfigurasi", bukan crash, tapi juga bukan data nyata. Effort Kecil kalau mau dilengkapi.
+**Yang sudah diperbaiki sebelumnya (26 Agustus 2026)**: `DashboardController` (branch `pegawai_lembaga`/`pegawai_yayasan`, `DashboardController.php:249`) resolve profil pegawai lewat `Guru` ATAU `Karyawan`. 2 bug turunan ikut fix: `PenugasanShift` query hardcode morph type, `Karyawan::class` tanpa `use` import.
 
-**Yang BELUM diperbaiki**: root cause di `UserController::store()` sendiri — form Pengguna generik masih bisa dipakai untuk membuat akun ber-role fungsional lembaga tanpa profil kepegawaian apa pun. Rekomendasi tetap BUKAN auto-create profil (butuh NIK asli + jenis_karyawan_id yang tidak tersedia di form ini, berisiko fabrikasi data), tapi guardrail/validasi di form tsb — belum dikerjakan.
+**Keterbatasan yang masih ada (tidak berubah)**: `DashboardStatsService::statistikSisaKuotaCuti()` masih Karyawan-only — staf ber-profil Guru akan selalu tampil "Sisa Kuota Cuti: Belum dikonfigurasi". Effort Kecil kalau mau dilengkapi.
 
-Lokasi: `app/Http/Controllers/Admin/DashboardController.php:248-295` (sudah fix), `app/Http/Controllers/Admin/UserController.php::store()` (belum fix).
+Lokasi: `app/Http/Controllers/Admin/DashboardController.php:248-295`, `app/Http/Controllers/Admin/UserController.php` (`assignableRoles()`, `store()`, `update()`).
 
 **Peta tabel PTK vs Karyawan** (referensi arsitektur):
 | Jenis staf | Tabel profil benar | Cara buat |
@@ -248,7 +247,13 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
 - **Broadcast WA massal ke wali murid** — Belum Ada, tapi gateway Fonnte sudah real & jalan — tinggal UI di atasnya. **Effort kecil, dampak tinggi.**
 
 ### Utang Arsitektur & UI (bukan fitur baru)
-- 🔴 **Bug "profil belum tertaut"** — lihat bagian atas file ini.
+- 🟢 **Bug "profil belum tertaut"** — SELESAI TOTAL 28 Agustus 2026, lihat bagian atas file ini.
+- **Kolom `enum()` tanpa PHP Backed Enum** — Parsial, ditemukan lewat scan penuh 28 Agustus 2026 (dipicu audit `guru.jenis_ptk` di kerja RBAC v2). 35 kolom `enum()` sudah dapat cast Enum PHP (`Kasus.status`, `Siswa.status`, `MataPelajaran.*`, dll), tapi ~30 kolom lain masih dibiarkan string mentah di 66 kolom `enum()` yang ada di seluruh migration. Kandidat prioritas tinggi (dipakai luas sebagai literal string di banyak file, rawan typo):
+  - **`tagihan.status`/`pembayaran.status`/`cicilan.status`** (domain Keuangan) — **26 file** menyentuh literal ini (`TagihanGenerator`, `PembayaranService`, `AutoAllocationEngine`, `ProcessBriVaPaymentAction`, dll). Paling berisiko — typo di sini bisa salah alokasi uang. Kandidat #1.
+  - `guru.jenis_ptk` — 6+ file (`KonselorAllocationResolver`, `DashboardController`, `AttendanceConfigurationController`, dll).
+  - `pendaftaran.status` (alur SPMB inti), `karyawan.status_aktif`/`guru.status_aktif`, `kasus.tingkat_urgensi` (tetangga `Kasus.status` yang sudah dapat enum, tapi field ini belum), `bri_virtual_accounts.status`/`bri_qris_payments.status`/`manual_payment_requests.status` (integrasi eksternal, state-machine).
+  - Kandidat lemah (skip — dipakai sempit, biner, risiko rendah): `jenis_kelamin` (L/P, 3 tabel), `semester.nama`, `lembaga.status_sekolah`/`naungan`/`akreditasi`, `siswa_orang_tua.hubungan`, `kasus_consent.*`, `notification_logs.*`.
+  - Belum ada spec/plan — murni catatan referensi, brainstorming terpisah kalau mau dikerjakan. Prioritas Rendah–Sedang (bukan bug, murni type-safety/maintainability).
 - **Serap Data Induk blast-radius sempit** (`JenisKaryawanMaster`, `JabatanTambahanMaster`, `MataPelajaran`) — ✅ Selesai 23 Agustus 2026 di `refactor-v1`.
   - Sisanya TETAP di `app/Models/` selamanya (keputusan arsitektur §3.2): `Lembaga` (~382 pemakai), `Kelas`, `Siswa`, `TahunAjaran`, `Semester`, `WhatsAppTemplate` — dipakai lintas domain, blast radius terlalu besar untuk dipindah.
 - **Migrasi domain Keuangan** ke `app/Domains/Keuangan` — ✅ Selesai 24 Agustus 2026 (SP1-5 semua, full test suite hijau tiap sub-project).
