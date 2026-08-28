@@ -98,5 +98,42 @@ it('does not duplicate RPP into Akademik for a guru account, but still shows it 
     $responseKepsek->assertSee('Perangkat Ajar (RPP)');
 });
 
+it('shows Kasus Pendampingan under Kehadiran Saya (not Pendampingan) for a pool konselor karyawan without kasus.view', function () {
+    (new \Database\Seeders\RoleSeeder)->run();
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $user = User::factory()->create(['lembaga_id' => null]);
+    $user->assignRole('pegawai_yayasan');
+    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = \App\Models\Karyawan::withoutGlobalScopes()->create([
+        'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool',
+        'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
+    ]);
+    Kasus::create([
+        'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
+        'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
+        'status' => StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertSeeInOrder(['Kehadiran Saya', 'Kasus Pendampingan']);
+});
+
+it('does not show QR Kehadiran or Izin/Cuti twice for a guru account', function () {
+    $guru = siapkanGuruUntukSidebar();
+
+    $response = $this->actingAs($guru)->get(route('dashboard'));
+
+    $response->assertOk();
+    expect(substr_count($response->getContent(), 'QR Kehadiran Saya'))->toBe(1);
+    expect(substr_count($response->getContent(), 'Izin/Cuti Saya'))->toBe(1);
+});
+
+
 
 
