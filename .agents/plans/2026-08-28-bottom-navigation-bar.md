@@ -28,7 +28,7 @@
 - Consumes: Models `User`, `Guru`, `OrangTua`, `Siswa`, `Lembaga`, `Role`, `Permission`.
 - Produces: Test assertions for role-based bottom nav rendering, slot routes, FAB geometry classes, aria-labels, active states, and exclusion of non-personal roles.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```php
 <?php
@@ -149,7 +149,7 @@ it('correctly matches active state for placeholder routes based on fitur query p
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `php artisan test tests/Feature/BottomNavTest.php`
 Expected: FAIL (Bottom nav markup does not exist yet).
@@ -165,7 +165,7 @@ Expected: FAIL (Bottom nav markup does not exist yet).
 - Consumes: `Auth::user()`, route helpers, query helper `request()->query('fitur')`.
 - Produces: Accessible 5-slot `<nav id="bottom-nav">` with Icon-First Floating Pill design.
 
-- [ ] **Step 1: Write the Blade component template**
+- [x] **Step 1: Write the Blade component template**
 
 ```blade
 @php
@@ -398,7 +398,7 @@ Expected: FAIL (Bottom nav markup does not exist yet).
 - Consumes: Component `layouts.bottom-nav`.
 - Produces: Conditional clearance `pb-28 lg:pb-6` on `<main>` and `@include('layouts.bottom-nav')` inside root Alpine context.
 
-- [ ] **Step 1: Update `resources/views/layouts/app.blade.php`**
+- [x] **Step 1: Update `resources/views/layouts/app.blade.php`**
 
 ```blade
             <div class="flex min-w-0 flex-1 flex-col">
@@ -428,7 +428,7 @@ Expected: FAIL (Bottom nav markup does not exist yet).
             @include('layouts.bottom-nav')
 ```
 
-- [ ] **Step 2: Run test suite to verify tests pass**
+- [x] **Step 2: Run test suite to verify tests pass**
 
 Run: `php artisan test tests/Feature/BottomNavTest.php`
 Expected: PASS (all 5 tests green).
@@ -440,17 +440,17 @@ Expected: PASS (all 5 tests green).
 **Files:**
 - Test: All Feature and Unit tests (`php artisan test --compact`)
 
-- [ ] **Step 1: Run complete test suite**
+- [x] **Step 1: Run complete test suite**
 
 Run: `php artisan test --compact`
 Expected: 2437+ passed, 0 failed.
 
-- [ ] **Step 2: Run code formatting**
+- [x] **Step 2: Run code formatting**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: Clean / Formatted.
 
-- [ ] **Step 3: Commit changes**
+- [x] **Step 3: Commit changes**
 
 ```bash
 git add resources/views/layouts/bottom-nav.blade.php resources/views/layouts/app.blade.php tests/Feature/BottomNavTest.php
