@@ -8,6 +8,8 @@ use App\Domains\Akademik\Actions\Jadwal\CreateJadwalPelajaranAction;
 use App\Domains\Akademik\Actions\Jadwal\DuplicateJadwalAction;
 use App\Domains\Akademik\Actions\Jadwal\UpdateJadwalPelajaranAction;
 use App\Domains\Akademik\DataTransferObjects\JadwalPelajaranData;
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Sarpras\Models\Ruangan;
 use App\Enums\Hari;
 use App\Http\Requests\Akademik\DuplicateJadwalRequest;
@@ -15,9 +17,7 @@ use App\Http\Requests\Akademik\StoreJadwalPelajaranRequest;
 use App\Http\Requests\Akademik\UpdateJadwalPelajaranRequest;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Scopes\TenantScope;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -83,7 +83,7 @@ class JadwalPelajaranController extends BaseController
                 ->where('is_aktif', true)
                 ->where(function ($q) use ($targetLembagaId) {
                     $q->where('lembaga_id', $targetLembagaId)
-                      ->orWhere('is_shared', true);
+                        ->orWhere('is_shared', true);
                 })
                 ->orderBy('nama_ruangan')
                 ->get()
@@ -156,7 +156,7 @@ class JadwalPelajaranController extends BaseController
             ->where('is_aktif', true)
             ->where(function ($q) use ($targetLembagaId) {
                 $q->where('lembaga_id', $targetLembagaId)
-                  ->orWhere('is_shared', true);
+                    ->orWhere('is_shared', true);
             })
             ->orderBy('nama_ruangan')
             ->get();
@@ -194,6 +194,7 @@ class JadwalPelajaranController extends BaseController
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['mata_pelajaran_id' => [$msg]]], 422);
                 }
+
                 return back()->withErrors(['mata_pelajaran_id' => $msg])->withInput();
             }
         }
@@ -203,6 +204,7 @@ class JadwalPelajaranController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['guru_id' => [$msg]]], 422);
             }
+
             return back()->withErrors(['guru_id' => $msg])->withInput();
         }
 
@@ -211,7 +213,20 @@ class JadwalPelajaranController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['semester_id' => [$msg]]], 422);
             }
+
             return back()->withErrors(['semester_id' => $msg])->withInput();
+        }
+
+        if (! empty($data['ruangan_id'])) {
+            $ruangan = Ruangan::withoutGlobalScope(TenantScope::class)->find((int) $data['ruangan_id']);
+            if (! $ruangan || (! $ruangan->is_shared && $ruangan->lembaga_id !== $kelas->lembaga_id)) {
+                $msg = 'Ruangan harus berasal dari lembaga yang sama dengan kelas ini, atau berupa ruangan bersama.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['ruangan_id' => [$msg]]], 422);
+                }
+
+                return back()->withErrors(['ruangan_id' => $msg])->withInput();
+            }
         }
 
         $ruanganId = ! empty($data['ruangan_id']) ? (int) $data['ruangan_id'] : $kelas->ruangan_id;
@@ -245,21 +260,22 @@ class JadwalPelajaranController extends BaseController
                 $berhasil[] = $this->formatSlot($jamPelajaran);
             } catch (ValidationException $e) {
                 $errorMessage = collect($e->errors())->flatten()->first() ?? 'Bentrok slot/ruangan/guru';
-                $dilewati[] = $this->formatSlot($jamPelajaran) . " ({$errorMessage})";
+                $dilewati[] = $this->formatSlot($jamPelajaran)." ({$errorMessage})";
             }
         }
 
         if (empty($berhasil)) {
-            $msg = 'Semua slot yang dipilih dilewati: ' . implode('; ', $dilewati) . '.';
+            $msg = 'Semua slot yang dipilih dilewati: '.implode('; ', $dilewati).'.';
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['jam_pelajaran_id' => [$msg]]], 422);
             }
+
             return back()->withErrors(['jam_pelajaran_id' => $msg])->withInput();
         }
 
-        $status = 'Jadwal pelajaran berhasil ditambahkan untuk ' . implode(', ', $berhasil) . '.';
+        $status = 'Jadwal pelajaran berhasil ditambahkan untuk '.implode(', ', $berhasil).'.';
         if (! empty($dilewati)) {
-            $status .= ' Dilewati: ' . implode('; ', $dilewati) . '.';
+            $status .= ' Dilewati: '.implode('; ', $dilewati).'.';
         }
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -289,7 +305,7 @@ class JadwalPelajaranController extends BaseController
             ->where('is_aktif', true)
             ->where(function ($q) use ($targetLembagaId) {
                 $q->where('lembaga_id', $targetLembagaId)
-                  ->orWhere('is_shared', true);
+                    ->orWhere('is_shared', true);
             })
             ->orderBy('nama_ruangan')
             ->get();
@@ -325,6 +341,7 @@ class JadwalPelajaranController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['guru_id' => [$msg]]], 422);
             }
+
             return back()->withErrors(['guru_id' => $msg])->withInput();
         }
 
@@ -335,7 +352,20 @@ class JadwalPelajaranController extends BaseController
                 if ($request->ajax() || $request->wantsJson()) {
                     return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['mata_pelajaran_id' => [$msg]]], 422);
                 }
+
                 return back()->withErrors(['mata_pelajaran_id' => $msg])->withInput();
+            }
+        }
+
+        if (! empty($data['ruangan_id'])) {
+            $ruangan = Ruangan::withoutGlobalScope(TenantScope::class)->find((int) $data['ruangan_id']);
+            if (! $ruangan || (! $ruangan->is_shared && $ruangan->lembaga_id !== $kelas->lembaga_id)) {
+                $msg = 'Ruangan harus berasal dari lembaga yang sama dengan kelas ini, atau berupa ruangan bersama.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['ruangan_id' => [$msg]]], 422);
+                }
+
+                return back()->withErrors(['ruangan_id' => $msg])->withInput();
             }
         }
 
@@ -357,6 +387,7 @@ class JadwalPelajaranController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return back()->withErrors($e->errors())->withInput();
         }
 
@@ -420,6 +451,7 @@ class JadwalPelajaranController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $e->getMessage(), 'errors' => $e->errors()], 422);
             }
+
             return redirect()->back()->withErrors($e->errors());
         }
 
@@ -447,7 +479,7 @@ class JadwalPelajaranController extends BaseController
 
     private function formatSlot(JamPelajaran $jamPelajaran): string
     {
-        return $jamPelajaran->hari->label() . ' ' . $jamPelajaran->label;
+        return $jamPelajaran->hari->label().' '.$jamPelajaran->label;
     }
 
     private function jamPelajaranPerHari(Kelas $kelas): Collection
