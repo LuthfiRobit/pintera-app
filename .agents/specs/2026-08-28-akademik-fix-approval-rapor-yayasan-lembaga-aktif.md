@@ -1,5 +1,7 @@
 # Fix: Waka Kurikulum Level Yayasan Tidak Bisa Approve/Verify Rapor — Design Spec
 
+> **DIGANTIKAN (superseded)** oleh `.agents/specs/2026-08-28-workflow-fix-approval-lembaga-privilege-escalation.md`. Saat menulis plan untuk spec ini, ditemukan bahwa approval Rapor memakai Workflow engine generik (`app/Domains/Workflow/`) yang punya bug fail-open lebih serius (`ApproverResolverService::checkRoleApprover()`, Critical) — fix Bug 3 di bawah ini TETAP BENAR dan tetap jadi bagian dari fix gabungan itu, tapi jangan eksekusi spec ini sendirian tanpa 2 fix lain (`ApproverResolverService` + `RoleController`) di spec pengganti. JANGAN buat plan/kickoff dari file spec ini — pakai spec pengganti di atas.
+
 **Tanggal**: 2026-08-28
 **Branch**: `akademik-v2`
 **Konteks**: Temuan #3 dari putaran audit ke-2 (workflow approval PengajuanRapor), sebelumnya sengaja dipisah dari siklus fix PolaJam/CatatanWaliKelas karena butuh keputusan desain dari user.
