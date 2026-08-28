@@ -181,7 +181,17 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Handoff Log: `.agents/logs/2026-08-28-akademik-fix-polajam-null-lembaga-dan-catatan-wali-semester.md`
   - Test: 26 passed di `PolaJamCrudTest.php`, 22 passed di `RaporControllerTest.php`.
 
-> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, Fix Komponen Penilaian, Fix Ruangan Jadwal Pelajaran, Fix Rapor & Kenaikan Kelas, Fix PolaJam & Catatan Wali Kelas)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
+- **Fix Privilege Escalation Lintas-Lembaga pada Approval Workflow Generik — ✅ SELESAI (28 Agustus 2026)**:
+  1. **Fail-closed `ApproverResolverService::checkRoleApprover()`** (`79fd78a5`): Guard fail-open diganti `effectiveLembagaId` pattern — aktor yayasan tanpa `active_lembaga_id` tidak bisa approve/verify untuk lembaga manapun. Backward-compatible: `$targetLembagaId === null` (workflow tanpa konteks tenant) tetap lolos.
+  2. **Guard `scope_level` di `RoleController::update()`** (`06c9fd83`): Menambah pengecekan apakah role dipakai sebagai approver di `WorkflowStep` dengan `scope_level` berbeda sebelum mutasi diizinkan — menutup jalur privilege escalation via UI Admin.
+  3. **Perbaiki guard lembaga di `ApprovePengajuanRaporAction`/`VerifyPengajuanRaporAction`** (`965da69f`): Ganti `$user->lembaga_id` mentah dengan `effectiveLembagaId` pattern — waka kurikulum yayasan dengan lembaga aktif benar kini bisa verify/approve rapor. Guard lokal dipertahankan sebagai defense-in-depth.
+  - Spec: `.agents/specs/2026-08-28-workflow-fix-approval-lembaga-privilege-escalation.md`
+  - Plan: `.agents/plans/2026-08-28-workflow-fix-approval-lembaga-privilege-escalation.md`
+  - Handoff Log: `.agents/logs/2026-08-28-workflow-fix-approval-lembaga-privilege-escalation.md`
+  - Test regresi gabungan: **80 passed (187 assertions)** — 7 file test lintas-modul (Workflow + RBAC + Akademik).
+
+> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, Fix Komponen Penilaian, Fix Ruangan Jadwal Pelajaran, Fix Rapor & Kenaikan Kelas, Fix PolaJam & Catatan Wali Kelas, Fix Privilege Escalation Approval Workflow)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
+
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 

@@ -1,10 +1,10 @@
-# Fix: Privilege Escalation Lintas-Lembaga pada Approval Workflow Generik — Implementation Plan
+﻿# Fix: Privilege Escalation Lintas-Lembaga pada Approval Workflow Generik â€” Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** (1) `ApproverResolverService::checkRoleApprover()` harus fail-closed terhadap aktor tanpa lembaga efektif yang jelas, ketika step approval punya target lembaga nyata. (2) `RoleController::update()` harus mencegah `scope_level` role menyimpang dari `scope_level` langkah workflow yang memakai role itu sebagai approver. (3) `ApprovePengajuanRaporAction`/`VerifyPengajuanRaporAction` harus memakai konsep "lembaga efektif" (bukan `user->lembaga_id` mentah) supaya aktor yayasan dengan lembaga aktif yang benar bisa lolos.
 
-**Architecture:** 3 task berurutan (Task 1 akar masalah generik, Task 2 defense-in-depth RBAC, Task 3 penyelarasan action spesifik Rapor) — TIDAK independen sepenuhnya: Task 3 idealnya dikerjakan SETELAH Task 1 karena keduanya menyentuh alur approval yang sama (meski file berbeda, test regresi Task 3 sebagian bergantung pada perilaku resolver dari Task 1 sudah benar).
+**Architecture:** 3 task berurutan (Task 1 akar masalah generik, Task 2 defense-in-depth RBAC, Task 3 penyelarasan action spesifik Rapor) â€” TIDAK independen sepenuhnya: Task 3 idealnya dikerjakan SETELAH Task 1 karena keduanya menyentuh alur approval yang sama (meski file berbeda, test regresi Task 3 sebagian bergantung pada perilaku resolver dari Task 1 sudah benar).
 
 **Tech Stack:** Laravel 12, PHP 8.3, Pest v4 (untuk test Task 2/3) + PHPUnit class-based (untuk test Task 1, mengikuti konvensi `WorkflowEngineTest.php` yang sudah ada).
 
@@ -13,8 +13,8 @@
 - Task 1 HANYA mengubah `app/Domains/Workflow/Services/ApproverResolverService.php` (method `checkRoleApprover()`).
 - Task 2 HANYA mengubah `app/Http/Controllers/Admin/RoleController.php` (method `update()`, +2 import).
 - Task 3 HANYA mengubah `app/Domains/Akademik/Actions/Rapor/ApprovePengajuanRaporAction.php` dan `VerifyPengajuanRaporAction.php`.
-- **Fail-closed di Task 1 HANYA berlaku ketika ada `$targetLembagaId` nyata** (bukan null). Kalau `$targetLembagaId` null (skenario workflow generik tanpa konteks tenant, seperti di `WorkflowEngineTest.php` existing), method harus tetap `return true` seperti sebelumnya — JANGAN membuat fail-closed berlaku tanpa syarat, itu akan mematahkan test existing.
-- Guard existing yang TIDAK BOLEH dihapus: guard `lembaga_id` di `ApprovePengajuanRaporAction`/`VerifyPengajuanRaporAction` (Task 3 memperbaikinya, BUKAN menghapusnya — lihat komentar di `tests/Feature/Akademik/RaporApprovalTenantScopeTest.php:48-51` yang menjelaskan kenapa guard lokal ini WAJIB tetap ada sebagai defense-in-depth).
+- **Fail-closed di Task 1 HANYA berlaku ketika ada `$targetLembagaId` nyata** (bukan null). Kalau `$targetLembagaId` null (skenario workflow generik tanpa konteks tenant, seperti di `WorkflowEngineTest.php` existing), method harus tetap `return true` seperti sebelumnya â€” JANGAN membuat fail-closed berlaku tanpa syarat, itu akan mematahkan test existing.
+- Guard existing yang TIDAK BOLEH dihapus: guard `lembaga_id` di `ApprovePengajuanRaporAction`/`VerifyPengajuanRaporAction` (Task 3 memperbaikinya, BUKAN menghapusnya â€” lihat komentar di `tests/Feature/Akademik/RaporApprovalTenantScopeTest.php:48-51` yang menjelaskan kenapa guard lokal ini WAJIB tetap ada sebagai defense-in-depth).
 - Semua test existing di file-file yang disebut di setiap task WAJIB tetap PASS tanpa modifikasi assertion apa pun.
 - Hanya jalankan test scoped per task (lihat masing-masing task). TIDAK PERLU full suite untuk setiap task individual, TAPI karena scope fix ini lintas-modul (Workflow + RBAC + Akademik), jalankan gabungan ketiga file test yang disebut plus `WorkflowEngineTest.php` di akhir Task 3 sebagai regresi gabungan (BUKAN full suite project, cukup file-file yang relevan).
 
@@ -27,10 +27,10 @@
 - Create: `tests/Unit/Domains/Workflow/ApproverResolverServiceTest.php`
 
 **Interfaces:**
-- Consumes: `App\Models\User::widestScopeLevel(): string`, `App\Models\User::lembaga_id: ?int`, `session('active_lembaga_id')` — pola yang sama dengan `GuruController::resolveLembagaId()`/`PolaJamController::store()`.
-- Produces: `ApproverResolverService::canUserApprove(WorkflowStep $step, User $user, ApprovalRequest $request): bool` — signature publik tidak berubah, hanya logika internal `checkRoleApprover()` (method `protected`) yang berubah.
+- Consumes: `App\Models\User::widestScopeLevel(): string`, `App\Models\User::lembaga_id: ?int`, `session('active_lembaga_id')` â€” pola yang sama dengan `GuruController::resolveLembagaId()`/`PolaJamController::store()`.
+- Produces: `ApproverResolverService::canUserApprove(WorkflowStep $step, User $user, ApprovalRequest $request): bool` â€” signature publik tidak berubah, hanya logika internal `checkRoleApprover()` (method `protected`) yang berubah.
 
-- [ ] **Step 1: Baca baseline `checkRoleApprover()` untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline `checkRoleApprover()` untuk memastikan tidak ada drift**
 
 Baseline (baris 25-39 di `app/Domains/Workflow/Services/ApproverResolverService.php`):
 
@@ -54,7 +54,7 @@ Baseline (baris 25-39 di `app/Domains/Workflow/Services/ApproverResolverService.
 
 Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutkan.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug + regresi negatif lengkap)**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug + regresi negatif lengkap)**
 
 Buat file baru `tests/Unit/Domains/Workflow/ApproverResolverServiceTest.php`, mengikuti konvensi class-based PHPUnit yang sama dengan `WorkflowEngineTest.php` yang sudah ada di direktori yang sama:
 
@@ -208,17 +208,17 @@ class ApproverResolverServiceTest extends TestCase
 }
 ```
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Unit/Domains/Workflow/ApproverResolverServiceTest.php --filter="test_denies_yayasan_scoped_user_without_active_lembaga_when_target_has_a_lembaga" --compact`
-Expected: FAIL — `assertFalse($result)` gagal karena `$result` aktual `true` (bug: fail-open).
+Expected: FAIL â€” `assertFalse($result)` gagal karena `$result` aktual `true` (bug: fail-open).
 
 Run: `php artisan test tests/Unit/Domains/Workflow/ApproverResolverServiceTest.php --filter="test_denies_yayasan_scoped_user_with_wrong_active_lembaga" --compact`
-Expected: FAIL — sama, `$result` aktual `true`.
+Expected: FAIL â€” sama, `$result` aktual `true`.
 
-Run 3 test lain (`test_allows_yayasan_scoped_user_with_correct_active_lembaga`, `test_allows_ordinary_lembaga_scoped_user_matching_target_lembaga`, `test_denies_ordinary_lembaga_scoped_user_from_a_different_lembaga`) dan pastikan hasilnya sesuai (2 pertama PASS dari awal karena baseline sudah `true`/mismatch handling untuk aktor biasa sudah benar; test terakhir HARUS sudah PASS juga karena baseline code sudah menangani mismatch untuk `$user->lembaga_id` yang truthy — verifikasi ini sebelum lanjut).
+Run 3 test lain (`test_allows_yayasan_scoped_user_with_correct_active_lembaga`, `test_allows_ordinary_lembaga_scoped_user_matching_target_lembaga`, `test_denies_ordinary_lembaga_scoped_user_from_a_different_lembaga`) dan pastikan hasilnya sesuai (2 pertama PASS dari awal karena baseline sudah `true`/mismatch handling untuk aktor biasa sudah benar; test terakhir HARUS sudah PASS juga karena baseline code sudah menangani mismatch untuk `$user->lembaga_id` yang truthy â€” verifikasi ini sebelum lanjut).
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
 Edit `app/Domains/Workflow/Services/ApproverResolverService.php`:
 
@@ -247,17 +247,17 @@ Edit `app/Domains/Workflow/Services/ApproverResolverService.php`:
     }
 ```
 
-- [ ] **Step 5: Jalankan seluruh file test baru dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test baru dan pastikan semua PASS**
 
 Run: `php artisan test tests/Unit/Domains/Workflow/ApproverResolverServiceTest.php --compact`
 Expected: PASS untuk seluruh 5 test.
 
-- [ ] **Step 6: Jalankan regresi `WorkflowEngineTest.php` existing (kritis — buktikan tidak ada regresi pada skenario tanpa konteks lembaga)**
+- [x] **Step 6: Jalankan regresi `WorkflowEngineTest.php` existing (kritis â€” buktikan tidak ada regresi pada skenario tanpa konteks lembaga)**
 
 Run: `php artisan test tests/Unit/Domains/Workflow/WorkflowEngineTest.php --compact`
-Expected: PASS — `test_can_initialize_and_progress_through_multi_step_workflow` HARUS tetap lolos, membuktikan fail-closed baru tidak mematahkan skenario `$targetLembagaId === null`.
+Expected: PASS â€” `test_can_initialize_and_progress_through_multi_step_workflow` HARUS tetap lolos, membuktikan fail-closed baru tidak mematahkan skenario `$targetLembagaId === null`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Domains/Workflow/Services/ApproverResolverService.php tests/Unit/Domains/Workflow/ApproverResolverServiceTest.php
@@ -273,10 +273,10 @@ git commit -m "fix(workflow): fail-closed checkRoleApprover saat lembaga efektif
 - Modify: `tests/Feature/Admin/RoleBuilderTest.php`
 
 **Interfaces:**
-- Consumes: `App\Domains\Workflow\Models\WorkflowStep::where(...)`, `App\Domains\Workflow\Enums\ApproverType::Role` — model/enum sudah ada, dipakai identik di Task 1.
-- Produces: `RoleController::update()` tetap `(Request $request, Role $role): RedirectResponse|JsonResponse` — signature tidak berubah, hanya menambah 1 jalur error baru sebelum mutasi `$role`.
+- Consumes: `App\Domains\Workflow\Models\WorkflowStep::where(...)`, `App\Domains\Workflow\Enums\ApproverType::Role` â€” model/enum sudah ada, dipakai identik di Task 1.
+- Produces: `RoleController::update()` tetap `(Request $request, Role $role): RedirectResponse|JsonResponse` â€” signature tidak berubah, hanya menambah 1 jalur error baru sebelum mutasi `$role`.
 
-- [ ] **Step 1: Baca baseline `update()` untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline `update()` untuk memastikan tidak ada drift**
 
 Baseline (baris 138-176 di `app/Http/Controllers/Admin/RoleController.php`):
 
@@ -324,7 +324,7 @@ Baseline (baris 138-176 di `app/Http/Controllers/Admin/RoleController.php`):
 
 Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutkan.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug + regresi negatif)**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug + regresi negatif)**
 
 Tambahkan di akhir `tests/Feature/Admin/RoleBuilderTest.php` (setelah test terakhir di file):
 
@@ -386,14 +386,14 @@ it('allows changing a role scope_level to match the workflow step scope_level it
 });
 ```
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Feature/Admin/RoleBuilderTest.php --filter="rejects changing a role scope_level when it would diverge" --compact`
-Expected: FAIL — `assertSessionHasErrors('scope_level')` gagal karena request justru sukses (redirect 302 tanpa errors), dan `scope_level` di DB sudah berubah jadi `yayasan`.
+Expected: FAIL â€” `assertSessionHasErrors('scope_level')` gagal karena request justru sukses (redirect 302 tanpa errors), dan `scope_level` di DB sudah berubah jadi `yayasan`.
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
-Edit `app/Http/Controllers/Admin/RoleController.php` — tambah 2 import di puncak file:
+Edit `app/Http/Controllers/Admin/RoleController.php` â€” tambah 2 import di puncak file:
 
 ```php
 use App\Domains\Workflow\Enums\ApproverType;
@@ -460,16 +460,16 @@ Ganti method `update()`:
     }
 ```
 
-**PENTING — urutan pengecekan sebelum mutasi**: cek `$dipakaiWorkflowBerbeda` memakai `$role->name`/`$role->scope_level` yang MASIH NILAI LAMA (belum di-assign `$data['name']`/`$data['scope_level']`) — pastikan baris `$role->name = ...`/`$role->scope_level = ...` tetap di BAWAH blok pengecekan ini, JANGAN dipindah ke atas seperti baseline lama.
+**PENTING â€” urutan pengecekan sebelum mutasi**: cek `$dipakaiWorkflowBerbeda` memakai `$role->name`/`$role->scope_level` yang MASIH NILAI LAMA (belum di-assign `$data['name']`/`$data['scope_level']`) â€” pastikan baris `$role->name = ...`/`$role->scope_level = ...` tetap di BAWAH blok pengecekan ini, JANGAN dipindah ke atas seperti baseline lama.
 
-- [ ] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Admin/RoleBuilderTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (baseline + 2 test baru).
 
 Jika ada test lain yang FAIL, laporkan sebagai temuan BLOCKED.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/RoleController.php tests/Feature/Admin/RoleBuilderTest.php
@@ -487,9 +487,9 @@ git commit -m "fix(rbac): cegah scope_level role menyimpang dari workflow_steps 
 
 **Interfaces:**
 - Consumes: `App\Models\User::widestScopeLevel(): string`, `App\Models\User::lembaga_id: ?int`, `session('active_lembaga_id')`.
-- Produces: `execute()` di kedua action tetap `(PengajuanRapor $pengajuanRapor, User $user, ApprovalAction $action, ?string $catatan = null): PengajuanRapor` — signature tidak berubah.
+- Produces: `execute()` di kedua action tetap `(PengajuanRapor $pengajuanRapor, User $user, ApprovalAction $action, ?string $catatan = null): PengajuanRapor` â€” signature tidak berubah.
 
-- [ ] **Step 1: Baca baseline kedua file untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline kedua file untuk memastikan tidak ada drift**
 
 Baseline `ApprovePengajuanRaporAction.php` (baris 26-32):
 ```php
@@ -517,7 +517,7 @@ Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutk
 
 **PENTING**: JANGAN menghapus guard ini. `tests/Feature/Akademik/RaporApprovalTenantScopeTest.php:44-53` (test `never resolves a PengajuanRapor belonging to another lembaga by id...`) secara eksplisit membuktikan guard lokal ini WAJIB ada sebagai defense-in-depth terhadap instance `PengajuanRapor` yang diteruskan langsung ke Action tanpa lewat `find()`/`TenantScope` (mis. dari command/job internal). Task ini MEMPERBAIKI logikanya, bukan menghapusnya.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug + regresi negatif)**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug + regresi negatif)**
 
 Tambahkan di akhir `tests/Feature/Akademik/RaporApprovalTenantScopeTest.php` (setelah test terakhir di file):
 
@@ -570,12 +570,12 @@ it('rejects a yayasan-scoped user without an active lembaga from verifying a pen
 });
 ```
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Feature/Akademik/RaporApprovalTenantScopeTest.php --filter="allows a yayasan-scoped user with the correct active lembaga" --compact`
-Expected: FAIL — exception dilempar (guard lama selalu menolak aktor yayasan), padahal seharusnya sukses.
+Expected: FAIL â€” exception dilempar (guard lama selalu menolak aktor yayasan), padahal seharusnya sukses.
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
 Edit `app/Domains/Akademik/Actions/Rapor/ApprovePengajuanRaporAction.php`:
 
@@ -611,23 +611,23 @@ Edit `app/Domains/Akademik/Actions/Rapor/VerifyPengajuanRaporAction.php`:
 
 Baris-baris lain di kedua file (setelah blok guard ini) TIDAK BERUBAH.
 
-- [ ] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Akademik/RaporApprovalTenantScopeTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (baseline 2 test + 2 test baru).
 
-- [ ] **Step 6: Jalankan regresi gabungan seluruh file terkait**
+- [x] **Step 6: Jalankan regresi gabungan seluruh file terkait**
 
 Run: `php artisan test tests/Feature/Akademik/RaporApprovalActionsTest.php tests/Feature/Akademik/RaporApprovalTenantScopeTest.php tests/Feature/Akademik/RaporPdfDataBuilderTest.php tests/Feature/Rapor/RaporPersetujuanControllerTest.php tests/Unit/Domains/Workflow/WorkflowEngineTest.php tests/Unit/Domains/Workflow/ApproverResolverServiceTest.php tests/Feature/Admin/RoleBuilderTest.php --compact`
-Expected: PASS semua — ini regresi gabungan lintas-modul untuk memastikan Task 1-3 bekerja konsisten bersama.
+Expected: PASS semua â€” ini regresi gabungan lintas-modul untuk memastikan Task 1-3 bekerja konsisten bersama.
 
-Jika ada test yang FAIL, laporkan sebagai temuan BLOCKED — jangan diam-diam mengubah assertion existing manapun.
+Jika ada test yang FAIL, laporkan sebagai temuan BLOCKED â€” jangan diam-diam mengubah assertion existing manapun.
 
-- [ ] **Step 7: Jalankan Pint**
+- [x] **Step 7: Jalankan Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/Rapor/ApprovePengajuanRaporAction.php app/Domains/Akademik/Actions/Rapor/VerifyPengajuanRaporAction.php tests/Feature/Akademik/RaporApprovalTenantScopeTest.php
@@ -639,24 +639,24 @@ git commit -m "fix(akademik): pakai lembaga efektif pada guard approval rapor, b
 ## Self-Review
 
 **1. Spec coverage:**
-- Bug 1 (§2 Fix Bug 1: fail-closed dengan syarat targetLembagaId nyata) → Task 1 Step 4. ✅
-- Bug 2 (§2 Fix Bug 2: cegah scope_level menyimpang dari workflow_steps) → Task 2 Step 4. ✅
-- Bug 3 (§2 Fix Bug 3: lembaga efektif di guard Rapor) → Task 3 Step 4. ✅
-- §3 Non-Goals (tidak ubah ProcessApprovalAction/WorkflowStep model/checkDirectRelationApprover/AjukanIzinCutiAction/SubmitPengajuanAction/RolePolicy, tidak ada migrasi data) → tidak ada task yang menyentuh area-area itu. ✅
-- §4.1 Regresi wajib → Task 1 Step 6, Task 2 Step 5, Task 3 Step 6 (regresi gabungan lintas-modul). ✅
-- §4.2-4.4 (Bug 1 reproduksi + 2 varian regresi negatif + regresi positif aktor biasa) → Task 1 Step 2, 5 test mencakup semua skenario. ✅
-- §4.5-4.6 (Bug 2 reproduksi + regresi negatif) → Task 2 Step 2, 2 test. ✅
-- §4.7-4.8 (Bug 3 reproduksi + regresi negatif) → Task 3 Step 2, 2 test + guard existing "tanpa lembaga aktif" otomatis tercakup karena `$effectiveLembagaId === null` tetap menolak. ✅
-- §5 Ringkasan file → cocok dengan Task 1-3 Files (nama file test Task 1 disesuaikan jadi `ApproverResolverServiceTest.php` sesuai spec). ✅
+- Bug 1 (Â§2 Fix Bug 1: fail-closed dengan syarat targetLembagaId nyata) â†’ Task 1 Step 4. âœ…
+- Bug 2 (Â§2 Fix Bug 2: cegah scope_level menyimpang dari workflow_steps) â†’ Task 2 Step 4. âœ…
+- Bug 3 (Â§2 Fix Bug 3: lembaga efektif di guard Rapor) â†’ Task 3 Step 4. âœ…
+- Â§3 Non-Goals (tidak ubah ProcessApprovalAction/WorkflowStep model/checkDirectRelationApprover/AjukanIzinCutiAction/SubmitPengajuanAction/RolePolicy, tidak ada migrasi data) â†’ tidak ada task yang menyentuh area-area itu. âœ…
+- Â§4.1 Regresi wajib â†’ Task 1 Step 6, Task 2 Step 5, Task 3 Step 6 (regresi gabungan lintas-modul). âœ…
+- Â§4.2-4.4 (Bug 1 reproduksi + 2 varian regresi negatif + regresi positif aktor biasa) â†’ Task 1 Step 2, 5 test mencakup semua skenario. âœ…
+- Â§4.5-4.6 (Bug 2 reproduksi + regresi negatif) â†’ Task 2 Step 2, 2 test. âœ…
+- Â§4.7-4.8 (Bug 3 reproduksi + regresi negatif) â†’ Task 3 Step 2, 2 test + guard existing "tanpa lembaga aktif" otomatis tercakup karena `$effectiveLembagaId === null` tetap menolak. âœ…
+- Â§5 Ringkasan file â†’ cocok dengan Task 1-3 Files (nama file test Task 1 disesuaikan jadi `ApproverResolverServiceTest.php` sesuai spec). âœ…
 
 **2. Placeholder scan:** Tidak ada TBD/TODO. Semua kode test dan implementasi lengkap.
 
-**3. Type consistency:** `canUserApprove()`, `RoleController::update()`, `execute()` di kedua Rapor action — semua signature publik tidak berubah di seluruh plan. Konsep `$effectiveLembagaId` dipakai identik (nama variabel dan logika) di Task 1 dan Task 3, konsisten.
+**3. Type consistency:** `canUserApprove()`, `RoleController::update()`, `execute()` di kedua Rapor action â€” semua signature publik tidak berubah di seluruh plan. Konsep `$effectiveLembagaId` dipakai identik (nama variabel dan logika) di Task 1 dan Task 3, konsisten.
 
 ---
 
 ## Konteks Tambahan untuk Kickoff
 
-- **Urutan Task PENTING**: kerjakan Task 1 → Task 2 → Task 3 secara berurutan (bukan paralel), karena Task 3 Step 6 menjalankan regresi gabungan yang mengasumsikan Task 1 dan Task 2 sudah selesai dan commit.
-- Scope fix ini LINTAS-MODUL (Workflow generik + RBAC + Akademik) — bukan modul Akademik semata. Kalau menemukan celah serupa di domain lain (Sdm/Izin-Cuti, Pengadaan/Sarpras) saat mengerjakan plan ini, JANGAN memperbaikinya sekalian — laporkan sebagai temuan terpisah di handoff log. Fix di Task 1 (`ApproverResolverService`) SUDAH otomatis berlaku untuk domain lain itu tanpa perlu sentuh kode masing-masing, jadi tidak perlu task tambahan untuk itu.
+- **Urutan Task PENTING**: kerjakan Task 1 â†’ Task 2 â†’ Task 3 secara berurutan (bukan paralel), karena Task 3 Step 6 menjalankan regresi gabungan yang mengasumsikan Task 1 dan Task 2 sudah selesai dan commit.
+- Scope fix ini LINTAS-MODUL (Workflow generik + RBAC + Akademik) â€” bukan modul Akademik semata. Kalau menemukan celah serupa di domain lain (Sdm/Izin-Cuti, Pengadaan/Sarpras) saat mengerjakan plan ini, JANGAN memperbaikinya sekalian â€” laporkan sebagai temuan terpisah di handoff log. Fix di Task 1 (`ApproverResolverService`) SUDAH otomatis berlaku untuk domain lain itu tanpa perlu sentuh kode masing-masing, jadi tidak perlu task tambahan untuk itu.
 - Referensi pola "lembaga efektif" yang dipakai konsisten di Task 1 dan Task 3: `GuruController::resolveLembagaId()` (`app/Http/Controllers/Admin/GuruController.php:181-188`), `PolaJamController::store()` (fix sebelumnya di sesi ini).
