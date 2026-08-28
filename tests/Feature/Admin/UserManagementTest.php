@@ -358,10 +358,11 @@ it('lets a platform_super_admin assign a yayasan-scoped role to a new user', fun
     expect(User::withoutGlobalScopes()->where('email', 'dariplatform@example.test')->exists())->toBeTrue();
 });
 
-it('does not strip the pegawai_lembaga baseline role when updating a guru account that only ever had "guru" assigned directly', function () {
+it('self-heals a missing pegawai_lembaga baseline for a guru-only account when adding an unrelated role, without ever submitting guru', function () {
     $manager = actingAsUserManager();
     Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'guru_bk', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
 
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
     $guru = User::factory()->create(['name' => 'Guru Lama', 'email' => 'gurulama@example.test', 'lembaga_id' => $lembaga->id]);
@@ -372,34 +373,35 @@ it('does not strip the pegawai_lembaga baseline role when updating a guru accoun
     $this->actingAs($manager)->put(route('admin.users.update', $guru), [
         'name' => 'Guru Baru',
         'email' => 'gurulama@example.test',
-        'roles' => ['guru'],
+        'roles' => ['guru_bk'],
     ])->assertRedirect(route('admin.users.index'));
 
     $updated = $guru->fresh();
     expect($updated->hasRole('guru'))->toBeTrue();
     expect($updated->hasRole('pegawai_lembaga'))->toBeTrue();
+    expect($updated->hasRole('guru_bk'))->toBeTrue();
 });
 
 it('assigns multiple functional roles at once plus a single shared pegawai_lembaga baseline', function () {
     $manager = actingAsUserManager();
     Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'admin_sdm', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
     Role::firstOrCreate(['name' => 'pegawai_lembaga', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
 
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
 
     $this->actingAs($manager)->post(route('admin.users.store'), [
-        'name' => 'Wakasek Merangkap Guru',
-        'email' => 'wakasekguru@example.test',
+        'name' => 'Wakasek Merangkap Admin SDM',
+        'email' => 'wakasekadminsdm@example.test',
         'password' => 'password123',
         'password_confirmation' => 'password123',
         'lembaga_id' => $lembaga->id,
-        'roles' => ['wakasek_kurikulum', 'guru'],
+        'roles' => ['wakasek_kurikulum', 'admin_sdm'],
     ])->assertRedirect(route('admin.users.index'));
 
-    $created = User::withoutGlobalScopes()->where('email', 'wakasekguru@example.test')->first();
+    $created = User::withoutGlobalScopes()->where('email', 'wakasekadminsdm@example.test')->first();
     expect($created->hasRole('wakasek_kurikulum'))->toBeTrue();
-    expect($created->hasRole('guru'))->toBeTrue();
+    expect($created->hasRole('admin_sdm'))->toBeTrue();
     expect($created->hasRole('pegawai_lembaga'))->toBeTrue();
     expect($created->roles()->count())->toBe(3);
 });
@@ -556,6 +558,47 @@ it('preserves the guru role and its pegawai_lembaga carrier when updating with u
     expect($fresh->hasRole('pegawai_lembaga'))->toBeTrue();
     expect($fresh->hasRole('wakasek_kurikulum'))->toBeTrue();
 });
+
+it('still allows creating a user with only the guru_bk role via the generic form', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'guru_bk', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Konselor BK Baru',
+        'email' => 'konselorbkbaru@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'lembaga_id' => $lembaga->id,
+        'roles' => ['guru_bk'],
+    ])->assertRedirect(route('admin.users.index'));
+
+    $created = User::withoutGlobalScopes()->where('email', 'konselorbkbaru@example.test')->first();
+    expect($created)->not->toBeNull();
+    expect($created->hasRole('guru_bk'))->toBeTrue();
+});
+
+it('still allows creating a user with only the wali_kelas role via the generic form', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'wali_kelas', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Wali Kelas Baru',
+        'email' => 'walikelasbaru@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'lembaga_id' => $lembaga->id,
+        'roles' => ['wali_kelas'],
+    ])->assertRedirect(route('admin.users.index'));
+
+    $created = User::withoutGlobalScopes()->where('email', 'walikelasbaru@example.test')->first();
+    expect($created)->not->toBeNull();
+    expect($created->hasRole('wali_kelas'))->toBeTrue();
+});
+
 
 
 
