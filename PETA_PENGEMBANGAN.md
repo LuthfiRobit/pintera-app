@@ -161,7 +161,13 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Handoff Log: `.agents/logs/2026-08-27-akademik-fix-lembaga-id-stale-komponen-penilaian.md`
   - Test: 34 passed di `KomponenPenilaianCrudTest.php`.
 
-> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, dan Fix Komponen Penilaian)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
+- **Fix Data Master — Cross-Check `ruangan_id` vs Lembaga Kelas pada Jadwal Pelajaran — ✅ SELESAI (28 Agustus 2026)**:
+  - `JadwalPelajaranController::store()` dan `::update()` kini memvalidasi bahwa jika `ruangan_id` dikirim di payload, ruangan tersebut wajib berasal dari lembaga yang sama dengan kelas atau berstatus ruangan bersama (`is_shared = true`), menggunakan query `Ruangan::withoutGlobalScope(TenantScope::class)->find(...)`.
+  - Plan: `.agents/plans/2026-08-28-akademik-fix-ruangan-id-cross-lembaga-jadwal-pelajaran.md`
+  - Handoff Log: `.agents/logs/2026-08-28-akademik-fix-ruangan-id-cross-lembaga-jadwal-pelajaran.md`
+  - Test: 52 passed di `JadwalPelajaranCrudTest.php`.
+
+> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, Fix Komponen Penilaian, dan Fix Ruangan Jadwal Pelajaran)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
