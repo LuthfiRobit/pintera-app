@@ -2,12 +2,16 @@
 
 use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Guru;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
+use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use Database\Seeders\RoleSeeder;
 use Spatie\Permission\Models\Permission;
 
 function siapkanGuruUntukSidebar(): User
@@ -66,7 +70,7 @@ it('shows Ruang Orang Tua group with dalam-pengembangan links plus keuangan self
 
     $orangTuaUser = User::factory()->create();
     $orangTuaUser->assignRole('orang_tua');
-    \App\Models\OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+    OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
 
     $response = $this->actingAs($orangTuaUser)->get(route('dashboard'));
 
@@ -99,15 +103,15 @@ it('does not duplicate RPP into Akademik for a guru account, but still shows it 
 });
 
 it('shows Kasus Pendampingan under Kehadiran Saya (not Pendampingan) for a pool konselor karyawan without kasus.view', function () {
-    (new \Database\Seeders\RoleSeeder)->run();
+    (new RoleSeeder)->run();
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('pegawai_yayasan');
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = \App\Models\Karyawan::withoutGlobalScopes()->create([
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::withoutGlobalScopes()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -134,6 +138,31 @@ it('does not show QR Kehadiran or Izin/Cuti twice for a guru account', function 
     expect(substr_count($response->getContent(), 'Izin/Cuti Saya'))->toBe(1);
 });
 
+it('keeps guru personal items in Ruang Guru and shows administrative items normally when the same user also holds wakasek_kurikulum', function () {
+    $guru = siapkanGuruUntukSidebar();
+    foreach (['komponen-penilaian.kelola', 'rapor.view', 'rapor.verify', 'kenaikan-kelas.kelola', 'jadwal-pelajaran.kelola'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $wakasekRole = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $wakasekRole->givePermissionTo(['komponen-penilaian.kelola', 'rapor.view', 'rapor.verify', 'kenaikan-kelas.kelola', 'jadwal-pelajaran.kelola']);
+    $guru->assignRole('wakasek_kurikulum');
 
+    $response = $this->actingAs($guru)->get(route('dashboard'));
 
+    $response->assertOk();
+    $response->assertSee('Ruang Guru');
+    expect(substr_count($response->getContent(), 'Perangkat Ajar (RPP)'))->toBe(1);
+    $response->assertSee('Kenaikan Kelas');
+});
 
+it('does not treat guru_bk as guru identity for sidebar grouping purposes', function () {
+    (new RoleSeeder)->run();
+    $lembaga = Lembaga::factory()->create();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('guru_bk');
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertDontSee('Ruang Guru');
+});
