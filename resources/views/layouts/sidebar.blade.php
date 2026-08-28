@@ -23,6 +23,16 @@
             ]),
         ],
         [
+            'label' => 'Ruang Siswa',
+            'group_icon' => 'backpack',
+            'items' => array_filter([
+                Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'nilai-rapor'], 'pattern' => 'dalam-pengembangan', 'label' => 'Nilai & Rapor', 'icon' => 'award'] : null,
+                Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'jadwal-pelajaran'], 'pattern' => 'dalam-pengembangan', 'label' => 'Jadwal Pelajaran', 'icon' => 'calendar-clock'] : null,
+                Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'presensi-saya'], 'pattern' => 'dalam-pengembangan', 'label' => 'Presensi Saya', 'icon' => 'clipboard-check'] : null,
+                Auth::user()->hasRole('siswa') && Auth::user()->can('viewAny', \App\Domains\Kasus\Models\Kasus::class) ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'stethoscope'] : null,
+            ]),
+        ],
+        [
             'label' => 'Kehadiran Saya',
             'group_icon' => 'clock',
             'items' => array_filter([
@@ -187,7 +197,7 @@
                             @php $active = request()->routeIs($item['pattern']); @endphp
                             <li>
                                 <a
-                                    href="{{ route($item['route']) }}"
+                                    href="{{ route($item['route'], $item['params'] ?? []) }}"
                                     class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
                                         {{ $active ? 'bg-brand-50 font-semibold text-brand-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}"
                                 >
