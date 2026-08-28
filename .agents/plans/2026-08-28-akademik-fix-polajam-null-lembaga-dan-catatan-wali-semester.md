@@ -28,7 +28,7 @@
 - Consumes: `$request->user()->widestScopeLevel(): string`, `$request->user()->lembaga_id: ?int`, `session('active_lembaga_id')` — semuanya sudah dipakai identik di `GuruController::resolveLembagaId()` (`app/Http/Controllers/Admin/GuruController.php:181-188`), pola referensi yang di-mirror.
 - Produces: `store()` tetap `(Request $request, CreatePolaJamAction $action): RedirectResponse` — signature tidak berubah, hanya logika derivasi `$lembagaId` di dalamnya.
 
-- [ ] **Step 1: Baca baseline `store()` untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline `store()` untuk memastikan tidak ada drift**
 
 Baseline (baris 42-62 di `app/Http/Controllers/Admin/PolaJamController.php`):
 
@@ -58,7 +58,7 @@ Baseline (baris 42-62 di `app/Http/Controllers/Admin/PolaJamController.php`):
 
 Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutkan.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug + perkuat test existing + regresi negatif yayasan)**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug + perkuat test existing + regresi negatif yayasan)**
 
 Di `tests/Feature/Admin/PolaJamCrudTest.php`, GANTI test existing `creates a pola jam` (baris 34-44) — tambahkan assertion `lembaga_id` TANPA menghapus assertion yang sudah ada:
 
@@ -132,7 +132,7 @@ it('rejects creating a pola jam for a yayasan-scoped manager with no active lemb
 });
 ```
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --filter="creates a pola jam" --compact`
 Expected: FAIL pada assertion `expect($polaJam->lembaga_id)->toBe($lembaga->id)` — `lembaga_id` aktual `null`.
@@ -142,7 +142,7 @@ Expected: FAIL — `assertSee('Kelas Rendah 1-3')` gagal karena pola jam dengan 
 
 Run 2 test lain (`creates a pola jam with the active lembaga for a yayasan-scoped manager`, `rejects creating a pola jam for a yayasan-scoped manager with no active lembaga`) dan pastikan itu PASS dari awal (baseline aman untuk jalur yayasan, tidak berubah).
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
 Edit `app/Http/Controllers/Admin/PolaJamController.php`:
 
@@ -169,14 +169,14 @@ Edit `app/Http/Controllers/Admin/PolaJamController.php`:
     }
 ```
 
-- [ ] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (baseline + 3 test baru + test existing yang diperkuat).
 
 Jika ada test lain yang FAIL, laporkan sebagai temuan BLOCKED — jangan diam-diam mengubah assertion existing lain.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/PolaJamController.php tests/Feature/Admin/PolaJamCrudTest.php
@@ -195,7 +195,7 @@ git commit -m "fix(akademik): isi lembaga_id untuk aktor lembaga biasa pada Pola
 - Consumes: `App\Models\Semester::find(int $id): ?Semester` (sudah dipakai identik di `edit()`/`generateNarasi()`/`cetak()` di file yang sama), `$request->validated('semester_id')` dari `StoreCatatanWaliKelasRequest` (sudah divalidasi `required|integer|exists:semester,id`).
 - Produces: `update()` tetap `(Siswa $siswa, StoreCatatanWaliKelasRequest $request): RedirectResponse` — signature tidak berubah, hanya menambah 1 jalur `abort_if` baru (404).
 
-- [ ] **Step 1: Baca baseline `update()` untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline `update()` untuk memastikan tidak ada drift**
 
 Baseline (baris 156-176 di `app/Http/Controllers/Guru/RaporController.php`):
 
@@ -225,7 +225,7 @@ Baseline (baris 156-176 di `app/Http/Controllers/Guru/RaporController.php`):
 
 Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutkan.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug)**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug)**
 
 Tambahkan di akhir `tests/Feature/Guru/RaporControllerTest.php` (setelah test terakhir di file):
 
@@ -251,12 +251,12 @@ it('rejects saving catatan wali kelas when semester_id belongs to a different ta
 
 `siapkanWaliKelasUntukRapor()` sudah mengembalikan `lembaga` di array-nya, tidak perlu setup tambahan.
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Feature/Guru/RaporControllerTest.php --filter="rejects saving catatan wali kelas when semester_id belongs to a different tahun ajaran" --compact`
 Expected: FAIL — `assertNotFound()` gagal karena response sukses (redirect) alih-alih 404, dan baris `catatan_wali_kelas` justru tersimpan.
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
 Edit `app/Http/Controllers/Guru/RaporController.php`:
 
@@ -287,18 +287,18 @@ Edit `app/Http/Controllers/Guru/RaporController.php`:
     }
 ```
 
-- [ ] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Guru/RaporControllerTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (baseline + 1 test baru), TERMASUK test existing `saves catatan wali kelas via update and redirects back to the index` (baris 127-143) dan `redirects to the next siswa edit page when next_siswa_id is submitted` (baris 145-155) yang HARUS tetap PASS tanpa modifikasi — keduanya memakai `$semester` dari `siapkanWaliKelasUntukRapor()` yang satu tahun ajaran dengan kelas, jadi tidak boleh terpengaruh guard baru.
 
 Jika ada test lain yang FAIL, laporkan sebagai temuan BLOCKED.
 
-- [ ] **Step 6: Jalankan Pint**
+- [x] **Step 6: Jalankan Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Guru/RaporController.php tests/Feature/Guru/RaporControllerTest.php
