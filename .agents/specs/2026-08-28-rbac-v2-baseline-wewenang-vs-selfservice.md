@@ -56,7 +56,9 @@ Kalau `kasus.view` dihapus dari baseline tanpa perubahan lain, Karyawan pool yan
 - Grep menyeluruh `app/` untuk pola set `konselor_karyawan_id` jadi `null` — **nol hasil**. Tidak ada mekanisme unassign di domain ini sama sekali, sekarang.
 - `ListKasusUntukUserAction` (perilaku existing, dipakai SEKARANG) — `where('konselor_karyawan_id', $karyawanId)` **tanpa filter status apa pun**. Karyawan yang pernah ditugaskan tetap melihat kasusnya di list selamanya, termasuk yang sudah `Selesai`.
 
-**Kontrak yang dikunci untuk spec ini**: *"Seorang karyawan dianggap memiliki akses sebagai konselor apabila terdapat minimal satu record `Kasus` dengan `konselor_karyawan_id` = karyawan tersebut."* Tidak ada filter status, tidak ada konsep "aktif", tidak ada asumsi expiry. Assignment konselor **bersifat historis/persisten** mengikuti model domain yang sudah ada — bukan istilah "aktif" yang dikarang di layer RBAC. Membangun mekanisme unassign adalah domain feature baru, eksplisit **di luar scope** spec ini.
+**Kontrak yang dikunci untuk spec ini**: *"Seorang karyawan dianggap memiliki akses sebagai konselor apabila terdapat minimal satu record `Kasus` dengan `konselor_karyawan_id` = karyawan tersebut."* Tidak ada filter status, tidak ada konsep "aktif", tidak ada asumsi expiry.
+
+**Catatan penting soal status persistence ini — observasi, bukan keputusan bisnis**: bahwa assignment konselor bersifat historis/persisten (tidak pernah dicabut) adalah **fakta perilaku domain Kasus yang sudah ada saat ini** (dibuktikan lewat grep dan `ListKasusUntukUserAction` di atas), **bukan** keputusan bisnis/RBAC yang sengaja diambil dalam spec ini. Spec ini hanya memilih untuk **konsisten dengan** perilaku existing tersebut alih-alih diam-diam menciptakan konsep "aktif" baru yang tidak dimiliki domain. Kalau di masa depan domain Kasus menambahkan mekanisme unassign/expiry, `viewAny()` harus ikut diperbarui mengikuti definisi baru itu — spec ini tidak mengunci "permanen selamanya" sebagai keputusan desain final. Membangun mekanisme unassign adalah domain feature baru, eksplisit **di luar scope** spec ini.
 
 ## 2. Keputusan Desain
 
@@ -65,10 +67,13 @@ Kalau `kasus.view` dihapus dari baseline tanpa perubahan lain, Karyawan pool yan
 ```text
 Permission (capability)  = kapabilitas yang melekat pada identitas/status user
 Policy (resource auth)   = otorisasi terhadap satu resource spesifik, berbasis relasi data
-Assignment (relationship)= hubungan user-ke-resource yang SUDAH ADA di data (FK), dipakai
-                            LANGSUNG sebagai dasar otorisasi collection-level TANPA
-                            direpresentasikan ulang sebagai role/permission global.
+Fakta domain (relationship, BUKAN "assignment RBAC") = hubungan user-ke-resource yang SUDAH
+                            ADA di data (FK, mis. konselor_karyawan_id), dipakai LANGSUNG
+                            sebagai dasar otorisasi collection-level TANPA direpresentasikan
+                            ulang sebagai role/permission global.
 ```
+
+**Penajaman istilah**: `konselor_karyawan_id` di atas sengaja disebut **"fakta domain"**, bukan "assignment RBAC" — istilah "assignment" dalam konteks Spatie Permission berarti pemberian role/permission secara sadar oleh admin (mis. `assignRole()`). `konselor_karyawan_id` bukan itu; ia adalah kolom data domain Kasus yang kebetulan dipakai sebagai basis otorisasi. Membedakan keduanya penting supaya developer masa depan tidak keliru mencari "role apa yang di-assign" ketika menelusuri kenapa seorang karyawan bisa mengakses sebuah Kasus — jawabannya bukan role, tapi relasi data.
 
 > Jangan memberikan global role hanya untuk merepresentasikan hubungan user dengan satu resource. Jika authorization dapat diturunkan langsung dari relationship resource tersebut, gunakan relationship + Policy — bukan role otomatis.
 
@@ -86,7 +91,7 @@ Baseline `guru`, `siswa`, `orang_tua` **tidak diubah**.
 
 **(b) Hapus gate `$this->authorize('kasus.view')` yang redundan** dari 8 endpoint di §1.4 (baris pertama di tiap method yang terdaftar redundan). Baris `$this->authorize('kelolaSesiTugas', $kasus)` / `KasusPolicy::view()` / `downloadLampiran()` / inline check yang SUDAH ADA di method yang sama **tidak diubah sama sekali** — itu tetap satu-satunya sumber otorisasi, terbukti sudah benar di audit §1.4.
 
-**(c) Tambah method baru `KasusPolicy::viewAny(User $user): bool`**:
+**(c) Tambah method baru `KasusPolicy::viewAny(User $user): bool`**. Definisi: **user boleh melihat koleksi Kasus apabila ia punya capability `kasus.view` ATAU punya hubungan konselor (fakta domain `konselor_karyawan_id`) dengan minimal satu Kasus** — dua kondisi yang independen, digabung dengan OR, bukan salah satu menggantikan yang lain:
 ```php
 public function viewAny(User $user): bool
 {
@@ -101,7 +106,9 @@ public function viewAny(User $user): bool
         ->exists();
 }
 ```
-`$user->can('kasus.view')` tetap `true` untuk `guru`/`siswa`/`orang_tua` (baseline mereka tidak berubah). Untuk `pegawai_lembaga`/`pegawai_yayasan` (yang setelah §2.2(a) tidak lagi punya `kasus.view`), fallback ke pengecekan `exists()` murni berbasis assignment data — TANPA filter status, sesuai kontrak §1.5.
+`$user->can('kasus.view')` tetap `true` untuk `guru`/`siswa`/`orang_tua` (baseline mereka tidak berubah), dan juga tetap `true` untuk siapa pun yang diberi `kasus.view` lewat role assignment eksplisit lain (mis. `guru_bk`, `wakasek_kesiswaan`, `operator_akademik`) — kondisi pertama ini tidak bergantung sama sekali pada riwayat penugasan konselor. Untuk `pegawai_lembaga`/`pegawai_yayasan` (yang setelah §2.2(a) tidak lagi punya `kasus.view`), fallback ke pengecekan `exists()` murni berbasis fakta domain — TANPA filter status, sesuai kontrak §1.5.
+
+**Invariant `withoutGlobalScope(TenantScope::class)` — didokumentasikan secara sengaja, bukan dianggap tenant-isolation hole**: dipakai di sini karena konselor karyawan level-yayasan (`lembaga_id = null`) adalah pool lintas-lembaga *dalam satu yayasan yang sama* — `Kasus` tidak punya kolom `yayasan_id` sendiri, jadi `TenantScope` default akan menurunkan cakupan yayasan dari `lembaga_id`, yang justru bisa menghasilkan false-negative untuk karyawan pool (`lembaga_id = null`). Tenant isolation untuk resource Kasus **tidak boleh diasumsikan berasal dari `TenantScope` saja**; validitas hubungan konselor ditentukan oleh fakta domain (`konselor_karyawan_id`) dan invariant assignment yang dijaga `KonselorAllocationResolver` (karyawan lembaga → konteks lembaganya sendiri; karyawan pool → `lembaga_id = null`, yayasan-wide). Pola ini konsisten dengan `KasusPolicy::isKonselor()` (sudah ada, tidak diubah spec ini) dan `Route::bind('kasus', ...)` di `routes/kasus.php` yang sudah melakukan hal serupa untuk alasan yang sama. **Bukan** berarti aman karena kode lain melakukan hal yang sama — melainkan karena `withoutGlobalScope()` di sini hanya dipakai untuk *menemukan identitas* karyawan/kasus, sementara *keputusan otorisasi* tetap sepenuhnya bergantung pada relasi data `konselor_karyawan_id` yang immutable-origin-nya dijaga oleh `AssignKonselorAction` + `KonselorAllocationResolver`.
 
 **(d) `KasusController::index()`** — ganti gate:
 ```php
@@ -127,7 +134,24 @@ $this->authorize('viewAny', Kasus::class);
 
 **4.1 — Regresi wajib**: seluruh test existing di `tests/Unit/RoleSeederTest.php`, `tests/Feature/KasusKonselorAksesTest.php`, `tests/Feature/KasusTugasReviewTest.php`, `tests/Feature/KasusEvaluasiTest.php`, `tests/Feature/DashboardKasusTest.php` HARUS tetap PASS tanpa modifikasi assertion. Perhatian khusus: test-test di `KasusKonselorAksesTest.php` yang meng-assign `kasus.view` manual di dalam test-nya sendiri (bukan lewat `RoleSeeder`) — perilaku itu TIDAK PERLU diubah (tetap valid, cuma tidak lagi merepresentasikan kondisi produksi nyata untuk kasus TANPA assignment — lihat 4.3).
 
-**4.2 — Bug reproduction (regresi yang HAMPIR terjadi kalau P0 naif dijalankan)**: karyawan pool (`lembaga_id = null`, `jenis_karyawan.is_konselor = true`) di-assign lewat `AssignKonselorAction` sungguhan (bukan manual role grant) sebagai `konselor_karyawan_id` pada sebuah `Kasus` → HARUS bisa buka `kasus.index`, `kasus.show`, dan endpoint sesi/tugas/evaluasi kasus itu — TANPA pernah diberi role/permission tambahan apa pun, HANYA lewat `RoleSeeder` baseline (yang sudah tidak punya `kasus.view`) + `konselor_karyawan_id` ter-set.
+**4.2 — Bug reproduction (regresi yang HAMPIR terjadi kalau P0 naif dijalankan)**: karyawan pool (`lembaga_id = null`, `jenis_karyawan.is_konselor = true`) di-assign lewat `AssignKonselorAction` sungguhan (bukan manual role grant) sebagai `konselor_karyawan_id` pada sebuah `Kasus` → HARUS bisa buka, TANPA pernah diberi role/permission tambahan apa pun (HANYA lewat `RoleSeeder` baseline yang sudah tidak punya `kasus.view` + `konselor_karyawan_id` ter-set), **setiap** endpoint berikut untuk Kasus tersebut:
+- `KasusController::index()` (via `viewAny`)
+- `KasusController::show()`
+- `KasusSesiController::store()` dan `updateStatus()`
+- `KasusTugasController::store()` dan `markSelesai()`
+- `KasusTugasBatchPreviewController::preview()`
+- `KasusTugasSubmissionController::store()`, `review()`, dan `download()`
+- `KasusEvaluasiController::store()`
+
+**4.2b — Regresi negatif pool lintas-lembaga (menguji invariant `withoutGlobalScope`, bukan cuma keberadaannya)**: skenario dua lembaga dalam satu yayasan —
+```text
+Yayasan A
+├── Sekolah A → Kasus X
+└── Sekolah B → Kasus Y
+
+Karyawan pool Yayasan A (lembaga_id = null) ditugaskan HANYA ke Kasus X
+```
+Karyawan tersebut HARUS bisa buka Kasus X, dan `viewAny()` bernilai `true` (karena punya minimal satu assignment), TAPI mengakses Kasus Y secara langsung (`show`/`sesi`/dst) HARUS tetap ditolak oleh `KasusPolicy::isKonselor()`/`view()` yang sudah ada (relasi `konselor_karyawan_id` tidak match Kasus Y) — membuktikan `viewAny()` yang longgar di collection-level tidak membocorkan akses ke resource individual di luar assignment nyata.
 
 **4.3 — Regresi negatif — karyawan biasa tanpa assignment**: karyawan (`pegawai_lembaga`/`pegawai_yayasan`, role dari `RoleSeeder` sungguhan) yang TIDAK PERNAH jadi `konselor_karyawan_id` di `Kasus` manapun → `kasus.index` HARUS 403 (via `viewAny` gate).
 
@@ -135,9 +159,16 @@ $this->authorize('viewAny', Kasus::class);
 
 **4.5 — Regresi negatif — baseline lain tidak berubah**: `guru`/`siswa`/`orang_tua` (role dari `RoleSeeder` sungguhan, TANPA pernah jadi konselor apa pun) tetap bisa buka `kasus.index` seperti sebelumnya (lewat `$user->can('kasus.view')` di `viewAny()`).
 
-**4.6 — Regresi negatif — Admin tidak terpengaruh**: `Admin\KasusController::index()` tetap berperilaku identik untuk semua kombinasi aktor yang sudah ada test-nya sebelumnya — dibuktikan test existing di area admin tetap hijau tanpa modifikasi.
+**4.5b — Regresi positif — capability lewat role eksplisit, TANPA riwayat konselor sama sekali**: karyawan yang diberi `kasus.view` lewat role assignment eksplisit terpisah (mis. `guru_bk` atau `wakasek_kesiswaan`, ditambahkan lewat `assignRole()` manual di admin, BUKAN baseline) dan **tidak pernah** menjadi `konselor_karyawan_id` di `Kasus` manapun → `viewAny()` HARUS tetap `true`. Test ini membuktikan cabang `$user->can('kasus.view')` di `viewAny()` benar-benar independen dan tidak collapse menjadi cabang relationship-only.
 
-**4.7 — Test guardrail permanen (allowlist baseline)**: test baru di `tests/Unit/RoleSeederTest.php` yang mengecek EXACT permission list (independen dari `RoleSeeder.php`, ditulis ulang manual di test) untuk kelima baseline role — `guru`, `pegawai_lembaga`+`pegawai_yayasan` (digabung 1 test karena identik), `siswa`, `orang_tua`. Test ini harus gagal kalau ada developer masa depan menambah permission baru ke salah satu baseline role tanpa update allowlist test secara sengaja.
+**4.6 — Regresi negatif — Admin tidak terpengaruh**: `Admin\KasusController::index()` tetap berperilaku identik untuk semua kombinasi aktor yang sudah ada test-nya sebelumnya — dibuktikan test existing di area admin tetap hijau tanpa modifikasi. Tidak ada task/perubahan kode untuk poin ini.
+
+**4.7 — Test guardrail permanen (allowlist baseline)**: 4 test case TERPISAH baru di `tests/Unit/RoleSeederTest.php` (bukan digabung), satu per baseline role — `guru`, `pegawai_lembaga`, `pegawai_yayasan` (dipisah dari `pegawai_lembaga` meski permission-nya identik saat ini, supaya kalau salah satu berubah sendiri di masa depan test yang gagal jelas menunjuk role mana), `siswa`+`orang_tua` masing-masing juga terpisah. Tiap test HARUS memakai bentuk deterministik agar tidak bergantung urutan insert:
+```php
+expect($role->permissions()->pluck('name')->sort()->values()->all())
+    ->toBe(['kasus.ajukan', 'kasus.view', ...]); // urutan alfabetis, exact list
+```
+Test ini harus gagal kalau ada developer masa depan menambah permission baru ke salah satu baseline role tanpa update allowlist test secara sengaja.
 
 ## 5. Ringkasan Perubahan File
 
@@ -151,8 +182,8 @@ app/Http/Controllers/KasusTugasBatchPreviewController.php           [hapus 1x au
 app/Http/Controllers/KasusTugasSubmissionController.php             [hapus 3x authorize('kasus.view') yang redundan]
 app/Http/Controllers/KasusEvaluasiController.php                    [hapus 1x authorize('kasus.view') yang redundan]
 app/Http/Controllers/KasusController.php (show())                   [hapus 1x authorize('kasus.view') yang redundan]
-tests/Unit/RoleSeederTest.php                                        [+4 test allowlist baseline permission]
-tests/Feature/KasusKonselorAksesTest.php ATAU file baru              [+test reproduksi karyawan-pool-via-RoleSeeder-asli, lihat 4.2-4.4]
+tests/Unit/RoleSeederTest.php                                        [+5 test allowlist baseline permission, terpisah per role: guru, pegawai_lembaga, pegawai_yayasan, siswa, orang_tua]
+tests/Feature/KasusKonselorAksesTest.php ATAU file baru              [+test reproduksi karyawan-pool-via-RoleSeeder-asli (4.2, semua 8 endpoint), +test pool lintas-lembaga (4.2b), +test capability-eksplisit-tanpa-riwayat (4.5b), +test historis (4.4)]
 ```
 
 ## 6. Rekomendasi Terpisah (bukan bagian scope — dicatat untuk referensi masa depan)
