@@ -12,6 +12,7 @@ use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\Siswa;
+use App\Models\TahunAjaran;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -48,6 +49,13 @@ final class ProsesKenaikanKelasAction
 
                 if ($kelasBaru->tahun_ajaran_id === $kelasLama->tahun_ajaran_id) {
                     throw new \DomainException("Kelas tujuan \"{$kelasBaru->nama}\" masih berada di tahun ajaran yang sama dengan kelas asal \"{$kelasLama->nama}\". Pilih kelas tujuan dari tahun ajaran berikutnya.");
+                }
+
+                $tahunAjaranLama = TahunAjaran::findOrFail($kelasLama->tahun_ajaran_id);
+                $tahunAjaranBaru = TahunAjaran::findOrFail($kelasBaru->tahun_ajaran_id);
+
+                if ($tahunAjaranBaru->tanggal_mulai < $tahunAjaranLama->tanggal_mulai) {
+                    throw new \DomainException("Kelas tujuan \"{$kelasBaru->nama}\" berada di tahun ajaran \"{$tahunAjaranBaru->nama}\" yang lebih lama dari tahun ajaran kelas asal \"{$tahunAjaranLama->nama}\". Pilih kelas tujuan dari tahun ajaran berikutnya.");
                 }
 
                 Siswa::where('kelas_id', $kelasLama->id)->update(['kelas_id' => $kelasBaru->id]);
@@ -95,7 +103,7 @@ final class ProsesKenaikanKelasAction
                 ]));
             } catch (ValidationException $e) {
                 $labelJam = $jadwal->jamPelajaran->label ?? "slot #{$jadwal->jam_pelajaran_id}";
-                $gagal[] = "{$kelasLama->nama} → {$kelasBaru->nama} ({$labelJam}): " . $e->validator->errors()->first();
+                $gagal[] = "{$kelasLama->nama} → {$kelasBaru->nama} ({$labelJam}): ".$e->validator->errors()->first();
             }
         }
 

@@ -52,7 +52,7 @@ it('throws a DomainException when kelas tujuan is in the same tahun ajaran as ke
 
     expect(fn () => buatKenaikanAction()->execute(new KenaikanKelasData(mapping: [
         $kelasLama->id => ['tindakan' => 'naik', 'kelas_baru_id' => $kelasBaru->id, 'salin_jadwal' => false, 'semester_tujuan_id' => null],
-    ])))->toThrow(\DomainException::class);
+    ])))->toThrow(DomainException::class);
 });
 
 it('skips a jadwal row that clashes on guru at the destination and still promotes the siswa', function () {
@@ -95,4 +95,34 @@ it('skips a jadwal row that clashes on guru at the destination and still promote
     expect($result['jadwalGagal'])->toHaveCount(1)
         ->and($siswa->fresh()->kelas_id)->toBe($kelasBaru->id)
         ->and(JadwalPelajaran::where('kelas_id', $kelasBaru->id)->where('semester_id', $semesterTujuan->id)->count())->toBe(0);
+});
+
+it('throws a DomainException when kelas tujuan is in a tahun ajaran with an earlier tanggal_mulai than kelas lama', function () {
+    $lembaga = Lembaga::factory()->create();
+    $tahunLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'tanggal_mulai' => '2026-07-01']);
+    $tahunMundur = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'tanggal_mulai' => '2025-07-01']);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLama->id]);
+    $kelasMundur = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunMundur->id]);
+    $siswa = Siswa::factory()->create(['kelas_id' => $kelasLama->id]);
+
+    expect(fn () => buatKenaikanAction()->execute(new KenaikanKelasData(mapping: [
+        $kelasLama->id => ['tindakan' => 'naik', 'kelas_baru_id' => $kelasMundur->id, 'salin_jadwal' => false, 'semester_tujuan_id' => null],
+    ])))->toThrow(DomainException::class);
+
+    expect($siswa->fresh()->kelas_id)->toBe($kelasLama->id);
+});
+
+it('promotes siswa when tahun ajaran tujuan has a later tanggal_mulai than kelas lama', function () {
+    $lembaga = Lembaga::factory()->create();
+    $tahunLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'tanggal_mulai' => '2025-07-01']);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'tanggal_mulai' => '2026-07-01']);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLama->id]);
+    $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id]);
+    $siswa = Siswa::factory()->create(['kelas_id' => $kelasLama->id]);
+
+    buatKenaikanAction()->execute(new KenaikanKelasData(mapping: [
+        $kelasLama->id => ['tindakan' => 'naik', 'kelas_baru_id' => $kelasBaru->id, 'salin_jadwal' => false, 'semester_tujuan_id' => null],
+    ]));
+
+    expect($siswa->fresh()->kelas_id)->toBe($kelasBaru->id);
 });
