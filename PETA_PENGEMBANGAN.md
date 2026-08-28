@@ -167,7 +167,14 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Handoff Log: `.agents/logs/2026-08-28-akademik-fix-ruangan-id-cross-lembaga-jadwal-pelajaran.md`
   - Test: 52 passed di `JadwalPelajaranCrudTest.php`.
 
-> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, Fix Komponen Penilaian, dan Fix Ruangan Jadwal Pelajaran)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
+- **Fix Integritas Periode & Arah Waktu — Rapor Semester Mismatch & Kenaikan Kelas Mundur — ✅ SELESAI (28 Agustus 2026)**:
+  1. **Cross-Check Semester vs Tahun Ajaran Kelas di `Guru\RaporController`**: Menambahkan `abort_if($semester->tahun_ajaran_id !== $siswa->kelas->tahun_ajaran_id, 404)` pada method `edit()`, `generateNarasi()`, `cetak()`, dan `$semester->tahun_ajaran_id !== $kelas->tahun_ajaran_id` pada method `ajukan()`.
+  2. **Validasi Arah Waktu Kenaikan Kelas di `ProsesKenaikanKelasAction`**: Memastikan tahun ajaran kelas tujuan tidak memiliki `tanggal_mulai` yang lebih awal (`<`) dari kelas asal.
+  - Plan: `.agents/plans/2026-08-28-akademik-fix-rapor-semester-mismatch-dan-kenaikan-kelas-mundur.md`
+  - Handoff Log: `.agents/logs/2026-08-28-akademik-fix-rapor-semester-mismatch-dan-kenaikan-kelas-mundur.md`
+  - Test: 21 passed di `RaporControllerTest.php`, 5 passed di `ProsesKenaikanKelasActionTest.php`, 12 passed di controller kenaikan kelas.
+
+> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, Fix Komponen Penilaian, Fix Ruangan Jadwal Pelajaran, Fix Rapor & Kenaikan Kelas)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
