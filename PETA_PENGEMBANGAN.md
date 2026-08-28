@@ -155,7 +155,13 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
   - Handoff Log: `.agents/logs/2026-08-27-akademik-fix-tahun-ajaran-lembaga-kurikulum-assignment.md`
   - Test: 11 passed di `KurikulumAssignmentControllerTest.php`.
 
-> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, dan Fix Data Master Kurikulum Assignment)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
+- **Fix Data Master — Recompute `lembaga_id` saat `semester_id` Berubah pada Komponen Penilaian — ✅ SELESAI (27 Agustus 2026)**:
+  - `UpdateKomponenPenilaianAction` kini menghitung ulang `$komponen->lembaga_id = Semester::findOrFail($data->semesterId)->lembaga_id` di dalam blok update subjek/semester, sehingga konsisten dengan `CreateKomponenPenilaianAction` dan mencegah `lembaga_id` basi saat dipindahkan lintas-lembaga oleh aktor level yayasan.
+  - Plan: `.agents/plans/2026-08-27-akademik-fix-lembaga-id-stale-komponen-penilaian.md`
+  - Handoff Log: `.agents/logs/2026-08-27-akademik-fix-lembaga-id-stale-komponen-penilaian.md`
+  - Test: 34 passed di `KomponenPenilaianCrudTest.php`.
+
+> **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, dan Fix Komponen Penilaian)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
