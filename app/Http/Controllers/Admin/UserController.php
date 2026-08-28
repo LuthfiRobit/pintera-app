@@ -199,6 +199,10 @@ class UserController extends BaseController
             'roles.*' => ['exists:roles,name', Rule::notIn(['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan'])],
         ]);
 
+        if (in_array('guru', $data['roles'], true)) {
+            return back()->withErrors(['roles' => 'Role Guru harus dibuat melalui Admin → Guru agar profil Guru dibuat dan tertaut dengan benar.'])->withInput();
+        }
+
         $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
             ? ($data['lembaga_id'] ?? null)
             : $request->user()->lembaga_id;

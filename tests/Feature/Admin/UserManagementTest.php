@@ -479,5 +479,39 @@ it('does not show guru as a selectable role option on the create form', function
     expect($allRoleNames)->toContain('wali_kelas');
 });
 
+it('rejects creating a user with the guru role via the generic form', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Percobaan Guru',
+        'email' => 'percobaanguru@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'roles' => ['guru'],
+    ])->assertSessionHasErrors('roles');
+
+    $errors = session('errors');
+    expect($errors->get('roles')[0])->toBe('Role Guru harus dibuat melalui Admin → Guru agar profil Guru dibuat dan tertaut dengan benar.');
+    expect(User::withoutGlobalScopes()->where('email', 'percobaanguru@example.test')->exists())->toBeFalse();
+});
+
+it('rejects creating a user when guru is combined with another role', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'guru_bk', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Percobaan Guru Kombinasi',
+        'email' => 'percobaangurukombinasi@example.test',
+        'password' => 'password123',
+        'password_confirmation' => 'password123',
+        'roles' => ['guru', 'guru_bk'],
+    ])->assertSessionHasErrors('roles');
+
+    expect(User::withoutGlobalScopes()->where('email', 'percobaangurukombinasi@example.test')->exists())->toBeFalse();
+});
+
+
 
 
