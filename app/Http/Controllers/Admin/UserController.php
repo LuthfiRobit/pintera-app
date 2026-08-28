@@ -296,7 +296,7 @@ class UserController extends BaseController
      */
     private function assignableRoles(int $actingRank): \Illuminate\Support\Collection
     {
-        $excluded = ['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan'];
+        $excluded = ['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan', 'guru'];
 
         return Role::all()
             ->reject(fn ($role) => in_array($role->name, $excluded, true))

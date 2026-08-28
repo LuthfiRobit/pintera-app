@@ -462,4 +462,22 @@ it('rejects a multi-role selection when any single role exceeds the acting manag
     expect(User::withoutGlobalScopes()->where('email', 'percobaancampuran@example.test')->exists())->toBeFalse();
 });
 
+it('does not show guru as a selectable role option on the create form', function () {
+    $manager = actingAsUserManager();
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    Role::firstOrCreate(['name' => 'guru_bk', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    Role::firstOrCreate(['name' => 'wali_kelas', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+
+    $response = $this->actingAs($manager)->get(route('admin.users.create'));
+
+    $response->assertOk();
+    $rolesByGroup = $response->viewData('rolesByGroup');
+    $allRoleNames = $rolesByGroup->flatten()->pluck('name')->values()->all();
+
+    expect($allRoleNames)->not->toContain('guru');
+    expect($allRoleNames)->toContain('guru_bk');
+    expect($allRoleNames)->toContain('wali_kelas');
+});
+
+
 
