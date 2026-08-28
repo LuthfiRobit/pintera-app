@@ -19,7 +19,6 @@ class KasusTugasController extends BaseController
 
     public function store(StoreKasusTugasBatchRequest $request, Kasus $kasus, BeriTugasBatchAction $action): RedirectResponse
     {
-        $this->authorize('kasus.view');
         $this->authorize('kelolaSesiTugas', $kasus);
         abort_if($kasus->trashed(), 404);
         abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
@@ -40,7 +39,6 @@ class KasusTugasController extends BaseController
 
     public function markSelesai(Kasus $kasus, KasusTugas $kasusTugas, TandaiTugasSelesaiAction $action): RedirectResponse
     {
-        $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
         $this->authorize('kelolaSesiTugas', $kasus);
 

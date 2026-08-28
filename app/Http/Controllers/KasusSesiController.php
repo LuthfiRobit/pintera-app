@@ -20,7 +20,6 @@ class KasusSesiController extends BaseController
 
     public function store(Request $request, Kasus $kasus, JadwalkanSesiAction $action): RedirectResponse
     {
-        $this->authorize('kasus.view');
         $this->authorize('kelolaSesiTugas', $kasus);
         abort_if($kasus->trashed(), 404);
         abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
@@ -39,7 +38,6 @@ class KasusSesiController extends BaseController
 
     public function updateStatus(Request $request, Kasus $kasus, KasusSesi $kasusSesi, UpdateStatusSesiAction $action): RedirectResponse
     {
-        $this->authorize('kasus.view');
         $this->authorize('kelolaSesiTugas', $kasus);
         abort_if($kasusSesi->kasus_id !== $kasus->id, 404);
         abort_if($kasusSesi->status->value !== 'terjadwal', 403);

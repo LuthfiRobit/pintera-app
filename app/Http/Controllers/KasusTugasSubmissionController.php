@@ -25,7 +25,6 @@ class KasusTugasSubmissionController extends BaseController
 
     public function store(Request $request, Kasus $kasus, KasusTugas $kasusTugas, SubmitBuktiTugasAction $action): RedirectResponse
     {
-        $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
         abort_if(! in_array($kasusTugas->status->value, ['ditugaskan', 'dikerjakan', 'revisi'], true), 403);
 
@@ -66,7 +65,6 @@ class KasusTugasSubmissionController extends BaseController
 
     public function review(Request $request, Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission, ReviewSubmissionAction $action): RedirectResponse
     {
-        $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
         abort_if($kasusTugasSubmission->tugas_id !== $kasusTugas->id, 404);
         $this->authorize('kelolaSesiTugas', $kasus);
@@ -86,7 +84,6 @@ class KasusTugasSubmissionController extends BaseController
 
     public function download(Kasus $kasus, KasusTugas $kasusTugas, KasusTugasSubmission $kasusTugasSubmission, KasusPolicy $policy): StreamedResponse
     {
-        $this->authorize('kasus.view');
         abort_if($kasusTugas->kasus_id !== $kasus->id, 404);
         abort_if($kasusTugasSubmission->tugas_id !== $kasusTugas->id, 404);
         abort_if($kasusTugasSubmission->lampiran === null, 404);

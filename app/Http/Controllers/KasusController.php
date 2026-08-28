@@ -22,7 +22,7 @@ class KasusController extends BaseController
 
     public function index(Request $request, ListKasusUntukUserAction $action): View
     {
-        $this->authorize('kasus.view');
+        $this->authorize('viewAny', Kasus::class);
 
         $kasusList = $action->execute($request->user());
 
@@ -107,8 +107,6 @@ class KasusController extends BaseController
 
     public function show(Kasus $kasus, KasusPolicy $policy): View
     {
-        $this->authorize('kasus.view');
-
         $user = auth()->user();
 
         abort_if($kasus->trashed(), 404);

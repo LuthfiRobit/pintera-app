@@ -17,7 +17,6 @@ class KasusTugasBatchPreviewController extends BaseController
 
     public function preview(PreviewKasusTugasBatchRequest $request, Kasus $kasus, TugasBatchGenerator $generator): JsonResponse
     {
-        $this->authorize('kasus.view');
         $this->authorize('kelolaSesiTugas', $kasus);
         abort_if($kasus->trashed(), 404);
         abort_unless(in_array($kasus->status, [StatusKasus::Ditugaskan, StatusKasus::Berjalan, StatusKasus::Eskalasi], true), 403);
