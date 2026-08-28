@@ -78,4 +78,25 @@ it('shows Ruang Orang Tua group with dalam-pengembangan links plus keuangan self
     $response->assertSee('Dompet &amp; Tagihan Saya', false);
 });
 
+it('does not duplicate RPP into Akademik for a guru account, but still shows it there for kepala_sekolah', function () {
+    $guru = siapkanGuruUntukSidebar();
+
+    $responseGuru = $this->actingAs($guru)->get(route('dashboard'));
+    $responseGuru->assertOk();
+    expect(substr_count($responseGuru->getContent(), 'Perangkat Ajar (RPP)'))->toBe(1);
+
+    foreach (['spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi', 'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk', 'tagihan.view', 'komponen-penilaian.kelola', 'rapor.view', 'rapor.approve', 'kenaikan-kelas.kelola', 'rpp.view', 'rpp.verify', 'kehadiran-sdm.izin.approve'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $kepsekRole = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $kepsekRole->givePermissionTo(['rpp.view', 'rpp.verify']);
+    $kepsek = User::factory()->create(['lembaga_id' => Lembaga::factory()->create()->id]);
+    $kepsek->assignRole('kepala_sekolah');
+
+    $responseKepsek = $this->actingAs($kepsek)->get(route('dashboard'));
+    $responseKepsek->assertOk();
+    $responseKepsek->assertSee('Perangkat Ajar (RPP)');
+});
+
+
 
