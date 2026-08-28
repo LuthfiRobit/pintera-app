@@ -51,12 +51,14 @@ Di `ProsesKenaikanKelasAction::execute()`, setelah guard lembaga (baris 47) dan 
 $tahunAjaranLama = TahunAjaran::findOrFail($kelasLama->tahun_ajaran_id);
 $tahunAjaranBaru = TahunAjaran::findOrFail($kelasBaru->tahun_ajaran_id);
 
-if ($tahunAjaranBaru->tanggal_mulai <= $tahunAjaranLama->tanggal_mulai) {
-    throw new \DomainException("Kelas tujuan \"{$kelasBaru->nama}\" berada di tahun ajaran \"{$tahunAjaranBaru->nama}\" yang tidak lebih baru dari tahun ajaran kelas asal \"{$tahunAjaranLama->nama}\". Pilih kelas tujuan dari tahun ajaran berikutnya.");
+if ($tahunAjaranBaru->tanggal_mulai < $tahunAjaranLama->tanggal_mulai) {
+    throw new \DomainException("Kelas tujuan \"{$kelasBaru->nama}\" berada di tahun ajaran \"{$tahunAjaranBaru->nama}\" yang lebih lama dari tahun ajaran kelas asal \"{$tahunAjaranLama->nama}\". Pilih kelas tujuan dari tahun ajaran berikutnya.");
 }
 ```
 
-Pengecekan `tahun_ajaran_id` SAMA (baris 49-51 existing) sudah otomatis tercakup oleh aturan `tanggal_mulai <=` ini (tahun ajaran yang sama punya `tanggal_mulai` yang sama, jadi `<=` akan selalu true) — TAPI baris existing tetap DIPERTAHANKAN apa adanya (bukan dihapus) karena pesan errornya lebih spesifik untuk kasus "tahun ajaran sama persis" dibanding pesan generik "tidak lebih baru". Pengecekan baru ditambahkan SETELAH pengecekan existing, sehingga kasus "sama persis" tetap dapat pesan lama, dan kasus "lebih lama" (tapi beda ID) dapat pesan baru.
+**PENTING — pakai `<` (strict), BUKAN `<=`**: `tahun_ajaran.tanggal_mulai` adalah kolom `date` (`database/migrations/2026_07_12_100820_create_tahun_ajaran_table.php:18`), dan `TahunAjaranFactory` (`database/factories/TahunAjaranFactory.php:20`) selalu default ke `now()` untuk SEMUA baris tanpa variasi — artinya 2 test existing di `ProsesKenaikanKelasActionTest.php` (`promotes siswa to the destination kelas...`, `skips a jadwal row that clashes...`) membuat `$tahunLama` dan `$tahunBaru` dengan `tanggal_mulai` yang IDENTIK (tanggal hari ini, kolom `date` membulatkan waktu). Kalau memakai `<=`, kedua test existing itu akan pecah (dianggap "tidak lebih baru" padahal cuma kebetulan sama hari). `<` (ketat) hanya menolak kasus yang BENAR-BENAR mundur (tanggal lebih awal), dan membiarkan kasus "tanggal sama" tetap lolos — cukup untuk menutup celah "mundur" yang jadi concern utama tanpa memaksa perubahan fixture pada test-test lain yang tidak terkait.
+
+Pengecekan `tahun_ajaran_id` SAMA (baris 49-51 existing) TETAP DIPERTAHANKAN apa adanya (bukan dihapus/digabung) — kasusnya berbeda dari pengecekan `tanggal_mulai` baru: "ID sama persis" vs "ID beda tapi tanggal mundur", masing-masing dengan pesan error sendiri. Urutan pengecekan: guard lembaga (baris 47, existing) → guard ID sama (baris 49-51, existing, TIDAK diubah) → guard tanggal mundur (BARU, ditambahkan setelahnya).
 
 Import `App\Models\TahunAjaran` perlu ditambahkan ke `ProsesKenaikanKelasAction.php`.
 
@@ -76,9 +78,9 @@ Import `App\Models\TahunAjaran` perlu ditambahkan ke `ProsesKenaikanKelasAction.
 
 **4.3 — Kasus tidak berubah (regresi negatif Temuan 1)**: `semester_id` yang valid DAN satu tahun ajaran dengan kelas → tetap sukses seperti sebelumnya (tidak ada regresi jalur normal).
 
-**4.4 — Bug reproduction Temuan 2**: admin memilih kelas tujuan kenaikan kelas yang `tahun_ajaran_id`-nya BEDA dari kelas asal TAPI `tanggal_mulai`-nya LEBIH AWAL (mundur) → `ProsesKenaikanKelasAction::execute()` HARUS throw `\DomainException` dengan pesan yang menyebut "tidak lebih baru". Siswa TIDAK boleh berpindah kelas (rollback via `DB::transaction` yang sudah ada).
+**4.4 — Bug reproduction Temuan 2**: admin memilih kelas tujuan kenaikan kelas yang `tahun_ajaran_id`-nya BEDA dari kelas asal TAPI `tanggal_mulai`-nya LEBIH AWAL (mundur, strictly lebih kecil) → `ProsesKenaikanKelasAction::execute()` HARUS throw `\DomainException` dengan pesan yang menyebut "lebih lama". Siswa TIDAK boleh berpindah kelas (rollback via `DB::transaction` yang sudah ada). Test HARUS eksplisit membuat `$tahunAjaranLama` dan `$tahunAjaranBaru` dengan `tanggal_mulai` yang secara eksplisit berbeda (bukan mengandalkan default factory `now()` yang bisa sama), agar skenario "mundur" benar-benar teruji.
 
-**4.5 — Kasus tidak berubah (regresi negatif Temuan 2)**: kenaikan kelas normal (tahun ajaran tujuan benar-benar lebih baru, `tanggal_mulai` lebih besar) → tetap sukses seperti sebelumnya. Kasus tahun ajaran SAMA PERSIS → tetap dapat pesan error existing ("masih berada di tahun ajaran yang sama"), BUKAN pesan baru.
+**4.5 — Kasus tidak berubah (regresi negatif Temuan 2)**: kenaikan kelas normal (tahun ajaran tujuan benar-benar lebih baru, `tanggal_mulai` lebih besar) → tetap sukses seperti sebelumnya. Kasus tahun ajaran SAMA PERSIS (ID sama) → tetap dapat pesan error existing ("masih berada di tahun ajaran yang sama"), BUKAN pesan baru. Kasus 2 tahun ajaran BEDA ID tapi `tanggal_mulai` SAMA (skenario 2 test existing di `ProsesKenaikanKelasActionTest.php` yang memakai default factory) → HARUS tetap sukses (tidak throw), karena validasi baru pakai `<` (strict), bukan `<=`.
 
 ## 5. Ringkasan Perubahan File
 
