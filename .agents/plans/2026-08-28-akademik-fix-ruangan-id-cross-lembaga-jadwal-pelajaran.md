@@ -28,7 +28,7 @@
 - Consumes: `App\Domains\Sarpras\Models\Ruangan` (fillable: `yayasan_id`, `lembaga_id`, `gedung_id`, `kode_ruangan`, `nama_ruangan`, `lantai`, `jenis_ruangan`, `kapasitas_siswa`, `luas_m2`, `penanggung_jawab_guru_id`, `is_shared` bool, `is_aktif` bool), pakai trait `BelongsToTenant` (jadi wajib `withoutGlobalScope(TenantScope::class)` untuk query lintas-lembaga secara sengaja). `App\Models\Scopes\TenantScope` — sudah dipakai identik di `edit()` baris 288 untuk query `ruanganList`.
 - Produces: `store()`/`update()` tetap mengembalikan `RedirectResponse|JsonResponse` — signature method tidak berubah, hanya menambah 1 jalur early-return error baru di masing-masing.
 
-- [ ] **Step 1: Baca baseline `store()` dan `update()` untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline `store()` dan `update()` untuk memastikan tidak ada drift**
 
 Baseline `store()` (baris 175-273 di `app/Http/Controllers/Admin/JadwalPelajaranController.php`), bagian yang relevan (baris 209-219 saat ini):
 
@@ -67,7 +67,7 @@ Baseline `update()` (baris 309-372), bagian yang relevan (baris 331-344 saat ini
 
 Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutkan.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug pada store dan update, plus regresi is_shared)**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug pada store dan update, plus regresi is_shared)**
 
 **PENTING — `Ruangan` TIDAK punya factory** (`database/factories/RuanganFactory.php` tidak ada, meski model pakai trait `HasFactory`). Ruangan test dibuat lewat `Ruangan::create()` langsung, dengan `Gedung::create()` dulu sebagai parent wajib — pola ini persis diambil dari `tests/Feature/Akademik/JadwalSarprasCollisionTest.php:32-57,184-209` yang sudah teruji jalan.
 
@@ -191,7 +191,7 @@ it('rejects updating ruangan_id to a ruangan from another lembaga', function () 
 });
 ```
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --filter="rejects a ruangan_id belonging to another lembaga on store" --compact`
 Expected: FAIL — `assertSessionHasErrors('ruangan_id')` gagal karena request tersimpan sukses (redirect 302 tanpa errors) alih-alih ditolak.
@@ -203,7 +203,7 @@ Run 2 test lain (`accepts a shared ruangan_id...`, `accepts a ruangan_id from th
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --filter="accepts a" --compact`
 Expected: PASS untuk keduanya.
 
-- [ ] **Step 4: Implementasi minimal fix di `store()`**
+- [x] **Step 4: Implementasi minimal fix di `store()`**
 
 Edit `app/Http/Controllers/Admin/JadwalPelajaranController.php`, tepat setelah blok pengecekan `semester_id` (baris 209-215 lama) dan sebelum baris pembentukan `$ruanganId` (baris 217 lama):
 
@@ -232,7 +232,7 @@ Edit `app/Http/Controllers/Admin/JadwalPelajaranController.php`, tepat setelah b
         $jamPelajaranIds = array_unique($data['jam_pelajaran_id']);
 ```
 
-- [ ] **Step 5: Implementasi minimal fix di `update()`**
+- [x] **Step 5: Implementasi minimal fix di `update()`**
 
 Edit `app/Http/Controllers/Admin/JadwalPelajaranController.php`, tepat setelah blok pengecekan `mata_pelajaran_id` (baris 331-340 lama) dan sebelum baris pembentukan `$ruanganId` (baris 342 lama):
 
@@ -266,18 +266,18 @@ Edit `app/Http/Controllers/Admin/JadwalPelajaranController.php`, tepat setelah b
 
 `Ruangan` (`App\Domains\Sarpras\Models\Ruangan`) dan `TenantScope` (`App\Models\Scopes\TenantScope`) sudah di-import di puncak file (baris 11 dan 21) — tidak perlu import baru.
 
-- [ ] **Step 6: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 6: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (baseline + 4 test baru).
 
 Jika ada test lain di file ini yang FAIL, cek dulu apakah kegagalan itu terkait fix sebelum melanjutkan — laporkan sebagai temuan BLOCKED jika ditemukan, jangan diam-diam mengubah assertion test existing.
 
-- [ ] **Step 7: Jalankan Pint**
+- [x] **Step 7: Jalankan Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/JadwalPelajaranController.php tests/Feature/Admin/JadwalPelajaranCrudTest.php
