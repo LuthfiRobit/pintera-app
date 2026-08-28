@@ -1,4 +1,5 @@
 <?php
+
 // database/seeders/EssentialUserSeeder.php
 
 namespace Database\Seeders;
@@ -61,6 +62,13 @@ class EssentialUserSeeder extends Seeder
             );
             $user->update(['lembaga_id' => $lembaga->id]);
             $user->assignRole($data['role']);
+
+            // kurikulum.sd@demo.test dobel peran: operator_akademik (kelola data master)
+            // DAN wakasek_kurikulum (approver step 1 workflow RAPOR_SEMESTER) -- tanpa ini
+            // tidak ada satu pun akun demo yang bisa memverifikasi pengajuan rapor.
+            if ($email === 'kurikulum.sd@demo.test') {
+                $user->assignRole('wakasek_kurikulum');
+            }
             // Baseline scope-carrier (RBAC v2 spec §6.1, §7) -- semua akun di array ini
             // lembaga-affiliated (lembaga_id terisi), jadi pegawai_lembaga, bukan
             // pegawai_yayasan.
