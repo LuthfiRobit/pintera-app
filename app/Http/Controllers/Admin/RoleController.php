@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Workflow\Enums\ApproverType;
+use App\Domains\Workflow\Models\WorkflowStep;
 use App\Models\Role;
 use App\Services\PermissionAuditService;
 use App\Services\PermissionCatalog;
@@ -17,11 +19,9 @@ class RoleController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function __construct(private PermissionAuditService $permissionAudit)
-    {
-    }
+    public function __construct(private PermissionAuditService $permissionAudit) {}
 
-    public function index(Request $request): View|\Illuminate\Http\JsonResponse
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('viewAny', Role::class);
 
@@ -152,8 +152,6 @@ class RoleController extends BaseController
         $data = $request->validate($rules);
 
         if (! $role->is_protected) {
-            $role->name = $data['name'];
-
             $actingRank = $this->scopeRank($request->user()->widestScopeLevel());
             if ($this->scopeRank($data['scope_level']) > $actingRank) {
                 return $this->errorResponse(
@@ -162,6 +160,23 @@ class RoleController extends BaseController
                     'Anda tidak dapat mengubah role ke scope lebih luas dari scope Anda sendiri.'
                 );
             }
+
+            if ($data['scope_level'] !== $role->scope_level) {
+                $dipakaiWorkflowBerbeda = WorkflowStep::where('approver_type', ApproverType::Role)
+                    ->where('approver_value', $role->name)
+                    ->where('scope_level', '!=', $data['scope_level'])
+                    ->exists();
+
+                if ($dipakaiWorkflowBerbeda) {
+                    return $this->errorResponse(
+                        $request,
+                        'scope_level',
+                        'Role ini dipakai sebagai approver pada langkah workflow dengan scope_level berbeda. Selaraskan scope_level langkah workflow terkait terlebih dahulu.'
+                    );
+                }
+            }
+
+            $role->name = $data['name'];
             $role->scope_level = $data['scope_level'];
         }
 

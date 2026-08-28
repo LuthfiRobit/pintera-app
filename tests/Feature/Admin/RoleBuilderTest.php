@@ -1,7 +1,11 @@
 <?php
 
+use App\Domains\Workflow\Enums\ApproverType;
+use App\Domains\Workflow\Models\WorkflowDefinition;
+use App\Domains\Workflow\Models\WorkflowStep;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
 
 function actingAsSuperAdmin(): User
@@ -15,7 +19,7 @@ function actingAsSuperAdmin(): User
     );
     $role->givePermissionTo(['roles.view', 'roles.create', 'roles.edit', 'roles.delete']);
 
-    $user = User::factory()->create(['yayasan_id' => \App\Models\Yayasan::factory()->create()->id]);
+    $user = User::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     $user->assignRole($role);
 
     return $user;
@@ -421,4 +425,60 @@ it('shows a permissions tooltip listing the first permission names plus a remain
 
     $response->assertOk();
     $response->assertSee('+1 lainnya');
+});
+
+it('rejects changing a role scope_level when it would diverge from a workflow step that uses it as approver', function () {
+    $admin = actingAsSuperAdmin();
+    $role = Role::create(['name' => 'kepala_sekolah', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+
+    $def = WorkflowDefinition::create([
+        'code' => 'TEST_ROLE_SCOPE_GUARD',
+        'nama_workflow' => 'Test Role Scope Guard',
+        'is_active' => true,
+    ]);
+    WorkflowStep::create([
+        'workflow_definition_id' => $def->id,
+        'step_number' => 1,
+        'step_name' => 'Approval Lembaga',
+        'approver_type' => ApproverType::Role,
+        'approver_value' => 'kepala_sekolah',
+        'scope_level' => 'lembaga',
+        'is_final_step' => true,
+    ]);
+
+    $this->actingAs($admin)->put(route('admin.roles.update', $role), [
+        'name' => 'kepala_sekolah',
+        'scope_level' => 'yayasan',
+        'permissions' => [],
+    ])->assertSessionHasErrors('scope_level');
+
+    expect($role->fresh()->scope_level)->toBe('lembaga');
+});
+
+it('allows changing a role scope_level to match the workflow step scope_level it is used in', function () {
+    $admin = actingAsSuperAdmin();
+    $role = Role::create(['name' => 'kepala_sekolah', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
+
+    $def = WorkflowDefinition::create([
+        'code' => 'TEST_ROLE_SCOPE_MATCH',
+        'nama_workflow' => 'Test Role Scope Match',
+        'is_active' => true,
+    ]);
+    WorkflowStep::create([
+        'workflow_definition_id' => $def->id,
+        'step_number' => 1,
+        'step_name' => 'Approval Lembaga',
+        'approver_type' => ApproverType::Role,
+        'approver_value' => 'kepala_sekolah',
+        'scope_level' => 'lembaga',
+        'is_final_step' => true,
+    ]);
+
+    $this->actingAs($admin)->put(route('admin.roles.update', $role), [
+        'name' => 'kepala_sekolah',
+        'scope_level' => 'lembaga',
+        'permissions' => [],
+    ])->assertRedirect(route('admin.roles.index'));
+
+    expect($role->fresh()->scope_level)->toBe('lembaga');
 });
