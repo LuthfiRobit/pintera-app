@@ -66,17 +66,16 @@ protected function checkRoleApprover(WorkflowStep $step, User $user, ApprovalReq
     }
 
     if ($step->scope_level === 'lembaga') {
-        $effectiveLembagaId = $user->widestScopeLevel() === 'yayasan'
-            ? session('active_lembaga_id')
-            : $user->lembaga_id;
-
-        if ($effectiveLembagaId === null) {
-            return false;
-        }
-
         $targetLembagaId = $request->approvable?->lembaga_id ?? $request->requester?->lembaga_id;
-        if ($targetLembagaId !== null && (int) $targetLembagaId !== (int) $effectiveLembagaId) {
-            return false;
+
+        if ($targetLembagaId !== null) {
+            $effectiveLembagaId = $user->widestScopeLevel() === 'yayasan'
+                ? session('active_lembaga_id')
+                : $user->lembaga_id;
+
+            if ($effectiveLembagaId === null || (int) $targetLembagaId !== (int) $effectiveLembagaId) {
+                return false;
+            }
         }
     }
 
@@ -84,7 +83,9 @@ protected function checkRoleApprover(WorkflowStep $step, User $user, ApprovalReq
 }
 ```
 
-Perubahan dari existing: (a) `$effectiveLembagaId === null` → langsung `return false` (fail-closed, dulu tidak ada pengecekan ini sama sekali); (b) `$targetLembagaId !== null` (dulu `$targetLembagaId &&`, sama efeknya untuk int tapi lebih eksplisit); (c) `$user->lembaga_id` di perbandingan mismatch diganti `$effectiveLembagaId` (dulu `$user->lembaga_id &&` yang jadi akar bug, sekarang dihapus syarat truthy-nya karena sudah di-guard duluan oleh baris fail-closed).
+**PENTING — fail-closed HANYA berlaku ketika `$targetLembagaId` tidak null.** Kalau `$targetLembagaId` NULL (baik `approvable` maupun `requester` sama-sama tidak punya `lembaga_id` — skenario workflow generik tanpa konteks tenant sama sekali, dibuktikan oleh `tests/Unit/Domains/Workflow/WorkflowEngineTest.php` yang memakai `User::factory()->create()` polos tanpa `lembaga_id` sebagai `approvable`/`requester`), TIDAK ADA yang perlu dilindungi — percabangan lembaga dilewati sepenuhnya, method lanjut ke `return true` seperti sebelumnya. **JANGAN membuat fail-closed berlaku tanpa syarat** (`$targetLembagaId === null → false`) — itu akan MEMATAHKAN `WorkflowEngineTest::test_can_initialize_and_progress_through_multi_step_workflow()` yang sengaja menguji step machine murni tanpa konteks lembaga sama sekali (baik `$userKepsek->lembaga_id` maupun `$requester->lembaga_id` default NULL dari factory, `scope_level` role `kepala_sekolah` juga tidak di-set eksplisit di test itu).
+
+Perubahan dari existing: (a) fail-closed HANYA aktif kalau ada `$targetLembagaId` nyata untuk dilindungi (dulu tidak ada pengecekan null sama sekali di jalur manapun); (b) `$user->lembaga_id` di perbandingan mismatch diganti `$effectiveLembagaId` yang menghitung nilai efektif untuk aktor yayasan (dulu `$user->lembaga_id &&` sebagai syarat truthy adalah akar bug, sekarang digantikan pengecekan `$effectiveLembagaId === null` yang benar-benar fail-closed KETIKA ada target yang perlu dilindungi).
 
 **Dampak untuk 3 workflow existing**: RAPOR_SEMESTER, IZIN_CUTI_SDM, PENGADAAN_SARPRAS — semua step approver-nya `approver_type=Role` + `scope_level='lembaga'` (kecuali `bendahara_yayasan` yang sudah `scope_level='yayasan'`, tidak tersentuh fix ini karena beda percabangan). Fix ini otomatis berlaku untuk ketiganya sekaligus.
 
@@ -185,7 +186,7 @@ Ini PERSIS desain yang sudah disetujui user di siklus sebelumnya (sebelum dijeda
 
 **4.1 — Regresi wajib**: seluruh test existing di `tests/Feature/Akademik/RaporApprovalActionsTest.php`, `tests/Feature/Akademik/RaporApprovalTenantScopeTest.php`, `tests/Feature/Akademik/RaporPdfDataBuilderTest.php`, `tests/Feature/Rapor/RaporPersetujuanControllerTest.php`, `tests/Feature/Admin/RoleBuilderTest.php` (test existing untuk `RoleController::update()`, sudah dikonfirmasi file-nya — BUKAN `RoleControllerTest.php`, yang tidak ada), dan `tests/Unit/Domains/Workflow/WorkflowEngineTest.php` HARUS tetap PASS tanpa modifikasi assertion apa pun.
 
-**4.2 — Bug reproduction Bug 1 (resolver fail-open)**: buat `WorkflowStep` dengan `scope_level='lembaga'`, buat `User` dengan role yang cocok TAPI `lembaga_id = NULL` (simulasi role yang scope_level-nya sudah "kebetulan" jadi yayasan di data, tanpa perlu melalui `RoleController`) DAN tanpa `session('active_lembaga_id')` — `ApproverResolverService::canUserApprove()` HARUS `false` (SEBELUM fix: `true`, bug).
+**4.2 — Bug reproduction Bug 1 (resolver fail-open)**: buat `WorkflowStep` dengan `scope_level='lembaga'`, buat `ApprovalRequest` dengan `approvable` yang PUNYA `lembaga_id` nyata (bukan model tanpa lembaga_id seperti di `WorkflowEngineTest` existing — WAJIB pakai model yang benar-benar punya `lembaga_id`, misal `Kelas`/`PengajuanRapor`, supaya `$targetLembagaId` tidak null dan skenario ini benar-benar menguji jalur fail-closed), buat `User` dengan role yang cocok TAPI `lembaga_id = NULL` DAN tanpa `session('active_lembaga_id')` — `ApproverResolverService::canUserApprove()` HARUS `false` (SEBELUM fix: `true`, bug).
 
 **4.3 — Bug reproduction Bug 1 varian yayasan dengan lembaga aktif BENAR**: user yayasan (`lembaga_id=NULL`) dengan `session('active_lembaga_id')` di-set SAMA dengan `$request->approvable->lembaga_id` → HARUS `true` (lolos, sesuai keputusan desain).
 
