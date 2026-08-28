@@ -57,3 +57,25 @@ it('shows Ruang Siswa group with 3 dalam-pengembangan links for a siswa account'
     $response->assertSee('Presensi Saya');
 });
 
+it('shows Ruang Orang Tua group with dalam-pengembangan links plus keuangan self-service items, moved out of the Keuangan group', function () {
+    foreach (['kasus.view', 'keuangan.akses'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $role->givePermissionTo(['kasus.view', 'keuangan.akses']);
+
+    $orangTuaUser = User::factory()->create();
+    $orangTuaUser->assignRole('orang_tua');
+    \App\Models\OrangTua::factory()->create(['user_id' => $orangTuaUser->id]);
+
+    $response = $this->actingAs($orangTuaUser)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Ruang Orang Tua');
+    $response->assertSee('Nilai Anak');
+    $response->assertSee('Jadwal Anak');
+    $response->assertSee('Riwayat Izin/Sakit Anak');
+    $response->assertSee('Dompet &amp; Tagihan Saya', false);
+});
+
+

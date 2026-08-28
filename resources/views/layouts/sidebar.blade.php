@@ -33,6 +33,19 @@
             ]),
         ],
         [
+            'label' => 'Ruang Orang Tua',
+            'group_icon' => 'users',
+            'items' => array_filter([
+                Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'nilai-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Nilai Anak', 'icon' => 'award'] : null,
+                Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'jadwal-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Jadwal Anak', 'icon' => 'calendar-clock'] : null,
+                Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'riwayat-izin-sakit-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Riwayat Izin/Sakit Anak', 'icon' => 'clipboard-check'] : null,
+                Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.dashboard', 'pattern' => 'keuangan.dashboard', 'label' => 'Dompet & Tagihan Saya', 'icon' => 'wallet'] : null,
+                Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.tagihan.index', 'pattern' => 'keuangan.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt'] : null,
+                Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.riwayat.index', 'pattern' => 'keuangan.riwayat.*', 'label' => 'Riwayat', 'icon' => 'history'] : null,
+                Auth::user()->orangTua !== null && Auth::user()->can('viewAny', \App\Domains\Kasus\Models\Kasus::class) ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'stethoscope'] : null,
+            ]),
+        ],
+        [
             'label' => 'Kehadiran Saya',
             'group_icon' => 'clock',
             'items' => array_filter([
@@ -84,9 +97,6 @@
                 Auth::user()->can('tagihan.view') && Route::has('admin.tagihan.index') ? ['route' => 'admin.tagihan.index', 'pattern' => 'admin.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt'] : null,
                 Auth::user()->can('pembayaran.view') ? ['route' => 'admin.pembayaran.index', 'pattern' => 'admin.pembayaran.*', 'label' => 'Verifikasi Pembayaran', 'icon' => 'banknote'] : null,
                 Auth::user()->can('pembayaran.verifikasi') ? ['route' => 'admin.manual-payment.index', 'pattern' => 'admin.manual-payment.*', 'label' => 'Verifikasi Transfer Manual', 'icon' => 'file-check'] : null,
-                Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.dashboard', 'pattern' => 'keuangan.dashboard', 'label' => 'Dompet & Tagihan Saya', 'icon' => 'wallet'] : null,
-                Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.tagihan.index', 'pattern' => 'keuangan.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt'] : null,
-                Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.riwayat.index', 'pattern' => 'keuangan.riwayat.*', 'label' => 'Riwayat', 'icon' => 'history'] : null,
             ]),
         ],
         /*
