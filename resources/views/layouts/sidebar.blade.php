@@ -31,6 +31,7 @@
             'group_icon' => 'book-open',
             'items' => array_filter([
                 Auth::user()->can('kalender-akademik.view') ? ['route' => 'admin.pengaturan.akademik.index', 'pattern' => 'admin.pengaturan.akademik.*', 'label' => 'Pengaturan Akademik', 'icon' => 'calendar-clock'] : null,
+                Auth::user()->can('kurikulum-assignment.view') ? ['route' => 'admin.kurikulum-assignment.index', 'pattern' => 'admin.kurikulum-assignment.*', 'label' => 'Kurikulum Assignment', 'icon' => 'layers'] : null,
                 Auth::user()->can('pola-jam.view') ? ['route' => 'admin.pola-jam.index', 'pattern' => 'admin.pola-jam.*', 'label' => 'Pola Jam', 'icon' => 'clock'] : null,
                 Auth::user()->can('jadwal-pelajaran.kelola') ? ['route' => 'admin.jadwal-pelajaran.index', 'pattern' => 'admin.jadwal-pelajaran.*', 'label' => 'Jadwal Pelajaran', 'icon' => 'clipboard-check'] : null,
                 Auth::user()->can('rpp.view') ? ['route' => 'admin.rpp.index', 'pattern' => 'admin.rpp.*', 'label' => 'Perangkat Ajar (RPP)', 'icon' => 'file-text'] : null,
