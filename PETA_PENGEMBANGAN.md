@@ -261,6 +261,14 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
 - **Halaman UI lama**: Pembayaran, Tagihan, SPMB-Pendaftaran, Tahun Ajaran (create) — masih pattern `<x-panel>`/`text-brass`/`bg-paper` lama. *(Dashboard per-role SUDAH direstyle 25 Agustus 2026 — dikeluarkan dari daftar ini.)* Prioritas Rendah, kosmetik murni.
 - **Rotasi otomatis shift (SDM)** — Belum Ada. Prioritas Rendah.
 - **Penyempurnaan Kuota Cuti** (per-jenis, Izin/Sakit, prorata) — Parsial, sengaja di luar cakupan awal. Prioritas Rendah.
+- **Bottom nav mobile/tablet untuk akun Guru, Orang Tua & Siswa** — Belum Ada, ide dari user (28 Agustus 2026), CATATAN untuk agent lain (mis. Antigravity) — bukan spec/plan, murni backlog analisis awal:
+  - Referensi visual: pola Flowbite bottom-nav (5 slot: 4 link + 1 tombol "+" tengah), `fixed bottom-4` pill-shaped.
+  - **Blocker teknis wajib dicek sebelum implementasi**: class Flowbite yang dipakai user sebagai referensi (`bg-neutral-primary-soft`, `border-default`, `text-body`, `text-fg-brand`, `rounded-base`, `shadow-xs`, dll — token Flowbite Blocks/versi baru) **TIDAK ADA** di `tailwind.config.js` project ini (cuma ada skala `brand.*`). Perlu dipetakan ke token existing (`bg-white`, `border-gray-200`, `text-gray-600`, `text-brand-600`, `bg-brand-500`, `shadow-elevated`), BUKAN copy-paste langsung.
+  - `layouts/app.blade.php` `<main>` (baris 41, `py-6`) tidak punya padding bawah cadangan — akan ketutupan bottom nav `fixed`, perlu `pb-24` kondisional di mobile.
+  - Item menu Guru (5-9 item lintas 3 grup sidebar: Jurnal, Rekap Kehadiran, Komponen Penilaian, Asesmen, Rapor Wali, QR, Izin/Cuti, RPP) lebih banyak dari 5 slot bottom nav — butuh kurasi 4 prioritas + slot "Lainnya" yang membuka sidebar off-canvas existing, bukan mapping 1:1.
+  - Siswa baseline saat ini cuma punya 2 menu (Dashboard + Kasus Pendampingan, lihat item "Pengelompokan ulang sidebar" di bawah) — bottom nav 5-slot akan mayoritas kosong kecuali sekaligus dibangun fitur viewer siswa baru (nilai/jadwal/presensi). Tombol "+" tengah juga belum ada padanan aksinya untuk siswa (baseline `siswa` bahkan tidak punya `kasus.ajukan`, cuma `kasus.view` — siswa tidak bisa "membuat" apa pun lewat sistem saat ini).
+  - Rekomendasi: brainstorming terpisah, idealnya SETELAH item "Pengelompokan ulang sidebar" di bawah selesai (biar tahu persis item final apa saja yang perlu dikurasi ke 4 slot).
+  - Lokasi: `resources/views/layouts/sidebar.blade.php`, `app.blade.php`, `topbar.blade.php`, `tailwind.config.js`.
 
 ## 4. Level Orang Tua / Wali
 *Dasar (dashboard anak, tagihan online, notifikasi transaksional) berjalan. Belum: komunikasi dua arah & transparansi presensi harian.*
