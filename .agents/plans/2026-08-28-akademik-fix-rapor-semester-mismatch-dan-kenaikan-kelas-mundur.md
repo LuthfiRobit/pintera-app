@@ -29,7 +29,7 @@
 - Consumes: `App\Models\Semester` (properti `tahun_ajaran_id`), `App\Models\Kelas` (properti `tahun_ajaran_id`) — keduanya sudah dipakai di file ini, tidak ada import baru.
 - Produces: `edit()`, `generateNarasi()`, `ajukan()`, `cetak()` tetap return type yang sama — hanya menambah 1 jalur `abort_if` baru (404) di masing-masing.
 
-- [ ] **Step 1: Baca baseline 4 method untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline 4 method untuk memastikan tidak ada drift**
 
 Baseline `edit()` (baris 121-154), bagian relevan (baris 129-133 saat ini):
 ```php
@@ -71,7 +71,7 @@ Baseline `cetak()` (baris 213-230), bagian relevan (baris 221-225 saat ini):
 
 Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutkan.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug di 4 method + regresi negatif)**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug di 4 method + regresi negatif)**
 
 Tambahkan di akhir `tests/Feature/Guru/RaporControllerTest.php` (setelah test terakhir di file):
 
@@ -119,14 +119,14 @@ it('rejects printing a pdf when semester_id belongs to a different tahun ajaran 
 
 `siapkanWaliKelasUntukRapor()` sudah mengembalikan `lembaga` di array-nya (lihat baris 44 file existing: `return compact('guruUser', 'guru', 'kelas', 'siswa', 'lembaga', 'yayasan', 'tahunAjaran', 'semester');`), jadi tidak perlu setup tambahan.
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Feature/Guru/RaporControllerTest.php --filter="rejects opening the edit form when semester_id belongs to a different tahun ajaran" --compact`
 Expected: FAIL — `assertNotFound()` gagal karena response sukses (200) alih-alih 404.
 
 Run juga untuk 3 test lain (`rejects generating narasi...`, `rejects submitting a pengajuan...`, `rejects printing a pdf...`) — semua harus FAIL di titik ini.
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
 Edit `app/Http/Controllers/Guru/RaporController.php`:
 
@@ -166,14 +166,14 @@ Edit `app/Http/Controllers/Guru/RaporController.php`:
         $data = $this->raporPdfDataBuilder->build($siswa, $semester);
 ```
 
-- [ ] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Guru/RaporControllerTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (baseline + 4 test baru).
 
 Jika ada test lain yang FAIL, laporkan sebagai temuan BLOCKED — jangan diam-diam mengubah assertion existing.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Guru/RaporController.php tests/Feature/Guru/RaporControllerTest.php
@@ -192,7 +192,7 @@ git commit -m "fix(akademik): cross-check semester vs tahun ajaran kelas pada Gu
 - Consumes: `App\Models\TahunAjaran::findOrFail(int $id): TahunAjaran` (properti `tanggal_mulai`, cast `date`).
 - Produces: `ProsesKenaikanKelasAction::execute()` tetap `(KenaikanKelasData $data): array{jadwalGagal: array<int,string>}` — signature tidak berubah, hanya menambah 1 kondisi baru yang bisa throw `\DomainException` (exception class yang sama dengan guard existing, tidak ada exception baru).
 
-- [ ] **Step 1: Baca baseline `execute()` untuk memastikan tidak ada drift**
+- [x] **Step 1: Baca baseline `execute()` untuk memastikan tidak ada drift**
 
 Baseline (baris 29-66 di `app/Domains/Akademik/Actions/KenaikanKelas/ProsesKenaikanKelasAction.php`), bagian relevan (baris 46-53 saat ini):
 
@@ -211,7 +211,7 @@ Jika file di repo berbeda dari baseline ini, STOP dan laporkan sebelum melanjutk
 
 **PENTING — kenapa pakai `<` bukan `<=`**: `tahun_ajaran.tanggal_mulai` adalah kolom `date` (`database/migrations/2026_07_12_100820_create_tahun_ajaran_table.php:18`). `TahunAjaranFactory` (`database/factories/TahunAjaranFactory.php:20`) SELALU default `tanggal_mulai` ke `now()` untuk SEMUA baris tanpa variasi. Test existing `promotes siswa to the destination kelas...` dan `skips a jadwal row that clashes...` di `ProsesKenaikanKelasActionTest.php` membuat `$tahunLama`/`$tahunBaru` (dan `$semesterTujuan`'s parent tahun ajaran) lewat factory default — tanggal-nya akan SAMA PERSIS (hari yang sama). Kalau pengecekan baru pakai `<=`, kedua test itu akan mulai gagal (dianggap "tidak lebih baru" padahal cuma kebetulan sama hari saat test dijalankan). WAJIB pakai `<` (strict) supaya hanya kasus BENAR-BENAR mundur (tanggal lebih awal) yang ditolak, dan kasus "kebetulan sama hari" tetap lolos seperti perilaku existing.
 
-- [ ] **Step 2: Tulis test yang gagal (reproduksi bug mundur + regresi negatif "tanggal sama")**
+- [x] **Step 2: Tulis test yang gagal (reproduksi bug mundur + regresi negatif "tanggal sama")**
 
 Tambahkan di akhir `tests/Unit/Domains/Akademik/Actions/KenaikanKelas/ProsesKenaikanKelasActionTest.php` (setelah test terakhir di file):
 
@@ -247,14 +247,14 @@ it('promotes siswa when tahun ajaran tujuan has a later tanggal_mulai than kelas
 });
 ```
 
-- [ ] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
+- [x] **Step 3: Jalankan test untuk memastikan reproduksi bug GAGAL (bug masih ada)**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/Actions/KenaikanKelas/ProsesKenaikanKelasActionTest.php --filter="throws a DomainException when kelas tujuan is in a tahun ajaran with an earlier tanggal_mulai" --compact`
 Expected: FAIL — `toThrow(\DomainException::class)` gagal karena tidak ada exception yang dilempar (siswa berhasil pindah kelas ke tahun ajaran yang lebih mundur).
 
 Run juga test `promotes siswa when tahun ajaran tujuan has a later tanggal_mulai...` dan pastikan itu PASS dari awal (baseline aman, bukan bukti bug).
 
-- [ ] **Step 4: Implementasi minimal fix**
+- [x] **Step 4: Implementasi minimal fix**
 
 Edit `app/Domains/Akademik/Actions/KenaikanKelas/ProsesKenaikanKelasAction.php`:
 
@@ -280,23 +280,23 @@ Tambah blok pengecekan tepat setelah guard "tahun ajaran sama" (baris 49-51 lama
                 Siswa::where('kelas_id', $kelasLama->id)->update(['kelas_id' => $kelasBaru->id]);
 ```
 
-- [ ] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
+- [x] **Step 5: Jalankan seluruh file test dan pastikan semua PASS**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/Actions/KenaikanKelas/ProsesKenaikanKelasActionTest.php --compact`
 Expected: PASS untuk seluruh test di file ini (3 test baseline existing + 2 test baru).
 
 Jika ada test lain yang FAIL, laporkan sebagai temuan BLOCKED — jangan diam-diam mengubah assertion existing.
 
-- [ ] **Step 6: Jalankan regresi di 2 file test terkait lain (disebut di spec §4.1)**
+- [x] **Step 6: Jalankan regresi di 2 file test terkait lain (disebut di spec §4.1)**
 
 Run: `php artisan test tests/Feature/Admin/KenaikanKelasControllerTest.php tests/Feature/Akademik/KenaikanKelasControllerUxTest.php --compact`
 Expected: PASS semua — file-file ini tidak dimodifikasi tapi memakai `ProsesKenaikanKelasAction` secara tidak langsung lewat controller, jadi perlu diverifikasi tidak ada regresi tersembunyi.
 
-- [ ] **Step 7: Jalankan Pint**
+- [x] **Step 7: Jalankan Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/KenaikanKelas/ProsesKenaikanKelasAction.php tests/Unit/Domains/Akademik/Actions/KenaikanKelas/ProsesKenaikanKelasActionTest.php
