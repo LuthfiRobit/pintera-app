@@ -16,11 +16,7 @@
         : collect();
     $activeSiswaId = session('active_siswa_id');
     $activeSiswaId = $activeSiswaId ?? (isset($resolvedActiveSiswaId) ? $resolvedActiveSiswaId : null);
-    $hasBottomNav = Auth::check() && (
-        Auth::user()->hasRole('guru') || 
-        Auth::user()->hasRole('siswa') || 
-        Auth::user()->orangTua !== null
-    );
+    $hasBottomNav = Auth::check() && Auth::user()->hasBottomNav();
 @endphp
 
 <header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-300 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">

@@ -4,13 +4,13 @@
         return;
     }
 
-    $isGuru = $user->hasRole('guru');
-    $isSiswa = ! $isGuru && $user->hasRole('siswa');
-    $isOrangTua = ! $isGuru && ! $isSiswa && $user->orangTua !== null;
-
-    if (! $isGuru && ! $isSiswa && ! $isOrangTua) {
+    if (! $user->hasBottomNav()) {
         return;
     }
+
+    $isGuru = $user->hasRole('guru');
+    $isSiswa = ! $isGuru && $user->hasRole('siswa');
+    $isOrangTua = ! $isGuru && ! $isSiswa;
 
     // Active state checks
     $isBerandaActive = request()->routeIs('dashboard');
@@ -50,45 +50,55 @@
             </a>
 
             {{-- Slot 2: Jurnal --}}
-            <a
-                href="{{ route('guru.jurnal-kbm.index') }}"
-                class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
-                aria-label="Jurnal"
-                @if($isJurnalActive) data-active="jurnal" @endif
-            >
-                <x-dynamic-component :component="'lucide-file-pen'" class="h-6 w-6 {{ $isJurnalActive ? 'text-brand-600' : 'text-gray-500' }}" />
-                <span class="sr-only">Jurnal</span>
-                @if ($isJurnalActive)
-                    <span class="mt-1 h-1 w-1 rounded-full bg-brand-600"></span>
-                @endif
-            </a>
+            @can('presensi.isi')
+                <a
+                    href="{{ route('guru.jurnal-kbm.index') }}"
+                    class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
+                    aria-label="Jurnal"
+                    @if($isJurnalActive) data-active="jurnal" @endif
+                >
+                    <x-dynamic-component :component="'lucide-file-pen'" class="h-6 w-6 {{ $isJurnalActive ? 'text-brand-600' : 'text-gray-500' }}" />
+                    <span class="sr-only">Jurnal</span>
+                    @if ($isJurnalActive)
+                        <span class="mt-1 h-1 w-1 rounded-full bg-brand-600"></span>
+                    @endif
+                </a>
+            @else
+                <div></div>
+            @endcan
 
             {{-- Slot 3: QR Saya (FAB) --}}
             <div class="flex items-center justify-center">
-                <a
-                    href="{{ route('sdm.qr-saya') }}"
-                    class="relative -translate-y-2 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-md transition duration-150 ease-out hover:bg-brand-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30"
-                    aria-label="QR Saya"
-                    @if($isQrActive) data-active="qr-saya" @endif
-                >
-                    <x-dynamic-component :component="'lucide-qr-code'" class="h-6 w-6 text-white" />
-                    <span class="sr-only">QR Saya</span>
-                </a>
+                @can('kehadiran-sdm.lihat-qr-sendiri')
+                    <a
+                        href="{{ route('sdm.qr-saya') }}"
+                        class="relative -translate-y-2 flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-md transition duration-150 ease-out hover:bg-brand-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30"
+                        aria-label="QR Saya"
+                        @if($isQrActive) data-active="qr-saya" @endif
+                    >
+                        <x-dynamic-component :component="'lucide-qr-code'" class="h-6 w-6 text-white" />
+                        <span class="sr-only">QR Saya</span>
+                    </a>
+                @endcan
             </div>
 
             {{-- Slot 4: Nilai --}}
-            <a
-                href="{{ route('guru.asesmen.index') }}"
-                class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
-                aria-label="Nilai"
-                @if($isNilaiGuruActive) data-active="nilai" @endif
-            >
-                <x-dynamic-component :component="'lucide-award'" class="h-6 w-6 {{ $isNilaiGuruActive ? 'text-brand-600' : 'text-gray-500' }}" />
-                <span class="sr-only">Nilai</span>
-                @if ($isNilaiGuruActive)
-                    <span class="mt-1 h-1 w-1 rounded-full bg-brand-600"></span>
-                @endif
-            </a>
+            @can('asesmen.kelola')
+                <a
+                    href="{{ route('guru.asesmen.index') }}"
+                    class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
+                    aria-label="Nilai"
+                    @if($isNilaiGuruActive) data-active="nilai" @endif
+                >
+                    <x-dynamic-component :component="'lucide-award'" class="h-6 w-6 {{ $isNilaiGuruActive ? 'text-brand-600' : 'text-gray-500' }}" />
+                    <span class="sr-only">Nilai</span>
+                    @if ($isNilaiGuruActive)
+                        <span class="mt-1 h-1 w-1 rounded-full bg-brand-600"></span>
+                    @endif
+                </a>
+            @else
+                <div></div>
+            @endcan
         @elseif ($isOrangTua)
             {{-- Slot 1: Beranda --}}
             <a

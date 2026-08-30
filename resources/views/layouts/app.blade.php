@@ -38,15 +38,7 @@
                     </header>
                 @endisset
 
-                @php
-                    $hasBottomNav = Auth::check() && (
-                        Auth::user()->hasRole('guru') || 
-                        Auth::user()->hasRole('siswa') || 
-                        Auth::user()->orangTua !== null
-                    );
-                @endphp
-
-                <main class="flex-1 px-4 py-6 sm:px-6 lg:px-10 {{ $hasBottomNav ? 'pb-28 lg:pb-6' : '' }}">
+                <main class="flex-1 px-4 py-6 sm:px-6 lg:px-10 {{ Auth::check() && Auth::user()->hasBottomNav() ? 'pb-28 lg:pb-6' : '' }}">
                     {{ $slot }}
                 </main>
             </div>

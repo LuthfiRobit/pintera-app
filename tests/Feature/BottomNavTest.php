@@ -8,6 +8,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 function siapkanUserPersonal(string $roleName): User
 {
@@ -112,6 +113,21 @@ it('correctly matches active state for placeholder routes based on fitur query p
     $response->assertSee('data-active="jadwal-pelajaran"', false);
     $response->assertDontSee('data-active="presensi-saya"', false);
     $response->assertDontSee('data-active="nilai-rapor"', false);
+});
+
+it('hides the Nilai slot for a guru account whose role lacks asesmen.kelola, without breaking the 5-slot grid', function () {
+    $guru = siapkanUserPersonal('guru');
+    Role::where('name', 'guru')->first()->revokePermissionTo('asesmen.kelola');
+    $guru->unsetRelation('permissions')->unsetRelation('roles');
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    $response = $this->actingAs($guru)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('aria-label="Beranda"', false);
+    $response->assertSee('aria-label="Jurnal"', false);
+    $response->assertSee('aria-label="QR Saya"', false);
+    $response->assertDontSee('aria-label="Nilai"', false);
 });
 
 it('shows Pintera brand logo in topbar on mobile for personal accounts and burger button for non-personal accounts', function () {

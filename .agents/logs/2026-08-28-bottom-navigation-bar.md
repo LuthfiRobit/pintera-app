@@ -55,11 +55,11 @@ Telah diimplementasikan komponen **Bottom Navigation Bar (Mobile/Tablet)** denga
 
 ## 4. Hasil Verifikasi
 
-- **Feature Tests**:
-  - `tests/Feature/BottomNavTest.php`: **5 passed (35 assertions)**
+- **Feature Tests** (dihitung ulang setelah review, §4 sebelumnya tidak sinkron dengan §1 yang sudah menyebut 6 skenario):
+  - `tests/Feature/BottomNavTest.php`: **6 passed (40 assertions)**
   - `tests/Feature/SidebarPengelompokanTest.php`: **8 passed (30 assertions)**
 - **Full Test Suite (`php artisan test --compact`)**:
-  - **2442 passed, 4 skipped, 0 failed (6700 assertions)**
+  - **2442 passed, 4 skipped, 0 failed (6700 assertions)** (angka sebelum perbaikan review 29 Agustus 2026 -- lihat §6 baru untuk perubahan pasca-review)
 - **Formatting**:
   - `vendor/bin/pint --dirty --format agent`: Clean / Formatted.
 

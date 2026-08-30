@@ -10,12 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles, BelongsToTenant;
+    use BelongsToTenant, HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -112,8 +113,18 @@ class User extends Authenticatable
      * widestScopeLevel()). Dipakai untuk tampilan UI (daftar Pengguna, form
      * edit) supaya tidak menampilkan role teknis yang membingungkan.
      */
-    public function functionalRoles(): \Illuminate\Support\Collection
+    public function functionalRoles(): Collection
     {
         return $this->roles->whereNotIn('name', ['pegawai_lembaga', 'pegawai_yayasan']);
+    }
+
+    /**
+     * Satu sumber kebenaran untuk kelayakan Bottom Navigation Bar (mobile/tablet) --
+     * dipakai bersama oleh bottom-nav.blade.php, app.blade.php (clearance <main>),
+     * dan topbar.blade.php (logo vs hamburger) supaya ketiganya tidak bisa berbeda.
+     */
+    public function hasBottomNav(): bool
+    {
+        return $this->hasRole('guru') || $this->hasRole('siswa') || $this->orangTua !== null;
     }
 }
