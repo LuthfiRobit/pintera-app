@@ -1,11 +1,13 @@
 <?php
+
 // tests/Feature/Keuangan/DashboardAuthorizationTest.php
 
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,14 +30,14 @@ it('never resolves another parent\'s child as the active siswa via switch_siswa'
 
     $me = User::factory()->create(['lembaga_id' => null]);
     $me->assignRole('orang_tua');
-    $ortuMe = OrangTua::create([
+    $ortuMe = OrangTua::factory()->create([
         'user_id' => $me->id, 'nama_lengkap' => 'Saya', 'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007777',
     ]);
     $ortuMe->siswa()->attach($siswaMine->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
     $otherUser = User::factory()->create(['lembaga_id' => null]);
     $otherUser->assignRole('orang_tua');
-    $ortuOther = OrangTua::create([
+    $ortuOther = OrangTua::factory()->create([
         'user_id' => $otherUser->id, 'nama_lengkap' => 'Orang Lain', 'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200008888',
     ]);
     $ortuOther->siswa()->attach($siswaOther->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
@@ -59,7 +61,7 @@ it('does not leak lembaga B\'s wallet/tagihan data onto lembaga A parent\'s dash
 
     $siswaA = Siswa::factory()->create(['lembaga_id' => $lembagaA->id, 'nama_lengkap' => 'Anak Lembaga A']);
     $siswaA->wallet->update(['balance' => 999000, 'va_number' => '8808089999999999']);
-    \App\Domains\Keuangan\Models\BriVirtualAccount::create([
+    BriVirtualAccount::create([
         'wallet_id' => $siswaA->wallet->id,
         'va_type' => 'WALLET_PERMANENT',
         'va_number' => '8808089999999999',
@@ -68,7 +70,7 @@ it('does not leak lembaga B\'s wallet/tagihan data onto lembaga A parent\'s dash
 
     $siswaB = Siswa::factory()->create(['lembaga_id' => $lembagaB->id, 'nama_lengkap' => 'Anak Lembaga B']);
     $siswaB->wallet->update(['balance' => 111000, 'va_number' => '8808081111111111']);
-    \App\Domains\Keuangan\Models\BriVirtualAccount::create([
+    BriVirtualAccount::create([
         'wallet_id' => $siswaB->wallet->id,
         'va_type' => 'WALLET_PERMANENT',
         'va_number' => '8808081111111111',
@@ -77,14 +79,14 @@ it('does not leak lembaga B\'s wallet/tagihan data onto lembaga A parent\'s dash
 
     $userA = User::factory()->create(['lembaga_id' => null]);
     $userA->assignRole('orang_tua');
-    $orangTuaA = OrangTua::create([
+    $orangTuaA = OrangTua::factory()->create([
         'user_id' => $userA->id, 'nama_lengkap' => 'Ortu Lembaga A', 'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009991',
     ]);
     $orangTuaA->siswa()->attach($siswaA->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
     $userB = User::factory()->create(['lembaga_id' => null]);
     $userB->assignRole('orang_tua');
-    $orangTuaB = OrangTua::create([
+    $orangTuaB = OrangTua::factory()->create([
         'user_id' => $userB->id, 'nama_lengkap' => 'Ortu Lembaga B', 'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009992',
     ]);
     $orangTuaB->siswa()->attach($siswaB->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);

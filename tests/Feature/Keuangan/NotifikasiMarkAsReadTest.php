@@ -8,6 +8,7 @@ use App\Models\Yayasan;
 use App\Notifications\Finance\FinanceNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -15,19 +16,32 @@ uses(RefreshDatabase::class);
 
 class MarkAsReadTestNotification extends FinanceNotification
 {
-    public function __construct(private readonly string $label = 'test')
+    public function __construct(private readonly string $label = 'test') {}
+
+    public function isUrgent(): bool
     {
+        return false;
     }
 
-    public function isUrgent(): bool { return false; }
+    public function via(object $notifiable): array
+    {
+        return ['database'];
+    }
 
-    public function via(object $notifiable): array { return ['database']; }
+    public function toDatabase(object $notifiable): array
+    {
+        return ['message' => $this->label];
+    }
 
-    public function toDatabase(object $notifiable): array { return ['message' => $this->label]; }
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)->line('test');
+    }
 
-    public function toMail(object $notifiable): MailMessage { return (new MailMessage())->line('test'); }
-
-    public function toWhatsApp(object $notifiable): ?string { return null; }
+    public function toWhatsApp(object $notifiable): ?string
+    {
+        return null;
+    }
 }
 
 it('marks a single notification as read', function () {
@@ -41,13 +55,13 @@ it('marks a single notification as read', function () {
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Notif',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200006666',
     ]);
     $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
-    $orangTua->notify(new MarkAsReadTestNotification());
+    $orangTua->notify(new MarkAsReadTestNotification);
     $notification = $orangTua->notifications()->first();
 
     $response = $this->actingAs($user)->postJson(route('notifikasi.baca', $notification->id));
@@ -63,7 +77,7 @@ it('marks a single notification sent directly to the user as read', function () 
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    OrangTua::create([
+    OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Langsung',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200005555',
     ]);
@@ -85,7 +99,7 @@ it('returns the correct remaining unread count after marking one of several as r
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    OrangTua::create([
+    OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Dua Notif',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200004444',
     ]);
@@ -116,15 +130,15 @@ it('marks all notifications for the active user feed as read', function () {
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Notif Multi',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007777',
     ]);
     $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
-    $orangTua->notify(new MarkAsReadTestNotification());
-    $orangTua->notify(new MarkAsReadTestNotification());
-    $user->notify(new MarkAsReadTestNotification());
+    $orangTua->notify(new MarkAsReadTestNotification);
+    $orangTua->notify(new MarkAsReadTestNotification);
+    $user->notify(new MarkAsReadTestNotification);
 
     expect($orangTua->unreadNotifications()->count())->toBe(2);
     expect($user->unreadNotifications()->count())->toBe(1);
@@ -144,14 +158,14 @@ it('returns 403 if the single notification does not belong to the user or their 
 
     $userA = User::factory()->create(['lembaga_id' => null]);
     $userA->assignRole('orang_tua');
-    OrangTua::create([
+    OrangTua::factory()->create([
         'user_id' => $userA->id, 'nama_lengkap' => 'Ortu A',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200008888',
     ]);
 
     $userB = User::factory()->create(['lembaga_id' => null]);
     $userB->assignRole('orang_tua');
-    $orangTuaB = OrangTua::create([
+    $orangTuaB = OrangTua::factory()->create([
         'user_id' => $userB->id, 'nama_lengkap' => 'Ortu B',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009999',
     ]);
@@ -172,12 +186,12 @@ it('returns a 403-safe response (not a crash) when marking a nonexistent notific
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    OrangTua::create([
+    OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Nonexistent',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200003333',
     ]);
 
-    $response = $this->actingAs($user)->postJson(route('notifikasi.baca', (string) \Illuminate\Support\Str::uuid()));
+    $response = $this->actingAs($user)->postJson(route('notifikasi.baca', (string) Str::uuid()));
 
     $response->assertForbidden();
 });
@@ -193,13 +207,13 @@ it('shows a topbar-specific mark-as-read control distinct from the dashboard pan
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Topbar',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200008888',
     ]);
     $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
-    $orangTua->notify(new MarkAsReadTestNotification());
+    $orangTua->notify(new MarkAsReadTestNotification);
 
     $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
 

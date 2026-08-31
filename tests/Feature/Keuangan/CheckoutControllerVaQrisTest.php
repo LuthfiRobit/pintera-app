@@ -1,12 +1,11 @@
 <?php
 
-use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
-use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,7 +27,7 @@ function actingAsOrangTuaForVaQris(): array
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu VaQris',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200006666',
     ]);
@@ -67,8 +66,6 @@ it('creates a QRIS payment and redirects to the waiting page', function () {
     $response->assertRedirect(route('keuangan.checkout.show', $pembayaran));
     expect($pembayaran->briQrisPayment)->not->toBeNull();
 });
-
-
 
 it('does not create a second QRIS for the same tagihan while one is still waiting', function () {
     [$user, , , $tagihan] = actingAsOrangTuaForVaQris();

@@ -15,15 +15,30 @@ uses(RefreshDatabase::class);
 
 class DashboardMarkAsReadTestNotification extends FinanceNotification
 {
-    public function isUrgent(): bool { return false; }
+    public function isUrgent(): bool
+    {
+        return false;
+    }
 
-    public function via(object $notifiable): array { return ['database']; }
+    public function via(object $notifiable): array
+    {
+        return ['database'];
+    }
 
-    public function toDatabase(object $notifiable): array { return ['message' => 'dashboard-test']; }
+    public function toDatabase(object $notifiable): array
+    {
+        return ['message' => 'dashboard-test'];
+    }
 
-    public function toMail(object $notifiable): MailMessage { return (new MailMessage())->line('test'); }
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)->line('test');
+    }
 
-    public function toWhatsApp(object $notifiable): ?string { return null; }
+    public function toWhatsApp(object $notifiable): ?string
+    {
+        return null;
+    }
 }
 
 it('shows a clickable mark-as-read control on each notification row in the dashboard panel', function () {
@@ -37,12 +52,12 @@ it('shows a clickable mark-as-read control on each notification row in the dashb
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Dashboard Notif',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007777',
     ]);
     $orangTua->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
-    $orangTua->notify(new DashboardMarkAsReadTestNotification());
+    $orangTua->notify(new DashboardMarkAsReadTestNotification);
 
     $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
 

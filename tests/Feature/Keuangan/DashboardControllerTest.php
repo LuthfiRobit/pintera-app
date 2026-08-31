@@ -1,11 +1,13 @@
 <?php
+
 // tests/Feature/Keuangan/DashboardControllerTest.php
 
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +28,7 @@ function actingAsOrangTuaForDashboard(): array
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Dashboard',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200003333',
     ]);
@@ -38,7 +40,7 @@ function actingAsOrangTuaForDashboard(): array
 it('shows the wallet balance and VA number on the dashboard', function () {
     [$user, , $siswa] = actingAsOrangTuaForDashboard();
     $siswa->wallet->update(['balance' => 250000, 'va_number' => '8808081234567890']);
-    \App\Domains\Keuangan\Models\BriVirtualAccount::create([
+    BriVirtualAccount::create([
         'wallet_id' => $siswa->wallet->id,
         'va_type' => 'WALLET_PERMANENT',
         'va_number' => '8808081234567890',
@@ -140,7 +142,7 @@ it('shows the "tanpa anak" page for an orang tua with zero linked siswa', functi
     $role->givePermissionTo('keuangan.akses');
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    OrangTua::create([
+    OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Tanpa Anak',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200004444',
     ]);
@@ -181,7 +183,7 @@ it('does not show "Dompet & Tagihan Saya" in sidebar for a user with keuangan.ak
 it('shows "Dompet & Tagihan Saya" in sidebar for a user with keuangan.akses permission and OrangTua profile', function () {
     // Verify the positive case: a user with both the permission AND a real
     // OrangTua profile SHOULD see the nav item in the sidebar.
-    [$user, , ] = actingAsOrangTuaForDashboard();
+    [$user] = actingAsOrangTuaForDashboard();
 
     $response = $this->actingAs($user)->get(route('dashboard'));
 

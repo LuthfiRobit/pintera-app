@@ -1,15 +1,17 @@
 <?php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\Lembaga;
-use App\Models\OrangTua;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
-use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Models\Lembaga;
+use App\Models\OrangTua;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -27,7 +29,7 @@ function actingAsOrangTuaForRiwayat(): array
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Riwayat',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009999',
     ]);
@@ -36,7 +38,7 @@ function actingAsOrangTuaForRiwayat(): array
     return [$user, $orangTua, $siswa];
 }
 
-function makeLunasPembayaran(Siswa $siswa, string $metode = 'wallet_saldo', ?\Carbon\Carbon $createdAt = null): Pembayaran
+function makeLunasPembayaran(Siswa $siswa, string $metode = 'wallet_saldo', ?Carbon $createdAt = null): Pembayaran
 {
     $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bulanan']);
     $tagihan = Tagihan::factory()->create([
@@ -46,7 +48,7 @@ function makeLunasPembayaran(Siswa $siswa, string $metode = 'wallet_saldo', ?\Ca
 
     $pembayaran = Pembayaran::create([
         'siswa_id' => $siswa->id, 'metode' => $metode, 'status' => 'lunas',
-        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+        'channel_reference' => (string) Str::uuid(),
     ]);
     if ($createdAt !== null) {
         $pembayaran->created_at = $createdAt;
@@ -117,7 +119,7 @@ it('shows the pending amount for a menunggu_pembayaran transaction with no rinci
 
     Pembayaran::create([
         'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'menunggu_pembayaran',
-        'channel_reference' => (string) \Illuminate\Support\Str::uuid(), 'amount' => 250000,
+        'channel_reference' => (string) Str::uuid(), 'amount' => 250000,
     ]);
 
     $response = $this->actingAs($user)->get(route('keuangan.riwayat.index'));
@@ -174,7 +176,7 @@ it('shows the kwitansi download link only for lunas rows', function () {
     $lunas = makeLunasPembayaran($siswa);
     $pending = Pembayaran::create([
         'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'menunggu_pembayaran',
-        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+        'channel_reference' => (string) Str::uuid(),
     ]);
 
     $response = $this->actingAs($user)->get(route('keuangan.riwayat.index'));

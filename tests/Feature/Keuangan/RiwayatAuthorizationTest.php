@@ -1,15 +1,16 @@
 <?php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\Lembaga;
-use App\Models\OrangTua;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
-use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Models\Lembaga;
+use App\Models\OrangTua;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -27,7 +28,7 @@ function makeParentWithLunasPembayaran(string $label): array
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => "Ortu {$label}",
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '0812'.random_int(10000000, 99999999),
     ]);
@@ -40,7 +41,7 @@ function makeParentWithLunasPembayaran(string $label): array
     ]);
     $pembayaran = Pembayaran::create([
         'siswa_id' => $siswa->id, 'metode' => 'wallet_saldo', 'status' => 'lunas',
-        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+        'channel_reference' => (string) Str::uuid(),
     ]);
     PembayaranTagihan::create(['pembayaran_id' => $pembayaran->id, 'tagihan_id' => $tagihan->id, 'amount_allocated' => 100000]);
 

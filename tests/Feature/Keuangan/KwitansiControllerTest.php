@@ -1,16 +1,17 @@
 <?php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
-use App\Domains\Keuangan\Models\Pembayaran;
-use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -28,7 +29,7 @@ function actingAsOrangTuaForKwitansi(): array
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Kwitansi',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
     ]);
@@ -42,7 +43,7 @@ function actingAsOrangTuaForKwitansi(): array
 
     $pembayaran = Pembayaran::create([
         'siswa_id' => $siswa->id, 'metode' => 'wallet_saldo', 'status' => 'lunas',
-        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+        'channel_reference' => (string) Str::uuid(),
     ]);
     PembayaranTagihan::create(['pembayaran_id' => $pembayaran->id, 'tagihan_id' => $tagihan->id, 'amount_allocated' => 100000]);
 
@@ -62,7 +63,7 @@ it('returns 404 for a pembayaran that is not yet lunas', function () {
     [$user, , $siswa] = actingAsOrangTuaForKwitansi();
     $pending = Pembayaran::create([
         'siswa_id' => $siswa->id, 'metode' => 'va_bri', 'status' => 'menunggu_pembayaran',
-        'channel_reference' => (string) \Illuminate\Support\Str::uuid(),
+        'channel_reference' => (string) Str::uuid(),
     ]);
 
     $response = $this->actingAs($user)->get(route('keuangan.riwayat.kwitansi', $pending));

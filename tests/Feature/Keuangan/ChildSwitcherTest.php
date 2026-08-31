@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Keuangan/ChildSwitcherTest.php
 
 use App\Models\Lembaga;
@@ -24,7 +25,7 @@ it('shows the child switcher dropdown when the orang tua has more than one child
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Dua Anak',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200005555',
     ]);
@@ -50,7 +51,7 @@ it('does not show the child switcher for a single-child orang tua', function () 
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Satu Anak',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200006666',
     ]);
@@ -77,7 +78,7 @@ it('shows the kontak utama child in both header and switcher label when kontak u
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Kontak Utama Tidak Alfabetis',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007777',
     ]);

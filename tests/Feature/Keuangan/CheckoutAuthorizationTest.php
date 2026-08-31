@@ -1,15 +1,17 @@
 <?php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
-use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -29,7 +31,7 @@ function makeParentWithChild(string $label, float $walletBalance = 0): array
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => "Ortu {$label}",
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '0812'.random_int(10000000, 99999999),
     ]);
@@ -79,7 +81,7 @@ it('rejects wallet checkout for a tagihan belonging to another parent\'s child',
 });
 
 it('rejects manual transfer checkout for a tagihan belonging to another parent\'s child', function () {
-    Illuminate\Support\Facades\Storage::fake('public');
+    Storage::fake('public');
     [$userA] = makeParentWithChild('A');
     [, , , $tagihanB] = makeParentWithChild('B');
 
@@ -87,7 +89,7 @@ it('rejects manual transfer checkout for a tagihan belonging to another parent\'
         'tagihan_ids' => [$tagihanB->id],
         'bank_origin' => 'BCA',
         'transfer_date' => now()->toDateString(),
-        'transfer_proof' => Illuminate\Http\UploadedFile::fake()->image('bukti.jpg'),
+        'transfer_proof' => UploadedFile::fake()->image('bukti.jpg'),
     ]);
 
     $response->assertSessionHasErrors('tagihan_ids');
@@ -131,13 +133,13 @@ it('blocks a parent from viewing another parent\'s qris checkout page', function
 });
 
 it('blocks a parent from viewing another parent\'s menunggu-verifikasi page', function () {
-    Illuminate\Support\Facades\Storage::fake('public');
+    Storage::fake('public');
     [$userA, , , $tagihanA] = makeParentWithChild('A');
     $this->actingAs($userA)->post(route('keuangan.checkout.transfer'), [
         'tagihan_ids' => [$tagihanA->id],
         'bank_origin' => 'BCA',
         'transfer_date' => now()->toDateString(),
-        'transfer_proof' => Illuminate\Http\UploadedFile::fake()->image('bukti.jpg'),
+        'transfer_proof' => UploadedFile::fake()->image('bukti.jpg'),
     ]);
     $pembayaranA = Pembayaran::where('metode', 'transfer_manual')->firstOrFail();
 

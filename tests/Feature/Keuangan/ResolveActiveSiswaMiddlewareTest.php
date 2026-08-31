@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Keuangan/ResolveActiveSiswaMiddlewareTest.php
 
 use App\Models\Lembaga;
@@ -7,6 +8,7 @@ use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -15,7 +17,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Route::middleware(['web', 'auth', 'permission:keuangan.akses', 'resolve.active.siswa'])
-        ->get('/keuangan/__test-probe', function (\Illuminate\Http\Request $request) {
+        ->get('/keuangan/__test-probe', function (Request $request) {
             $activeSiswa = $request->attributes->get('activeSiswa');
 
             return response($activeSiswa?->id !== null ? (string) $activeSiswa->id : 'none');
@@ -33,7 +35,7 @@ function actingAsOrangTuaWithChildren(array $children = ['utama' => true]): arra
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Test',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200002222',
     ]);

@@ -1,8 +1,8 @@
 <?php
+
 // tests/Feature/Keuangan/NotificationFeedResolverTest.php
 
 use App\Models\OrangTua;
-use App\Models\Siswa;
 use App\Models\User;
 use App\Notifications\Finance\FinanceNotification;
 use App\Services\Notifications\NotificationFeedResolver;
@@ -15,20 +15,35 @@ class FeedTestNotification extends FinanceNotification
 {
     public function __construct(private readonly string $label) {}
 
-    public function isUrgent(): bool { return false; }
+    public function isUrgent(): bool
+    {
+        return false;
+    }
 
-    public function via(object $notifiable): array { return ['database']; }
+    public function via(object $notifiable): array
+    {
+        return ['database'];
+    }
 
-    public function toDatabase(object $notifiable): array { return ['message' => $this->label]; }
+    public function toDatabase(object $notifiable): array
+    {
+        return ['message' => $this->label];
+    }
 
-    public function toMail(object $notifiable): MailMessage { return (new MailMessage())->line('test'); }
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)->line('test');
+    }
 
-    public function toWhatsApp(object $notifiable): ?string { return null; }
+    public function toWhatsApp(object $notifiable): ?string
+    {
+        return null;
+    }
 }
 
 it('merges notifications sent to the User directly and to their linked OrangTua', function () {
     $user = User::factory()->create(['lembaga_id' => null]);
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Feed',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
     ]);
@@ -44,7 +59,7 @@ it('merges notifications sent to the User directly and to their linked OrangTua'
 
 it('caps the merged feed at 10 items, newest first', function () {
     $user = User::factory()->create(['lembaga_id' => null]);
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Feed',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001112',
     ]);

@@ -1,11 +1,11 @@
 <?php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
-use App\Domains\Keuangan\Models\Pembayaran;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,7 +28,7 @@ function actingAsOrangTuaForTransfer(): array
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Transfer',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200008888',
     ]);
