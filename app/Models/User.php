@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Domains\Identity\Models\Person;
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Scopes\TenantScope;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -81,7 +82,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        )->withoutGlobalScopes();
+        )->withoutGlobalScope(TenantScope::class);
     }
 
     public function orangTua(): HasOneThrough
@@ -93,7 +94,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        )->withoutGlobalScopes();
+        )->withoutGlobalScope(TenantScope::class);
     }
 
     public function siswa(): HasOneThrough
@@ -105,7 +106,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        )->withoutGlobalScopes();
+        )->withoutGlobalScope(TenantScope::class);
     }
 
     public function karyawan(): HasOneThrough
@@ -117,7 +118,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        )->withoutGlobalScopes();
+        )->withoutGlobalScope(TenantScope::class);
     }
 
     public function notificationPreference(): HasOne
