@@ -35,10 +35,7 @@ class VirtualAccountController extends Controller
                 $q->where('lembaga_id', $lembagaId);
 
                 if ($search) {
-                    $q->where(function ($q2) use ($search) {
-                        $q2->where('nama_lengkap', 'like', "%{$search}%")
-                            ->orWhere('nis', 'like', "%{$search}%");
-                    });
+                    $q->search($search);
                 }
 
                 if ($kelasId) {
@@ -119,20 +116,17 @@ class VirtualAccountController extends Controller
         $query = Siswa::where('lembaga_id', $lembagaId)
             ->where('status', StatusSiswa::Aktif->value)
             ->whereDoesntHave('wallet.briVirtualAccounts', fn ($q) => $q->where('va_type', 'WALLET_PERMANENT'))
-            ->with('kelas');
+            ->with(['kelas', 'person']);
 
         if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', "%{$search}%")
-                    ->orWhere('nis', 'like', "%{$search}%");
-            });
+            $query->search($search);
         }
 
         if ($kelasId) {
             $query->where('kelas_id', $kelasId);
         }
 
-        $siswaList = $query->orderBy('nama_lengkap')->limit(200)->get();
+        $siswaList = $query->orderByNama()->limit(200)->get();
 
         return response()->json([
             'data' => $siswaList->map(fn (Siswa $siswa) => [

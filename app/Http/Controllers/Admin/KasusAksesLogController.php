@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Kasus\Models\Kasus;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -25,7 +26,7 @@ class KasusAksesLogController extends BaseController
             ->where('log_name', 'akses_klinis')
             ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->whereHasMorph(
                 'subject',
-                [\App\Domains\Kasus\Models\Kasus::class],
+                [Kasus::class],
                 fn ($subQuery) => $subQuery->withoutGlobalScopes()->withTrashed()->where('lembaga_id', $user->lembaga_id)
             ));
 
@@ -35,20 +36,20 @@ class KasusAksesLogController extends BaseController
 
         // Pencarian (Siswa atau Pengakses)
         // Karena subject dan causer adalah polymorphic, kita apply filter secara manual.
-        if (!empty($search)) {
+        if (! empty($search)) {
             $baseQuery->where(function ($q) use ($search) {
                 // Pencarian berdasarkan nama siswa di Kasus
-                $q->whereHasMorph('subject', [\App\Domains\Kasus\Models\Kasus::class], function ($subQuery) use ($search) {
+                $q->whereHasMorph('subject', [Kasus::class], function ($subQuery) use ($search) {
                     $subQuery->withoutGlobalScopes()->withTrashed()->whereHas('siswa', function ($siswaQuery) use ($search) {
-                        $siswaQuery->withoutGlobalScopes()->where('nama_lengkap', 'like', '%' . $search . '%');
+                        $siswaQuery->withoutGlobalScopes()->search($search);
                     });
                 })
                 // Pencarian berdasarkan nama causer (User) — dibatasi causer_type supaya tidak
                 // salah cocok dengan causer model lain yang kebetulan punya id sama.
-                ->orWhere(function ($q2) use ($search) {
-                    $q2->where('causer_type', User::class)
-                        ->whereIn('causer_id', User::withoutGlobalScopes()->where('name', 'like', '%' . $search . '%')->pluck('id'));
-                });
+                    ->orWhere(function ($q2) use ($search) {
+                        $q2->where('causer_type', User::class)
+                            ->whereIn('causer_id', User::withoutGlobalScopes()->where('name', 'like', '%'.$search.'%')->pluck('id'));
+                    });
             });
         }
 
@@ -64,12 +65,12 @@ class KasusAksesLogController extends BaseController
             ->keyBy('id');
 
         return view('portals.lembaga.kasus.akses-log', [
-            'logs' => $logs, 
+            'logs' => $logs,
             'causers' => $causers,
             'totalAkses' => $totalAkses,
             'aksesHariIni' => $aksesHariIni,
             'search' => $search,
-            'perPage' => $perPage
+            'perPage' => $perPage,
         ]);
     }
 }

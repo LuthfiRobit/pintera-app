@@ -91,7 +91,7 @@ class RaporController extends BaseController
         $siswaList = collect();
         $pengajuanRapor = null;
         if ($kelas && $semester) {
-            $siswaList = Siswa::where('kelas_id', $kelas->id)->orderBy('nama_lengkap')->get();
+            $siswaList = Siswa::where('kelas_id', $kelas->id)->with('person')->orderByNama()->get();
             $siswaIdsWithCatatan = CatatanWaliKelas::where('semester_id', $semester->id)
                 ->whereIn('siswa_id', $siswaList->pluck('id'))
                 ->pluck('siswa_id');
@@ -104,13 +104,8 @@ class RaporController extends BaseController
             $pengajuanRapor = PengajuanRapor::where('kelas_id', $kelas->id)->where('semester_id', $semester->id)->first();
         }
 
-        return view('portals.guru.rapor.catatan.index', [
-            'tahunAjaranList' => $tahunAjaranList,
-            'tahunAjaranId' => $tahunAjaranId,
-            'semesterList' => $semesterList,
-            'semesterId' => $semesterId,
+        return view('portals.guru.rapor.index', [
             'kelasList' => $kelasList,
-            'kelasId' => $kelasId,
             'kelas' => $kelas,
             'semester' => $semester,
             'siswaList' => $siswaList,
@@ -118,15 +113,14 @@ class RaporController extends BaseController
         ]);
     }
 
-    public function edit(Siswa $siswa, Request $request): View
+    public function editCatatan(Request $request, Siswa $siswa): View
     {
-        $this->authorize('rapor.input-wali');
+        $this->authorize('guru.rapor-catatan');
 
-        $guru = $request->user()->guru;
-        abort_if($guru === null, 403);
-        abort_unless($siswa->kelas && $siswa->kelas->wali_kelas_guru_id === $guru->id, 403);
+        $user = $request->user();
+        abort_unless($user->canManageKelas($siswa->kelas_id), 403);
 
-        $semesterId = (int) $request->query('semester_id');
+        $semesterId = (int) $request->input('semester_id', 0);
         abort_if($semesterId === 0, 404, 'Konteks semester wajib disertakan untuk membuka form catatan wali kelas.');
         $semester = Semester::find($semesterId);
         abort_if($semester === null, 404);
@@ -135,7 +129,7 @@ class RaporController extends BaseController
         $catatan = CatatanWaliKelas::where('siswa_id', $siswa->id)->where('semester_id', $semester->id)->first()
             ?? new CatatanWaliKelas(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]);
 
-        $siswaListKelas = Siswa::where('kelas_id', $siswa->kelas_id)->orderBy('nama_lengkap')->get();
+        $siswaListKelas = Siswa::where('kelas_id', $siswa->kelas_id)->with('person')->orderByNama()->get();
         $posisiSaatIni = $siswaListKelas->search(fn (Siswa $s) => $s->id === $siswa->id);
         $siswaSebelumnya = $posisiSaatIni > 0 ? $siswaListKelas->get($posisiSaatIni - 1) : null;
         $siswaBerikutnya = $posisiSaatIni !== false && $posisiSaatIni < $siswaListKelas->count() - 1 ? $siswaListKelas->get($posisiSaatIni + 1) : null;

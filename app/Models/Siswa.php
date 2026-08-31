@@ -133,4 +133,25 @@ class Siswa extends Model
             ->logOnlyDirty()
             ->useLogName('siswa');
     }
+
+    public function scopeSearch($query, ?string $term)
+    {
+        if (! $term) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($term) {
+            $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%"))
+                ->orWhere('siswa.nama_lengkap', 'like', "%{$term}%")
+                ->orWhere('siswa.nis', 'like', "%{$term}%")
+                ->orWhere('siswa.nisn', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopeOrderByNama($query, string $direction = 'asc')
+    {
+        return $query->leftJoin('persons', 'siswa.person_id', '=', 'persons.id')
+            ->orderByRaw("COALESCE(persons.nama_lengkap, siswa.nama_lengkap) {$direction}")
+            ->select('siswa.*');
+    }
 }

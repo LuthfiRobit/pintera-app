@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/Admin/KasusTerhapusController.php
 
 namespace App\Http\Controllers\Admin;
@@ -31,11 +32,11 @@ class KasusTerhapusController extends BaseController
         $dihapusBulanIni = (clone $baseQuery)->whereYear('deleted_at', now()->year)->whereMonth('deleted_at', now()->month)->count();
 
         // Pencarian
-        if (!empty($search)) {
+        if (! empty($search)) {
             $baseQuery->where(function ($q) use ($search) {
                 $q->whereHas('siswa', function ($siswaQuery) use ($search) {
-                    $siswaQuery->withoutGlobalScopes()->where('nama_lengkap', 'like', '%' . $search . '%');
-                })->orWhere('kategori_masalah', 'like', '%' . $search . '%');
+                    $siswaQuery->withoutGlobalScopes()->search($search);
+                })->orWhere('kategori_masalah', 'like', '%'.$search.'%');
             });
         }
 
@@ -49,7 +50,7 @@ class KasusTerhapusController extends BaseController
             'totalTerhapus' => $totalTerhapus,
             'dihapusBulanIni' => $dihapusBulanIni,
             'search' => $search,
-            'perPage' => $perPage
+            'perPage' => $perPage,
         ]);
     }
 }

@@ -14,7 +14,7 @@ class PresensiAggregationService
      */
     public function agregasiPerKelas(int $kelasId, ?Semester $semester = null): Collection
     {
-        $siswaList = Siswa::where('kelas_id', $kelasId)->where('status', 'aktif')->orderBy('nama_lengkap')->get();
+        $siswaList = Siswa::where('kelas_id', $kelasId)->where('status', 'aktif')->with('person')->orderByNama()->get();
 
         $query = DB::table('presensi')
             ->select('presensi.siswa_id', 'presensi.status', DB::raw('count(*) as total'))

@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Domains\Kasus\Actions\Pengajuan\AjukanKasusAction;
 use App\Domains\Kasus\Actions\Pengajuan\ListKasusUntukUserAction;
 use App\Domains\Kasus\DataTransferObjects\AjukanKasusData;
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Policies\KasusPolicy;
-use App\Domains\Kasus\Enums\StatusKasus;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -51,8 +51,8 @@ class KasusController extends BaseController
         $user = $request->user();
 
         $siswaList = $user->hasRole('orang_tua')
-            ? ($user->orangTua?->siswa()->withoutGlobalScope(TenantScope::class)->orderBy('nama_lengkap')->get() ?? collect())
-            : Siswa::orderBy('nama_lengkap')->get();
+            ? ($user->orangTua?->siswa()->withoutGlobalScope(TenantScope::class)->with('person')->orderByNama()->get() ?? collect())
+            : Siswa::with('person')->orderByNama()->get();
 
         return view('portals.kasus.create', ['siswaList' => $siswaList]);
     }

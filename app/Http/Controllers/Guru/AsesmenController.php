@@ -98,7 +98,7 @@ class AsesmenController extends BaseController
         $this->authorizeMilikGuru($asesmen);
 
         $komponenList = $asesmen->komponenPenilaian;
-        $siswaList = $asesmen->kelas->siswa()->orderBy('nama_lengkap')->get();
+        $siswaList = $asesmen->kelas->siswa()->with('person')->orderByNama()->get();
 
         $existingNilai = NilaiSiswa::where('asesmen_id', $asesmen->id)->get();
         $existingKeys = $existingNilai->map(fn ($n) => $n->siswa_id.'-'.$n->komponen_penilaian_id)->flip();

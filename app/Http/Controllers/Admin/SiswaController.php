@@ -30,25 +30,11 @@ class SiswaController extends BaseController
 
         $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = Siswa::with(['kelas', 'person'])->orderBy('nama_lengkap');
-
-        // Search by name or NIS
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', '%'.$search.'%')
-                    ->orWhere('nis', 'like', '%'.$search.'%');
-            });
-        }
-
-        // Filter by Kelas
-        if ($kelasId = $request->input('kelas_id')) {
-            $query->where('kelas_id', $kelasId);
-        }
-
-        // Filter by Status
-        if ($status = $request->input('status')) {
-            $query->where('status', $status);
-        }
+        $query = Siswa::with(['kelas', 'person'])
+            ->when($request->input('search'), fn ($q, $search) => $q->search($search))
+            ->when($request->input('kelas_id'), fn ($q, $kelasId) => $q->where('siswa.kelas_id', $kelasId))
+            ->when($request->input('status'), fn ($q, $status) => $q->where('siswa.status', $status))
+            ->orderByNama();
 
         // Build kelas list from the acting lembaga's active tahun ajaran only.
         // Left empty for a yayasan-scoped user with no active lembaga selected —

@@ -24,7 +24,7 @@ final class RaporCalculationService
      */
     public function hitungRekapKelas(Kelas $kelas, Semester $semester): array
     {
-        $siswaList = Siswa::where('kelas_id', $kelas->id)->orderBy('nama_lengkap')->get();
+        $siswaList = Siswa::where('kelas_id', $kelas->id)->with('person')->orderByNama()->get();
 
         $asesmenList = Asesmen::where('kelas_id', $kelas->id)
             ->where('semester_id', $semester->id)

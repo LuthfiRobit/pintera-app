@@ -31,7 +31,7 @@ class ManualPaymentController extends Controller
             ->latest('transfer_date');
 
         if ($search = $request->input('search')) {
-            $query->whereHas('pembayaran.siswa', fn ($q) => $q->where('nama_lengkap', 'like', '%'.$search.'%'));
+            $query->whereHas('pembayaran.siswa', fn ($q) => $q->search($search));
         }
 
         if ($dari = $request->input('dari')) {
