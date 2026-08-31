@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Guru;
+use App\Domains\Identity\Actions\CreatePersonAction;
+use App\Domains\Identity\Actions\UpdatePersonAction;
+use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Models\JabatanTambahanMaster;
+use App\Models\Guru;
+use App\Models\Lembaga;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -96,6 +100,30 @@ class GuruController extends BaseController
         }
 
         DB::transaction(function () use ($data, $lembagaId) {
+            $person = app(CreatePersonAction::class)->execute(
+                identityData: [
+                    'nama_lengkap' => $data['nama'],
+                    'nik' => $data['nik'] ?? null,
+                    'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
+                    'tempat_lahir' => $data['tempat_lahir'] ?? null,
+                    'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
+                    'agama' => $data['agama'] ?? null,
+                    'kewarganegaraan' => $data['kewarganegaraan'] ?? 'WNI',
+                    'no_hp' => $data['no_hp'] ?? null,
+                    'email' => $data['email'],
+                    'alamat_jalan' => $data['alamat_jalan'] ?? null,
+                    'rt' => $data['rt'] ?? null,
+                    'rw' => $data['rw'] ?? null,
+                    'desa_kelurahan' => $data['desa_kelurahan'] ?? null,
+                    'kecamatan' => $data['kecamatan'] ?? null,
+                    'kabupaten_kota' => $data['kabupaten_kota'] ?? null,
+                    'provinsi' => $data['provinsi'] ?? null,
+                    'kode_pos' => $data['kode_pos'] ?? null,
+                ],
+                lembagaId: $lembagaId,
+                actingYayasanId: null,
+            );
+
             $user = User::create([
                 'name' => $data['nama'],
                 'email' => $data['email'],
@@ -106,11 +134,21 @@ class GuruController extends BaseController
                 'must_change_password' => true,
             ]);
             $user->assignRole('guru');
+            $person->update(['user_id' => $user->id]);
 
             Guru::create([
-                ...$data,
+                'person_id' => $person->id,
                 'user_id' => $user->id,
                 'lembaga_id' => $lembagaId,
+                'nuptk' => $data['nuptk'] ?? null,
+                'nip' => $data['nip'],
+                'jenis_ptk' => $data['jenis_ptk'],
+                'status_kepegawaian' => $data['status_kepegawaian'],
+                'golongan_pangkat' => $data['golongan_pangkat'] ?? null,
+                'tmt_tugas' => $data['tmt_tugas'] ?? null,
+                'tmt_pns' => $data['tmt_pns'] ?? null,
+                'status_aktif' => 'aktif',
+                'kapasitas_kasus_aktif' => $data['kapasitas_kasus_aktif'] ?? null,
             ]);
         });
 
@@ -123,6 +161,7 @@ class GuruController extends BaseController
 
         $guru->load([
             'user',
+            'person',
             'riwayatPendidikan' => fn ($query) => $query->orderBy('tahun_lulus', 'desc'),
             'sertifikasi' => fn ($query) => $query->orderBy('tahun_sertifikasi', 'desc'),
             'jabatanTambahan',
@@ -142,12 +181,43 @@ class GuruController extends BaseController
         $data = $this->validateProfil($request, $guru);
 
         DB::transaction(function () use ($data, $guru) {
-            $guru->user()->update([
-                'name' => $data['nama'],
-                'email' => $data['email'],
-            ]);
+            if ($guru->person) {
+                app(UpdatePersonAction::class)->execute($guru->person, [
+                    'nama_lengkap' => $data['nama'],
+                    'email' => $data['email'],
+                    'nik' => $data['nik'] ?? $guru->person->nik,
+                    'jenis_kelamin' => $data['jenis_kelamin'] ?? $guru->person->jenis_kelamin,
+                    'tempat_lahir' => $data['tempat_lahir'] ?? $guru->person->tempat_lahir,
+                    'tanggal_lahir' => $data['tanggal_lahir'] ?? $guru->person->tanggal_lahir,
+                    'agama' => $data['agama'] ?? $guru->person->agama,
+                    'kewarganegaraan' => $data['kewarganegaraan'] ?? $guru->person->kewarganegaraan,
+                    'no_hp' => $data['no_hp'] ?? $guru->person->no_hp,
+                    'alamat_jalan' => $data['alamat_jalan'] ?? $guru->person->alamat_jalan,
+                    'rt' => $data['rt'] ?? $guru->person->rt,
+                    'rw' => $data['rw'] ?? $guru->person->rw,
+                    'desa_kelurahan' => $data['desa_kelurahan'] ?? $guru->person->desa_kelurahan,
+                    'kecamatan' => $data['kecamatan'] ?? $guru->person->kecamatan,
+                    'kabupaten_kota' => $data['kabupaten_kota'] ?? $guru->person->kabupaten_kota,
+                    'provinsi' => $data['provinsi'] ?? $guru->person->provinsi,
+                    'kode_pos' => $data['kode_pos'] ?? $guru->person->kode_pos,
+                ]);
 
-            $guru->update($data);
+                if ($guru->person->user !== null) {
+                    $guru->person->user->update([
+                        'name' => $data['nama'],
+                        'email' => $data['email'],
+                    ]);
+                }
+            } elseif ($guru->user !== null) {
+                $guru->user->update([
+                    'name' => $data['nama'],
+                    'email' => $data['email'],
+                ]);
+            }
+
+            $guru->update(collect($data)->only([
+                'nuptk', 'nip', 'jenis_ptk', 'status_kepegawaian', 'golongan_pangkat', 'tmt_tugas', 'tmt_pns', 'kapasitas_kasus_aktif',
+            ])->toArray());
         });
 
         return redirect()->route('admin.guru.index')->with('status', 'Data guru berhasil diperbarui.');
@@ -189,11 +259,17 @@ class GuruController extends BaseController
 
     private function validateProfil(Request $request, ?Guru $guru = null): array
     {
+        $lembagaId = $this->resolveLembagaId($request);
+        $yayasanId = $lembagaId ? Lembaga::withoutGlobalScopes()->find($lembagaId)?->yayasan_id : ($request->user()?->yayasan_id ?? $request->user()?->lembaga?->yayasan_id);
+
         $data = $request->validate([
-            'nik' => ['required', 'digits:16', function ($attribute, $value, $fail) use ($guru) {
-                $query = Guru::withoutGlobalScopes()->where('nik_hash', hash('sha256', $value));
-                if ($guru) {
-                    $query->where('id', '!=', $guru->id);
+            'nik' => ['required', 'digits:16', function ($attribute, $value, $fail) use ($guru, $yayasanId) {
+                $query = Person::withoutGlobalScopes()->where('nik_hash', hash('sha256', $value));
+                if ($yayasanId) {
+                    $query->where('yayasan_id', $yayasanId);
+                }
+                if ($guru && $guru->person_id) {
+                    $query->where('id', '!=', $guru->person_id);
                 }
                 if ($query->exists()) {
                     $fail('NIK sudah terdaftar untuk guru lain.');
@@ -201,7 +277,7 @@ class GuruController extends BaseController
             }],
             'nip' => ['required', 'string', 'max:30'],
             'nama' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($guru?->user_id)],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($guru?->user_id ?? $guru?->person?->user_id)],
             'jenis_kelamin' => ['required', 'in:L,P'],
             'jenis_ptk' => ['required', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi,guru_bk'],
             'kapasitas_kasus_aktif' => ['nullable', 'integer', 'min:0'],
