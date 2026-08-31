@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Policies\KasusPolicy;
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
@@ -11,9 +12,9 @@ use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -25,12 +26,14 @@ it('isKonselor returns true for the assigned konselor guru, false for another gu
     $userKonselor = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $guruKonselor->user_id = $userKonselor->id;
     $guruKonselor->save();
+    $guruKonselor->person->update(['user_id' => $userKonselor->id]);
 
     $kasus = Kasus::factory()->create(['lembaga_id' => $lembaga->id, 'konselor_guru_id' => $guruKonselor->id]);
 
     $userB = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $guruLain->user_id = $userB->id;
     $guruLain->save();
+    $guruLain->person->update(['user_id' => $userB->id]);
 
     $policy = new KasusPolicy;
 
@@ -45,6 +48,7 @@ it('view grants access to the guru submitter even when not the konselor', functi
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $guruPengaju->user_id = $user->id;
     $guruPengaju->save();
+    $guruPengaju->person->update(['user_id' => $user->id]);
 
     $kasus = Kasus::factory()->create([
         'lembaga_id' => $lembaga->id,
@@ -66,10 +70,12 @@ it('view grants access to orang tua kontak utama but not a non-kontak-utama oran
     $userKontakUtama = User::factory()->create();
     $kontakUtama->user_id = $userKontakUtama->id;
     $kontakUtama->save();
+    $kontakUtama->person->update(['user_id' => $userKontakUtama->id]);
 
     $userBukanKontakUtama = User::factory()->create();
     $bukanKontakUtama->user_id = $userBukanKontakUtama->id;
     $bukanKontakUtama->save();
+    $bukanKontakUtama->person->update(['user_id' => $userBukanKontakUtama->id]);
 
     $kasus = Kasus::factory()->create(['lembaga_id' => $lembaga->id, 'siswa_id' => $siswa->id]);
 
@@ -81,7 +87,7 @@ it('view grants access to orang tua kontak utama but not a non-kontak-utama oran
 
 it('view grants access to a triase admin within the same lembaga but not a different lembaga', function () {
     Role::firstOrCreate(['name' => 'admin_lembaga', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
-    \Spatie\Permission\Models\Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
+    Permission::firstOrCreate(['name' => 'kasus.triase', 'guard_name' => 'web']);
 
     $lembagaA = Lembaga::factory()->create();
     $lembagaB = Lembaga::factory()->create();
@@ -105,6 +111,7 @@ it('view grants access to the terkait siswa themselves', function () {
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswa->user_id = $user->id;
     $siswa->save();
+    $siswa->person->update(['user_id' => $user->id]);
 
     $kasus = Kasus::factory()->create(['lembaga_id' => $lembaga->id, 'siswa_id' => $siswa->id]);
 
@@ -126,6 +133,7 @@ it('kelolaSesiTugas mirrors isKonselor exactly', function () {
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $karyawanKonselor->user_id = $user->id;
     $karyawanKonselor->save();
+    $karyawanKonselor->person->update(['user_id' => $user->id]);
 
     $kasus = Kasus::factory()->create(['lembaga_id' => $lembaga->id, 'konselor_karyawan_id' => $karyawanKonselor->id]);
 
@@ -156,7 +164,7 @@ it('viewAny returns true when karyawan is konselor on at least one kasus, withou
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = Karyawan::withoutGlobalScopes()->create([
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -164,7 +172,7 @@ it('viewAny returns true when karyawan is konselor on at least one kasus, withou
     Kasus::create([
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
-        'status' => App\Domains\Kasus\Enums\StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+        'status' => StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
     ]);
 
     expect((new KasusPolicy)->viewAny($user))->toBeTrue();
@@ -176,7 +184,7 @@ it('viewAny returns false for karyawan with no kasus.view capability and never a
 
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
-    Karyawan::withoutGlobalScopes()->create([
+    Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Satpam',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -192,7 +200,7 @@ it('viewAny returns true for karyawan whose only konselor assignment is on a Sel
 
     $user = User::factory()->create(['lembaga_id' => null]);
     $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = Karyawan::withoutGlobalScopes()->create([
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool Selesai',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -200,9 +208,8 @@ it('viewAny returns true for karyawan whose only konselor assignment is on a Sel
     Kasus::create([
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
-        'status' => App\Domains\Kasus\Enums\StatusKasus::Selesai, 'konselor_karyawan_id' => $karyawan->id,
+        'status' => StatusKasus::Selesai, 'konselor_karyawan_id' => $karyawan->id,
     ]);
 
     expect((new KasusPolicy)->viewAny($user))->toBeTrue();
 });
-

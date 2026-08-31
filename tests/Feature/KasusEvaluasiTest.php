@@ -1,12 +1,15 @@
 <?php
+
 // tests/Feature/KasusEvaluasiTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
-use App\Domains\Sdm\Models\JenisKaryawanMaster;
-use App\Models\Karyawan;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusEvaluasi;
+use App\Domains\Kasus\Models\KasusSesi;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Models\Guru;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;
@@ -17,6 +20,7 @@ use App\Notifications\KasusDikembalikanNotification;
 use App\Notifications\KasusEskalasiNotification;
 use App\Notifications\KasusSelesaiNotification;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Permission;
 
 if (! function_exists('buatKasusBerjalanDenganKonselor')) {
@@ -29,7 +33,7 @@ if (! function_exists('buatKasusBerjalanDenganKonselor')) {
         $guruRole = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
         $guruRole->givePermissionTo(['kasus.view']);
         $konselorUser->assignRole('guru');
-        $guruBk = Guru::withoutGlobalScopes()->create([
+        $guruBk = Guru::factory()->create([
             'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
             'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
             'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -67,7 +71,7 @@ if (! function_exists('buatKasusBerjalanDenganKaryawanKonselor')) {
         $role->givePermissionTo(['kasus.view']);
         $konselorUser->assignRole('pegawai_yayasan');
         $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-        $karyawan = Karyawan::withoutGlobalScopes()->create([
+        $karyawan = Karyawan::factory()->create([
             'user_id' => $konselorUser->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
             'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Konselor',
             'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -175,7 +179,7 @@ it('lets the konselor evaluate a berjalan kasus with keputusan selesai, no appro
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Selesai',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009999',
         'email' => 'ortu.selesai@example.test',
@@ -203,7 +207,7 @@ it('does not 500 when notifying KasusSelesaiNotification for real (no Notificati
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Selesai Real',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009988',
         'email' => 'ortu.selesai.real@example.test',
@@ -337,8 +341,8 @@ it('lets the konselor keep scheduling sesi and giving tugas while the kasus is e
         'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(3)->toDateString(),
     ])->assertRedirect(route('kasus.show', $kasus));
 
-    expect(\App\Domains\Kasus\Models\KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(1);
-    expect(\App\Domains\Kasus\Models\KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(1);
+    expect(KasusSesi::where('kasus_id', $kasus->id)->count())->toBe(1);
+    expect(KasusTugas::where('kasus_id', $kasus->id)->count())->toBe(1);
     expect($kasus->refresh()->status)->toBe(StatusKasus::Eskalasi);
 });
 
@@ -350,7 +354,7 @@ it('records an activitylog entry when a konselor evaluates a berjalan kasus with
         'catatan' => 'Butuh keterlibatan admin.', 'keputusan' => 'eskalasi',
     ])->assertRedirect(route('kasus.show', $kasus));
 
-    expect(\Spatie\Activitylog\Models\Activity::where('subject_type', \App\Domains\Kasus\Models\Kasus::class)
+    expect(Activity::where('subject_type', Kasus::class)
         ->where('subject_id', $kasus->id)
         ->where('event', 'updated')
         ->exists())->toBeTrue();

@@ -1,20 +1,21 @@
 <?php
+
 // tests/Feature/KasusTugasSubmissionTest.php
 
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusConsent;
 use App\Domains\Kasus\Models\KasusTugas;
 use App\Domains\Kasus\Models\KasusTugasSubmission;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;
+use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
-use App\Models\Siswa;
 use Spatie\Permission\Models\Permission;
 
 if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
@@ -27,7 +28,7 @@ if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
         $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
         $role->givePermissionTo(['kasus.view']);
         $konselorUser->assignRole('guru');
-        $guruBk = Guru::withoutGlobalScopes()->create([
+        $guruBk = Guru::factory()->create([
             'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
             'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
             'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -47,33 +48,34 @@ if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
 if (! function_exists('buatKasusDenganTugasDanKontakUtama')) {
     function buatKasusDenganTugasDanKontakUtama(Lembaga $lembaga): array
     {
-    [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBk($lembaga);
+        [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBk($lembaga);
 
-    Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
 
-    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $siswaRole->givePermissionTo(['kasus.view']);
-    $siswaUser->assignRole('siswa');
-    $siswa->update(['user_id' => $siswaUser->id]);
+        $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $siswaRole->givePermissionTo(['kasus.view']);
+        $siswaUser->assignRole('siswa');
+        $siswa->update(['user_id' => $siswaUser->id]);
+        $siswa->person->update(['user_id' => $siswaUser->id]);
 
-    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
-    $orangTuaRole = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $orangTuaRole->givePermissionTo(['kasus.view']);
-    $orangTuaUser->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
-        'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Submission',
-        'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200008888',
-        'email' => 'ortu.submission@example.test',
-    ]);
-    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
+        $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+        $orangTuaRole = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $orangTuaRole->givePermissionTo(['kasus.view']);
+        $orangTuaUser->assignRole('orang_tua');
+        $orangTua = OrangTua::factory()->create([
+            'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Submission',
+            'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200008888',
+            'email' => 'ortu.submission@example.test',
+        ]);
+        $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
 
-    $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id]);
+        $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id]);
 
-    KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan', 'status' => 'disetujui', 'disetujui_at' => now()]);
-    KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media']);
+        KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan', 'status' => 'disetujui', 'disetujui_at' => now()]);
+        KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'pengumpulan_media']);
 
-    return [$kasus, $tugas, $siswaUser, $orangTuaUser];
+        return [$kasus, $tugas, $siswaUser, $orangTuaUser];
     }
 }
 
@@ -155,7 +157,7 @@ it('403s a siswa unrelated to the kasus from submitting', function () {
     $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $siswaRole->givePermissionTo(['kasus.view']);
     $unrelatedSiswaUser->assignRole('siswa');
-    \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $unrelatedSiswaUser->id]);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $unrelatedSiswaUser->id]);
 
     $this->actingAs($unrelatedSiswaUser)->post(route('kasus.tugas.submission.store', [$kasus, $tugas]), ['teks' => 'x'])
         ->assertForbidden();
@@ -281,7 +283,7 @@ it('404s an unrelated user attempting to download a submission lampiran', functi
     $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $siswaRole->givePermissionTo(['kasus.view']);
     $unrelatedUser->assignRole('siswa');
-    \App\Models\Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $unrelatedUser->id]);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $unrelatedUser->id]);
 
     $this->actingAs($unrelatedUser)
         ->get(route('kasus.tugas.submission.lampiran', [$kasus, $tugas, $submission]))

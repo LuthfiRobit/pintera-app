@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/KasusSchemaTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
@@ -7,7 +8,9 @@ use App\Domains\Kasus\Models\KasusConsent;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
+use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Database\QueryException;
 
 it('creates a kasus linked to siswa and lembaga with default status diajukan', function () {
     $yayasan = Yayasan::factory()->create();
@@ -41,11 +44,12 @@ it('creates exactly one kasus_consent row per jenis per kasus', function () {
 
     expect($kasus->consents()->count())->toBe(1);
     expect(fn () => KasusConsent::create(['kasus_id' => $kasus->id, 'jenis' => 'sesi_pendampingan']))
-        ->toThrow(\Illuminate\Database\QueryException::class);
+        ->toThrow(QueryException::class);
 });
 
 it('exposes User::orangTua() as the inverse of OrangTua::user()', function () {
-    $orangTua = OrangTua::factory()->create();
+    $user = User::factory()->create();
+    $orangTua = OrangTua::factory()->create(['user_id' => $user->id]);
 
     expect($orangTua->user->orangTua->id)->toBe($orangTua->id);
 });

@@ -1,9 +1,9 @@
 <?php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusConsent;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;
@@ -31,7 +31,7 @@ function siapkanKasusMenungguConsent(?Guru $guruPengaju = null, ?Lembaga $lembag
 
     $kontakUtamaUser = User::factory()->create(['lembaga_id' => null]);
     $kontakUtamaUser->assignRole($role);
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $kontakUtamaUser->id, 'nama_lengkap' => 'Kontak Utama',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200004444',
         'email' => 'kontak.consent@example.test',
@@ -40,7 +40,7 @@ function siapkanKasusMenungguConsent(?Guru $guruPengaju = null, ?Lembaga $lembag
 
     $nonKontakUtamaUser = User::factory()->create(['lembaga_id' => null]);
     $nonKontakUtamaUser->assignRole($role);
-    $nonKontakUtama = OrangTua::create([
+    $nonKontakUtama = OrangTua::factory()->create([
         'user_id' => $nonKontakUtamaUser->id, 'nama_lengkap' => 'Bukan Kontak Utama',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200005555',
     ]);
@@ -96,7 +96,7 @@ it('rejects consent approval from an orang tua who is linked but not kontak utam
 it('notifies the submitting guru and lembaga admins when sesi_pendampingan consent is approved', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $guruPengaju = Guru::withoutGlobalScopes()->create([
+    $guruPengaju = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Guru Pengaju', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -122,7 +122,7 @@ it('notifies the submitting guru and lembaga admins when sesi_pendampingan conse
 it('renders the consent-approved notification for real without a fake, using the already-scoped siswa relation', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $guruPengaju = Guru::withoutGlobalScopes()->create([
+    $guruPengaju = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Guru Pengaju Nyata', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_bk',
@@ -146,7 +146,7 @@ it('does not 500 when notifying ConsentDisetujuiNotification for real (no Notifi
     // notifiable (with a real email) is notified outside Notification::fake().
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $guruPengaju = Guru::withoutGlobalScopes()->create([
+    $guruPengaju = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Guru Pengaju Konsent Real', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',

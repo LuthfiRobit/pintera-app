@@ -1,9 +1,10 @@
 <?php
+
 // tests/Feature/KasusShowDeleteButtonTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\User;
@@ -32,7 +33,7 @@ function actingAsKonselorPemegangKasusUntukShow(Kasus $kasus, Lembaga $lembaga):
     $role->givePermissionTo('kasus.view');
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
-    $guru = Guru::withoutGlobalScopes()->create([
+    $guru = Guru::factory()->create([
         'user_id' => $user->id, 'lembaga_id' => $lembaga->id, 'nama' => 'Konselor',
         'nik' => fake()->unique()->numerify('################'),
         'nip' => '9988776655', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_bk',

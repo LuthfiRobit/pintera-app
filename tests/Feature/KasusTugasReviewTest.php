@@ -1,16 +1,20 @@
 <?php
+
 // tests/Feature/KasusTugasReviewTest.php
 
+use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusTugas;
 use App\Domains\Kasus\Models\KasusTugasSubmission;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Models\Guru;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
-use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
+use App\Notifications\SubmissionRevisiNotification;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
@@ -24,7 +28,7 @@ if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
         $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
         $role->givePermissionTo(['kasus.view']);
         $konselorUser->assignRole('guru');
-        $guruBk = Guru::withoutGlobalScopes()->create([
+        $guruBk = Guru::factory()->create([
             'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
             'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
             'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -133,8 +137,8 @@ it('notifies the siswa on revisi_diminta even when a yayasan-scoped konselor has
     $konselorRole = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $konselorRole->givePermissionTo(['kasus.view']);
     $konselorUser->assignRole('pegawai_yayasan');
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = \App\Models\Karyawan::withoutGlobalScopes()->create([
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $konselorUser->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaLain->id,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Konselor Lintas Lembaga',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -143,7 +147,7 @@ it('notifies the siswa on revisi_diminta even when a yayasan-scoped konselor has
     $kasus = Kasus::create([
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
-        'status' => \App\Domains\Kasus\Enums\StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
+        'status' => StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
     ]);
     $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id, 'status' => 'dikerjakan']);
     $submission = KasusTugasSubmission::factory()->create(['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id]);
@@ -157,7 +161,7 @@ it('notifies the siswa on revisi_diminta even when a yayasan-scoped konselor has
             'catatan_revisi' => 'Tolong diperbaiki.',
         ])->assertRedirect(route('kasus.show', $kasus));
 
-    Notification::assertSentTo($siswaUser, \App\Notifications\SubmissionRevisiNotification::class);
+    Notification::assertSentTo($siswaUser, SubmissionRevisiNotification::class);
 });
 
 it('403s a konselor who is not assigned from reviewing a submission', function () {

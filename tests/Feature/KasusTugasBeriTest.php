@@ -1,16 +1,20 @@
 <?php
+
 // tests/Feature/KasusTugasBeriTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusTugas;
+use App\Models\Guru;
 use App\Models\Lembaga;
+use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use App\Notifications\TugasBatchDibuatNotification;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
 // Declared with a distinct name from the other tests/Feature/*.php files' own
@@ -26,7 +30,7 @@ function buatKasusDitugaskanKeGuruBkUntukTugas(Lembaga $lembaga): array
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
     $konselorUser->assignRole('guru');
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
         'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -137,29 +141,29 @@ it('notifies siswa and orang tua once for the whole batch when a tugas is given'
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
 
-    $siswaUser = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswa->update(['user_id' => $siswaUser->id]);
 
-    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
-    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tugas',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007777',
         'email' => 'ortu.tugas@example.test',
     ]);
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
 
-    \Illuminate\Support\Facades\Notification::fake();
+    Notification::fake();
 
     $this->actingAs($konselorUser)->post(route('kasus.tugas.store', $kasus), [
         'judul' => 'Jurnal Harian', 'instruksi' => 'x', 'frekuensi' => 'harian',
         'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(2)->toDateString(),
     ]);
 
-    \Illuminate\Support\Facades\Notification::assertSentTimes(TugasBatchDibuatNotification::class, 2);
-    \Illuminate\Support\Facades\Notification::assertSentTo($siswaUser, TugasBatchDibuatNotification::class);
-    \Illuminate\Support\Facades\Notification::assertSentTo($orangTua, TugasBatchDibuatNotification::class);
+    Notification::assertSentTimes(TugasBatchDibuatNotification::class, 2);
+    Notification::assertSentTo($siswaUser, TugasBatchDibuatNotification::class);
+    Notification::assertSentTo($orangTua, TugasBatchDibuatNotification::class);
 });
 
 it('does not 500 when notifying TugasBatchDibuatNotification for real (no Notification::fake)', function () {
@@ -172,13 +176,13 @@ it('does not 500 when notifying TugasBatchDibuatNotification for real (no Notifi
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
 
-    $siswaUser = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswa->update(['user_id' => $siswaUser->id]);
 
-    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
-    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tugas Real',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007799',
         'email' => 'ortu.tugas.real@example.test',
@@ -199,10 +203,10 @@ it('does not 500 when notifying TugasSelesaiNotification for real (no Notificati
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
 
-    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
-    \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tugas Selesai Real',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007700',
         'email' => 'ortu.tugas.selesai.real@example.test',
@@ -282,7 +286,7 @@ it('lets the assigned konselor give tugas against a berjalan kasus', function ()
 });
 
 it('does not call Fonnte when a tugas is given (TugasBatchDibuatNotification has no whatsapp channel)', function () {
-    \Illuminate\Support\Facades\Http::fake();
+    Http::fake();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
     [$kasus, $konselorUser] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
 
@@ -291,5 +295,5 @@ it('does not call Fonnte when a tugas is given (TugasBatchDibuatNotification has
         'tanggal_mulai' => now()->toDateString(), 'tanggal_selesai' => now()->addDays(3)->toDateString(),
     ]);
 
-    \Illuminate\Support\Facades\Http::assertNothingSent();
+    Http::assertNothingSent();
 });

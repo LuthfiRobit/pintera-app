@@ -1,18 +1,21 @@
 <?php
+
 // tests/Feature/Admin/KasusTriaseTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusConsent;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Models\WhatsAppTemplate;
 use App\Models\Yayasan;
 use App\Notifications\KonselorDipilihNotification;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
@@ -38,7 +41,7 @@ it('assigns a guru_bk konselor from the resolver, moves status to menunggu_conse
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager = actingAsKasusTriaseManager($lembaga);
 
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor BK', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -48,7 +51,7 @@ it('assigns a guru_bk konselor from the resolver, moves status to menunggu_conse
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200003333',
         'email' => 'kontak.utama.triase@example.test',
@@ -110,7 +113,7 @@ it('404s an operator_akademik from another lembaga trying to assign a konselor t
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Milik lembaga B.',
     ]);
 
-    $guruBkLembagaB = Guru::withoutGlobalScopes()->create([
+    $guruBkLembagaB = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaB->id])->id,
         'lembaga_id' => $lembagaB->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor BK Lembaga B', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -145,7 +148,7 @@ it('rejects a konselor_id that is not in the resolver\'s candidate list for the 
 
     // A real Guru row exists, but is not guru_bk -- so it must never appear as a valid
     // candidate for konselor_tipe = guru.
-    $guruBukanBk = Guru::withoutGlobalScopes()->create([
+    $guruBukanBk = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Guru Bukan BK', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas',
@@ -175,7 +178,7 @@ it('renders the triase index page with KPI statistics and the triase assignment 
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Uji Triase']);
     $manager = actingAsKasusTriaseManager($lembaga);
 
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor BK Triase View', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -202,8 +205,8 @@ it('renders the triase index page with KPI statistics and the triase assignment 
 });
 
 it('sends the consent-diminta notification via whatsapp with the rendered template', function () {
-    \Illuminate\Support\Facades\Http::fake(['api.fonnte.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
-    \App\Models\WhatsAppTemplate::firstOrCreate(
+    Http::fake(['api.fonnte.com/*' => Http::response(['status' => true], 200)]);
+    WhatsAppTemplate::firstOrCreate(
         ['kode' => 'consent_diminta'],
         ['isi_template' => 'Konselor {nama_konselor} dipilih untuk {nama_siswa}.']
     );
@@ -213,7 +216,7 @@ it('sends the consent-diminta notification via whatsapp with the rendered templa
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Budi Santoso']);
     $manager = actingAsKasusTriaseManager($lembaga);
 
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor Whatsapp', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -223,7 +226,7 @@ it('sends the consent-diminta notification via whatsapp with the rendered templa
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu WhatsApp',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009900',
         'email' => 'kontak.wa@example.test',
@@ -239,7 +242,7 @@ it('sends the consent-diminta notification via whatsapp with the rendered templa
         'tingkat_urgensi' => 'sedang', 'konselor_tipe' => 'guru', 'konselor_id' => $guruBk->id,
     ]);
 
-    \Illuminate\Support\Facades\Http::assertSent(function ($request) {
+    Http::assertSent(function ($request) {
         return $request->url() === 'https://api.fonnte.com/send'
             && $request['target'] === '081200009900'
             && str_contains($request['message'], 'Konselor Whatsapp')
@@ -248,14 +251,14 @@ it('sends the consent-diminta notification via whatsapp with the rendered templa
 });
 
 it('does NOT call Fonnte when the consent-diminta template row is missing', function () {
-    \Illuminate\Support\Facades\Http::fake();
-    \App\Models\WhatsAppTemplate::where('kode', 'consent_diminta')->delete();
+    Http::fake();
+    WhatsAppTemplate::where('kode', 'consent_diminta')->delete();
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager = actingAsKasusTriaseManager($lembaga);
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor Tanpa Template', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -264,7 +267,7 @@ it('does NOT call Fonnte when the consent-diminta template row is missing', func
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tanpa Template',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200008800',
         'email' => 'ortu.tanpa.template@example.test',
@@ -279,7 +282,7 @@ it('does NOT call Fonnte when the consent-diminta template row is missing', func
         'tingkat_urgensi' => 'sedang', 'konselor_tipe' => 'guru', 'konselor_id' => $guruBk->id,
     ]);
 
-    \Illuminate\Support\Facades\Http::assertNothingSent();
+    Http::assertNothingSent();
 });
 
 it('still delivers database and mail when the Fonnte call fails', function () {
@@ -304,8 +307,8 @@ it('still delivers database and mail when the Fonnte call fails', function () {
     // out of scope for a WhatsApp channel task. Instead we let mail send for real (phpunit.xml
     // sets MAIL_MAILER=array) and assert against the array transport directly, which proves
     // the same thing the brief's spec requires without relying on the broken fake path.
-    \Illuminate\Support\Facades\Http::fake(['api.fonnte.com/*' => \Illuminate\Support\Facades\Http::response(['status' => false], 500)]);
-    \App\Models\WhatsAppTemplate::firstOrCreate(
+    Http::fake(['api.fonnte.com/*' => Http::response(['status' => false], 500)]);
+    WhatsAppTemplate::firstOrCreate(
         ['kode' => 'consent_diminta'],
         ['isi_template' => 'Konselor {nama_konselor} dipilih untuk {nama_siswa}.']
     );
@@ -314,7 +317,7 @@ it('still delivers database and mail when the Fonnte call fails', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager = actingAsKasusTriaseManager($lembaga);
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor Gagal WA', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -323,7 +326,7 @@ it('still delivers database and mail when the Fonnte call fails', function () {
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Gagal WA',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200006600',
         'email' => 'ortu.gagal.wa@example.test',
@@ -339,8 +342,8 @@ it('still delivers database and mail when the Fonnte call fails', function () {
     ]);
 
     // WhatsApp was attempted (and failed) — but database and mail still succeeded.
-    \Illuminate\Support\Facades\Http::assertSent(fn ($request) => $request->url() === 'https://api.fonnte.com/send');
-    expect($kontakUtama->notifications()->where('type', \App\Notifications\KonselorDipilihNotification::class)->exists())->toBeTrue();
+    Http::assertSent(fn ($request) => $request->url() === 'https://api.fonnte.com/send');
+    expect($kontakUtama->notifications()->where('type', KonselorDipilihNotification::class)->exists())->toBeTrue();
 
     $sentMessages = app('mailer')->getSymfonyTransport()->messages();
     expect($sentMessages->count())->toBeGreaterThan(0);
@@ -356,8 +359,8 @@ it('does not 500 when assigning a konselor for an orang tua kontak utama with no
     // a Mailable with no recipient set when $email was null, and MailChannel::send() sends it
     // regardless, throwing LogicException("An email must have a To, Cc, or Bcc header") and
     // 500ing the whole admin action -- after the DB transaction had already committed.
-    \Illuminate\Support\Facades\Http::fake(['api.fonnte.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
-    \App\Models\WhatsAppTemplate::firstOrCreate(
+    Http::fake(['api.fonnte.com/*' => Http::response(['status' => true], 200)]);
+    WhatsAppTemplate::firstOrCreate(
         ['kode' => 'consent_diminta'],
         ['isi_template' => 'Konselor {nama_konselor} dipilih untuk {nama_siswa}.']
     );
@@ -367,7 +370,7 @@ it('does not 500 when assigning a konselor for an orang tua kontak utama with no
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Tanpa Email Ortu']);
     $manager = actingAsKasusTriaseManager($lembaga);
 
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor Tanpa Email Ortu', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
@@ -377,7 +380,7 @@ it('does not 500 when assigning a konselor for an orang tua kontak utama with no
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Tanpa Email',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200005500',
         'email' => null,
@@ -397,10 +400,9 @@ it('does not 500 when assigning a konselor for an orang tua kontak utama with no
     expect($kasus->status)->toBe(StatusKasus::MenungguConsent);
     expect($kontakUtama->notifications()->where('type', KonselorDipilihNotification::class)->exists())->toBeTrue();
 
-    \Illuminate\Support\Facades\Http::assertSent(function ($request) {
+    Http::assertSent(function ($request) {
         return $request->url() === 'https://api.fonnte.com/send'
             && $request['target'] === '081200005500'
             && str_contains($request['message'], 'Siswa Tanpa Email Ortu');
     });
 });
-

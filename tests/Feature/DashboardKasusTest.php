@@ -1,9 +1,12 @@
 <?php
+
 // tests/Feature/DashboardKasusTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Models\Guru;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Role;
@@ -22,7 +25,7 @@ it('shows a guru only kasus they submitted, not kasus submitted by another guru'
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
     $guruUser->assignRole('guru');
-    $guru = Guru::withoutGlobalScopes()->create([
+    $guru = Guru::factory()->create([
         'user_id' => $guruUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Satu',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
@@ -52,7 +55,7 @@ it('shows a guru_bk konselor a "kasus saya tangani" section on their dashboard',
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
     $konselorUser->assignRole('guru');
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
         'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -78,7 +81,7 @@ it('shows an orang tua only kasus belonging to their linked children', function 
     $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Dashboard',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
         'email' => 'ortu.dashboard@example.test',
@@ -109,8 +112,8 @@ it('shows a pegawai_yayasan konselor only kasus they are assigned to', function 
     $role = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
     $karyawanUser->assignRole('pegawai_yayasan');
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = \App\Models\Karyawan::withoutGlobalScopes()->create([
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $karyawanUser->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Konselor',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -202,7 +205,7 @@ it('counts the guru dashboard stat tiles from only that guru\'s own visible kasu
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.ajukan', 'kasus.view']);
     $guruUser->assignRole('guru');
-    $guru = Guru::withoutGlobalScopes()->create([
+    $guru = Guru::factory()->create([
         'user_id' => $guruUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Stats',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',

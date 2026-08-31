@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/KasusTrashedGuardHardeningTest.php
 //
 // M3/M4 hardening (final whole-branch review, Sub-proyek 7): sesi/tugas/evaluasi store()
@@ -6,8 +7,8 @@
 // current state machine (status stays 'selesai' after soft-delete) to block them by accident.
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\User;
@@ -24,7 +25,7 @@ function buatKasusTrashedNamunStatusBerjalan(Lembaga $lembaga): array
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
     $konselorUser->assignRole('guru');
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
         'nip' => fake()->unique()->numerify('##########'),

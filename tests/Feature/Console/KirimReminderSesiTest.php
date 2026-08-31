@@ -1,7 +1,7 @@
 <?php
+
 // tests/Feature/Console/KirimReminderSesiTest.php
 
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusSesi;
 use App\Models\Lembaga;
@@ -9,8 +9,10 @@ use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
+use App\Models\WhatsAppTemplate;
 use App\Models\Yayasan;
 use App\Notifications\SesiReminderNotification;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 
 it('sends a reminder for sesi terjadwal tomorrow, but not for other dates or statuses', function () {
@@ -21,7 +23,7 @@ it('sends a reminder for sesi terjadwal tomorrow, but not for other dates or sta
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Reminder',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200006666',
         'email' => 'ortu.reminder@example.test',
@@ -55,8 +57,8 @@ it('sends a reminder for sesi terjadwal tomorrow, but not for other dates or sta
 });
 
 it('sends the H-1 reminder via whatsapp to the orang tua kontak utama', function () {
-    \Illuminate\Support\Facades\Http::fake(['api.fonnte.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
-    \App\Models\WhatsAppTemplate::firstOrCreate(
+    Http::fake(['api.fonnte.com/*' => Http::response(['status' => true], 200)]);
+    WhatsAppTemplate::firstOrCreate(
         ['kode' => 'reminder_sesi_h1'],
         ['isi_template' => 'Sesi {nama_siswa} besok di {lokasi_sesi} jam {tanggal_sesi}.']
     );
@@ -68,7 +70,7 @@ it('sends the H-1 reminder via whatsapp to the orang tua kontak utama', function
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Reminder Whatsapp',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007700',
         'email' => 'ortu.reminder.wa@example.test',
@@ -88,7 +90,7 @@ it('sends the H-1 reminder via whatsapp to the orang tua kontak utama', function
 
     $this->artisan('kasus:kirim-reminder-sesi');
 
-    \Illuminate\Support\Facades\Http::assertSent(function ($request) {
+    Http::assertSent(function ($request) {
         return $request->url() === 'https://api.fonnte.com/send'
             && $request['target'] === '081200007700'
             && str_contains($request['message'], 'Ani Wijaya')
@@ -106,8 +108,8 @@ it('sends both a siswa-user mail reminder and an orang-tua whatsapp reminder in 
     // KirimReminderSesi::handle() -- with no try/catch, aborting the command and silently
     // skipping every OTHER sesi's reminder in that same run, including orang-tua whatsapp
     // reminders that come later in the loop.
-    \Illuminate\Support\Facades\Http::fake(['api.fonnte.com/*' => \Illuminate\Support\Facades\Http::response(['status' => true], 200)]);
-    \App\Models\WhatsAppTemplate::firstOrCreate(
+    Http::fake(['api.fonnte.com/*' => Http::response(['status' => true], 200)]);
+    WhatsAppTemplate::firstOrCreate(
         ['kode' => 'reminder_sesi_h1'],
         ['isi_template' => 'Sesi {nama_siswa} besok di {lokasi_sesi} jam {tanggal_sesi}.']
     );
@@ -133,7 +135,7 @@ it('sends both a siswa-user mail reminder and an orang-tua whatsapp reminder in 
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTuaDua = OrangTua::create([
+    $orangTuaDua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Dua',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200007701',
         'email' => 'ortu.dua@example.test',
@@ -163,7 +165,7 @@ it('sends both a siswa-user mail reminder and an orang-tua whatsapp reminder in 
 
     // Orang tua's whatsapp reminder also sent -- proving the loop did not abort partway
     // through and silently skip the rest.
-    \Illuminate\Support\Facades\Http::assertSent(function ($request) {
+    Http::assertSent(function ($request) {
         return $request->url() === 'https://api.fonnte.com/send'
             && $request['target'] === '081200007701'
             && str_contains($request['message'], 'Siswa Dua')

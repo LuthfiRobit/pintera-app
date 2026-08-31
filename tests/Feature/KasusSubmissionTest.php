@@ -3,8 +3,8 @@
 // tests/Feature/KasusSubmissionTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
@@ -28,7 +28,7 @@ if (! function_exists('actingAsGuruPengaju')) {
 
         $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
         $user->assignRole('guru');
-        $guru = Guru::create([
+        $guru = Guru::factory()->create([
             'user_id' => $user->id, 'lembaga_id' => $lembaga->id,
             'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Pengaju',
             'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
@@ -50,7 +50,7 @@ if (! function_exists('actingAsOrangTuaPengaju')) {
 
         $user = User::factory()->create(['lembaga_id' => null]);
         $user->assignRole('orang_tua');
-        $orangTua = OrangTua::create([
+        $orangTua = OrangTua::factory()->create([
             'user_id' => $user->id, 'nama_lengkap' => 'Orang Tua Pengaju',
             'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
             'email' => 'ortu.pengaju@example.test',
@@ -82,7 +82,7 @@ it('lets a guru submit a kasus and notifies the kontak utama orang tua', functio
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     $orangTuaUser->assignRole('orang_tua');
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200002222',
         'email' => 'kontak.utama@example.test',
@@ -119,7 +119,7 @@ it('does not 500 when notifying KasusDiajukanNotification for real (no Notificat
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     $orangTuaUser->assignRole('orang_tua');
-    $kontakUtama = OrangTua::create([
+    $kontakUtama = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama Real',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200002233',
         'email' => 'kontak.utama.real@example.test',

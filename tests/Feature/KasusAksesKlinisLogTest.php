@@ -1,9 +1,10 @@
 <?php
+
 // tests/Feature/KasusAksesKlinisLogTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\User;
@@ -20,7 +21,7 @@ function actingAsKasusKonselor(Lembaga $lembaga): array
 
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
-    $guru = Guru::withoutGlobalScopes()->create([
+    $guru = Guru::factory()->create([
         'user_id' => $user->id,
         'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'),

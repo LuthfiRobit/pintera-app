@@ -1,16 +1,20 @@
 <?php
+
 // tests/Feature/KasusKonselorAksesTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
+use App\Domains\Kasus\Models\Kasus;
+use App\Domains\Kasus\Models\KasusTugas;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Guru;
 use App\Models\Karyawan;
-use App\Domains\Kasus\Models\Kasus;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
 use App\Notifications\SesiDijadwalkanNotification;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
@@ -21,7 +25,7 @@ function buatGuruBkKonselorAkses(Lembaga $lembaga): array
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
     $user->assignRole('guru');
-    $guru = Guru::withoutGlobalScopes()->create([
+    $guru = Guru::factory()->create([
         'user_id' => $user->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
         'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -38,8 +42,8 @@ function buatKaryawanKonselorAkses(Yayasan $yayasan): array
     $role = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->givePermissionTo(['kasus.view']);
     $user->assignRole('pegawai_yayasan');
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = Karyawan::withoutGlobalScopes()->create([
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Konselor',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -158,11 +162,11 @@ it('404s a guru_bk who is not assigned to the kasus', function () {
 
 function buatKaryawanPoolViaRoleSeederAsli(Yayasan $yayasan): array
 {
-    (new \Database\Seeders\RoleSeeder)->run();
+    (new RoleSeeder)->run();
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('pegawai_yayasan');
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = Karyawan::withoutGlobalScopes()->create([
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool Asli',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -183,7 +187,7 @@ it('lets a real RoleSeeder-baseline pool karyawan (no manual permission grant) a
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Contoh.',
         'status' => StatusKasus::Ditugaskan, 'konselor_karyawan_id' => $karyawan->id,
     ]);
-    $tugas = \App\Domains\Kasus\Models\KasusTugas::create([
+    $tugas = KasusTugas::create([
         'kasus_id' => $kasus->id, 'judul' => 'Tugas', 'instruksi' => 'Kerjakan',
         'frekuensi' => 'sekali', 'mulai_pada' => now()->toDateString(),
         'batas_selesai_pada' => now()->addDays(3)->toDateString(), 'status' => 'ditugaskan',
@@ -238,11 +242,11 @@ it('lets a yayasan-pool konselor open their assigned kasus but not an unrelated 
 it('403s a pegawai_lembaga karyawan who was never assigned as a konselor on any kasus', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    (new \Database\Seeders\RoleSeeder)->run();
+    (new RoleSeeder)->run();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('pegawai_lembaga');
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
-    Karyawan::withoutGlobalScopes()->create([
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
+    Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Satpam',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -269,12 +273,12 @@ it('lets a karyawan whose only konselor assignment is on a Selesai kasus still o
 it('lets a karyawan with kasus.view granted via an explicit extra role open kasus.index even with zero konselor history', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    (new \Database\Seeders\RoleSeeder)->run();
+    (new RoleSeeder)->run();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('pegawai_lembaga');
     $user->assignRole('guru_bk');
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
-    Karyawan::withoutGlobalScopes()->create([
+    $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => false]);
+    Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Guru BK Tambahan',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',
@@ -282,4 +286,3 @@ it('lets a karyawan with kasus.view granted via an explicit extra role open kasu
 
     $this->actingAs($user)->get(route('kasus.index'))->assertOk();
 });
-

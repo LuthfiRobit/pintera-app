@@ -1,9 +1,10 @@
 <?php
+
 // tests/Feature/KasusAutoBerjalanTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\Siswa;
@@ -20,7 +21,7 @@ function buatKasusDitugaskanUntukAutoBerjalan(Lembaga $lembaga): array
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
     $konselorUser->assignRole('guru');
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
         'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',

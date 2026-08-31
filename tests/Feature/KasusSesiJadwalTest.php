@@ -1,15 +1,19 @@
 <?php
+
 // tests/Feature/KasusSesiJadwalTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusSesi;
+use App\Models\Guru;
 use App\Models\Lembaga;
+use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
+use App\Notifications\SesiDijadwalkanNotification;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
 if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
@@ -22,7 +26,7 @@ if (! function_exists('buatKasusDitugaskanKeGuruBk')) {
         $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
         $role->givePermissionTo(['kasus.view']);
         $konselorUser->assignRole('guru');
-        $guruBk = Guru::withoutGlobalScopes()->create([
+        $guruBk = Guru::factory()->create([
             'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
             'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
             'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -91,20 +95,20 @@ it('notifies the relevant peserta when a sesi is scheduled', function () {
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200004444',
         'email' => 'ortu.sesi@example.test',
     ]);
     $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ibu', 'is_kontak_utama' => true]);
 
-    \Illuminate\Support\Facades\Notification::fake();
+    Notification::fake();
 
     $this->actingAs($konselorUser)->post(route('kasus.sesi.store', $kasus), ['sesi' => [
         ['dijadwalkan_pada' => now()->addDays(1)->format('Y-m-d H:i:s'), 'peserta' => 'orang_tua', 'lokasi_mode' => 'Ruang BK'],
     ]]);
 
-    \Illuminate\Support\Facades\Notification::assertSentTo($orangTua, \App\Notifications\SesiDijadwalkanNotification::class);
+    Notification::assertSentTo($orangTua, SesiDijadwalkanNotification::class);
 });
 
 it('does not 500 when notifying SesiDijadwalkanNotification for real (no Notification::fake)', function () {
@@ -118,7 +122,7 @@ it('does not 500 when notifying SesiDijadwalkanNotification for real (no Notific
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama Real',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200004455',
         'email' => 'ortu.sesi.real@example.test',

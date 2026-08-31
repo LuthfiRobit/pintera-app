@@ -1,14 +1,17 @@
 <?php
+
 // tests/Feature/KasusListingTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Guru;
 use App\Models\Lembaga;
-use App\Models\Siswa;
-use App\Models\Yayasan;
 use App\Models\OrangTua;
+use App\Models\Scopes\TenantScope;
+use App\Models\Siswa;
 use App\Models\User;
+use App\Models\Yayasan;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -23,7 +26,7 @@ if (! function_exists('actingAsGuruPengaju')) {
 
         $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
         $user->assignRole('guru');
-        $guru = Guru::create([
+        $guru = Guru::factory()->create([
             'user_id' => $user->id, 'lembaga_id' => $lembaga->id,
             'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Pengaju',
             'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
@@ -45,7 +48,7 @@ if (! function_exists('actingAsOrangTuaPengaju')) {
 
         $user = User::factory()->create(['lembaga_id' => null]);
         $user->assignRole('orang_tua');
-        $orangTua = OrangTua::create([
+        $orangTua = OrangTua::factory()->create([
             'user_id' => $user->id, 'nama_lengkap' => 'Orang Tua Pengaju',
             'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200001111',
             'email' => 'ortu.pengaju@example.test',
@@ -78,8 +81,8 @@ it('shows a guru only the kasus they submitted, not another guru\'s', function (
     $siswaA = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Kasus Sendiri']);
     $siswaB = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'nama_lengkap' => 'Siswa Kasus Guru Lain']);
     [$user, $guru] = actingAsGuruPengaju($lembaga);
-    $otherUser = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $otherGuru = \App\Models\Guru::create([
+    $otherUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $otherGuru = Guru::factory()->create([
         'user_id' => $otherUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Lain',
         'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
@@ -128,10 +131,10 @@ it('404s when an unrelated guru tries to view another guru\'s kasus detail', fun
         'kategori_masalah' => 'Perilaku', 'deskripsi' => 'Rahasia.',
     ]);
 
-    $otherUser = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $otherRole = \App\Models\Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $otherUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $otherRole = App\Models\Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $otherUser->assignRole($otherRole);
-    \App\Models\Guru::create([
+    Guru::factory()->create([
         'user_id' => $otherUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Guru Tidak Terkait',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
@@ -162,17 +165,17 @@ it('lets an orang tua kontak utama list and view their kasus end-to-end through 
     $indexResponse->assertOk();
     $indexResponse->assertSee('Anak Orang Tua E2E');
 
-    $kasus = Kasus::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+    $kasus = Kasus::withoutGlobalScope(TenantScope::class)
         ->where('siswa_id', $siswa->id)->firstOrFail();
 
-    $guruBk = Guru::withoutGlobalScopes()->create([
-        'user_id' => \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id])->id,
+    $guruBk = Guru::factory()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => fake()->unique()->numerify('################'),
         'nama' => 'Konselor BK E2E', 'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk',
         'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
     ]);
     $manager = actingAsKasusTriaseManager($lembaga);
-    \Illuminate\Support\Facades\Notification::fake();
+    Notification::fake();
     $this->actingAs($manager)->post(route('admin.kasus.assign-konselor', $kasus), [
         'tingkat_urgensi' => 'sedang',
         'konselor_tipe' => 'guru',
@@ -225,9 +228,9 @@ it('does not show a guru-submitted kasus to an orang tua who is not the kontak u
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo('kasus.view');
-    $bukanKontakUtamaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    $bukanKontakUtamaUser = User::factory()->create(['lembaga_id' => null]);
     $bukanKontakUtamaUser->assignRole('orang_tua');
-    $bukanKontakUtama = \App\Models\OrangTua::create([
+    $bukanKontakUtama = OrangTua::factory()->create([
         'user_id' => $bukanKontakUtamaUser->id, 'nama_lengkap' => 'Bukan Kontak Utama',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200009999',
     ]);

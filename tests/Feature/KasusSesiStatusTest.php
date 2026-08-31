@@ -1,11 +1,13 @@
 <?php
+
 // tests/Feature/KasusSesiStatusTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
-use App\Models\Guru;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusSesi;
+use App\Models\Guru;
 use App\Models\Lembaga;
+use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
@@ -25,7 +27,7 @@ function buatKasusDitugaskanKeGuruBkUntukStatus(Lembaga $lembaga): array
     $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
     $konselorUser->assignRole('guru');
-    $guruBk = Guru::withoutGlobalScopes()->create([
+    $guruBk = Guru::factory()->create([
         'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
         'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
         'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -79,12 +81,12 @@ it('hides catatan_internal from the orang tua kontak utama viewing kasus.show', 
         'catatan_internal' => 'RAHASIA-CATATAN-KONSELOR',
     ]);
 
-    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
-    $orangTuaRole = \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaRole = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaRole->givePermissionTo(['kasus.view']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Utama',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200005555',
         'email' => 'ortu.confidential@example.test',
@@ -123,12 +125,12 @@ it('lets an orang tua kontak utama see sesi metadata but not the create-sesi for
         'dijadwalkan_pada' => now()->addDays(2),
     ]);
 
-    $orangTuaUser = \App\Models\User::factory()->create(['lembaga_id' => null]);
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
-    $orangTuaRole = \App\Models\Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $orangTuaRole = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $orangTuaRole->givePermissionTo(['kasus.view']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Kontak Sesi',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200006666',
         'email' => 'ortu.sesi@example.test',

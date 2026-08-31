@@ -3,12 +3,13 @@
 use App\Domains\Kasus\Enums\StatusKasus;
 use App\Domains\Kasus\Models\Kasus;
 use App\Domains\Kasus\Models\KasusEvaluasi;
+use App\Models\Guru;
 use App\Models\Lembaga;
+use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
-use App\Models\Guru;
 use Spatie\Permission\Models\Permission;
 
 if (! function_exists('buatKasusBerjalanDenganKonselor')) {
@@ -21,7 +22,7 @@ if (! function_exists('buatKasusBerjalanDenganKonselor')) {
         $guruRole = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
         $guruRole->givePermissionTo(['kasus.view']);
         $konselorUser->assignRole('guru');
-        $guruBk = Guru::withoutGlobalScopes()->create([
+        $guruBk = Guru::factory()->create([
             'user_id' => $konselorUser->id, 'lembaga_id' => $lembaga->id,
             'nik' => fake()->unique()->numerify('################'), 'nama' => 'Konselor BK',
             'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_bk', 'status_kepegawaian' => 'GTY',
@@ -102,7 +103,7 @@ it('hides evaluasi catatan and the evaluasi form from orang tua kontak utama', f
     $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view', 'kasus.consent']);
     $orangTuaUser->assignRole('orang_tua');
-    $orangTua = \App\Models\OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $orangTuaUser->id, 'nama_lengkap' => 'Ibu Evaluasi',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200002222',
         'email' => 'ortu.evaluasi@example.test',
