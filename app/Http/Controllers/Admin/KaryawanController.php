@@ -179,9 +179,6 @@ class KaryawanController extends BaseController
             }
 
             $karyawan->update([
-                'nama' => $data['nama'],
-                'email' => $data['email'] ?? null,
-                'no_hp' => $data['no_hp'] ?? null,
                 'jenis_karyawan_id' => $data['jenis_karyawan_id'],
             ]);
         });

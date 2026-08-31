@@ -51,11 +51,6 @@ class AkunKaryawanGenerator
                 'yayasan_id' => $yayasanId,
                 'lembaga_id' => $lembagaId,
                 'jenis_karyawan_id' => $jenisKaryawanId,
-                'nama' => $nama,
-                'nik' => $nik,
-                'nik_hash' => hash('sha256', $nik),
-                'no_hp' => $noHp,
-                'email' => $email,
                 'status_aktif' => 'aktif',
             ]);
         });
