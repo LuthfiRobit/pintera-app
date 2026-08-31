@@ -13,10 +13,13 @@ class YayasanScope implements Scope
 
     public function apply(Builder $builder, Model $model): void
     {
-        // Same re-entrancy guard as TenantScope: the first cold resolution of
-        // auth()->id() can recurse back into this scope via SessionGuard's
-        // internal user() call. Breaking the cycle here mirrors TenantScope's
-        // own guard exactly.
+        // Defensive no-op copied from TenantScope's re-entrancy guard for
+        // consistency. Unlike TenantScope (attached to User itself, where
+        // resolving auth()->id() can recurse back into a User query and
+        // re-trigger that same scope), YayasanScope is only ever attached to
+        // Person, so resolving auth()->id() below never triggers a Person
+        // query and there is no actual recursion path to guard against here.
+        // Kept anyway because it's cheap and keeps the two scopes symmetric.
         if (self::$resolvingActingUser) {
             return;
         }
