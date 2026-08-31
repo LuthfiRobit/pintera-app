@@ -96,4 +96,23 @@ class Karyawan extends Model
     {
         return $this->morphMany(PengajuanIzinCuti::class, 'pegawai');
     }
+
+    public function scopeSearch($query, ?string $term)
+    {
+        if (! $term) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($term) {
+            $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%"))
+                ->orWhere('nama', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopeOrderByNama($query, string $direction = 'asc')
+    {
+        return $query->leftJoin('persons', 'karyawan.person_id', '=', 'persons.id')
+            ->orderByRaw("COALESCE(persons.nama_lengkap, karyawan.nama) {$direction}")
+            ->select('karyawan.*');
+    }
 }

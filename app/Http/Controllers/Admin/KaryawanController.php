@@ -37,16 +37,16 @@ class KaryawanController extends BaseController
         // is active. We bypass the global scope here and rebuild the equivalent filter by hand
         // (dedicated karyawan for this lembaga OR pool karyawan for this lembaga's yayasan).
         $karyawanList = Karyawan::withoutGlobalScope(TenantScope::class)
-            ->with(['user', 'jenisKaryawan', 'lembaga'])
+            ->with(['user', 'jenisKaryawan', 'lembaga', 'person'])
             ->when(
                 $lembagaId !== null,
                 function ($query) use ($lembagaId) {
                     $yayasanId = Lembaga::find($lembagaId)?->yayasan_id;
 
                     $query->where(function ($q) use ($lembagaId, $yayasanId) {
-                        $q->where('lembaga_id', $lembagaId)
+                        $q->where('karyawan.lembaga_id', $lembagaId)
                             ->orWhere(function ($q2) use ($yayasanId) {
-                                $q2->whereNull('lembaga_id')->where('yayasan_id', $yayasanId);
+                                $q2->whereNull('karyawan.lembaga_id')->where('karyawan.yayasan_id', $yayasanId);
                             });
                     });
                 },
@@ -56,12 +56,12 @@ class KaryawanController extends BaseController
                     // viewer with no active lembaga ("all lembaga" mode) sees everything
                     // unfiltered, matching the pre-existing behavior of that mode.
                     if ($user->widestScopeLevel() !== 'yayasan') {
-                        $query->where('lembaga_id', $lembagaId);
+                        $query->where('karyawan.lembaga_id', $lembagaId);
                     }
                 }
             )
-            ->when($search, fn ($q) => $q->where('nama', 'like', "%{$search}%"))
-            ->orderBy('nama')
+            ->when($search, fn ($q) => $q->search($search))
+            ->orderByNama()
             ->get();
 
         $totalKaryawan = $karyawanList->count();

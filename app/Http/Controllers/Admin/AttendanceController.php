@@ -49,7 +49,7 @@ class AttendanceController extends BaseController
                 ->map(fn ($g) => ['id' => (string) $g->id, 'nama' => $g->nama, 'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : '')])->values()
             : collect();
         $karyawanList = $lembagaId
-            ? Karyawan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama', 'email'])
+            ? Karyawan::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
                 ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
             : collect();
         $titikAbsen = $lembagaId ? AttendancePoint::where('lembaga_id', $lembagaId)->where('is_active', true)->orderBy('nama')->get() : collect();
