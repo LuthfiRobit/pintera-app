@@ -32,7 +32,7 @@ function actingAsGuruAsesmen(Guru $guru): User
         'lembaga_id' => $guru->lembaga_id,
         'email' => $guru->email ?: 'guru'.random_int(1000, 9999).'@test.com',
     ]);
-    $guru->update(['user_id' => $user->id]);
+    $guru->person->update(['user_id' => $user->id]);
     $user->assignRole($role);
 
     return $user;

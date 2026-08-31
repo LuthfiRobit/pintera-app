@@ -1,14 +1,14 @@
 <?php
 
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -27,7 +27,7 @@ function actingAsGuruKomponenPenilaian(Guru $guru): User
         'lembaga_id' => $guru->lembaga_id,
         'email' => $guru->email ?: 'guru'.random_int(1000, 9999).'@test.com',
     ]);
-    $guru->update(['user_id' => $user->id]);
+    $guru->person->update(['user_id' => $user->id]);
     $user->assignRole($role);
 
     return $user;

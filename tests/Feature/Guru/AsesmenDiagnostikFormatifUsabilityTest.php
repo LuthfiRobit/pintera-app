@@ -37,7 +37,7 @@ it('lets a guru create, fill, and read back a Formatif asesmen through the exist
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($role);
-    $guru->update(['user_id' => $user->id]);
+    $guru->person->update(['user_id' => $user->id]);
 
     JadwalPelajaran::create([
         'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'mata_pelajaran_id' => $mapel->id,

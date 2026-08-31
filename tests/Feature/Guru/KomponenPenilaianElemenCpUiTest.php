@@ -12,15 +12,15 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 
 it('renders create page and stores a komponen penilaian with subjek_type=elemen_cp for guru', function () {
-    (new PermissionSeeder())->run();
-    (new RoleSeeder())->run();
+    (new PermissionSeeder)->run();
+    (new RoleSeeder)->run();
 
     $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'TK']);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('guru');
     $user->givePermissionTo('komponen-penilaian.kelola-sendiri');
-    $guru->update(['user_id' => $user->id]);
+    $guru->person->update(['user_id' => $user->id]);
 
     $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $elemen = ElemenCp::factory()->create();
