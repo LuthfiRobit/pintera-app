@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Enums\SumberDataSiswa;
 use App\Exports\SiswaImportTemplateExport;
 use App\Imports\SiswaImportRow;
@@ -70,20 +71,30 @@ class SiswaImportController extends BaseController
             $lembaga = Lembaga::withoutGlobalScopes()->findOrFail($lembagaId);
 
             foreach ($validRows as $row) {
+                $person = app(CreatePersonAction::class)->execute(
+                    identityData: [
+                        'nama_lengkap' => $row['nama_lengkap'],
+                        'jenis_kelamin' => $row['jenis_kelamin'] ?? null,
+                        'tempat_lahir' => $row['tempat_lahir'] ?? null,
+                        'tanggal_lahir' => $row['tanggal_lahir'] ?? null,
+                        'agama' => $row['agama'] ?? null,
+                    ],
+                    lembagaId: $lembagaId,
+                    actingYayasanId: $lembaga->yayasan_id,
+                );
+
                 $user = app(AkunSiswaGenerator::class)->buat($row['nama_lengkap'], $row['nis'], $lembaga);
+                $person->update(['user_id' => $user->id]);
 
                 Siswa::create([
+                    'person_id' => $person->id,
                     'lembaga_id' => $lembagaId,
                     'user_id' => $user->id,
                     'kelas_id' => $row['kelas_id'],
                     'sumber_data' => SumberDataSiswa::Import->value,
                     'nis' => $row['nis'],
                     'nisn' => $row['nisn'],
-                    'nama_lengkap' => $row['nama_lengkap'],
-                    'jenis_kelamin' => $row['jenis_kelamin'],
-                    'tempat_lahir' => $row['tempat_lahir'],
-                    'tanggal_lahir' => $row['tanggal_lahir'],
-                    'agama' => $row['agama'],
+                    'status' => 'aktif',
                 ]);
             }
         });
