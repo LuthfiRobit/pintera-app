@@ -10,7 +10,7 @@ uses(RefreshDatabase::class);
 function buatOrangTuaUntukProfilNotifikasi(): array
 {
     $user = User::factory()->create(['lembaga_id' => null]);
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id, 'nama_lengkap' => 'Ortu Profil Notifikasi',
         'nik' => fake()->unique()->numerify('################'), 'no_hp' => '081200005555',
     ]);

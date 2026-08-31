@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Karyawan;
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -12,7 +12,7 @@ it('creates a dedicated-lembaga karyawan with all relations resolvable', functio
     $jenis = JenisKaryawanMaster::factory()->create(['nama' => 'Konselor BK']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
 
-    $karyawan = Karyawan::create([
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $user->id,
         'yayasan_id' => $yayasan->id,
         'lembaga_id' => $lembaga->id,
@@ -34,7 +34,7 @@ it('creates a pool karyawan with lembaga_id null', function () {
     $jenis = JenisKaryawanMaster::factory()->create(['nama' => 'Psikolog']);
     $user = User::factory()->create(['lembaga_id' => null]);
 
-    $karyawan = Karyawan::create([
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $user->id,
         'yayasan_id' => $yayasan->id,
         'lembaga_id' => null,

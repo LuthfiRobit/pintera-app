@@ -1,18 +1,17 @@
 <?php
+
 // tests/Feature/WhatsAppChannelTest.php
 
 use App\Models\OrangTua;
 use App\Models\User;
-use App\Notifications\Channels\WhatsAppChannel;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class ContohWhatsAppNotification extends Notification
 {
-    public function __construct(private ?string $pesan)
-    {
-    }
+    public function __construct(private ?string $pesan) {}
 
     public function via(object $notifiable): array
     {
@@ -27,7 +26,7 @@ class ContohWhatsAppNotification extends Notification
 
 function buatOrangTuaDenganNoHp(string $noHp = '081234567890'): OrangTua
 {
-    return OrangTua::create([
+    return OrangTua::factory()->create([
         'user_id' => User::factory()->create()->id,
         'nama_lengkap' => 'Ibu Contoh',
         'nik' => fake()->unique()->numerify('################'),
@@ -72,7 +71,7 @@ it('logs a warning and does not throw when Fonnte returns a failure response', f
 
 it('logs an error and does not throw when the Fonnte call itself throws', function () {
     Http::fake(function () {
-        throw new \Illuminate\Http\Client\ConnectionException('Gagal terhubung.');
+        throw new ConnectionException('Gagal terhubung.');
     });
     Log::spy();
     $orangTua = buatOrangTuaDenganNoHp();

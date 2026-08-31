@@ -111,7 +111,7 @@ it('shows Kasus Pendampingan under Kehadiran Saya (not Pendampingan) for a pool 
     $user = User::factory()->create(['lembaga_id' => null]);
     $user->assignRole('pegawai_yayasan');
     $jenis = JenisKaryawanMaster::factory()->create(['is_konselor' => true]);
-    $karyawan = Karyawan::withoutGlobalScopes()->create([
+    $karyawan = Karyawan::factory()->create([
         'user_id' => $user->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
         'jenis_karyawan_id' => $jenis->id, 'nama' => 'Karyawan Pool',
         'nik' => fake()->unique()->numerify('################'), 'status_aktif' => 'aktif',

@@ -43,7 +43,7 @@ it('aborts with 404 when wali_kelas_guru_id belongs to a different lembaga than 
     $lembagaB = Lembaga::factory()->create();
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
     KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $tahunAjaran->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
-    $guruLain = Guru::withoutGlobalScopes()->create([
+    $guruLain = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaB->id])->id,
         'lembaga_id' => $lembagaB->id,
         'nik' => '3201234567899999',

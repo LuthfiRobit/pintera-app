@@ -53,7 +53,7 @@ it('logs guru changes without leaking nik or nik_hash', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
 
-    $guru = Guru::create([
+    $guru = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id,
         'nik' => '3201234567890222',

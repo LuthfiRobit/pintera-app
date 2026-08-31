@@ -1,18 +1,18 @@
 <?php
 
-use App\Models\Guru;
 use App\Domains\Sdm\Models\JabatanTambahanMaster;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\JabatanTambahanMasterSeeder;
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
 it('seeds the jabatan tambahan master list from Permendikdasmen 11/2025', function () {
-    (new JabatanTambahanMasterSeeder())->run();
+    (new JabatanTambahanMasterSeeder)->run();
 
     expect(JabatanTambahanMaster::count())->toBe(16);
     expect(JabatanTambahanMaster::where('nama', 'Guru Wali')->where('kelompok', 'fungsional')->exists())->toBeTrue();
@@ -22,11 +22,11 @@ it('seeds the jabatan tambahan master list from Permendikdasmen 11/2025', functi
 });
 
 it('assigns a jabatan tambahan to a guru with a period and SK number', function () {
-    (new JabatanTambahanMasterSeeder())->run();
+    (new JabatanTambahanMasterSeeder)->run();
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $guru = Guru::create([
+    $guru = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id,
         'nik' => '3201234567890111',

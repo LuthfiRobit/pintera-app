@@ -2,6 +2,9 @@
 
 namespace Tests\Unit\Domains\Sarpras;
 
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Sarpras\Actions\CreateGedungAction;
 use App\Domains\Sarpras\Actions\CreateRuanganAction;
 use App\Domains\Sarpras\Actions\UpdateGedungAction;
@@ -16,8 +19,6 @@ use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use App\Models\User;
@@ -42,7 +43,7 @@ class GedungRuanganActionTest extends TestCase
             jumlahLantai: 2,
         );
 
-        $action = new CreateGedungAction();
+        $action = new CreateGedungAction;
         $gedung = $action->execute($dto);
 
         $this->assertInstanceOf(Gedung::class, $gedung);
@@ -56,7 +57,7 @@ class GedungRuanganActionTest extends TestCase
             jumlahLantai: 3,
         );
 
-        $updateAction = new UpdateGedungAction();
+        $updateAction = new UpdateGedungAction;
         $updated = $updateAction->execute($gedung, $updateDto);
 
         $this->assertEquals('Gedung Timur Baru', $updated->nama_gedung);
@@ -82,7 +83,7 @@ class GedungRuanganActionTest extends TestCase
             isShared: true,
         );
 
-        $createAction = new CreateRuanganAction();
+        $createAction = new CreateRuanganAction;
         $ruangan = $createAction->execute($dto);
 
         $this->assertEquals('LAB-1', $ruangan->kode_ruangan);
@@ -101,7 +102,7 @@ class GedungRuanganActionTest extends TestCase
             isShared: true,
         );
 
-        $updateAction = new UpdateRuanganAction();
+        $updateAction = new UpdateRuanganAction;
         $updated = $updateAction->execute($ruangan, $updateDto);
 
         $this->assertEquals('Laboratorium Komputer & Multimedia', $updated->nama_ruangan);
@@ -133,7 +134,7 @@ class GedungRuanganActionTest extends TestCase
         $kelas = Kelas::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'nama' => '7A', 'tingkat' => 7]);
         $mapel = MataPelajaran::create(['lembaga_id' => $lembaga->id, 'nama' => 'Informatika', 'kode' => 'INF']);
         $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-        $guru = Guru::create([
+        $guru = Guru::factory()->create([
             'lembaga_id' => $lembaga->id,
             'user_id' => $user->id,
             'nama' => 'Budi M.Kom',
@@ -142,7 +143,7 @@ class GedungRuanganActionTest extends TestCase
         ]);
 
         $pola = PolaJam::create(['lembaga_id' => $lembaga->id, 'nama' => 'Reguler']);
-        $jam = \App\Domains\Akademik\Models\JamPelajaran::create([
+        $jam = JamPelajaran::create([
             'pola_jam_id' => $pola->id,
             'label' => 'Jam 1',
             'jam_mulai' => '07:30',
@@ -160,7 +161,7 @@ class GedungRuanganActionTest extends TestCase
             'ruangan_id' => $ruangan->id,
         ]);
 
-        $validator = new ValidateRoomClashAction();
+        $validator = new ValidateRoomClashAction;
 
         // Should detect clash on the same semester and jam
         $isClash = $validator->execute(

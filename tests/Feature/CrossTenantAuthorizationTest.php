@@ -22,7 +22,7 @@ it('404s when a lembaga-scoped admin opens the edit page for a guru in another l
     $manager = User::factory()->create(['lembaga_id' => $ownLembaga->id]);
     $manager->assignRole($role);
 
-    $otherGuru = Guru::withoutGlobalScopes()->create([
+    $otherGuru = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $otherLembaga->id])->id,
         'lembaga_id' => $otherLembaga->id,
         'nik' => '3201234567897777',
@@ -70,12 +70,12 @@ it('lets a yayasan-scoped user filter the guru list down to one lembaga via the 
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
 
-    Guru::withoutGlobalScopes()->create([
+    Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaA->id])->id,
         'lembaga_id' => $lembagaA->id, 'nik' => '3201234567898881', 'nama' => 'Guru A',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
     ]);
-    Guru::withoutGlobalScopes()->create([
+    Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaB->id])->id,
         'lembaga_id' => $lembagaB->id, 'nik' => '3201234567898882', 'nama' => 'Guru Kedua',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',

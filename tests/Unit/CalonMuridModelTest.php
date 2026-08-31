@@ -2,6 +2,7 @@
 
 use App\Models\CalonMurid;
 use App\Models\Yayasan;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -11,7 +12,7 @@ uses(TestCase::class, RefreshDatabase::class);
 it('encrypts nik and no_kk and keeps a deterministic nik_hash for uniqueness', function () {
     $yayasan = Yayasan::factory()->create();
 
-    $calonMurid = CalonMurid::create([
+    $calonMurid = CalonMurid::factory()->create([
         'yayasan_id' => $yayasan->id,
         'nik' => '3201234567890123',
         'no_kk' => '3201234567890000',
@@ -27,7 +28,7 @@ it('encrypts nik and no_kk and keeps a deterministic nik_hash for uniqueness', f
     ]);
 
     expect($calonMurid->nik)->toBe('3201234567890123');
-    expect($calonMurid->nik_hash)->toBe(hash('sha256', '3201234567890123'));
+    expect($calonMurid->person->nik_hash)->toBe(hash('sha256', '3201234567890123'));
 
     $raw = DB::table('calon_murid')->where('id', $calonMurid->id)->first();
     expect($raw->nik)->not->toBe('3201234567890123');
@@ -37,7 +38,7 @@ it('encrypts nik and no_kk and keeps a deterministic nik_hash for uniqueness', f
 it('rejects a duplicate nik_hash', function () {
     $yayasan = Yayasan::factory()->create();
 
-    CalonMurid::create([
+    CalonMurid::factory()->create([
         'yayasan_id' => $yayasan->id,
         'nik' => '3201234567890123',
         'nama_lengkap' => 'Ahmad Fauzan',
@@ -47,7 +48,7 @@ it('rejects a duplicate nik_hash', function () {
         'agama' => 'Islam',
     ]);
 
-    expect(fn () => CalonMurid::create([
+    expect(fn () => CalonMurid::factory()->create([
         'yayasan_id' => $yayasan->id,
         'nik' => '3201234567890123',
         'nama_lengkap' => 'Nama Lain',
@@ -55,12 +56,12 @@ it('rejects a duplicate nik_hash', function () {
         'tempat_lahir' => 'Jakarta',
         'tanggal_lahir' => '2015-05-20',
         'agama' => 'Islam',
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
+    ]))->toThrow(QueryException::class);
 });
 
 it('finds a calon murid by plaintext nik via findByNik', function () {
     $yayasan = Yayasan::factory()->create();
-    $calonMurid = CalonMurid::create([
+    $calonMurid = CalonMurid::factory()->create([
         'yayasan_id' => $yayasan->id,
         'nik' => '3201234567890123',
         'nama_lengkap' => 'Ahmad Fauzan',
