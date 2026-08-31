@@ -47,8 +47,17 @@ class BackfillPersonsFromRoleTables extends Command
                     'tempat_lahir' => $guru->tempat_lahir,
                     'tanggal_lahir' => $guru->tanggal_lahir,
                     'agama' => $guru->agama,
+                    'kewarganegaraan' => $guru->kewarganegaraan,
                     'no_hp' => $guru->no_hp,
                     'email' => $guru->email,
+                    'alamat_jalan' => $guru->alamat_jalan,
+                    'rt' => $guru->rt,
+                    'rw' => $guru->rw,
+                    'desa_kelurahan' => $guru->desa_kelurahan,
+                    'kecamatan' => $guru->kecamatan,
+                    'kabupaten_kota' => $guru->kabupaten_kota,
+                    'provinsi' => $guru->provinsi,
+                    'kode_pos' => $guru->kode_pos,
                 ],
                 sourceTable: 'guru',
             );
@@ -110,6 +119,7 @@ class BackfillPersonsFromRoleTables extends Command
                     'jenis_kelamin' => $siswa->jenis_kelamin,
                     'tempat_lahir' => $siswa->tempat_lahir,
                     'tanggal_lahir' => $siswa->tanggal_lahir,
+                    'agama' => $siswa->agama,
                 ],
                 sourceTable: 'siswa',
             );
@@ -152,6 +162,10 @@ class BackfillPersonsFromRoleTables extends Command
                 ->first();
 
             if ($existing !== null) {
+                foreach ($this->tablesLinkedToPerson($existing->id) as $linkedTable) {
+                    $this->seenThisRun[] = ['table' => $linkedTable, 'nik_hash' => $nikHash, 'yayasan_id' => $yayasanId];
+                }
+
                 $this->seenThisRun[] = ['table' => $sourceTable, 'nik_hash' => $nikHash, 'yayasan_id' => $yayasanId];
 
                 return $existing;
@@ -165,17 +179,45 @@ class BackfillPersonsFromRoleTables extends Command
         ]));
     }
 
+    /**
+     * Determine which of the five role tables already point their person_id at the given Person.
+     * Only called on an actual NIK collision, so the extra per-table lookups are cheap in practice.
+     *
+     * @return array<int, string>
+     */
+    private function tablesLinkedToPerson(int $personId): array
+    {
+        $tables = [
+            'guru' => Guru::class,
+            'karyawan' => Karyawan::class,
+            'orang_tua' => OrangTua::class,
+            'siswa' => Siswa::class,
+            'calon_murid' => CalonMurid::class,
+        ];
+
+        $linked = [];
+
+        foreach ($tables as $tableName => $modelClass) {
+            if ($modelClass::withoutGlobalScopes()->where('person_id', $personId)->exists()) {
+                $linked[] = $tableName;
+            }
+        }
+
+        return $linked;
+    }
+
     private function reportCollisions(): void
     {
         $byHash = collect($this->seenThisRun)->groupBy(fn (array $row) => $row['yayasan_id'].'|'.$row['nik_hash']);
 
         foreach ($byHash as $group) {
-            if ($group->count() < 1) {
+            $tables = $group->pluck('table')->unique()->values();
+
+            if ($tables->count() < 2) {
                 continue;
             }
 
-            $tables = $group->pluck('table')->unique()->implode(', ');
-            $this->warn("NIK collision within yayasan_id={$group->first()['yayasan_id']}: same NIK shared across [{$tables}]. Person rows were reused, not merged -- review manually.");
+            $this->warn("NIK collision within yayasan_id={$group->first()['yayasan_id']}: same NIK shared across [{$tables->implode(', ')}]. Person rows were reused, not merged -- review manually.");
         }
     }
 }
