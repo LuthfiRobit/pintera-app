@@ -29,7 +29,7 @@ class Guru extends Model
     protected $table = 'guru';
 
     protected $fillable = [
-        'person_id', 'user_id', 'lembaga_id', 'nik', 'nuptk', 'nip', 'nama', 'jenis_kelamin',
+        'person_id', 'user_id', 'lembaga_id', 'nik', 'nik_hash', 'nuptk', 'nip', 'nama', 'jenis_kelamin',
         'tempat_lahir', 'tanggal_lahir', 'agama', 'kewarganegaraan',
         'alamat_jalan', 'rt', 'rw', 'desa_kelurahan', 'kecamatan', 'kabupaten_kota',
         'provinsi', 'kode_pos', 'no_hp', 'email',
@@ -40,6 +40,7 @@ class Guru extends Model
     protected function casts(): array
     {
         return [
+            'nik' => 'encrypted',
             'tanggal_lahir' => 'date',
             'tmt_tugas' => 'date',
             'tmt_pns' => 'date',
@@ -58,7 +59,19 @@ class Guru extends Model
 
     public function getNikAttribute(): ?string
     {
-        return $this->person?->nik;
+        if ($this->person) {
+            return $this->person->nik;
+        }
+
+        if (isset($this->attributes['nik'])) {
+            try {
+                return $this->castAttribute('nik', $this->attributes['nik']);
+            } catch (\Throwable) {
+                return $this->attributes['nik'];
+            }
+        }
+
+        return null;
     }
 
     public function getJenisKelaminAttribute(): ?string
@@ -187,6 +200,49 @@ class Guru extends Model
     public function pengajuanIzinCuti(): MorphMany
     {
         return $this->morphMany(PengajuanIzinCuti::class, 'pegawai');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Guru $guru) {
+            if (empty($guru->person_id)) {
+                $yayasanId = $guru->yayasan_id ?? ($guru->lembaga_id ? Lembaga::find($guru->lembaga_id)?->yayasan_id : null) ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
+                $plainNik = null;
+                if (isset($guru->attributes['nik'])) {
+                    try {
+                        $plainNik = $guru->castAttribute('nik', $guru->attributes['nik']);
+                    } catch (\Throwable) {
+                        $plainNik = $guru->attributes['nik'];
+                    }
+                }
+                $person = Person::create([
+                    'yayasan_id' => $yayasanId,
+                    'user_id' => $guru->user_id,
+                    'nama_lengkap' => $guru->attributes['nama'] ?? 'Guru',
+                    'nik' => $plainNik,
+                    'no_hp' => $guru->attributes['no_hp'] ?? null,
+                    'email' => $guru->attributes['email'] ?? null,
+                ]);
+                $guru->person_id = $person->id;
+            }
+        });
+
+        static::saving(function (Guru $guru) {
+            if (! empty($guru->attributes['nik'])) {
+                try {
+                    $plainNik = $guru->castAttribute('nik', $guru->attributes['nik']);
+                } catch (\Throwable) {
+                    $plainNik = $guru->attributes['nik'];
+                }
+                $guru->nik_hash = hash('sha256', $plainNik);
+            }
+        });
+
+        static::saved(function (Guru $guru) {
+            if ($guru->user_id && $guru->person_id) {
+                Person::withoutGlobalScopes()->where('id', $guru->person_id)->update(['user_id' => $guru->user_id]);
+            }
+        });
     }
 
     public function getActivitylogOptions(): LogOptions

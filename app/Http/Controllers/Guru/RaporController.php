@@ -104,7 +104,12 @@ class RaporController extends BaseController
             $pengajuanRapor = PengajuanRapor::where('kelas_id', $kelas->id)->where('semester_id', $semester->id)->first();
         }
 
-        return view('portals.guru.rapor.index', [
+        return view('portals.guru.rapor.catatan.index', [
+            'tahunAjaranList' => $tahunAjaranList,
+            'tahunAjaranId' => $tahunAjaranId,
+            'semesterList' => $semesterList,
+            'semesterId' => $semesterId,
+            'kelasId' => $kelasId,
             'kelasList' => $kelasList,
             'kelas' => $kelas,
             'semester' => $semester,
@@ -113,12 +118,18 @@ class RaporController extends BaseController
         ]);
     }
 
+    public function edit(Request $request, Siswa $siswa): View
+    {
+        return $this->editCatatan($request, $siswa);
+    }
+
     public function editCatatan(Request $request, Siswa $siswa): View
     {
-        $this->authorize('guru.rapor-catatan');
+        $this->authorize('rapor.input-wali');
 
-        $user = $request->user();
-        abort_unless($user->canManageKelas($siswa->kelas_id), 403);
+        $guru = $request->user()->guru;
+        abort_if($guru === null, 403);
+        abort_unless($siswa->kelas && $siswa->kelas->wali_kelas_guru_id === $guru->id, 403);
 
         $semesterId = (int) $request->input('semester_id', 0);
         abort_if($semesterId === 0, 404, 'Konteks semester wajib disertakan untuk membuka form catatan wali kelas.');

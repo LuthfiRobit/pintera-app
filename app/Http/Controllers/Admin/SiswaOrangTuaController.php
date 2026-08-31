@@ -93,6 +93,7 @@ class SiswaOrangTuaController extends BaseController
                 $data['email'] ?? null,
                 $data['alamat'] ?? null,
                 $data['pekerjaan'] ?? null,
+                $siswa->lembaga?->yayasan_id ?? $request->user()->yayasan_id ?? $request->user()->lembaga?->yayasan_id,
             );
         }
 

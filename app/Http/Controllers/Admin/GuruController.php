@@ -140,8 +140,25 @@ class GuruController extends BaseController
                 'person_id' => $person->id,
                 'user_id' => $user->id,
                 'lembaga_id' => $lembagaId,
+                'nama' => $data['nama'],
+                'nik' => $data['nik'],
                 'nuptk' => $data['nuptk'] ?? null,
                 'nip' => $data['nip'],
+                'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
+                'tempat_lahir' => $data['tempat_lahir'] ?? null,
+                'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
+                'agama' => $data['agama'] ?? null,
+                'kewarganegaraan' => $data['kewarganegaraan'] ?? 'WNI',
+                'no_hp' => $data['no_hp'] ?? null,
+                'email' => $data['email'] ?? null,
+                'alamat_jalan' => $data['alamat_jalan'] ?? null,
+                'rt' => $data['rt'] ?? null,
+                'rw' => $data['rw'] ?? null,
+                'desa_kelurahan' => $data['desa_kelurahan'] ?? null,
+                'kecamatan' => $data['kecamatan'] ?? null,
+                'kabupaten_kota' => $data['kabupaten_kota'] ?? null,
+                'provinsi' => $data['provinsi'] ?? null,
+                'kode_pos' => $data['kode_pos'] ?? null,
                 'jenis_ptk' => $data['jenis_ptk'],
                 'status_kepegawaian' => $data['status_kepegawaian'],
                 'golongan_pangkat' => $data['golongan_pangkat'] ?? null,
@@ -215,9 +232,33 @@ class GuruController extends BaseController
                 ]);
             }
 
-            $guru->update(collect($data)->only([
-                'nuptk', 'nip', 'jenis_ptk', 'status_kepegawaian', 'golongan_pangkat', 'tmt_tugas', 'tmt_pns', 'kapasitas_kasus_aktif',
-            ])->toArray());
+            $guru->update([
+                'nama' => $data['nama'],
+                'email' => $data['email'],
+                'nik' => $data['nik'] ?? $guru->nik,
+                'jenis_kelamin' => $data['jenis_kelamin'] ?? $guru->jenis_kelamin,
+                'tempat_lahir' => $data['tempat_lahir'] ?? $guru->tempat_lahir,
+                'tanggal_lahir' => $data['tanggal_lahir'] ?? $guru->tanggal_lahir,
+                'agama' => $data['agama'] ?? $guru->agama,
+                'kewarganegaraan' => $data['kewarganegaraan'] ?? $guru->kewarganegaraan,
+                'no_hp' => $data['no_hp'] ?? $guru->no_hp,
+                'alamat_jalan' => $data['alamat_jalan'] ?? $guru->alamat_jalan,
+                'rt' => $data['rt'] ?? $guru->rt,
+                'rw' => $data['rw'] ?? $guru->rw,
+                'desa_kelurahan' => $data['desa_kelurahan'] ?? $guru->desa_kelurahan,
+                'kecamatan' => $data['kecamatan'] ?? $guru->kecamatan,
+                'kabupaten_kota' => $data['kabupaten_kota'] ?? $guru->kabupaten_kota,
+                'provinsi' => $data['provinsi'] ?? $guru->provinsi,
+                'kode_pos' => $data['kode_pos'] ?? $guru->kode_pos,
+                'nuptk' => $data['nuptk'] ?? null,
+                'nip' => $data['nip'],
+                'jenis_ptk' => $data['jenis_ptk'],
+                'status_kepegawaian' => $data['status_kepegawaian'],
+                'golongan_pangkat' => $data['golongan_pangkat'] ?? null,
+                'tmt_tugas' => $data['tmt_tugas'] ?? null,
+                'tmt_pns' => $data['tmt_pns'] ?? null,
+                'kapasitas_kasus_aktif' => $data['kapasitas_kasus_aktif'] ?? null,
+            ]);
         });
 
         return redirect()->route('admin.guru.index')->with('status', 'Data guru berhasil diperbarui.');

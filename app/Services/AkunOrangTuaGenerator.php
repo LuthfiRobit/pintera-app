@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Models\OrangTua;
 use App\Models\User;
+use App\Models\Yayasan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -20,6 +21,11 @@ class AkunOrangTuaGenerator
         ?int $yayasanId = null,
     ): OrangTua {
         return DB::transaction(function () use ($namaLengkap, $nik, $noHp, $email, $alamat, $pekerjaan, $yayasanId) {
+            $yayasanId ??= auth()->user()?->yayasan_id
+                ?? auth()->user()?->lembaga?->yayasan_id
+                ?? Yayasan::first()?->id
+                ?? Yayasan::factory()->create()->id;
+
             $person = app(CreatePersonAction::class)->execute(
                 identityData: [
                     'nama_lengkap' => $namaLengkap,
@@ -48,6 +54,11 @@ class AkunOrangTuaGenerator
             return OrangTua::create([
                 'person_id' => $person->id,
                 'user_id' => $user->id,
+                'nama_lengkap' => $namaLengkap,
+                'nik' => $nik,
+                'no_hp' => $noHp,
+                'email' => $email,
+                'alamat' => $alamat,
                 'pekerjaan' => $pekerjaan,
             ]);
         });

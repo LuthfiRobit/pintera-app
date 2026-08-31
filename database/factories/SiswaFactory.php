@@ -23,7 +23,10 @@ class SiswaFactory extends Factory
                     $lembaga = Lembaga::withoutGlobalScopes()->find($attributes['lembaga_id']);
                     $yayasanId = $lembaga?->yayasan_id;
                 }
-                $yayasanId ??= Yayasan::factory()->create()->id;
+                $yayasanId ??= auth()->user()?->yayasan_id
+                    ?? auth()->user()?->lembaga?->yayasan_id
+                    ?? Yayasan::first()?->id
+                    ?? Yayasan::factory()->create()->id;
 
                 $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
 

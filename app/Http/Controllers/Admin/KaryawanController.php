@@ -178,7 +178,12 @@ class KaryawanController extends BaseController
                 $karyawan->user()->update(['name' => $data['nama']]);
             }
 
-            $karyawan->update(collect($data)->only(['jenis_karyawan_id'])->toArray());
+            $karyawan->update([
+                'nama' => $data['nama'],
+                'email' => $data['email'] ?? null,
+                'no_hp' => $data['no_hp'] ?? null,
+                'jenis_karyawan_id' => $data['jenis_karyawan_id'],
+            ]);
         });
 
         return redirect()->route('admin.karyawan.index')->with('status', 'Data karyawan berhasil diperbarui.');

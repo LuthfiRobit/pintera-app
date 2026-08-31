@@ -25,7 +25,7 @@
             <div class="grid grid-cols-2 gap-4 p-6 text-sm">
                 <div><p class="text-slate">NIK</p><p class="font-mono text-ink">{{ $pendaftaran->calonMurid->nik }}</p></div>
                 <div><p class="text-slate">Jenis Kelamin</p><p class="text-ink">{{ $pendaftaran->calonMurid->jenis_kelamin }}</p></div>
-                <div><p class="text-slate">Tempat, Tanggal Lahir</p><p class="text-ink">{{ $pendaftaran->calonMurid->tempat_lahir }}, {{ $pendaftaran->calonMurid->tanggal_lahir->translatedFormat('d F Y') }}</p></div>
+                <div><p class="text-slate">Tempat, Tanggal Lahir</p><p class="text-ink">{{ $pendaftaran->calonMurid->tempat_lahir ?: '-' }}, {{ $pendaftaran->calonMurid->tanggal_lahir?->translatedFormat('d F Y') ?: '-' }}</p></div>
                 <div><p class="text-slate">Jalur / Gelombang</p><p class="text-ink">{{ $pendaftaran->jalurPpdb->nama }} / {{ $pendaftaran->gelombangPpdb->nama }}</p></div>
                 @if ($pendaftaran->calonMurid->alamat)
                     <div class="col-span-2">

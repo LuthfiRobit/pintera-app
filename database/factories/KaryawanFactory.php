@@ -19,7 +19,10 @@ class KaryawanFactory extends Factory
         return [
             'person_id' => function (array $attributes) {
                 $yayasanId = ! empty($attributes['yayasan_id']) && is_numeric($attributes['yayasan_id']) ? (int) $attributes['yayasan_id'] : null;
-                $yayasanId ??= Yayasan::factory()->create()->id;
+                $yayasanId ??= auth()->user()?->yayasan_id
+                    ?? auth()->user()?->lembaga?->yayasan_id
+                    ?? Yayasan::first()?->id
+                    ?? Yayasan::factory()->create()->id;
                 $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
 
                 return Person::factory()->create([
@@ -28,9 +31,19 @@ class KaryawanFactory extends Factory
                     'nama_lengkap' => $attributes['nama'] ?? $this->faker->name(),
                     'nik' => $attributes['nik'] ?? $this->faker->unique()->numerify('################'),
                     'no_hp' => $attributes['no_hp'] ?? $this->faker->numerify('08##########'),
+                    'email' => $attributes['email'] ?? $this->faker->safeEmail(),
                 ])->id;
             },
-            'user_id' => User::factory(),
+            'user_id' => function (array $attributes) {
+                if (! empty($attributes['person_id']) && is_numeric($attributes['person_id'])) {
+                    $p = Person::withoutGlobalScopes()->find($attributes['person_id']);
+                    if ($p?->user_id) {
+                        return $p->user_id;
+                    }
+                }
+
+                return User::factory();
+            },
             'yayasan_id' => Yayasan::factory(),
             'lembaga_id' => Lembaga::factory(),
             'jenis_karyawan_id' => JenisKaryawanMaster::factory(),

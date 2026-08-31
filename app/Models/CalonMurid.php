@@ -35,6 +35,7 @@ class CalonMurid extends Model
     protected function casts(): array
     {
         return [
+            'nik' => 'encrypted',
             'no_kk' => 'encrypted',
             'tanggal_lahir' => 'date',
         ];
@@ -42,9 +43,40 @@ class CalonMurid extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (CalonMurid $calonMurid) {
+            if (empty($calonMurid->person_id)) {
+                $yayasanId = $calonMurid->yayasan_id ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
+                $plainNik = null;
+                if (isset($calonMurid->attributes['nik'])) {
+                    try {
+                        $plainNik = $calonMurid->castAttribute('nik', $calonMurid->attributes['nik']);
+                    } catch (\Throwable) {
+                        $plainNik = $calonMurid->attributes['nik'];
+                    }
+                }
+                $person = Person::create([
+                    'yayasan_id' => $yayasanId,
+                    'nama_lengkap' => $calonMurid->attributes['nama_lengkap'] ?? 'Calon Murid',
+                    'nik' => $plainNik,
+                    'jenis_kelamin' => $calonMurid->attributes['jenis_kelamin'] ?? null,
+                    'tempat_lahir' => $calonMurid->attributes['tempat_lahir'] ?? null,
+                    'tanggal_lahir' => $calonMurid->attributes['tanggal_lahir'] ?? null,
+                    'agama' => $calonMurid->attributes['agama'] ?? null,
+                    'no_hp' => $calonMurid->attributes['no_telepon'] ?? null,
+                    'email' => $calonMurid->attributes['email_kontak'] ?? null,
+                ]);
+                $calonMurid->person_id = $person->id;
+            }
+        });
+
         static::saving(function (CalonMurid $calonMurid) {
             if (! empty($calonMurid->attributes['nik'])) {
-                $calonMurid->nik_hash = hash('sha256', $calonMurid->attributes['nik']);
+                try {
+                    $plainNik = $calonMurid->castAttribute('nik', $calonMurid->attributes['nik']);
+                } catch (\Throwable) {
+                    $plainNik = $calonMurid->attributes['nik'];
+                }
+                $calonMurid->nik_hash = hash('sha256', $plainNik);
             }
         });
     }
@@ -61,7 +93,19 @@ class CalonMurid extends Model
 
     public function getNikAttribute(): ?string
     {
-        return $this->person?->nik;
+        if ($this->person) {
+            return $this->person->nik;
+        }
+
+        if (isset($this->attributes['nik'])) {
+            try {
+                return $this->castAttribute('nik', $this->attributes['nik']);
+            } catch (\Throwable) {
+                return $this->attributes['nik'];
+            }
+        }
+
+        return null;
     }
 
     public function getJenisKelaminAttribute(): ?string
@@ -96,8 +140,13 @@ class CalonMurid extends Model
 
     public static function findByNik(string $nik): ?self
     {
-        return static::whereHas('person', fn ($q) => $q->withoutGlobalScopes()->where('nik_hash', hash('sha256', $nik)))
-            ->orWhere('nik_hash', hash('sha256', $nik))
+        $nikHash = hash('sha256', $nik);
+
+        return static::withoutGlobalScopes()
+            ->where(function ($query) use ($nikHash) {
+                $query->whereHas('person', fn ($q) => $q->withoutGlobalScopes()->where('nik_hash', $nikHash))
+                    ->orWhere('nik_hash', $nikHash);
+            })
             ->first();
     }
 

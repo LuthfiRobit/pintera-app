@@ -3,13 +3,13 @@
 namespace Database\Seeders;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Keuangan\Models\TagihanItem;
+use App\Domains\Keuangan\Services\PaymentService;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
-use App\Domains\Keuangan\Models\TagihanItem;
 use App\Models\User;
-use App\Domains\Keuangan\Services\PaymentService;
 use Illuminate\Database\Seeder;
 
 /**
@@ -89,7 +89,7 @@ class KeuanganDemoSeeder extends Seeder
         // supaya halaman verifikasi admin ("admin/manual-payment") juga
         // langsung ada antrean untuk dicoba.
         $tagihanVerifikasi = $this->buatTagihan($siswa, $jenisTagihan, now()->subMonths(2)->format('Y-m'), 350000, now()->subMonths(2)->addDays(10));
-        if ($tagihanVerifikasi->pembayaran()->doesntExist()) {
+        if ($tagihanVerifikasi->status !== 'lunas' && $tagihanVerifikasi->pembayaran()->doesntExist()) {
             app(PaymentService::class)->createManualPayment($siswa, collect([$tagihanVerifikasi]), [
                 'requested_by' => $orangTua->user_id,
                 'amount' => 350000,

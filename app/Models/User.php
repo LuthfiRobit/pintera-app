@@ -81,7 +81,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        );
+        )->withoutGlobalScopes();
     }
 
     public function orangTua(): HasOneThrough
@@ -93,7 +93,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        );
+        )->withoutGlobalScopes();
     }
 
     public function siswa(): HasOneThrough
@@ -105,7 +105,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        );
+        )->withoutGlobalScopes();
     }
 
     public function karyawan(): HasOneThrough
@@ -117,7 +117,7 @@ class User extends Authenticatable
             'person_id',
             'id',
             'id'
-        );
+        )->withoutGlobalScopes();
     }
 
     public function notificationPreference(): HasOne

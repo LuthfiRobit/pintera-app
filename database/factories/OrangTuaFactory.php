@@ -31,7 +31,10 @@ class OrangTuaFactory extends Factory
                     $user = User::withoutGlobalScopes()->find($attributes['user_id']);
                     $yayasanId = $user?->yayasan_id;
                 }
-                $yayasanId ??= Yayasan::factory()->create()->id;
+                $yayasanId ??= auth()->user()?->yayasan_id
+                    ?? auth()->user()?->lembaga?->yayasan_id
+                    ?? Yayasan::first()?->id
+                    ?? Yayasan::factory()->create()->id;
 
                 $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
 
@@ -45,7 +48,16 @@ class OrangTuaFactory extends Factory
                     'alamat_jalan' => $attributes['alamat'] ?? $this->faker->optional()->address(),
                 ])->id;
             },
-            'user_id' => User::factory(),
+            'user_id' => function (array $attributes) {
+                if (! empty($attributes['person_id']) && is_numeric($attributes['person_id'])) {
+                    $p = Person::withoutGlobalScopes()->find($attributes['person_id']);
+                    if ($p?->user_id) {
+                        return $p->user_id;
+                    }
+                }
+
+                return User::factory();
+            },
             'pekerjaan' => $this->faker->optional()->jobTitle(),
         ];
     }

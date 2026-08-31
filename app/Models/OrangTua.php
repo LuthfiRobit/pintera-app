@@ -20,6 +20,32 @@ class OrangTua extends Model
         'person_id', 'user_id', 'nama_lengkap', 'nik', 'no_hp', 'email', 'alamat', 'pekerjaan',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (OrangTua $orangTua) {
+            if (empty($orangTua->person_id)) {
+                $user = $orangTua->user_id ? User::withoutGlobalScopes()->find($orangTua->user_id) : null;
+                $yayasanId = $user?->yayasan_id ?? auth()->user()?->yayasan_id ?? auth()->user()?->lembaga?->yayasan_id ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
+                $person = Person::create([
+                    'yayasan_id' => $yayasanId,
+                    'user_id' => $orangTua->user_id,
+                    'nama_lengkap' => $orangTua->attributes['nama_lengkap'] ?? 'Orang Tua',
+                    'nik' => $orangTua->attributes['nik'] ?? null,
+                    'no_hp' => $orangTua->attributes['no_hp'] ?? null,
+                    'email' => $orangTua->attributes['email'] ?? null,
+                    'alamat_jalan' => $orangTua->attributes['alamat'] ?? null,
+                ]);
+                $orangTua->person_id = $person->id;
+            }
+        });
+
+        static::saved(function (OrangTua $orangTua) {
+            if ($orangTua->user_id && $orangTua->person_id) {
+                Person::withoutGlobalScopes()->where('id', $orangTua->person_id)->update(['user_id' => $orangTua->user_id]);
+            }
+        });
+    }
+
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
@@ -58,6 +84,7 @@ class OrangTua extends Model
     public function siswa(): BelongsToMany
     {
         return $this->belongsToMany(Siswa::class, 'siswa_orang_tua')
+            ->withoutGlobalScopes()
             ->withPivot(['hubungan', 'is_kontak_utama'])
             ->withTimestamps()
             ->using(SiswaOrangTua::class);
@@ -94,5 +121,10 @@ class OrangTua extends Model
         return $query->leftJoin('persons', 'orang_tua.person_id', '=', 'persons.id')
             ->orderByRaw("COALESCE(persons.nama_lengkap, orang_tua.nama_lengkap) {$direction}")
             ->select('orang_tua.*');
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->withoutGlobalScopes()->where($field ?? $this->getRouteKeyName(), $value)->first();
     }
 }

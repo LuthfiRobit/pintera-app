@@ -24,7 +24,7 @@ class Karyawan extends Model
 
     protected $fillable = [
         'person_id', 'user_id', 'yayasan_id', 'lembaga_id', 'jenis_karyawan_id',
-        'nama', 'nik', 'no_hp', 'email', 'status_aktif', 'kapasitas_kasus_aktif',
+        'nama', 'nik', 'nik_hash', 'no_hp', 'email', 'status_aktif', 'kapasitas_kasus_aktif',
     ];
 
     public function person(): BelongsTo
@@ -39,7 +39,7 @@ class Karyawan extends Model
 
     public function getNikAttribute(): ?string
     {
-        return $this->person?->nik;
+        return $this->person?->nik ?? $this->attributes['nik'] ?? null;
     }
 
     public function getNoHpAttribute(): ?string
@@ -95,6 +95,36 @@ class Karyawan extends Model
     public function pengajuanIzinCuti(): MorphMany
     {
         return $this->morphMany(PengajuanIzinCuti::class, 'pegawai');
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (Karyawan $karyawan) {
+            if (empty($karyawan->person_id)) {
+                $yayasanId = $karyawan->yayasan_id ?? ($karyawan->lembaga_id ? Lembaga::find($karyawan->lembaga_id)?->yayasan_id : null) ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
+                $person = Person::create([
+                    'yayasan_id' => $yayasanId,
+                    'user_id' => $karyawan->user_id,
+                    'nama_lengkap' => $karyawan->attributes['nama'] ?? 'Karyawan',
+                    'nik' => $karyawan->attributes['nik'] ?? null,
+                    'no_hp' => $karyawan->attributes['no_hp'] ?? null,
+                    'email' => $karyawan->attributes['email'] ?? null,
+                ]);
+                $karyawan->person_id = $person->id;
+            }
+        });
+
+        static::saving(function (Karyawan $karyawan) {
+            if (! empty($karyawan->attributes['nik'])) {
+                $karyawan->nik_hash = hash('sha256', $karyawan->attributes['nik']);
+            }
+        });
+
+        static::saved(function (Karyawan $karyawan) {
+            if ($karyawan->user_id && $karyawan->person_id) {
+                Person::withoutGlobalScopes()->where('id', $karyawan->person_id)->update(['user_id' => $karyawan->user_id]);
+            }
+        });
     }
 
     public function scopeSearch($query, ?string $term)

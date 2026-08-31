@@ -100,6 +100,7 @@ class Siswa extends Model
     public function orangTua(): BelongsToMany
     {
         return $this->belongsToMany(OrangTua::class, 'siswa_orang_tua')
+            ->withoutGlobalScopes()
             ->withPivot(['hubungan', 'is_kontak_utama'])
             ->withTimestamps()
             ->using(SiswaOrangTua::class);
@@ -117,7 +118,29 @@ class Siswa extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (Siswa $siswa) {
+            if (empty($siswa->person_id)) {
+                $yayasanId = $siswa->yayasan_id ?? ($siswa->lembaga_id ? Lembaga::find($siswa->lembaga_id)?->yayasan_id : null) ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
+                $person = Person::create([
+                    'yayasan_id' => $yayasanId,
+                    'user_id' => $siswa->user_id,
+                    'nama_lengkap' => $siswa->attributes['nama_lengkap'] ?? 'Siswa',
+                    'jenis_kelamin' => $siswa->attributes['jenis_kelamin'] ?? null,
+                    'tempat_lahir' => $siswa->attributes['tempat_lahir'] ?? null,
+                    'tanggal_lahir' => $siswa->attributes['tanggal_lahir'] ?? null,
+                    'agama' => $siswa->attributes['agama'] ?? null,
+                ]);
+                $siswa->person_id = $person->id;
+            }
+        });
+
         static::created(fn (Siswa $siswa) => event(new StudentCreated($siswa)));
+
+        static::saved(function (Siswa $siswa) {
+            if ($siswa->user_id && $siswa->person_id) {
+                Person::withoutGlobalScopes()->where('id', $siswa->person_id)->update(['user_id' => $siswa->user_id]);
+            }
+        });
 
         static::updated(function (Siswa $siswa) {
             if ($siswa->wasChanged('kelas_id')) {

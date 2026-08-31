@@ -8,9 +8,11 @@ use App\Models\Scopes\TenantScope;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -19,7 +21,7 @@ class UserController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function index(Request $request): View|\Illuminate\Http\JsonResponse
+    public function index(Request $request): View|JsonResponse
     {
         $this->authorize('users.view');
 
@@ -156,7 +158,7 @@ class UserController extends BaseController
             if ($activeLembagaId) {
                 return $query->where(fn ($q) => $q
                     ->where('users.lembaga_id', $activeLembagaId)
-                    ->orWhereHas('orangTua.siswa', fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $activeLembagaId)));
+                    ->orWhereHas('orangTua', fn ($qo) => $qo->withoutGlobalScopes()->whereHas('siswa', fn ($q2) => $q2->withoutGlobalScopes()->where('lembaga_id', $activeLembagaId))));
             }
 
             $lembagaMilikYayasan = Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id');
@@ -164,12 +166,12 @@ class UserController extends BaseController
             return $query->where(fn ($q) => $q
                 ->whereIn('users.lembaga_id', $lembagaMilikYayasan)
                 ->orWhere('users.yayasan_id', $actor->yayasan_id)
-                ->orWhereHas('orangTua.siswa', fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)->whereIn('lembaga_id', $lembagaMilikYayasan)));
+                ->orWhereHas('orangTua', fn ($qo) => $qo->withoutGlobalScopes()->whereHas('siswa', fn ($q2) => $q2->withoutGlobalScopes()->whereIn('lembaga_id', $lembagaMilikYayasan))));
         }
 
         return $query->where(fn ($q) => $q
             ->where('users.lembaga_id', $actor->lembaga_id)
-            ->orWhereHas('orangTua.siswa', fn ($q2) => $q2->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $actor->lembaga_id)));
+            ->orWhereHas('orangTua', fn ($qo) => $qo->withoutGlobalScopes()->whereHas('siswa', fn ($q2) => $q2->withoutGlobalScopes()->where('lembaga_id', $actor->lembaga_id))));
     }
 
     public function create(Request $request): View
@@ -314,7 +316,7 @@ class UserController extends BaseController
      * per-role individual karena role dalam satu grup checkbox (lihat
      * formRoleGroups()) bisa punya scope_level berbeda (mis. guru = diri_sendiri).
      */
-    private function assignableRoles(int $actingRank): \Illuminate\Support\Collection
+    private function assignableRoles(int $actingRank): Collection
     {
         $excluded = ['siswa', 'orang_tua', 'pegawai_lembaga', 'pegawai_yayasan', 'guru'];
 
@@ -346,7 +348,7 @@ class UserController extends BaseController
      * untuk actor lembaga-scope karena role platform_super_admin sudah difilter
      * habis duluan oleh scopeRank di assignableRoles()).
      */
-    private function groupRolesForForm(\Illuminate\Support\Collection $roles): \Illuminate\Support\Collection
+    private function groupRolesForForm(Collection $roles): Collection
     {
         return collect($this->formRoleGroups())
             ->map(fn ($names) => $roles->whereIn('name', $names)->values())
@@ -361,7 +363,7 @@ class UserController extends BaseController
      * TIDAK PERNAH dikembalikan di sini -- form ini untuk staf ber-lembaga_id,
      * bukan alur pool karyawan yayasan.
      */
-    private function baselineCarrierRole(\Illuminate\Support\Collection $selectedRoles, ?int $lembagaId): ?string
+    private function baselineCarrierRole(Collection $selectedRoles, ?int $lembagaId): ?string
     {
         if ($lembagaId === null) {
             return null;

@@ -6,6 +6,7 @@ use App\Domains\Identity\Actions\UpdatePersonAction;
 use App\Models\OrangTua;
 use App\Models\Scopes\TenantScope;
 use App\Models\User;
+use App\Models\Yayasan;
 use App\Services\AkunOrangTuaGenerator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -134,7 +135,13 @@ class OrangTuaController extends BaseController
                 User::withoutGlobalScopes()->where('id', $orangTua->user_id)->update(['name' => $data['nama_lengkap']]);
             }
 
-            $orangTua->update(collect($data)->only(['pekerjaan'])->toArray());
+            $orangTua->update([
+                'nama_lengkap' => $data['nama_lengkap'],
+                'no_hp' => $data['no_hp'],
+                'email' => $data['email'] ?? null,
+                'alamat' => $data['alamat'] ?? null,
+                'pekerjaan' => $data['pekerjaan'] ?? null,
+            ]);
         });
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua berhasil diperbarui.');
@@ -159,10 +166,10 @@ class OrangTuaController extends BaseController
         $user = $request->user();
 
         if ($user->widestScopeLevel() === 'yayasan') {
-            return $user->yayasan_id;
+            return $user->yayasan_id ?? $user->lembaga?->yayasan_id ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
         }
 
-        return $user->lembaga->yayasan_id;
+        return $user->lembaga?->yayasan_id ?? $user->yayasan_id ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
     }
 
     // A lembaga-scoped admin (operator_akademik) may act on any orang tua profile that either has
