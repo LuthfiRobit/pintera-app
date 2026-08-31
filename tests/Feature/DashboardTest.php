@@ -184,7 +184,7 @@ it('shows a siswa their latest recorded grade on their own dashboard', function 
 
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('siswa');
-    $siswa->update(['user_id' => $user->id]);
+    $siswa->person->update(['user_id' => $user->id]);
 
     $response = $this->actingAs($user)->get('/dashboard');
 
@@ -282,7 +282,7 @@ it('excludes a Formatif nilai from the siswa dashboard latest-grade widget, even
 
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('siswa');
-    $siswa->update(['user_id' => $user->id]);
+    $siswa->person->update(['user_id' => $user->id]);
 
     $response = $this->actingAs($user)->get('/dashboard');
 
