@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Models\Karyawan;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,17 @@ class AkunKaryawanGenerator
         ?string $email = null,
     ): Karyawan {
         return DB::transaction(function () use ($nama, $nik, $yayasanId, $lembagaId, $jenisKaryawanId, $noHp, $email) {
+            $person = app(CreatePersonAction::class)->execute(
+                identityData: [
+                    'nama_lengkap' => $nama,
+                    'nik' => $nik,
+                    'no_hp' => $noHp,
+                    'email' => $email,
+                ],
+                lembagaId: $lembagaId,
+                actingYayasanId: $lembagaId === null ? $yayasanId : null,
+            );
+
             $user = User::create([
                 'name' => $nama,
                 'email' => null,
@@ -31,16 +43,14 @@ class AkunKaryawanGenerator
                 'must_change_password' => true,
             ]);
             $user->assignRole($lembagaId === null ? 'pegawai_yayasan' : 'pegawai_lembaga');
+            $person->update(['user_id' => $user->id]);
 
             return Karyawan::create([
+                'person_id' => $person->id,
                 'user_id' => $user->id,
                 'yayasan_id' => $yayasanId,
                 'lembaga_id' => $lembagaId,
                 'jenis_karyawan_id' => $jenisKaryawanId,
-                'nama' => $nama,
-                'nik' => $nik,
-                'no_hp' => $noHp,
-                'email' => $email,
                 'status_aktif' => 'aktif',
             ]);
         });

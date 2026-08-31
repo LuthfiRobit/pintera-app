@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Identity\Actions\UpdatePersonAction;
+use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
@@ -138,6 +140,7 @@ class KaryawanController extends BaseController
 
         $karyawan->load([
             'user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+            'person',
             'jenisKaryawan',
             'lembaga',
             'yayasan',
@@ -161,8 +164,21 @@ class KaryawanController extends BaseController
         ]);
 
         DB::transaction(function () use ($data, $karyawan) {
-            $karyawan->user()->update(['name' => $data['nama']]);
-            $karyawan->update($data);
+            if ($karyawan->person) {
+                app(UpdatePersonAction::class)->execute($karyawan->person, [
+                    'nama_lengkap' => $data['nama'],
+                    'no_hp' => $data['no_hp'] ?? $karyawan->person->no_hp,
+                    'email' => $data['email'] ?? $karyawan->person->email,
+                ]);
+
+                if ($karyawan->person->user !== null) {
+                    $karyawan->person->user->update(['name' => $data['nama']]);
+                }
+            } elseif ($karyawan->user !== null) {
+                $karyawan->user()->update(['name' => $data['nama']]);
+            }
+
+            $karyawan->update(collect($data)->only(['jenis_karyawan_id'])->toArray());
         });
 
         return redirect()->route('admin.karyawan.index')->with('status', 'Data karyawan berhasil diperbarui.');
@@ -195,11 +211,23 @@ class KaryawanController extends BaseController
 
     private function validateProfil(Request $request, ?Karyawan $karyawan = null): array
     {
+        $isPool = $request->boolean('is_pool');
+        $yayasanId = null;
+        if ($isPool) {
+            $yayasanId = (int) $request->input('yayasan_id');
+        } else {
+            $lembagaId = $this->resolveLembagaId($request);
+            $yayasanId = $lembagaId ? Lembaga::withoutGlobalScopes()->find($lembagaId)?->yayasan_id : ($request->user()?->yayasan_id ?? $request->user()?->lembaga?->yayasan_id);
+        }
+
         return $request->validate([
-            'nik' => ['required', 'digits:16', function ($attribute, $value, $fail) use ($karyawan) {
-                $query = Karyawan::withoutGlobalScopes()->where('nik_hash', hash('sha256', $value));
-                if ($karyawan) {
-                    $query->where('id', '!=', $karyawan->id);
+            'nik' => ['required', 'digits:16', function ($attribute, $value, $fail) use ($karyawan, $yayasanId) {
+                $query = Person::withoutGlobalScopes()->where('nik_hash', hash('sha256', $value));
+                if ($yayasanId) {
+                    $query->where('yayasan_id', $yayasanId);
+                }
+                if ($karyawan && $karyawan->person_id) {
+                    $query->where('id', '!=', $karyawan->person_id);
                 }
                 if ($query->exists()) {
                     $fail('NIK sudah terdaftar untuk karyawan lain.');
