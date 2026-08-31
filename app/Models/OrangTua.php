@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Domains\Identity\Models\Person;
+use App\Models\Concerns\BelongsToTenantViaPerson;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,7 @@ use Illuminate\Notifications\Notifiable;
 
 class OrangTua extends Model
 {
-    use HasFactory, Notifiable;
+    use BelongsToTenantViaPerson, HasFactory, Notifiable;
 
     protected $table = 'orang_tua';
 
