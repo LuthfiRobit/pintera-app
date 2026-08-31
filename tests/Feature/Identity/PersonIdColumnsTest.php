@@ -1,7 +1,10 @@
 <?php
 
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Lembaga;
 use App\Models\User;
+use App\Models\Yayasan;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -25,6 +28,71 @@ it('allows inserting guru without legacy identity columns populated', function (
         'jenis_ptk' => 'guru_kelas',
         'status_kepegawaian' => 'PNS',
         'status_aktif' => 'aktif',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect($id)->toBeGreaterThan(0);
+});
+
+it('preserves the jenis_kelamin enum constraint and kewarganegaraan default after relaxing guru to nullable', function () {
+    $lembaga = Lembaga::factory()->create();
+
+    expect(fn () => DB::table('guru')->insert([
+        'user_id' => User::factory()->create()->id,
+        'lembaga_id' => $lembaga->id,
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'PNS',
+        'status_aktif' => 'aktif',
+        'jenis_kelamin' => 'X',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]))->toThrow(QueryException::class);
+
+    $id = DB::table('guru')->insertGetId([
+        'user_id' => User::factory()->create()->id,
+        'lembaga_id' => $lembaga->id,
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'PNS',
+        'status_aktif' => 'aktif',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(DB::table('guru')->where('id', $id)->value('kewarganegaraan'))->toBe('WNI');
+});
+
+it('allows inserting karyawan without legacy identity columns populated', function () {
+    $yayasan = Yayasan::factory()->create();
+    $jenisKaryawan = JenisKaryawanMaster::factory()->create();
+
+    $id = DB::table('karyawan')->insertGetId([
+        'user_id' => User::factory()->create()->id,
+        'yayasan_id' => $yayasan->id,
+        'jenis_karyawan_id' => $jenisKaryawan->id,
+        'status_aktif' => 'aktif',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect($id)->toBeGreaterThan(0);
+});
+
+it('allows inserting orang_tua without legacy identity columns populated', function () {
+    $id = DB::table('orang_tua')->insertGetId([
+        'user_id' => User::factory()->create()->id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect($id)->toBeGreaterThan(0);
+});
+
+it('allows inserting calon_murid without legacy identity columns populated', function () {
+    $yayasan = Yayasan::factory()->create();
+
+    $id = DB::table('calon_murid')->insertGetId([
+        'yayasan_id' => $yayasan->id,
         'created_at' => now(),
         'updated_at' => now(),
     ]);

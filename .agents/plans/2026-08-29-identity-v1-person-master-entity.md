@@ -132,6 +132,7 @@ git commit -m "feat(identity): create persons master identity table"
 
 **Files:**
 - Create: `app/Domains/Identity/Models/Person.php`
+- Create: `app/Models/Scopes/YayasanScope.php`
 - Create: `database/factories/PersonFactory.php`
 - Test: `tests/Feature/Identity/PersonModelTest.php`
 
@@ -139,7 +140,13 @@ git commit -m "feat(identity): create persons master identity table"
 - Consumes: `persons` table from Task 1.
 - Produces: `Person` model at `App\Domains\Identity\Models\Person`, with relations `user()`, `guru()`, `karyawan()`, `orangTua()`, `siswa()` (all against the not-yet-existing `person_id` columns — these become live once Task 3 lands, but are safe to define now).
 
-**Why `Person` does NOT use the `BelongsToTenant` trait:** `BelongsToTenant` (`app/Models/Concerns/BelongsToTenant.php`) registers `TenantScope` AND a `creating()` hook that auto-fills `lembaga_id`. `persons` has no `lembaga_id` column at all — its boundary is `yayasan_id` directly. Using the trait as-is would make the `creating()` hook try to write to a nonexistent column. Instead, `Person` registers `TenantScope` directly in `booted()`, skipping the trait's `lembaga_id` auto-fill. `TenantScope` already has a fallback branch for tenant-scoped models that carry their own `yayasan_id` column (the same branch `Karyawan`'s pool rows rely on), so this is reusing existing, proven scope logic — not inventing new scope logic.
+**Why `Person` does NOT use the `BelongsToTenant` trait, and does NOT reuse `TenantScope` either:** `BelongsToTenant` (`app/Models/Concerns/BelongsToTenant.php`) registers `TenantScope` AND a `creating()` hook that auto-fills `lembaga_id`. `persons` has no `lembaga_id` column at all — its boundary is `yayasan_id` directly.
+
+**Correction found during implementation (recorded here so the reasoning is not re-derived incorrectly later):** an earlier version of this plan assumed `TenantScope` could be registered directly on `Person`, reasoning that its `'yayasan'`-actor branch already has a `yayasan_id` fallback (the same branch `Karyawan`'s pool rows rely on). Reading `TenantScope::apply()` in full during Task 2's implementation showed this is incomplete: the `yayasan_id` fallback only fires for a `'yayasan'`-level actor with NO `active_lembaga_id` session value set. Every other path — a `'yayasan'`-level actor WITH an active lembaga selected (line ~56), and the final unconditional branch for `'lembaga'`-level and `'diri_sendiri'`-level actors (line ~88) — filters with `where($model->getTable().'.lembaga_id', ...)` unconditionally, regardless of whether the model even has that column. `persons` never has `lembaga_id`, so any of those paths throws `SQLSTATE[42S22]: Column not found`. This is not a test-setup artifact — an ordinary lembaga-scoped admin (the most common actor type in this app) would hit this in production the moment they queried `Person`.
+
+Patching `TenantScope` itself was rejected: it is a shared, security-relevant scope class used by every tenant-scoped model in the app (Guru, Karyawan, Siswa, Rpp, AsetBarang, Gedung, KategoriAset, Ruangan, User, and more), and a change to its filtering logic needs its own deliberate review — not a change bundled into an unrelated task for a brand-new model.
+
+**Corrected design:** `Person` gets its own dedicated global scope, `App\Models\Scopes\YayasanScope`, registered directly in `Person::booted()`. Unlike `TenantScope`, it has exactly one rule, because `persons.yayasan_id` is the ONLY tenant boundary this table has: for any actor whose `widestScopeLevel()` is not `'platform'`, resolve the actor's effective yayasan_id (their own `yayasan_id` if they carry one, otherwise `$actingUser->lembaga->yayasan_id`), and filter `where('yayasan_id', $resolvedYayasanId)`. Platform-level actors are unscoped, same as `TenantScope`'s convention. This mirrors the actor-resolution pattern `PersonTenantScope` will later use for `OrangTua` in Task 13 (that one filters through a `whereHas('person', ...)` relation instead of a local column — the two scopes solve the same problem at two different distances from `persons.yayasan_id`).
 
 - [ ] **Step 1: Write the model**
 
@@ -151,9 +158,10 @@ namespace App\Domains\Identity\Models;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Models\OrangTua;
-use App\Models\Scopes\TenantScope;
+use App\Models\Scopes\YayasanScope;
 use App\Models\Siswa;
 use App\Models\User;
+use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -163,6 +171,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Person extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = 'persons';
 
     protected $fillable = [
         'yayasan_id', 'user_id', 'nik', 'nama_lengkap', 'jenis_kelamin',
@@ -183,11 +193,16 @@ class Person extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new TenantScope);
+        static::addGlobalScope(new YayasanScope);
 
         static::saving(function (Person $person) {
             $person->nik_hash = $person->nik ? hash('sha256', $person->nik) : null;
         });
+    }
+
+    protected static function newFactory(): PersonFactory
+    {
+        return PersonFactory::new();
     }
 
     public function user(): BelongsTo
@@ -216,6 +231,65 @@ class Person extends Model
     }
 }
 ```
+
+- [ ] **Step 1b: Write the dedicated `YayasanScope`**
+
+```php
+<?php
+
+namespace App\Models\Scopes;
+
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Scope;
+
+class YayasanScope implements Scope
+{
+    private static bool $resolvingActingUser = false;
+
+    public function apply(Builder $builder, Model $model): void
+    {
+        if (self::$resolvingActingUser) {
+            return;
+        }
+
+        self::$resolvingActingUser = true;
+
+        try {
+            $userId = auth()->id();
+        } finally {
+            self::$resolvingActingUser = false;
+        }
+
+        if (! $userId) {
+            return;
+        }
+
+        $actingUser = User::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->find($userId);
+
+        if (! $actingUser) {
+            return;
+        }
+
+        if ($actingUser->widestScopeLevel() === 'platform') {
+            return;
+        }
+
+        $yayasanId = $actingUser->yayasan_id ?? $actingUser->lembaga?->yayasan_id;
+
+        if ($yayasanId === null) {
+            $builder->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $builder->where($model->getTable().'.yayasan_id', $yayasanId);
+    }
+}
+```
+
+This deliberately does NOT reuse or modify `TenantScope` (see the rationale above) — `persons.yayasan_id` is the table's only tenant boundary, so the scope needs exactly one rule, not `TenantScope`'s three lembaga-first branches.
 
 - [ ] **Step 2: Write the factory**
 
@@ -327,76 +401,94 @@ return new class extends Migration
         Schema::table('guru', function (Blueprint $table) {
             $table->unsignedBigInteger('person_id')->nullable()->after('id');
             $table->text('nik')->nullable()->change();
+            $table->string('nik_hash', 64)->nullable()->change();
             $table->string('nama')->nullable()->change();
-            $table->string('jenis_kelamin')->nullable()->change();
-            $table->string('tempat_lahir')->nullable()->change();
-            $table->date('tanggal_lahir')->nullable()->change();
-            $table->string('agama')->nullable()->change();
-            $table->string('kewarganegaraan')->nullable()->change();
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable()->change();
+            $table->string('kewarganegaraan')->nullable()->default('WNI')->change();
         });
 
         Schema::table('karyawan', function (Blueprint $table) {
             $table->unsignedBigInteger('person_id')->nullable()->after('id');
             $table->text('nik')->nullable()->change();
+            $table->string('nik_hash', 64)->nullable()->change();
             $table->string('nama')->nullable()->change();
         });
 
         Schema::table('orang_tua', function (Blueprint $table) {
             $table->unsignedBigInteger('person_id')->nullable()->after('id');
             $table->string('nama_lengkap')->nullable()->change();
+            $table->string('nik', 16)->nullable()->change();
+            $table->string('no_hp', 20)->nullable()->change();
         });
 
         Schema::table('siswa', function (Blueprint $table) {
             $table->unsignedBigInteger('person_id')->nullable()->after('id');
             $table->string('nama_lengkap')->nullable()->change();
-            $table->string('jenis_kelamin')->nullable()->change();
-            $table->string('tempat_lahir')->nullable()->change();
-            $table->date('tanggal_lahir')->nullable()->change();
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable()->change();
         });
 
         Schema::table('calon_murid', function (Blueprint $table) {
             $table->unsignedBigInteger('person_id')->nullable()->after('id');
+            $table->text('nik')->nullable()->change();
+            $table->string('nik_hash', 64)->nullable()->change();
+            $table->string('nama_lengkap')->nullable()->change();
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable()->change();
+            $table->string('tempat_lahir')->nullable()->change();
+            $table->date('tanggal_lahir')->nullable()->change();
+            $table->string('agama')->nullable()->change();
         });
     }
 
     public function down(): void
     {
-        Schema::table('calon_murid', fn (Blueprint $table) => $table->dropColumn('person_id'));
+        Schema::table('calon_murid', function (Blueprint $table) {
+            $table->dropColumn('person_id');
+            $table->text('nik')->nullable(false)->change();
+            $table->string('nik_hash', 64)->nullable(false)->change();
+            $table->string('nama_lengkap')->nullable(false)->change();
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable(false)->change();
+            $table->string('tempat_lahir')->nullable(false)->change();
+            $table->date('tanggal_lahir')->nullable(false)->change();
+            $table->string('agama')->nullable(false)->change();
+        });
 
         Schema::table('siswa', function (Blueprint $table) {
             $table->dropColumn('person_id');
             $table->string('nama_lengkap')->nullable(false)->change();
-            $table->string('jenis_kelamin')->nullable(false)->change();
-            $table->string('tempat_lahir')->nullable(false)->change();
-            $table->date('tanggal_lahir')->nullable(false)->change();
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable(false)->change();
         });
 
         Schema::table('orang_tua', function (Blueprint $table) {
             $table->dropColumn('person_id');
             $table->string('nama_lengkap')->nullable(false)->change();
+            $table->string('nik', 16)->nullable(false)->change();
+            $table->string('no_hp', 20)->nullable(false)->change();
         });
 
         Schema::table('karyawan', function (Blueprint $table) {
             $table->dropColumn('person_id');
             $table->text('nik')->nullable(false)->change();
+            $table->string('nik_hash', 64)->nullable(false)->change();
             $table->string('nama')->nullable(false)->change();
         });
 
         Schema::table('guru', function (Blueprint $table) {
             $table->dropColumn('person_id');
             $table->text('nik')->nullable(false)->change();
+            $table->string('nik_hash', 64)->nullable(false)->change();
             $table->string('nama')->nullable(false)->change();
-            $table->string('jenis_kelamin')->nullable(false)->change();
-            $table->string('tempat_lahir')->nullable(false)->change();
-            $table->date('tanggal_lahir')->nullable(false)->change();
-            $table->string('agama')->nullable(false)->change();
-            $table->string('kewarganegaraan')->nullable(false)->change();
+            $table->enum('jenis_kelamin', ['L', 'P'])->nullable(false)->change();
+            $table->string('kewarganegaraan')->nullable(false)->default('WNI')->change();
         });
     }
 };
 ```
 
-Note: `doctrine/dbal` is required by Laravel's `->change()` method on columns — confirm it's already a dependency via `composer show doctrine/dbal`; if missing, this is a dependency change requiring user approval per this project's `.ai/rules`/CLAUDE.md convention, so stop and ask before adding it.
+**Correction found during review of Task 3's implementation (recorded here so it isn't lost or re-introduced):** an earlier version of this migration used `$table->string('jenis_kelamin')->nullable()->change()` and `$table->string('kewarganegaraan')->nullable()->change()`, plus redundant `->change()` calls on `tempat_lahir`/`tanggal_lahir`/`agama` on `guru`/`siswa` (all three were already nullable in the original `create_guru_table`/`create_siswa_table` migrations, so touching them there was unnecessary churn, not a correctness bug). The `jenis_kelamin`/`kewarganegaraan` versions were a real, materialized bug: Laravel's `Blueprint::change()` reconstructs a column's FULL definition from only what's specified in that call — it does not preserve the column's existing type or default automatically. `guru.jenis_kelamin`/`siswa.jenis_kelamin` were originally `enum('L','P')`; calling `->string(...)->change()` silently rewrote them to unconstrained `varchar(255)`, permanently accepting any value. `guru.kewarganegaraan` originally had `->default('WNI')`; omitting `->default('WNI')` from the `->change()` call silently dropped the default. Both defects were confirmed live against the applied migration in the dev database during review, and the original `down()` did not restore either property, making the migration irreversible to its true original schema. The code above is the corrected version: `jenis_kelamin` keeps its `enum(['L','P'])` type through both `up()` and `down()`, and `kewarganegaraan` keeps its `default('WNI')` through both. The rule this generalizes: **any `->change()` call on a column must restate every property of that column that must survive the change — type, default, and nullability — never just the one property being modified.** This applies to every other `->change()` call anywhere else in this plan and is worth an explicit self-check before writing any future `->change()` line.
+
+**Second correction, found while manually verifying the fix against the live dev database:** the original column list for this task omitted `nik_hash` on `guru`/`karyawan` (both `string(64) UNIQUE`, NOT NULL by default), `nik` on `orang_tua` (`string(16)`, NOT NULL), and `no_hp` on `orang_tua` (`string(20)`, NOT NULL, found in a second pass after the first three were already fixed and the `orang_tua` insert-without-legacy-columns test still failed on this column) — all four are populated today only by legacy write paths that Tasks 14-16's `PersonService` cutover stops populating going forward, so leaving them NOT NULL would make every future `Guru::create()`/`Karyawan::create()`/`OrangTua::create()` call fail immediately once those tasks land. Worse, `calon_murid` was left entirely untouched beyond `person_id` in the original version of this task, even though `calon_murid.nik`, `nik_hash`, `nama_lengkap`, `jenis_kelamin`, `tempat_lahir`, `tanggal_lahir`, and `agama` are ALL currently `NOT NULL` (see `database/migrations/2026_07_14_090000_create_calon_murid_table.php`), and Task 20's `CalonMurid::updateOrCreate(['person_id' => $person->id], ['yayasan_id' => $lembaga->yayasan_id])` call populates none of them — this would have failed immediately on the very first SPMB submission after Task 20 shipped, with no test in Task 3 ever catching it (Task 3's own tests only exercised `guru`). The code above now includes all of these in both `up()` and `down()`. **Generalized lesson for whoever implements or reviews any later task in this plan:** before treating "Task 3 relaxes the NOT NULL columns" as complete, cross-check every column a later task's `create()`/`updateOrCreate()` call omits against that table's actual `NOT NULL` columns in its original `create_*_table` migration — the plan's own prose summaries are not guaranteed exhaustive; the migration file is the ground truth.
+
+Note: `doctrine/dbal` is NOT required here — this codebase already uses `Blueprint::change()` on MySQL without it (see `database/migrations/2026_08_26_100100_add_subjek_columns_to_komponen_penilaian_and_asesmen.php`), since Laravel's native MySQL grammar supports column changes without doctrine/dbal from Laravel 11 onward. Confirmed via `composer show doctrine/dbal` (not installed) and the sibling migration working correctly. No dependency approval needed.
 
 - [ ] **Step 2: Write the failing test**
 
