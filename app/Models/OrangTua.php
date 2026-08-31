@@ -72,4 +72,27 @@ class OrangTua extends Model
     {
         return $this->no_hp;
     }
+
+    public function scopeSearch($query, ?string $term)
+    {
+        if (! $term) {
+            return $query;
+        }
+
+        $termHash = hash('sha256', $term);
+
+        return $query->where(function ($q) use ($term, $termHash) {
+            $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%")
+                ->orWhere('nik_hash', $termHash))
+                ->orWhere('orang_tua.nama_lengkap', 'like', "%{$term}%")
+                ->orWhere('orang_tua.nik', $term);
+        });
+    }
+
+    public function scopeOrderByNama($query, string $direction = 'asc')
+    {
+        return $query->leftJoin('persons', 'orang_tua.person_id', '=', 'persons.id')
+            ->orderByRaw("COALESCE(persons.nama_lengkap, orang_tua.nama_lengkap) {$direction}")
+            ->select('orang_tua.*');
+    }
 }

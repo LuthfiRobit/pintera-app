@@ -30,15 +30,13 @@ class OrangTuaController extends BaseController
         // to null (Eloquent turns `where('lembaga_id', null)` into `whereNull`, which happens
         // to only pass when the viewer ALSO has a null lembaga_id — masking this for any
         // fixture/manager that never set one).
-        $orangTuaList = OrangTua::with(['user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
+        $orangTuaList = OrangTua::with(['user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class), 'person'])
             ->withCount('siswa')
             ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where(fn ($q2) => $q2
                 ->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
-                ->orWhereHas('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $user->lembaga_id))))
-            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2
-                ->where('nama_lengkap', 'like', "%{$search}%")
-                ->orWhere('nik', 'like', "%{$search}%")))
-            ->orderBy('nama_lengkap')
+                ->orWhereHas('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class)->where('siswa.lembaga_id', $user->lembaga_id))))
+            ->when($search, fn ($q) => $q->search($search))
+            ->orderByNama()
             ->get();
 
         return view('admin.orang-tua.index', [

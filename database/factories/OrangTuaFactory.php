@@ -26,11 +26,18 @@ class OrangTuaFactory extends Factory
     {
         return [
             'person_id' => function (array $attributes) {
-                $yayasan = Yayasan::factory()->create();
+                $yayasanId = ! empty($attributes['yayasan_id']) && is_numeric($attributes['yayasan_id']) ? (int) $attributes['yayasan_id'] : null;
+                if (! $yayasanId && ! empty($attributes['user_id']) && is_numeric($attributes['user_id'])) {
+                    $user = User::withoutGlobalScopes()->find($attributes['user_id']);
+                    $yayasanId = $user?->yayasan_id;
+                }
+                $yayasanId ??= Yayasan::factory()->create()->id;
+
+                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
 
                 return Person::factory()->create([
-                    'yayasan_id' => $yayasan->id,
-                    'user_id' => $attributes['user_id'] ?? null,
+                    'yayasan_id' => $yayasanId,
+                    'user_id' => $userId,
                     'nama_lengkap' => $attributes['nama_lengkap'] ?? $this->faker->name(),
                     'nik' => $attributes['nik'] ?? $this->faker->unique()->numerify('################'),
                     'no_hp' => $attributes['no_hp'] ?? $this->faker->numerify('08##########'),
