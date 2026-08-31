@@ -1,12 +1,15 @@
 <?php
 
+use App\Models\DokumenPendaftaran;
+use App\Models\DokumenSyaratPpdb;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 });
 
 it('denies access to the index page without the spmb-pendaftaran.view permission', function () {
@@ -66,8 +69,8 @@ it('filters by status', function () {
 
 it('includes a dokumen progress count per row', function () {
     [$lembaga, $jalur, , $pendaftaran] = buatPendaftaranUntukAdmin();
-    $syarat = \App\Models\DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
-    \App\Models\DokumenPendaftaran::create([
+    $syarat = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'nama_dokumen' => 'Akta Kelahiran']);
+    DokumenPendaftaran::create([
         'pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syarat->id,
         'file_path' => 'x.pdf', 'nama_file_asli' => 'x.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 10,
         'status_verifikasi' => 'diterima',
@@ -84,7 +87,9 @@ it('includes a dokumen progress count per row', function () {
 
 it('returns pendaftaran data for a yayasan-scoped user once an active lembaga is selected in session', function () {
     [$lembaga] = buatPendaftaranUntukAdmin(namaCalon: 'Ahmad Fauzan');
-    $user = User::factory()->create(['lembaga_id' => null]);
+    // A yayasan_super_admin needs a resolvable yayasan_id for Person's YayasanScope to admit
+    // the calon murid's identity data at all (it fails closed otherwise).
+    $user = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $user->assignRole('yayasan_super_admin');
 
     $response = $this->actingAs($user)

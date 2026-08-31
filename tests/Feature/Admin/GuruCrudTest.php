@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Identity\Models\Person;
 use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Role;
@@ -7,6 +8,16 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
+
+// Identity data (nama, nik, ...) now lives on Person, not on the guru legacy columns (no
+// dual-write via CreatePersonAction/UpdatePersonAction), so tests created through the
+// controller must look Guru up via its person relation instead of `Guru::where('nama', ...)`.
+function findGuruByNama(string $nama): ?Guru
+{
+    $person = Person::withoutGlobalScopes()->where('nama_lengkap', $nama)->first();
+
+    return $person ? Guru::where('person_id', $person->id)->first() : null;
+}
 
 function actingAsGuruManager(Lembaga $lembaga): User
 {
@@ -48,7 +59,7 @@ it('creates both a User account and a Guru profile in one submit, with NIP as th
     $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload())
         ->assertRedirect(route('admin.guru.index'));
 
-    $guru = Guru::where('nama', 'Guru Baru')->first();
+    $guru = findGuruByNama('Guru Baru');
     expect($guru)->not->toBeNull();
     expect($guru->lembaga_id)->toBe($lembaga->id);
     expect($guru->status_aktif)->toBe('aktif');
@@ -69,7 +80,7 @@ it('rejects creating a guru without a NIP', function () {
     $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload(['nip' => '']))
         ->assertSessionHasErrors('nip');
 
-    expect(Guru::where('nama', 'Guru Baru')->exists())->toBeFalse();
+    expect(findGuruByNama('Guru Baru') !== null)->toBeFalse();
 });
 
 it('rejects creating a guru with an email already used by another account', function () {
@@ -81,7 +92,7 @@ it('rejects creating a guru with an email already used by another account', func
     $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload())
         ->assertSessionHasErrors('email');
 
-    expect(Guru::where('nama', 'Guru Baru')->exists())->toBeFalse();
+    expect(findGuruByNama('Guru Baru') !== null)->toBeFalse();
 });
 
 it('shows a friendly validation error instead of a 500 when creating a guru with a duplicate NIK', function () {
@@ -97,7 +108,7 @@ it('shows a friendly validation error instead of a 500 when creating a guru with
         'email' => 'guru.kedua@permata.sch.id',
     ]))->assertSessionHasErrors('nik');
 
-    expect(Guru::where('nama', 'Guru Kedua')->exists())->toBeFalse();
+    expect(findGuruByNama('Guru Kedua') !== null)->toBeFalse();
 });
 
 it('only lists guru belonging to the acting lembaga-scoped manager\'s own lembaga', function () {
@@ -106,7 +117,7 @@ it('only lists guru belonging to the acting lembaga-scoped manager\'s own lembag
     $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsGuruManager($lembagaA);
 
-    Guru::create([
+    Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaA->id])->id,
         'lembaga_id' => $lembagaA->id,
         'nik' => '3201234567895555',
@@ -116,7 +127,7 @@ it('only lists guru belonging to the acting lembaga-scoped manager\'s own lembag
         'status_kepegawaian' => 'GTY',
     ]);
 
-    Guru::withoutGlobalScopes()->create([
+    Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaB->id])->id,
         'lembaga_id' => $lembagaB->id,
         'nik' => '3201234567896666',
@@ -137,12 +148,12 @@ it('filters the index by search, jenis_ptk, and status_aktif', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsGuruManager($lembaga);
 
-    Guru::create([
+    Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => '3201234567897777', 'nama' => 'Budi Santoso',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_mapel', 'status_kepegawaian' => 'PNS', 'status_aktif' => 'aktif',
     ]);
-    Guru::create([
+    Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => '3201234567898888', 'nama' => 'Siti Rahmawati',
         'jenis_kelamin' => 'P', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY', 'status_aktif' => 'non_aktif',
@@ -165,7 +176,7 @@ it('updates guru profile fields without changing the linked User password', func
 
     $user = User::factory()->create(['lembaga_id' => $lembaga->id, 'email' => 'lama@permata.sch.id']);
     $originalHash = $user->password;
-    $guru = Guru::create([
+    $guru = Guru::factory()->create([
         'user_id' => $user->id, 'lembaga_id' => $lembaga->id, 'nik' => '3201234567898899',
         'nip' => '198001011990011001', 'nama' => 'Guru Uji Update', 'email' => 'lama@permata.sch.id',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',
@@ -188,7 +199,7 @@ it('changes status_aktif via the dedicated status action, rejecting values outsi
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsGuruManager($lembaga);
 
-    $guru = Guru::create([
+    $guru = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => '3201234567899900', 'nama' => 'Guru Status',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
@@ -208,7 +219,7 @@ it('deactivates the linked User account when status changes away from aktif, and
     $manager = actingAsGuruManager($lembaga);
 
     $user = User::factory()->create(['lembaga_id' => $lembaga->id, 'is_active' => true]);
-    $guru = Guru::create([
+    $guru = Guru::factory()->create([
         'user_id' => $user->id, 'lembaga_id' => $lembaga->id, 'nik' => '3201234567899911',
         'nama' => 'Guru Pensiun', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas',
         'status_kepegawaian' => 'GTY', 'status_aktif' => 'aktif',
@@ -234,7 +245,7 @@ it('rejects creating or updating a guru with a NUPTK already used by another gur
         'nama' => 'Guru Kedua', 'email' => 'guru.kedua@permata.sch.id', 'nuptk' => '1234567890123456',
     ]))->assertSessionHasErrors('nuptk');
 
-    expect(Guru::where('nama', 'Guru Kedua')->exists())->toBeFalse();
+    expect(findGuruByNama('Guru Kedua') !== null)->toBeFalse();
 });
 
 it('allows creating a guru with a blank NUPTK even when other guru already have a blank NUPTK', function () {
@@ -249,13 +260,13 @@ it('allows creating a guru with a blank NUPTK even when other guru already have 
         'nik' => '3201234567891299', 'nama' => 'Guru Kedua Tanpa Nuptk', 'email' => 'guru.kedua-nonuptk@permata.sch.id',
     ]))->assertSessionDoesntHaveErrors('nuptk');
 
-    expect(Guru::where('nama', 'Guru Kedua Tanpa Nuptk')->exists())->toBeTrue();
+    expect(findGuruByNama('Guru Kedua Tanpa Nuptk') !== null)->toBeTrue();
 });
 
 it('denies status change without guru.edit permission', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $guru = Guru::withoutGlobalScopes()->create([
+    $guru = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembaga->id])->id,
         'lembaga_id' => $lembaga->id, 'nik' => '3201234567899901', 'nama' => 'Guru Lain',
         'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas', 'status_kepegawaian' => 'GTY',

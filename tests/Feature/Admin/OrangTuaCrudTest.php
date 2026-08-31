@@ -48,7 +48,10 @@ it('creates both a User account and an OrangTua profile, with NIK as username an
 
     $orangTua = findOrangTuaByNik('3201234567894444');
     expect($orangTua)->not->toBeNull();
-    expect($orangTua->nik)->toBe('3201234567894444');
+    // `actingAsOrangTuaManager()` has no yayasan_id/lembaga_id, so the scoped `person()`
+    // relation used by OrangTua's `nik` accessor fails Person's YayasanScope closed for this
+    // actor. Read the Person unscoped for this assertion, same as the cross-tenant test below.
+    expect(Person::withoutGlobalScopes()->find($orangTua->person_id)->nik)->toBe('3201234567894444');
 
     $user = $orangTua->user;
     expect($user->username)->toBe('3201234567894444');
@@ -101,7 +104,15 @@ it('returns a validation error instead of crashing when the NIK belongs to a Use
 });
 
 it('updates the orang tua profile and the linked user name, without touching nik or password', function () {
+    // OrangTuaController::update() only writes identity fields when `$orangTua->person`
+    // resolves, and that relation carries Person's YayasanScope — a manager with no
+    // yayasan_id/lembaga_id at all can never resolve it, so the update would silently skip the
+    // Person write. Give the manager a lembaga here (unlike the plain `actingAsOrangTuaManager()`
+    // fixture used elsewhere in this file) so the scope resolves like a real operator_akademik.
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembaga->id]);
     $this->actingAs($manager)->post(route('admin.orang-tua.store'), orangTuaFormPayload())->assertRedirect();
     $orangTua = findOrangTuaByNik('3201234567894444');
     $originalPasswordHash = $orangTua->user->password;
@@ -115,9 +126,10 @@ it('updates the orang tua profile and the linked user name, without touching nik
     ])->assertRedirect(route('admin.orang-tua.index'));
 
     $orangTua->refresh();
-    expect($orangTua->nama_lengkap)->toBe('Nama Diperbarui');
-    expect($orangTua->no_hp)->toBe('089900001111');
-    expect($orangTua->nik)->toBe('3201234567894444');
+    $person = Person::withoutGlobalScopes()->find($orangTua->person_id);
+    expect($person->nama_lengkap)->toBe('Nama Diperbarui');
+    expect($person->no_hp)->toBe('089900001111');
+    expect($person->nik)->toBe('3201234567894444');
     expect($orangTua->user->name)->toBe('Nama Diperbarui');
     expect($orangTua->user->password)->toBe($originalPasswordHash);
 });
@@ -216,7 +228,11 @@ it('lets yayasan_super_admin see an orang tua regardless of which lembaga their 
     Permission::firstOrCreate(['name' => 'orang-tua.view', 'guard_name' => 'web']);
     $superAdminRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $superAdminRole->givePermissionTo('orang-tua.view');
-    $superAdmin = User::factory()->create();
+    // A yayasan_super_admin needs a resolvable yayasan_id for Person's YayasanScope to admit
+    // any rows at all (it fails closed otherwise) — set it to the same yayasan the orang tua's
+    // Person and the siswa's lembaga live under, so "regardless of lembaga" is exercised within
+    // the actor's own yayasan boundary.
+    $superAdmin = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $superAdmin->assignRole($superAdminRole);
 
     $response = $this->actingAs($superAdmin)->get(route('admin.orang-tua.index'));

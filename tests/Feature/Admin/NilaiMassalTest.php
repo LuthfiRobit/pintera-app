@@ -1,24 +1,42 @@
 <?php
 
+use App\Domains\Identity\Models\Person;
 use App\Models\CalonMurid;
 use App\Models\GelombangPpdb;
 use App\Models\HasilSeleksi;
 use App\Models\JalurPpdb;
 use App\Models\JenisTesMaster;
+use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Models\SeleksiPpdb;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 });
+
+// tests/Pest.php's buatPendaftaranUntukAdmin() always creates a brand-new Yayasan for the
+// CalonMurid it builds, even when an existing $lembaga is passed in — so a "second peserta in
+// the same lembaga" ends up with a Person under an unrelated Yayasan. That mismatch was
+// harmless before identity-v1 (CalonMurid carried no yayasan scope of its own), but now
+// Person's YayasanScope hides that CalonMurid's name from anyone correctly scoped to the real
+// lembaga. Realign it here (in this assigned test file) rather than editing the shared fixture.
+function buatPendaftaranSatuLembaga(Lembaga $lembaga, string $namaCalon): Pendaftaran
+{
+    [, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga, $namaCalon);
+    $calonMurid = CalonMurid::withoutGlobalScopes()->find($pendaftaran->calon_murid_id);
+    Person::withoutGlobalScopes()->whereKey($calonMurid->person_id)->update(['yayasan_id' => $lembaga->yayasan_id]);
+
+    return $pendaftaran;
+}
 
 it('shows all peserta for a chosen seleksi_ppdb with their existing nilai prefilled', function () {
     [$lembaga, $jalur, $gelombang, $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Peserta A');
-    [, , , $pendaftaranB] = buatPendaftaranUntukAdmin($lembaga, 'Peserta B');
+    $pendaftaranB = buatPendaftaranSatuLembaga($lembaga, 'Peserta B');
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
     $seleksi = SeleksiPpdb::create([
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id, 'jenis_tes_master_id' => $jenisTes->id,
@@ -38,7 +56,7 @@ it('shows all peserta for a chosen seleksi_ppdb with their existing nilai prefil
 
 it('bulk-saves nilai for multiple pendaftaran without duplicating existing hasil_seleksi rows', function () {
     [$lembaga, $jalur, $gelombang, $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Peserta A');
-    [, , , $pendaftaranB] = buatPendaftaranUntukAdmin($lembaga, 'Peserta B');
+    $pendaftaranB = buatPendaftaranSatuLembaga($lembaga, 'Peserta B');
     $pendaftaranB->update(['jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id]);
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
     $seleksi = SeleksiPpdb::create([
@@ -65,7 +83,7 @@ it('bulk-saves nilai for multiple pendaftaran without duplicating existing hasil
 
 it('re-saving the same batch updates existing hasil_seleksi rows instead of duplicating them', function () {
     [$lembaga, $jalur, $gelombang, $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Peserta A');
-    [, , , $pendaftaranB] = buatPendaftaranUntukAdmin($lembaga, 'Peserta B');
+    $pendaftaranB = buatPendaftaranSatuLembaga($lembaga, 'Peserta B');
     $pendaftaranB->update(['jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id]);
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
     $seleksi = SeleksiPpdb::create([
@@ -162,7 +180,9 @@ it('shows peserta and bulk-saves nilai for a yayasan-scoped user once an active 
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id, 'jenis_tes_master_id' => $jenisTes->id,
         'jadwal' => now()->addWeek(), 'kriteria_kelulusan' => 'Nilai minimal 65', 'bobot' => 60,
     ]);
-    $user = User::factory()->create(['lembaga_id' => null]);
+    // A yayasan_super_admin needs a resolvable yayasan_id for Person's YayasanScope to admit
+    // the calon murid's identity data at all (it fails closed otherwise).
+    $user = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $user->assignRole('yayasan_super_admin');
 
     $pageResponse = $this->actingAs($user)

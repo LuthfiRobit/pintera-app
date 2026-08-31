@@ -1,15 +1,15 @@
 <?php
 
+use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Siswa;
 use App\Models\User;
-use App\Models\Lembaga;
 use App\Models\Yayasan;
 
 it('creates an orang_tua profile with a nullable-lembaga user', function () {
     $user = User::factory()->create(['lembaga_id' => null, 'username' => '3201234567891111']);
 
-    $orangTua = OrangTua::create([
+    $orangTua = OrangTua::factory()->create([
         'user_id' => $user->id,
         'nama_lengkap' => 'Budi Santoso',
         'nik' => '3201234567891111',

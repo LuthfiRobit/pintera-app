@@ -52,7 +52,7 @@ it('offers only guru belonging to the current lembaga as wali kelas options', fu
     $manager = actingAsKelasManager($lembagaA);
 
     $guruA = Guru::factory()->create(['lembaga_id' => $lembagaA->id]);
-    Guru::withoutGlobalScopes()->create([
+    Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaB->id])->id,
         'lembaga_id' => $lembagaB->id,
         'nik' => '3201234567891111',
@@ -90,7 +90,7 @@ it('rejects creating a kelas with a wali_kelas_guru_id belonging to a different 
     $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
-    $guruLain = Guru::withoutGlobalScopes()->create([
+    $guruLain = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaLain->id])->id,
         'lembaga_id' => $lembagaLain->id,
         'nik' => '3201234567892222',
@@ -154,7 +154,7 @@ it('rejects updating a kelas with a wali_kelas_guru_id belonging to a different 
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
     $manager = actingAsKelasManager($lembagaSaya);
     $kelas = Kelas::create(['lembaga_id' => $lembagaSaya->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
-    $guruLain = Guru::withoutGlobalScopes()->create([
+    $guruLain = Guru::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaLain->id])->id,
         'lembaga_id' => $lembagaLain->id,
         'nik' => '3201234567893333',

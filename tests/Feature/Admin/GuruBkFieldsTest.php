@@ -1,11 +1,22 @@
 <?php
 
+use App\Domains\Identity\Models\Person;
 use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
+
+// Identity data (nama, ...) now lives on Person, not on the guru legacy columns (no
+// dual-write via CreatePersonAction), so tests created through the controller must look Guru
+// up via its person relation instead of `Guru::where('nama', ...)`.
+function findGuruByNamaBk(string $nama): Guru
+{
+    $person = Person::withoutGlobalScopes()->where('nama_lengkap', $nama)->firstOrFail();
+
+    return Guru::where('person_id', $person->id)->firstOrFail();
+}
 
 it('accepts jenis_ptk=guru_bk and a kapasitas_kasus_aktif value when creating a guru', function () {
     $yayasan = Yayasan::factory()->create();
@@ -31,7 +42,7 @@ it('accepts jenis_ptk=guru_bk and a kapasitas_kasus_aktif value when creating a 
         'kapasitas_kasus_aktif' => '5',
     ])->assertRedirect(route('admin.guru.index'));
 
-    $guru = Guru::where('nama', 'Guru BK Baru')->firstOrFail();
+    $guru = findGuruByNamaBk('Guru BK Baru');
     expect($guru->jenis_ptk)->toBe('guru_bk');
     expect($guru->kapasitas_kasus_aktif)->toBe(5);
 });
@@ -59,6 +70,6 @@ it('allows kapasitas_kasus_aktif to be left blank (unlimited)', function () {
         'status_kepegawaian' => 'GTY',
     ])->assertRedirect(route('admin.guru.index'));
 
-    $guru = Guru::where('nama', 'Guru BK Tanpa Batas')->firstOrFail();
+    $guru = findGuruByNamaBk('Guru BK Tanpa Batas');
     expect($guru->kapasitas_kasus_aktif)->toBeNull();
 });

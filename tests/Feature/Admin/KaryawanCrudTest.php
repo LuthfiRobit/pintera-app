@@ -1,14 +1,26 @@
 <?php
+
 // tests/Feature/Admin/KaryawanCrudTest.php
 
-use App\Models\Karyawan;
+use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
+
+// Identity data (nama, ...) now lives on Person, not on the karyawan legacy columns (no
+// dual-write via CreatePersonAction/UpdatePersonAction), so tests created through the
+// controller must look Karyawan up via its person relation instead of `Karyawan::where('nama', ...)`.
+function findKaryawanByNama(string $nama): ?Karyawan
+{
+    $person = Person::withoutGlobalScopes()->where('nama_lengkap', $nama)->first();
+
+    return $person ? Karyawan::where('person_id', $person->id)->first() : null;
+}
 
 function actingAsKaryawanManager(Lembaga $lembaga): User
 {
@@ -59,7 +71,8 @@ it('lets a lembaga admin create a dedicated karyawan scoped to their own lembaga
         'jenis_karyawan_id' => $jenis->id,
     ])->assertRedirect(route('admin.karyawan.index'));
 
-    $karyawan = Karyawan::where('nama', 'Konselor Lembaga')->firstOrFail();
+    $karyawan = findKaryawanByNama('Konselor Lembaga');
+    expect($karyawan)->not->toBeNull();
     expect($karyawan->lembaga_id)->toBe($lembaga->id);
     expect($karyawan->yayasan_id)->toBe($yayasan->id);
     expect($karyawan->user->hasRole('pegawai_lembaga'))->toBeTrue();
@@ -81,7 +94,7 @@ it('rejects a lembaga admin trying to create a pool karyawan', function () {
         'yayasan_id' => $yayasan->id,
     ])->assertForbidden();
 
-    expect(Karyawan::where('nama', 'Percobaan Pool')->exists())->toBeFalse();
+    expect(findKaryawanByNama('Percobaan Pool') !== null)->toBeFalse();
 });
 
 it('lets yayasan_super_admin create a pool karyawan', function () {
@@ -99,7 +112,8 @@ it('lets yayasan_super_admin create a pool karyawan', function () {
         'yayasan_id' => $yayasan->id,
     ])->assertRedirect(route('admin.karyawan.index'));
 
-    $karyawan = Karyawan::where('nama', 'Psikolog Pool')->firstOrFail();
+    $karyawan = findKaryawanByNama('Psikolog Pool');
+    expect($karyawan)->not->toBeNull();
     expect($karyawan->lembaga_id)->toBeNull();
     expect($karyawan->yayasan_id)->toBe($yayasan->id);
     expect($karyawan->user->hasRole('pegawai_yayasan'))->toBeTrue();
@@ -115,7 +129,7 @@ it('updates a karyawan profile without touching nik or lembaga_id', function () 
     $this->actingAs($manager)->post(route('admin.karyawan.store'), [
         'nik' => '3201234567897777', 'nama' => 'Nama Lama', 'email' => 'lama@permata.sch.id', 'jenis_karyawan_id' => $jenisA->id,
     ])->assertRedirect();
-    $karyawan = Karyawan::where('nik_hash', hash('sha256', '3201234567897777'))->firstOrFail();
+    $karyawan = Karyawan::whereHas('person', fn ($q) => $q->where('nik_hash', hash('sha256', '3201234567897777')))->firstOrFail();
 
     $this->actingAs($manager)->put(route('admin.karyawan.update', $karyawan), [
         'nama' => 'Nama Baru', 'email' => 'baru@permata.sch.id', 'jenis_karyawan_id' => $jenisB->id,
@@ -144,7 +158,7 @@ it('rejects creating a karyawan whose NIK is already registered to a non-karyawa
     ])->assertSessionHasErrors('nik');
 
     expect(User::withoutGlobalScopes()->count())->toBe($usersBefore);
-    expect(Karyawan::where('nama', 'Percobaan Duplikat')->exists())->toBeFalse();
+    expect(findKaryawanByNama('Percobaan Duplikat') !== null)->toBeFalse();
 });
 
 it('toggles a karyawan status_aktif and the linked user is_active together', function () {
@@ -156,7 +170,7 @@ it('toggles a karyawan status_aktif and the linked user is_active together', fun
     $this->actingAs($manager)->post(route('admin.karyawan.store'), [
         'nik' => '3201234567898888', 'nama' => 'Toggle Status', 'jenis_karyawan_id' => $jenis->id,
     ])->assertRedirect();
-    $karyawan = Karyawan::where('nik_hash', hash('sha256', '3201234567898888'))->firstOrFail();
+    $karyawan = Karyawan::whereHas('person', fn ($q) => $q->where('nik_hash', hash('sha256', '3201234567898888')))->firstOrFail();
 
     $this->actingAs($manager)->patch(route('admin.karyawan.update-status', $karyawan), [
         'status_aktif' => 'non_aktif',
@@ -176,7 +190,7 @@ it('shows a lembaga-scoped admin their own dedicated karyawan plus their yayasan
     $manager = actingAsKaryawanManager($lembagaA);
     $jenis = JenisKaryawanMaster::factory()->create();
 
-    $dedicatedOwn = Karyawan::withoutGlobalScopes()->create([
+    $dedicatedOwn = Karyawan::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaA->id])->id,
         'yayasan_id' => $yayasanA->id,
         'lembaga_id' => $lembagaA->id,
@@ -186,7 +200,7 @@ it('shows a lembaga-scoped admin their own dedicated karyawan plus their yayasan
         'status_aktif' => 'aktif',
     ]);
 
-    $poolSameYayasan = Karyawan::withoutGlobalScopes()->create([
+    $poolSameYayasan = Karyawan::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => null])->id,
         'yayasan_id' => $yayasanA->id,
         'lembaga_id' => null,
@@ -196,7 +210,7 @@ it('shows a lembaga-scoped admin their own dedicated karyawan plus their yayasan
         'status_aktif' => 'aktif',
     ]);
 
-    $dedicatedOtherLembaga = Karyawan::withoutGlobalScopes()->create([
+    $dedicatedOtherLembaga = Karyawan::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaAOther->id])->id,
         'yayasan_id' => $yayasanA->id,
         'lembaga_id' => $lembagaAOther->id,
@@ -206,7 +220,7 @@ it('shows a lembaga-scoped admin their own dedicated karyawan plus their yayasan
         'status_aktif' => 'aktif',
     ]);
 
-    $poolOtherYayasan = Karyawan::withoutGlobalScopes()->create([
+    $poolOtherYayasan = Karyawan::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => null])->id,
         'yayasan_id' => $yayasanB->id,
         'lembaga_id' => null,
