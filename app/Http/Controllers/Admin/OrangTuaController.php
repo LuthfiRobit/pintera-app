@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Identity\Actions\UpdatePersonAction;
 use App\Models\OrangTua;
 use App\Models\Scopes\TenantScope;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrangTuaController extends BaseController
@@ -60,9 +62,9 @@ class OrangTuaController extends BaseController
 
         $data = $this->validateProfil($request);
 
-        $existingUser = User::where('username', $data['nik'])->first();
+        $existingUser = User::withoutGlobalScopes()->where('username', $data['nik'])->first();
         if ($existingUser) {
-            $existingOrangTua = OrangTua::where('user_id', $existingUser->id)->first();
+            $existingOrangTua = OrangTua::withoutGlobalScopes()->where('user_id', $existingUser->id)->first();
 
             if ($existingOrangTua === null) {
                 return back()
@@ -75,6 +77,8 @@ class OrangTuaController extends BaseController
                 ->with('status', 'NIK sudah terdaftar — berikut profil Orang Tua yang sudah ada.');
         }
 
+        $yayasanId = $this->resolveYayasanIdForCreate($request);
+
         $generator->buat(
             $data['nama_lengkap'],
             $data['nik'],
@@ -82,6 +86,7 @@ class OrangTuaController extends BaseController
             $data['email'] ?? null,
             $data['alamat'] ?? null,
             $data['pekerjaan'] ?? null,
+            $yayasanId,
         );
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua & akun berhasil dibuat.');
@@ -94,6 +99,7 @@ class OrangTuaController extends BaseController
 
         $orangTua->load([
             'user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+            'person',
             'siswa' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
         ]);
 
@@ -113,8 +119,25 @@ class OrangTuaController extends BaseController
             'pekerjaan' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $orangTua->user()->withoutGlobalScope(TenantScope::class)->update(['name' => $data['nama_lengkap']]);
-        $orangTua->update($data);
+        DB::transaction(function () use ($data, $orangTua) {
+            if ($orangTua->person) {
+                app(UpdatePersonAction::class)->execute($orangTua->person, [
+                    'nama_lengkap' => $data['nama_lengkap'],
+                    'no_hp' => $data['no_hp'],
+                    'email' => $data['email'] ?? $orangTua->person->email,
+                    'alamat_jalan' => $data['alamat'] ?? $orangTua->person->alamat_jalan,
+                ]);
+
+                $user = $orangTua->person->user ?? ($orangTua->person->user_id ? User::withoutGlobalScopes()->find($orangTua->person->user_id) : null);
+                if ($user !== null) {
+                    $user->update(['name' => $data['nama_lengkap']]);
+                }
+            } elseif ($orangTua->user_id !== null) {
+                User::withoutGlobalScopes()->where('id', $orangTua->user_id)->update(['name' => $data['nama_lengkap']]);
+            }
+
+            $orangTua->update(collect($data)->only(['pekerjaan'])->toArray());
+        });
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua berhasil diperbarui.');
     }
@@ -131,6 +154,17 @@ class OrangTuaController extends BaseController
         $orangTua->user()->withoutGlobalScope(TenantScope::class)->update(['is_active' => $data['is_active']]);
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Status akun Orang Tua berhasil diperbarui.');
+    }
+
+    private function resolveYayasanIdForCreate(Request $request): int
+    {
+        $user = $request->user();
+
+        if ($user->widestScopeLevel() === 'yayasan') {
+            return $user->yayasan_id;
+        }
+
+        return $user->lembaga->yayasan_id;
     }
 
     // A lembaga-scoped admin (operator_akademik) may act on any orang tua profile that either has

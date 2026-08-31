@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Models\OrangTua;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -16,8 +17,21 @@ class AkunOrangTuaGenerator
         ?string $email = null,
         ?string $alamat = null,
         ?string $pekerjaan = null,
+        ?int $yayasanId = null,
     ): OrangTua {
-        return DB::transaction(function () use ($namaLengkap, $nik, $noHp, $email, $alamat, $pekerjaan) {
+        return DB::transaction(function () use ($namaLengkap, $nik, $noHp, $email, $alamat, $pekerjaan, $yayasanId) {
+            $person = app(CreatePersonAction::class)->execute(
+                identityData: [
+                    'nama_lengkap' => $namaLengkap,
+                    'nik' => $nik,
+                    'no_hp' => $noHp,
+                    'email' => $email,
+                    'alamat_jalan' => $alamat,
+                ],
+                lembagaId: null,
+                actingYayasanId: $yayasanId,
+            );
+
             $user = User::create([
                 'name' => $namaLengkap,
                 'email' => null,
@@ -29,14 +43,11 @@ class AkunOrangTuaGenerator
                 'must_change_password' => true,
             ]);
             $user->assignRole('orang_tua');
+            $person->update(['user_id' => $user->id]);
 
             return OrangTua::create([
+                'person_id' => $person->id,
                 'user_id' => $user->id,
-                'nama_lengkap' => $namaLengkap,
-                'nik' => $nik,
-                'no_hp' => $noHp,
-                'email' => $email,
-                'alamat' => $alamat,
                 'pekerjaan' => $pekerjaan,
             ]);
         });

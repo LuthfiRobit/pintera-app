@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\Role;
-use App\Models\User;
+use App\Models\Yayasan;
 use App\Services\AkunOrangTuaGenerator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -11,8 +11,9 @@ uses(TestCase::class, RefreshDatabase::class);
 
 it('creates a User with username=nik, password hashed from nik, and lembaga_id null', function () {
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $yayasan = Yayasan::factory()->create();
 
-    $orangTua = (new AkunOrangTuaGenerator())->buat('Siti Aminah', '3201234567892222', '081298765432');
+    $orangTua = (new AkunOrangTuaGenerator)->buat('Siti Aminah', '3201234567892222', '081298765432', yayasanId: $yayasan->id);
 
     $user = $orangTua->user;
     expect($user->username)->toBe('3201234567892222');
@@ -29,10 +30,12 @@ it('creates a User with username=nik, password hashed from nik, and lembaga_id n
 
 it('stores optional email, alamat, and pekerjaan when provided', function () {
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $yayasan = Yayasan::factory()->create();
 
-    $orangTua = (new AkunOrangTuaGenerator())->buat(
+    $orangTua = (new AkunOrangTuaGenerator)->buat(
         'Ahmad Fauzan', '3201234567893333', '081200001111',
         'ahmad@example.test', 'Jl. Merdeka No. 1', 'Wiraswasta',
+        yayasanId: $yayasan->id,
     );
 
     expect($orangTua->email)->toBe('ahmad@example.test');
