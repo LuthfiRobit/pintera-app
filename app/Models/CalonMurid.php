@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Domains\Identity\Models\Person;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +17,7 @@ class CalonMurid extends Model
     protected $table = 'calon_murid';
 
     protected $fillable = [
+        'person_id',
         'yayasan_id',
         'nik',
         'no_kk',
@@ -32,17 +35,54 @@ class CalonMurid extends Model
     protected function casts(): array
     {
         return [
-            'nik' => 'encrypted',
             'no_kk' => 'encrypted',
             'tanggal_lahir' => 'date',
         ];
     }
 
-    protected static function booted(): void
+    public function person(): BelongsTo
     {
-        static::saving(function (CalonMurid $calonMurid) {
-            $calonMurid->nik_hash = hash('sha256', $calonMurid->nik);
-        });
+        return $this->belongsTo(Person::class);
+    }
+
+    public function getNamaLengkapAttribute(): ?string
+    {
+        return $this->person?->nama_lengkap ?? $this->attributes['nama_lengkap'] ?? null;
+    }
+
+    public function getNikAttribute(): ?string
+    {
+        return $this->person?->nik;
+    }
+
+    public function getJenisKelaminAttribute(): ?string
+    {
+        return $this->person?->jenis_kelamin ?? $this->attributes['jenis_kelamin'] ?? null;
+    }
+
+    public function getTempatLahirAttribute(): ?string
+    {
+        return $this->person?->tempat_lahir ?? $this->attributes['tempat_lahir'] ?? null;
+    }
+
+    public function getTanggalLahirAttribute(): ?Carbon
+    {
+        return $this->person?->tanggal_lahir ?? ($this->attributes['tanggal_lahir'] ?? null ? Carbon::parse($this->attributes['tanggal_lahir']) : null);
+    }
+
+    public function getAgamaAttribute(): ?string
+    {
+        return $this->person?->agama ?? $this->attributes['agama'] ?? null;
+    }
+
+    public function getNoTeleponAttribute(): ?string
+    {
+        return $this->person?->no_hp ?? $this->attributes['no_telepon'] ?? null;
+    }
+
+    public function getEmailKontakAttribute(): ?string
+    {
+        return $this->person?->email ?? $this->attributes['email_kontak'] ?? null;
     }
 
     public static function findByNik(string $nik): ?self

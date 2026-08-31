@@ -1,11 +1,18 @@
 <?php
+
 // app/Models/Siswa.php
 
 namespace App\Models;
 
+use App\Domains\Identity\Models\Person;
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Enums\StatusSiswa;
 use App\Enums\SumberDataSiswa;
+use App\Events\StudentCreated;
+use App\Events\StudentUpdatedClass;
 use App\Models\Concerns\BelongsToTenant;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,12 +23,12 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Siswa extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity;
+    use BelongsToTenant, HasFactory, LogsActivity;
 
     protected $table = 'siswa';
 
     protected $fillable = [
-        'lembaga_id', 'kelas_id', 'calon_murid_id', 'pendaftaran_asal_id', 'user_id',
+        'person_id', 'lembaga_id', 'kelas_id', 'calon_murid_id', 'pendaftaran_asal_id', 'user_id',
         'sumber_data', 'nis', 'nisn', 'nama_lengkap', 'jenis_kelamin',
         'tempat_lahir', 'tanggal_lahir', 'agama', 'status',
     ];
@@ -33,6 +40,36 @@ class Siswa extends Model
             'sumber_data' => SumberDataSiswa::class,
             'status' => StatusSiswa::class,
         ];
+    }
+
+    public function person(): BelongsTo
+    {
+        return $this->belongsTo(Person::class);
+    }
+
+    public function getNamaLengkapAttribute(): ?string
+    {
+        return $this->person?->nama_lengkap ?? $this->attributes['nama_lengkap'] ?? null;
+    }
+
+    public function getJenisKelaminAttribute(): ?string
+    {
+        return $this->person?->jenis_kelamin ?? $this->attributes['jenis_kelamin'] ?? null;
+    }
+
+    public function getTempatLahirAttribute(): ?string
+    {
+        return $this->person?->tempat_lahir ?? $this->attributes['tempat_lahir'] ?? null;
+    }
+
+    public function getTanggalLahirAttribute(): ?Carbon
+    {
+        return $this->person?->tanggal_lahir ?? ($this->attributes['tanggal_lahir'] ?? null ? Carbon::parse($this->attributes['tanggal_lahir']) : null);
+    }
+
+    public function getAgamaAttribute(): ?string
+    {
+        return $this->person?->agama ?? $this->attributes['agama'] ?? null;
     }
 
     public function lembaga(): BelongsTo
@@ -70,21 +107,21 @@ class Siswa extends Model
 
     public function tagihan(): MorphMany
     {
-        return $this->morphMany(\App\Domains\Keuangan\Models\Tagihan::class, 'tagihable');
+        return $this->morphMany(Tagihan::class, 'tagihable');
     }
 
     public function wallet()
     {
-        return $this->hasOne(\App\Domains\Keuangan\Models\Wallet::class);
+        return $this->hasOne(Wallet::class);
     }
 
     protected static function booted(): void
     {
-        static::created(fn (Siswa $siswa) => event(new \App\Events\StudentCreated($siswa)));
+        static::created(fn (Siswa $siswa) => event(new StudentCreated($siswa)));
 
         static::updated(function (Siswa $siswa) {
             if ($siswa->wasChanged('kelas_id')) {
-                event(new \App\Events\StudentUpdatedClass($siswa));
+                event(new StudentUpdatedClass($siswa));
             }
         });
     }

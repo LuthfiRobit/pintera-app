@@ -2,17 +2,20 @@
 
 namespace App\Models;
 
+use App\Domains\Identity\Models\Person;
+use App\Domains\Sdm\Models\AttendanceEvent;
+use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\EmployeeQrCode;
+use App\Domains\Sdm\Models\JabatanTambahanMaster;
+use App\Domains\Sdm\Models\PengajuanIzinCuti;
+use App\Domains\Sdm\Models\PenugasanShift;
 use App\Models\Concerns\BelongsToTenant;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Domains\Sdm\Models\AttendanceEvent;
-use App\Domains\Sdm\Models\AttendanceRecord;
-use App\Domains\Sdm\Models\EmployeeQrCode;
-use App\Domains\Sdm\Models\PenugasanShift;
-use App\Domains\Sdm\Models\PengajuanIzinCuti;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Notifications\Notifiable;
@@ -21,12 +24,12 @@ use Spatie\Activitylog\Traits\LogsActivity;
 
 class Guru extends Model
 {
-    use HasFactory, BelongsToTenant, LogsActivity, Notifiable;
+    use BelongsToTenant, HasFactory, LogsActivity, Notifiable;
 
     protected $table = 'guru';
 
     protected $fillable = [
-        'user_id', 'lembaga_id', 'nik', 'nuptk', 'nip', 'nama', 'jenis_kelamin',
+        'person_id', 'user_id', 'lembaga_id', 'nik', 'nuptk', 'nip', 'nama', 'jenis_kelamin',
         'tempat_lahir', 'tanggal_lahir', 'agama', 'kewarganegaraan',
         'alamat_jalan', 'rt', 'rw', 'desa_kelurahan', 'kecamatan', 'kabupaten_kota',
         'provinsi', 'kode_pos', 'no_hp', 'email',
@@ -40,15 +43,97 @@ class Guru extends Model
             'tanggal_lahir' => 'date',
             'tmt_tugas' => 'date',
             'tmt_pns' => 'date',
-            'nik' => 'encrypted',
         ];
     }
 
-    protected static function booted(): void
+    public function person(): BelongsTo
     {
-        static::saving(function (Guru $guru) {
-            $guru->nik_hash = hash('sha256', $guru->nik);
-        });
+        return $this->belongsTo(Person::class);
+    }
+
+    public function getNamaAttribute(): ?string
+    {
+        return $this->person?->nama_lengkap ?? $this->attributes['nama'] ?? null;
+    }
+
+    public function getNikAttribute(): ?string
+    {
+        return $this->person?->nik;
+    }
+
+    public function getJenisKelaminAttribute(): ?string
+    {
+        return $this->person?->jenis_kelamin ?? $this->attributes['jenis_kelamin'] ?? null;
+    }
+
+    public function getTempatLahirAttribute(): ?string
+    {
+        return $this->person?->tempat_lahir ?? $this->attributes['tempat_lahir'] ?? null;
+    }
+
+    public function getTanggalLahirAttribute(): ?Carbon
+    {
+        return $this->person?->tanggal_lahir ?? ($this->attributes['tanggal_lahir'] ?? null ? Carbon::parse($this->attributes['tanggal_lahir']) : null);
+    }
+
+    public function getAgamaAttribute(): ?string
+    {
+        return $this->person?->agama ?? $this->attributes['agama'] ?? null;
+    }
+
+    public function getNoHpAttribute(): ?string
+    {
+        return $this->person?->no_hp ?? $this->attributes['no_hp'] ?? null;
+    }
+
+    public function getEmailAttribute(): ?string
+    {
+        return $this->person?->email ?? $this->attributes['email'] ?? null;
+    }
+
+    public function getKewarganegaraanAttribute(): ?string
+    {
+        return $this->person?->kewarganegaraan ?? $this->attributes['kewarganegaraan'] ?? 'WNI';
+    }
+
+    public function getAlamatJalanAttribute(): ?string
+    {
+        return $this->person?->alamat_jalan ?? $this->attributes['alamat_jalan'] ?? null;
+    }
+
+    public function getRtAttribute(): ?string
+    {
+        return $this->person?->rt ?? $this->attributes['rt'] ?? null;
+    }
+
+    public function getRwAttribute(): ?string
+    {
+        return $this->person?->rw ?? $this->attributes['rw'] ?? null;
+    }
+
+    public function getDesaKelurahanAttribute(): ?string
+    {
+        return $this->person?->desa_kelurahan ?? $this->attributes['desa_kelurahan'] ?? null;
+    }
+
+    public function getKecamatanAttribute(): ?string
+    {
+        return $this->person?->kecamatan ?? $this->attributes['kecamatan'] ?? null;
+    }
+
+    public function getKabupatenKotaAttribute(): ?string
+    {
+        return $this->person?->kabupaten_kota ?? $this->attributes['kabupaten_kota'] ?? null;
+    }
+
+    public function getProvinsiAttribute(): ?string
+    {
+        return $this->person?->provinsi ?? $this->attributes['provinsi'] ?? null;
+    }
+
+    public function getKodePosAttribute(): ?string
+    {
+        return $this->person?->kode_pos ?? $this->attributes['kode_pos'] ?? null;
     }
 
     public function user(): BelongsTo
@@ -73,7 +158,7 @@ class Guru extends Model
 
     public function jabatanTambahan(): BelongsToMany
     {
-        return $this->belongsToMany(\App\Domains\Sdm\Models\JabatanTambahanMaster::class, 'guru_jabatan_tambahan')
+        return $this->belongsToMany(JabatanTambahanMaster::class, 'guru_jabatan_tambahan')
             ->withPivot(['mulai_periode', 'akhir_periode', 'no_sk'])
             ->withTimestamps()
             ->using(GuruJabatanTambahan::class);
