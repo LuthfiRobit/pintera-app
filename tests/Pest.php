@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AkunPendaftar;
 use App\Models\CalonMurid;
 use App\Models\GelombangPpdb;
 use App\Models\JalurPpdb;
@@ -76,9 +77,9 @@ function buatLembagaDenganGelombangBuka(): array
     return [$lembaga, $tahunAjaran, $jalur, $gelombang];
 }
 
-function loginAkunDenganPilihanSpmb(Lembaga $lembaga, JalurPpdb $jalur): \App\Models\AkunPendaftar
+function loginAkunDenganPilihanSpmb(Lembaga $lembaga, JalurPpdb $jalur): AkunPendaftar
 {
-    $akun = \App\Models\AkunPendaftar::factory()->create();
+    $akun = AkunPendaftar::factory()->create();
     session(['spmb_pilihan.lembaga_id' => $lembaga->id, 'spmb_pilihan.jalur_id' => $jalur->id]);
     test()->actingAs($akun, 'portal');
 
@@ -87,7 +88,7 @@ function loginAkunDenganPilihanSpmb(Lembaga $lembaga, JalurPpdb $jalur): \App\Mo
 
 function buatPendaftaranUntukAdmin(?Lembaga $lembaga = null, string $namaCalon = 'Ahmad Fauzan', string $status = 'menunggu_verifikasi'): array
 {
-    $yayasan = Yayasan::factory()->create();
+    $yayasan = $lembaga?->yayasan ?? Yayasan::factory()->create();
     $lembaga = $lembaga ?? Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     // firstOrCreate: buatPendaftaranUntukAdmin() is called multiple times with the same
     // $lembaga in some tests, and tahun_ajaran/jalur_ppdb/gelombang_ppdb each carry a unique
@@ -154,7 +155,7 @@ function actingAsSiswaOrangTuaManager(): User
         ['name' => 'yayasan_admin_ortu_link', 'guard_name' => 'web'],
         ['scope_level' => 'yayasan']
     );
-    $manager->update(['yayasan_id' => \App\Models\Yayasan::factory()->create()->id]);
+    $manager->update(['yayasan_id' => Yayasan::factory()->create()->id]);
     $manager->assignRole($yayasanRole);
 
     return $manager;
