@@ -1078,7 +1078,10 @@ class CreatePersonAction
 
         if (! empty($identityData['nik'])) {
             $nikHash = hash('sha256', $identityData['nik']);
-            $existing = Person::where('yayasan_id', $yayasanId)->where('nik_hash', $nikHash)->first();
+            $existing = Person::withoutGlobalScope(\App\Models\Scopes\YayasanScope::class)
+                ->where('yayasan_id', $yayasanId)
+                ->where('nik_hash', $nikHash)
+                ->first();
 
             if ($existing !== null) {
                 throw new PersonAlreadyExistsException($existing);
@@ -1109,10 +1112,12 @@ class CreatePersonAction
 }
 ```
 
+**Correction found during implementation (recorded so it isn't re-introduced):** the dedup lookup must bypass `Person`'s own `YayasanScope`, not rely on plain `Person::where(...)`. `YayasanScope` is a global scope that filters by the ACTING AUTHENTICATED USER's own resolved yayasan_id (see Task 2's `YayasanScope`), which is a separate, independent filter from the explicit `->where('yayasan_id', $yayasanId)` in this query. In the common case (an actor creating a Person inside their own yayasan) both conditions agree and nothing breaks — which is exactly why none of the 5 original tests above (all run with no authenticated user, so the scope no-ops) catch this. But if `$yayasanId` (the action's resolved target) ever differs from the acting user's own yayasan, the two ANDed `yayasan_id` conditions become mutually exclusive, `first()` silently returns `null` regardless of whether a duplicate truly exists, and the duplicate insert proceeds to fail loudly at the DB level instead (`uq_persons_yayasan_nik` unique constraint violation surfaces as a raw `UniqueConstraintViolationException`, not the intended `PersonAlreadyExistsException`). The fix is `Person::withoutGlobalScope(YayasanScope::class)->where('yayasan_id', $yayasanId)->where('nik_hash', $nikHash)->first()` (shown in the code above) — correct because the query already has the exact, explicit target yayasan_id to filter by, so bypassing the ambient-auth-context scope removes an unnecessary and incorrect dependency. Two additional regression tests are required beyond the 5 above (both run with `actingAs()` so the scope is actually live): one proving the common case still works when the acting user's yayasan matches the target, one proving the dedup check still catches a duplicate even when the acting user belongs to a DIFFERENT yayasan than the target (this second test is the one that fails without the fix).
+
 - [ ] **Step 5: Run tests to verify they pass**
 
 Run: `php artisan test --filter=CreatePersonActionTest --compact`
-Expected: PASS
+Expected: PASS (7 tests: the 5 above plus the 2 `YayasanScope`-interaction regression tests described above)
 
 - [ ] **Step 6: Commit**
 
@@ -1417,20 +1422,29 @@ class MergePersonsAction
             }
 
             if ($losing->user_id !== null && $winning->user_id === null) {
-                $winning->update(['user_id' => $losing->user_id]);
+                // persons.user_id carries a unique constraint: clear it on the losing
+                // side (and persist merged_into_person_id in the same statement) before
+                // assigning it to the winning side, or the winning update violates the
+                // constraint while the losing row still holds the same user_id.
+                $carriedUserId = $losing->user_id;
+                $losing->update(['user_id' => null, 'merged_into_person_id' => $winning->id]);
+                $winning->update(['user_id' => $carriedUserId]);
+            } else {
+                $losing->update(['merged_into_person_id' => $winning->id]);
             }
 
-            $losing->update(['merged_into_person_id' => $winning->id]);
             $losing->delete();
         });
     }
 }
 ```
 
+**Correction found during implementation (recorded so it isn't re-introduced):** the version above fixes a real bug in an earlier draft of this action that set `$winning->user_id = $losing->user_id` BEFORE clearing `$losing->user_id` in the database. Since `persons.user_id` carries a `UNIQUE` constraint (Task 1's DDL), and `$losing`'s row still held that same `user_id` value in the database at the moment `$winning->update(['user_id' => ...])` ran, the update failed with `SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry ... for key 'persons.persons_user_id_unique'`. The fix clears the losing side's `user_id` to `null` (combined with `merged_into_person_id` in one `update()` call to avoid an extra query) BEFORE assigning the carried value to `$winning`, all within the same `DB::transaction()` closure so atomicity is preserved. This is a rare but real ordering trap with unique constraints during a "move a unique value from row A to row B" operation — the value must leave A before it can land on B, or the DB sees both rows holding it simultaneously mid-statement.
+
 - [ ] **Step 5: Run tests to verify they pass**
 
 Run: `php artisan test --filter=MergePersonsActionTest --compact`
-Expected: PASS
+Expected: PASS (5 tests: the 4 above, plus one proving check-precedence — a cross-yayasan merge attempt where BOTH persons also have a `user_id` set must hit the yayasan-mismatch `abort_if` first, not `ConflictingUserAccountsException`, since the brief's `abort_if` runs strictly before the conflicting-accounts check)
 
 - [ ] **Step 6: Commit**
 
