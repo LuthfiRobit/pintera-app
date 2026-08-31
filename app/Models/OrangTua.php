@@ -20,32 +20,6 @@ class OrangTua extends Model
         'person_id', 'user_id', 'nama_lengkap', 'nik', 'no_hp', 'email', 'alamat', 'pekerjaan',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function (OrangTua $orangTua) {
-            if (empty($orangTua->person_id)) {
-                $user = $orangTua->user_id ? User::withoutGlobalScopes()->find($orangTua->user_id) : null;
-                $yayasanId = $user?->yayasan_id ?? auth()->user()?->yayasan_id ?? auth()->user()?->lembaga?->yayasan_id ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
-                $person = Person::create([
-                    'yayasan_id' => $yayasanId,
-                    'user_id' => $orangTua->user_id,
-                    'nama_lengkap' => $orangTua->attributes['nama_lengkap'] ?? 'Orang Tua',
-                    'nik' => $orangTua->attributes['nik'] ?? null,
-                    'no_hp' => $orangTua->attributes['no_hp'] ?? null,
-                    'email' => $orangTua->attributes['email'] ?? null,
-                    'alamat_jalan' => $orangTua->attributes['alamat'] ?? null,
-                ]);
-                $orangTua->person_id = $person->id;
-            }
-        });
-
-        static::saved(function (OrangTua $orangTua) {
-            if ($orangTua->user_id && $orangTua->person_id) {
-                Person::withoutGlobalScopes()->where('id', $orangTua->person_id)->update(['user_id' => $orangTua->user_id]);
-            }
-        });
-    }
-
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
@@ -53,27 +27,27 @@ class OrangTua extends Model
 
     public function getNamaLengkapAttribute(): ?string
     {
-        return $this->person?->nama_lengkap ?? $this->attributes['nama_lengkap'] ?? null;
+        return $this->person?->nama_lengkap;
     }
 
     public function getNikAttribute(): ?string
     {
-        return $this->person?->nik ?? $this->attributes['nik'] ?? null;
+        return $this->person?->nik;
     }
 
     public function getNoHpAttribute(): ?string
     {
-        return $this->person?->no_hp ?? $this->attributes['no_hp'] ?? null;
+        return $this->person?->no_hp;
     }
 
     public function getEmailAttribute(): ?string
     {
-        return $this->person?->email ?? $this->attributes['email'] ?? null;
+        return $this->person?->email;
     }
 
     public function getAlamatAttribute(): ?string
     {
-        return $this->person?->alamat_jalan ?? $this->attributes['alamat'] ?? null;
+        return $this->person?->alamat_jalan;
     }
 
     public function user(): BelongsTo
@@ -110,16 +84,14 @@ class OrangTua extends Model
 
         return $query->where(function ($q) use ($term, $termHash) {
             $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%")
-                ->orWhere('nik_hash', $termHash))
-                ->orWhere('orang_tua.nama_lengkap', 'like', "%{$term}%")
-                ->orWhere('orang_tua.nik', $term);
+                ->orWhere('nik_hash', $termHash));
         });
     }
 
     public function scopeOrderByNama($query, string $direction = 'asc')
     {
         return $query->leftJoin('persons', 'orang_tua.person_id', '=', 'persons.id')
-            ->orderByRaw("COALESCE(persons.nama_lengkap, orang_tua.nama_lengkap) {$direction}")
+            ->orderBy('persons.nama_lengkap', $direction)
             ->select('orang_tua.*');
     }
 

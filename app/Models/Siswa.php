@@ -49,27 +49,27 @@ class Siswa extends Model
 
     public function getNamaLengkapAttribute(): ?string
     {
-        return $this->person?->nama_lengkap ?? $this->attributes['nama_lengkap'] ?? null;
+        return $this->person?->nama_lengkap;
     }
 
     public function getJenisKelaminAttribute(): ?string
     {
-        return $this->person?->jenis_kelamin ?? $this->attributes['jenis_kelamin'] ?? null;
+        return $this->person?->jenis_kelamin;
     }
 
     public function getTempatLahirAttribute(): ?string
     {
-        return $this->person?->tempat_lahir ?? $this->attributes['tempat_lahir'] ?? null;
+        return $this->person?->tempat_lahir;
     }
 
     public function getTanggalLahirAttribute(): ?Carbon
     {
-        return $this->person?->tanggal_lahir ?? ($this->attributes['tanggal_lahir'] ?? null ? Carbon::parse($this->attributes['tanggal_lahir']) : null);
+        return $this->person?->tanggal_lahir;
     }
 
     public function getAgamaAttribute(): ?string
     {
-        return $this->person?->agama ?? $this->attributes['agama'] ?? null;
+        return $this->person?->agama;
     }
 
     public function lembaga(): BelongsTo
@@ -118,29 +118,7 @@ class Siswa extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (Siswa $siswa) {
-            if (empty($siswa->person_id)) {
-                $yayasanId = $siswa->yayasan_id ?? ($siswa->lembaga_id ? Lembaga::find($siswa->lembaga_id)?->yayasan_id : null) ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
-                $person = Person::create([
-                    'yayasan_id' => $yayasanId,
-                    'user_id' => $siswa->user_id,
-                    'nama_lengkap' => $siswa->attributes['nama_lengkap'] ?? 'Siswa',
-                    'jenis_kelamin' => $siswa->attributes['jenis_kelamin'] ?? null,
-                    'tempat_lahir' => $siswa->attributes['tempat_lahir'] ?? null,
-                    'tanggal_lahir' => $siswa->attributes['tanggal_lahir'] ?? null,
-                    'agama' => $siswa->attributes['agama'] ?? null,
-                ]);
-                $siswa->person_id = $person->id;
-            }
-        });
-
         static::created(fn (Siswa $siswa) => event(new StudentCreated($siswa)));
-
-        static::saved(function (Siswa $siswa) {
-            if ($siswa->user_id && $siswa->person_id) {
-                Person::withoutGlobalScopes()->where('id', $siswa->person_id)->update(['user_id' => $siswa->user_id]);
-            }
-        });
 
         static::updated(function (Siswa $siswa) {
             if ($siswa->wasChanged('kelas_id')) {
@@ -165,7 +143,6 @@ class Siswa extends Model
 
         return $query->where(function ($q) use ($term) {
             $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%"))
-                ->orWhere('siswa.nama_lengkap', 'like', "%{$term}%")
                 ->orWhere('siswa.nis', 'like', "%{$term}%")
                 ->orWhere('siswa.nisn', 'like', "%{$term}%");
         });
@@ -174,7 +151,7 @@ class Siswa extends Model
     public function scopeOrderByNama($query, string $direction = 'asc')
     {
         return $query->leftJoin('persons', 'siswa.person_id', '=', 'persons.id')
-            ->orderByRaw("COALESCE(persons.nama_lengkap, siswa.nama_lengkap) {$direction}")
+            ->orderBy('persons.nama_lengkap', $direction)
             ->select('siswa.*');
     }
 }

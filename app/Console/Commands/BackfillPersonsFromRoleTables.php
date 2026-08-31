@@ -9,6 +9,7 @@ use App\Models\Karyawan;
 use App\Models\OrangTua;
 use App\Models\Siswa;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 class BackfillPersonsFromRoleTables extends Command
@@ -40,24 +41,24 @@ class BackfillPersonsFromRoleTables extends Command
         Guru::withoutGlobalScopes()->whereNull('person_id')->with('lembaga')->each(function (Guru $guru) {
             $person = $this->findOrCreatePerson(
                 yayasanId: $guru->lembaga->yayasan_id,
-                nik: $guru->nik,
-                namaLengkap: $guru->nama,
+                nik: $this->decryptRawAttribute($guru, 'nik'),
+                namaLengkap: $guru->getRawOriginal('nama'),
                 extra: [
-                    'jenis_kelamin' => $guru->jenis_kelamin,
-                    'tempat_lahir' => $guru->tempat_lahir,
-                    'tanggal_lahir' => $guru->tanggal_lahir,
-                    'agama' => $guru->agama,
-                    'kewarganegaraan' => $guru->kewarganegaraan,
-                    'no_hp' => $guru->no_hp,
-                    'email' => $guru->email,
-                    'alamat_jalan' => $guru->alamat_jalan,
-                    'rt' => $guru->rt,
-                    'rw' => $guru->rw,
-                    'desa_kelurahan' => $guru->desa_kelurahan,
-                    'kecamatan' => $guru->kecamatan,
-                    'kabupaten_kota' => $guru->kabupaten_kota,
-                    'provinsi' => $guru->provinsi,
-                    'kode_pos' => $guru->kode_pos,
+                    'jenis_kelamin' => $guru->getRawOriginal('jenis_kelamin'),
+                    'tempat_lahir' => $guru->getRawOriginal('tempat_lahir'),
+                    'tanggal_lahir' => $guru->getRawOriginal('tanggal_lahir'),
+                    'agama' => $guru->getRawOriginal('agama'),
+                    'kewarganegaraan' => $guru->getRawOriginal('kewarganegaraan'),
+                    'no_hp' => $guru->getRawOriginal('no_hp'),
+                    'email' => $guru->getRawOriginal('email'),
+                    'alamat_jalan' => $guru->getRawOriginal('alamat_jalan'),
+                    'rt' => $guru->getRawOriginal('rt'),
+                    'rw' => $guru->getRawOriginal('rw'),
+                    'desa_kelurahan' => $guru->getRawOriginal('desa_kelurahan'),
+                    'kecamatan' => $guru->getRawOriginal('kecamatan'),
+                    'kabupaten_kota' => $guru->getRawOriginal('kabupaten_kota'),
+                    'provinsi' => $guru->getRawOriginal('provinsi'),
+                    'kode_pos' => $guru->getRawOriginal('kode_pos'),
                 ],
                 sourceTable: 'guru',
                 sourceId: $guru->id,
@@ -76,9 +77,9 @@ class BackfillPersonsFromRoleTables extends Command
 
             $person = $this->findOrCreatePerson(
                 yayasanId: $yayasanId,
-                nik: $karyawan->nik,
-                namaLengkap: $karyawan->nama,
-                extra: ['no_hp' => $karyawan->no_hp, 'email' => $karyawan->email],
+                nik: $karyawan->getRawOriginal('nik'),
+                namaLengkap: $karyawan->getRawOriginal('nama'),
+                extra: ['no_hp' => $karyawan->getRawOriginal('no_hp'), 'email' => $karyawan->getRawOriginal('email')],
                 sourceTable: 'karyawan',
                 sourceId: $karyawan->id,
             );
@@ -100,9 +101,9 @@ class BackfillPersonsFromRoleTables extends Command
 
             $person = $this->findOrCreatePerson(
                 yayasanId: $siswa->lembaga->yayasan_id,
-                nik: $ortu->nik,
-                namaLengkap: $ortu->nama_lengkap,
-                extra: ['no_hp' => $ortu->no_hp, 'email' => $ortu->email, 'alamat_jalan' => $ortu->alamat],
+                nik: $ortu->getRawOriginal('nik'),
+                namaLengkap: $ortu->getRawOriginal('nama_lengkap'),
+                extra: ['no_hp' => $ortu->getRawOriginal('no_hp'), 'email' => $ortu->getRawOriginal('email'), 'alamat_jalan' => $ortu->getRawOriginal('alamat')],
                 sourceTable: 'orang_tua',
                 sourceId: $ortu->id,
             );
@@ -117,12 +118,12 @@ class BackfillPersonsFromRoleTables extends Command
             $person = $this->findOrCreatePerson(
                 yayasanId: $siswa->lembaga->yayasan_id,
                 nik: null,
-                namaLengkap: $siswa->nama_lengkap,
+                namaLengkap: $siswa->getRawOriginal('nama_lengkap'),
                 extra: [
-                    'jenis_kelamin' => $siswa->jenis_kelamin,
-                    'tempat_lahir' => $siswa->tempat_lahir,
-                    'tanggal_lahir' => $siswa->tanggal_lahir,
-                    'agama' => $siswa->agama,
+                    'jenis_kelamin' => $siswa->getRawOriginal('jenis_kelamin'),
+                    'tempat_lahir' => $siswa->getRawOriginal('tempat_lahir'),
+                    'tanggal_lahir' => $siswa->getRawOriginal('tanggal_lahir'),
+                    'agama' => $siswa->getRawOriginal('agama'),
                 ],
                 sourceTable: 'siswa',
                 sourceId: $siswa->id,
@@ -137,15 +138,15 @@ class BackfillPersonsFromRoleTables extends Command
         CalonMurid::withoutGlobalScopes()->whereNull('person_id')->get()->each(function (CalonMurid $calon) {
             $person = $this->findOrCreatePerson(
                 yayasanId: $calon->yayasan_id,
-                nik: $calon->nik,
-                namaLengkap: $calon->nama_lengkap,
+                nik: $this->decryptRawAttribute($calon, 'nik'),
+                namaLengkap: $calon->getRawOriginal('nama_lengkap'),
                 extra: [
-                    'jenis_kelamin' => $calon->jenis_kelamin,
-                    'tempat_lahir' => $calon->tempat_lahir,
-                    'tanggal_lahir' => $calon->tanggal_lahir,
-                    'agama' => $calon->agama,
-                    'no_hp' => $calon->no_telepon,
-                    'email' => $calon->email_kontak,
+                    'jenis_kelamin' => $calon->getRawOriginal('jenis_kelamin'),
+                    'tempat_lahir' => $calon->getRawOriginal('tempat_lahir'),
+                    'tanggal_lahir' => $calon->getRawOriginal('tanggal_lahir'),
+                    'agama' => $calon->getRawOriginal('agama'),
+                    'no_hp' => $calon->getRawOriginal('no_telepon'),
+                    'email' => $calon->getRawOriginal('email_kontak'),
                 ],
                 sourceTable: 'calon_murid',
                 sourceId: $calon->id,
@@ -153,6 +154,26 @@ class BackfillPersonsFromRoleTables extends Command
 
             $calon->newQueryWithoutScopes()->whereKey($calon->id)->update(['person_id' => $person->id]);
         });
+    }
+
+    /**
+     * Read an `encrypted`-cast attribute's raw column value and decrypt it, bypassing the
+     * role model's `person`-proxying accessor (which returns null here since `person_id`
+     * is still null for the row being backfilled).
+     */
+    private function decryptRawAttribute(Guru|CalonMurid $model, string $key): ?string
+    {
+        $raw = $model->getRawOriginal($key);
+
+        if ($raw === null) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($raw);
+        } catch (\Throwable) {
+            return $raw;
+        }
     }
 
     /** @param array<string, mixed> $extra */

@@ -41,46 +41,6 @@ class CalonMurid extends Model
         ];
     }
 
-    protected static function booted(): void
-    {
-        static::creating(function (CalonMurid $calonMurid) {
-            if (empty($calonMurid->person_id)) {
-                $yayasanId = $calonMurid->yayasan_id ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
-                $plainNik = null;
-                if (isset($calonMurid->attributes['nik'])) {
-                    try {
-                        $plainNik = $calonMurid->castAttribute('nik', $calonMurid->attributes['nik']);
-                    } catch (\Throwable) {
-                        $plainNik = $calonMurid->attributes['nik'];
-                    }
-                }
-                $person = Person::create([
-                    'yayasan_id' => $yayasanId,
-                    'nama_lengkap' => $calonMurid->attributes['nama_lengkap'] ?? 'Calon Murid',
-                    'nik' => $plainNik,
-                    'jenis_kelamin' => $calonMurid->attributes['jenis_kelamin'] ?? null,
-                    'tempat_lahir' => $calonMurid->attributes['tempat_lahir'] ?? null,
-                    'tanggal_lahir' => $calonMurid->attributes['tanggal_lahir'] ?? null,
-                    'agama' => $calonMurid->attributes['agama'] ?? null,
-                    'no_hp' => $calonMurid->attributes['no_telepon'] ?? null,
-                    'email' => $calonMurid->attributes['email_kontak'] ?? null,
-                ]);
-                $calonMurid->person_id = $person->id;
-            }
-        });
-
-        static::saving(function (CalonMurid $calonMurid) {
-            if (! empty($calonMurid->attributes['nik'])) {
-                try {
-                    $plainNik = $calonMurid->castAttribute('nik', $calonMurid->attributes['nik']);
-                } catch (\Throwable) {
-                    $plainNik = $calonMurid->attributes['nik'];
-                }
-                $calonMurid->nik_hash = hash('sha256', $plainNik);
-            }
-        });
-    }
-
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
@@ -88,66 +48,47 @@ class CalonMurid extends Model
 
     public function getNamaLengkapAttribute(): ?string
     {
-        return $this->person?->nama_lengkap ?? $this->attributes['nama_lengkap'] ?? null;
+        return $this->person?->nama_lengkap;
     }
 
     public function getNikAttribute(): ?string
     {
-        if ($this->person) {
-            return $this->person->nik;
-        }
-
-        if (isset($this->attributes['nik'])) {
-            try {
-                return $this->castAttribute('nik', $this->attributes['nik']);
-            } catch (\Throwable) {
-                return $this->attributes['nik'];
-            }
-        }
-
-        return null;
+        return $this->person?->nik;
     }
 
     public function getJenisKelaminAttribute(): ?string
     {
-        return $this->person?->jenis_kelamin ?? $this->attributes['jenis_kelamin'] ?? null;
+        return $this->person?->jenis_kelamin;
     }
 
     public function getTempatLahirAttribute(): ?string
     {
-        return $this->person?->tempat_lahir ?? $this->attributes['tempat_lahir'] ?? null;
+        return $this->person?->tempat_lahir;
     }
 
     public function getTanggalLahirAttribute(): ?Carbon
     {
-        return $this->person?->tanggal_lahir ?? ($this->attributes['tanggal_lahir'] ?? null ? Carbon::parse($this->attributes['tanggal_lahir']) : null);
+        return $this->person?->tanggal_lahir;
     }
 
     public function getAgamaAttribute(): ?string
     {
-        return $this->person?->agama ?? $this->attributes['agama'] ?? null;
+        return $this->person?->agama;
     }
 
     public function getNoTeleponAttribute(): ?string
     {
-        return $this->person?->no_hp ?? $this->attributes['no_telepon'] ?? null;
+        return $this->person?->no_hp;
     }
 
     public function getEmailKontakAttribute(): ?string
     {
-        return $this->person?->email ?? $this->attributes['email_kontak'] ?? null;
+        return $this->person?->email;
     }
 
     public static function findByNik(string $nik): ?self
     {
-        $nikHash = hash('sha256', $nik);
-
-        return static::withoutGlobalScopes()
-            ->where(function ($query) use ($nikHash) {
-                $query->whereHas('person', fn ($q) => $q->withoutGlobalScopes()->where('nik_hash', $nikHash))
-                    ->orWhere('nik_hash', $nikHash);
-            })
-            ->first();
+        return static::whereHas('person', fn ($q) => $q->where('nik_hash', hash('sha256', $nik)))->first();
     }
 
     public function yayasan(): BelongsTo
@@ -191,16 +132,14 @@ class CalonMurid extends Model
         return $query->where(function ($q) use ($term, $termHash) {
             $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%")
                 ->orWhere('nik_hash', $termHash))
-                ->orWhere('calon_murid.nama_lengkap', 'like', "%{$term}%")
-                ->orWhere('calon_murid.nisn', 'like', "%{$term}%")
-                ->orWhere('calon_murid.nik_hash', $termHash);
+                ->orWhere('calon_murid.nisn', 'like', "%{$term}%");
         });
     }
 
     public function scopeOrderByNama($query, string $direction = 'asc')
     {
         return $query->leftJoin('persons', 'calon_murid.person_id', '=', 'persons.id')
-            ->orderByRaw("COALESCE(persons.nama_lengkap, calon_murid.nama_lengkap) {$direction}")
+            ->orderBy('persons.nama_lengkap', $direction)
             ->select('calon_murid.*');
     }
 }

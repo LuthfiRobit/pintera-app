@@ -54,99 +54,87 @@ class Guru extends Model
 
     public function getNamaAttribute(): ?string
     {
-        return $this->person?->nama_lengkap ?? $this->attributes['nama'] ?? null;
+        return $this->person?->nama_lengkap;
     }
 
     public function getNikAttribute(): ?string
     {
-        if ($this->person) {
-            return $this->person->nik;
-        }
-
-        if (isset($this->attributes['nik'])) {
-            try {
-                return $this->castAttribute('nik', $this->attributes['nik']);
-            } catch (\Throwable) {
-                return $this->attributes['nik'];
-            }
-        }
-
-        return null;
+        return $this->person?->nik;
     }
 
     public function getJenisKelaminAttribute(): ?string
     {
-        return $this->person?->jenis_kelamin ?? $this->attributes['jenis_kelamin'] ?? null;
+        return $this->person?->jenis_kelamin;
     }
 
     public function getTempatLahirAttribute(): ?string
     {
-        return $this->person?->tempat_lahir ?? $this->attributes['tempat_lahir'] ?? null;
+        return $this->person?->tempat_lahir;
     }
 
     public function getTanggalLahirAttribute(): ?Carbon
     {
-        return $this->person?->tanggal_lahir ?? ($this->attributes['tanggal_lahir'] ?? null ? Carbon::parse($this->attributes['tanggal_lahir']) : null);
+        return $this->person?->tanggal_lahir;
     }
 
     public function getAgamaAttribute(): ?string
     {
-        return $this->person?->agama ?? $this->attributes['agama'] ?? null;
+        return $this->person?->agama;
     }
 
     public function getNoHpAttribute(): ?string
     {
-        return $this->person?->no_hp ?? $this->attributes['no_hp'] ?? null;
+        return $this->person?->no_hp;
     }
 
     public function getEmailAttribute(): ?string
     {
-        return $this->person?->email ?? $this->attributes['email'] ?? null;
+        return $this->person?->email;
     }
 
     public function getKewarganegaraanAttribute(): ?string
     {
-        return $this->person?->kewarganegaraan ?? $this->attributes['kewarganegaraan'] ?? 'WNI';
+        return $this->person?->kewarganegaraan;
     }
 
     public function getAlamatJalanAttribute(): ?string
     {
-        return $this->person?->alamat_jalan ?? $this->attributes['alamat_jalan'] ?? null;
+        return $this->person?->alamat_jalan;
     }
 
     public function getRtAttribute(): ?string
     {
-        return $this->person?->rt ?? $this->attributes['rt'] ?? null;
+        return $this->person?->rt;
     }
 
     public function getRwAttribute(): ?string
     {
-        return $this->person?->rw ?? $this->attributes['rw'] ?? null;
+        return $this->person?->rw;
     }
 
     public function getDesaKelurahanAttribute(): ?string
     {
-        return $this->person?->desa_kelurahan ?? $this->attributes['desa_kelurahan'] ?? null;
+        return $this->person?->desa_kelurahan;
     }
 
     public function getKecamatanAttribute(): ?string
     {
-        return $this->person?->kecamatan ?? $this->attributes['kecamatan'] ?? null;
+        return $this->person?->kecamatan;
     }
 
     public function getKabupatenKotaAttribute(): ?string
     {
-        return $this->person?->kabupaten_kota ?? $this->attributes['kabupaten_kota'] ?? null;
+        return $this->person?->kabupaten_kota;
     }
 
     public function getProvinsiAttribute(): ?string
     {
-        return $this->person?->provinsi ?? $this->attributes['provinsi'] ?? null;
+        return $this->person?->provinsi;
     }
 
     public function getKodePosAttribute(): ?string
     {
-        return $this->person?->kode_pos ?? $this->attributes['kode_pos'] ?? null;
+        return $this->person?->kode_pos;
     }
 
     public function user(): BelongsTo
@@ -202,49 +190,6 @@ class Guru extends Model
         return $this->morphMany(PengajuanIzinCuti::class, 'pegawai');
     }
 
-    protected static function booted(): void
-    {
-        static::creating(function (Guru $guru) {
-            if (empty($guru->person_id)) {
-                $yayasanId = $guru->yayasan_id ?? ($guru->lembaga_id ? Lembaga::find($guru->lembaga_id)?->yayasan_id : null) ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
-                $plainNik = null;
-                if (isset($guru->attributes['nik'])) {
-                    try {
-                        $plainNik = $guru->castAttribute('nik', $guru->attributes['nik']);
-                    } catch (\Throwable) {
-                        $plainNik = $guru->attributes['nik'];
-                    }
-                }
-                $person = Person::create([
-                    'yayasan_id' => $yayasanId,
-                    'user_id' => $guru->user_id,
-                    'nama_lengkap' => $guru->attributes['nama'] ?? 'Guru',
-                    'nik' => $plainNik,
-                    'no_hp' => $guru->attributes['no_hp'] ?? null,
-                    'email' => $guru->attributes['email'] ?? null,
-                ]);
-                $guru->person_id = $person->id;
-            }
-        });
-
-        static::saving(function (Guru $guru) {
-            if (! empty($guru->attributes['nik'])) {
-                try {
-                    $plainNik = $guru->castAttribute('nik', $guru->attributes['nik']);
-                } catch (\Throwable) {
-                    $plainNik = $guru->attributes['nik'];
-                }
-                $guru->nik_hash = hash('sha256', $plainNik);
-            }
-        });
-
-        static::saved(function (Guru $guru) {
-            if ($guru->user_id && $guru->person_id) {
-                Person::withoutGlobalScopes()->where('id', $guru->person_id)->update(['user_id' => $guru->user_id]);
-            }
-        });
-    }
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -261,7 +206,6 @@ class Guru extends Model
 
         return $query->where(function ($q) use ($term) {
             $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%"))
-                ->orWhere('nama', 'like', "%{$term}%")
                 ->orWhere('nip', 'like', "%{$term}%")
                 ->orWhere('nuptk', 'like', "%{$term}%");
         });
@@ -270,7 +214,7 @@ class Guru extends Model
     public function scopeOrderByNama($query, string $direction = 'asc')
     {
         return $query->leftJoin('persons', 'guru.person_id', '=', 'persons.id')
-            ->orderByRaw("COALESCE(persons.nama_lengkap, guru.nama) {$direction}")
+            ->orderBy('persons.nama_lengkap', $direction)
             ->select('guru.*');
     }
 

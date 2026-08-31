@@ -34,22 +34,22 @@ class Karyawan extends Model
 
     public function getNamaAttribute(): ?string
     {
-        return $this->person?->nama_lengkap ?? $this->attributes['nama'] ?? null;
+        return $this->person?->nama_lengkap;
     }
 
     public function getNikAttribute(): ?string
     {
-        return $this->person?->nik ?? $this->attributes['nik'] ?? null;
+        return $this->person?->nik;
     }
 
     public function getNoHpAttribute(): ?string
     {
-        return $this->person?->no_hp ?? $this->attributes['no_hp'] ?? null;
+        return $this->person?->no_hp;
     }
 
     public function getEmailAttribute(): ?string
     {
-        return $this->person?->email ?? $this->attributes['email'] ?? null;
+        return $this->person?->email;
     }
 
     public function user(): BelongsTo
@@ -97,36 +97,6 @@ class Karyawan extends Model
         return $this->morphMany(PengajuanIzinCuti::class, 'pegawai');
     }
 
-    protected static function booted(): void
-    {
-        static::creating(function (Karyawan $karyawan) {
-            if (empty($karyawan->person_id)) {
-                $yayasanId = $karyawan->yayasan_id ?? ($karyawan->lembaga_id ? Lembaga::find($karyawan->lembaga_id)?->yayasan_id : null) ?? Yayasan::first()?->id ?? Yayasan::factory()->create()->id;
-                $person = Person::create([
-                    'yayasan_id' => $yayasanId,
-                    'user_id' => $karyawan->user_id,
-                    'nama_lengkap' => $karyawan->attributes['nama'] ?? 'Karyawan',
-                    'nik' => $karyawan->attributes['nik'] ?? null,
-                    'no_hp' => $karyawan->attributes['no_hp'] ?? null,
-                    'email' => $karyawan->attributes['email'] ?? null,
-                ]);
-                $karyawan->person_id = $person->id;
-            }
-        });
-
-        static::saving(function (Karyawan $karyawan) {
-            if (! empty($karyawan->attributes['nik'])) {
-                $karyawan->nik_hash = hash('sha256', $karyawan->attributes['nik']);
-            }
-        });
-
-        static::saved(function (Karyawan $karyawan) {
-            if ($karyawan->user_id && $karyawan->person_id) {
-                Person::withoutGlobalScopes()->where('id', $karyawan->person_id)->update(['user_id' => $karyawan->user_id]);
-            }
-        });
-    }
-
     public function scopeSearch($query, ?string $term)
     {
         if (! $term) {
@@ -134,15 +104,14 @@ class Karyawan extends Model
         }
 
         return $query->where(function ($q) use ($term) {
-            $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%"))
-                ->orWhere('nama', 'like', "%{$term}%");
+            $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%"));
         });
     }
 
     public function scopeOrderByNama($query, string $direction = 'asc')
     {
         return $query->leftJoin('persons', 'karyawan.person_id', '=', 'persons.id')
-            ->orderByRaw("COALESCE(persons.nama_lengkap, karyawan.nama) {$direction}")
+            ->orderBy('persons.nama_lengkap', $direction)
             ->select('karyawan.*');
     }
 }
