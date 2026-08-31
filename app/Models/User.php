@@ -3,11 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Domains\Identity\Models\Person;
 use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
@@ -70,24 +72,52 @@ class User extends Authenticatable
         return $this->belongsTo(Yayasan::class);
     }
 
-    public function guru(): HasOne
+    public function guru(): HasOneThrough
     {
-        return $this->hasOne(Guru::class);
+        return $this->hasOneThrough(
+            Guru::class,
+            Person::class,
+            'user_id',
+            'person_id',
+            'id',
+            'id'
+        );
     }
 
-    public function orangTua(): HasOne
+    public function orangTua(): HasOneThrough
     {
-        return $this->hasOne(OrangTua::class);
+        return $this->hasOneThrough(
+            OrangTua::class,
+            Person::class,
+            'user_id',
+            'person_id',
+            'id',
+            'id'
+        );
     }
 
-    public function siswa(): HasOne
+    public function siswa(): HasOneThrough
     {
-        return $this->hasOne(Siswa::class);
+        return $this->hasOneThrough(
+            Siswa::class,
+            Person::class,
+            'user_id',
+            'person_id',
+            'id',
+            'id'
+        );
     }
 
-    public function karyawan(): HasOne
+    public function karyawan(): HasOneThrough
     {
-        return $this->hasOne(Karyawan::class);
+        return $this->hasOneThrough(
+            Karyawan::class,
+            Person::class,
+            'user_id',
+            'person_id',
+            'id',
+            'id'
+        );
     }
 
     public function notificationPreference(): HasOne

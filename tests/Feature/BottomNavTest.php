@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Identity\Models\Person;
 use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
@@ -32,12 +33,14 @@ function siapkanUserPersonal(string $roleName): User
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole($roleName);
 
+    $person = Person::factory()->create(['yayasan_id' => $yayasan->id, 'user_id' => $user->id]);
+
     if ($roleName === 'guru') {
-        Guru::factory()->create(['user_id' => $user->id, 'lembaga_id' => $lembaga->id]);
+        Guru::factory()->create(['user_id' => $user->id, 'person_id' => $person->id, 'lembaga_id' => $lembaga->id]);
     } elseif ($roleName === 'orang_tua') {
-        OrangTua::factory()->create(['user_id' => $user->id]);
+        OrangTua::factory()->create(['user_id' => $user->id, 'person_id' => $person->id]);
     } elseif ($roleName === 'siswa') {
-        Siswa::factory()->create(['user_id' => $user->id, 'lembaga_id' => $lembaga->id]);
+        Siswa::factory()->create(['user_id' => $user->id, 'person_id' => $person->id, 'lembaga_id' => $lembaga->id]);
     }
 
     return $user;
