@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Identity\Actions\CreatePersonAction;
+use App\Domains\Identity\Models\Person;
 use App\Enums\SumberDataSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -84,7 +86,33 @@ class PendaftaranSiswaController extends BaseController
                 $nis = $data['nis'][$pendaftaran->id] ?? $this->nisBerikutnya();
                 $user = app(AkunSiswaGenerator::class)->buat($calonMurid->nama_lengkap, $nis, $lembaga);
 
+                $personId = $calonMurid->person_id;
+                if (! $personId) {
+                    $person = app(CreatePersonAction::class)->execute(
+                        identityData: [
+                            'nama_lengkap' => $calonMurid->nama_lengkap,
+                            'nik' => $calonMurid->nik,
+                            'jenis_kelamin' => $calonMurid->jenis_kelamin,
+                            'tempat_lahir' => $calonMurid->tempat_lahir,
+                            'tanggal_lahir' => $calonMurid->tanggal_lahir,
+                            'agama' => $calonMurid->agama,
+                            'no_hp' => $calonMurid->no_telepon,
+                            'email' => $calonMurid->email_kontak,
+                        ],
+                        lembagaId: $pendaftaran->lembaga_id,
+                        actingYayasanId: $lembaga->yayasan_id,
+                    );
+                    $personId = $person->id;
+                    $calonMurid->update(['person_id' => $personId]);
+                }
+
+                $person = Person::withoutGlobalScopes()->find($personId);
+                if ($person) {
+                    $person->update(['user_id' => $user->id]);
+                }
+
                 Siswa::create([
+                    'person_id' => $personId,
                     'lembaga_id' => $pendaftaran->lembaga_id,
                     'kelas_id' => $kelas->id,
                     'calon_murid_id' => $calonMurid->id,
@@ -93,11 +121,7 @@ class PendaftaranSiswaController extends BaseController
                     'sumber_data' => SumberDataSiswa::Spmb->value,
                     'nis' => $nis,
                     'nisn' => $calonMurid->nisn,
-                    'nama_lengkap' => $calonMurid->nama_lengkap,
-                    'jenis_kelamin' => $calonMurid->jenis_kelamin,
-                    'tempat_lahir' => $calonMurid->tempat_lahir,
-                    'tanggal_lahir' => $calonMurid->tanggal_lahir,
-                    'agama' => $calonMurid->agama,
+                    'status' => 'aktif',
                 ]);
             }
         });

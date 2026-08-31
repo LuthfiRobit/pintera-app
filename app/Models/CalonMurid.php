@@ -40,6 +40,15 @@ class CalonMurid extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (CalonMurid $calonMurid) {
+            if (! empty($calonMurid->attributes['nik'])) {
+                $calonMurid->nik_hash = hash('sha256', $calonMurid->attributes['nik']);
+            }
+        });
+    }
+
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
@@ -87,7 +96,9 @@ class CalonMurid extends Model
 
     public static function findByNik(string $nik): ?self
     {
-        return static::where('nik_hash', hash('sha256', $nik))->first();
+        return static::whereHas('person', fn ($q) => $q->withoutGlobalScopes()->where('nik_hash', hash('sha256', $nik)))
+            ->orWhere('nik_hash', hash('sha256', $nik))
+            ->first();
     }
 
     public function yayasan(): BelongsTo

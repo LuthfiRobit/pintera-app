@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Spmb;
 
+use App\Domains\Identity\Actions\CreatePersonAction;
+use App\Domains\Identity\Actions\UpdatePersonAction;
+use App\Domains\Identity\Exceptions\PersonAlreadyExistsException;
 use App\Http\Controllers\Spmb\Concerns\ResolvesWizardContext;
 use App\Mail\PendaftaranBerhasilMail;
 use App\Models\AkunPendaftar;
@@ -77,10 +80,51 @@ class ReviewSubmitController extends BaseController
                 $gelombang = $this->resolveGelombangAktifUntukJalur($lembaga, $jalur);
                 $tahunAjaran = $gelombang->tahunAjaran;
 
-                $calonMurid = CalonMurid::updateOrCreate(
-                    ['nik_hash' => hash('sha256', $session['nik'])],
-                    array_merge(['yayasan_id' => $lembaga->yayasan_id, 'nik' => $session['nik']], $session['data_pribadi'])
-                );
+                try {
+                    $person = app(CreatePersonAction::class)->execute(
+                        identityData: [
+                            'nama_lengkap' => $session['data_pribadi']['nama_lengkap'],
+                            'nik' => $session['nik'],
+                            'jenis_kelamin' => $session['data_pribadi']['jenis_kelamin'] ?? null,
+                            'tempat_lahir' => $session['data_pribadi']['tempat_lahir'] ?? null,
+                            'tanggal_lahir' => $session['data_pribadi']['tanggal_lahir'] ?? null,
+                            'agama' => $session['data_pribadi']['agama'] ?? null,
+                            'no_hp' => $session['data_pribadi']['no_telepon'] ?? null,
+                        ],
+                        lembagaId: $lembaga->id,
+                        actingYayasanId: $lembaga->yayasan_id,
+                    );
+                } catch (PersonAlreadyExistsException $e) {
+                    $person = $e->existing;
+                    app(UpdatePersonAction::class)->execute($person, [
+                        'nama_lengkap' => $session['data_pribadi']['nama_lengkap'],
+                        'jenis_kelamin' => $session['data_pribadi']['jenis_kelamin'] ?? null,
+                        'tempat_lahir' => $session['data_pribadi']['tempat_lahir'] ?? null,
+                        'tanggal_lahir' => $session['data_pribadi']['tanggal_lahir'] ?? null,
+                        'agama' => $session['data_pribadi']['agama'] ?? null,
+                        'no_hp' => $session['data_pribadi']['no_telepon'] ?? null,
+                    ]);
+                }
+
+                $calonMurid = CalonMurid::where('person_id', $person->id)
+                    ->orWhere('nik_hash', hash('sha256', $session['nik']))
+                    ->first();
+                if (! $calonMurid) {
+                    $calonMurid = CalonMurid::create([
+                        'person_id' => $person->id,
+                        'yayasan_id' => $lembaga->yayasan_id,
+                        'nisn' => $session['data_pribadi']['nisn'] ?? null,
+                        'no_kk' => $session['data_pribadi']['no_kk'] ?? null,
+                        'golongan_darah' => $session['data_pribadi']['golongan_darah'] ?? null,
+                    ]);
+                } else {
+                    $calonMurid->update([
+                        'person_id' => $person->id,
+                        'nisn' => $session['data_pribadi']['nisn'] ?? $calonMurid->nisn,
+                        'no_kk' => $session['data_pribadi']['no_kk'] ?? $calonMurid->no_kk,
+                        'golongan_darah' => $session['data_pribadi']['golongan_darah'] ?? $calonMurid->golongan_darah,
+                    ]);
+                }
 
                 AlamatCalonMurid::updateOrCreate(['calon_murid_id' => $calonMurid->id], $session['alamat']);
 
