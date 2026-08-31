@@ -22,21 +22,21 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    (new PermissionSeeder())->run();
-    (new RoleSeeder())->run();
+    (new PermissionSeeder)->run();
+    (new RoleSeeder)->run();
     Yayasan::factory()->create();
-    (new LembagaSeeder())->run();
-    (new EssentialUserSeeder())->run();
-    (new UserSeeder())->run();
-    (new TahunAjaranSeeder())->run();
-    (new SemesterSeeder())->run();
-    (new GuruSeeder())->run();
-    (new PolaJamSeeder())->run();
-    (new KelasSeeder())->run();
+    (new LembagaSeeder)->run();
+    (new EssentialUserSeeder)->run();
+    (new UserSeeder)->run();
+    (new TahunAjaranSeeder)->run();
+    (new SemesterSeeder)->run();
+    (new GuruSeeder)->run();
+    (new PolaJamSeeder)->run();
+    (new KelasSeeder)->run();
 });
 
 it('seeds students into active classes for the SD institution', function () {
-    (new SiswaSeeder())->run();
+    (new SiswaSeeder)->run();
 
     $sdit = Lembaga::where('npsn', '20223333')->first();
     $aktif = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
@@ -45,7 +45,7 @@ it('seeds students into active classes for the SD institution', function () {
     $siswaCount = Siswa::whereIn('kelas_id', $kelasIds)->count();
     expect($siswaCount)->toBe(336);
 
-    $siswaWithUser = Siswa::whereIn('kelas_id', $kelasIds)->whereNotNull('user_id')->first();
+    $siswaWithUser = Siswa::whereIn('kelas_id', $kelasIds)->whereHas('person', fn ($q) => $q->whereNotNull('user_id'))->first();
     expect($siswaWithUser)->not->toBeNull();
     expect($siswaWithUser->user->hasRole('siswa'))->toBeTrue();
 
@@ -55,9 +55,9 @@ it('seeds students into active classes for the SD institution', function () {
 });
 
 it('is idempotent when run twice', function () {
-    (new SiswaSeeder())->run();
+    (new SiswaSeeder)->run();
     $sebelum = Siswa::count();
-    (new SiswaSeeder())->run();
+    (new SiswaSeeder)->run();
 
     expect(Siswa::count())->toBe($sebelum);
 });

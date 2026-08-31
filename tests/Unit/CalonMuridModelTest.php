@@ -30,8 +30,10 @@ it('encrypts nik and no_kk and keeps a deterministic nik_hash for uniqueness', f
     expect($calonMurid->nik)->toBe('3201234567890123');
     expect($calonMurid->person->nik_hash)->toBe(hash('sha256', '3201234567890123'));
 
+    $rawPerson = DB::table('persons')->where('id', $calonMurid->person_id)->first();
+    expect($rawPerson->nik)->not->toBe('3201234567890123');
+
     $raw = DB::table('calon_murid')->where('id', $calonMurid->id)->first();
-    expect($raw->nik)->not->toBe('3201234567890123');
     expect($raw->no_kk)->not->toBe('3201234567890000');
 });
 

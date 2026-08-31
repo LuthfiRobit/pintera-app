@@ -1,7 +1,7 @@
 <?php
+
 // tests/Unit/GuruJabatanTambahanSeederTest.php
 
-use App\Models\Guru;
 use App\Models\GuruJabatanTambahan;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -18,30 +18,30 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    (new PermissionSeeder())->run();
-    (new RoleSeeder())->run();
-    (new JabatanTambahanMasterSeeder())->run();
+    (new PermissionSeeder)->run();
+    (new RoleSeeder)->run();
+    (new JabatanTambahanMasterSeeder)->run();
     Yayasan::factory()->create();
-    (new LembagaSeeder())->run();
-    (new UserSeeder())->run();
-    (new GuruSeeder())->run();
+    (new LembagaSeeder)->run();
+    (new UserSeeder)->run();
+    (new GuruSeeder)->run();
 });
 
 it('assigns Wali Kelas to the guru who has one, and Wakil Kepala Sekolah Kurikulum to another', function () {
-    (new GuruJabatanTambahanSeeder())->run();
+    (new GuruJabatanTambahanSeeder)->run();
 
     $sari = User::where('email', 'sari.wulandari@demo.test')->first();
-    $guruSari = Guru::where('user_id', $sari->id)->first();
+    $guruSari = $sari->guru;
     expect(GuruJabatanTambahan::where('guru_id', $guruSari->id)->exists())->toBeTrue();
 
     $hendra = User::where('email', 'hendra.gunawan@demo.test')->first();
-    $guruHendra = Guru::where('user_id', $hendra->id)->first();
+    $guruHendra = $hendra->guru;
     expect(GuruJabatanTambahan::where('guru_id', $guruHendra->id)->exists())->toBeTrue();
 });
 
 it('is idempotent when run twice', function () {
-    (new GuruJabatanTambahanSeeder())->run();
-    (new GuruJabatanTambahanSeeder())->run();
+    (new GuruJabatanTambahanSeeder)->run();
+    (new GuruJabatanTambahanSeeder)->run();
 
     expect(GuruJabatanTambahan::count())->toBe(4);
 });

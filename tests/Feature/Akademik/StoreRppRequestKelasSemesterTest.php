@@ -72,7 +72,7 @@ it('allows store when kelas and semester share the same tahun ajaran', function 
 
 it('rejects update when the new kelas belongs to a different tahun ajaran than the RPP semester', function () {
     [$userGuru, $semesterTahunA, $kelasTahunA, $kelasTahunB] = siapkanRppRequestFixture();
-    $guru = Guru::where('user_id', $userGuru->id)->first();
+    $guru = $userGuru->guru;
     $rpp = Rpp::create([
         'yayasan_id' => $kelasTahunA->lembaga->yayasan_id, 'lembaga_id' => $kelasTahunA->lembaga_id, 'guru_id' => $guru->id,
         'tahun_ajaran_id' => $semesterTahunA->tahun_ajaran_id, 'semester_id' => $semesterTahunA->id, 'kelas_id' => $kelasTahunA->id,
@@ -93,7 +93,7 @@ it('rejects update when the new kelas belongs to a different tahun ajaran than t
 
 it('allows update when the new kelas shares the same tahun ajaran as the RPP semester', function () {
     [$userGuru, $semesterTahunA, $kelasTahunA, $kelasTahunB] = siapkanRppRequestFixture();
-    $guru = Guru::where('user_id', $userGuru->id)->first();
+    $guru = $userGuru->guru;
     $kelasTahunALain = Kelas::factory()->create(['lembaga_id' => $kelasTahunA->lembaga_id, 'tahun_ajaran_id' => $kelasTahunA->tahun_ajaran_id]);
     $rpp = Rpp::create([
         'yayasan_id' => $kelasTahunA->lembaga->yayasan_id, 'lembaga_id' => $kelasTahunA->lembaga_id, 'guru_id' => $guru->id,

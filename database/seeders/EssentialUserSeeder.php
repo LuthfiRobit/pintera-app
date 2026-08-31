@@ -98,9 +98,8 @@ class EssentialUserSeeder extends Seeder
             // juga untuk PTK non-guru via jenis_ptk). Tanpa ini, akun demo di atas kena
             // 404 "Data kepegawaian Anda tidak ditemukan" begitu membuka fitur tsb.
             Guru::firstOrCreate(
-                ['user_id' => $user->id],
+                ['person_id' => $person->id],
                 [
-                    'person_id' => $person->id,
                     'lembaga_id' => $lembaga->id,
                     'jenis_ptk' => $data['jenis_ptk'],
                     'status_kepegawaian' => 'PTY',

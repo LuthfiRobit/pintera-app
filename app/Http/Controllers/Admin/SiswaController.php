@@ -45,7 +45,9 @@ class SiswaController extends BaseController
             ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
             : collect();
 
-        $siswaTanpaAkunCount = Siswa::where('status', StatusSiswa::Aktif->value)->whereNull('user_id')->count();
+        $siswaTanpaAkunCount = Siswa::where('status', StatusSiswa::Aktif->value)
+            ->whereHas('person', fn ($q) => $q->whereNull('user_id'))
+            ->count();
         $totalSiswa = Siswa::count();
         $totalAktif = Siswa::where('status', StatusSiswa::Aktif->value)->count();
 
@@ -115,7 +117,6 @@ class SiswaController extends BaseController
 
             Siswa::create([
                 'person_id' => $person->id,
-                'user_id' => $user->id,
                 'lembaga_id' => $lembagaId,
                 'kelas_id' => $data['kelas_id'] ?? null,
                 'nis' => $data['nis'],
@@ -234,7 +235,7 @@ class SiswaController extends BaseController
 
         $lembaga = Lembaga::withoutGlobalScopes()->findOrFail($lembagaId);
         $siswaWithoutAccount = Siswa::where('status', StatusSiswa::Aktif->value)
-            ->whereNull('user_id')
+            ->whereHas('person', fn ($q) => $q->whereNull('user_id'))
             ->get();
 
         if ($siswaWithoutAccount->isEmpty()) {
@@ -248,7 +249,6 @@ class SiswaController extends BaseController
                 if ($siswa->person) {
                     $siswa->person->update(['user_id' => $user->id]);
                 }
-                $siswa->update(['user_id' => $user->id]);
             }
         });
 

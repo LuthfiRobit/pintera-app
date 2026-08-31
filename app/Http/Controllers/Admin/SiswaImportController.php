@@ -89,7 +89,6 @@ class SiswaImportController extends BaseController
                 Siswa::create([
                     'person_id' => $person->id,
                     'lembaga_id' => $lembagaId,
-                    'user_id' => $user->id,
                     'kelas_id' => $row['kelas_id'],
                     'sumber_data' => SumberDataSiswa::Import->value,
                     'nis' => $row['nis'],

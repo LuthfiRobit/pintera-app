@@ -1,4 +1,5 @@
 <?php
+
 // app/Domains/Keuangan/Services/JenisTagihanSasaranMatcher.php
 
 namespace App\Domains\Keuangan\Services;
@@ -102,7 +103,9 @@ class JenisTagihanSasaranMatcher
                 }
                 break;
             case 'jenis_kelamin':
-                $isIn ? $query->whereIn('jenis_kelamin', $values) : $query->whereNotIn('jenis_kelamin', $values);
+                $isIn
+                    ? $query->whereHas('person', fn (Builder $p) => $p->whereIn('jenis_kelamin', $values))
+                    : $query->whereHas('person', fn (Builder $p) => $p->whereNotIn('jenis_kelamin', $values));
                 break;
             case 'status_siswa':
                 $isIn ? $query->whereIn('status', $values) : $query->whereNotIn('status', $values);

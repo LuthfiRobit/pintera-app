@@ -30,7 +30,7 @@ class CalonMuridSeeder extends Seeder
         };
 
         $namaLengkap = $namaDasar.' ('.$lembaga->nama.')';
-        if (CalonMurid::where('nama_lengkap', $namaLengkap)->exists()) {
+        if (CalonMurid::whereHas('person', fn ($q) => $q->where('nama_lengkap', $namaLengkap))->exists()) {
             return;
         }
 
@@ -49,12 +49,6 @@ class CalonMuridSeeder extends Seeder
         CalonMurid::create([
             'person_id' => $person->id,
             'yayasan_id' => $lembaga->yayasan_id,
-            'nama_lengkap' => $namaLengkap,
-            'nik' => $nik,
-            'jenis_kelamin' => $jenisKelamin,
-            'tempat_lahir' => 'Bandung',
-            'tanggal_lahir' => now()->subYears($umur)->toDateString(),
-            'agama' => 'Islam',
         ]);
     }
 }

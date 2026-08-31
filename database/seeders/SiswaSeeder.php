@@ -114,8 +114,7 @@ class SiswaSeeder extends Seeder
         );
         $user->assignRole('siswa');
 
-        if ($firstSiswa->user_id !== $user->id) {
-            $firstSiswa->update(['user_id' => $user->id]);
+        if ($firstSiswa->person?->user_id !== $user->id) {
             $firstSiswa->person?->update(['user_id' => $user->id]);
         }
     }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Notifications\Notifiable;
 
 class OrangTua extends Model
@@ -17,12 +18,17 @@ class OrangTua extends Model
     protected $table = 'orang_tua';
 
     protected $fillable = [
-        'person_id', 'user_id', 'nama_lengkap', 'nik', 'no_hp', 'email', 'alamat', 'pekerjaan',
+        'person_id', 'pekerjaan',
     ];
 
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public function getUserIdAttribute(): ?int
+    {
+        return $this->person?->user_id;
     }
 
     public function getNamaLengkapAttribute(): ?string
@@ -50,9 +56,16 @@ class OrangTua extends Model
         return $this->person?->alamat_jalan;
     }
 
-    public function user(): BelongsTo
+    public function user(): HasOneThrough
     {
-        return $this->belongsTo(User::class);
+        return $this->hasOneThrough(
+            User::class,
+            Person::class,
+            'id',
+            'id',
+            'person_id',
+            'user_id'
+        );
     }
 
     public function siswa(): BelongsToMany

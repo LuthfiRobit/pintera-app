@@ -106,9 +106,7 @@ class ReviewSubmitController extends BaseController
                     ]);
                 }
 
-                $calonMurid = CalonMurid::where('person_id', $person->id)
-                    ->orWhere('nik_hash', hash('sha256', $session['nik']))
-                    ->first();
+                $calonMurid = CalonMurid::where('person_id', $person->id)->first();
                 if (! $calonMurid) {
                     $calonMurid = CalonMurid::create([
                         'person_id' => $person->id,

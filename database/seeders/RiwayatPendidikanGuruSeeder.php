@@ -1,9 +1,9 @@
 <?php
+
 // database/seeders/RiwayatPendidikanGuruSeeder.php
 
 namespace Database\Seeders;
 
-use App\Models\Guru;
 use App\Models\RiwayatPendidikanGuru;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -43,7 +43,7 @@ class RiwayatPendidikanGuruSeeder extends Seeder
                 continue;
             }
 
-            $guru = Guru::where('user_id', $user->id)->first();
+            $guru = $user->guru;
 
             if (! $guru) {
                 continue;

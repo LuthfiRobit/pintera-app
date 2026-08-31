@@ -94,11 +94,12 @@ it('lets the siswa a kasus is about open kasus.show, but not a different siswa',
     $siswaRole->givePermissionTo(['kasus.view']);
     $siswaUser->assignRole('siswa');
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $siswaUser->id]);
+    $siswa->person->update(['user_id' => $siswaUser->id]);
 
     $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswaLainUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $siswaLainUser->assignRole('siswa');
-    $siswaLain->update(['user_id' => $siswaLainUser->id]);
+    $siswaLain->person->update(['user_id' => $siswaLainUser->id]);
 
     $kasus = Kasus::create([
         'siswa_id' => $siswa->id, 'lembaga_id' => $lembaga->id,

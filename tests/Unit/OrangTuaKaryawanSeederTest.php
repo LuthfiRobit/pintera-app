@@ -14,9 +14,9 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    (new PermissionSeeder())->run();
-    (new RoleSeeder())->run();
-    (new JenisKaryawanMasterSeeder())->run();
+    (new PermissionSeeder)->run();
+    (new RoleSeeder)->run();
+    (new JenisKaryawanMasterSeeder)->run();
 });
 
 it('creates a Satpam and a Petugas Kebersihan karyawan via the real AkunKaryawanGenerator flow, lembaga-scoped', function () {
@@ -27,21 +27,21 @@ it('creates a Satpam and a Petugas Kebersihan karyawan via the real AkunKaryawan
     $yayasan = Yayasan::factory()->create();
     Lembaga::factory()->create(['npsn' => '20223333', 'yayasan_id' => $yayasan->id]);
 
-    (new OrangTuaKaryawanSeeder())->run();
+    (new OrangTuaKaryawanSeeder)->run();
 
     $satpam = User::where('username', '3273019900020001')->first();
     expect($satpam)->not->toBeNull();
     expect($satpam->hasRole('pegawai_lembaga'))->toBeTrue();
     expect($satpam->lembaga_id)->not->toBeNull();
 
-    $karyawanSatpam = Karyawan::where('user_id', $satpam->id)->first();
+    $karyawanSatpam = $satpam->karyawan;
     expect($karyawanSatpam)->not->toBeNull();
     expect($karyawanSatpam->nama)->toBe('Slamet Riyadi');
     expect($karyawanSatpam->jenisKaryawan->nama)->toBe('Satpam');
 
     $cleaning = User::where('username', '3273019900020002')->first();
     expect($cleaning)->not->toBeNull();
-    $karyawanCleaning = Karyawan::where('user_id', $cleaning->id)->first();
+    $karyawanCleaning = $cleaning->karyawan;
     expect($karyawanCleaning->jenisKaryawan->nama)->toBe('Petugas Kebersihan');
 });
 
@@ -49,8 +49,8 @@ it('is idempotent when run twice', function () {
     $yayasan = Yayasan::factory()->create();
     Lembaga::factory()->create(['npsn' => '20223333', 'yayasan_id' => $yayasan->id]);
 
-    (new OrangTuaKaryawanSeeder())->run();
-    (new OrangTuaKaryawanSeeder())->run();
+    (new OrangTuaKaryawanSeeder)->run();
+    (new OrangTuaKaryawanSeeder)->run();
 
     expect(User::where('username', '3273019900020001')->count())->toBe(1);
     expect(User::where('username', '3273019900020002')->count())->toBe(1);

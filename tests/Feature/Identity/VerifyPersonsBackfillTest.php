@@ -3,7 +3,6 @@
 use App\Domains\Identity\Models\Person;
 use App\Models\Guru;
 use App\Models\Lembaga;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 it('fails when a guru row still has no person_id', function () {
@@ -12,10 +11,6 @@ it('fails when a guru row still has no person_id', function () {
         DB::statement('ALTER TABLE guru MODIFY person_id BIGINT UNSIGNED NULL');
         DB::table('guru')->insert([
             'lembaga_id' => $lembaga->id,
-            'user_id' => User::factory()->create()->id,
-            'nik' => fake()->unique()->numerify('################'),
-            'nama' => 'Guru Tanpa Person',
-            'jenis_kelamin' => 'L',
             'jenis_ptk' => 'guru_mapel',
             'status_kepegawaian' => 'GTY',
             'status_aktif' => 'aktif',

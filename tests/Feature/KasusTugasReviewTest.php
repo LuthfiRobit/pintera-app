@@ -76,7 +76,7 @@ it('does not 500 when notifying SubmissionRevisiNotification for real (no Notifi
     $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $siswaRole->givePermissionTo(['kasus.view']);
     $siswaUser->assignRole('siswa');
-    $siswa->update(['user_id' => $siswaUser->id]);
+    $siswa->person->update(['user_id' => $siswaUser->id]);
 
     $tugas = KasusTugas::factory()->create(['kasus_id' => $kasus->id, 'status' => 'dikerjakan']);
     $submission = KasusTugasSubmission::factory()->create(['tugas_id' => $tugas->id, 'siswa_id' => $siswa->id, 'orang_tua_id' => null]);
@@ -131,7 +131,7 @@ it('notifies the siswa on revisi_diminta even when a yayasan-scoped konselor has
     $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $siswaRole->givePermissionTo(['kasus.view']);
     $siswaUser->assignRole('siswa');
-    $siswa->update(['user_id' => $siswaUser->id]);
+    $siswa->person->update(['user_id' => $siswaUser->id]);
 
     $konselorUser = User::factory()->create(['lembaga_id' => null]);
     $konselorRole = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);

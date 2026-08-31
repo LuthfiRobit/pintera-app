@@ -151,7 +151,7 @@ class JadwalPelajaranController extends BaseController
         $jamPelajaranPerHari = $this->jamPelajaranPerHari($kelas);
 
         $mataPelajaranList = MataPelajaran::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
-        $guruList = Guru::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
+        $guruList = Guru::where('lembaga_id', $targetLembagaId)->with('person')->orderByNama()->get();
         $ruanganList = Ruangan::withoutGlobalScope(TenantScope::class)
             ->where('is_aktif', true)
             ->where(function ($q) use ($targetLembagaId) {
@@ -300,7 +300,7 @@ class JadwalPelajaranController extends BaseController
         $slotMasihValid = $jamPelajaranPerHari->flatMap(fn ($grup) => $grup['items']->pluck('id'))->contains($jadwalPelajaran->jam_pelajaran_id);
 
         $mataPelajaranList = MataPelajaran::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
-        $guruList = Guru::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get();
+        $guruList = Guru::where('lembaga_id', $targetLembagaId)->with('person')->orderByNama()->get();
         $ruanganList = Ruangan::withoutGlobalScope(TenantScope::class)
             ->where('is_aktif', true)
             ->where(function ($q) use ($targetLembagaId) {

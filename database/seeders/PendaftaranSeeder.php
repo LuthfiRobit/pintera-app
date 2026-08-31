@@ -1,4 +1,5 @@
 <?php
+
 // database/seeders/PendaftaranSeeder.php
 
 namespace Database\Seeders;
@@ -81,7 +82,7 @@ class PendaftaranSeeder extends Seeder
         string $email,
         array $extra
     ): void {
-        $calonMurid = CalonMurid::where('nama_lengkap', $namaCalon.' ('.$lembaga->nama.')')->first();
+        $calonMurid = CalonMurid::whereHas('person', fn ($q) => $q->where('nama_lengkap', $namaCalon.' ('.$lembaga->nama.')'))->first();
 
         if (! $calonMurid) {
             return;

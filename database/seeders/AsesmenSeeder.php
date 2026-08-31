@@ -1,4 +1,5 @@
 <?php
+
 // database/seeders/AsesmenSeeder.php
 
 namespace Database\Seeders;
@@ -6,12 +7,13 @@ namespace Database\Seeders;
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class AsesmenSeeder extends Seeder
@@ -48,8 +50,8 @@ class AsesmenSeeder extends Seeder
 
         $mtk = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
         $ipas = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
-        $guruHendra = Guru::where('email', 'hendra.gunawan@demo.test')->first();
-        $guruMaya = Guru::where('email', 'maya.anggraini@demo.test')->first();
+        $guruHendra = User::where('email', 'hendra.gunawan@demo.test')->first()?->guru;
+        $guruMaya = User::where('email', 'maya.anggraini@demo.test')->first()?->guru;
 
         if ($mtk && $guruHendra) {
             $tpMtk1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->where('semester_id', $semester->id)->first();

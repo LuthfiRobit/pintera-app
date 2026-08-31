@@ -39,8 +39,6 @@ class EmployeeQrCodeController extends BaseController
 
     private function resolvePegawai(Request $request): Guru|Karyawan|null
     {
-        $userId = $request->user()->id;
-
-        return Guru::where('user_id', $userId)->first() ?? Karyawan::where('user_id', $userId)->first();
+        return $request->user()->guru ?? $request->user()->karyawan;
     }
 }

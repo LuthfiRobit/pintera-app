@@ -7,7 +7,6 @@ namespace App\Domains\Akademik\Actions\Rpp;
 use App\Domains\Akademik\Enums\StatusRpp;
 use App\Domains\Akademik\Models\Rpp;
 use App\Domains\Shared\Context\TenantContext;
-use App\Models\Guru;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -40,7 +39,7 @@ final class ListRppAction
         }
 
         if ($tab === 'saya') {
-            $guru = Guru::where('user_id', $user->id)->first();
+            $guru = $user->guru;
             if ($guru) {
                 $baseQuery->where('guru_id', $guru->id);
             }

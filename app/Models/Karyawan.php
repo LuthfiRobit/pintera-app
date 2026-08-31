@@ -13,6 +13,7 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
@@ -23,13 +24,17 @@ class Karyawan extends Model
     protected $table = 'karyawan';
 
     protected $fillable = [
-        'person_id', 'user_id', 'yayasan_id', 'lembaga_id', 'jenis_karyawan_id',
-        'nama', 'nik', 'nik_hash', 'no_hp', 'email', 'status_aktif', 'kapasitas_kasus_aktif',
+        'person_id', 'yayasan_id', 'lembaga_id', 'jenis_karyawan_id', 'status_aktif', 'kapasitas_kasus_aktif',
     ];
 
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public function getUserIdAttribute(): ?int
+    {
+        return $this->person?->user_id;
     }
 
     public function getNamaAttribute(): ?string
@@ -52,9 +57,16 @@ class Karyawan extends Model
         return $this->person?->email;
     }
 
-    public function user(): BelongsTo
+    public function user(): HasOneThrough
     {
-        return $this->belongsTo(User::class);
+        return $this->hasOneThrough(
+            User::class,
+            Person::class,
+            'id',
+            'id',
+            'person_id',
+            'user_id'
+        );
     }
 
     public function yayasan(): BelongsTo

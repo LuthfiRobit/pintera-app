@@ -173,27 +173,9 @@ class GuruSeeder extends Seeder
             }
 
             Guru::firstOrCreate(
-                ['user_id' => $user->id],
+                ['person_id' => $person->id],
                 [
-                    'person_id' => $person->id,
                     'lembaga_id' => $lembaga->id,
-                    'nama' => $data['name'],
-                    'email' => $data['email'],
-                    'nik' => $data['nik'],
-                    'no_hp' => $data['no_hp'],
-                    'jenis_kelamin' => $data['jenis_kelamin'],
-                    'tempat_lahir' => $data['tempat_lahir'],
-                    'tanggal_lahir' => $data['tanggal_lahir'],
-                    'agama' => 'Islam',
-                    'kewarganegaraan' => 'WNI',
-                    'alamat_jalan' => 'Jl. Panglima Sudirman No. 88C',
-                    'rt' => '001',
-                    'rw' => '003',
-                    'desa_kelurahan' => 'Sidomulyo',
-                    'kecamatan' => 'Kraksaan',
-                    'kabupaten_kota' => 'Kabupaten Probolinggo',
-                    'provinsi' => 'Jawa Timur',
-                    'kode_pos' => '67282',
                     'nuptk' => $data['nuptk'],
                     'nip' => $data['nip'],
                     'jenis_ptk' => $data['jenis_ptk'],

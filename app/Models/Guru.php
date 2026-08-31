@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Notifications\Notifiable;
@@ -29,19 +30,13 @@ class Guru extends Model
     protected $table = 'guru';
 
     protected $fillable = [
-        'person_id', 'user_id', 'lembaga_id', 'nik', 'nik_hash', 'nuptk', 'nip', 'nama', 'jenis_kelamin',
-        'tempat_lahir', 'tanggal_lahir', 'agama', 'kewarganegaraan',
-        'alamat_jalan', 'rt', 'rw', 'desa_kelurahan', 'kecamatan', 'kabupaten_kota',
-        'provinsi', 'kode_pos', 'no_hp', 'email',
-        'jenis_ptk', 'status_kepegawaian', 'golongan_pangkat', 'tmt_tugas', 'tmt_pns', 'status_aktif',
-        'kapasitas_kasus_aktif',
+        'person_id', 'lembaga_id', 'nuptk', 'nip', 'jenis_ptk', 'status_kepegawaian',
+        'golongan_pangkat', 'tmt_tugas', 'tmt_pns', 'status_aktif', 'kapasitas_kasus_aktif',
     ];
 
     protected function casts(): array
     {
         return [
-            'nik' => 'encrypted',
-            'tanggal_lahir' => 'date',
             'tmt_tugas' => 'date',
             'tmt_pns' => 'date',
         ];
@@ -50,6 +45,11 @@ class Guru extends Model
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public function getUserIdAttribute(): ?int
+    {
+        return $this->person?->user_id;
     }
 
     public function getNamaAttribute(): ?string
@@ -137,9 +137,16 @@ class Guru extends Model
         return $this->person?->kode_pos;
     }
 
-    public function user(): BelongsTo
+    public function user(): HasOneThrough
     {
-        return $this->belongsTo(User::class);
+        return $this->hasOneThrough(
+            User::class,
+            Person::class,
+            'id',
+            'id',
+            'person_id',
+            'user_id'
+        );
     }
 
     public function lembaga(): BelongsTo

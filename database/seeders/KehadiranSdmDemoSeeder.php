@@ -54,9 +54,9 @@ class KehadiranSdmDemoSeeder extends Seeder
             return;
         }
 
-        $guruAbsensi = Guru::where('email', 'hendra.gunawan@demo.test')->first();
-        $guruPolicy = Guru::where('email', 'maya.anggraini@demo.test')->first();
-        $guruShift = Guru::where('email', 'taufik.hidayat@demo.test')->first();
+        $guruAbsensi = User::where('email', 'hendra.gunawan@demo.test')->first()?->guru;
+        $guruPolicy = User::where('email', 'maya.anggraini@demo.test')->first()?->guru;
+        $guruShift = User::where('email', 'taufik.hidayat@demo.test')->first()?->guru;
 
         if (! $guruAbsensi || ! $guruPolicy || ! $guruShift) {
             $this->command?->warn(static::class.': data Guru demo SDIT belum lengkap (jalankan GuruSeeder dulu), dilewati.');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Lembaga;
+use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\Yayasan;
 use App\Services\AkunSiswaGenerator;
@@ -83,7 +84,7 @@ class LembagaController extends BaseController
         $this->authorizeOwnLembaga($request, $lembaga);
 
         $lembaga->load(['dataPeriodik.semester.tahunAjaran', 'ekstrakurikuler', 'layananKhusus', 'programInklusi', 'yayasan']);
-        $semesters = \App\Models\Semester::with('tahunAjaran')->where('lembaga_id', $lembaga->id)->orderByDesc('tahun_ajaran_id')->orderBy('urutan')->get();
+        $semesters = Semester::with('tahunAjaran')->where('lembaga_id', $lembaga->id)->orderByDesc('tahun_ajaran_id')->orderBy('urutan')->get();
 
         return view('admin.lembaga.edit', [
             'lembaga' => $lembaga,
@@ -116,10 +117,10 @@ class LembagaController extends BaseController
                 // rows and the rename leaves every affected username stale/broken.
                 Siswa::withoutGlobalScopes()
                     ->where('lembaga_id', $lembaga->id)
-                    ->whereNotNull('user_id')
-                    ->with(['user' => fn ($q) => $q->withoutGlobalScopes()])
+                    ->whereHas('person', fn ($q) => $q->withoutGlobalScopes()->whereNotNull('user_id'))
+                    ->with(['person' => fn ($q) => $q->withoutGlobalScopes()])
                     ->get()
-                    ->each(fn (Siswa $siswa) => $siswa->user->update([
+                    ->each(fn (Siswa $siswa) => $siswa->person?->user?->update([
                         'username' => $generator->usernameUntuk($lembaga, $siswa->nis),
                     ]));
             }

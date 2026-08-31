@@ -97,7 +97,7 @@ it('rejects linking with a nik that is already registered instead of silently cr
         'no_hp' => '081200002222',
     ])->assertSessionHasErrors('nik');
 
-    expect(OrangTua::where('nik', '3201234567897777')->count())->toBe(1);
+    expect(OrangTua::whereHas('person', fn ($q) => $q->where('nik_hash', hash('sha256', '3201234567897777')))->count())->toBe(1);
 });
 
 it('sets is_kontak_utama exclusively when linking a second orang tua as the new main contact', function () {

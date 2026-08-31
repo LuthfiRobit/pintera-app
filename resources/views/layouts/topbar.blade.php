@@ -12,7 +12,7 @@
 
     $orangTua = Auth::user()->orangTua;
     $childOptions = $orangTua !== null
-        ? $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->select('siswa.id', 'siswa.nama_lengkap')->orderBy('siswa.nama_lengkap')->get()
+        ? $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->with('person')->get()->sortBy('nama_lengkap')
         : collect();
     $activeSiswaId = session('active_siswa_id');
     $activeSiswaId = $activeSiswaId ?? (isset($resolvedActiveSiswaId) ? $resolvedActiveSiswaId : null);

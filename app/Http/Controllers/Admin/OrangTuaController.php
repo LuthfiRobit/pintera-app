@@ -64,7 +64,7 @@ class OrangTuaController extends BaseController
 
         $existingUser = User::withoutGlobalScopes()->where('username', $data['nik'])->first();
         if ($existingUser) {
-            $existingOrangTua = OrangTua::withoutGlobalScopes()->where('user_id', $existingUser->id)->first();
+            $existingOrangTua = $existingUser->orangTua;
 
             if ($existingOrangTua === null) {
                 return back()

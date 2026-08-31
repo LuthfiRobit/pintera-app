@@ -138,7 +138,6 @@ class GuruController extends BaseController
 
             Guru::create([
                 'person_id' => $person->id,
-                'user_id' => $user->id,
                 'lembaga_id' => $lembagaId,
                 'nuptk' => $data['nuptk'] ?? null,
                 'nip' => $data['nip'],

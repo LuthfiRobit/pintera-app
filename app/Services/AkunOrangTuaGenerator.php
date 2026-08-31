@@ -53,7 +53,6 @@ class AkunOrangTuaGenerator
 
             return OrangTua::create([
                 'person_id' => $person->id,
-                'user_id' => $user->id,
                 'pekerjaan' => $pekerjaan,
             ]);
         });

@@ -85,7 +85,7 @@ it('rejects creating a siswa with a kelas belonging to a different lembaga', fun
         'jenis_kelamin' => 'L',
     ])->assertNotFound();
 
-    expect(Siswa::where('nama_lengkap', 'Siswa Campur Lembaga')->exists())->toBeFalse();
+    expect(Siswa::whereHas('person', fn ($q) => $q->where('nama_lengkap', 'Siswa Campur Lembaga'))->exists())->toBeFalse();
 });
 
 it('only lists siswa belonging to the acting manager\'s own lembaga', function () {

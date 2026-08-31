@@ -257,8 +257,7 @@ class DashboardController extends BaseController
         }
 
         if ($user->hasRole('pegawai_yayasan') || $user->hasRole('pegawai_lembaga')) {
-            $karyawan = Guru::where('user_id', $user->id)->withoutGlobalScope(TenantScope::class)->first()
-                ?? Karyawan::where('user_id', $user->id)->withoutGlobalScope(TenantScope::class)->with('jenisKaryawan')->first();
+            $karyawan = $user->guru ?? $user->karyawan;
             $karyawanId = $karyawan?->id;
             $jabatanLabel = match (true) {
                 $karyawan instanceof Karyawan => $karyawan->jenisKaryawan?->nama,

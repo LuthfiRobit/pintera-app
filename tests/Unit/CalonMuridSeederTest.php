@@ -1,4 +1,5 @@
 <?php
+
 // tests/Unit/CalonMuridSeederTest.php
 
 use App\Models\CalonMurid;
@@ -13,23 +14,23 @@ uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     Yayasan::factory()->create();
-    (new LembagaSeeder())->run();
+    (new LembagaSeeder)->run();
 });
 
 it('seeds 4 calon murid for the SD institution with lembaga-qualified names', function () {
-    (new CalonMuridSeeder())->run();
+    (new CalonMuridSeeder)->run();
 
     foreach (Lembaga::all() as $lembaga) {
-        expect(CalonMurid::where('nama_lengkap', 'Calon Menunggu Verifikasi ('.$lembaga->nama.')')->exists())->toBeTrue();
-        expect(CalonMurid::where('nama_lengkap', 'Calon Diterima ('.$lembaga->nama.')')->exists())->toBeTrue();
-        expect(CalonMurid::where('nama_lengkap', 'Calon Ditolak ('.$lembaga->nama.')')->exists())->toBeTrue();
-        expect(CalonMurid::where('nama_lengkap', 'Calon Cicilan Demo ('.$lembaga->nama.')')->exists())->toBeTrue();
+        expect(CalonMurid::whereHas('person', fn ($q) => $q->where('nama_lengkap', 'Calon Menunggu Verifikasi ('.$lembaga->nama.')'))->exists())->toBeTrue();
+        expect(CalonMurid::whereHas('person', fn ($q) => $q->where('nama_lengkap', 'Calon Diterima ('.$lembaga->nama.')'))->exists())->toBeTrue();
+        expect(CalonMurid::whereHas('person', fn ($q) => $q->where('nama_lengkap', 'Calon Ditolak ('.$lembaga->nama.')'))->exists())->toBeTrue();
+        expect(CalonMurid::whereHas('person', fn ($q) => $q->where('nama_lengkap', 'Calon Cicilan Demo ('.$lembaga->nama.')'))->exists())->toBeTrue();
     }
 });
 
 it('is idempotent when run twice', function () {
-    (new CalonMuridSeeder())->run();
-    (new CalonMuridSeeder())->run();
+    (new CalonMuridSeeder)->run();
+    (new CalonMuridSeeder)->run();
 
     expect(CalonMurid::count())->toBe(4);
 });

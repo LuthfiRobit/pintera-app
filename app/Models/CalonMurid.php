@@ -19,25 +19,15 @@ class CalonMurid extends Model
     protected $fillable = [
         'person_id',
         'yayasan_id',
-        'nik',
         'no_kk',
         'nisn',
-        'nama_lengkap',
-        'jenis_kelamin',
-        'tempat_lahir',
-        'tanggal_lahir',
-        'agama',
         'golongan_darah',
-        'no_telepon',
-        'email_kontak',
     ];
 
     protected function casts(): array
     {
         return [
-            'nik' => 'encrypted',
             'no_kk' => 'encrypted',
-            'tanggal_lahir' => 'date',
         ];
     }
 

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -28,15 +29,13 @@ class Siswa extends Model
     protected $table = 'siswa';
 
     protected $fillable = [
-        'person_id', 'lembaga_id', 'kelas_id', 'calon_murid_id', 'pendaftaran_asal_id', 'user_id',
-        'sumber_data', 'nis', 'nisn', 'nama_lengkap', 'jenis_kelamin',
-        'tempat_lahir', 'tanggal_lahir', 'agama', 'status',
+        'person_id', 'lembaga_id', 'kelas_id', 'calon_murid_id', 'pendaftaran_asal_id',
+        'sumber_data', 'nis', 'nisn', 'status',
     ];
 
     protected function casts(): array
     {
         return [
-            'tanggal_lahir' => 'date',
             'sumber_data' => SumberDataSiswa::class,
             'status' => StatusSiswa::class,
         ];
@@ -45,6 +44,11 @@ class Siswa extends Model
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    public function getUserIdAttribute(): ?int
+    {
+        return $this->person?->user_id;
     }
 
     public function getNamaLengkapAttribute(): ?string
@@ -92,9 +96,16 @@ class Siswa extends Model
         return $this->belongsTo(Pendaftaran::class, 'pendaftaran_asal_id');
     }
 
-    public function user(): BelongsTo
+    public function user(): HasOneThrough
     {
-        return $this->belongsTo(User::class);
+        return $this->hasOneThrough(
+            User::class,
+            Person::class,
+            'id',
+            'id',
+            'person_id',
+            'user_id'
+        );
     }
 
     public function orangTua(): BelongsToMany
@@ -130,7 +141,7 @@ class Siswa extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['nama_lengkap', 'kelas_id', 'status', 'lembaga_id'])
+            ->logOnly(['kelas_id', 'status', 'lembaga_id'])
             ->logOnlyDirty()
             ->useLogName('siswa');
     }

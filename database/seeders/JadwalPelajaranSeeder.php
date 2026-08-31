@@ -1,17 +1,19 @@
 <?php
+
 // database/seeders/JadwalPelajaranSeeder.php
 
 namespace Database\Seeders;
 
-use App\Models\Guru;
-use App\Models\JadwalPelajaran;
 use App\Domains\Akademik\Models\JamPelajaran;
-use App\Models\Kelas;
-use App\Models\Lembaga;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\PolaJam;
+use App\Models\Guru;
+use App\Models\JadwalPelajaran;
+use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class JadwalPelajaranSeeder extends Seeder
@@ -51,8 +53,8 @@ class JadwalPelajaranSeeder extends Seeder
         $mapelMatematika = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
         $mapelIPAS = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
 
-        $guruHendra = Guru::where('email', 'hendra.gunawan@demo.test')->first();
-        $guruMaya = Guru::where('email', 'maya.anggraini@demo.test')->first();
+        $guruHendra = User::where('email', 'hendra.gunawan@demo.test')->first()?->guru;
+        $guruMaya = User::where('email', 'maya.anggraini@demo.test')->first()?->guru;
 
         if (! $kelasA || ! $kelasB || ! $mapelMatematika || ! $mapelIPAS || ! $guruHendra || ! $guruMaya) {
             return;

@@ -47,7 +47,6 @@ class AkunKaryawanGenerator
 
             return Karyawan::create([
                 'person_id' => $person->id,
-                'user_id' => $user->id,
                 'yayasan_id' => $yayasanId,
                 'lembaga_id' => $lembagaId,
                 'jenis_karyawan_id' => $jenisKaryawanId,

@@ -14,6 +14,21 @@ class KaryawanFactory extends Factory
 {
     protected $model = Karyawan::class;
 
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Karyawan $karyawan) {
+            unset(
+                $karyawan->user_id,
+                $karyawan->nama,
+                $karyawan->nama_lengkap,
+                $karyawan->nik,
+                $karyawan->nik_hash,
+                $karyawan->no_hp,
+                $karyawan->email
+            );
+        });
+    }
+
     public function definition(): array
     {
         return [
@@ -23,7 +38,9 @@ class KaryawanFactory extends Factory
                     ?? auth()->user()?->lembaga?->yayasan_id
                     ?? Yayasan::first()?->id
                     ?? Yayasan::factory()->create()->id;
-                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
+                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id'])
+                    ? (int) $attributes['user_id']
+                    : User::factory()->create(['yayasan_id' => $yayasanId])->id;
 
                 return Person::factory()->create([
                     'yayasan_id' => $yayasanId,
@@ -33,16 +50,6 @@ class KaryawanFactory extends Factory
                     'no_hp' => $attributes['no_hp'] ?? $this->faker->numerify('08##########'),
                     'email' => $attributes['email'] ?? $this->faker->safeEmail(),
                 ])->id;
-            },
-            'user_id' => function (array $attributes) {
-                if (! empty($attributes['person_id']) && is_numeric($attributes['person_id'])) {
-                    $p = Person::withoutGlobalScopes()->find($attributes['person_id']);
-                    if ($p?->user_id) {
-                        return $p->user_id;
-                    }
-                }
-
-                return User::factory();
             },
             'yayasan_id' => Yayasan::factory(),
             'lembaga_id' => Lembaga::factory(),

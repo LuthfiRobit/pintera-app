@@ -1,4 +1,5 @@
 <?php
+
 // tests/Unit/EssentialUserSeederTest.php
 
 use App\Models\Guru;
@@ -14,12 +15,12 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    (new PermissionSeeder())->run();
-    (new RoleSeeder())->run();
+    (new PermissionSeeder)->run();
+    (new RoleSeeder)->run();
 });
 
 it('creates only the superadmin account when no lembaga exists yet', function () {
-    (new EssentialUserSeeder())->run();
+    (new EssentialUserSeeder)->run();
 
     $superAdmin = User::where('email', 'superadmin@demo.test')->first();
     expect($superAdmin)->not->toBeNull();
@@ -33,7 +34,7 @@ it('creates all 7 essential accounts when a lembaga exists, attaching the lembag
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
 
-    (new EssentialUserSeeder())->run();
+    (new EssentialUserSeeder)->run();
 
     expect(User::where('email', 'superadmin@demo.test')->exists())->toBeTrue();
 
@@ -62,8 +63,8 @@ it('creates all 7 essential accounts when a lembaga exists, attaching the lembag
 it('is idempotent when run twice', function () {
     Lembaga::factory()->create(['yayasan_id' => Yayasan::factory()->create()->id]);
 
-    (new EssentialUserSeeder())->run();
-    (new EssentialUserSeeder())->run();
+    (new EssentialUserSeeder)->run();
+    (new EssentialUserSeeder)->run();
 
     expect(User::count())->toBe(7);
     expect(Guru::count())->toBe(6);
@@ -78,7 +79,7 @@ it('creates a matching Guru row for every lembaga-scoped account so self-service
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
 
-    (new EssentialUserSeeder())->run();
+    (new EssentialUserSeeder)->run();
 
     $expectedJenisPtk = [
         'kepsek.sd@demo.test' => 'kepala_sekolah',
@@ -91,7 +92,7 @@ it('creates a matching Guru row for every lembaga-scoped account so self-service
 
     foreach ($expectedJenisPtk as $email => $jenisPtk) {
         $user = User::where('email', $email)->first();
-        $guru = Guru::where('user_id', $user->id)->first();
+        $guru = $user->guru;
 
         expect($guru)->not->toBeNull("Guru row missing for {$email}");
         expect($guru->lembaga_id)->toBe($lembaga->id);

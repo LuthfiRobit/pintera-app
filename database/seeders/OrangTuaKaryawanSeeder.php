@@ -54,7 +54,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             return;
         }
 
-        Guru::where('user_id', $user->id)->update([
+        $user->guru?->update([
             'jenis_ptk' => 'guru_bk',
             'kapasitas_kasus_aktif' => null, // tidak dibatasi
         ]);
@@ -94,7 +94,6 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         Karyawan::create([
             'person_id' => $person->id,
-            'user_id' => $user->id,
             'yayasan_id' => $yayasan->id,
             'lembaga_id' => null,
             'jenis_karyawan_id' => $jenisKaryawan->id,
@@ -185,7 +184,7 @@ class OrangTuaKaryawanSeeder extends Seeder
             $siswa = $siswas[$item['siswa_idx']] ?? null;
 
             if (User::where('username', $item['nik'])->exists()) {
-                $existing = OrangTua::where('nik', $item['nik'])->first();
+                $existing = OrangTua::whereHas('person', fn ($q) => $q->where('nik', $item['nik']))->first();
                 if ($existing && $siswa) {
                     $this->tautkanOrangTuaSiswa($existing, $siswa, $item['hubungan'], true);
                 }
@@ -220,7 +219,6 @@ class OrangTuaKaryawanSeeder extends Seeder
 
             $orangTua = OrangTua::create([
                 'person_id' => $person->id,
-                'user_id' => $user->id,
             ]);
 
             $this->tautkanOrangTuaSiswa($orangTua, $siswa, $item['hubungan'], true);
@@ -266,7 +264,6 @@ class OrangTuaKaryawanSeeder extends Seeder
 
         $orangTua = OrangTua::create([
             'person_id' => $person->id,
-            'user_id' => $user->id,
         ]);
 
         $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ibu', true);

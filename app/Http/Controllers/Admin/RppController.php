@@ -139,7 +139,7 @@ class RppController extends BaseController
     public function store(StoreRppRequest $request): RedirectResponse|JsonResponse
     {
         $user = $request->user();
-        $guru = Guru::where('user_id', $user->id)->first();
+        $guru = $user->guru;
 
         $kelas = Kelas::findOrFail($request->input('kelas_id'));
         $semester = Semester::findOrFail($request->input('semester_id'));

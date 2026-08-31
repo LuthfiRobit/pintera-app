@@ -14,6 +14,22 @@ class SiswaFactory extends Factory
 {
     protected $model = Siswa::class;
 
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Siswa $siswa) {
+            unset(
+                $siswa->user_id,
+                $siswa->nama,
+                $siswa->nama_lengkap,
+                $siswa->nik,
+                $siswa->jenis_kelamin,
+                $siswa->tempat_lahir,
+                $siswa->tanggal_lahir,
+                $siswa->agama
+            );
+        });
+    }
+
     public function definition(): array
     {
         return [

@@ -88,7 +88,6 @@ it('enforces uniqueness of person_id on orang_tua', function () {
     // Inserting a second orang_tua for the same person should fail
     DB::table('orang_tua')->insert([
         'person_id' => $person->id,
-        'nama_lengkap' => 'Duplicate Ortu',
         'created_at' => now(),
         'updated_at' => now(),
     ]);

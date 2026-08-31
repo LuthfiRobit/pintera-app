@@ -117,7 +117,6 @@ class PendaftaranSiswaController extends BaseController
                     'kelas_id' => $kelas->id,
                     'calon_murid_id' => $calonMurid->id,
                     'pendaftaran_asal_id' => $pendaftaran->id,
-                    'user_id' => $user->id,
                     'sumber_data' => SumberDataSiswa::Spmb->value,
                     'nis' => $nis,
                     'nisn' => $calonMurid->nisn,

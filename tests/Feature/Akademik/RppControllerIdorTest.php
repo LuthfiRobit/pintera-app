@@ -148,7 +148,7 @@ it('allows store when the guru actually teaches the selected combination (via Ja
     $kelas = Kelas::find($rppMilikA->kelas_id);
     $mapel = MataPelajaran::find($rppMilikA->mata_pelajaran_id);
     $semester = Semester::find($rppMilikA->semester_id);
-    $guruB = Guru::where('user_id', $userGuruB->id)->first();
+    $guruB = $userGuruB->guru;
     $jamPelajaran = JamPelajaran::factory()->create();
     JadwalPelajaran::create([
         'kelas_id' => $kelas->id, 'guru_id' => $guruB->id, 'mata_pelajaran_id' => $mapel->id,
@@ -191,7 +191,7 @@ it('allows store of a tematik RPP when the guru IS the wali kelas', function () 
     [$userGuruA, $userGuruB, $userKurikulum, $rppMilikA] = siapkanRppIdorFixture();
     $kelas = Kelas::find($rppMilikA->kelas_id);
     $semester = Semester::find($rppMilikA->semester_id);
-    $guruB = Guru::where('user_id', $userGuruB->id)->first();
+    $guruB = $userGuruB->guru;
     $kelas->update(['wali_kelas_guru_id' => $guruB->id]);
     $file = UploadedFile::fake()->create('rpp-tematik-sah.pdf', 100, 'application/pdf');
 

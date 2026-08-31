@@ -14,8 +14,18 @@ class OrangTuaFactory extends Factory
 
     public function configure(): static
     {
-        return $this->afterCreating(function (OrangTua $orangTua) {
-            $user = User::withoutGlobalScopes()->find($orangTua->user_id);
+        return $this->afterMaking(function (OrangTua $orangTua) {
+            unset(
+                $orangTua->user_id,
+                $orangTua->nama,
+                $orangTua->nama_lengkap,
+                $orangTua->nik,
+                $orangTua->no_hp,
+                $orangTua->email,
+                $orangTua->alamat
+            );
+        })->afterCreating(function (OrangTua $orangTua) {
+            $user = $orangTua->user;
             if ($user && $orangTua->nik) {
                 $user->update(['username' => $orangTua->nik, 'email' => null]);
             }
@@ -36,7 +46,9 @@ class OrangTuaFactory extends Factory
                     ?? Yayasan::first()?->id
                     ?? Yayasan::factory()->create()->id;
 
-                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
+                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id'])
+                    ? (int) $attributes['user_id']
+                    : User::factory()->create(['yayasan_id' => $yayasanId])->id;
 
                 return Person::factory()->create([
                     'yayasan_id' => $yayasanId,
@@ -47,16 +59,6 @@ class OrangTuaFactory extends Factory
                     'email' => $attributes['email'] ?? $this->faker->optional()->safeEmail(),
                     'alamat_jalan' => $attributes['alamat'] ?? $this->faker->optional()->address(),
                 ])->id;
-            },
-            'user_id' => function (array $attributes) {
-                if (! empty($attributes['person_id']) && is_numeric($attributes['person_id'])) {
-                    $p = Person::withoutGlobalScopes()->find($attributes['person_id']);
-                    if ($p?->user_id) {
-                        return $p->user_id;
-                    }
-                }
-
-                return User::factory();
             },
             'pekerjaan' => $this->faker->optional()->jobTitle(),
         ];

@@ -13,6 +13,34 @@ class GuruFactory extends Factory
 {
     protected $model = Guru::class;
 
+    public function configure(): static
+    {
+        return $this->afterMaking(function (Guru $guru) {
+            unset(
+                $guru->user_id,
+                $guru->nama,
+                $guru->nama_lengkap,
+                $guru->nik,
+                $guru->nik_hash,
+                $guru->jenis_kelamin,
+                $guru->tempat_lahir,
+                $guru->tanggal_lahir,
+                $guru->agama,
+                $guru->kewarganegaraan,
+                $guru->alamat_jalan,
+                $guru->rt,
+                $guru->rw,
+                $guru->desa_kelurahan,
+                $guru->kecamatan,
+                $guru->kabupaten_kota,
+                $guru->provinsi,
+                $guru->kode_pos,
+                $guru->no_hp,
+                $guru->email
+            );
+        });
+    }
+
     public function definition(): array
     {
         return [
@@ -31,7 +59,9 @@ class GuruFactory extends Factory
                     ?? Yayasan::first()?->id
                     ?? Yayasan::factory()->create()->id;
 
-                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
+                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id'])
+                    ? (int) $attributes['user_id']
+                    : User::factory()->create(['yayasan_id' => $yayasanId])->id;
 
                 return Person::factory()->create([
                     'yayasan_id' => $yayasanId,
@@ -42,16 +72,6 @@ class GuruFactory extends Factory
                     'email' => $attributes['email'] ?? $this->faker->safeEmail(),
                     'no_hp' => $attributes['no_hp'] ?? $this->faker->numerify('08##########'),
                 ])->id;
-            },
-            'user_id' => function (array $attributes) {
-                if (! empty($attributes['person_id']) && is_numeric($attributes['person_id'])) {
-                    $p = Person::withoutGlobalScopes()->find($attributes['person_id']);
-                    if ($p?->user_id) {
-                        return $p->user_id;
-                    }
-                }
-
-                return User::factory();
             },
             'lembaga_id' => Lembaga::factory(),
             'jenis_ptk' => $this->faker->randomElement(['guru_kelas', 'guru_mapel', 'kepala_sekolah', 'tenaga_administrasi']),

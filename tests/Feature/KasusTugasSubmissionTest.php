@@ -56,7 +56,6 @@ if (! function_exists('buatKasusDenganTugasDanKontakUtama')) {
         $siswaRole = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
         $siswaRole->givePermissionTo(['kasus.view']);
         $siswaUser->assignRole('siswa');
-        $siswa->update(['user_id' => $siswaUser->id]);
         $siswa->person->update(['user_id' => $siswaUser->id]);
 
         $orangTuaUser = User::factory()->create(['lembaga_id' => null]);

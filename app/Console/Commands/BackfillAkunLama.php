@@ -1,4 +1,5 @@
 <?php
+
 // app/Console/Commands/BackfillAkunLama.php
 
 namespace App\Console\Commands;
@@ -71,7 +72,7 @@ class BackfillAkunLama extends Command
         // Only currently-active siswa get a backfilled account — alumni, transferred-out,
         // and expelled students don't need a live login with a guessable (NIS) password.
         $siswaTanpaAkun = Siswa::withoutGlobalScopes()
-            ->whereNull('user_id')
+            ->whereHas('person', fn ($q) => $q->whereNull('user_id'))
             ->where('status', StatusSiswa::Aktif->value)
             ->get();
 
@@ -93,7 +94,7 @@ class BackfillAkunLama extends Command
             try {
                 DB::transaction(function () use ($generator, $siswa, $lembaga) {
                     $user = $generator->buat($siswa->nama_lengkap, $siswa->nis, $lembaga);
-                    $siswa->update(['user_id' => $user->id]);
+                    $siswa->person?->update(['user_id' => $user->id]);
                 });
             } catch (Throwable $e) {
                 $this->warn("Skipping siswa #{$siswa->id} — failed to create account: {$e->getMessage()}");

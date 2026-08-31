@@ -11,6 +11,24 @@ class CalonMuridFactory extends Factory
 {
     protected $model = CalonMurid::class;
 
+    public function configure(): static
+    {
+        return $this->afterMaking(function (CalonMurid $calonMurid) {
+            unset(
+                $calonMurid->nama,
+                $calonMurid->nama_lengkap,
+                $calonMurid->nik,
+                $calonMurid->nik_hash,
+                $calonMurid->jenis_kelamin,
+                $calonMurid->tempat_lahir,
+                $calonMurid->tanggal_lahir,
+                $calonMurid->agama,
+                $calonMurid->no_telepon,
+                $calonMurid->email_kontak
+            );
+        });
+    }
+
     public function definition(): array
     {
         return [

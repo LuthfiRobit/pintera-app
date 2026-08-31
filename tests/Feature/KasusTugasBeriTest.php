@@ -142,7 +142,7 @@ it('notifies siswa and orang tua once for the whole batch when a tugas is given'
     [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
 
     $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $siswa->update(['user_id' => $siswaUser->id]);
+    $siswa->person->update(['user_id' => $siswaUser->id]);
 
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
@@ -177,7 +177,7 @@ it('does not 500 when notifying TugasBatchDibuatNotification for real (no Notifi
     [$kasus, $konselorUser, $siswa] = buatKasusDitugaskanKeGuruBkUntukTugas($lembaga);
 
     $siswaUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $siswa->update(['user_id' => $siswaUser->id]);
+    $siswa->person->update(['user_id' => $siswaUser->id]);
 
     $orangTuaUser = User::factory()->create(['lembaga_id' => null]);
     Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
