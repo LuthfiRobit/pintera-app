@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Identity\Actions\CreatePersonAction;
+use App\Domains\Identity\Actions\UpdatePersonAction;
 use App\Enums\StatusSiswa;
 use App\Enums\SumberDataSiswa;
 use App\Models\Kelas;
@@ -28,13 +30,13 @@ class SiswaController extends BaseController
 
         $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = Siswa::with('kelas')->orderBy('nama_lengkap');
+        $query = Siswa::with(['kelas', 'person'])->orderBy('nama_lengkap');
 
         // Search by name or NIS
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('nama_lengkap', 'like', '%' . $search . '%')
-                    ->orWhere('nis', 'like', '%' . $search . '%');
+                $q->where('nama_lengkap', 'like', '%'.$search.'%')
+                    ->orWhere('nis', 'like', '%'.$search.'%');
             });
         }
 
@@ -109,9 +111,32 @@ class SiswaController extends BaseController
 
         DB::transaction(function () use ($data, $lembagaId) {
             $lembaga = Lembaga::withoutGlobalScopes()->findOrFail($lembagaId);
-            $user = app(AkunSiswaGenerator::class)->buat($data['nama_lengkap'], $data['nis'], $lembaga);
 
-            Siswa::create([...$data, 'user_id' => $user->id]);
+            $person = app(CreatePersonAction::class)->execute(
+                identityData: [
+                    'nama_lengkap' => $data['nama_lengkap'],
+                    'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
+                    'tempat_lahir' => $data['tempat_lahir'] ?? null,
+                    'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
+                    'agama' => $data['agama'] ?? null,
+                ],
+                lembagaId: $lembagaId,
+                actingYayasanId: null,
+            );
+
+            $user = app(AkunSiswaGenerator::class)->buat($data['nama_lengkap'], $data['nis'], $lembaga);
+            $person->update(['user_id' => $user->id]);
+
+            Siswa::create([
+                'person_id' => $person->id,
+                'user_id' => $user->id,
+                'lembaga_id' => $lembagaId,
+                'kelas_id' => $data['kelas_id'] ?? null,
+                'nis' => $data['nis'],
+                'nisn' => $data['nisn'] ?? null,
+                'status' => StatusSiswa::Aktif->value,
+                'sumber_data' => $data['sumber_data'] ?? SumberDataSiswa::Manual->value,
+            ]);
         });
 
         return redirect()->route('admin.siswa.index')->with('status', 'Siswa & akun berhasil disimpan.');
@@ -121,7 +146,7 @@ class SiswaController extends BaseController
     {
         $this->authorize('siswa.edit');
 
-        $siswa->load(['orangTua']);
+        $siswa->load(['orangTua', 'person']);
 
         return view('admin.siswa.edit', [
             'siswa' => $siswa,
@@ -136,20 +161,35 @@ class SiswaController extends BaseController
         $data = $this->validateSiswa($request, $siswa);
 
         DB::transaction(function () use ($data, $siswa) {
-            if ($siswa->user_id) {
-                $updates = [];
-                if ($data['nama_lengkap'] !== $siswa->nama_lengkap) {
-                    $updates['name'] = $data['nama_lengkap'];
+            if ($siswa->person) {
+                app(UpdatePersonAction::class)->execute($siswa->person, [
+                    'nama_lengkap' => $data['nama_lengkap'],
+                    'jenis_kelamin' => $data['jenis_kelamin'] ?? $siswa->person->jenis_kelamin,
+                    'tempat_lahir' => $data['tempat_lahir'] ?? $siswa->person->tempat_lahir,
+                    'tanggal_lahir' => $data['tanggal_lahir'] ?? $siswa->person->tanggal_lahir,
+                    'agama' => $data['agama'] ?? $siswa->person->agama,
+                ]);
+
+                $user = $siswa->person->user ?? ($siswa->person->user_id ? User::withoutGlobalScopes()->find($siswa->person->user_id) : null);
+                if ($user !== null) {
+                    $user->update([
+                        'name' => $data['nama_lengkap'],
+                        'username' => app(AkunSiswaGenerator::class)->usernameUntuk($siswa->lembaga, $data['nis']),
+                    ]);
                 }
-                if ($data['nis'] !== $siswa->nis) {
-                    $updates['username'] = app(AkunSiswaGenerator::class)->usernameUntuk($siswa->lembaga, $data['nis']);
-                }
-                if ($updates !== []) {
-                    $siswa->user()->update($updates);
+            } elseif ($siswa->user_id) {
+                $user = User::withoutGlobalScopes()->find($siswa->user_id);
+                if ($user !== null) {
+                    $user->update([
+                        'name' => $data['nama_lengkap'],
+                        'username' => app(AkunSiswaGenerator::class)->usernameUntuk($siswa->lembaga, $data['nis']),
+                    ]);
                 }
             }
 
-            $siswa->update($data);
+            $siswa->update(collect($data)->only([
+                'kelas_id', 'nis', 'nisn',
+            ])->toArray());
         });
 
         return redirect()->route('admin.siswa.index')->with('status', 'Siswa berhasil diperbarui.');
@@ -219,6 +259,9 @@ class SiswaController extends BaseController
             $generator = app(AkunSiswaGenerator::class);
             foreach ($siswaWithoutAccount as $siswa) {
                 $user = $generator->buat($siswa->nama_lengkap, $siswa->nis, $lembaga);
+                if ($siswa->person) {
+                    $siswa->person->update(['user_id' => $user->id]);
+                }
                 $siswa->update(['user_id' => $user->id]);
             }
         });
@@ -237,6 +280,9 @@ class SiswaController extends BaseController
         DB::transaction(function () use ($siswa) {
             $generator = app(AkunSiswaGenerator::class);
             $user = $generator->buat($siswa->nama_lengkap, $siswa->nis, $siswa->lembaga);
+            if ($siswa->person) {
+                $siswa->person->update(['user_id' => $user->id]);
+            }
             $siswa->update(['user_id' => $user->id]);
         });
 
