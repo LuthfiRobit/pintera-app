@@ -46,7 +46,25 @@ class YayasanScope implements Scope
             return;
         }
 
-        $yayasanId = $actingUser->yayasan_id ?? $actingUser->lembaga?->yayasan_id;
+        $yayasanId = $actingUser->yayasan_id
+            // guru/karyawan/staff-type accounts: yayasan_id or lembaga_id set
+            // directly on the users row at account creation.
+            ?? $actingUser->lembaga?->yayasan_id
+            // siswa-role personal accounts: no yayasan_id/lembaga_id on users
+            // at all, only resolvable via their own Siswa profile. User::siswa()
+            // is a hasOneThrough(..., Person::class, ...) that already bypasses
+            // Siswa's own TenantScope; Siswa carries no YayasanScope (only
+            // Person does), so this cannot recurse back into this scope.
+            ?? $actingUser->siswa?->lembaga?->yayasan_id
+            // orang_tua-role personal accounts: same gap, resolvable only via
+            // whichever Siswa they're linked to. User::orangTua() likewise
+            // bypasses TenantScope, and OrangTua::siswa() already declares
+            // ->withoutGlobalScopes() on its own pivot query, so both hops are
+            // scope-safe. A parent with multiple children takes the first one
+            // deterministically -- this app's design keeps a Person's
+            // yayasan_id fixed, so any linked child's lembaga should sit under
+            // the same yayasan.
+            ?? $actingUser->orangTua?->siswa()->first()?->lembaga?->yayasan_id;
 
         if (! $yayasanId) {
             // Fail closed: an actor with no resolvable yayasan boundary sees nothing,
