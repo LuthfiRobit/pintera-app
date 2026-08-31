@@ -6,11 +6,11 @@ use App\Domains\Keuangan\Actions\Tagihan\BuatSkemaCicilanAction;
 use App\Domains\Keuangan\Actions\Tagihan\CatatManualCicilanAction;
 use App\Domains\Keuangan\Actions\Tagihan\CatatManualTagihanAction;
 use App\Domains\Keuangan\Actions\Tagihan\SimpanNominalCicilanAction;
+use App\Domains\Keuangan\Models\Cicilan;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\TagihanCicilanEligibilityService;
 use App\Http\Controllers\Controller;
-use App\Domains\Keuangan\Models\Cicilan;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -56,7 +56,7 @@ class TagihanController extends Controller
         if ($search = trim((string) $request->string('search'))) {
             $query->whereHas('pendaftaran', function ($q) use ($search) {
                 $q->where('kode_pendaftaran', 'like', '%'.$search.'%')
-                    ->orWhereHas('calonMurid', fn ($cm) => $cm->where('nama_lengkap', 'like', '%'.$search.'%'));
+                    ->orWhereHas('calonMurid', fn ($cm) => $cm->search($search));
             });
         }
 

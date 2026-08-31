@@ -130,4 +130,28 @@ class CalonMurid extends Model
     {
         return $this->hasMany(Pendaftaran::class);
     }
+
+    public function scopeSearch($query, ?string $term)
+    {
+        if (! $term) {
+            return $query;
+        }
+
+        $termHash = hash('sha256', $term);
+
+        return $query->where(function ($q) use ($term, $termHash) {
+            $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%")
+                ->orWhere('nik_hash', $termHash))
+                ->orWhere('calon_murid.nama_lengkap', 'like', "%{$term}%")
+                ->orWhere('calon_murid.nisn', 'like', "%{$term}%")
+                ->orWhere('calon_murid.nik_hash', $termHash);
+        });
+    }
+
+    public function scopeOrderByNama($query, string $direction = 'asc')
+    {
+        return $query->leftJoin('persons', 'calon_murid.person_id', '=', 'persons.id')
+            ->orderByRaw("COALESCE(persons.nama_lengkap, calon_murid.nama_lengkap) {$direction}")
+            ->select('calon_murid.*');
+    }
 }

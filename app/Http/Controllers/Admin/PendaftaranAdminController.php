@@ -70,7 +70,7 @@ class PendaftaranAdminController extends BaseController
         if ($search = trim((string) $request->string('search'))) {
             $query->where(function ($q) use ($search) {
                 $q->where('kode_pendaftaran', 'like', '%'.$search.'%')
-                    ->orWhereHas('calonMurid', fn ($cm) => $cm->where('nama_lengkap', 'like', '%'.$search.'%'));
+                    ->orWhereHas('calonMurid', fn ($cm) => $cm->search($search));
             });
         }
 
@@ -129,7 +129,7 @@ class PendaftaranAdminController extends BaseController
             'tagihan.skemaCicilan', 'tagihan.cicilan.pembayaran', 'tagihan.pembayaran',
         ]);
 
-        $seleksiTersedia = \App\Models\SeleksiPpdb::where('jalur_ppdb_id', $pendaftaran->jalur_ppdb_id)
+        $seleksiTersedia = SeleksiPpdb::where('jalur_ppdb_id', $pendaftaran->jalur_ppdb_id)
             ->where('gelombang_ppdb_id', $pendaftaran->gelombang_ppdb_id)
             ->with('jenisTesMaster')
             ->get();
