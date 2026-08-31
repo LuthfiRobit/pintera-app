@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Domains\Identity\Actions;
+
+use App\Domains\Identity\Models\Person;
+
+class DeactivatePersonAction
+{
+    public function execute(Person $person): Person
+    {
+        $person->update(['deactivated_at' => now()]);
+
+        return $person;
+    }
+}
