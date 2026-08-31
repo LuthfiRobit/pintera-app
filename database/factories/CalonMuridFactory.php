@@ -15,10 +15,8 @@ class CalonMuridFactory extends Factory
     {
         return [
             'person_id' => function (array $attributes) {
-                $yayasanId = $attributes['yayasan_id'] ?? Yayasan::factory()->create()->id;
-                if ($yayasanId instanceof Yayasan) {
-                    $yayasanId = $yayasanId->id;
-                }
+                $yayasanId = ! empty($attributes['yayasan_id']) && is_numeric($attributes['yayasan_id']) ? (int) $attributes['yayasan_id'] : null;
+                $yayasanId ??= Yayasan::factory()->create()->id;
 
                 return Person::factory()->create([
                     'yayasan_id' => $yayasanId,

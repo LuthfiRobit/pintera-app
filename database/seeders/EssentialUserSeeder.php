@@ -4,6 +4,7 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Identity\Models\Person;
 use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\User;
@@ -74,6 +75,24 @@ class EssentialUserSeeder extends Seeder
             // pegawai_yayasan.
             $user->assignRole('pegawai_lembaga');
 
+            $person = Person::withoutGlobalScopes()->where('yayasan_id', $lembaga->yayasan_id)
+                ->where('nik_hash', hash('sha256', $data['nik']))
+                ->first();
+
+            if (! $person) {
+                $person = Person::create([
+                    'yayasan_id' => $lembaga->yayasan_id,
+                    'user_id' => $user->id,
+                    'nik' => $data['nik'],
+                    'nama_lengkap' => $data['name'],
+                    'jenis_kelamin' => $data['jenis_kelamin'],
+                    'kewarganegaraan' => 'WNI',
+                    'email' => $email,
+                ]);
+            } else {
+                $person->update(['user_id' => $user->id]);
+            }
+
             // pegawai_lembaga membawa permission self-service SDM (QR kehadiran sendiri,
             // ajukan izin/cuti) yang butuh baris data kepegawaian (tabel `guru`, dipakai
             // juga untuk PTK non-guru via jenis_ptk). Tanpa ini, akun demo di atas kena
@@ -81,12 +100,8 @@ class EssentialUserSeeder extends Seeder
             Guru::firstOrCreate(
                 ['user_id' => $user->id],
                 [
+                    'person_id' => $person->id,
                     'lembaga_id' => $lembaga->id,
-                    'nik' => $data['nik'],
-                    'nama' => $data['name'],
-                    'jenis_kelamin' => $data['jenis_kelamin'],
-                    'kewarganegaraan' => 'WNI',
-                    'email' => $email,
                     'jenis_ptk' => $data['jenis_ptk'],
                     'status_kepegawaian' => 'PTY',
                     'status_aktif' => 'aktif',

@@ -1,8 +1,10 @@
 <?php
+
 // database/seeders/SiswaSeeder.php
 
 namespace Database\Seeders;
 
+use App\Domains\Identity\Models\Person;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Siswa;
@@ -52,26 +54,35 @@ class SiswaSeeder extends Seeder
         foreach ($kelasList as $kelas) {
             for ($i = 1; $i <= 28; $i++) {
                 $numStr = str_pad((string) $counter, 3, '0', STR_PAD_LEFT);
-                $nis = $prefix . $numStr;
-                $nisn = '00' . $prefix . $numStr;
+                $nis = $prefix.$numStr;
+                $nisn = '00'.$prefix.$numStr;
 
                 $depan = self::NAMA_DEPAN[$counter % count(self::NAMA_DEPAN)];
                 $belakang = self::NAMA_BELAKANG[$counter % count(self::NAMA_BELAKANG)];
+                $namaLengkap = "{$depan} {$belakang}";
+                $jk = ($i % 2 === 1) ? 'L' : 'P';
 
-                Siswa::firstOrCreate(
-                    ['lembaga_id' => $lembaga->id, 'nis' => $nis],
-                    [
-                        'kelas_id' => $kelas->id,
-                        'nisn' => $nisn,
-                        'nama_lengkap' => "{$depan} {$belakang}",
-                        'jenis_kelamin' => ($i % 2 === 1) ? 'L' : 'P',
+                $existingSiswa = Siswa::where('lembaga_id', $lembaga->id)->where('nis', $nis)->first();
+                if (! $existingSiswa) {
+                    $person = Person::create([
+                        'yayasan_id' => $lembaga->yayasan_id,
+                        'nama_lengkap' => $namaLengkap,
+                        'jenis_kelamin' => $jk,
                         'tempat_lahir' => 'Kraksaan',
                         'tanggal_lahir' => '2016-01-10',
                         'agama' => 'Islam',
+                    ]);
+
+                    Siswa::create([
+                        'person_id' => $person->id,
+                        'lembaga_id' => $lembaga->id,
+                        'nis' => $nis,
+                        'kelas_id' => $kelas->id,
+                        'nisn' => $nisn,
                         'sumber_data' => 'manual',
                         'status' => 'aktif',
-                    ]
-                );
+                    ]);
+                }
 
                 $counter++;
             }
@@ -105,6 +116,7 @@ class SiswaSeeder extends Seeder
 
         if ($firstSiswa->user_id !== $user->id) {
             $firstSiswa->update(['user_id' => $user->id]);
+            $firstSiswa->person?->update(['user_id' => $user->id]);
         }
     }
 }

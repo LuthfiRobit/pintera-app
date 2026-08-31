@@ -1,8 +1,10 @@
 <?php
+
 // database/seeders/CalonMuridSeeder.php
 
 namespace Database\Seeders;
 
+use App\Domains\Identity\Models\Person;
 use App\Models\CalonMurid;
 use App\Models\Lembaga;
 use Illuminate\Database\Seeder;
@@ -27,16 +29,22 @@ class CalonMuridSeeder extends Seeder
             default => 13,
         };
 
-        CalonMurid::firstOrCreate(
-            ['nama_lengkap' => $namaDasar.' ('.$lembaga->nama.')'],
-            [
-                'yayasan_id' => $lembaga->yayasan_id,
-                'nik' => '0000'.str_pad((string) random_int(0, 999999999999), 12, '0', STR_PAD_LEFT),
-                'jenis_kelamin' => $jenisKelamin,
-                'tempat_lahir' => 'Bandung',
-                'tanggal_lahir' => now()->subYears($umur)->toDateString(),
-                'agama' => 'Islam',
-            ]
-        );
+        $namaLengkap = $namaDasar.' ('.$lembaga->nama.')';
+        $nik = '0000'.str_pad((string) random_int(0, 999999999999), 12, '0', STR_PAD_LEFT);
+
+        $person = Person::create([
+            'yayasan_id' => $lembaga->yayasan_id,
+            'nama_lengkap' => $namaLengkap,
+            'nik' => $nik,
+            'jenis_kelamin' => $jenisKelamin,
+            'tempat_lahir' => 'Bandung',
+            'tanggal_lahir' => now()->subYears($umur)->toDateString(),
+            'agama' => 'Islam',
+        ]);
+
+        CalonMurid::create([
+            'person_id' => $person->id,
+            'yayasan_id' => $lembaga->yayasan_id,
+        ]);
     }
 }

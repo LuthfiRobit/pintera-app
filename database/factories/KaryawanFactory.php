@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
@@ -16,13 +17,23 @@ class KaryawanFactory extends Factory
     public function definition(): array
     {
         return [
+            'person_id' => function (array $attributes) {
+                $yayasanId = ! empty($attributes['yayasan_id']) && is_numeric($attributes['yayasan_id']) ? (int) $attributes['yayasan_id'] : null;
+                $yayasanId ??= Yayasan::factory()->create()->id;
+                $userId = ! empty($attributes['user_id']) && is_numeric($attributes['user_id']) ? (int) $attributes['user_id'] : null;
+
+                return Person::factory()->create([
+                    'yayasan_id' => $yayasanId,
+                    'user_id' => $userId,
+                    'nama_lengkap' => $attributes['nama'] ?? $this->faker->name(),
+                    'nik' => $attributes['nik'] ?? $this->faker->unique()->numerify('################'),
+                    'no_hp' => $attributes['no_hp'] ?? $this->faker->numerify('08##########'),
+                ])->id;
+            },
             'user_id' => User::factory(),
             'yayasan_id' => Yayasan::factory(),
             'lembaga_id' => Lembaga::factory(),
             'jenis_karyawan_id' => JenisKaryawanMaster::factory(),
-            'nama' => $this->faker->name(),
-            'nik' => $this->faker->unique()->numerify('################'),
-            'no_hp' => $this->faker->numerify('08##########'),
             'status_aktif' => 'aktif',
         ];
     }

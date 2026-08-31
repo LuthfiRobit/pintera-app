@@ -1,8 +1,10 @@
 <?php
+
 // database/seeders/GuruSeeder.php
 
 namespace Database\Seeders;
 
+use App\Domains\Identity\Models\Person;
 use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\User;
@@ -140,14 +142,16 @@ class GuruSeeder extends Seeder
                 continue;
             }
 
-            Guru::firstOrCreate(
-                ['user_id' => $user->id],
-                [
-                    'lembaga_id' => $lembaga->id,
+            $person = Person::withoutGlobalScopes()->where('yayasan_id', $lembaga->yayasan_id)
+                ->where('nik_hash', hash('sha256', $data['nik']))
+                ->first();
+
+            if (! $person) {
+                $person = Person::create([
+                    'yayasan_id' => $lembaga->yayasan_id,
+                    'user_id' => $user->id,
                     'nik' => $data['nik'],
-                    'nuptk' => $data['nuptk'],
-                    'nip' => $data['nip'],
-                    'nama' => $data['name'],
+                    'nama_lengkap' => $data['name'],
                     'jenis_kelamin' => $data['jenis_kelamin'],
                     'tempat_lahir' => $data['tempat_lahir'],
                     'tanggal_lahir' => $data['tanggal_lahir'],
@@ -163,6 +167,18 @@ class GuruSeeder extends Seeder
                     'kode_pos' => '67282',
                     'no_hp' => $data['no_hp'],
                     'email' => $data['email'],
+                ]);
+            } else {
+                $person->update(['user_id' => $user->id]);
+            }
+
+            Guru::firstOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'person_id' => $person->id,
+                    'lembaga_id' => $lembaga->id,
+                    'nuptk' => $data['nuptk'],
+                    'nip' => $data['nip'],
                     'jenis_ptk' => $data['jenis_ptk'],
                     'status_kepegawaian' => $data['status_kepegawaian'],
                     'golongan_pangkat' => $data['golongan_pangkat'],
