@@ -75,8 +75,8 @@ class JadwalPelajaranController extends BaseController
             : MataPelajaran::orderBy('nama')->get();
 
         $guruList = $targetLembagaId
-            ? Guru::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get()
-            : Guru::orderBy('nama')->get();
+            ? Guru::where('lembaga_id', $targetLembagaId)->with('person')->orderByNama()->get()
+            : Guru::with('person')->orderByNama()->get();
 
         $ruanganList = $targetLembagaId
             ? Ruangan::withoutGlobalScope(TenantScope::class)

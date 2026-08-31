@@ -50,11 +50,11 @@ class GuruController extends BaseController
 
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $guruList = Guru::with('user')
-            ->when($search, fn ($q) => $q->where(fn ($q2) => $q2->where('nama', 'like', "%{$search}%")->orWhere('nip', 'like', "%{$search}%")))
+        $guruList = Guru::with(['user', 'person'])
+            ->when($search, fn ($q) => $q->search($search))
             ->when($jenisPtk, fn ($q) => $q->where('jenis_ptk', $jenisPtk))
             ->when($statusAktif, fn ($q) => $q->where('status_aktif', $statusAktif))
-            ->orderBy('nama')
+            ->orderByNama()
             ->paginate($perPage)
             ->withQueryString();
 

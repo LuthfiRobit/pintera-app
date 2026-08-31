@@ -84,7 +84,7 @@ class KelasController extends BaseController
 
         return view('admin.kelas.create', [
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
-            'guruList' => Guru::orderBy('nama')->get(),
+            'guruList' => Guru::with('person')->orderByNama()->get(),
             'polaJamList' => PolaJam::orderBy('nama')->get(),
             'faseList' => Fase::orderBy('urutan')->get(),
         ]);
@@ -123,7 +123,7 @@ class KelasController extends BaseController
         return view('admin.kelas.edit', [
             'kelas' => $kelas,
             'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
-            'guruList' => Guru::orderBy('nama')->get(),
+            'guruList' => Guru::with('person')->orderByNama()->get(),
             'polaJamList' => PolaJam::orderBy('nama')->get(),
             'faseList' => Fase::orderBy('urutan')->get(),
         ]);

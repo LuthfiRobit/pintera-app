@@ -15,12 +15,12 @@ use App\Domains\Sdm\Exceptions\ShiftAssignmentOverlapException;
 use App\Domains\Sdm\Models\AttendanceMethodConfiguration;
 use App\Domains\Sdm\Models\AttendancePoint;
 use App\Domains\Sdm\Models\AttendancePolicy;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Domains\Sdm\Models\JenisShift;
 use App\Domains\Sdm\Models\KalenderKerjaSdm;
 use App\Domains\Sdm\Models\KuotaCutiConfig;
 use App\Domains\Sdm\Models\PenugasanShift;
 use App\Models\Guru;
-use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
@@ -99,11 +99,11 @@ class AttendanceConfigurationController extends BaseController
             ->orderByDesc('tanggal_mulai')
             ->get() : collect();
 
-        $guruList = $lembagaId 
-            ? Guru::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama', 'nip', 'nuptk'])
+        $guruList = $lembagaId
+            ? Guru::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(['guru.id', 'guru.nama', 'guru.nip', 'guru.nuptk', 'guru.person_id'])
                 ->map(fn ($g) => ['id' => (string) $g->id, 'nama' => $g->nama, 'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : '')])->values()
             : collect();
-        $karyawanList = $lembagaId 
+        $karyawanList = $lembagaId
             ? Karyawan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama', 'email'])
                 ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
             : collect();

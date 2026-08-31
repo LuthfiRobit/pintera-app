@@ -197,6 +197,27 @@ class Guru extends Model
             ->useLogName('guru');
     }
 
+    public function scopeSearch($query, ?string $term)
+    {
+        if (! $term) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($term) {
+            $q->whereHas('person', fn ($qp) => $qp->where('nama_lengkap', 'like', "%{$term}%"))
+                ->orWhere('nama', 'like', "%{$term}%")
+                ->orWhere('nip', 'like', "%{$term}%")
+                ->orWhere('nuptk', 'like', "%{$term}%");
+        });
+    }
+
+    public function scopeOrderByNama($query, string $direction = 'asc')
+    {
+        return $query->leftJoin('persons', 'guru.person_id', '=', 'persons.id')
+            ->orderByRaw("COALESCE(persons.nama_lengkap, guru.nama) {$direction}")
+            ->select('guru.*');
+    }
+
     public function routeNotificationForMail(): ?string
     {
         return $this->email;
