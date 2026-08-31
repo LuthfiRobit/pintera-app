@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Identity\Actions\UpdatePersonAction;
+use App\Domains\Identity\Models\Person;
 use App\Models\OrangTua;
 use App\Models\Scopes\TenantScope;
 use App\Models\User;
@@ -135,13 +136,7 @@ class OrangTuaController extends BaseController
                 User::withoutGlobalScopes()->where('id', $orangTua->user_id)->update(['name' => $data['nama_lengkap']]);
             }
 
-            $orangTua->update([
-                'nama_lengkap' => $data['nama_lengkap'],
-                'no_hp' => $data['no_hp'],
-                'email' => $data['email'] ?? null,
-                'alamat' => $data['alamat'] ?? null,
-                'pekerjaan' => $data['pekerjaan'] ?? null,
-            ]);
+            $orangTua->update(collect($data)->only(['pekerjaan'])->toArray());
         });
 
         return redirect()->route('admin.orang-tua.index')->with('status', 'Data Orang Tua berhasil diperbarui.');
@@ -174,14 +169,37 @@ class OrangTuaController extends BaseController
 
     // A lembaga-scoped admin (operator_akademik) may act on any orang tua profile that either has
     // no linked siswa yet (so the just-created-but-not-yet-tautkan flow isn't blocked) or has
-    // at least one siswa in their own lembaga. yayasan_super_admin is unrestricted. OrangTua
-    // has no lembaga_id of its own by design (a parent can have children in multiple lembaga),
-    // so this checks the siswa pivot instead of a direct column.
+    // at least one siswa in their own lembaga. yayasan_super_admin is unrestricted WITHIN their
+    // own yayasan only — see below. OrangTua has no lembaga_id of its own by design (a parent
+    // can have children in multiple lembaga), so this checks the siswa pivot instead of a
+    // direct column.
+    //
+    // `OrangTua::resolveRouteBinding()` intentionally still uses `withoutGlobalScopes()` so that
+    // a permission-less actor gets a 403 from the explicit `authorize()` ability check above
+    // (tested by "denies edit access to a user without orang-tua.edit permission") instead of a
+    // scope-driven 404 before the controller ever runs. That means route-model-binding does NOT
+    // enforce tenant isolation by itself, so this method — the only tenant gate left in the
+    // request — MUST verify the resource's own tenant against the actor's, not just trust
+    // `widestScopeLevel()`. Failing to do so was a confirmed cross-tenant IDOR (a
+    // yayasan_super_admin in Yayasan A could edit an OrangTua belonging to Yayasan B).
     private function authorizeLembaga(OrangTua $orangTua): void
     {
         $user = auth()->user();
+        $widestScopeLevel = $user->widestScopeLevel();
 
-        if ($user->widestScopeLevel() === 'yayasan') {
+        if ($widestScopeLevel === 'platform') {
+            return;
+        }
+
+        if ($widestScopeLevel === 'yayasan') {
+            $actorYayasanId = $user->yayasan_id ?? $user->lembaga?->yayasan_id;
+            $orangTuaYayasanId = Person::withoutGlobalScopes()->find($orangTua->person_id)?->yayasan_id;
+
+            abort_if(
+                $actorYayasanId === null || $orangTuaYayasanId === null || $actorYayasanId !== $orangTuaYayasanId,
+                404,
+            );
+
             return;
         }
 

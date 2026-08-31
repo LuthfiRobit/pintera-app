@@ -1,7 +1,9 @@
 <?php
 
+use App\Domains\Identity\Models\Person;
 use App\Models\Lembaga;
 use App\Models\OrangTua;
+use App\Models\Role;
 use App\Models\Siswa;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -75,8 +77,11 @@ it('creates a new orang tua and links it in one submit when orang_tua_id is abse
         'no_hp' => '081211112222',
     ])->assertRedirect(route('admin.siswa.edit', $siswa));
 
-    $orangTua = OrangTua::where('nik', '3201234567896666')->firstOrFail();
-    expect($orangTua->nama_lengkap)->toBe('Bapak Baru');
+    // Identity data (nama_lengkap, nik) now lives on Person, not on the orang_tua legacy
+    // columns (no dual-write — see AkunOrangTuaGenerator::buat()), so look it up via Person.
+    $person = Person::withoutGlobalScopes()->where('nik_hash', hash('sha256', '3201234567896666'))->firstOrFail();
+    $orangTua = OrangTua::withoutGlobalScopes()->where('person_id', $person->id)->firstOrFail();
+    expect($person->nama_lengkap)->toBe('Bapak Baru');
     expect($siswa->orangTua()->where('orang_tua_id', $orangTua->id)->exists())->toBeTrue();
 });
 
@@ -199,7 +204,7 @@ it('requires siswa.edit in addition to orang-tua permissions on nested siswa/ora
     foreach (['orang-tua.view', 'orang-tua.create', 'orang-tua.edit'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
-    $role = \App\Models\Role::firstOrCreate(
+    $role = Role::firstOrCreate(
         ['name' => 'orang_tua_only_no_siswa_edit', 'guard_name' => 'web'],
         ['scope_level' => 'yayasan']
     );
