@@ -3371,13 +3371,13 @@ git commit -m "feat(identity): enforce person_id NOT NULL and FK constraints aft
 
 ## Deferred — NOT part of this release
 
-### Task 28 (deferred, separate PR/migration, run only after a full production cycle): Drop legacy identity columns
+### - [x] Task 28: Drop legacy identity columns from 5 role tables (Completed 2026-09-01)
 
-Per spec §8 step 6 and the user's explicit instruction, this is **not bundled with the rest of this plan**. When it is time to execute it (a separate, later kickoff):
-
-- Create `database/migrations/YYYY_MM_DD_drop_legacy_identity_columns.php` implementing exactly the `DROP COLUMN` statements already fully specified in spec §3's DDL block for `guru`, `karyawan`, `orang_tua`, `siswa` (and whatever remains of `calon_murid` per spec §3's note that its final shape is decided at that time, not now).
-- Before writing it, re-run `Grep` across `app/` for any remaining direct reference to the dropped column names (`->nik`, `->nama`, `'nik'`, `'nama'` etc. on the 5 models) to catch anything the accessor shims might have missed — the shims make reads safe, but any code still WRITING to these columns directly (bypassing `PersonService`) would silently no-op post-drop and must be found first.
-- This migration is irreversible in practice (its `down()` can restore columns but not data) — do not run it until the accessor-shim-based code has had at least one full release cycle in production with no incidents, per spec §8.
+Completed on 2026-09-01 per kickoff `kickoff-2026-09-01-identity-v1-task28-drop-columns-schema-squash.md`.
+- Legacy columns dropped from `guru` (18 columns), `karyawan` (6 columns), `orang_tua` (6 columns), `siswa` (6 columns), and `calon_murid` (9 columns, keeping `no_kk` & `golongan_darah`).
+- Role models, factories, seeders, and controllers cleaned up to exclusively read/write via `Person`.
+- Migrations squashed into `database/schema/mysql-schema.sql` via `schema:dump --prune`.
+- Test suite verified: 2517 passed, 0 failed.
 
 ---
 
