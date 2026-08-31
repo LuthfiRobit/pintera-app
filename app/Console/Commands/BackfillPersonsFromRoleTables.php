@@ -17,7 +17,7 @@ class BackfillPersonsFromRoleTables extends Command
 
     protected $description = 'Backfill the persons master table from guru/karyawan/orang_tua/siswa/calon_murid rows.';
 
-    /** @var array<int, array{table: string, nik_hash: ?string, yayasan_id: int}> */
+    /** @var array<int, array{table: string, row_id: int, nik_hash: ?string, yayasan_id: int}> */
     private array $seenThisRun = [];
 
     public function handle(): int
@@ -60,6 +60,7 @@ class BackfillPersonsFromRoleTables extends Command
                     'kode_pos' => $guru->kode_pos,
                 ],
                 sourceTable: 'guru',
+                sourceId: $guru->id,
             );
 
             $guru->newQueryWithoutScopes()->whereKey($guru->id)->update(['person_id' => $person->id]);
@@ -79,6 +80,7 @@ class BackfillPersonsFromRoleTables extends Command
                 namaLengkap: $karyawan->nama,
                 extra: ['no_hp' => $karyawan->no_hp, 'email' => $karyawan->email],
                 sourceTable: 'karyawan',
+                sourceId: $karyawan->id,
             );
 
             $karyawan->newQueryWithoutScopes()->whereKey($karyawan->id)->update(['person_id' => $person->id]);
@@ -102,6 +104,7 @@ class BackfillPersonsFromRoleTables extends Command
                 namaLengkap: $ortu->nama_lengkap,
                 extra: ['no_hp' => $ortu->no_hp, 'email' => $ortu->email, 'alamat_jalan' => $ortu->alamat],
                 sourceTable: 'orang_tua',
+                sourceId: $ortu->id,
             );
 
             $ortu->newQueryWithoutScopes()->whereKey($ortu->id)->update(['person_id' => $person->id]);
@@ -122,6 +125,7 @@ class BackfillPersonsFromRoleTables extends Command
                     'agama' => $siswa->agama,
                 ],
                 sourceTable: 'siswa',
+                sourceId: $siswa->id,
             );
 
             $siswa->newQueryWithoutScopes()->whereKey($siswa->id)->update(['person_id' => $person->id]);
@@ -144,6 +148,7 @@ class BackfillPersonsFromRoleTables extends Command
                     'email' => $calon->email_kontak,
                 ],
                 sourceTable: 'calon_murid',
+                sourceId: $calon->id,
             );
 
             $calon->newQueryWithoutScopes()->whereKey($calon->id)->update(['person_id' => $person->id]);
@@ -151,7 +156,7 @@ class BackfillPersonsFromRoleTables extends Command
     }
 
     /** @param array<string, mixed> $extra */
-    private function findOrCreatePerson(int $yayasanId, ?string $nik, string $namaLengkap, array $extra, string $sourceTable): Person
+    private function findOrCreatePerson(int $yayasanId, ?string $nik, string $namaLengkap, array $extra, string $sourceTable, int $sourceId): Person
     {
         $nikHash = $nik ? hash('sha256', $nik) : null;
 
@@ -162,11 +167,11 @@ class BackfillPersonsFromRoleTables extends Command
                 ->first();
 
             if ($existing !== null) {
-                foreach ($this->tablesLinkedToPerson($existing->id) as $linkedTable) {
-                    $this->seenThisRun[] = ['table' => $linkedTable, 'nik_hash' => $nikHash, 'yayasan_id' => $yayasanId];
+                foreach ($this->tablesLinkedToPerson($existing->id) as $linkedRow) {
+                    $this->seenThisRun[] = ['table' => $linkedRow['table'], 'row_id' => $linkedRow['id'], 'nik_hash' => $nikHash, 'yayasan_id' => $yayasanId];
                 }
 
-                $this->seenThisRun[] = ['table' => $sourceTable, 'nik_hash' => $nikHash, 'yayasan_id' => $yayasanId];
+                $this->seenThisRun[] = ['table' => $sourceTable, 'row_id' => $sourceId, 'nik_hash' => $nikHash, 'yayasan_id' => $yayasanId];
 
                 return $existing;
             }
@@ -180,10 +185,10 @@ class BackfillPersonsFromRoleTables extends Command
     }
 
     /**
-     * Determine which of the five role tables already point their person_id at the given Person.
+     * Determine which rows, across the five role tables, already point their person_id at the given Person.
      * Only called on an actual NIK collision, so the extra per-table lookups are cheap in practice.
      *
-     * @return array<int, string>
+     * @return array<int, array{table: string, id: int}>
      */
     private function tablesLinkedToPerson(int $personId): array
     {
@@ -198,8 +203,8 @@ class BackfillPersonsFromRoleTables extends Command
         $linked = [];
 
         foreach ($tables as $tableName => $modelClass) {
-            if ($modelClass::withoutGlobalScopes()->where('person_id', $personId)->exists()) {
-                $linked[] = $tableName;
+            foreach ($modelClass::withoutGlobalScopes()->where('person_id', $personId)->pluck('id') as $rowId) {
+                $linked[] = ['table' => $tableName, 'id' => $rowId];
             }
         }
 
@@ -211,11 +216,16 @@ class BackfillPersonsFromRoleTables extends Command
         $byHash = collect($this->seenThisRun)->groupBy(fn (array $row) => $row['yayasan_id'].'|'.$row['nik_hash']);
 
         foreach ($byHash as $group) {
-            $tables = $group->pluck('table')->unique()->values();
+            // Key on (table, row_id) rather than table name alone: two distinct rows from the
+            // *same* table (e.g. two orang_tua records) sharing a NIK is still a real collision
+            // when that table has no DB-level unique constraint on the NIK column.
+            $distinctRows = $group->unique(fn (array $row) => $row['table'].'|'.$row['row_id']);
 
-            if ($tables->count() < 2) {
+            if ($distinctRows->count() < 2) {
                 continue;
             }
+
+            $tables = $distinctRows->pluck('table')->unique()->values();
 
             $this->warn("NIK collision within yayasan_id={$group->first()['yayasan_id']}: same NIK shared across [{$tables->implode(', ')}]. Person rows were reused, not merged -- review manually.");
         }

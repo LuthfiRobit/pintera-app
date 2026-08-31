@@ -113,3 +113,30 @@ it('reports a NIK collision within one yayasan instead of auto-merging', functio
     expect(Guru::first()->person_id)->not->toBeNull();
     expect(Karyawan::first()->person_id)->not->toBeNull();
 });
+
+it('reports a NIK collision between two distinct orang_tua rows sharing one NIK', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $siswaSatu = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $ortuSatu = OrangTua::factory()->create(['nik' => '4444444444444444']);
+    // The factory mirrors nik onto the linked user's username (unique); reset it so two
+    // orang_tua rows can legitimately share one NIK, as they would for the same parent
+    // registered twice under two different student accounts.
+    $ortuSatu->user->update(['username' => 'ortu-satu-'.$ortuSatu->id, 'email' => null]);
+    $siswaSatu->orangTua()->attach($ortuSatu->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $siswaDua = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $ortuDua = OrangTua::factory()->create(['nik' => '4444444444444444']);
+    $ortuDua->user->update(['username' => 'ortu-dua-'.$ortuDua->id, 'email' => null]);
+    $siswaDua->orangTua()->attach($ortuDua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $this->artisan('identity:backfill-persons')
+        ->expectsOutputToContain('NIK collision within yayasan_id='.$yayasan->id.': same NIK shared across [orang_tua]')
+        ->assertExitCode(0);
+
+    // Both orang_tua rows still get linked to a Person -- the second reuses the first's, not blocked or silently merged
+    expect($ortuSatu->refresh()->person_id)->not->toBeNull();
+    expect($ortuDua->refresh()->person_id)->not->toBeNull();
+    expect($ortuSatu->person_id)->toBe($ortuDua->person_id);
+});
