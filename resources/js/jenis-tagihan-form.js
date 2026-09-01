@@ -52,6 +52,13 @@ export function jenisTagihanForm(config) {
             keringanan: config.initialKeringanan.map(hydrateKeringanan),
         },
         kategoriKeringananOptions: config.kategoriKeringananList,
+        previewSasaranUrl: config.previewSasaranUrl,
+        previewTarifKeringananUrl: config.previewTarifKeringananUrl,
+        reorderTarifUrl: config.reorderTarifUrl,
+        previewSasaranCount: null,
+        previewTarifCounts: [],
+        previewKeringananCounts: {},
+        previewLoading: false,
         kategoriBaruNama: '',
         kategoriBaruError: '',
         kategoriBaruSubmitting: false,
@@ -60,6 +67,70 @@ export function jenisTagihanForm(config) {
 
         formatRupiah,
         unformatRupiah,
+
+        moveTarifUp(index) {
+            if (index <= 0) return;
+            const item = this.form.tarif.splice(index, 1)[0];
+            this.form.tarif.splice(index - 1, 0, item);
+            this.fetchPreviewTarifKeringanan();
+        },
+
+        moveTarifDown(index) {
+            if (index >= this.form.tarif.length - 1) return;
+            const item = this.form.tarif.splice(index, 1)[0];
+            this.form.tarif.splice(index + 1, 0, item);
+            this.fetchPreviewTarifKeringanan();
+        },
+
+        async fetchPreviewSasaran() {
+            if (!this.previewSasaranUrl) return;
+            try {
+                const payload = this.sasaranMode === 'kriteria'
+                    ? { sasaran: this.form.sasaran.map((g) => ({ kriteria: (g.kriteria || []).map((k) => ({ field: k.field, operator: k.operator, value: k.value })) })) }
+                    : { sasaran: [] };
+                const res = await fetch(this.previewSasaranUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify(payload),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.previewSasaranCount = data.count;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+
+        async fetchPreviewTarifKeringanan() {
+            if (!this.previewTarifKeringananUrl) return;
+            try {
+                const payload = {
+                    tarif: this.form.tarif.map((g) => ({ nominal: g.nominal, kriteria: (g.kriteria || []).map((k) => ({ field: k.field, operator: k.operator, value: k.value })) })),
+                    keringanan: this.form.keringanan.map((k) => ({ kategori_keringanan_id: k.kategori_keringanan_id, tipe_potongan: k.tipe_potongan, nilai_potongan: k.nilai })),
+                };
+                const res = await fetch(this.previewTarifKeringananUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify(payload),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.previewTarifCounts = data.tarif_counts ?? [];
+                    this.previewKeringananCounts = data.keringanan_counts ?? {};
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
 
         onDefaultAmountInput(event) {
             const raw = unformatRupiah(event.target.value);

@@ -36,7 +36,10 @@
             },
             initialSasaran: @js(old('sasaran', $jenisTagihan?->sasaranGrup->where('tipe', 'sasaran')->map(fn ($g) => ['nominal' => null, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),
             initialTarif: @js(old('tarif', $jenisTagihan?->sasaranGrup->where('tipe', 'tarif')->map(fn ($g) => ['nominal' => $g->nominal, 'kriteria' => $g->kriteria->map(fn ($k) => ['field' => $k->field, 'operator' => $k->operator, 'value' => $k->value])->values()->all()])->values()->all() ?? [])),
-            kategoriKeringananStoreUrl: @js(route('admin.kategori-keringanan.store')),
+            kategoriKeringananStoreUrl: '{{ route('admin.kategori-keringanan.store') }}',
+            previewSasaranUrl: '{{ route('admin.jenis-tagihan.preview-sasaran') }}',
+            previewTarifKeringananUrl: '{{ route('admin.jenis-tagihan.preview-tarif-keringanan') }}',
+            reorderTarifUrl: '{{ $jenisTagihan ? route('admin.jenis-tagihan.tarif-grup.reorder', $jenisTagihan) : '' }}',
             initialKeringanan: @js(old('keringanan', $jenisTagihan?->keringananRules->map(fn ($r) => ['kategori_keringanan_id' => $r->kategori_keringanan_id, 'tipe_potongan' => $r->tipe_potongan, 'nilai' => (float) $r->nilai, 'keterangan' => $r->keterangan])->values()->all() ?? [])),
         })"
     >
@@ -383,9 +386,20 @@
                 {{-- CARD 2: Nominal Default & Sasaran Siswa (Non-PPDB) --}}
                 <template x-if="!kategoriPpdb">
                     <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-5">
-                        <div class="border-b border-gray-100 pb-3.5">
-                            <h4 class="font-bold text-gray-900 text-sm">Nominal Default & Target Sasaran</h4>
-                            <p class="text-xs text-gray-500">Tentukan nominal dasar dan kriteria siswa yang ditagih</p>
+                        <div class="border-b border-gray-100 pb-3.5 flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm">Nominal Default & Target Sasaran</h4>
+                                <p class="text-xs text-gray-500">Tentukan nominal dasar dan kriteria siswa yang ditagih</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="fetchPreviewSasaran()" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition">
+                                    <x-icon name="refresh" class="h-3.5 w-3.5" />
+                                    <span>Hitung Sasaran</span>
+                                </button>
+                                <span x-show="previewSasaranCount !== null" class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-bold text-brand-700 border border-brand-200">
+                                    <span x-text="previewSasaranCount + ' siswa cocok'"></span>
+                                </span>
+                            </div>
                         </div>
 
                         {{-- Nominal Default dengan Format Rupiah --}}
@@ -412,11 +426,11 @@
                             <x-input-label value="Target Sasaran Siswa" class="mb-2" />
                             <div class="flex items-center gap-6">
                                 <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                    <input type="radio" value="semua" x-model="sasaranMode" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
+                                    <input type="radio" value="semua" x-model="sasaranMode" @change="fetchPreviewSasaran()" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
                                     <span>Semua Siswa</span>
                                 </label>
                                 <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                                    <input type="radio" value="kriteria" x-model="sasaranMode" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
+                                    <input type="radio" value="kriteria" x-model="sasaranMode" @change="fetchPreviewSasaran()" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
                                     <span>Berdasarkan Kriteria Khusus</span>
                                 </label>
                             </div>
@@ -430,14 +444,14 @@
                                                     <div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" x-text="gi + 1"></div>
                                                     <p class="text-sm font-bold text-gray-900">Grup Sasaran</p>
                                                 </div>
-                                                <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.sasaran.splice(gi, 1)">Hapus Grup</button>
+                                                <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.sasaran.splice(gi, 1); fetchPreviewSasaran();">Hapus Grup</button>
                                             </div>
                                             <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
                                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-start">
-                                                    <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
+                                                    <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid }); fetchPreviewSasaran();" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
                                                         <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldLabels[fieldOpt] ?? fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
                                                     </select>
-                                                    <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
+                                                    <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" @change="fetchPreviewSasaran()" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
                                                         <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
                                                         <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                                     </select>
@@ -448,7 +462,7 @@
                                                         <p class="mt-1 text-[10px] text-gray-400">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk hapus.</p>
                                                     </div>
                                                     <div class="text-right sm:text-left sm:col-span-1 pt-2">
-                                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="grup.kriteria.splice(ki, 1)">Hapus</button>
+                                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="grup.kriteria.splice(ki, 1); fetchPreviewSasaran();">Hapus</button>
                                                     </div>
                                                 </div>
                                             </template>
@@ -476,9 +490,15 @@
                                 <h4 class="font-bold text-gray-900 text-sm">Tarif Berdimensi (Nominal Khusus)</h4>
                                 <p class="text-xs text-gray-500">Nominal spesifik per kriteria kelas / tingkat</p>
                             </div>
-                            <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="fetchPreviewTarifKeringanan()" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition">
+                                    <x-icon name="refresh" class="h-3.5 w-3.5" />
+                                    <span>Hitung Siswa</span>
+                                </button>
+                                <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
+                            </div>
                         </div>
-                        <p class="text-[11px] text-gray-400">Diproses berurutan dari atas — Grup pertama yang cocok dengan data siswa akan dipakai nominalnya.</p>
+                        <p class="text-[11px] text-gray-400">Diproses berurutan dari atas (Gunakan panah &uarr;&darr; untuk ubah prioritas) — Grup pertama yang cocok dengan data siswa akan dipakai nominalnya.</p>
 
                         <div class="space-y-4 pt-1">
                             <template x-for="(grup, gi) in form.tarif" :key="grup.uid">
@@ -487,8 +507,19 @@
                                         <div class="flex items-center gap-2">
                                             <div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" x-text="gi + 1"></div>
                                             <p class="text-sm font-bold text-gray-900">Grup Tarif</p>
+                                            <span x-show="previewTarifCounts[gi] !== undefined" class="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700 border border-brand-200/60">
+                                                <span x-text="(previewTarifCounts[gi] ?? 0) + ' siswa cocok'"></span>
+                                            </span>
                                         </div>
-                                        <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-white shadow-xs">
+                                                <button type="button" @click="moveTarifUp(gi)" :disabled="gi === 0" class="p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-25 transition" title="Geser ke atas">
+                                                    <x-icon name="arrow_upward" class="h-3.5 w-3.5" />
+                                                </button>
+                                                <button type="button" @click="moveTarifDown(gi)" :disabled="gi === form.tarif.length - 1" class="p-1 text-gray-500 hover:bg-gray-100 disabled:opacity-25 transition" title="Geser ke bawah">
+                                                    <x-icon name="arrow_downward" class="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
                                             <div class="relative w-44">
                                                 <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                                     <span class="text-xs font-bold text-gray-400">Rp</span>
@@ -502,15 +533,15 @@
                                                 />
                                                 <input type="hidden" :name="'tarif[' + gi + '][nominal]'" :value="grup.nominal" />
                                             </div>
-                                            <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.tarif.splice(gi, 1)">Hapus</button>
+                                            <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.tarif.splice(gi, 1); fetchPreviewTarifKeringanan();">Hapus</button>
                                         </div>
                                     </div>
                                     <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
                                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-start">
-                                            <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
+                                            <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid }); fetchPreviewTarifKeringanan();" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
                                                 <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldLabels[fieldOpt] ?? fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
                                             </select>
-                                            <select :name="'tarif[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
+                                            <select :name="'tarif[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" @change="fetchPreviewTarifKeringanan()" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
                                                 <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
                                                 <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                             </select>
@@ -521,7 +552,7 @@
                                                 <p class="mt-1 text-[10px] text-gray-400">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk hapus.</p>
                                             </div>
                                             <div class="text-right sm:text-left sm:col-span-1 pt-2">
-                                                <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="grup.kriteria.splice(ki, 1)">Hapus</button>
+                                                <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="grup.kriteria.splice(ki, 1); fetchPreviewTarifKeringanan();">Hapus</button>
                                             </div>
                                         </div>
                                     </template>
@@ -547,21 +578,32 @@
                                 <h4 class="font-bold text-gray-900 text-sm">Keringanan & Potongan Biaya</h4>
                                 <p class="text-xs text-gray-500">Diskon khusus untuk kategori siswa tertentu</p>
                             </div>
-                            <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="fetchPreviewTarifKeringanan()" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition">
+                                    <x-icon name="refresh" class="h-3.5 w-3.5" />
+                                    <span>Hitung Siswa</span>
+                                </button>
+                                <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
+                            </div>
                         </div>
 
                         <div class="space-y-3 pt-1">
                             <template x-for="(rule, ri) in form.keringanan" :key="rule.uid">
-                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-5 items-center rounded-xl border border-gray-100 bg-gray-50/50 p-3">
-                                    <select :name="'keringanan[' + ri + '][kategori_keringanan_id]'" x-model.number="rule.kategori_keringanan_id" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                        <option value="">-- Pilih Kategori --</option>
-                                        <template x-for="opt in kategoriKeringananOptions" :key="opt.id"><option :value="opt.id" x-text="opt.nama" :selected="opt.id === rule.kategori_keringanan_id"></option></template>
-                                    </select>
-                                    <select :name="'keringanan[' + ri + '][tipe_potongan]'" x-model="rule.tipe_potongan" @change="onKeringananTipeChange(rule)" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                        <option value="fixed" :selected="rule.tipe_potongan === 'fixed'">Nominal Tetap (Rp)</option>
-                                        <option value="persen" :selected="rule.tipe_potongan === 'persen'">Persentase (%)</option>
-                                    </select>
-                                    <div class="relative">
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-12 items-center rounded-xl border border-gray-100 bg-gray-50/50 p-3">
+                                    <div class="sm:col-span-4 flex items-center gap-2">
+                                        <select :name="'keringanan[' + ri + '][kategori_keringanan_id]'" x-model.number="rule.kategori_keringanan_id" @change="fetchPreviewTarifKeringanan()" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                            <option value="">-- Pilih Kategori --</option>
+                                            <template x-for="opt in kategoriKeringananOptions" :key="opt.id"><option :value="opt.id" x-text="opt.nama" :selected="opt.id === rule.kategori_keringanan_id"></option></template>
+                                        </select>
+                                        <span x-show="previewKeringananCounts[rule.kategori_keringanan_id] !== undefined" class="shrink-0 inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700 border border-brand-200/60" x-text="(previewKeringananCounts[rule.kategori_keringanan_id] ?? 0) + ' siswa'"></span>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <select :name="'keringanan[' + ri + '][tipe_potongan]'" x-model="rule.tipe_potongan" @change="onKeringananTipeChange(rule)" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                            <option value="fixed" :selected="rule.tipe_potongan === 'fixed'">Nominal Tetap (Rp)</option>
+                                            <option value="persen" :selected="rule.tipe_potongan === 'persen'">Persentase (%)</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-3 relative">
                                         <div x-show="rule.tipe_potongan === 'fixed'" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                                             <span class="text-xs font-bold text-gray-400">Rp</span>
                                         </div>
@@ -575,9 +617,11 @@
                                         />
                                         <input type="hidden" :name="'keringanan[' + ri + '][nilai]'" :value="rule.nilai" />
                                     </div>
-                                    <input type="text" :name="'keringanan[' + ri + '][keterangan]'" x-model="rule.keterangan" placeholder="Keterangan (opsional)" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                    <div class="text-right sm:text-center">
-                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.keringanan.splice(ri, 1)">Hapus</button>
+                                    <div class="sm:col-span-2">
+                                        <input type="text" :name="'keringanan[' + ri + '][keterangan]'" x-model="rule.keterangan" placeholder="Keterangan" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                    </div>
+                                    <div class="sm:col-span-1 text-right">
+                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.keringanan.splice(ri, 1); fetchPreviewTarifKeringanan();">Hapus</button>
                                     </div>
                                 </div>
                             </template>
