@@ -3,31 +3,33 @@
 namespace App\Providers;
 
 use App\Auth\TenantAwareUserProvider;
-use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
-use App\Models\AkunPendaftar;
-use App\Notifications\Channels\WhatsAppChannel;
-use App\Domains\Keuangan\Services\Gateway\BriSnapGateway;
-use App\Domains\Keuangan\Services\Gateway\MockPaymentGateway;
-use Illuminate\Auth\Middleware\Authenticate;
-use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
-use Illuminate\Auth\Notifications\ResetPassword;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\ServiceProvider;
-use App\Domains\Keuangan\Services\Gateway\BriSnap\BriSnapClient;
-use App\Domains\Keuangan\Services\Gateway\HybridPaymentGateway;
+use App\Domains\Akademik\Models\ElemenCp;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Identity\Events\PersonsMerged;
 use App\Domains\Keuangan\Contracts\BriInboundAuthenticatorInterface;
+use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
 use App\Domains\Keuangan\Events\BillTypeActivated;
 use App\Domains\Keuangan\Listeners\GenerateTagihanForActivatedBillType;
 use App\Domains\Keuangan\Listeners\GenerateTagihanForNewStudent;
 use App\Domains\Keuangan\Listeners\GenerateTagihanForUpdatedClass;
+use App\Domains\Keuangan\Listeners\ReparentTagihanOnPersonsMerged;
+use App\Domains\Keuangan\Services\BriInbound\SimpleBriInboundAuthenticator;
+use App\Domains\Keuangan\Services\Gateway\BriSnap\BriSnapClient;
+use App\Domains\Keuangan\Services\Gateway\BriSnapGateway;
+use App\Domains\Keuangan\Services\Gateway\HybridPaymentGateway;
+use App\Domains\Keuangan\Services\Gateway\MockPaymentGateway;
 use App\Events\StudentCreated;
 use App\Events\StudentUpdatedClass;
-use App\Domains\Keuangan\Services\BriInbound\SimpleBriInboundAuthenticator;
-use App\Domains\Akademik\Models\ElemenCp;
-use App\Domains\Akademik\Models\MataPelajaran;
+use App\Models\AkunPendaftar;
+use App\Notifications\Channels\WhatsAppChannel;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -41,7 +43,7 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(PaymentGatewayInterface::class, function ($app) {
             $gatewayConfig = config('services.bri.gateway', 'mock');
-            
+
             if ($gatewayConfig === 'snap') {
                 return $app->make(BriSnapGateway::class);
             }
@@ -86,9 +88,10 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Notification::extend('whatsapp', fn ($app) => new WhatsAppChannel);
-        
+
         Event::listen(BillTypeActivated::class, GenerateTagihanForActivatedBillType::class);
         Event::listen(StudentCreated::class, GenerateTagihanForNewStudent::class);
         Event::listen(StudentUpdatedClass::class, GenerateTagihanForUpdatedClass::class);
+        Event::listen(PersonsMerged::class, ReparentTagihanOnPersonsMerged::class);
     }
 }
