@@ -83,6 +83,17 @@ Implementasi lengkap sistem penjadwalan tagihan 5 tipe (`harian`, `mingguan`, `b
   - Verifikasi otomatis via Playwright / `browser_subagent` dengan rekaman browser WebP artifact.
 - **Hasil**: 14/14 form tests passing.
 
+### Task 10: UI/UX Polishing, Currency Masking, & Layout Enhancement
+- **Files**: `resources/views/portals/lembaga/keuangan/jenis-tagihan/form.blade.php`, `resources/js/jenis-tagihan-form.js`, `resources/views/layouts/app.blade.php`, `app/View/Components/AppLayout.php`
+- **Perubahan**:
+  - **Live Rupiah Currency Masking**: Input `default_amount`, `tarif[gi][nominal]`, dan `keringanan[ri][nilai]` (fixed) otomatis terformat titik ribuan saat diketik (`750000` -> `Rp 750.000`) dengan sinkronisasi hidden input bertipe integer murni ke backend.
+  - **Custom Radio Cards untuk Mode**: Mengganti select dropdown dengan 2 kartu radio interaktif (Otomatis & Manual) dengan SVG icons (`schedule`, `edit_note`), ring highlight, dan penjelasan fungsi.
+  - **Segmented Pill Buttons untuk Tipe**: Selector tipe berbentuk pill button yang dinamis menyembunyikan 'Sekali Tagih' pada mode Otomatis.
+  - **Optgroup Kategori**: Dropdown kategori dikelompokkan menjadi *Siswa Aktif* dan *Penerimaan Siswa Baru (PPDB / SPMB)*.
+  - **Contextual Guidance Card**: Kartu informatif otomatis tampil di kolom kanan saat kategori PPDB dipilih.
+  - **Auto-Collapse Sidebar**: Layout `<x-app-layout :sidebar-collapsed="true">` otomatis menyembunyikan sidebar saat membuka halaman create/edit agar area form dua kolom memiliki canvas kerja yang lebar dan lapang.
+- **Hasil**: 357/357 tests passing di domain Keuangan & Admin JenisTagihan.
+
 ### Test Suite Alignment (Commit `911f58f5`)
 - **Files**: `tests/Feature/Admin/JenisTagihanFinalReviewFixesTest.php`
 - **Perubahan**: Menyesuaikan payload request non-PPDB di suite test lama agar menyertakan `'tipe' => 'bulanan'` sesuai aturan validasi baru.
@@ -102,12 +113,14 @@ Implementasi lengkap sistem penjadwalan tagihan 5 tipe (`harian`, `mingguan`, `b
    - Ketika bendahara mengedit jenis tagihan dari `Mingguan` ke `Bulanan`, field `hari_generate` dan `offset_hari_jatuh_tempo` otomatis di-set ke `NULL` oleh `UpdateJenisTagihanAction` agar database tetap bersih dan tidak menyimpan konfigurasi yatim.
 4. **Isolasi Penuh untuk Kategori PPDB**:
    - Kategori PPDB (`pendaftaran`, `daftar_ulang`) diproses via alur penerimaan murid, bukan billing engine berulang. `hasBillingPayload()` dan validasi form secara ketat mencegah input tipe/billing masuk ke jenis tagihan PPDB.
+5. **Integritas Format Rupiah Frontend vs Backend**:
+   - Format titik ribuan pada UI di-bind ke display state, sedangkan submit form menggunakan nilai unformatted (integer) melalui hidden input agar validasi backend `numeric` Laravel tidak mengalami kendala lokalisasi titik/koma desimal.
 
 ---
 
 ## 3. Hal yang Masih Perlu Direview Manusia / Claude
 
-- **Git Branch Status**: Pekerjaan berada di branch `keuangan-v2`. Semua perubahan telah di-commit secara rapi (total 10 commit).
+- **Git Branch Status**: Pekerjaan berada di branch `keuangan-v2`. Semua perubahan telah di-commit secara rapi.
 - **Production Migration Note**: Saat deploy ke production/staging, pastikan menjalankan `php artisan migrate` untuk menerapkan migration `2026_09_01_000003_add_tipe_penjadwalan_to_jenis_tagihan_table.php`. Migration ini sudah memiliki safe backfill dan idempotency.
 - **Frontend Asset Build**: Perubahan Javascript Alpine.js sudah dibuild ke `public/build/` via Vite (`npm.cmd run build`).
 
@@ -116,6 +129,7 @@ Implementasi lengkap sistem penjadwalan tagihan 5 tipe (`harian`, `mingguan`, `b
 ## 4. Riwayat Commit
 
 ```
+d3bc9401 docs(keuangan): add handoff log for jenis tagihan tipe penjadwalan feature
 911f58f5 test(keuangan): pass tipe=bulanan in non-ppdb payloads in JenisTagihanFinalReviewFixesTest
 55a602ff feat(keuangan): dynamic UI form for all 5 Tipe options and their support fields
 58ee5d77 feat(keuangan): rewrite GenerateTagihanHarian candidate matching query per Tipe

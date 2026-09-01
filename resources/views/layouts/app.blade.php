@@ -16,7 +16,7 @@
     </head>
     <body class="h-full font-sans antialiased text-gray-900">
         <div
-            x-data="{ sidebarOpen: false, sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true' }"
+            x-data="{ sidebarOpen: false, sidebarCollapsed: {{ $sidebarCollapsed ? 'true' : "localStorage.getItem('sidebarCollapsed') === 'true'" }} }"
             x-init="$watch('sidebarCollapsed', value => localStorage.setItem('sidebarCollapsed', value))"
             class="min-h-full bg-gray-50 lg:flex"
         >

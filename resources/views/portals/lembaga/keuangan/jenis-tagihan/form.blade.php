@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :sidebar-collapsed="true">
     {{-- Top Navigation & Breadcrumbs --}}
     <div class="mx-auto max-w-6xl mb-6 flex flex-wrap items-center justify-between gap-3 px-4 sm:px-0">
         <div>
@@ -8,7 +8,7 @@
                 <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-900">{{ $jenisTagihan === null ? 'Tambah' : 'Edit' }}</b>
             </p>
         </div>
-        <a href="{{ route('admin.jenis-tagihan.index') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-95">
+        <a href="{{ route('admin.jenis-tagihan.index') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-xs font-semibold text-gray-700 shadow-xs transition hover:bg-gray-50 active:scale-95">
             <x-icon name="arrow_back" class="h-4 w-4 text-gray-500" />
             <span>Kembali ke Daftar</span>
         </a>
@@ -16,15 +16,16 @@
 
     @if ($errors->any())
         <div class="mx-auto max-w-6xl px-4 sm:px-0 mb-6">
-            <div class="rounded-xl border border-error-200 bg-error-50 p-4 text-sm font-medium text-error-700 shadow-sm">{{ $errors->first() }}</div>
+            <div class="rounded-xl border border-error-200 bg-error-50 p-4 text-sm font-medium text-error-700 shadow-xs">{{ $errors->first() }}</div>
         </div>
     @endif
 
     <div
         x-data="jenisTagihanForm({
-            kategoriAwal: @js(old('kategori', $jenisTagihan?->kategori ?? 'lainnya')),
+            kategoriAwal: @js(old('kategori', $jenisTagihan?->kategori ?? 'spp')),
             modeAwal: @js(old('mode', $jenisTagihan?->mode ?? 'manual')),
             tipeAwal: @js(old('tipe', $jenisTagihan?->tipe?->value ?? ($jenisTagihan?->mode === 'manual' ? 'sekali' : 'bulanan'))),
+            defaultAmountAwal: @js(old('default_amount', $jenisTagihan?->default_amount)),
             bisaDicicilAwal: @js((bool) old('bisa_dicicil', $jenisTagihan?->bisa_dicicil ?? false)),
             kategoriKeringananList: @js($kategoriKeringananList),
             referenceOptions: {
@@ -50,357 +51,549 @@
                 @method('PUT')
             @endif
 
-        {{-- Sticky Sidebar Form (Kolom Kiri) --}}
-        <div class="sticky top-6 flex flex-col gap-5">
-            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card transition hover:shadow-elevated">
-                <div class="mb-5 flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                        <x-icon name="receipt_long" class="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-gray-900">Identitas Tagihan</h3>
-                        <p class="text-xs text-gray-500">Konfigurasi esensial</p>
-                    </div>
-                </div>
-
-                <div class="space-y-5">
-                    <div>
-                        <x-input-label value="Nama" />
-                        <x-text-input type="text" name="nama" :value="old('nama', $jenisTagihan?->nama)" placeholder="mis. SPP Bulanan" class="mt-1.5" required />
-                    </div>
-
-                    <div>
-                        <x-input-label value="Kategori" />
-                        <select name="kategori" x-model="form.kategori" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="pendaftaran">Pendaftaran</option>
-                            <option value="daftar_ulang">Daftar Ulang</option>
-                            <option value="lainnya">Lainnya</option>
-                            <option value="spp">SPP</option>
-                            <option value="tahunan">Tahunan</option>
-                            <option value="kegiatan">Kegiatan</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="flex items-center gap-2 text-sm text-gray-700">
-                            <input type="checkbox" name="bisa_dicicil" value="1" x-model="form.bisaDicicil" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition" {{ old('bisa_dicicil', $jenisTagihan?->bisa_dicicil) ? 'checked' : '' }}>
-                            <span class="font-medium">Bisa dicicil</span>
-                        </label>
-                        <div x-show="form.bisaDicicil" x-cloak class="mt-2" x-transition>
-                            <x-input-label value="Maksimal Jumlah Cicilan" />
-                            <x-text-input type="number" min="2" name="maks_cicilan" :value="old('maks_cicilan', $jenisTagihan?->maks_cicilan)" class="mt-1.5" />
+            {{-- Sticky Sidebar Form (Kolom Kiri) --}}
+            <div class="sticky top-6 flex flex-col gap-5">
+                <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card transition hover:shadow-elevated">
+                    <div class="mb-5 flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                            <x-icon name="receipt_long" class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-gray-900">Identitas Tagihan</h3>
+                            <p class="text-xs text-gray-500">Konfigurasi dasar & status</p>
                         </div>
                     </div>
 
-                    <div>
-                        <label class="flex items-center gap-2 text-sm text-gray-700">
-                            <input type="checkbox" name="is_active" value="1" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition" {{ old('is_active', $jenisTagihan?->is_active ?? true) ? 'checked' : '' }}>
-                            <span class="font-medium">Status Aktif</span>
-                        </label>
-                    </div>
+                    <div class="space-y-5">
+                        <div>
+                            <x-input-label value="Nama Jenis Tagihan" />
+                            <x-text-input type="text" name="nama" :value="old('nama', $jenisTagihan?->nama)" placeholder="mis. SPP Bulanan" class="mt-1.5" required />
+                        </div>
 
-                    <div class="flex flex-col gap-3 pt-4">
-                        <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 active:scale-[0.98]">
-                            <x-icon name="save" class="h-4 w-4" />
-                            <span>{{ $jenisTagihan === null ? 'Buat Jenis Tagihan' : 'Simpan Perubahan' }}</span>
-                        </button>
-                        <a href="{{ route('admin.jenis-tagihan.index') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]">
-                            Batal
-                        </a>
+                        <div>
+                            <x-input-label value="Kategori Tagihan" />
+                            <select name="kategori" x-model="form.kategori" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500">
+                                <optgroup label="Siswa Aktif (Tagihan Reguler & Operasional)">
+                                    <option value="spp">SPP (Biaya Pendidikan Rutin)</option>
+                                    <option value="tahunan">Tahunan (Uang Pangkal / Sarpras)</option>
+                                    <option value="kegiatan">Kegiatan (Field Trip / Ekskul / Ujian)</option>
+                                    <option value="lainnya">Lainnya</option>
+                                    <option value="custom">Custom</option>
+                                </optgroup>
+                                <optgroup label="Penerimaan Siswa Baru (PPDB / SPMB)">
+                                    <option value="pendaftaran">Pendaftaran PPDB</option>
+                                    <option value="daftar_ulang">Daftar Ulang PPDB</option>
+                                </optgroup>
+                            </select>
+                            <p class="mt-1 text-[11px] text-gray-400">Pilih kategori yang sesuai untuk klasifikasi laporan.</p>
+                        </div>
+
+                        <div class="rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 space-y-3">
+                            <div>
+                                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                    <input type="checkbox" name="bisa_dicicil" value="1" x-model="form.bisaDicicil" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition" {{ old('bisa_dicicil', $jenisTagihan?->bisa_dicicil) ? 'checked' : '' }}>
+                                    <span class="font-medium text-gray-800">Bisa Dicicil</span>
+                                </label>
+                                <div x-show="form.bisaDicicil" x-cloak class="mt-2.5 pt-2.5 border-t border-gray-200/60" x-transition>
+                                    <x-input-label value="Maksimal Jumlah Cicilan" />
+                                    <x-text-input type="number" min="2" name="maks_cicilan" :value="old('maks_cicilan', $jenisTagihan?->maks_cicilan)" placeholder="mis. 3" class="mt-1.5" />
+                                    <p class="mt-1 text-[10px] text-gray-400">Batas frekuensi pembayaran per tagihan.</p>
+                                </div>
+                            </div>
+
+                            <div class="pt-2 border-t border-gray-200/60">
+                                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                    <input type="checkbox" name="is_active" value="1" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition" {{ old('is_active', $jenisTagihan?->is_active ?? true) ? 'checked' : '' }}>
+                                    <span class="font-medium text-gray-800">Status Aktif</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-3 pt-2">
+                            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-bold text-white shadow-xs transition hover:bg-brand-700 active:scale-[0.98]">
+                                <x-icon name="check" class="h-4 w-4" />
+                                <span>{{ $jenisTagihan === null ? 'Buat Jenis Tagihan' : 'Simpan Perubahan' }}</span>
+                            </button>
+                            <a href="{{ route('admin.jenis-tagihan.index') }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 shadow-xs transition hover:bg-gray-50 active:scale-[0.98]">
+                                Batal
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        {{-- Konten Dinamis (Kolom Kanan) --}}
-        <div class="flex flex-col gap-6">
-            <template x-if="!kategoriPpdb">
-                <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
-                    <p class="font-display text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Mode Penjadwalan & Default</p>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 pt-1">
-                        <div>
-                            <x-input-label value="Nominal Default" />
-                            <x-text-input type="number" step="0.01" min="0" name="default_amount" :value="old('default_amount', $jenisTagihan?->default_amount)" class="mt-1.5" placeholder="Dipakai jika kriteria tak cocok" />
-                        </div>
-                        <div>
-                            <x-input-label value="Mode" />
-                            <select name="mode" x-model="form.mode" @change="onModeChange()" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                <option value="manual">Manual</option>
-                                <option value="otomatis">Otomatis</option>
-                            </select>
-                        </div>
-                        <div>
-                            <x-input-label value="Tipe Penjadwalan" />
-                            <select name="tipe" x-model="form.tipe" @change="onTipeChange()" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                <template x-if="form.mode === 'manual'">
-                                    <option value="sekali" :selected="form.tipe === 'sekali'">Sekali (Insidental / Non-Rutin)</option>
-                                </template>
-                                <option value="harian" :selected="form.tipe === 'harian'">Harian</option>
-                                <option value="mingguan" :selected="form.tipe === 'mingguan'">Mingguan</option>
-                                <option value="bulanan" :selected="form.tipe === 'bulanan'">Bulanan</option>
-                                <option value="tahunan" :selected="form.tipe === 'tahunan'">Tahunan</option>
-                            </select>
-                        </div>
-
-                        {{-- Mode Otomatis Dates Window --}}
-                        <template x-if="form.mode === 'otomatis'">
-                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-2 pt-2 border-t border-gray-100">
-                                <div>
-                                    <x-input-label value="Tanggal Mulai" />
-                                    <x-text-input type="date" name="tanggal_mulai" :value="old('tanggal_mulai', optional($jenisTagihan?->tanggal_mulai)->toDateString())" class="mt-1.5" />
-                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal jenis tagihan ini mulai aktif digenerate otomatis.</p>
-                                </div>
-                                <div>
-                                    <x-input-label value="Tanggal Selesai (opsional)" />
-                                    <x-text-input type="date" name="tanggal_selesai" :value="old('tanggal_selesai', optional($jenisTagihan?->tanggal_selesai)->toDateString())" class="mt-1.5" />
-                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Kosongkan jika tidak ada batas akhir.</p>
-                                </div>
+            {{-- Konten Dinamis (Kolom Kanan) --}}
+            <div class="flex flex-col gap-6">
+                {{-- Informative Card saat kategori PPDB dipilih --}}
+                <template x-if="kategoriPpdb">
+                    <div class="rounded-2xl border border-brand-200 bg-brand-50/60 p-6 shadow-card space-y-3">
+                        <div class="flex items-start gap-3.5">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 text-white">
+                                <x-icon name="info" class="h-5 w-5" />
                             </div>
-                        </template>
-
-                        {{-- Conditional Support Fields per Tipe --}}
-                        {{-- Harian: offset_hari_jatuh_tempo --}}
-                        <template x-if="form.tipe === 'harian'">
-                            <div class="sm:col-span-3 pt-2">
-                                <x-input-label value="Jarak Jatuh Tempo (hari setelah generate)" />
-                                <x-text-input type="number" min="0" max="365" name="offset_hari_jatuh_tempo" :value="old('offset_hari_jatuh_tempo', $jenisTagihan?->offset_hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 3 (jatuh tempo 3 hari setelah tagihan terbit)" />
-                                <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Jumlah hari dari tanggal generate sampai tagihan jatuh tempo. Kosongkan jika tanpa jatuh tempo.</p>
+                            <div class="space-y-1.5">
+                                <h4 class="text-sm font-bold text-gray-900">Alur Khusus Kategori PPDB</h4>
+                                <p class="text-xs text-gray-600 leading-relaxed">
+                                    Jenis tagihan kategori PPDB (Pendaftaran & Daftar Ulang) terintegrasi langsung dengan modul penerimaan siswa baru. Tagihan akan otomatis terbit saat calon siswa mendaftar sesuai jalur seleksi.
+                                </p>
+                                <p class="text-xs text-brand-700 font-medium pt-1">
+                                    Pengaturan nominal per jalur dan gelombang dapat dikonfigurasi melalui menu SPMB / PPDB setelah jenis tagihan ini disimpan.
+                                </p>
                             </div>
-                        </template>
+                        </div>
+                    </div>
+                </template>
 
-                        {{-- Mingguan: hari_generate (1-7), offset_hari_jatuh_tempo --}}
-                        <template x-if="form.tipe === 'mingguan'">
-                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-2 pt-2">
-                                <template x-if="form.mode === 'otomatis'">
-                                    <div>
-                                        <x-input-label value="Hari Generate Mingguan" />
-                                        <select name="hari_generate" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                            <option value="1" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 1 ? 'selected' : '' }}>Senin</option>
-                                            <option value="2" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 2 ? 'selected' : '' }}>Selasa</option>
-                                            <option value="3" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 3 ? 'selected' : '' }}>Rabu</option>
-                                            <option value="4" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 4 ? 'selected' : '' }}>Kamis</option>
-                                            <option value="5" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 5 ? 'selected' : '' }}>Jumat</option>
-                                            <option value="6" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 6 ? 'selected' : '' }}>Sabtu</option>
-                                            <option value="7" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 7 ? 'selected' : '' }}>Minggu</option>
-                                        </select>
-                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Hari dalam setiap minggu saat tagihan otomatis digenerate.</p>
+                {{-- CARD 1: Aturan Penjadwalan & Terbit Tagihan (Non-PPDB) --}}
+                <template x-if="!kategoriPpdb">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-5">
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-3.5">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm">Aturan Penjadwalan & Terbit Tagihan</h4>
+                                <p class="text-xs text-gray-500">Tentukan cara penerbitan dan frekuensi tagihan</p>
+                            </div>
+                        </div>
+
+                        {{-- 1. Mode Selection via Custom Radio Cards --}}
+                        <div>
+                            <x-input-label value="Mode Penerbitan Tagihan" class="mb-2" />
+                            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {{-- Mode Otomatis Card --}}
+                                <label
+                                    class="relative flex cursor-pointer flex-col rounded-xl border p-4 shadow-xs transition focus-within:ring-2 focus-within:ring-brand-500"
+                                    :class="form.mode === 'otomatis' ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500' : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50'"
+                                >
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="flex h-8 w-8 items-center justify-center rounded-lg" :class="form.mode === 'otomatis' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'">
+                                                <x-icon name="schedule" class="h-4 w-4" />
+                                            </div>
+                                            <span class="text-sm font-bold" :class="form.mode === 'otomatis' ? 'text-brand-900' : 'text-gray-900'">Otomatis (Jadwal)</span>
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            name="mode"
+                                            value="otomatis"
+                                            x-model="form.mode"
+                                            @change="onModeChange()"
+                                            class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500"
+                                        />
                                     </div>
+                                    <p class="mt-2 text-xs leading-relaxed" :class="form.mode === 'otomatis' ? 'text-brand-700' : 'text-gray-500'">
+                                        Tagihan diterbitkan otomatis oleh sistem pada tanggal/hari yang dijadwalkan secara rutin.
+                                    </p>
+                                </label>
+
+                                {{-- Mode Manual Card --}}
+                                <label
+                                    class="relative flex cursor-pointer flex-col rounded-xl border p-4 shadow-xs transition focus-within:ring-2 focus-within:ring-brand-500"
+                                    :class="form.mode === 'manual' ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500' : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50'"
+                                >
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-2.5">
+                                            <div class="flex h-8 w-8 items-center justify-center rounded-lg" :class="form.mode === 'manual' ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-600'">
+                                                <x-icon name="edit_note" class="h-4 w-4" />
+                                            </div>
+                                            <span class="text-sm font-bold" :class="form.mode === 'manual' ? 'text-brand-900' : 'text-gray-900'">Manual (Insidental)</span>
+                                        </div>
+                                        <input
+                                            type="radio"
+                                            name="mode"
+                                            value="manual"
+                                            x-model="form.mode"
+                                            @change="onModeChange()"
+                                            class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500"
+                                        />
+                                    </div>
+                                    <p class="mt-2 text-xs leading-relaxed" :class="form.mode === 'manual' ? 'text-brand-700' : 'text-gray-500'">
+                                        Tagihan diterbitkan secara mandiri oleh staf keuangan saat dibutuhkan atau per kegiatan.
+                                    </p>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- 2. Tipe Penjadwalan (Segmented Buttons) --}}
+                        <div class="pt-1">
+                            <x-input-label value="Tipe / Frekuensi Periode Tagihan" class="mb-2" />
+                            <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                                {{-- Sekali (Manual only) --}}
+                                <template x-if="form.mode === 'manual'">
+                                    <label
+                                        class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-center text-xs font-semibold transition"
+                                        :class="form.tipe === 'sekali' ? 'border-brand-500 bg-brand-600 text-white shadow-xs' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                                    >
+                                        <input type="radio" name="tipe" value="sekali" x-model="form.tipe" @change="onTipeChange()" class="sr-only" />
+                                        <span>Sekali Tagih</span>
+                                    </label>
                                 </template>
+
+                                {{-- Harian --}}
+                                <label
+                                    class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-center text-xs font-semibold transition"
+                                    :class="form.tipe === 'harian' ? 'border-brand-500 bg-brand-600 text-white shadow-xs' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                                >
+                                    <input type="radio" name="tipe" value="harian" x-model="form.tipe" @change="onTipeChange()" class="sr-only" />
+                                    <span>Harian</span>
+                                </label>
+
+                                {{-- Mingguan --}}
+                                <label
+                                    class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-center text-xs font-semibold transition"
+                                    :class="form.tipe === 'mingguan' ? 'border-brand-500 bg-brand-600 text-white shadow-xs' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                                >
+                                    <input type="radio" name="tipe" value="mingguan" x-model="form.tipe" @change="onTipeChange()" class="sr-only" />
+                                    <span>Mingguan</span>
+                                </label>
+
+                                {{-- Bulanan --}}
+                                <label
+                                    class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-center text-xs font-semibold transition"
+                                    :class="form.tipe === 'bulanan' ? 'border-brand-500 bg-brand-600 text-white shadow-xs' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                                >
+                                    <input type="radio" name="tipe" value="bulanan" x-model="form.tipe" @change="onTipeChange()" class="sr-only" />
+                                    <span>Bulanan</span>
+                                </label>
+
+                                {{-- Tahunan --}}
+                                <label
+                                    class="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-center text-xs font-semibold transition"
+                                    :class="form.tipe === 'tahunan' ? 'border-brand-500 bg-brand-600 text-white shadow-xs' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                                >
+                                    <input type="radio" name="tipe" value="tahunan" x-model="form.tipe" @change="onTipeChange()" class="sr-only" />
+                                    <span>Tahunan</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {{-- 3. Rentang Waktu Aktif Tagihan (Mode Otomatis) --}}
+                        <template x-if="form.mode === 'otomatis'">
+                            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 space-y-3">
+                                <p class="text-xs font-bold text-gray-700">Periode Keaktifan Tagihan Otomatis</p>
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <x-input-label value="Tanggal Mulai" />
+                                        <x-text-input type="date" name="tanggal_mulai" :value="old('tanggal_mulai', optional($jenisTagihan?->tanggal_mulai)->toDateString())" class="mt-1.5" />
+                                        <p class="mt-1 text-[10px] text-gray-400">Tanggal jenis tagihan ini mulai aktif digenerate otomatis.</p>
+                                    </div>
+                                    <div>
+                                        <x-input-label value="Tanggal Selesai (opsional)" />
+                                        <x-text-input type="date" name="tanggal_selesai" :value="old('tanggal_selesai', optional($jenisTagihan?->tanggal_selesai)->toDateString())" class="mt-1.5" />
+                                        <p class="mt-1 text-[10px] text-gray-400">Kosongkan jika tidak ada batas akhir.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- 4. Parameter Jadwal & Jatuh Tempo (Dynamic per Tipe) --}}
+                        <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 space-y-4">
+                            <p class="text-xs font-bold text-gray-700">Ketentuan Waktu Generate & Jatuh Tempo</p>
+
+                            {{-- Harian --}}
+                            <template x-if="form.tipe === 'harian'">
                                 <div>
                                     <x-input-label value="Jarak Jatuh Tempo (hari setelah generate)" />
-                                    <x-text-input type="number" min="0" max="365" name="offset_hari_jatuh_tempo" :value="old('offset_hari_jatuh_tempo', $jenisTagihan?->offset_hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 5" />
-                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Jumlah hari dari tanggal generate sampai jatuh tempo. Kosongkan jika tanpa jatuh tempo.</p>
+                                    <x-text-input type="number" min="0" max="365" name="offset_hari_jatuh_tempo" :value="old('offset_hari_jatuh_tempo', $jenisTagihan?->offset_hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 3" />
+                                    <p class="mt-1 text-[10px] text-gray-400">Jumlah hari dari tanggal generate sampai tagihan jatuh tempo. Kosongkan jika tanpa jatuh tempo.</p>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
 
-                        {{-- Bulanan: tanggal_generate, hari_jatuh_tempo --}}
-                        <template x-if="form.tipe === 'bulanan'">
-                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-2 pt-2">
-                                <template x-if="form.mode === 'otomatis'">
-                                    <div>
-                                        <x-input-label value="Tanggal Generate (hari ke-)" />
-                                        <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" placeholder="mis. 1" />
-                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal setiap bulan saat tagihan otomatis dibuat (mis. isi 1 untuk tanggal 1 tiap bulan).</p>
+                            {{-- Mingguan --}}
+                            <template x-if="form.tipe === 'mingguan'">
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <template x-if="form.mode === 'otomatis'">
+                                        <div>
+                                            <x-input-label value="Hari Generate Mingguan" />
+                                            <select name="hari_generate" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500">
+                                                <option value="1" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 1 ? 'selected' : '' }}>Senin</option>
+                                                <option value="2" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 2 ? 'selected' : '' }}>Selasa</option>
+                                                <option value="3" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 3 ? 'selected' : '' }}>Rabu</option>
+                                                <option value="4" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 4 ? 'selected' : '' }}>Kamis</option>
+                                                <option value="5" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 5 ? 'selected' : '' }}>Jumat</option>
+                                                <option value="6" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 6 ? 'selected' : '' }}>Sabtu</option>
+                                                <option value="7" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 7 ? 'selected' : '' }}>Minggu</option>
+                                            </select>
+                                            <p class="mt-1 text-[10px] text-gray-400">Hari dalam setiap minggu saat tagihan otomatis digenerate.</p>
+                                        </div>
+                                    </template>
+                                    <div :class="form.mode === 'otomatis' ? '' : 'sm:col-span-2'">
+                                        <x-input-label value="Jarak Jatuh Tempo (hari setelah generate)" />
+                                        <x-text-input type="number" min="0" max="365" name="offset_hari_jatuh_tempo" :value="old('offset_hari_jatuh_tempo', $jenisTagihan?->offset_hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 5" />
+                                        <p class="mt-1 text-[10px] text-gray-400">Jumlah hari dari tanggal generate sampai jatuh tempo. Kosongkan jika tanpa jatuh tempo.</p>
                                     </div>
-                                </template>
-                                <div>
-                                    <x-input-label value="Tanggal jatuh tempo (tanggal di bulan yang sama, bukan jarak hari)" />
-                                    <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 10" />
-                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal di bulan yang sama dengan Tanggal Generate saat tagihan jatuh tempo (mis. isi 25 untuk tanggal 25 di bulan itu).</p>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
 
-                        {{-- Tahunan: bulan_generate, tanggal_generate, hari_jatuh_tempo --}}
-                        <template x-if="form.tipe === 'tahunan'">
-                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-3 pt-2">
-                                <template x-if="form.mode === 'otomatis'">
-                                    <div class="sm:col-span-1">
-                                        <x-input-label value="Bulan Generate" />
-                                        <select name="bulan_generate" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                            @foreach (range(1, 12) as $m)
-                                                <option value="{{ $m }}" {{ old('bulan_generate', $jenisTagihan?->bulan_generate) == $m ? 'selected' : '' }}>
-                                                    {{ \Carbon\Carbon::create(2026, $m, 1)->translatedFormat('F') }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Bulan tagihan otomatis diterbitkan tiap tahun.</p>
+                            {{-- Bulanan --}}
+                            <template x-if="form.tipe === 'bulanan'">
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                    <template x-if="form.mode === 'otomatis'">
+                                        <div>
+                                            <x-input-label value="Tanggal Generate (hari ke-)" />
+                                            <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" placeholder="mis. 1" />
+                                            <p class="mt-1 text-[10px] text-gray-400">Tanggal setiap bulan saat tagihan otomatis dibuat (mis. isi 1 untuk tanggal 1 tiap bulan).</p>
+                                        </div>
+                                    </template>
+                                    <div :class="form.mode === 'otomatis' ? '' : 'sm:col-span-2'">
+                                        <x-input-label value="Tanggal jatuh tempo (tanggal di bulan yang sama, bukan jarak hari)" />
+                                        <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 10" />
+                                        <p class="mt-1 text-[10px] text-gray-400">Tanggal di bulan yang sama dengan Tanggal Generate saat tagihan jatuh tempo (mis. isi 25 untuk tanggal 25 di bulan itu).</p>
                                     </div>
-                                </template>
-                                <template x-if="form.mode === 'otomatis'">
-                                    <div class="sm:col-span-1">
-                                        <x-input-label value="Tanggal Generate" />
-                                        <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" placeholder="mis. 1" />
-                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal pada bulan generate.</p>
-                                    </div>
-                                </template>
-                                <div :class="form.mode === 'otomatis' ? 'sm:col-span-1' : 'sm:col-span-3'">
-                                    <x-input-label value="Tanggal Jatuh Tempo" />
-                                    <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 20" />
-                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal jatuh tempo pada bulan generate tersebut.</p>
                                 </div>
-                            </div>
-                        </template>
+                            </template>
+
+                            {{-- Tahunan --}}
+                            <template x-if="form.tipe === 'tahunan'">
+                                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                                    <template x-if="form.mode === 'otomatis'">
+                                        <div class="sm:col-span-1">
+                                            <x-input-label value="Bulan Generate" />
+                                            <select name="bulan_generate" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500">
+                                                @foreach (range(1, 12) as $m)
+                                                    <option value="{{ $m }}" {{ old('bulan_generate', $jenisTagihan?->bulan_generate) == $m ? 'selected' : '' }}>
+                                                        {{ \Carbon\Carbon::create(2026, $m, 1)->translatedFormat('F') }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <p class="mt-1 text-[10px] text-gray-400">Bulan tagihan otomatis diterbitkan tiap tahun.</p>
+                                        </div>
+                                    </template>
+                                    <template x-if="form.mode === 'otomatis'">
+                                        <div class="sm:col-span-1">
+                                            <x-input-label value="Tanggal Generate" />
+                                            <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" placeholder="mis. 1" />
+                                            <p class="mt-1 text-[10px] text-gray-400">Tanggal pada bulan generate.</p>
+                                        </div>
+                                    </template>
+                                    <div :class="form.mode === 'otomatis' ? 'sm:col-span-1' : 'sm:col-span-3'">
+                                        <x-input-label value="Tanggal Jatuh Tempo" />
+                                        <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 20" />
+                                        <p class="mt-1 text-[10px] text-gray-400">Tanggal jatuh tempo pada bulan generate tersebut.</p>
+                                    </div>
+                                </div>
+                            </template>
+
+                            {{-- Sekali --}}
+                            <template x-if="form.tipe === 'sekali'">
+                                <p class="text-xs text-gray-500 italic">Tagihan insidental sekali terbit tidak memiliki siklus jatuh tempo otomatis.</p>
+                            </template>
+                        </div>
                     </div>
-                </div>
-            </template>
+                </template>
 
-            <template x-if="!kategoriPpdb">
-                <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
-                    <p class="font-display text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Target Sasaran</p>
-                    <div class="flex items-center gap-6 pt-1">
-                        <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                            <input type="radio" value="semua" x-model="sasaranMode" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
-                            Semua Siswa
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                            <input type="radio" value="kriteria" x-model="sasaranMode" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
-                            Berdasarkan Kriteria
-                        </label>
+                {{-- CARD 2: Nominal Default & Sasaran Siswa (Non-PPDB) --}}
+                <template x-if="!kategoriPpdb">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-5">
+                        <div class="border-b border-gray-100 pb-3.5">
+                            <h4 class="font-bold text-gray-900 text-sm">Nominal Default & Target Sasaran</h4>
+                            <p class="text-xs text-gray-500">Tentukan nominal dasar dan kriteria siswa yang ditagih</p>
+                        </div>
+
+                        {{-- Nominal Default dengan Format Rupiah --}}
+                        <div class="max-w-md">
+                            <x-input-label value="Nominal Tagihan Default" />
+                            <div class="relative mt-1.5 rounded-lg shadow-xs">
+                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                    <span class="text-xs font-bold text-gray-400">Rp</span>
+                                </div>
+                                <input
+                                    type="text"
+                                    x-model="form.defaultAmountDisplay"
+                                    @input="onDefaultAmountInput($event)"
+                                    placeholder="0"
+                                    class="block w-full rounded-lg border-gray-200 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-brand-500"
+                                />
+                                <input type="hidden" name="default_amount" :value="form.defaultAmount" />
+                            </div>
+                            <p class="mt-1 text-[10px] text-gray-400">Nominal dasar yang dipakai jika siswa tidak memenuhi kriteria tarif khusus.</p>
+                        </div>
+
+                        {{-- Target Sasaran (Semua vs Kriteria) --}}
+                        <div class="pt-3 border-t border-gray-100">
+                            <x-input-label value="Target Sasaran Siswa" class="mb-2" />
+                            <div class="flex items-center gap-6">
+                                <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input type="radio" value="semua" x-model="sasaranMode" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
+                                    <span>Semua Siswa</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input type="radio" value="kriteria" x-model="sasaranMode" class="h-4 w-4 border-gray-300 text-brand-600 focus:ring-brand-500">
+                                    <span>Berdasarkan Kriteria Khusus</span>
+                                </label>
+                            </div>
+
+                            <template x-if="sasaranMode === 'kriteria'">
+                                <div class="space-y-4 pt-3">
+                                    <template x-for="(grup, gi) in form.sasaran" :key="grup.uid">
+                                        <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-5 space-y-4 shadow-xs">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" x-text="gi + 1"></div>
+                                                    <p class="text-sm font-bold text-gray-900">Grup Sasaran</p>
+                                                </div>
+                                                <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.sasaran.splice(gi, 1)">Hapus Grup</button>
+                                            </div>
+                                            <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
+                                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-start">
+                                                    <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
+                                                        <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldLabels[fieldOpt] ?? fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
+                                                    </select>
+                                                    <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
+                                                        <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
+                                                        <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
+                                                    </select>
+                                                    <div class="sm:col-span-4">
+                                                        <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="$nextTick(() => { initTomSelect($el, kriteria) })" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500">
+                                                            <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
+                                                        </select>
+                                                        <p class="mt-1 text-[10px] text-gray-400">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk hapus.</p>
+                                                    </div>
+                                                    <div class="text-right sm:text-left sm:col-span-1 pt-2">
+                                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="grup.kriteria.splice(ki, 1)">Hapus</button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <p class="text-[10px] text-gray-400 leading-tight">Semua kriteria di dalam satu grup harus terpenuhi bersamaan (DAN).</p>
+                                            <button type="button" class="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700" @click="grup.kriteria.push(newKriteria())">
+                                                <x-icon name="add" class="h-3.5 w-3.5" /> Tambah Kriteria
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-brand-600 hover:bg-gray-50 transition" @click="form.sasaran.push(newGrup())">
+                                        <x-icon name="add" class="h-4 w-4" /> Tambah Grup Sasaran Baru
+                                    </button>
+                                    <p class="text-[10px] text-gray-400">Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).</p>
+                                </div>
+                            </template>
+                        </div>
                     </div>
+                </template>
 
-                    <template x-if="sasaranMode === 'kriteria'">
-                        <div class="space-y-4 pt-2">
-                            <template x-for="(grup, gi) in form.sasaran" :key="grup.uid">
-                                <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-5 space-y-4 shadow-sm">
-                                    <div class="flex items-center justify-between">
+                {{-- CARD 3: Tarif Berdimensi (Nominal Berdasarkan Kriteria Khusus) --}}
+                <template x-if="!kategoriPpdb">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
+                        <div class="border-b border-gray-100 pb-3.5 flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm">Tarif Berdimensi (Nominal Khusus)</h4>
+                                <p class="text-xs text-gray-500">Nominal spesifik per kriteria kelas / tingkat</p>
+                            </div>
+                            <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
+                        </div>
+                        <p class="text-[11px] text-gray-400">Diproses berurutan dari atas — Grup pertama yang cocok dengan data siswa akan dipakai nominalnya.</p>
+
+                        <div class="space-y-4 pt-1">
+                            <template x-for="(grup, gi) in form.tarif" :key="grup.uid">
+                                <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-5 space-y-4 shadow-xs">
+                                    <div class="flex items-center justify-between gap-3">
                                         <div class="flex items-center gap-2">
                                             <div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" x-text="gi + 1"></div>
-                                            <p class="text-sm font-bold text-gray-900">Grup Sasaran</p>
+                                            <p class="text-sm font-bold text-gray-900">Grup Tarif</p>
                                         </div>
-                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.sasaran.splice(gi, 1)">Hapus Grup</button>
+                                        <div class="flex items-center gap-3">
+                                            <div class="relative w-44">
+                                                <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                                    <span class="text-xs font-bold text-gray-400">Rp</span>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    x-model="grup.nominalDisplay"
+                                                    @input="onTarifNominalInput(grup, $event)"
+                                                    placeholder="0"
+                                                    class="block w-full rounded-lg border-gray-200 pl-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-brand-500"
+                                                />
+                                                <input type="hidden" :name="'tarif[' + gi + '][nominal]'" :value="grup.nominal" />
+                                            </div>
+                                            <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.tarif.splice(gi, 1)">Hapus</button>
+                                        </div>
                                     </div>
                                     <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
                                         <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-start">
-                                            <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
+                                            <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
                                                 <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldLabels[fieldOpt] ?? fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
                                             </select>
-                                            <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
+                                            <select :name="'tarif[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
                                                 <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
                                                 <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
                                             </select>
                                             <div class="sm:col-span-4">
-                                                <select :name="'sasaran[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="$nextTick(() => { initTomSelect($el, kriteria) })" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                                <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="$nextTick(() => { initTomSelect($el, kriteria) })" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-xs focus:border-brand-500 focus:ring-brand-500">
                                                     <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
                                                 </select>
-                                                <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk batal.</p>
+                                                <p class="mt-1 text-[10px] text-gray-400">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk hapus.</p>
                                             </div>
                                             <div class="text-right sm:text-left sm:col-span-1 pt-2">
                                                 <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="grup.kriteria.splice(ki, 1)">Hapus</button>
                                             </div>
                                         </div>
                                     </template>
-                                    <p class="text-[10px] text-gray-400 leading-tight">Semua kriteria di atas harus terpenuhi bersamaan (DAN).</p>
+                                    <p class="text-[10px] text-gray-400 leading-tight">Semua kriteria di dalam satu grup tarif harus terpenuhi bersamaan (DAN).</p>
                                     <button type="button" class="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700" @click="grup.kriteria.push(newKriteria())">
                                         <x-icon name="add" class="h-3.5 w-3.5" /> Tambah Kriteria
                                     </button>
                                 </div>
                             </template>
-                            <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-brand-600 hover:bg-gray-50" @click="form.sasaran.push(newGrup())">
-                                <x-icon name="add_circle" class="h-4 w-4" /> Tambah Grup Sasaran Baru
+                            <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-brand-600 hover:bg-gray-50 transition" @click="form.tarif.push(newGrup())">
+                                <x-icon name="add" class="h-4 w-4" /> Tambah Grup Tarif Baru
                             </button>
-                            <p class="text-[10px] text-gray-400 leading-tight">Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).</p>
                         </div>
-                    </template>
-                </div>
-            </template>
-
-            <template x-if="!kategoriPpdb">
-                <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
-                    <div class="border-b border-gray-100 pb-3 flex justify-between items-center">
-                        <p class="font-display text-sm font-bold text-gray-900">Tarif Berdimensi</p>
-                        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
                     </div>
-                    <p class="text-[10px] text-gray-400 leading-tight">Diproses berurutan dari atas — Grup pertama yang cocok dengan siswa akan dipakai nominalnya.</p>
+                </template>
 
-                    <div class="space-y-4 pt-1">
-                        <template x-for="(grup, gi) in form.tarif" :key="grup.uid">
-                            <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-5 space-y-4 shadow-sm">
-                                <div class="flex items-center justify-between gap-3">
-                                    <div class="flex items-center gap-2">
-                                        <div class="flex h-6 w-6 items-center justify-center rounded-full bg-brand-100 text-xs font-bold text-brand-700" x-text="gi + 1"></div>
-                                        <p class="text-sm font-bold text-gray-900">Grup Tarif</p>
+                {{-- CARD 4: Keringanan Tagihan (Opsional) --}}
+                <template x-if="!kategoriPpdb">
+                    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
+                        <div class="border-b border-gray-100 pb-3.5 flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-sm">Keringanan & Potongan Biaya</h4>
+                                <p class="text-xs text-gray-500">Diskon khusus untuk kategori siswa tertentu</p>
+                            </div>
+                            <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
+                        </div>
+
+                        <div class="space-y-3 pt-1">
+                            <template x-for="(rule, ri) in form.keringanan" :key="rule.uid">
+                                <div class="grid grid-cols-1 gap-2 sm:grid-cols-5 items-center rounded-xl border border-gray-100 bg-gray-50/50 p-3">
+                                    <select :name="'keringanan[' + ri + '][kategori_keringanan_id]'" x-model.number="rule.kategori_keringanan_id" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                        <option value="">-- Pilih Kategori --</option>
+                                        <template x-for="opt in kategoriKeringananOptions" :key="opt.id"><option :value="opt.id" x-text="opt.nama" :selected="opt.id === rule.kategori_keringanan_id"></option></template>
+                                    </select>
+                                    <select :name="'keringanan[' + ri + '][tipe_potongan]'" x-model="rule.tipe_potongan" @change="onKeringananTipeChange(rule)" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                        <option value="fixed" :selected="rule.tipe_potongan === 'fixed'">Nominal Tetap (Rp)</option>
+                                        <option value="persen" :selected="rule.tipe_potongan === 'persen'">Persentase (%)</option>
+                                    </select>
+                                    <div class="relative">
+                                        <div x-show="rule.tipe_potongan === 'fixed'" class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <span class="text-xs font-bold text-gray-400">Rp</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            x-model="rule.nilaiDisplay"
+                                            @input="onKeringananNilaiInput(rule, $event)"
+                                            :placeholder="rule.tipe_potongan === 'persen' ? '0-100' : '0'"
+                                            :class="rule.tipe_potongan === 'fixed' ? 'pl-9' : 'pl-3.5'"
+                                            class="block w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500"
+                                        />
+                                        <input type="hidden" :name="'keringanan[' + ri + '][nilai]'" :value="rule.nilai" />
                                     </div>
-                                    <div class="flex items-center gap-3">
-                                        <input type="number" step="0.01" min="0" :name="'tarif[' + gi + '][nominal]'" x-model="grup.nominal" placeholder="Nominal Rp" class="w-40 rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.tarif.splice(gi, 1)">Hapus</button>
+                                    <input type="text" :name="'keringanan[' + ri + '][keterangan]'" x-model="rule.keterangan" placeholder="Keterangan (opsional)" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+                                    <div class="text-right sm:text-center">
+                                        <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.keringanan.splice(ri, 1)">Hapus</button>
                                     </div>
                                 </div>
-                                <template x-for="(kriteria, ki) in grup.kriteria" :key="kriteria.uid">
-                                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-12 items-start">
-                                        <select :name="'tarif[' + gi + '][kriteria][' + ki + '][field]'" x-model="kriteria.field" @change="$dispatch('kriteria-field-changed', { uid: kriteria.uid })" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-4">
-                                            <template x-for="fieldOpt in kriteriaFields" :key="fieldOpt"><option :value="fieldOpt" x-text="fieldLabels[fieldOpt] ?? fieldOpt" :selected="fieldOpt === kriteria.field"></option></template>
-                                        </select>
-                                        <select :name="'tarif[' + gi + '][kriteria][' + ki + '][operator]'" x-model="kriteria.operator" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 sm:col-span-3">
-                                            <option value="in" :selected="kriteria.operator === 'in'">Termasuk</option>
-                                            <option value="not_in" :selected="kriteria.operator === 'not_in'">Tidak Termasuk</option>
-                                        </select>
-                                        <div class="sm:col-span-4">
-                                            <select :name="'tarif[' + gi + '][kriteria][' + ki + '][value][]'" multiple x-init="$nextTick(() => { initTomSelect($el, kriteria) })" @kriteria-field-changed.window="if ($event.detail.uid === kriteria.uid) { $nextTick(() => { initTomSelect($el, kriteria) }) }" class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                <template x-for="opt in optionsFor(kriteria.field)" :key="opt.value"><option :value="opt.value" x-text="opt.label" :selected="(kriteria.value ?? []).map(String).includes(String(opt.value))"></option></template>
-                                            </select>
-                                            <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Pilih satu/banyak. Klik <span class="font-semibold text-gray-600">×</span> untuk batal.</p>
-                                        </div>
-                                        <div class="text-right sm:text-left sm:col-span-1 pt-2">
-                                            <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="grup.kriteria.splice(ki, 1)">Hapus</button>
-                                        </div>
-                                    </div>
-                                </template>
-                                <p class="text-[10px] text-gray-400 leading-tight">Semua kriteria di atas harus terpenuhi bersamaan (DAN).</p>
-                                <button type="button" class="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700" @click="grup.kriteria.push(newKriteria())">
-                                    <x-icon name="add" class="h-3.5 w-3.5" /> Tambah Kriteria
-                                </button>
-                            </div>
-                        </template>
-                        <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-brand-600 hover:bg-gray-50" @click="form.tarif.push(newGrup())">
-                            <x-icon name="add_circle" class="h-4 w-4" /> Tambah Grup Tarif Baru
-                        </button>
-                        <p class="text-[10px] text-gray-400 leading-tight">Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).</p>
-                    </div>
-                </div>
-            </template>
+                            </template>
+                        </div>
 
-            <template x-if="!kategoriPpdb">
-                <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
-                    <div class="border-b border-gray-100 pb-3 flex justify-between items-center">
-                        <p class="font-display text-sm font-bold text-gray-900">Keringanan Tagihan</p>
-                        <span class="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
+                        <div class="flex items-center gap-3 pt-2">
+                            <button type="button" class="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-700" @click="form.keringanan.push(newKeringanan())">
+                                <x-icon name="add" class="h-4 w-4" /> Tambah Keringanan
+                            </button>
+                            <span class="text-gray-300">|</span>
+                            <button type="button" class="inline-flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-gray-700" @click="showKategoriBaru = true">
+                                <x-icon name="category" class="h-4 w-4" /> Buat Kategori Baru
+                            </button>
+                        </div>
                     </div>
-
-                    <div class="space-y-3 pt-1">
-                        <template x-for="(rule, ri) in form.keringanan" :key="rule.uid">
-                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-5 items-center">
-                                <select :name="'keringanan[' + ri + '][kategori_keringanan_id]'" x-model.number="rule.kategori_keringanan_id" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                    <option value="">-- Pilih Kategori --</option>
-                                    <template x-for="opt in kategoriKeringananOptions" :key="opt.id"><option :value="opt.id" x-text="opt.nama" :selected="opt.id === rule.kategori_keringanan_id"></option></template>
-                                </select>
-                                <select :name="'keringanan[' + ri + '][tipe_potongan]'" x-model="rule.tipe_potongan" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                    <option value="fixed" :selected="rule.tipe_potongan === 'fixed'">Nominal Tetap</option>
-                                    <option value="persen" :selected="rule.tipe_potongan === 'persen'">Persentase</option>
-                                </select>
-                                <input type="number" min="0" :max="rule.tipe_potongan === 'persen' ? 100 : null" step="0.01" :name="'keringanan[' + ri + '][nilai]'" x-model="rule.nilai" :placeholder="rule.tipe_potongan === 'persen' ? 'Contoh: 20 (%)' : 'Contoh: 50000 (Rupiah)'" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                <input type="text" :name="'keringanan[' + ri + '][keterangan]'" x-model="rule.keterangan" placeholder="Keterangan" class="rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-                                <div class="text-right sm:text-center">
-                                    <button type="button" class="text-xs font-bold text-error-600 hover:text-error-700" @click="form.keringanan.splice(ri, 1)">Hapus</button>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    <div class="flex items-center gap-3 pt-2">
-                        <button type="button" class="inline-flex items-center gap-1 text-sm font-bold text-brand-600 hover:text-brand-700" @click="form.keringanan.push(newKeringanan())">
-                            <x-icon name="add" class="h-4 w-4" /> Tambah Keringanan
-                        </button>
-                        <span class="text-gray-300">|</span>
-                        <button type="button" class="inline-flex items-center gap-1 text-sm font-bold text-gray-500 hover:text-gray-700" @click="showKategoriBaru = true">
-                            <x-icon name="category" class="h-4 w-4" /> Buat Kategori Baru
-                        </button>
-                    </div>
-                </div>
-            </template>
-        </div>
+                </template>
+            </div>
         </form>
 
         {{-- Modal Kategori Keringanan --}}

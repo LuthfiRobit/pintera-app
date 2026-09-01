@@ -3,10 +3,33 @@ import TomSelect from 'tom-select';
 export function jenisTagihanForm(config) {
     let uidCounter = 0;
     const nextUid = () => ++uidCounter;
+
+    const formatRupiah = (val) => {
+        if (val === null || val === undefined || val === '') return '';
+        const clean = String(val).replace(/[^0-9]/g, '');
+        if (!clean) return '';
+        return new Intl.NumberFormat('id-ID').format(clean);
+    };
+
+    const unformatRupiah = (str) => {
+        if (str === null || str === undefined) return '';
+        return String(str).replace(/[^0-9]/g, '');
+    };
+
     const hydrateGrup = (grup) => ({ 
         uid: nextUid(), 
-        nominal: grup.nominal ?? '', 
-        kriteria: grup.kriteria.map((k) => ({ uid: nextUid(), ...k })) 
+        nominalDisplay: grup.nominal ? formatRupiah(grup.nominal) : '',
+        nominal: grup.nominal ? String(grup.nominal) : '', 
+        kriteria: (grup.kriteria || []).map((k) => ({ uid: nextUid(), ...k })) 
+    });
+
+    const hydrateKeringanan = (k) => ({
+        uid: nextUid(),
+        kategori_keringanan_id: k.kategori_keringanan_id ?? null,
+        tipe_potongan: k.tipe_potongan ?? 'fixed',
+        nilaiDisplay: k.tipe_potongan === 'fixed' && k.nilai ? formatRupiah(k.nilai) : (k.nilai ? String(k.nilai) : ''),
+        nilai: k.nilai ? String(k.nilai) : '',
+        keterangan: k.keterangan ?? '',
     });
 
     return {
@@ -21,10 +44,12 @@ export function jenisTagihanForm(config) {
             kategori: config.kategoriAwal,
             mode: config.modeAwal,
             tipe: config.tipeAwal ?? (config.modeAwal === 'manual' ? 'sekali' : 'bulanan'),
+            defaultAmountDisplay: config.defaultAmountAwal ? formatRupiah(config.defaultAmountAwal) : '',
+            defaultAmount: config.defaultAmountAwal ? String(config.defaultAmountAwal) : '',
             bisaDicicil: config.bisaDicicilAwal,
             sasaran: config.initialSasaran.map(hydrateGrup),
             tarif: config.initialTarif.map(hydrateGrup),
-            keringanan: config.initialKeringanan.map((k) => ({ uid: nextUid(), ...k })),
+            keringanan: config.initialKeringanan.map(hydrateKeringanan),
         },
         kategoriKeringananOptions: config.kategoriKeringananList,
         kategoriBaruNama: '',
@@ -32,6 +57,44 @@ export function jenisTagihanForm(config) {
         kategoriBaruSubmitting: false,
         showKategoriBaru: false,
         tomSelectInstances: {},
+
+        formatRupiah,
+        unformatRupiah,
+
+        onDefaultAmountInput(event) {
+            const raw = unformatRupiah(event.target.value);
+            this.form.defaultAmount = raw;
+            this.form.defaultAmountDisplay = raw ? formatRupiah(raw) : '';
+        },
+
+        onTarifNominalInput(grup, event) {
+            const raw = unformatRupiah(event.target.value);
+            grup.nominal = raw;
+            grup.nominalDisplay = raw ? formatRupiah(raw) : '';
+        },
+
+        onKeringananNilaiInput(rule, event) {
+            if (rule.tipe_potongan === 'fixed') {
+                const raw = unformatRupiah(event.target.value);
+                rule.nilai = raw;
+                rule.nilaiDisplay = raw ? formatRupiah(raw) : '';
+            } else {
+                rule.nilai = event.target.value;
+                rule.nilaiDisplay = event.target.value;
+            }
+        },
+
+        onKeringananTipeChange(rule) {
+            if (rule.tipe_potongan === 'fixed') {
+                const raw = unformatRupiah(rule.nilai);
+                rule.nilai = raw;
+                rule.nilaiDisplay = raw ? formatRupiah(raw) : '';
+            } else {
+                const num = parseFloat(rule.nilai) || 0;
+                rule.nilai = num > 100 ? '100' : (rule.nilai || '');
+                rule.nilaiDisplay = rule.nilai;
+            }
+        },
 
         onModeChange() {
             if (this.form.mode === 'otomatis' && this.form.tipe === 'sekali') {
@@ -52,7 +115,7 @@ export function jenisTagihanForm(config) {
         hydrateGrup,
 
         newKeringanan() {
-            return { uid: nextUid(), kategori_keringanan_id: null, tipe_potongan: 'fixed', nilai: '', keterangan: '' };
+            return { uid: nextUid(), kategori_keringanan_id: null, tipe_potongan: 'fixed', nilaiDisplay: '', nilai: '', keterangan: '' };
         },
 
         async submitKategoriBaru() {
@@ -98,7 +161,7 @@ export function jenisTagihanForm(config) {
         },
 
         newGrup() {
-            return { uid: nextUid(), nominal: '', kriteria: [this.newKriteria()] };
+            return { uid: nextUid(), nominalDisplay: '', nominal: '', kriteria: [this.newKriteria()] };
         },
 
         optionsFor(field) {
