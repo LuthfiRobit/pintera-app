@@ -1,16 +1,17 @@
 <?php
+
 // tests/Feature/Admin/JenisTagihanFinalReviewFixesTest.php
 //
 // Regression tests for the final-review fixes on Sub-project 2b-1 (Form Jenis Tagihan):
 // C1 (is_active checkbox uncheck), C2 (event-ordering vs sasaran sync),
 // I1 (persen keringanan > 100 server-side cap), I2 (nominal()/simpanNominal() ppdb guard).
 
-use App\Enums\StatusSiswa;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Enums\StatusSiswa;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
@@ -42,7 +43,7 @@ it('turns is_active off when the checkbox is left unchecked on update', function
 
     $response = $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $jenisTagihan), [
         'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false,
-        'mode' => 'manual', 'default_amount' => 500000,
+        'mode' => 'manual', 'tipe' => 'bulanan', 'default_amount' => 500000,
         // 'is_active' intentionally omitted, as an unchecked checkbox would be
     ]);
 
@@ -67,7 +68,7 @@ it('activating a jenis tagihan while also changing sasaran generates bills again
     // Flip is_active to true (fires BillTypeActivated) WHILE replacing sasaran to target 'aktif' instead of 'lulus'.
     $response = $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $jenisTagihan), [
         'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false,
-        'mode' => 'manual', 'default_amount' => 500000, 'is_active' => '1',
+        'mode' => 'manual', 'tipe' => 'bulanan', 'default_amount' => 500000, 'is_active' => '1',
         'sasaran' => [
             ['kriteria' => [['field' => 'status_siswa', 'operator' => 'in', 'value' => ['aktif']]]],
         ],
@@ -91,7 +92,7 @@ it('rejects a persen keringanan nilai above 100 with a 422', function () {
     $kategoriKeringanan = KategoriKeringanan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Yatim Piatu']);
 
     $response = $this->actingAs($user)->postJson(route('admin.jenis-tagihan.store'), [
-        'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false,
+        'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'tipe' => 'bulanan', 'bisa_dicicil' => false,
         'keringanan' => [
             ['kategori_keringanan_id' => $kategoriKeringanan->id, 'tipe_potongan' => 'persen', 'nilai' => 150],
         ],
@@ -107,7 +108,7 @@ it('allows a fixed keringanan nilai above 100', function () {
     $kategoriKeringanan = KategoriKeringanan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Yatim Piatu']);
 
     $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
-        'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false,
+        'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'tipe' => 'bulanan', 'bisa_dicicil' => false,
         'keringanan' => [
             ['kategori_keringanan_id' => $kategoriKeringanan->id, 'tipe_potongan' => 'fixed', 'nilai' => 150000],
         ],
