@@ -3,8 +3,9 @@
 namespace App\Domains\Keuangan\Actions\JenisTagihan;
 
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
-use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Enums\TipeTagihan;
 use App\Domains\Keuangan\Events\BillTypeActivated;
+use App\Domains\Keuangan\Models\JenisTagihan;
 use Illuminate\Support\Facades\DB;
 
 class UpdateJenisTagihanAction
@@ -20,12 +21,22 @@ class UpdateJenisTagihanAction
 
             $this->syncBillingConfig->execute($jenisTagihan, $data->billing);
 
-            $attributes = array_merge($data->attributes, [
-                'nama'         => $data->nama,
-                'kategori'     => $data->kategori,
-                'bisa_dicicil' => $data->bisaDicicil,
-                'maks_cicilan' => $data->maksCicilan,
-            ]);
+            $tipeEnum = isset($data->attributes['tipe'])
+                ? ($data->attributes['tipe'] instanceof TipeTagihan ? $data->attributes['tipe'] : TipeTagihan::tryFrom($data->attributes['tipe']))
+                : null;
+
+            $nullified = $tipeEnum ? $this->nullifyFieldsNotOwnedBy($tipeEnum) : [];
+
+            $attributes = array_merge(
+                $nullified,
+                $data->attributes,
+                [
+                    'nama'         => $data->nama,
+                    'kategori'     => $data->kategori,
+                    'bisa_dicicil' => $data->bisaDicicil,
+                    'maks_cicilan' => $data->maksCicilan,
+                ]
+            );
 
             $jenisTagihan->update($attributes);
 
@@ -40,5 +51,20 @@ class UpdateJenisTagihanAction
 
             return $fresh;
         });
+    }
+
+    private function nullifyFieldsNotOwnedBy(TipeTagihan $tipe): array
+    {
+        $ownedByTipe = match ($tipe) {
+            TipeTagihan::Harian => ['offset_hari_jatuh_tempo'],
+            TipeTagihan::Mingguan => ['hari_generate', 'offset_hari_jatuh_tempo'],
+            TipeTagihan::Bulanan => ['tanggal_generate', 'hari_jatuh_tempo'],
+            TipeTagihan::Tahunan => ['bulan_generate', 'tanggal_generate', 'hari_jatuh_tempo'],
+            TipeTagihan::Sekali => [],
+        };
+
+        $semuaFieldPendukung = ['hari_generate', 'bulan_generate', 'tanggal_generate', 'hari_jatuh_tempo', 'offset_hari_jatuh_tempo'];
+
+        return array_fill_keys(array_diff($semuaFieldPendukung, $ownedByTipe), null);
     }
 }
