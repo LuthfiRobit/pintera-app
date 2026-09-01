@@ -821,7 +821,9 @@ git commit -m "feat(keuangan): add nullable tagihan.person_id column"
 **Interfaces:**
 - Consumes: `Pendaftaran::calonMurid(): BelongsTo` (existing), `CalonMurid::person_id` (existing, from identity-v1).
 
-- [ ] **Step 1: Write the failing test**
+**Production write path vs. backfill — different failure contract.** The backfill command (Task 19) is explicitly allowed to skip-and-log a row it can't resolve, because it's cleaning up OLD data that may predate identity-v1. This task is the opposite: it's the NEW-tagihan creation path. A `Pendaftaran` reaching this code with no resolvable `calonMurid->person_id` means the data is already corrupt (identity-v1 guarantees every `Pendaftaran`'s `CalonMurid` has a `person_id`) — this must throw hard and loud, not silently create a `tagihan` row with `person_id = NULL` (which the NOT NULL constraint from Task 20 would reject anyway, but only AFTER this generator already ran — better to fail at the source with a clear message).
+
+- [ ] **Step 1: Write the failing tests**
 
 ```php
 <?php
@@ -839,27 +841,45 @@ it('TagihanGenerator fills tagihan.person_id from pendaftaran.calonMurid.person_
     $tagihan = $pendaftaran->tagihan()->first(); // adjust relation name if different
     expect($tagihan->person_id)->toBe($calonMurid->person_id);
 });
+
+it('throws hard, instead of creating a tagihan with a null person_id, when pendaftaran has no resolvable calonMurid', function () {
+    $pendaftaran = Pendaftaran::factory()->create(['calon_murid_id' => null]); // or however this project models a Pendaftaran with no CalonMurid link
+
+    expect(fn () => app(TagihanGenerator::class)->generateFor($pendaftaran))
+        ->toThrow(\RuntimeException::class);
+
+    $this->assertDatabaseMissing('tagihan', ['tagihable_type' => Pendaftaran::class, 'tagihable_id' => $pendaftaran->id]);
+});
 ```
 
-Read `app/Services/TagihanGenerator.php` in full first to confirm the exact public method name and how `$pendaftaran` reaches line 56's `Tagihan::create()` call, and adjust the test's setup/invocation to match exactly.
+Read `app/Services/TagihanGenerator.php` in full first to confirm the exact public method name, how `$pendaftaran` reaches line 56's `Tagihan::create()` call, and whether a `Pendaftaran` factory state already exists for "no linked CalonMurid" — adjust both tests' setup/invocation to match exactly.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 2: Run tests to verify they fail**
 
 Run: `php artisan test --filter=TagihanGeneratorPersonIdTest`
-Expected: FAIL (`person_id` is `null`)
+Expected: both FAIL (first: `person_id` is `null`; second: no exception thrown, or a generic/unclear one)
 
-- [ ] **Step 3: Add `person_id` to the create call**
+- [ ] **Step 3: Resolve `person_id` with a hard failure guard, then use it in the create call**
 
-At line 56, inside the `Tagihan::create([...])` array, add:
+Immediately before the `Tagihan::create([...])` call at line 56, add:
 
 ```php
-'person_id' => $pendaftaran->calonMurid->person_id,
+$personId = $pendaftaran->calonMurid?->person_id
+    ?? throw new \RuntimeException("Tidak bisa membuat tagihan: Pendaftaran #{$pendaftaran->id} tidak punya CalonMurid dengan person_id yang valid — data kemungkinan cacat.");
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+Then inside the `Tagihan::create([...])` array, add:
+
+```php
+'person_id' => $personId,
+```
+
+(Do not use `$pendaftaran->calonMurid->person_id` directly without the guard — that would throw PHP's generic `Error: Attempt to read property "person_id" on null` when `calonMurid` is missing, which works but gives a far less useful message than the explicit `RuntimeException` above. Use the guard.)
+
+- [ ] **Step 4: Run tests to verify they pass**
 
 Run: `php artisan test --filter=TagihanGeneratorPersonIdTest`
-Expected: PASS
+Expected: both PASS
 
 - [ ] **Step 5: Commit**
 
@@ -879,7 +899,9 @@ git commit -m "feat(keuangan): populate tagihan.person_id in TagihanGenerator"
 **Interfaces:**
 - Consumes: `Siswa::person_id` (existing, from identity-v1).
 
-- [ ] **Step 1: Write the failing test**
+**Same hard-failure contract as Task 12** — see that task's note. A `Siswa` row with a null `person_id` should be impossible today (identity-v1's `siswa.person_id` is NOT NULL after Task 28), but this generator is a production write path, not the backfill, so it must not rely on that constraint alone and must not silently write a null.
+
+- [ ] **Step 1: Write the failing tests**
 
 ```php
 <?php
@@ -897,27 +919,47 @@ it('TagihanBillingGenerator fills tagihan.person_id from siswa.person_id directl
     $tagihan = $siswa->tagihan()->where('jenis_tagihan_id', $jenisTagihan->id)->first();
     expect($tagihan->person_id)->toBe($siswa->person_id);
 });
+
+it('throws hard, instead of creating a tagihan with a null person_id, when siswa.person_id is null', function () {
+    $siswa = Siswa::factory()->create();
+    $siswa->forceFill(['person_id' => null])->saveQuietly(); // bypass identity-v1's NOT NULL constraint just to simulate corrupt data for this test
+    $jenisTagihan = JenisTagihan::factory()->create(['kategori' => 'spp']);
+
+    expect(fn () => app(TagihanBillingGenerator::class)->generateForSiswa($siswa, $jenisTagihan))
+        ->toThrow(\RuntimeException::class);
+
+    $this->assertDatabaseMissing('tagihan', ['tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihan->id]);
+});
 ```
 
-Read `app/Domains/Keuangan/Services/TagihanBillingGenerator.php`'s `generateForSiswa()` signature first (already read in prior audit — confirm it hasn't changed) before finalizing this test's invocation.
+If `siswa.person_id` is a DB-level NOT NULL column, `forceFill()->saveQuietly()` may itself throw a `QueryException` before reaching the generator — if so, simulate the corrupt-data scenario at the PHP level instead (e.g. a partial mock/stub of `Siswa` with `person_id` overridden to `null` via `Mockery`), whichever this project's existing test suite already does for "simulate a NOT NULL column somehow null" scenarios. Check `tests/Feature/Identity/` for a precedent before deciding.
 
-- [ ] **Step 2: Run test to verify it fails**
+Read `app/Domains/Keuangan/Services/TagihanBillingGenerator.php`'s `generateForSiswa()` signature first (already read in prior audit — confirm it hasn't changed) before finalizing both tests' invocation.
+
+- [ ] **Step 2: Run tests to verify they fail**
 
 Run: `php artisan test --filter=TagihanBillingGeneratorPersonIdTest`
-Expected: FAIL
+Expected: both FAIL
 
-- [ ] **Step 3: Add `person_id` to the create call**
+- [ ] **Step 3: Resolve `person_id` with a hard failure guard, then use it in the create call**
 
-At line 70, inside the `Tagihan::create([...])` array, add:
+Immediately before the `Tagihan::create([...])` call at line 70, add:
 
 ```php
-'person_id' => $siswa->person_id,
+$personId = $siswa->person_id
+    ?? throw new \RuntimeException("Tidak bisa membuat tagihan: Siswa #{$siswa->id} tidak punya person_id yang valid — data kemungkinan cacat.");
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+Then inside the `Tagihan::create([...])` array, add:
+
+```php
+'person_id' => $personId,
+```
+
+- [ ] **Step 4: Run tests to verify they pass**
 
 Run: `php artisan test --filter=TagihanBillingGeneratorPersonIdTest`
-Expected: PASS
+Expected: both PASS
 
 - [ ] **Step 5: Commit**
 
@@ -1204,6 +1246,8 @@ git commit -m "feat(keuangan): reparent tagihan.person_id synchronously on Perso
 
 **Interfaces:**
 - Consumes: `tagihan.person_id` populated by Tasks 12–15.
+
+> **Known risk — sequencing in this plan vs. production deployment.** This task cuts `DashboardController` over to `where('person_id', ...)` BEFORE Task 19 (backfill) and Task 20 (verify + NOT NULL) run. In this dev/demo environment that's harmless — Tasks 12–15 already made every NEW tagihan row correct going forward, and this repo's existing `tagihan` data was confirmed 100% backfill-able in the person-id spec's audit (§4.5's "Catatan realita data"). **But this ordering is NOT safe for a production deployment against a database with pre-existing `tagihan` rows that might fail to backfill.** Between this task's deploy and Task 19/20's backfill completing, any `tagihan` row still `person_id IS NULL` would silently disappear from the dashboard (a `WHERE person_id = X` query never matches a `NULL` row), even though the OR-hack it replaced would have shown it. For a real production rollout: either (a) run Task 19's backfill to completion and confirm Task 19's verify command exits 0 BEFORE deploying this task's `DashboardController` change, or (b) deploy Tasks 11–20 together as one atomic release so there is no window where old tagihan rows are both `person_id NULL` and being queried by the new code. Do not reorder tasks in THIS plan to fix this — the current order optimizes for this dev environment's already-confirmed-clean data; just carry this note into the production rollout runbook when this branch ships.
 
 - [ ] **Step 1: Write the failing test**
 
