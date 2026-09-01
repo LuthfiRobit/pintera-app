@@ -126,3 +126,22 @@ Diminta user menganalisa bagaimana portal Ruang Orang Tua (`/keuangan`, BUKAN `/
 Poin #3 (notifikasi tenggelam) dan #4 (breakdown tarif/diskon) BELUM dikerjakan — disepakati sebagai peningkatan UX terpisah, bukan risiko finansial mendesak, menunggu prioritas user berikutnya.
 
 Test baru: 2 di `TagihanControllerTest.php`/`DashboardControllerTest.php` (badge + non-leak alasan), 1 di `CheckoutControllerWalletTest.php`, 1 di `CheckoutControllerCreateTest.php`. Semua PASS, regresi 35 test controller terkait PASS, full suite proyek dijalankan ulang untuk verifikasi akhir.
+
+---
+
+## 8. Poin #3 & #4 Dikerjakan: Halaman Detail Tagihan + Deep-Link Notifikasi (2026-09-01, sesi lanjutan ketiga)
+
+Spec: `.agents/specs/2026-09-01-portal-ortu-detail-tagihan-notifikasi.md`. Scope kecil & rendah risiko (murni tampilan baca, tidak menyentuh nominal/pembayaran) — dikerjakan langsung tanpa plan terpisah, TDD per fitur.
+
+**Temuan penting yang mengecilkan scope**: semua notifikasi finance (`TagihanDiterbitkanNotification`, `PembayaranBerhasilNotification`, `SaldoTidakCukupNotification`, `DueReminderNotification`, `TagihanDirevisiNotification`) SUDAH menyimpan `tagihan_id` di payload `toDatabase()` — cuma 2 notifikasi transfer manual yang tidak. Jadi gap #3 murni masalah UI (bell tidak pernah memakai data yang sudah ada), bukan backend.
+
+**Dikerjakan**:
+1. Halaman detail baru `GET keuangan/tagihan/{tagihan}` (`TagihanController::show()`, view `portals/portal/keuangan/tagihan/show.blade.php`) — breakdown Nominal Awal/Potongan/Nominal Akhir/Sisa, banner "sedang ditinjau" kalau relevan (tanpa expose alasan teknis). Guard kepemilikan baru `AuthorizesTagihanAccess` trait (pola sama `AuthorizesPembayaran`) — cek SEMUA anak orang tua, bukan cuma `activeSiswa` yang sedang dipilih, supaya link lama tetap valid setelah ganti anak aktif.
+2. Baris tagihan di `tagihan/index.blade.php` dan `dashboard.blade.php` jadi link ke halaman detail.
+3. Bell notifikasi (`topbar.blade.php`, dipakai bersama admin+ortu) dan panel notifikasi khusus di `portals/portal/keuangan/dashboard.blade.php` (dua tempat terpisah, keduanya dulu render polos): keduanya sekarang menampilkan "Lihat Detail →" dan menavigasi ke halaman baru kalau notifikasi punya `tagihan_id`. Di topbar (shared), link digerbangi `Auth::user()->orangTua !== null` supaya tidak jadi link mati untuk admin.
+
+**Gotcha ditemukan saat testing**: `@js()` Blade directive membungkus value jadi `JSON.parse('...')` dengan slash di-escape (`\/`) — assert URL literal di test HARUS pakai `Illuminate\Support\Js::from()` untuk hasil yang sama persis, bukan `route()` mentah (pola yang sama persis sudah didokumentasikan di `JenisTagihanSasaranFormTest.php` dari sesi sebelumnya, kena lagi di sini).
+
+Test baru: 5 di `TagihanControllerTest.php` (breakdown, hide-zero-discount, banner tanpa leak, akses anak non-aktif, tolak orang tua lain), 2 di `TopbarNotificationBellTest.php`, 1 di `DashboardNotificationMarkAsReadTest.php`. Regresi: seluruh namespace `Keuangan` (368 test) PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.
+
+Dengan ini, kedua gap transparansi orang tua yang tersisa dari §7 sudah ditutup. Status: Admin selesai, Orang Tua selesai (risiko + transparansi), Siswa tidak punya portal terpisah (di luar scope, belum pernah dibangun sama sekali).

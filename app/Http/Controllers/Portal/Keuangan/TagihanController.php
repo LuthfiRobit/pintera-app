@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Portal\Keuangan;
 
+use App\Domains\Keuangan\Concerns\AuthorizesTagihanAccess;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Http\Controllers\Controller;
 use App\Models\Scopes\TenantScope;
@@ -11,6 +12,8 @@ use Illuminate\View\View;
 
 class TagihanController extends Controller
 {
+    use AuthorizesTagihanAccess;
+
     public function index(Request $request): View
     {
         $activeSiswa = $request->attributes->get('activeSiswa');
@@ -33,5 +36,14 @@ class TagihanController extends Controller
             'tagihans' => $tagihans,
             'autoDebitEnabled' => $autoDebitEnabled,
         ]);
+    }
+
+    public function show(Tagihan $tagihan): View
+    {
+        $this->authorizeTagihanAccess($tagihan);
+
+        $tagihan->load(['jenisTagihan' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)]);
+
+        return view('portals.portal.keuangan.tagihan.show', ['tagihan' => $tagihan]);
     }
 }

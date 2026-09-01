@@ -112,16 +112,21 @@
                     x-data="{
                         readIds: [],
                         unreadCount: {{ $notificationFeed->whereNull('read_at')->count() }},
-                        async tandaiSatu(id) {
-                            if (this.readIds.includes(id)) return;
-                            const response = await fetch(`{{ url('/notifikasi') }}/${id}/baca`, {
-                                method: 'POST',
-                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
-                            });
-                            if (!response.ok) return;
-                            this.readIds.push(id);
-                            const data = await response.json();
-                            this.unreadCount = data.unread_count;
+                        async tandaiSatu(id, url = null) {
+                            if (!this.readIds.includes(id)) {
+                                const response = await fetch(`{{ url('/notifikasi') }}/${id}/baca`, {
+                                    method: 'POST',
+                                    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                                });
+                                if (response.ok) {
+                                    this.readIds.push(id);
+                                    const data = await response.json();
+                                    this.unreadCount = data.unread_count;
+                                }
+                            }
+                            if (url) {
+                                window.location.href = url;
+                            }
                         },
                         async tandaiSemua() {
                             const response = await fetch('{{ route('notifikasi.baca-semua') }}', {
@@ -153,20 +158,23 @@
                             @foreach ($notificationFeed as $notification)
                                 <button
                                     type="button"
-                                    @click="tandaiSatu('{{ $notification->id }}')"
+                                    @click="tandaiSatu('{{ $notification->id }}', @js(isset($notification->data['tagihan_id']) ? route('keuangan.tagihan.show', $notification->data['tagihan_id']) : null))"
                                     class="w-full py-3 text-left transition hover:bg-gray-50/50 block group focus:outline-none"
                                     :class="readIds.includes('{{ $notification->id }}') ? 'opacity-60' : ''"
                                 >
                                     <div class="flex items-start gap-3">
                                         {{-- Read/unread indicator dot --}}
-                                        <span 
-                                            x-show="!readIds.includes('{{ $notification->id }}')" 
+                                        <span
+                                            x-show="!readIds.includes('{{ $notification->id }}')"
                                             class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600"
                                             @if (!is_null($notification->read_at)) style="display: none;" @endif
                                         ></span>
                                         <div class="flex-1">
                                             <p class="text-xs text-gray-700 leading-normal group-hover:text-brand-900 transition-colors">{{ $notification->data['message'] ?? '-' }}</p>
                                             <p class="mt-1 text-[10px] text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
+                                            @isset($notification->data['tagihan_id'])
+                                                <span class="mt-1 inline-block text-[10px] font-semibold text-brand-600 group-hover:underline">Lihat Detail &rarr;</span>
+                                            @endisset
                                         </div>
                                     </div>
                                 </button>
@@ -252,7 +260,7 @@
                                         class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 disabled:cursor-not-allowed"
                                     >
                                     <div class="flex-1">
-                                        <p class="text-xs font-semibold text-gray-900">{{ $tagihan->jenisTagihan->nama }}</p>
+                                        <a href="{{ route('keuangan.tagihan.show', $tagihan) }}" class="text-xs font-semibold text-gray-900 hover:text-brand-600 hover:underline">{{ $tagihan->jenisTagihan->nama }}</a>
                                         <p class="text-[10px] text-gray-400 mt-0.5">Jatuh tempo: {{ $tagihan->jatuh_tempo?->translatedFormat('d M Y') ?? '-' }}</p>
                                         @if ($tagihan->perlu_ditinjau_ulang)
                                             <p class="text-[10px] text-amber-600 mt-1 font-medium">Nominal sedang ditinjau ulang oleh admin, sementara belum bisa dibayar. Silakan cek kembali nanti.</p>

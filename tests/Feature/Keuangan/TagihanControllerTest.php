@@ -91,6 +91,87 @@ it('shows a Sedang Ditinjau badge and disables the checkbox for a flagged tagiha
     $response->assertDontSee('contoh alasan internal');
 });
 
+it('shows the breakdown detail of a tagihan owned by the acting orang tua', function () {
+    [$user, , $siswa] = actingAsOrangTuaForTagihan();
+    $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bulanan']);
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'sebagian', 'total_tagihan' => 300000, 'discount_amount' => 50000, 'discount_type' => 'fixed',
+        'net_amount' => 250000, 'paid_amount' => 100000,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.tagihan.show', $tagihan));
+
+    $response->assertOk();
+    $response->assertSee('300.000', false);
+    $response->assertSee('50.000', false);
+    $response->assertSee('250.000', false);
+    $response->assertSee('Potongan Tetap', false);
+});
+
+it('hides the potongan row when discount_amount is zero', function () {
+    [$user, , $siswa] = actingAsOrangTuaForTagihan();
+    $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bulanan']);
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'total_tagihan' => 200000, 'discount_amount' => 0, 'discount_type' => null,
+        'net_amount' => 200000, 'paid_amount' => 0,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.tagihan.show', $tagihan));
+
+    $response->assertOk();
+    $response->assertDontSee('Potongan Tetap', false);
+    $response->assertDontSee('Potongan Persentase', false);
+    $response->assertDontSee('Potongan Gabungan', false);
+});
+
+it('shows the review banner without leaking alasan_perlu_ditinjau on the detail page', function () {
+    [$user, , $siswa] = actingAsOrangTuaForTagihan();
+    $jenis = JenisTagihan::factory()->create();
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'net_amount' => 100000, 'paid_amount' => 0,
+        'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh alasan internal',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.tagihan.show', $tagihan));
+
+    $response->assertOk();
+    $response->assertSee('Nominal sedang ditinjau ulang oleh admin, sementara belum bisa dibayar.', false);
+    $response->assertDontSee('contoh alasan internal');
+});
+
+it('allows viewing a tagihan for a non-active child of the same orang tua', function () {
+    [$user, $orangTua] = actingAsOrangTuaForTagihan();
+    $lembaga = Lembaga::factory()->create();
+    $anakLain = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $orangTua->siswa()->attach($anakLain->id, ['hubungan' => 'ayah', 'is_kontak_utama' => false]);
+    $jenis = JenisTagihan::factory()->create();
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $anakLain->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'net_amount' => 100000, 'paid_amount' => 0,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.tagihan.show', $tagihan));
+
+    $response->assertOk();
+});
+
+it('rejects viewing a tagihan belonging to a different orang tua entirely', function () {
+    [$user] = actingAsOrangTuaForTagihan();
+    $otherSiswa = Siswa::factory()->create();
+    $jenis = JenisTagihan::factory()->create();
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $otherSiswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'net_amount' => 100000, 'paid_amount' => 0,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.tagihan.show', $tagihan));
+
+    $response->assertForbidden();
+});
+
 it('denies access without keuangan.akses permission', function () {
     $user = User::factory()->create(['lembaga_id' => null]);
 

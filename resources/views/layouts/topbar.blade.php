@@ -9,6 +9,7 @@
     
     $notificationFeed = app(\App\Services\Notifications\NotificationFeedResolver::class)->resolve(Auth::user());
     $unreadCount = $notificationFeed->whereNull('read_at')->count();
+    $isOrangTua = Auth::user()->orangTua !== null;
 
     $effectiveLembagaId = $isYayasan ? $activeLembagaId : Auth::user()->lembaga_id;
     $perluDitinjauCount = (Auth::user()->can('tagihan.view') || Auth::user()->can('tagihan.edit')) && $effectiveLembagaId
@@ -88,16 +89,21 @@
         <div x-data="{
                 unreadCount: {{ $unreadCount }},
                 readIds: [],
-                async tandaiSatu(id) {
-                    if (this.readIds.includes(id)) return;
-                    const response = await fetch(`{{ url('/notifikasi') }}/${id}/baca`, {
-                        method: 'POST',
-                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
-                    });
-                    if (!response.ok) return;
-                    this.readIds.push(id);
-                    const data = await response.json();
-                    this.unreadCount = data.unread_count;
+                async tandaiSatu(id, url = null) {
+                    if (!this.readIds.includes(id)) {
+                        const response = await fetch(`{{ url('/notifikasi') }}/${id}/baca`, {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                        });
+                        if (response.ok) {
+                            this.readIds.push(id);
+                            const data = await response.json();
+                            this.unreadCount = data.unread_count;
+                        }
+                    }
+                    if (url) {
+                        window.location.href = url;
+                    }
                 },
                 async tandaiSemua() {
                     const response = await fetch('{{ route('notifikasi.baca-semua') }}', {
@@ -130,14 +136,18 @@
                     @else
                         <div class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
                             @foreach ($notificationFeed as $notification)
+                                @php $tagihanUrl = ($isOrangTua && isset($notification->data['tagihan_id'])) ? route('keuangan.tagihan.show', $notification->data['tagihan_id']) : null; @endphp
                                 <button
                                     type="button"
-                                    @click="tandaiSatu('{{ $notification->id }}')"
+                                    @click="tandaiSatu('{{ $notification->id }}', @js($tagihanUrl))"
                                     :class="readIds.includes('{{ $notification->id }}') ? 'bg-white' : '{{ $notification->read_at === null ? 'bg-brand-50/40' : 'bg-white' }}'"
                                     class="block w-full px-4 py-3 text-left transition hover:bg-gray-50"
                                 >
                                     <p class="text-sm text-gray-800">{{ $notification->data['message'] ?? '-' }}</p>
                                     <p class="mt-1 text-xs text-gray-400">{{ $notification->created_at->diffForHumans() }}</p>
+                                    @if ($tagihanUrl)
+                                        <p class="mt-1 text-xs font-semibold text-brand-600">Lihat Detail &rarr;</p>
+                                    @endif
                                 </button>
                             @endforeach
                         </div>

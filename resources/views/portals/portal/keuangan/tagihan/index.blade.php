@@ -4,6 +4,8 @@
          x-data="{
              selected: [],
              activeFilter: 'semua',
+             detailUrlTemplate: '{{ route('keuangan.tagihan.show', ['tagihan' => '__ID__']) }}',
+             detailUrl(id) { return this.detailUrlTemplate.replace('__ID__', id); },
              items: @js($tagihans->map(fn($t) => [
                  'id' => $t->id,
                  'nama' => $t->jenisTagihan->nama,
@@ -142,7 +144,7 @@
                                             <input type="checkbox" :value="item.id" x-model="selected" :disabled="item.perlu_ditinjau_ulang" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer disabled:cursor-not-allowed">
                                         </td>
                                         <td class="px-5 py-3.5 font-medium text-gray-900">
-                                            <span x-text="item.nama"></span>
+                                            <a :href="detailUrl(item.id)" class="hover:text-brand-600 hover:underline" x-text="item.nama"></a>
                                             <p x-show="item.perlu_ditinjau_ulang" class="text-[10px] font-normal text-amber-600 mt-0.5">Nominal sedang ditinjau ulang oleh admin, sementara belum bisa dibayar.</p>
                                         </td>
                                         <td class="px-5 py-3.5 text-gray-600 font-mono text-xs">
