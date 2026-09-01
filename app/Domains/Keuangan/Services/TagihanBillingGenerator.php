@@ -4,6 +4,7 @@
 
 namespace App\Domains\Keuangan\Services;
 
+use App\Domains\Keuangan\Enums\TipeTagihan;
 use App\Domains\Keuangan\Models\BillingJobLog;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\Tagihan;
@@ -80,7 +81,7 @@ class TagihanBillingGenerator
                 'discount_amount' => $resolved['discount_amount'] ?: null,
                 'discount_type' => $resolved['discount_type'],
                 'net_amount' => $netAmount,
-                'jatuh_tempo' => $this->resolveDueDate($jenisTagihan, $billingPeriod),
+                'jatuh_tempo' => $this->resolveDueDate($jenisTagihan, $billingPeriod, now()),
                 'status' => 'belum_bayar',
             ]);
 
@@ -128,18 +129,44 @@ class TagihanBillingGenerator
         }
     }
 
-    private function resolveDueDate(JenisTagihan $jenisTagihan, ?string $billingPeriod): ?string
+    private function resolveDueDate(JenisTagihan $jenisTagihan, ?string $billingPeriod, Carbon $tanggalGenerateAktual): ?string
     {
-        if (! $billingPeriod || ! $jenisTagihan->hari_jatuh_tempo) {
+        return match ($jenisTagihan->tipe) {
+            TipeTagihan::Sekali => null,
+
+            TipeTagihan::Harian, TipeTagihan::Mingguan => $jenisTagihan->offset_hari_jatuh_tempo === null
+                ? null
+                : $tanggalGenerateAktual->copy()->addDays($jenisTagihan->offset_hari_jatuh_tempo)->toDateString(),
+
+            TipeTagihan::Bulanan => $this->resolveDueDateBulanan($billingPeriod, $jenisTagihan->hari_jatuh_tempo),
+
+            TipeTagihan::Tahunan => $this->resolveDueDateTahunan($billingPeriod, $jenisTagihan->bulan_generate, $jenisTagihan->hari_jatuh_tempo),
+        };
+    }
+
+    private function resolveDueDateBulanan(?string $billingPeriod, ?int $hariJatuhTempo): ?string
+    {
+        if (! $billingPeriod || ! $hariJatuhTempo) {
             return null;
         }
 
         $year = (int) substr($billingPeriod, 0, 4);
         $month = (int) substr($billingPeriod, 5, 2);
         $daysInMonth = Carbon::create($year, $month, 1)->daysInMonth;
-        $day = min($jenisTagihan->hari_jatuh_tempo, $daysInMonth);
 
-        return Carbon::create($year, $month, $day)->toDateString();
+        return Carbon::create($year, $month, min($hariJatuhTempo, $daysInMonth))->toDateString();
+    }
+
+    private function resolveDueDateTahunan(?string $billingPeriod, ?int $bulanGenerate, ?int $hariJatuhTempo): ?string
+    {
+        if (! $billingPeriod || ! $bulanGenerate || ! $hariJatuhTempo) {
+            return null;
+        }
+
+        $year = (int) $billingPeriod;
+        $daysInMonth = Carbon::create($year, $bulanGenerate, 1)->daysInMonth;
+
+        return Carbon::create($year, $bulanGenerate, min($hariJatuhTempo, $daysInMonth))->toDateString();
     }
 
     private function logResult(JenisTagihan $jenisTagihan, string $triggerType, ?string $triggerEvent, int $billsGenerated, array $errors): BillingJobLog
