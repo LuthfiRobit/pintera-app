@@ -79,6 +79,11 @@
                     <span>Orang Tua Tertaut</span>
                     <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 font-mono" :class="activeTab === 'orang-tua' ? 'bg-brand-100 text-brand-800' : ''">{{ $siswa->orangTua->count() }}</span>
                 </button>
+                <button type="button" @click="activeTab = 'keringanan'" :class="activeTab === 'keringanan' ? 'border-brand-600 text-brand-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'" class="flex items-center gap-2 border-b-2 py-3 px-4 transition whitespace-nowrap">
+                    <x-icon name="percent" class="h-4 w-4" />
+                    <span>Keringanan</span>
+                    <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 font-mono" :class="activeTab === 'keringanan' ? 'bg-brand-100 text-brand-800' : ''">{{ $keringanan->count() }}</span>
+                </button>
             </div>
         </div>
 
@@ -86,6 +91,7 @@
         <div class="mt-6">
             @include('admin.siswa.tabs.profil')
             @include('admin.siswa.tabs.orang-tua')
+            @include('admin.siswa.tabs.keringanan')
         </div>
     </div>
 </x-app-layout>
