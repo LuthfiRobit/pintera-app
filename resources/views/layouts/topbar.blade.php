@@ -10,6 +10,17 @@
     $notificationFeed = app(\App\Services\Notifications\NotificationFeedResolver::class)->resolve(Auth::user());
     $unreadCount = $notificationFeed->whereNull('read_at')->count();
 
+    $effectiveLembagaId = $isYayasan ? $activeLembagaId : Auth::user()->lembaga_id;
+    $perluDitinjauCount = (Auth::user()->can('tagihan.view') || Auth::user()->can('tagihan.edit')) && $effectiveLembagaId
+        ? \App\Domains\Keuangan\Models\Tagihan::where('perlu_ditinjau_ulang', true)
+            ->where(function ($q) use ($effectiveLembagaId) {
+                $q->whereHas('jenisTagihan', fn ($jt) => $jt->where('lembaga_id', $effectiveLembagaId))
+                    ->orWhereHas('pendaftaran', fn ($p) => $p->where('lembaga_id', $effectiveLembagaId))
+                    ->orWhereHasMorph('tagihable', [\App\Models\Siswa::class], fn ($s) => $s->withoutGlobalScopes()->where('lembaga_id', $effectiveLembagaId));
+            })
+            ->count()
+        : 0;
+
     $orangTua = Auth::user()->orangTua;
     $childOptions = $orangTua !== null
         ? $orangTua->siswa()->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->with('person')->get()->sortBy('nama_lengkap')
@@ -59,6 +70,20 @@
         <button type="button" class="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Mode gelap" title="Mode gelap belum tersedia">
             <x-icon name="dark_mode" class="h-4 w-4" />
         </button>
+
+        @if ($perluDitinjauCount > 0)
+            <a
+                href="{{ Route::has('admin.tagihan.perlu-ditinjau') ? route('admin.tagihan.perlu-ditinjau') : '#' }}"
+                class="relative flex h-[38px] w-[38px] items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-600 transition hover:bg-amber-100"
+                aria-label="Tagihan Perlu Ditinjau"
+                title="{{ $perluDitinjauCount }} tagihan perlu ditinjau ulang"
+            >
+                <x-icon name="assignment_late" class="h-4 w-4" />
+                <span class="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
+                    {{ $perluDitinjauCount > 9 ? '9+' : $perluDitinjauCount }}
+                </span>
+            </a>
+        @endif
 
         <div x-data="{
                 unreadCount: {{ $unreadCount }},

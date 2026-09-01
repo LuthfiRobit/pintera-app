@@ -91,7 +91,7 @@ class Tagihan extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['status', 'total_tagihan'])
+            ->logOnly(['status', 'total_tagihan', 'net_amount', 'discount_amount', 'discount_type', 'perlu_ditinjau_ulang', 'alasan_perlu_ditinjau'])
             ->logOnlyDirty()
             ->useLogName('tagihan');
     }
