@@ -85,3 +85,28 @@ it('rejects revoking a keringanan belonging to a siswa in a different lembaga', 
 
     $this->assertDatabaseHas('siswa_keringanan', ['id' => $siswaKeringanan->id]);
 });
+
+it('returns the created siswa_keringanan as JSON when the request wants JSON (AJAX widget)', function () {
+    $siswa = Siswa::factory()->create();
+    $admin = actingAsSiswaKeringananManager($siswa->lembaga_id);
+    $kategori = KategoriKeringanan::factory()->create(['lembaga_id' => $siswa->lembaga_id]);
+
+    $response = $this->actingAs($admin)->postJson(route('admin.siswa.keringanan.store', $siswa), [
+        'kategori_keringanan_id' => $kategori->id,
+        'berlaku_dari' => now()->toDateString(),
+    ]);
+
+    $response->assertStatus(201);
+    $response->assertJsonPath('data.siswa_id', $siswa->id);
+    $response->assertJsonPath('data.kategori_keringanan_id', $kategori->id);
+});
+
+it('returns a JSON message when revoking via AJAX (widget)', function () {
+    $siswaKeringanan = SiswaKeringanan::factory()->create();
+    $admin = actingAsSiswaKeringananManager($siswaKeringanan->siswa->lembaga_id);
+
+    $response = $this->actingAs($admin)->deleteJson(route('admin.siswa-keringanan.destroy', $siswaKeringanan));
+
+    $response->assertOk();
+    $this->assertDatabaseMissing('siswa_keringanan', ['id' => $siswaKeringanan->id]);
+});

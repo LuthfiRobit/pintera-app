@@ -54,6 +54,9 @@ export function jenisTagihanForm(config) {
         kategoriKeringananOptions: config.kategoriKeringananList,
         previewSasaranUrl: config.previewSasaranUrl,
         previewTarifKeringananUrl: config.previewTarifKeringananUrl,
+        previewSiswaKeringananUrl: config.previewSiswaKeringananUrl,
+        siswaKeringananStoreUrlTemplate: config.siswaKeringananStoreUrlTemplate,
+        siswaKeringananDestroyUrlTemplate: config.siswaKeringananDestroyUrlTemplate,
         reorderTarifUrl: config.reorderTarifUrl,
         previewSasaranCount: null,
         previewTarifCounts: [],
@@ -63,6 +66,11 @@ export function jenisTagihanForm(config) {
         kategoriBaruError: '',
         kategoriBaruSubmitting: false,
         showKategoriBaru: false,
+        showSiswaKeringananPanel: false,
+        siswaKeringananList: [],
+        siswaKeringananLoading: false,
+        siswaKeringananSearch: '',
+        siswaKeringananTogglingKey: null,
         tomSelectInstances: {},
 
         formatRupiah,
@@ -129,6 +137,93 @@ export function jenisTagihanForm(config) {
                 }
             } catch (e) {
                 console.error(e);
+            }
+        },
+
+        get siswaKeringananListFiltered() {
+            const term = this.siswaKeringananSearch.trim().toLowerCase();
+            if (!term) return this.siswaKeringananList;
+            return this.siswaKeringananList.filter((s) => s.nama.toLowerCase().includes(term));
+        },
+
+        toggleSiswaKeringananPanel() {
+            this.showSiswaKeringananPanel = !this.showSiswaKeringananPanel;
+            if (this.showSiswaKeringananPanel && this.siswaKeringananList.length === 0) {
+                this.fetchSiswaKeringananList();
+            }
+        },
+
+        async fetchSiswaKeringananList() {
+            if (!this.previewSiswaKeringananUrl) return;
+            this.siswaKeringananLoading = true;
+            try {
+                const payload = this.sasaranMode === 'kriteria'
+                    ? { sasaran: this.form.sasaran.map((g) => ({ kriteria: (g.kriteria || []).map((k) => ({ field: k.field, operator: k.operator, value: k.value })) })) }
+                    : { sasaran: [] };
+                const res = await fetch(this.previewSiswaKeringananUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Accept: 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    },
+                    body: JSON.stringify(payload),
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.siswaKeringananList = data.siswa ?? [];
+                }
+            } catch (e) {
+                console.error(e);
+            } finally {
+                this.siswaKeringananLoading = false;
+            }
+        },
+
+        async toggleSiswaKeringanan(siswa, kategoriId, isChecked) {
+            const key = siswa.id + ':' + kategoriId;
+            this.siswaKeringananTogglingKey = key;
+            try {
+                if (isChecked) {
+                    const url = this.siswaKeringananStoreUrlTemplate.replace('__ID__', siswa.id);
+                    const res = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({ kategori_keringanan_id: kategoriId, berlaku_dari: new Date().toISOString().slice(0, 10) }),
+                    });
+                    if (!res.ok) {
+                        Alpine.store('toast').push('error', 'Gagal menambahkan keringanan.');
+                        return;
+                    }
+                    const json = await res.json();
+                    siswa.assignments[kategoriId] = json.data.id;
+                } else {
+                    const siswaKeringananId = siswa.assignments[kategoriId];
+                    if (!siswaKeringananId) return;
+                    const url = this.siswaKeringananDestroyUrlTemplate.replace('__ID__', siswaKeringananId);
+                    const res = await fetch(url, {
+                        method: 'DELETE',
+                        headers: {
+                            Accept: 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        },
+                    });
+                    if (!res.ok) {
+                        Alpine.store('toast').push('error', 'Gagal mencabut keringanan.');
+                        return;
+                    }
+                    delete siswa.assignments[kategoriId];
+                }
+                this.fetchPreviewTarifKeringanan();
+            } catch (e) {
+                console.error(e);
+                Alpine.store('toast').push('error', 'Gagal memperbarui keringanan siswa.');
+            } finally {
+                this.siswaKeringananTogglingKey = null;
             }
         },
 

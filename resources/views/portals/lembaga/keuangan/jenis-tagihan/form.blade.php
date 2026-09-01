@@ -39,6 +39,9 @@
             kategoriKeringananStoreUrl: '{{ route('admin.kategori-keringanan.store') }}',
             previewSasaranUrl: '{{ route('admin.jenis-tagihan.preview-sasaran') }}',
             previewTarifKeringananUrl: '{{ route('admin.jenis-tagihan.preview-tarif-keringanan') }}',
+            previewSiswaKeringananUrl: '{{ route('admin.jenis-tagihan.preview-siswa-keringanan') }}',
+            siswaKeringananStoreUrlTemplate: '{{ route('admin.siswa.keringanan.store', ['siswa' => '__ID__']) }}',
+            siswaKeringananDestroyUrlTemplate: '{{ route('admin.siswa-keringanan.destroy', ['siswaKeringanan' => '__ID__']) }}',
             reorderTarifUrl: '{{ $jenisTagihan ? route('admin.jenis-tagihan.tarif-grup.reorder', $jenisTagihan) : '' }}',
             initialKeringanan: @js(old('keringanan', $jenisTagihan?->keringananRules->map(fn ($r) => ['kategori_keringanan_id' => $r->kategori_keringanan_id, 'tipe_potongan' => $r->tipe_potongan, 'nilai' => (float) $r->nilai, 'keterangan' => $r->keterangan])->values()->all() ?? [])),
         })"
@@ -635,6 +638,63 @@
                             <button type="button" class="inline-flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-gray-700" @click="showKategoriBaru = true">
                                 <x-icon name="category" class="h-4 w-4" /> Buat Kategori Baru
                             </button>
+                            <span class="text-gray-300">|</span>
+                            <button type="button" class="inline-flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-gray-700" @click="toggleSiswaKeringananPanel()">
+                                <x-icon name="group" class="h-4 w-4" />
+                                <span x-text="showSiswaKeringananPanel ? 'Tutup Assignment Siswa' : 'Kelola Assignment Siswa'"></span>
+                            </button>
+                        </div>
+
+                        {{-- Widget assignment siswa-ke-kategori-keringanan, tanpa perlu ke halaman edit Siswa --}}
+                        <div x-show="showSiswaKeringananPanel" x-cloak class="mt-2 rounded-xl border border-gray-200 bg-gray-50/60 p-4 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-xs text-gray-500">
+                                    Daftar siswa yang cocok dengan Target Sasaran di atas. Centang untuk assign, hilangkan centang untuk mencabut &mdash; berlaku langsung, tanpa perlu ke halaman edit Siswa.
+                                </p>
+                                <button type="button" @click="fetchSiswaKeringananList()" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition shrink-0">
+                                    <x-icon name="refresh" class="h-3.5 w-3.5" />
+                                    <span>Muat Ulang</span>
+                                </button>
+                            </div>
+
+                            <input type="text" x-model="siswaKeringananSearch" placeholder="Cari nama siswa..." class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
+
+                            <div x-show="siswaKeringananLoading" class="py-6 text-center text-xs text-gray-400">Memuat daftar siswa...</div>
+
+                            <div x-show="!siswaKeringananLoading && siswaKeringananList.length === 0" class="py-6 text-center text-xs text-gray-400">
+                                Belum ada siswa yang cocok dengan Target Sasaran di atas (atau tidak ada siswa di lembaga ini).
+                            </div>
+
+                            <div x-show="!siswaKeringananLoading && siswaKeringananList.length > 0" class="overflow-x-auto">
+                                <table class="min-w-full text-left text-xs">
+                                    <thead>
+                                        <tr class="border-b border-gray-200 text-gray-500">
+                                            <th class="py-2 pr-3 font-semibold">Nama Siswa</th>
+                                            <template x-for="opt in kategoriKeringananOptions" :key="opt.id">
+                                                <th class="py-2 px-2 font-semibold text-center" x-text="opt.nama"></th>
+                                            </template>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="siswa in siswaKeringananListFiltered" :key="siswa.id">
+                                            <tr class="border-b border-gray-100">
+                                                <td class="py-2 pr-3 font-medium text-gray-800" x-text="siswa.nama"></td>
+                                                <template x-for="opt in kategoriKeringananOptions" :key="opt.id">
+                                                    <td class="py-2 px-2 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            class="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                                            :checked="siswa.assignments[opt.id] !== undefined"
+                                                            :disabled="siswaKeringananTogglingKey === (siswa.id + ':' + opt.id)"
+                                                            @change="toggleSiswaKeringanan(siswa, opt.id, $event.target.checked)"
+                                                        />
+                                                    </td>
+                                                </template>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </template>

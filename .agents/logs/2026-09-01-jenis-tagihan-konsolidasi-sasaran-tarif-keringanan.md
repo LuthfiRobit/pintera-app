@@ -66,3 +66,42 @@ Telah diimplementasikan secara menyeluruh 9 Tahap (17 Task) Subagent-Driven Deve
    - Branch: `keuangan-v2`
    - Semua perubahan tersimpan rapi dalam commit-commit atomik per task.
    - Belum di-push ke remote (siap untuk direview dan di-merge/push sesuai workflow branch management tim).
+
+---
+
+## 5. Hasil Review Pasca-Implementasi (2026-09-01)
+
+Review kode dilakukan langsung (bukan cuma percaya ringkasan handoff di atas) terhadap semua 11 keputusan kritis di `.agents/kickoff/2026-09-01-jenis-tagihan-recalc-kickoff.md`, commit range `0050f291..05344997`. Semua CONFIRMED, tidak ada bug ditemukan:
+
+- Guard `tagihable_type !== Siswa::class` di `RecalculateTagihanNominalAction.php:35-37` — no-op murni, urutan cek benar (setelah lockForUpdate + status lunas/dibatalkan).
+- Query trigger #1 (`SiswaKeringananController::store()/destroy()`) memang pakai `tagihable_type`+`tagihable_id`, tidak ada `person_id` di jalur recalc manapun.
+- Guard overpayment & guard cicilan bekerja benar (OR'd, cicilan selalu memaksa jalur `perlu_ditinjau_ulang` terlepas hasil overpayment).
+- `TagihanStatusResolver` benar-benar jadi satu-satunya sumber transisi status, dipanggil di kedua tempat (`PaymentAllocationService::allocate()` & `RecalculateTagihanNominalAction`).
+- `lockForUpdate()` dipasang sebelum `paid_amount` dibaca.
+- `SyncJenisTagihanBillingConfigAction` genuinely diff-aware (snapshot before/after delete-recreate); test regresi "save tanpa sentuh tarif/keringanan → 0 job" ada dan tidak vakum (dibuktikan test sebelahnya yang memverifikasi job memang terkirim saat rule berubah).
+- Trigger #4 (`ReorderTarifGrupAction`) benar memotong jalur diff §5.5, dispatch recalc langsung.
+- Semua trigger bulk (#2/#3/#4) dispatch 1 job per tagihan, tidak ada job besar yang loop.
+- `SiswaKeringananController` tetap jadi endpoint aktif (bukan diganti), widget form baru di Stage 9 murni tambahan pintu masuk.
+- `resolveDiscount()`/`resolveNominal()` cocok persis dengan algoritma di spec (best-non-combinable + sum-combinable, clamp; orderBy priority, backfill via ROW_NUMBER partition).
+
+**Update mandiri implementer yang bagus, tidak perlu diperbaiki**:
+- `JenisTagihan::$syncBillingConfigResult` dideklarasikan sebagai **typed public property biasa** di model (bukan dynamic property/`#[AllowDynamicProperties]` seperti disarankan plan) — pilihan ini lebih baik karena otomatis tidak ikut ter-serialize ke `toArray()`/`toJson()` (relevan karena `JenisTagihanController::update()` mengembalikan JSON response di request yang sama). Dipertahankan apa adanya.
+- Halaman "Tagihan Perlu Ditinjau" (`TagihanController::perluDitinjau()`) melakukan filter lembaga lintas 3 jalur relasi (jenisTagihan/pendaftaran/Siswa morph), lebih luas dari scope recalc yang cuma Siswa-only — masuk akal untuk halaman review umum (bisa saja tagihan PPDB di-flag lewat mekanisme lain di masa depan), tidak mempengaruhi invariant recalc manapun. Dipertahankan apa adanya.
+
+**Kesimpulan**: implementasi sesuai spec dan plan tanpa penyimpangan berisiko. Siap lanjut ke tahap merge/push sesuai keputusan user.
+
+---
+
+## 6. Gap Ditemukan & Ditutup (2026-09-01, sesi lanjutan)
+
+Saat menjelaskan alur form ke user, ditemukan **Task 17 (plan) tidak selesai**: widget assignment siswa-ke-kategori-keringanan langsung di form Jenis Tagihan tidak pernah dibangun oleh implementer. Yang sudah ada sebelumnya cuma live preview counter dan modal "Buat Kategori Baru" (nama kategori saja) — meng-assign siswa TERTENTU ke kategori masih harus lewat halaman edit Siswa lama, padahal ini permintaan inti user di awal paket ini ("tak perlu ke halaman edit siswa untuk mengatur diskon atau apapun").
+
+**Ditutup pada commit ini** (belum di-commit terpisah saat log ini ditulis, akan menyusul commit `feat(keuangan): add in-form siswa-to-keringanan assignment widget`):
+
+1. Endpoint baru `POST admin/jenis-tagihan/preview-siswa-keringanan` (`JenisTagihanController::previewSiswaKeringanan()`) — mengembalikan daftar siswa yang cocok dengan draft Target Sasaran form ini, beserta map assignment keringanan mereka saat ini (`{siswa: [{id, nama, assignments: {kategori_id: siswa_keringanan_id}}]}`).
+2. `SiswaKeringananController::store()`/`destroy()` sekarang JSON-aware (`$request->wantsJson()`) tanpa mengubah endpoint/permission/guard-nya sama sekali — cuma menambah cabang response, backend assignment-nya TETAP endpoint lama yang sudah ada (sesuai keputusan desain awal: tidak bikin backend baru untuk assignment).
+3. Widget di kartu "Keringanan & Potongan Biaya" (`form.blade.php` + `jenis-tagihan-form.js`): tombol "Kelola Assignment Siswa" membuka panel tabel siswa (dengan filter pencarian nama) × kategori keringanan, checkbox per sel yang langsung memanggil endpoint store/destroy di atas via AJAX.
+
+Test baru: `JenisTagihanPreviewSiswaKeringananTest.php`, `JenisTagihanFormKeringananWidgetTest.php`, plus 2 test tambahan di `SiswaKeringananControllerTest.php` untuk mode JSON. Regresi diverifikasi: 425 test keuangan/jenis-tagihan/siswa-keringanan terkait — semua PASS, 0 gagal. Full suite proyek dijalankan ulang secara langsung (bukan cuma dipercaya) sebelum dan sesudah gap-closing ini, keduanya hijau (~2644 passed).
+
+Dengan ini, permintaan inti user ("semua pengaturan Jenis Tagihan, termasuk assign siswa ke keringanan, selesai di 1 form") sudah tercapai penuh.

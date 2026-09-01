@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -29,7 +30,7 @@ class SiswaKeringananController extends Controller
         return view('admin.siswa.tabs.keringanan', compact('siswa', 'keringanan'));
     }
 
-    public function store(Request $request, Siswa $siswa, RecalculateTagihanNominalAction $recalcAction): RedirectResponse
+    public function store(Request $request, Siswa $siswa, RecalculateTagihanNominalAction $recalcAction): RedirectResponse|JsonResponse
     {
         $this->authorize('siswa-keringanan.kelola');
 
@@ -42,7 +43,7 @@ class SiswaKeringananController extends Controller
             'berlaku_sampai' => ['nullable', 'date', 'after_or_equal:berlaku_dari'],
         ]);
 
-        $siswa->siswaKeringanan()->create($validated);
+        $siswaKeringanan = $siswa->siswaKeringanan()->create($validated);
 
         Tagihan::where('tagihable_type', Siswa::class)
             ->where('tagihable_id', $siswa->id)
@@ -50,10 +51,14 @@ class SiswaKeringananController extends Controller
             ->pluck('id')
             ->each(fn (int $tagihanId) => $recalcAction->execute($tagihanId));
 
+        if ($request->wantsJson()) {
+            return response()->json(['data' => $siswaKeringanan], 201);
+        }
+
         return back()->with('success', 'Keringanan berhasil ditambahkan.');
     }
 
-    public function destroy(Request $request, SiswaKeringanan $siswaKeringanan, RecalculateTagihanNominalAction $recalcAction): RedirectResponse
+    public function destroy(Request $request, SiswaKeringanan $siswaKeringanan, RecalculateTagihanNominalAction $recalcAction): RedirectResponse|JsonResponse
     {
         $this->authorize('siswa-keringanan.kelola');
 
@@ -73,6 +78,10 @@ class SiswaKeringananController extends Controller
             ->whereNotIn('status', ['lunas', 'dibatalkan'])
             ->pluck('id')
             ->each(fn (int $tagihanId) => $recalcAction->execute($tagihanId));
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'Keringanan berhasil dicabut.']);
+        }
 
         return back()->with('success', 'Keringanan berhasil dicabut.');
     }

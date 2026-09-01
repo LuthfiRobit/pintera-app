@@ -36,4 +36,8 @@ it('renders the edit form with reorder controls and in-form keringanan assignmen
     $response->assertSee('preview-sasaran', false);
     $response->assertSee('preview-tarif-keringanan', false);
     $response->assertSee('tarif-grup/reorder', false);
+    // Widget assignment siswa-ke-keringanan langsung di form (bukan cuma modal buat kategori
+    // baru) -- lihat JenisTagihanFormKeringananWidgetTest.php untuk cakupan penuhnya.
+    $response->assertSee('preview-siswa-keringanan', false);
+    $response->assertSee('Kelola Assignment Siswa', false);
 });

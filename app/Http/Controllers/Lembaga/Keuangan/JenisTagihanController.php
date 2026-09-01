@@ -319,6 +319,49 @@ class JenisTagihanController extends Controller
         ]);
     }
 
+    public function previewSiswaKeringanan(Request $request, JenisTagihanSasaranMatcher $matcher): JsonResponse
+    {
+        $this->authorize('jenis-tagihan.create');
+
+        $lembagaId = $this->resolveLembagaIdOrFail($request);
+        if ($lembagaId === null) {
+            return response()->json(['siswa' => []]);
+        }
+
+        $data = $request->validate(['sasaran' => ['nullable', 'array']]);
+
+        $draftJenisTagihan = new JenisTagihan(['lembaga_id' => $lembagaId]);
+        $draftGrups = collect($data['sasaran'] ?? [])->map(function ($grupData) {
+            $grup = new JenisTagihanSasaranGrup(['tipe' => 'sasaran']);
+            $grup->setRelation('kriteria', collect($grupData['kriteria'] ?? [])->map(fn ($k) => new JenisTagihanSasaranKriteria($k)));
+
+            return $grup;
+        });
+        $draftJenisTagihan->setRelation('sasaranGrup', $draftGrups);
+
+        $siswaList = Siswa::withoutGlobalScope(TenantScope::class)
+            ->where('lembaga_id', $lembagaId)
+            ->get()
+            ->filter(fn (Siswa $siswa) => $matcher->siswaMatchesJenisTagihan($siswa, $draftJenisTagihan))
+            ->values();
+
+        $today = now()->toDateString();
+        $assignmentsBySiswa = SiswaKeringanan::whereIn('siswa_id', $siswaList->pluck('id'))
+            ->where('berlaku_dari', '<=', $today)
+            ->where(fn ($q) => $q->whereNull('berlaku_sampai')->orWhere('berlaku_sampai', '>=', $today))
+            ->get(['id', 'siswa_id', 'kategori_keringanan_id'])
+            ->groupBy('siswa_id');
+
+        $result = $siswaList->map(fn (Siswa $siswa) => [
+            'id' => $siswa->id,
+            'nama' => $siswa->nama_lengkap,
+            'assignments' => ($assignmentsBySiswa->get($siswa->id) ?? collect())
+                ->mapWithKeys(fn ($row) => [(string) $row->kategori_keringanan_id => $row->id]),
+        ])->values();
+
+        return response()->json(['siswa' => $result]);
+    }
+
     public function prosesTagihan(
         JenisTagihan $jenisTagihan,
         JenisTagihanSasaranMatcher $matcher,
