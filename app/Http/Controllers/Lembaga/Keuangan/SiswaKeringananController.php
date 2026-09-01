@@ -4,7 +4,9 @@
 
 namespace App\Http\Controllers\Lembaga\Keuangan;
 
+use App\Domains\Keuangan\Actions\Tagihan\RecalculateTagihanNominalAction;
 use App\Domains\Keuangan\Models\SiswaKeringanan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Http\Controllers\Controller;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
@@ -27,7 +29,7 @@ class SiswaKeringananController extends Controller
         return view('admin.siswa.tabs.keringanan', compact('siswa', 'keringanan'));
     }
 
-    public function store(Request $request, Siswa $siswa): RedirectResponse
+    public function store(Request $request, Siswa $siswa, RecalculateTagihanNominalAction $recalcAction): RedirectResponse
     {
         $this->authorize('siswa-keringanan.kelola');
 
@@ -42,10 +44,16 @@ class SiswaKeringananController extends Controller
 
         $siswa->siswaKeringanan()->create($validated);
 
+        Tagihan::where('tagihable_type', Siswa::class)
+            ->where('tagihable_id', $siswa->id)
+            ->whereNotIn('status', ['lunas', 'dibatalkan'])
+            ->pluck('id')
+            ->each(fn (int $tagihanId) => $recalcAction->execute($tagihanId));
+
         return back()->with('success', 'Keringanan berhasil ditambahkan.');
     }
 
-    public function destroy(Request $request, SiswaKeringanan $siswaKeringanan): RedirectResponse
+    public function destroy(Request $request, SiswaKeringanan $siswaKeringanan, RecalculateTagihanNominalAction $recalcAction): RedirectResponse
     {
         $this->authorize('siswa-keringanan.kelola');
 
@@ -55,10 +63,16 @@ class SiswaKeringananController extends Controller
         // keringanan row by guessing/incrementing the id. Bypass Siswa's own TenantScope
         // here -- otherwise a cross-tenant siswa resolves to null (invisible to the acting
         // user's scope) and crashes on ->lembaga_id instead of cleanly 404ing.
-        $siswaLembagaId = Siswa::withoutGlobalScope(TenantScope::class)->find($siswaKeringanan->siswa_id)?->lembaga_id;
-        abort_unless($siswaLembagaId === $this->lembagaId($request), 404);
+        $siswa = Siswa::withoutGlobalScope(TenantScope::class)->find($siswaKeringanan->siswa_id);
+        abort_unless($siswa?->lembaga_id === $this->lembagaId($request), 404);
 
         $siswaKeringanan->delete();
+
+        Tagihan::where('tagihable_type', Siswa::class)
+            ->where('tagihable_id', $siswa->id)
+            ->whereNotIn('status', ['lunas', 'dibatalkan'])
+            ->pluck('id')
+            ->each(fn (int $tagihanId) => $recalcAction->execute($tagihanId));
 
         return back()->with('success', 'Keringanan berhasil dicabut.');
     }
