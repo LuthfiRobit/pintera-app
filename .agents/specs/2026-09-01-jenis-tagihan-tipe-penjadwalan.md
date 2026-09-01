@@ -126,12 +126,17 @@ UPDATE jenis_tagihan SET tipe = 'bulanan' WHERE mode = 'otomatis'; -- satu-satun
 UPDATE jenis_tagihan SET tipe = 'sekali' WHERE mode = 'manual'; -- historisnya sekali klik, sekali tagihan -- lebih jujur daripada 'bulanan'
 
 ALTER TABLE jenis_tagihan MODIFY COLUMN tipe ENUM('harian','mingguan','bulanan','tahunan','sekali') NOT NULL;
+
+ALTER TABLE jenis_tagihan
+    ADD CONSTRAINT chk_jenis_tagihan_mode_tipe CHECK (NOT (mode = 'otomatis' AND tipe = 'sekali'));
 ```
+
+**Lapis pertahanan kedua (dikonfirmasi user)**: `CHECK` constraint di atas menegakkan aturan §6 ("Mode=Otomatis + Tipe=Sekali ditolak") di level database, bukan cuma validasi form. MySQL 8.0.16+ (project ini pakai 8.0.30) menegakkan `CHECK` secara nyata, bukan cuma diterima-tapi-diabaikan seperti versi lama — jadi ini benar-benar mencegah, bukan dekorasi. Alasan kenapa ini bukan over-engineering: kalau ada jalur tulis lain di masa depan (seeder, command, import) lolos dari form ini, baris yang lolos itu akan silently diabaikan cron selamanya (tidak error, cuma tidak pernah jalan) — persis kelas bug "salah diam-diam" yang berulang kali ditemukan sepanjang proyek ini.
 
 Catatan:
 - `last_generated_period` dihapus di migration yang sama (bukan task terpisah tanpa jadwal) — alasan lengkap di §11.
 - `billing_period` dilebarkan dari `varchar(7)` ke `varchar(10)` (cukup untuk format `Y-m-d`, format terpanjang di antara 5 varian).
-- Test wajib untuk migration ini: assert SEMUA baris `jenis_tagihan` existing (dibuat lewat factory dengan `mode` bervariasi sebelum migrasi jalan) mendapat `tipe` yang benar sesuai `mode`-nya masing-masing setelah migrasi, dan kolom `tipe` benar-benar `NOT NULL` di akhir (percobaan insert tanpa `tipe` harus gagal di level DB).
+- Test wajib untuk migration ini: assert SEMUA baris `jenis_tagihan` existing (dibuat lewat factory dengan `mode` bervariasi sebelum migrasi jalan) mendapat `tipe` yang benar sesuai `mode`-nya masing-masing setelah migrasi, dan kolom `tipe` benar-benar `NOT NULL` di akhir (percobaan insert tanpa `tipe` harus gagal di level DB). **Tambahan**: assert `INSERT`/`UPDATE` langsung ke tabel (bypass Eloquent validation, misal lewat `DB::table('jenis_tagihan')->insert([...'mode' => 'otomatis', 'tipe' => 'sekali'...])`) gagal dengan `QueryException` karena `CHECK` constraint — bukan cuma test yang lewat form/Eloquent saja.
 
 ## 6. Validasi form (`JenisTagihanController::baseRules()`)
 
@@ -149,6 +154,34 @@ Catatan:
 **Validasi tambahan (custom rule, bukan bawaan Laravel)**: tolak kombinasi `mode=otomatis` + `tipe=sekali` dengan pesan eksplisit — "Tipe 'Sekali' tidak bisa dipasangkan dengan Mode Otomatis karena kontradiktif (generate berulang vs sekali saja)."
 
 **Guard PPDB (existing, diperluas)**: `hasBillingPayload()` sudah mengecek `sasaran`/`tarif`/`keringanan`. Tambahkan `tipe`, `hari_generate`, `bulan_generate`, `offset_hari_jatuh_tempo` ke daftar field yang diblok kalau kategori PPDB — kirim field-field ini untuk kategori Pendaftaran/Daftar Ulang harus ditolak sama seperti field billing lain.
+
+### 6.1 WAJIB: null-kan field pendukung yang tidak relevan saat Tipe diganti (`update()`)
+
+Kalau admin mengubah `tipe` sebuah `JenisTagihan` yang sudah ada (misal dari Mingguan ke Bulanan), field pendukung milik Tipe LAMA yang tidak relevan untuk Tipe BARU **wajib di-null-kan secara eksplisit** di `UpdateJenisTagihanAction` — TIDAK boleh dibiarkan menyimpan nilai lama begitu saja. Tanpa ini, `resolveDueDate()`/cron bisa salah baca nilai basi dari Tipe sebelumnya kalau suatu saat `tipe` diubah lagi bolak-balik, atau nilai basi itu membingungkan admin lain yang melihat form dan mengira field itu masih relevan.
+
+Pemetaan "field milik Tipe mana" (dari §4.6) dipakai untuk menentukan field mana yang di-null-kan: begitu `tipe` baru ditentukan, SEMUA field pendukung yang TIDAK ada di baris Tipe baru itu di §4.6 di-set `null`, sebelum field-field milik Tipe baru diisi dari input.
+
+```php
+// Di UpdateJenisTagihanAction (atau setara), sebelum menyimpan data baru:
+private function nullifyFieldsNotOwnedBy(TipeTagihan $tipe): array
+{
+    $ownedByTipe = match ($tipe) {
+        TipeTagihan::Harian => ['offset_hari_jatuh_tempo'],
+        TipeTagihan::Mingguan => ['hari_generate', 'offset_hari_jatuh_tempo'],
+        TipeTagihan::Bulanan => ['tanggal_generate', 'hari_jatuh_tempo'],
+        TipeTagihan::Tahunan => ['bulan_generate', 'tanggal_generate', 'hari_jatuh_tempo'],
+        TipeTagihan::Sekali => [],
+    };
+
+    $semuaFieldPendukung = ['hari_generate', 'bulan_generate', 'tanggal_generate', 'hari_jatuh_tempo', 'offset_hari_jatuh_tempo'];
+
+    return array_fill_keys(array_diff($semuaFieldPendukung, $ownedByTipe), null);
+}
+```
+
+Hasil `nullifyFieldsNotOwnedBy()` di-merge ke data update SEBELUM field-field dari request di-overlay di atasnya (supaya field yang memang dikirim untuk Tipe baru tidak ikut ke-null-kan).
+
+**Test wajib**: buat `JenisTagihan` dengan Tipe Mingguan (isi `hari_generate` dan `offset_hari_jatuh_tempo`), lalu update ke Tipe Bulanan (isi `tanggal_generate`/`hari_jatuh_tempo` baru) — assert `hari_generate` dan `offset_hari_jatuh_tempo` sudah `null` setelah update, BUKAN masih menyimpan nilai lama. Ulangi untuk minimal 2 kombinasi perpindahan Tipe lain (misal Tahunan → Harian) untuk memastikan pemetaan §4.6 benar-benar diterapkan penuh, bukan cuma satu arah.
 
 ## 7. Perbaikan bug `hari_jatuh_tempo` (WAJIB SELESAI DULU sebelum §8-§10 dikerjakan)
 
@@ -273,7 +306,7 @@ $kandidat = JenisTagihan::withoutGlobalScope(TenantScope::class)
     ->get();
 ```
 
-**Poin kritis untuk Tipe Mingguan**: kondisi `hari_generate === $today->dayOfWeekIso` SAJA TIDAK CUKUP sebagai penjamin anti-duplikat — itu cuma menentukan HARI mana kandidat dipertimbangkan, bukan mencegah generate dobel kalau cron sempat retry/ke-trigger dua kali di hari yang sama. Pencegahan duplikat yang sebenarnya tetap terjadi di `generateForSiswa()`'s existing dedup check (`exists()` query terhadap `billing_period`, sudah ada di kode), yang sekarang otomatis ikut bekerja untuk Mingguan begitu `billing_period` diisi format ISO-week (§9). **Tulis test yang secara eksplisit memanggil generator DUA KALI di hari yang sama untuk Tipe Mingguan, assert tagihan cuma dibuat SEKALI** — supaya kedua lapis perlindungan ini (query kandidat cron + dedup di generator) terverifikasi bekerja sama dengan benar, bukan cuma salah satu.
+**Poin kritis untuk Tipe Harian DAN Mingguan**: kondisi kandidat cron di atas (tidak ada syarat tambahan untuk Harian; `hari_generate === $today->dayOfWeekIso` untuk Mingguan) SAJA TIDAK CUKUP sebagai penjamin anti-duplikat — itu cuma menentukan KAPAN kandidat dipertimbangkan, bukan mencegah generate dobel kalau cron sempat retry/ke-trigger dua kali di hari yang sama. Ini berlaku SAMA NYATA untuk Harian — bahkan risikonya bukan lebih kecil, karena Harian dipertimbangkan cron SETIAP HARI tanpa syarat tambahan sama sekali. Pencegahan duplikat yang sebenarnya tetap terjadi di `generateForSiswa()`'s existing dedup check (`exists()` query terhadap `billing_period`, sudah ada di kode), yang sekarang otomatis ikut bekerja untuk Harian (format `Y-m-d`) dan Mingguan (format ISO-week) begitu `billing_period` diisi sesuai §9. **Tulis test yang secara eksplisit memanggil generator DUA KALI di hari yang sama, untuk KEDUA Tipe (Harian dan Mingguan terpisah), assert tagihan cuma dibuat SEKALI** — supaya kedua lapis perlindungan ini (query kandidat cron + dedup di generator) terverifikasi bekerja sama dengan benar untuk keduanya, bukan cuma salah satu Tipe yang kebetulan dites.
 
 ## 11. Penghapusan `jenis_tagihan.last_generated_period`
 
@@ -288,7 +321,7 @@ Kolom ini **dihapus di migration yang sama** dengan penambahan field baru (§5) 
 - Guard PPDB: kirim `tipe`/`hari_generate`/`bulan_generate`/`offset_hari_jatuh_tempo` untuk kategori Pendaftaran/Daftar Ulang → ditolak, sama seperti field billing lain.
 - `resolveDueDate()`: 5 test terpisah, satu per Tipe, assert nilai due-date yang benar sesuai definisi §8 masing-masing (termasuk kasus `null` untuk Sekali, dan kasus field pendukung belum diisi → `null`, bukan error).
 - `resolveBillingPeriod()`: 5 test terpisah, assert format string yang benar per Tipe, TERMASUK 2 test edge-case ISO-week di sekitar pergantian tahun (1 Januari & 29 Desember, nilai persis seperti temuan verifikasi di §9).
-- Cron `GenerateTagihanHarian`: 5 test kandidat-matching (satu per Tipe, assert kandidat match/tidak-match sesuai kondisi hari ini), PLUS 1 test dedup-ganda khusus Mingguan (generator dipanggil 2x di hari yang sama, assert tagihan cuma 1).
+- Cron `GenerateTagihanHarian`: 5 test kandidat-matching (satu per Tipe, assert kandidat match/tidak-match sesuai kondisi hari ini), PLUS test dedup-ganda untuk **Harian DAN Mingguan** (generator dipanggil 2x di hari yang sama, assert tagihan cuma 1 — kedua Tipe ini sama-sama berisiko generate dobel kalau cron retry/ke-trigger dua kali, dan Harian justru lebih sering ke-trigger karena cron jalan tiap hari tanpa syarat tambahan sama sekali, jadi risikonya bukan lebih kecil dari Mingguan).
 - Migration: assert kolom baru ada dengan tipe/constraint yang benar, `last_generated_period` sudah tidak ada, `billing_period` sudah `varchar(10)`.
 - Regression: seluruh test existing untuk Tipe Bulanan (perilaku default) harus tetap hijau tanpa perubahan hasil — Bulanan adalah satu-satunya Tipe yang perilakunya TIDAK berubah dari sekarang.
 
@@ -298,7 +331,7 @@ Kolom ini **dihapus di migration yang sama** dengan penambahan field baru (§5) 
 2. **Migration** (§5) — kolom baru + hapus `last_generated_period` + lebarkan `billing_period`, dalam satu migration.
 3. **Enum + validasi form** (§4, §6) — `TipeTagihan`, `HariDalamMinggu`, rules baru di `JenisTagihanController`, guard PPDB diperluas.
 4. **`resolveDueDate()` + `resolveBillingPeriod()`** (§8, §9) — rewrite di `TagihanBillingGenerator`, dengan seluruh test per-Tipe.
-5. **Rewrite cron `GenerateTagihanHarian`** (§10) — percabangan per Tipe + test dedup-ganda Mingguan.
+5. **Rewrite cron `GenerateTagihanHarian`** (§10) — percabangan per Tipe + test dedup-ganda Harian dan Mingguan.
 6. **UI form** — 5 varian field dinamis sesuai Tipe (mockup sudah dikonfirmasi user di awal diskusi).
 7. Full test suite.
 
