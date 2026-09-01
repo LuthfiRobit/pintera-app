@@ -2,6 +2,9 @@
 
 namespace App\Domains\Keuangan\Models;
 
+use App\Domains\Keuangan\DataTransferObjects\SyncBillingConfigResult;
+use App\Domains\Keuangan\Enums\KategoriTagihan;
+use App\Domains\Keuangan\Enums\TipeTagihan;
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Lembaga;
 use Database\Factories\JenisTagihanFactory;
@@ -13,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class JenisTagihan extends Model
 {
     use BelongsToTenant, HasFactory;
+
+    public ?SyncBillingConfigResult $syncBillingConfigResult = null;
 
     protected static function newFactory(): JenisTagihanFactory
     {
@@ -40,8 +45,8 @@ class JenisTagihan extends Model
         return [
             'bisa_dicicil' => 'boolean',
             'default_amount' => 'decimal:2',
-            'kategori' => \App\Domains\Keuangan\Enums\KategoriTagihan::class,
-            'tipe' => \App\Domains\Keuangan\Enums\TipeTagihan::class,
+            'kategori' => KategoriTagihan::class,
+            'tipe' => TipeTagihan::class,
             'tanggal_mulai' => 'date',
             'tanggal_selesai' => 'date',
             'is_active' => 'boolean',

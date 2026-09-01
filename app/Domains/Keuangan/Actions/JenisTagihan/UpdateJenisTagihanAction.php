@@ -19,7 +19,7 @@ class UpdateJenisTagihanAction
         return DB::transaction(function () use ($jenisTagihan, $data) {
             $wasActive = (bool) $jenisTagihan->is_active;
 
-            $this->syncBillingConfig->execute($jenisTagihan, $data->billing);
+            $syncResult = $this->syncBillingConfig->execute($jenisTagihan, $data->billing);
 
             $tipeEnum = isset($data->attributes['tipe'])
                 ? ($data->attributes['tipe'] instanceof TipeTagihan ? $data->attributes['tipe'] : TipeTagihan::tryFrom($data->attributes['tipe']))
@@ -31,8 +31,8 @@ class UpdateJenisTagihanAction
                 $nullified,
                 $data->attributes,
                 [
-                    'nama'         => $data->nama,
-                    'kategori'     => $data->kategori,
+                    'nama' => $data->nama,
+                    'kategori' => $data->kategori,
                     'bisa_dicicil' => $data->bisaDicicil,
                     'maks_cicilan' => $data->maksCicilan,
                 ]
@@ -41,6 +41,7 @@ class UpdateJenisTagihanAction
             $jenisTagihan->update($attributes);
 
             $fresh = $jenisTagihan->fresh();
+            $fresh->syncBillingConfigResult = $syncResult;
 
             // Menggantikan JenisTagihan::booted() lama (model tidak boleh punya business
             // logic) — satu-satunya call site nyata adalah alur ini (update() generik via

@@ -12,8 +12,10 @@ use App\Domains\Keuangan\Enums\KategoriTagihan;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Http\Controllers\Controller;
+use App\Jobs\RecalculateTagihanNominalJob;
 use App\Models\JalurPpdb;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -203,6 +205,13 @@ class JenisTagihanController extends Controller
 
         $dto = JenisTagihanData::fromArray($data, $billing);
         $jenisTagihan = $action->execute($jenisTagihan, $dto);
+
+        if ($jenisTagihan->syncBillingConfigResult?->tarifBerubah || $jenisTagihan->syncBillingConfigResult?->keringananBerubah) {
+            Tagihan::where('jenis_tagihan_id', $jenisTagihan->id)
+                ->whereNotIn('status', ['lunas', 'dibatalkan'])
+                ->pluck('id')
+                ->each(fn (int $tagihanId) => RecalculateTagihanNominalJob::dispatch($tagihanId));
+        }
 
         if ($request->wantsJson()) {
             return response()->json(['data' => $jenisTagihan->loadCount(['nominalJalur', 'tagihanItem'])]);
