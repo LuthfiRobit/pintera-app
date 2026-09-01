@@ -1,4 +1,5 @@
 <?php
+
 // app/Domains/Keuangan/Services/TagihanNominalResolver.php
 
 namespace App\Domains\Keuangan\Services;
@@ -6,14 +7,12 @@ namespace App\Domains\Keuangan\Services;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanSiswa;
-use App\Models\Siswa;
 use App\Domains\Keuangan\Models\SiswaKeringanan;
+use App\Models\Siswa;
 
 class TagihanNominalResolver
 {
-    public function __construct(private readonly JenisTagihanSasaranMatcher $matcher)
-    {
-    }
+    public function __construct(private readonly JenisTagihanSasaranMatcher $matcher) {}
 
     /**
      * @return array{nominal: float, discount_amount: float, discount_type: ?string}
@@ -40,7 +39,7 @@ class TagihanNominalResolver
             return (float) $override->nominal;
         }
 
-        $tarifGrups = $jenisTagihan->sasaranGrup()->where('tipe', 'tarif')->with('kriteria')->orderBy('id')->get();
+        $tarifGrups = $jenisTagihan->sasaranGrup()->where('tipe', 'tarif')->with('kriteria')->orderBy('priority')->get();
 
         foreach ($tarifGrups as $grup) {
             if ($this->matcher->siswaMatchesGrup($siswa, $grup)) {

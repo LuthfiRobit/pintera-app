@@ -10,7 +10,7 @@ class JenisTagihanSasaranGrup extends Model
 {
     protected $table = 'jenis_tagihan_sasaran_grup';
 
-    protected $fillable = ['jenis_tagihan_id', 'tipe', 'nominal'];
+    protected $fillable = ['jenis_tagihan_id', 'tipe', 'nominal', 'priority'];
 
     protected function casts(): array
     {
