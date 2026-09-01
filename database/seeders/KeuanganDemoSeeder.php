@@ -110,6 +110,7 @@ class KeuanganDemoSeeder extends Seeder
                 'billing_period' => $periode,
             ],
             [
+                'person_id' => $siswa->person_id,
                 'kategori' => 'spp',
                 'source_trigger' => 'demo_seeder',
                 'total_tagihan' => $nominal,
