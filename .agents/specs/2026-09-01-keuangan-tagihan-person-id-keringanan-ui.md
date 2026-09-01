@@ -214,6 +214,8 @@ Registrasi listener: `EventServiceProvider` atau auto-discovery Laravel 12 (cek 
 
 ## 5. Perbaikan #3 — Sentralisasi `PPDB_KATEGORI`
 
+> **Revisi 2026-09-01 (post-review, superseded oleh paket #4)**: §5.2 di bawah ini (buat `JenisTagihan::isPpdbKategori()`) TIDAK JADI DIKERJAKAN. Audit lanjutan menemukan kebutuhan lebih besar untuk mengubah `kategori` jadi PHP Backed Enum (13 titik patah, bukan cuma 7) — dipisah jadi `.agents/specs/2026-09-01-keuangan-kategori-tagihan-backed-enum.md` (paket #4). Keputusan urutan eksekusi terkunci: **paket #4 dikerjakan PENUH lebih dulu** (menghasilkan `KategoriTagihan::isPpdb()`), BARU paket ini (#1+2+3) dikerjakan — §5.2 disederhanakan jadi "pakai `KategoriTagihan::isPpdb()` yang sudah ada", bukan membuat mekanisme baru yang nanti harus dihapus lagi. Lihat plan implementasi gabungan untuk urutan detail.
+
 ### 5.1 Titik yang terpengaruh (7 total, terverifikasi lengkap)
 
 | # | File:baris | Bentuk saat ini |
@@ -226,37 +228,28 @@ Registrasi listener: `EventServiceProvider` atau auto-discovery Laravel 12 (cek 
 | 6 | `app/Domains/Keuangan/Listeners/GenerateTagihanForNewStudent.php:27` | idem #5 |
 | 7 | `app/Http/Controllers/Lembaga/Keuangan/PembayaranController.php:34` | ternary rapuh: `kategori === 'pendaftaran' ? 'Tagihan Pendaftaran' : 'Tagihan Daftar Ulang'` (salah kalau kategori sebenarnya bukan keduanya) |
 
-### 5.2 Solusi
+### 5.2 Solusi (DIREVISI — lihat catatan di awal §5)
 
-Tambah konstanta terpusat di `App\Domains\Keuangan\Models\JenisTagihan` (model yang memang memiliki kolom `kategori`, tempat paling natural):
+~~Tambah konstanta terpusat di `JenisTagihan::isPpdbKategori()`~~ — TIDAK JADI. Karena paket #4 dikerjakan lebih dulu dan sudah menghasilkan `App\Domains\Keuangan\Enums\KategoriTagihan::isPpdb()` (method instance, bukan static helper berbasis string), titik-titik di §5.1 SEMUANYA sudah selesai diperbaiki sebagai bagian dari eksekusi paket #4 itu sendiri (lihat spec paket #4 §4.2 — titik #1/#2/#3/#4/#5/#6/#12/#13 di sana adalah titik #1-4 dan #7 di daftar §5.1 ini, ditambah 2 titik lain yang baru ketemu di audit paket #4). Titik #5 dan #6 (`GenerateTagihanForUpdatedClass.php:27`, `GenerateTagihanForNewStudent.php:27` — keduanya `whereNotIn('kategori', [...])` di level query builder, bukan perbandingan objek) TIDAK termasuk breakage list paket #4 karena aman terhadap cast enum (operasi SQL langsung) — tetap diganti ke `KategoriTagihan` di sini murni untuk konsistensi sumber kebenaran (pakai `array_map(fn ($c) => $c->value, KategoriTagihan::cases())` yang di-filter, atau langsung `[KategoriTagihan::Pendaftaran->value, KategoriTagihan::DaftarUlang->value]`), BUKAN karena ada bug yang diperbaiki.
 
-```php
-class JenisTagihan extends Model
-{
-    public const PPDB_KATEGORI = ['pendaftaran', 'daftar_ulang'];
+**Tidak ada pekerjaan baru untuk paket ini di §5** selain memastikan titik #5 dan #6 memakai `KategoriTagihan` (bukan literal string) untuk konsistensi, dan memverifikasi (test regression) bahwa titik #1-4, #7 dari paket #4 memang benar sudah menutup seluruh §5.1.
 
-    public static function isPpdbKategori(string $kategori): bool
-    {
-        return in_array($kategori, self::PPDB_KATEGORI, true);
-    }
-}
-```
+### 5.3 Test Requirements (DIREVISI)
 
-Semua 7 titik diganti memanggil `JenisTagihan::isPpdbKategori($kategori)` (atau `JenisTagihan::PPDB_KATEGORI` langsung untuk kasus `Rule::in()`/array literal yang butuh array, bukan boolean). Titik #7 (`PembayaranController.php:34`) diperbaiki sekalian dari ternary 2-kemungkinan jadi label yang benar per kategori (`match` atau lookup array, bukan ternary biner) — memperbaiki bug laten (kategori pendaftaran yang bukan 'pendaftaran'/'daftar_ulang' akan salah label) sebagai bagian dari sentralisasi ini.
+- ~~`JenisTagihan::isPpdbKategori()` benar~~ — sudah tercakup sebagai `KategoriTagihan::isPpdb()` test di paket #4.
+- Regression test untuk titik #5 dan #6 (§5.1): perilaku SAMA, memakai `KategoriTagihan` sebagai sumber nilai, bukan literal string.
+- Regression test titik #7 (`PembayaranController.php:34`): sudah tercakup di test paket #4 (titik #7 di daftarnya).
 
-### 5.3 Test Requirements
+## 6. Urutan Migrasi & Implementasi (DIREVISI — lihat plan gabungan untuk detail penuh)
 
-- `JenisTagihan::isPpdbKategori()` benar untuk kedua nilai PPDB dan kategori non-PPDB.
-- Regression test untuk masing-masing dari 7 titik: perilaku SAMA seperti sebelum refactor (tidak ada perubahan fungsional, murni konsolidasi sumber kebenaran) — KECUALI titik #7 yang sengaja diperbaiki labelnya.
+**Prasyarat**: paket #4 (`.agents/specs/2026-09-01-keuangan-kategori-tagihan-backed-enum.md`) SUDAH selesai dieksekusi PENUH dan full test suite hijau, SEBELUM paket ini (#1+2+3) dimulai.
 
-## 6. Urutan Migrasi & Implementasi (garis besar, detail penuh di plan)
-
-1. **#3 dulu** (paling kecil, tidak bergantung apa pun): sentralisasi `PPDB_KATEGORI`, migrasi 7 titik.
+1. **#3**: pastikan titik #5/#6 (§5.1) memakai `KategoriTagihan` (bukan literal string) — konsolidasi murni, bukan bug fix.
 2. **#2 — Schema**: migration tambah `tagihan.person_id` nullable.
 3. **#2 — Kode**: sesuaikan 6 titik penulis (§4.4), event `PersonsMerged` + listener (§4.7), sederhanakan `DashboardController` (§4.6).
 4. **#2 — Backfill**: command backfill + verify, jalankan terhadap data dev.
 5. **#2 — Constraint**: migration terpisah untuk NOT NULL + FK, HANYA setelah verify exit 0.
-6. **#1 — UI Keringanan**: independen dari #2/#3, bisa dikerjakan paralel atau kapan saja dalam urutan ini — controller, route, permission, view.
+6. **#1 — UI Keringanan**: independen dari #2/#3, dikerjakan terakhir dalam paket ini — controller, route, permission, view.
 7. **Full test suite** setelah semua langkah di atas selesai.
 
 ## 7. Risiko
