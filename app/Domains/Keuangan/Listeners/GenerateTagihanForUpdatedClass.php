@@ -1,21 +1,22 @@
 <?php
+
 // app/Domains/Keuangan/Listeners/GenerateTagihanForUpdatedClass.php
 
 namespace App\Domains\Keuangan\Listeners;
 
-use App\Events\StudentUpdatedClass;
+use App\Domains\Keuangan\Enums\KategoriTagihan;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\Scopes\TenantScope;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Domains\Keuangan\Services\TagihanBillingGenerator;
+use App\Events\StudentUpdatedClass;
+use App\Models\Scopes\TenantScope;
 
 class GenerateTagihanForUpdatedClass
 {
     public function __construct(
         private readonly JenisTagihanSasaranMatcher $matcher,
         private readonly TagihanBillingGenerator $generator,
-    ) {
-    }
+    ) {}
 
     public function handle(StudentUpdatedClass $event): void
     {
@@ -24,7 +25,7 @@ class GenerateTagihanForUpdatedClass
         JenisTagihan::withoutGlobalScope(TenantScope::class)
             ->where('lembaga_id', $siswa->lembaga_id)
             ->where('is_active', true)
-            ->whereNotIn('kategori', ['pendaftaran', 'daftar_ulang'])
+            ->whereNotIn('kategori', [KategoriTagihan::Pendaftaran->value, KategoriTagihan::DaftarUlang->value])
             ->get()
             ->each(function (JenisTagihan $jenisTagihan) use ($siswa) {
                 if ($this->matcher->siswaMatchesJenisTagihan($siswa, $jenisTagihan)) {
