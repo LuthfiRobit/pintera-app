@@ -58,6 +58,7 @@ class TagihanSeeder extends Seeder
                         'total_tagihan' => $nominalPendaftaran->nominal,
                         'net_amount' => $nominalPendaftaran->nominal,
                         'status' => 'belum_bayar',
+                        'person_id' => $diterima->calonMurid->person_id,
                     ]
                 );
                 Tagihan::firstOrCreate(
@@ -68,6 +69,7 @@ class TagihanSeeder extends Seeder
                         'total_tagihan' => $nominalDaftarUlang->nominal,
                         'net_amount' => $nominalDaftarUlang->nominal,
                         'status' => 'belum_bayar',
+                        'person_id' => $diterima->calonMurid->person_id,
                     ]
                 );
             }
@@ -81,6 +83,7 @@ class TagihanSeeder extends Seeder
                         'total_tagihan' => $nominalDaftarUlang->nominal,
                         'net_amount' => $nominalDaftarUlang->nominal,
                         'status' => 'belum_bayar',
+                        'person_id' => $cicilanDemo->calonMurid->person_id,
                     ]
                 );
             }
