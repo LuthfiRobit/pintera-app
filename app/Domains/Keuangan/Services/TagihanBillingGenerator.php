@@ -50,7 +50,8 @@ class TagihanBillingGenerator
         $createdTagihan = null;
 
         $result = DB::transaction(function () use ($siswa, $jenisTagihan, $triggerType, &$createdTagihan) {
-            $billingPeriod = $jenisTagihan->mode === 'otomatis' ? now()->format('Y-m') : null;
+            $tanggalGenerateAktual = now();
+            $billingPeriod = $this->resolveBillingPeriod($jenisTagihan, $tanggalGenerateAktual);
 
             $exists = Tagihan::where('tagihable_type', Siswa::class)
                 ->where('tagihable_id', $siswa->id)
@@ -81,7 +82,7 @@ class TagihanBillingGenerator
                 'discount_amount' => $resolved['discount_amount'] ?: null,
                 'discount_type' => $resolved['discount_type'],
                 'net_amount' => $netAmount,
-                'jatuh_tempo' => $this->resolveDueDate($jenisTagihan, $billingPeriod, now()),
+                'jatuh_tempo' => $this->resolveDueDate($jenisTagihan, $billingPeriod, $tanggalGenerateAktual),
                 'status' => 'belum_bayar',
             ]);
 
@@ -167,6 +168,25 @@ class TagihanBillingGenerator
         $daysInMonth = Carbon::create($year, $bulanGenerate, 1)->daysInMonth;
 
         return Carbon::create($year, $bulanGenerate, min($hariJatuhTempo, $daysInMonth))->toDateString();
+    }
+
+    private function resolveBillingPeriod(JenisTagihan $jenisTagihan, Carbon $tanggalGenerateAktual): ?string
+    {
+        if ($jenisTagihan->mode !== 'otomatis') {
+            return null;
+        }
+
+        return match ($jenisTagihan->tipe) {
+            TipeTagihan::Sekali => null,
+            TipeTagihan::Harian => $tanggalGenerateAktual->format('Y-m-d'),
+            // 'o' (lowercase, ISO week-numbering year) is REQUIRED here, not 'Y' (calendar
+            // year) -- verified at the year boundary: 2027-01-01 must produce "2026-W53",
+            // not "2027-W01", and 2025-12-29 must produce "2026-W01". Using 'Y' silently
+            // miscalculates dedup at every year boundary.
+            TipeTagihan::Mingguan => $tanggalGenerateAktual->format('o-\WW'),
+            TipeTagihan::Bulanan => $tanggalGenerateAktual->format('Y-m'),
+            TipeTagihan::Tahunan => $tanggalGenerateAktual->format('Y'),
+        };
     }
 
     private function logResult(JenisTagihan $jenisTagihan, string $triggerType, ?string $triggerEvent, int $billsGenerated, array $errors): BillingJobLog
