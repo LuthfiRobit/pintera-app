@@ -262,7 +262,7 @@ class JenisTagihanController extends Controller
     {
         $this->authorize('jenis-tagihan.edit');
 
-        if (! in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
+        if (! $jenisTagihan->kategori->isPpdb()) {
             return redirect()->route('admin.jenis-tagihan.index')
                 ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang. Kategori "Lainnya" belum punya mekanisme penentuan nominal.']);
         }
@@ -286,7 +286,7 @@ class JenisTagihanController extends Controller
     ): RedirectResponse {
         $this->authorize('jenis-tagihan.edit');
 
-        if (! in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
+        if (! $jenisTagihan->kategori->isPpdb()) {
             return redirect()->route('admin.jenis-tagihan.index')
                 ->withErrors(['kategori' => 'Nominal per jalur PPDB hanya berlaku untuk kategori Pendaftaran/Daftar Ulang.']);
         }

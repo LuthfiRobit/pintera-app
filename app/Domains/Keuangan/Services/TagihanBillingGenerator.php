@@ -1,4 +1,5 @@
 <?php
+
 // app/Domains/Keuangan/Services/TagihanBillingGenerator.php
 
 namespace App\Domains\Keuangan\Services;
@@ -21,8 +22,7 @@ class TagihanBillingGenerator
         private readonly JenisTagihanSasaranMatcher $matcher,
         private readonly TagihanNominalResolver $nominalResolver,
         private readonly NotificationDispatcher $dispatcher,
-    ) {
-    }
+    ) {}
 
     public function generate(JenisTagihan $jenisTagihan, string $triggerType, ?string $triggerEvent = null): BillingJobLog
     {
@@ -119,9 +119,9 @@ class TagihanBillingGenerator
 
     private function assertBillable(JenisTagihan $jenisTagihan): void
     {
-        if (in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
+        if ($jenisTagihan->kategori->isPpdb()) {
             throw new \RuntimeException(
-                "Jenis tagihan berkategori {$jenisTagihan->kategori} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB."
+                "Jenis tagihan berkategori {$jenisTagihan->kategori->label()} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB."
             );
         }
     }

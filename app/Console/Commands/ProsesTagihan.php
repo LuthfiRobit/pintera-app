@@ -1,4 +1,5 @@
 <?php
+
 // app/Console/Commands/ProsesTagihan.php
 
 namespace App\Console\Commands;
@@ -25,8 +26,8 @@ class ProsesTagihan extends Command
             return self::FAILURE;
         }
 
-        if (in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
-            $this->error("Jenis tagihan berkategori {$jenisTagihan->kategori} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB.");
+        if ($jenisTagihan->kategori->isPpdb()) {
+            $this->error("Jenis tagihan berkategori {$jenisTagihan->kategori->label()} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB.");
 
             return self::FAILURE;
         }
