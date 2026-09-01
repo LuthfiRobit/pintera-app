@@ -15,9 +15,11 @@ beforeEach(function () {
     (new RolePermissionSeeder)->run();
 });
 
-// TenantScope filters {siswa}/{siswaKeringanan} route-model-binding by the acting user's
-// own lembaga_id, so the manager must share the target siswa's lembaga_id or binding 404s
-// before the controller ever runs.
+// TenantScope filters {siswa} route-model-binding by the acting user's own lembaga_id, so
+// the manager must share the target siswa's lembaga_id or binding 404s before the controller
+// ever runs. {siswaKeringanan} in destroy() is NOT tenant-scoped this way (SiswaKeringanan has
+// no BelongsToTenant of its own) -- that route relies on an explicit abort_unless() check in
+// the controller instead, see the cross-tenant rejection test below.
 function actingAsSiswaKeringananManager(?int $lembagaId = null): User
 {
     $admin = User::factory()->create(['lembaga_id' => $lembagaId]);
@@ -72,4 +74,14 @@ it('admin can revoke an assigned keringanan (hard delete)', function () {
     $this->actingAs($admin)->delete(route('admin.siswa-keringanan.destroy', $siswaKeringanan))->assertRedirect();
 
     $this->assertDatabaseMissing('siswa_keringanan', ['id' => $siswaKeringanan->id]);
+});
+
+it('rejects revoking a keringanan belonging to a siswa in a different lembaga', function () {
+    $siswa = Siswa::factory()->create();
+    $siswaKeringanan = SiswaKeringanan::factory()->create(['siswa_id' => $siswa->id]);
+    $admin = actingAsSiswaKeringananManager($siswa->lembaga_id + 1);
+
+    $this->actingAs($admin)->delete(route('admin.siswa-keringanan.destroy', $siswaKeringanan))->assertNotFound();
+
+    $this->assertDatabaseHas('siswa_keringanan', ['id' => $siswaKeringanan->id]);
 });
