@@ -31,7 +31,7 @@ class JenisTagihanController extends Controller
 {
     use AuthorizesRequests;
 
-    private const KRITERIA_FIELDS = ['lembaga', 'tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'];
+    private const KRITERIA_FIELDS = ['tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'];
 
     public function index(Request $request): View
     {
@@ -143,6 +143,7 @@ class JenisTagihanController extends Controller
         $billing = null;
         if (! $isPpdbKategori) {
             $billing = $request->validate($this->billingRules($lembagaId, $request));
+            $this->validateKelasKriteriaLembaga($billing, $lembagaId);
             $duplicateError = $this->findDuplicateKeringanan($billing['keringanan'] ?? []);
             if ($duplicateError) {
                 return $this->errorResponse($request, $duplicateError);
@@ -193,6 +194,7 @@ class JenisTagihanController extends Controller
         $billing = null;
         if (! $isPpdbKategori) {
             $billing = $request->validate($this->billingRules($jenisTagihan->lembaga_id, $request));
+            $this->validateKelasKriteriaLembaga($billing, $jenisTagihan->lembaga_id);
             $duplicateError = $this->findDuplicateKeringanan($billing['keringanan'] ?? []);
             if ($duplicateError) {
                 return $this->errorResponse($request, $duplicateError);
@@ -398,6 +400,25 @@ class JenisTagihanController extends Controller
         }
 
         return null;
+    }
+
+    private function validateKelasKriteriaLembaga(array $billing, int $lembagaId): void
+    {
+        $semuaKriteria = collect($billing['sasaran'] ?? [])->flatMap(fn ($grup) => $grup['kriteria'] ?? [])
+            ->merge(collect($billing['tarif'] ?? [])->flatMap(fn ($grup) => $grup['kriteria'] ?? []));
+
+        foreach ($semuaKriteria as $kriteria) {
+            if (($kriteria['field'] ?? null) !== 'kelas') {
+                continue;
+            }
+
+            $idsValid = Kelas::where('lembaga_id', $lembagaId)->whereIn('id', $kriteria['value'] ?? [])->pluck('id')->all();
+            $idsDiminta = array_map('intval', $kriteria['value'] ?? []);
+
+            if (array_diff($idsDiminta, $idsValid) !== []) {
+                throw ValidationException::withMessages(['sasaran' => 'Salah satu kelas yang dipilih tidak ditemukan di lembaga ini.']);
+            }
+        }
     }
 
     private function errorResponse(Request $request, string $message): RedirectResponse|JsonResponse

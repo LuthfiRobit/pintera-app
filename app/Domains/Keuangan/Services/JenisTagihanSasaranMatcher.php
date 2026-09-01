@@ -125,6 +125,9 @@ class JenisTagihanSasaranMatcher
 
     private function siswaMatchesKriteria(Siswa $siswa, JenisTagihanSasaranKriteria $kriteria): bool
     {
+        // $siswa->jenis_kelamin reads via Siswa::getJenisKelaminAttribute() -> $this->person->jenis_kelamin
+        // (siswa.jenis_kelamin was dropped in identity-v1 Task 28) -- this is the SAME source as the
+        // SQL-side whereHas('person', ...) check above, not a divergent one. Verified 2026-09-01.
         $actual = match ($kriteria->field) {
             'lembaga' => $siswa->lembaga_id,
             'kelas' => $siswa->kelas_id,
