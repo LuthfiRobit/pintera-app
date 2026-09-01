@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lembaga\Keuangan;
 use App\Domains\Keuangan\Actions\Tagihan\BuatSkemaCicilanAction;
 use App\Domains\Keuangan\Actions\Tagihan\CatatManualCicilanAction;
 use App\Domains\Keuangan\Actions\Tagihan\CatatManualTagihanAction;
+use App\Domains\Keuangan\Actions\Tagihan\SelesaikanTinjauanTagihanAction;
 use App\Domains\Keuangan\Actions\Tagihan\SimpanNominalCicilanAction;
 use App\Domains\Keuangan\Models\Cicilan;
 use App\Domains\Keuangan\Models\SkemaCicilan;
@@ -173,5 +174,17 @@ class TagihanController extends Controller
         }
 
         return back()->with('status', 'Pembayaran termin berhasil dicatat.');
+    }
+
+    public function tandaiSelesaiDitinjau(
+        Request $request,
+        Tagihan $tagihan,
+        SelesaikanTinjauanTagihanAction $action,
+    ): RedirectResponse {
+        $this->authorize('tagihan.view');
+
+        $action->execute($tagihan);
+
+        return back()->with('status', 'Tagihan telah ditandai selesai ditinjau.');
     }
 }
