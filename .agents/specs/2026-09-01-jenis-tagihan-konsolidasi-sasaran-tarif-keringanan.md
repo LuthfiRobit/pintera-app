@@ -129,7 +129,18 @@ class RecalculateTagihanNominalAction
                 return;
             }
 
-            $siswa = $tagihan->tagihable; // MorphTo -- di paket ini scope-nya Siswa (Pendaftaran tidak relevan utk Tarif/Keringanan)
+            // Guard defensif WAJIB, terlepas dari bagaimana query pemanggil (§5.4) ditulis:
+            // Sasaran/Tarif/Keringanan cuma berlaku untuk tagihan Siswa (mode billing berulang).
+            // Tagihan berkategori PPDB (tagihable_type = Pendaftaran::class) pakai mekanisme
+            // nominal-per-jalur yang sama sekali berbeda -- resolveNominal()/resolveDiscount()
+            // akan salah/error kalau dipaksa jalan terhadap Pendaftaran. No-op, bukan exception,
+            // karena guard ini murni pertahanan lapis kedua terhadap kesalahan pemanggil, bukan
+            // kondisi error yang perlu ditinjau admin.
+            if ($tagihan->tagihable_type !== Siswa::class) {
+                return;
+            }
+
+            $siswa = $tagihan->tagihable; // MorphTo, dijamin instance Siswa oleh guard di atas
             $jenisTagihan = $tagihan->jenisTagihan;
             $resolved = $this->nominalResolver->resolve($siswa, $jenisTagihan);
             $newNetAmount = max(0, $resolved['nominal'] - $resolved['discount_amount']);
@@ -202,9 +213,37 @@ Semua panggil `RecalculateTagihanNominalAction` yang sama:
 | 3 | Tarif grup berubah nominal ATAU **dihapus** | Bisa ratusan siswa | **Queued job, 1 job per tagihan** |
 | 4 | **Tarif grup di-reorder (priority berubah tanpa nominal berubah)** | Bisa ratusan siswa | **Queued job, 1 job per tagihan** |
 
+**Trigger #1 — query eksplisit, WAJIB `tagihable_type`+`tagihable_id`, BUKAN `person_id`**:
+```php
+Tagihan::where('tagihable_type', Siswa::class)
+    ->where('tagihable_id', $siswa->id)
+    ->whereNotIn('status', ['lunas', 'dibatalkan'])
+    ->pluck('id');
+```
+`tagihan.person_id` (dari paket person_id/keringanan sebelumnya) sengaja TIDAK dipakai di sini, meski secara semantik "semua tagihan orang ini" kedengarannya cocok — `person_id` menyatukan ledger LINTAS `tagihable_type` (Pendaftaran DAN Siswa), sehingga query berbasis `person_id` akan ikut menarik tagihan PPDB lama (`tagihable_type = Pendaftaran::class`) ke dalam scope recalc, padahal Sasaran/Tarif/Keringanan sama sekali tidak berlaku untuk jalur PPDB. Guard defensif di `RecalculateTagihanNominalAction::execute()` (§5.1) menangkap kesalahan ini kalau terjadi, tapi query pemanggil di sini WAJIB sudah benar dari awal, bukan mengandalkan guard sebagai satu-satunya lapis pertahanan.
+
 **Trigger #4 (baru)**: mengubah urutan prioritas TANPA mengubah nominal tetap bisa mengubah hasil `resolveNominal()` untuk siswa yang match LEBIH DARI SATU grup Tarif sekaligus — grup yang tadinya kalah prioritas bisa jadi menang setelah reorder. Diberi perlakuan identik dengan trigger #3 (queued, 1 job per tagihan).
 
-**Trigger #2 dan #3 mencakup event DELETE, bukan cuma UPDATE** — lihat §5.5 untuk cara mendeteksinya dengan benar (bukan naif hook ke event Eloquent `deleted`).
+**Titik pemicu trigger #4 — endpoint terpisah, BUKAN lewat submit form penuh**: kontrol naik/turun prioritas di UI (§4.2) adalah AJAX ringan langsung ke endpoint baru `PATCH admin/jenis-tagihan/{jenisTagihan}/tarif-grup/reorder` (menerima daftar id grup dalam urutan baru), diproses oleh `ReorderTarifGrupAction` — SAMA SEKALI TIDAK lewat `SyncJenisTagihanBillingConfigAction`/submit form penuh. Ini penting karena §5.5's mekanisme diff-aware HANYA berjalan saat form Jenis Tagihan disubmit penuh — aksi reorder cepat ini TIDAK PERNAH melewati jalur itu, jadi `ReorderTarifGrupAction` WAJIB dispatch trigger recalc **secara langsung di dalam aksinya sendiri**, segera setelah kolom `priority` berhasil diperbarui:
+```php
+class ReorderTarifGrupAction
+{
+    public function execute(JenisTagihan $jenisTagihan, array $urutanGrupId): void
+    {
+        DB::transaction(function () use ($jenisTagihan, $urutanGrupId) {
+            foreach ($urutanGrupId as $index => $grupId) {
+                JenisTagihanSasaranGrup::where('id', $grupId)
+                    ->where('jenis_tagihan_id', $jenisTagihan->id) // guard tenant, cegah reorder grup Jenis Tagihan lain
+                    ->update(['priority' => $index + 1]);
+            }
+        });
+
+        $this->dispatchRecalcUntukJenisTagihan($jenisTagihan); // sama seperti trigger #3, queued 1 job per tagihan
+    }
+}
+```
+
+**Trigger #2 dan #3 mencakup event DELETE, bukan cuma UPDATE** — lihat §5.5 untuk cara mendeteksinya dengan benar lewat jalur submit form penuh (bukan naif hook ke event Eloquent `deleted`, dan bukan jalur yang sama dengan trigger #4 di atas).
 
 ### 5.5 Temuan kritis: `SyncJenisTagihanBillingConfigAction` delete-lalu-buat-ulang SETIAP save form
 
@@ -284,7 +323,8 @@ Dikirim via `NotificationDispatcher::send()` yang sama, **HANYA kalau `net_amoun
 - §4.4: `resolveDiscount()` dengan kombinasi kategori combinable+non-combinable — assert hasil penjumlahan benar, assert clamp ke `nominal` saat total diskon melebihi nominal, assert perilaku TIDAK berubah untuk kategori `bisa_digabung=false` (regresi terhadap perilaku lama).
 - §5.1-5.2: test untuk SETIAP guard gagal (overpayment, ada cicilan, status lunas/dibatalkan) — assert nilai TIDAK berubah, `perlu_ditinjau_ulang=true` dengan alasan yang benar. Test jalur sukses — assert `total_tagihan`/`discount_amount`/`discount_type`/`net_amount`/`status` semua ter-update konsisten dalam satu transaksi.
 - §5.3: test flag di-re-evaluasi (bukan di-skip) pada trigger kedua setelah pertama gagal guard — assert alasan TERTIMPA bukan ditumpuk; test auto-clear saat kondisi membaik; test `SelesaikanTinjauanTagihanAction` cuma clear flag tanpa mengubah nominal apapun.
-- §5.4: test 4 sumber trigger masing-masing memicu recalc yang benar dengan scope yang benar (1 siswa vs semua siswa Jenis Tagihan); test trigger #4 (reorder tanpa ubah nominal) benar-benar mengubah hasil resolve untuk siswa multi-match.
+- §5.4: test 4 sumber trigger masing-masing memicu recalc yang benar dengan scope yang benar (1 siswa vs semua siswa Jenis Tagihan); test trigger #4 (reorder tanpa ubah nominal) benar-benar mengubah hasil resolve untuk siswa multi-match; test trigger #1's query cuma menghasilkan id tagihan dengan `tagihable_type = Siswa::class` meski siswa itu juga punya tagihan PPDB lama (`tagihable_type = Pendaftaran::class`) dengan `person_id` yang sama — tagihan PPDB itu TIDAK BOLEH ikut ke daftar id yang di-dispatch; test `ReorderTarifGrupAction` dispatch recalc langsung tanpa melalui `SyncJenisTagihanBillingConfigAction` sama sekali.
+- **§5.1 (guard tagihable_type)**: test `RecalculateTagihanNominalAction::execute()` dipanggil langsung dengan id tagihan berkategori PPDB (`tagihable_type = Pendaftaran::class`) — assert no-op (tidak ada exception, tidak ada kolom yang berubah), bukan error. Ini test defense-in-depth yang harus tetap lolos SEKALIPUN §5.4's query pemanggil entah bagaimana salah kirim id yang tidak seharusnya.
 - §5.5: **test paling kritis** — simpan form Jenis Tagihan TANPA mengubah Tarif/Keringanan sama sekali, assert TIDAK ADA job recalc yang di-dispatch (mencegah regresi ke pola delete-recreate naif). Test terpisah: hapus 1 rule Keringanan lewat form, assert job recalc DI-dispatch untuk tagihan yang terdampak rule itu.
 - §5.6: test `PaymentAllocationService::allocate()` dan `RecalculateTagihanNominalAction` menghasilkan status yang SAMA untuk kombinasi paid_amount/net_amount yang sama (bukti keduanya benar-benar pakai `TagihanStatusResolver` yang sama, tidak divergen). Test `lockForUpdate()` mencegah race — pembayaran dan recalc terhadap tagihan yang sama diproses berurutan (serial), tidak keduanya baca nilai stale.
 - §5.7: test notifikasi cuma terkirim kalau `net_amount` benar-benar beda; test Activitylog mencatat perubahan `net_amount`/`discount_amount`/`perlu_ditinjau_ulang`; test badge counter menghitung jumlah tagihan `perlu_ditinjau_ulang=true` dengan benar dan ter-scope ke tenant/lembaga yang benar.
