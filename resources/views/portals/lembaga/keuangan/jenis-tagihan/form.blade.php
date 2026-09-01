@@ -24,6 +24,7 @@
         x-data="jenisTagihanForm({
             kategoriAwal: @js(old('kategori', $jenisTagihan?->kategori ?? 'lainnya')),
             modeAwal: @js(old('mode', $jenisTagihan?->mode ?? 'manual')),
+            tipeAwal: @js(old('tipe', $jenisTagihan?->tipe?->value ?? ($jenisTagihan?->mode === 'manual' ? 'sekali' : 'bulanan'))),
             bisaDicicilAwal: @js((bool) old('bisa_dicicil', $jenisTagihan?->bisa_dicicil ?? false)),
             kategoriKeringananList: @js($kategoriKeringananList),
             referenceOptions: {
@@ -116,21 +117,35 @@
         <div class="flex flex-col gap-6">
             <template x-if="!kategoriPpdb">
                 <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
-                    <p class="font-display text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Mode Generate & Default</p>
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 pt-1">
+                    <p class="font-display text-sm font-bold text-gray-900 border-b border-gray-100 pb-3">Mode Penjadwalan & Default</p>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 pt-1">
                         <div>
                             <x-input-label value="Nominal Default" />
                             <x-text-input type="number" step="0.01" min="0" name="default_amount" :value="old('default_amount', $jenisTagihan?->default_amount)" class="mt-1.5" placeholder="Dipakai jika kriteria tak cocok" />
                         </div>
                         <div>
                             <x-input-label value="Mode" />
-                            <select name="mode" x-model="form.mode" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            <select name="mode" x-model="form.mode" @change="onModeChange()" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                 <option value="manual">Manual</option>
                                 <option value="otomatis">Otomatis</option>
                             </select>
                         </div>
+                        <div>
+                            <x-input-label value="Tipe Penjadwalan" />
+                            <select name="tipe" x-model="form.tipe" @change="onTipeChange()" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                <template x-if="form.mode === 'manual'">
+                                    <option value="sekali" :selected="form.tipe === 'sekali'">Sekali (Insidental / Non-Rutin)</option>
+                                </template>
+                                <option value="harian" :selected="form.tipe === 'harian'">Harian</option>
+                                <option value="mingguan" :selected="form.tipe === 'mingguan'">Mingguan</option>
+                                <option value="bulanan" :selected="form.tipe === 'bulanan'">Bulanan</option>
+                                <option value="tahunan" :selected="form.tipe === 'tahunan'">Tahunan</option>
+                            </select>
+                        </div>
+
+                        {{-- Mode Otomatis Dates Window --}}
                         <template x-if="form.mode === 'otomatis'">
-                            <div class="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2 pt-2">
+                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-2 pt-2 border-t border-gray-100">
                                 <div>
                                     <x-input-label value="Tanggal Mulai" />
                                     <x-text-input type="date" name="tanggal_mulai" :value="old('tanggal_mulai', optional($jenisTagihan?->tanggal_mulai)->toDateString())" class="mt-1.5" />
@@ -141,15 +156,90 @@
                                     <x-text-input type="date" name="tanggal_selesai" :value="old('tanggal_selesai', optional($jenisTagihan?->tanggal_selesai)->toDateString())" class="mt-1.5" />
                                     <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Kosongkan jika tidak ada batas akhir.</p>
                                 </div>
+                            </div>
+                        </template>
+
+                        {{-- Conditional Support Fields per Tipe --}}
+                        {{-- Harian: offset_hari_jatuh_tempo --}}
+                        <template x-if="form.tipe === 'harian'">
+                            <div class="sm:col-span-3 pt-2">
+                                <x-input-label value="Jarak Jatuh Tempo (hari setelah generate)" />
+                                <x-text-input type="number" min="0" max="365" name="offset_hari_jatuh_tempo" :value="old('offset_hari_jatuh_tempo', $jenisTagihan?->offset_hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 3 (jatuh tempo 3 hari setelah tagihan terbit)" />
+                                <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Jumlah hari dari tanggal generate sampai tagihan jatuh tempo. Kosongkan jika tanpa jatuh tempo.</p>
+                            </div>
+                        </template>
+
+                        {{-- Mingguan: hari_generate (1-7), offset_hari_jatuh_tempo --}}
+                        <template x-if="form.tipe === 'mingguan'">
+                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-2 pt-2">
+                                <template x-if="form.mode === 'otomatis'">
+                                    <div>
+                                        <x-input-label value="Hari Generate Mingguan" />
+                                        <select name="hari_generate" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                            <option value="1" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 1 ? 'selected' : '' }}>Senin</option>
+                                            <option value="2" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 2 ? 'selected' : '' }}>Selasa</option>
+                                            <option value="3" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 3 ? 'selected' : '' }}>Rabu</option>
+                                            <option value="4" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 4 ? 'selected' : '' }}>Kamis</option>
+                                            <option value="5" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 5 ? 'selected' : '' }}>Jumat</option>
+                                            <option value="6" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 6 ? 'selected' : '' }}>Sabtu</option>
+                                            <option value="7" {{ old('hari_generate', $jenisTagihan?->hari_generate) == 7 ? 'selected' : '' }}>Minggu</option>
+                                        </select>
+                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Hari dalam setiap minggu saat tagihan otomatis digenerate.</p>
+                                    </div>
+                                </template>
                                 <div>
-                                    <x-input-label value="Tanggal Generate (hari ke-)" />
-                                    <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" />
-                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal setiap bulan saat tagihan otomatis dibuat (mis. isi 1 untuk tanggal 1 tiap bulan).</p>
+                                    <x-input-label value="Jarak Jatuh Tempo (hari setelah generate)" />
+                                    <x-text-input type="number" min="0" max="365" name="offset_hari_jatuh_tempo" :value="old('offset_hari_jatuh_tempo', $jenisTagihan?->offset_hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 5" />
+                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Jumlah hari dari tanggal generate sampai jatuh tempo. Kosongkan jika tanpa jatuh tempo.</p>
                                 </div>
+                            </div>
+                        </template>
+
+                        {{-- Bulanan: tanggal_generate, hari_jatuh_tempo --}}
+                        <template x-if="form.tipe === 'bulanan'">
+                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-2 pt-2">
+                                <template x-if="form.mode === 'otomatis'">
+                                    <div>
+                                        <x-input-label value="Tanggal Generate (hari ke-)" />
+                                        <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" placeholder="mis. 1" />
+                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal setiap bulan saat tagihan otomatis dibuat (mis. isi 1 untuk tanggal 1 tiap bulan).</p>
+                                    </div>
+                                </template>
                                 <div>
                                     <x-input-label value="Tanggal jatuh tempo (tanggal di bulan yang sama, bukan jarak hari)" />
-                                    <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" />
+                                    <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 10" />
                                     <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal di bulan yang sama dengan Tanggal Generate saat tagihan jatuh tempo (mis. isi 25 untuk tanggal 25 di bulan itu).</p>
+                                </div>
+                            </div>
+                        </template>
+
+                        {{-- Tahunan: bulan_generate, tanggal_generate, hari_jatuh_tempo --}}
+                        <template x-if="form.tipe === 'tahunan'">
+                            <div class="grid grid-cols-1 gap-4 sm:col-span-3 sm:grid-cols-3 pt-2">
+                                <template x-if="form.mode === 'otomatis'">
+                                    <div class="sm:col-span-1">
+                                        <x-input-label value="Bulan Generate" />
+                                        <select name="bulan_generate" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                                            @foreach (range(1, 12) as $m)
+                                                <option value="{{ $m }}" {{ old('bulan_generate', $jenisTagihan?->bulan_generate) == $m ? 'selected' : '' }}>
+                                                    {{ \Carbon\Carbon::create(2026, $m, 1)->translatedFormat('F') }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Bulan tagihan otomatis diterbitkan tiap tahun.</p>
+                                    </div>
+                                </template>
+                                <template x-if="form.mode === 'otomatis'">
+                                    <div class="sm:col-span-1">
+                                        <x-input-label value="Tanggal Generate" />
+                                        <x-text-input type="number" min="1" max="31" name="tanggal_generate" :value="old('tanggal_generate', $jenisTagihan?->tanggal_generate)" class="mt-1.5" placeholder="mis. 1" />
+                                        <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal pada bulan generate.</p>
+                                    </div>
+                                </template>
+                                <div :class="form.mode === 'otomatis' ? 'sm:col-span-1' : 'sm:col-span-3'">
+                                    <x-input-label value="Tanggal Jatuh Tempo" />
+                                    <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" placeholder="mis. 20" />
+                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal jatuh tempo pada bulan generate tersebut.</p>
                                 </div>
                             </div>
                         </template>

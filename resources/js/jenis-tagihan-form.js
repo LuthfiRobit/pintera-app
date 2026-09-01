@@ -20,6 +20,7 @@ export function jenisTagihanForm(config) {
         form: {
             kategori: config.kategoriAwal,
             mode: config.modeAwal,
+            tipe: config.tipeAwal ?? (config.modeAwal === 'manual' ? 'sekali' : 'bulanan'),
             bisaDicicil: config.bisaDicicilAwal,
             sasaran: config.initialSasaran.map(hydrateGrup),
             tarif: config.initialTarif.map(hydrateGrup),
@@ -31,6 +32,18 @@ export function jenisTagihanForm(config) {
         kategoriBaruSubmitting: false,
         showKategoriBaru: false,
         tomSelectInstances: {},
+
+        onModeChange() {
+            if (this.form.mode === 'otomatis' && this.form.tipe === 'sekali') {
+                this.form.tipe = 'bulanan';
+            }
+        },
+
+        onTipeChange() {
+            if (this.form.mode === 'otomatis' && this.form.tipe === 'sekali') {
+                this.form.tipe = 'bulanan';
+            }
+        },
 
         get kategoriPpdb() {
             return ['pendaftaran', 'daftar_ulang'].includes(this.form.kategori);
