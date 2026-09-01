@@ -18,6 +18,9 @@ class GenerateTagihanHarian extends Command
     {
         $today = now();
 
+        // withoutGlobalScope: cron runs with no authenticated user so TenantScope would be a
+        // no-op here anyway, but stays explicit per this plan's tenant-scope constraint rather
+        // than relying on "no session exists right now" to make it safe.
         $kandidat = JenisTagihan::withoutGlobalScope(TenantScope::class)
             ->where('mode', 'otomatis')
             ->where('is_active', true)
