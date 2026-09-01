@@ -31,8 +31,8 @@ class Tagihan extends Model
     protected $fillable = [
         'pendaftaran_id', 'tagihable_type', 'tagihable_id', 'person_id', 'jenis_tagihan_id',
         'kategori', 'billing_period', 'source_trigger',
-        'total_tagihan', 'discount_amount', 'discount_type', 'net_amount', 'paid_amount',
-        'status', 'jatuh_tempo', 'cancelled_by', 'cancelled_at', 'cancel_reason',
+        'total_tagihan', 'discount_amount', 'discount_type', 'perlu_ditinjau_ulang', 'alasan_perlu_ditinjau',
+        'net_amount', 'paid_amount', 'status', 'jatuh_tempo', 'cancelled_by', 'cancelled_at', 'cancel_reason',
     ];
 
     protected function casts(): array
@@ -44,6 +44,7 @@ class Tagihan extends Model
             'net_amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'cancelled_at' => 'datetime',
+            'perlu_ditinjau_ulang' => 'boolean',
         ];
     }
 
