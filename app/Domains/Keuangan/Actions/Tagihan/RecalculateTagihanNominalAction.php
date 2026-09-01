@@ -7,13 +7,17 @@ use App\Domains\Keuangan\Services\TagihanNominalResolver;
 use App\Domains\Keuangan\Services\TagihanStatusResolver;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
+use App\Notifications\Finance\TagihanDirevisiNotification;
+use App\Services\Finance\NotificationDispatcher;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RecalculateTagihanNominalAction
 {
     public function __construct(
         private readonly TagihanNominalResolver $nominalResolver,
         private readonly TagihanStatusResolver $statusResolver,
+        private readonly NotificationDispatcher $dispatcher,
     ) {}
 
     public function execute(int $tagihanId): void
@@ -39,6 +43,8 @@ class RecalculateTagihanNominalAction
                 return;
             }
 
+            $netAmountLama = (float) $tagihan->net_amount;
+
             $resolved = $this->nominalResolver->resolve($siswa, $jenisTagihan);
             $newNetAmount = max(0, $resolved['nominal'] - $resolved['discount_amount']);
 
@@ -63,6 +69,17 @@ class RecalculateTagihanNominalAction
             $tagihan->perlu_ditinjau_ulang = false;
             $tagihan->alasan_perlu_ditinjau = null;
             $tagihan->save();
+
+            if ($netAmountLama !== $newNetAmount) {
+                $kontakUtama = $siswa->orangTua()->wherePivot('is_kontak_utama', true)->first();
+                if ($kontakUtama !== null) {
+                    try {
+                        $this->dispatcher->send($kontakUtama, new TagihanDirevisiNotification($tagihan->fresh(), $netAmountLama));
+                    } catch (\Throwable $e) {
+                        Log::error('Gagal mengirim TagihanDirevisiNotification: '.$e->getMessage());
+                    }
+                }
+            }
         });
     }
 }

@@ -30,6 +30,11 @@ class WhatsAppTemplateSeeder extends Seeder
             'deskripsi' => 'Dikirim saat tagihan baru diterbitkan untuk siswa.',
         ]);
 
+        WhatsAppTemplate::firstOrCreate(['kode' => 'tagihan_direvisi'], [
+            'isi_template' => 'Tagihan {jenis_tagihan} telah direvisi dari Rp{net_amount_lama} menjadi Rp{net_amount_baru}.',
+            'deskripsi' => 'Dikirim saat nominal tagihan siswa direvisi otomatis oleh sistem.',
+        ]);
+
         WhatsAppTemplate::firstOrCreate(['kode' => 'pembayaran_berhasil'], [
             'isi_template' => 'Pembayaran {tagihan} sebesar Rp{amount} berhasil melalui {metode}.',
             'deskripsi' => 'Dikirim saat pembayaran tagihan berhasil diverifikasi.',
