@@ -19,6 +19,7 @@ Route::delete('jenis-tagihan/{jenisTagihan}', [JenisTagihanController::class, 'd
 Route::post('jenis-tagihan/{jenisTagihan}/proses', [JenisTagihanController::class, 'prosesTagihan'])->name('jenis-tagihan.proses');
 Route::get('jenis-tagihan/{jenisTagihan}/nominal', [JenisTagihanController::class, 'nominal'])->name('jenis-tagihan.nominal');
 Route::post('jenis-tagihan/{jenisTagihan}/nominal', [JenisTagihanController::class, 'simpanNominal'])->name('jenis-tagihan.nominal.store');
+Route::post('jenis-tagihan/preview-sasaran', [JenisTagihanController::class, 'previewSasaran'])->name('jenis-tagihan.preview-sasaran');
 Route::patch('jenis-tagihan/{jenisTagihan}/tarif-grup/reorder', [JenisTagihanController::class, 'reorderTarif'])->name('jenis-tagihan.tarif-grup.reorder');
 
 Route::get('jenis-tagihan/{jenisTagihan}/monitoring', [JenisTagihanMonitoringController::class, 'index'])->name('jenis-tagihan.monitoring.index');

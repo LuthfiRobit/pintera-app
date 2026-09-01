@@ -49,7 +49,9 @@ class JenisTagihanSasaranMatcher
 
     public function siswaMatchesGrup(Siswa $siswa, JenisTagihanSasaranGrup $grup): bool
     {
-        foreach ($grup->kriteria as $kriteria) {
+        $kriterias = $grup->relationLoaded('kriteria') ? $grup->kriteria : $grup->kriteria()->get();
+
+        foreach ($kriterias as $kriteria) {
             if (! $this->siswaMatchesKriteria($siswa, $kriteria)) {
                 return false;
             }
@@ -64,7 +66,9 @@ class JenisTagihanSasaranMatcher
             return false;
         }
 
-        $sasaranGrups = $jenisTagihan->sasaranGrup()->where('tipe', 'sasaran')->with('kriteria')->get();
+        $sasaranGrups = $jenisTagihan->relationLoaded('sasaranGrup')
+            ? $jenisTagihan->sasaranGrup->where('tipe', 'sasaran')
+            : $jenisTagihan->sasaranGrup()->where('tipe', 'sasaran')->with('kriteria')->get();
 
         if ($sasaranGrups->isEmpty()) {
             return true;

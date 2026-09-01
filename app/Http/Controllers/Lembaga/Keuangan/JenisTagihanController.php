@@ -11,6 +11,8 @@ use App\Domains\Keuangan\Actions\JenisTagihan\UpdateJenisTagihanAction;
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
 use App\Domains\Keuangan\Enums\KategoriTagihan;
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
+use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Domains\Keuangan\Models\Tagihan;
@@ -21,6 +23,7 @@ use App\Models\JalurPpdb;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
+use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -238,6 +241,35 @@ class JenisTagihanController extends Controller
         }
 
         return redirect()->route('admin.jenis-tagihan.index')->with('status', 'Jenis tagihan berhasil dihapus.');
+    }
+
+    public function previewSasaran(Request $request, JenisTagihanSasaranMatcher $matcher): JsonResponse
+    {
+        $this->authorize('jenis-tagihan.create');
+
+        $lembagaId = $this->resolveLembagaIdOrFail($request);
+        if ($lembagaId === null) {
+            return response()->json(['count' => 0]);
+        }
+
+        $data = $request->validate(['sasaran' => ['nullable', 'array']]);
+
+        $draftJenisTagihan = new JenisTagihan(['lembaga_id' => $lembagaId]);
+        $draftGrups = collect($data['sasaran'] ?? [])->map(function ($grupData) {
+            $grup = new JenisTagihanSasaranGrup(['tipe' => 'sasaran']);
+            $grup->setRelation('kriteria', collect($grupData['kriteria'] ?? [])->map(fn ($k) => new JenisTagihanSasaranKriteria($k)));
+
+            return $grup;
+        });
+        $draftJenisTagihan->setRelation('sasaranGrup', $draftGrups);
+
+        $count = Siswa::withoutGlobalScope(TenantScope::class)
+            ->where('lembaga_id', $lembagaId)
+            ->get()
+            ->filter(fn (Siswa $siswa) => $matcher->siswaMatchesJenisTagihan($siswa, $draftJenisTagihan))
+            ->count();
+
+        return response()->json(['count' => $count]);
     }
 
     public function prosesTagihan(
