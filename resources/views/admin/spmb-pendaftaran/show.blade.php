@@ -198,7 +198,7 @@
             </div>
             <div class="p-6 space-y-4">
                 @forelse (['pendaftaran' => 'Tagihan Pendaftaran', 'daftar_ulang' => 'Tagihan Daftar Ulang'] as $kategori => $label)
-                    @php $tagihan = $pendaftaran->tagihan->firstWhere('kategori', $kategori); @endphp
+                    @php $tagihan = $pendaftaran->tagihan->first(fn ($t) => $t->kategori === \App\Domains\Keuangan\Enums\KategoriTagihan::from($kategori)); @endphp
                     <div class="flex items-center justify-between gap-3">
                         <div>
                             <p class="text-sm font-medium text-ink">{{ $label }}</p>
