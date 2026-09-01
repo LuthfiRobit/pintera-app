@@ -31,8 +31,6 @@ class JenisTagihanController extends Controller
 {
     use AuthorizesRequests;
 
-    private const PPDB_KATEGORI = ['pendaftaran', 'daftar_ulang'];
-
     private const KRITERIA_FIELDS = ['lembaga', 'tahun_ajaran', 'tingkat', 'kelas', 'jenis_kelamin', 'status_siswa'];
 
     public function index(Request $request): View

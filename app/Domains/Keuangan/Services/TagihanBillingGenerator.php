@@ -16,8 +16,6 @@ use Illuminate\Support\Facades\Log;
 
 class TagihanBillingGenerator
 {
-    private const PPDB_KATEGORI = ['pendaftaran', 'daftar_ulang'];
-
     public function __construct(
         private readonly JenisTagihanSasaranMatcher $matcher,
         private readonly TagihanNominalResolver $nominalResolver,

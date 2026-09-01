@@ -10,8 +10,6 @@ use Illuminate\Console\Command;
 
 class ProsesTagihan extends Command
 {
-    private const PPDB_KATEGORI = ['pendaftaran', 'daftar_ulang'];
-
     protected $signature = 'billing:proses {jenis_tagihan_id}';
 
     protected $description = 'Generate tagihan manually for one jenis_tagihan (admin "Proses Tagihan" button, or backfill/testing)';
