@@ -5,6 +5,7 @@ use App\Http\Controllers\Lembaga\Keuangan\JenisTagihanMonitoringController;
 use App\Http\Controllers\Lembaga\Keuangan\KategoriKeringananController;
 use App\Http\Controllers\Lembaga\Keuangan\ManualPaymentController;
 use App\Http\Controllers\Lembaga\Keuangan\PembayaranController;
+use App\Http\Controllers\Lembaga\Keuangan\SiswaKeringananController;
 use App\Http\Controllers\Lembaga\Keuangan\TagihanController;
 use App\Http\Controllers\Lembaga\Keuangan\VirtualAccountController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,10 @@ Route::get('jenis-tagihan/{jenisTagihan}/monitoring', [JenisTagihanMonitoringCon
 Route::post('jenis-tagihan/{jenisTagihan}/batal-tagihan/{tagihan}', [JenisTagihanMonitoringController::class, 'batalTagihan'])->name('jenis-tagihan.monitoring.batal');
 
 Route::post('kategori-keringanan', [KategoriKeringananController::class, 'store'])->name('kategori-keringanan.store');
+
+Route::get('siswa/{siswa}/keringanan', [SiswaKeringananController::class, 'index'])->name('siswa.keringanan.index');
+Route::post('siswa/{siswa}/keringanan', [SiswaKeringananController::class, 'store'])->name('siswa.keringanan.store');
+Route::delete('siswa-keringanan/{siswaKeringanan}', [SiswaKeringananController::class, 'destroy'])->name('siswa-keringanan.destroy');
 
 Route::get('tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
 Route::get('tagihan/data', [TagihanController::class, 'data'])->name('tagihan.data');

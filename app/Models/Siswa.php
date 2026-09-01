@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Domains\Identity\Models\Person;
+use App\Domains\Keuangan\Models\SiswaKeringanan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\Wallet;
 use App\Enums\StatusSiswa;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Spatie\Activitylog\LogOptions;
@@ -125,6 +127,11 @@ class Siswa extends Model
     public function wallet()
     {
         return $this->hasOne(Wallet::class);
+    }
+
+    public function siswaKeringanan(): HasMany
+    {
+        return $this->hasMany(SiswaKeringanan::class);
     }
 
     protected static function booted(): void

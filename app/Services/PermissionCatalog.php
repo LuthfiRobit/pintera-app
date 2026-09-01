@@ -47,6 +47,7 @@ class PermissionCatalog
         'rapor' => 'Rapor',
         'rpp' => 'Perangkat Ajar (RPP)',
         'sarpras' => 'Sarana & Prasarana',
+        'siswa-keringanan' => 'Keringanan Siswa',
         'whatsapp-template' => 'Template WhatsApp',
         'workflow' => 'Konfigurasi Alur Kerja',
         'yayasan' => 'Yayasan',

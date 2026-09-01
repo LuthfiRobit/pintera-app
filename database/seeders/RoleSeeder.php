@@ -76,6 +76,7 @@ class RoleSeeder extends Seeder
                     'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual', 'pembayaran.virtual-account',
                     'cicilan.kelola',
                     'spmb-pendaftaran.view',
+                    'siswa-keringanan.kelola',
                 ]);
             }
 
@@ -139,6 +140,7 @@ class RoleSeeder extends Seeder
                     'mata-pelajaran.view', 'mata-pelajaran.create', 'mata-pelajaran.edit',
                     'siswa.view', 'siswa.create', 'siswa.edit', 'siswa.spmb-daftar', 'siswa.import',
                     'orang-tua.view', 'orang-tua.create', 'orang-tua.edit',
+                    'siswa-keringanan.kelola',
                     'karyawan.view', 'karyawan.create', 'karyawan.edit',
                     'kasus.view', 'kasus.triase', 'kasus.lihat-log-akses', 'kasus.hapus', 'kasus.pulihkan',
                     'whatsapp-template.edit',

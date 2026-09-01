@@ -21,7 +21,7 @@ it('seeds roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(149);
+    expect($superAdmin->permissions()->count())->toBe(150);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -57,11 +57,11 @@ it('gives kepala_sekolah the correct 13 permissions', function () {
     expect($kepalaSekolah->hasPermissionTo('kehadiran-sdm.izin.approve'))->toBeTrue();
 });
 
-it('gives bendahara_lembaga the correct 12 permissions', function () {
+it('gives bendahara_lembaga the correct 13 permissions', function () {
     (new RoleSeeder)->run();
 
     $bendahara = Role::where('name', 'bendahara_lembaga')->first();
-    expect($bendahara->permissions()->count())->toBe(12);
+    expect($bendahara->permissions()->count())->toBe(13);
     expect($bendahara->hasPermissionTo('cicilan.kelola'))->toBeTrue();
     expect($bendahara->hasPermissionTo('pembayaran.virtual-account'))->toBeTrue();
 });
@@ -119,14 +119,14 @@ it('grants kenaikan-kelas.kelola to kepala_sekolah after permissions sync and ro
     expect($kepalaSekolah->hasPermissionTo('kenaikan-kelas.kelola'))->toBeTrue();
 });
 
-it('seeds operator_akademik with the correct 54 academic-management permissions', function () {
+it('seeds operator_akademik with the correct 55 academic-management permissions', function () {
     (new RoleSeeder)->run();
 
     $operatorAkademik = Role::where('name', 'operator_akademik')->first();
     expect($operatorAkademik)->not->toBeNull();
     expect($operatorAkademik->scope_level)->toBe('lembaga');
     expect($operatorAkademik->is_protected)->toBeFalse();
-    expect($operatorAkademik->permissions()->count())->toBe(54);
+    expect($operatorAkademik->permissions()->count())->toBe(55);
     expect($operatorAkademik->hasPermissionTo('kelas.edit'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('kurikulum-assignment.view'))->toBeTrue();
     expect($operatorAkademik->hasPermissionTo('siswa.import'))->toBeTrue();
@@ -207,4 +207,3 @@ it('gives orang_tua EXACTLY the self-service baseline permission set', function 
         'keuangan.akses',
     ]);
 });
-
