@@ -2,6 +2,7 @@
 
 namespace App\Domains\Identity\Actions;
 
+use App\Domains\Identity\Events\PersonsMerged;
 use App\Domains\Identity\Exceptions\ConflictingUserAccountsException;
 use App\Domains\Identity\Models\Person;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,10 @@ class MergePersonsAction
             foreach (self::ROLE_TABLES as $table) {
                 DB::table($table)->where('person_id', $losing->id)->update(['person_id' => $winning->id]);
             }
+
+            // Synchronous by design -- see PersonsMerged's class comment. A listener
+            // exception here propagates and rolls back this entire transaction.
+            event(new PersonsMerged($losing, $winning));
 
             if ($losing->user_id !== null && $winning->user_id === null) {
                 // persons.user_id carries a unique constraint: clear it on the losing
