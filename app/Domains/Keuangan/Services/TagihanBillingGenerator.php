@@ -65,10 +65,14 @@ class TagihanBillingGenerator
             $resolved = $this->nominalResolver->resolve($siswa, $jenisTagihan);
             $netAmount = max(0, $resolved['nominal'] - $resolved['discount_amount']);
 
+            $personId = $siswa->person_id
+                ?? throw new \RuntimeException("Tidak bisa membuat tagihan: Siswa #{$siswa->id} tidak punya person_id yang valid — data kemungkinan cacat.");
+
             $createdTagihan = Tagihan::create([
                 'tagihable_type' => Siswa::class,
                 'tagihable_id' => $siswa->id,
                 'jenis_tagihan_id' => $jenisTagihan->id,
+                'person_id' => $personId,
                 'kategori' => $jenisTagihan->kategori,
                 'billing_period' => $billingPeriod,
                 'source_trigger' => $triggerType,
