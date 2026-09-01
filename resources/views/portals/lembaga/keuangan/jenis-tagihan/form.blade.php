@@ -498,7 +498,7 @@
                                 <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-gray-500">Opsional</span>
                             </div>
                         </div>
-                        <p class="text-[11px] text-gray-400">Diproses berurutan dari atas (Gunakan panah &uarr;&darr; untuk ubah prioritas) — Grup pertama yang cocok dengan data siswa akan dipakai nominalnya.</p>
+                        <p class="text-[11px] text-gray-400">Diproses berurutan dari atas — Grup pertama yang cocok dengan data siswa akan dipakai nominalnya. (Gunakan panah &uarr;&darr; untuk ubah prioritas)</p>
 
                         <div class="space-y-4 pt-1">
                             <template x-for="(grup, gi) in form.tarif" :key="grup.uid">
