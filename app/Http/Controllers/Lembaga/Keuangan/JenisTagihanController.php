@@ -8,6 +8,7 @@ use App\Domains\Keuangan\Actions\JenisTagihan\ProsesJenisTagihanBillingAction;
 use App\Domains\Keuangan\Actions\JenisTagihan\SimpanNominalJenisTagihanAction;
 use App\Domains\Keuangan\Actions\JenisTagihan\UpdateJenisTagihanAction;
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
+use App\Domains\Keuangan\Enums\KategoriTagihan;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
@@ -127,7 +128,7 @@ class JenisTagihanController extends Controller
             return back()->withErrors(['lembaga_id' => $message])->withInput();
         }
 
-        $isPpdbKategori = in_array($request->input('kategori'), self::PPDB_KATEGORI, true);
+        $isPpdbKategori = KategoriTagihan::tryFrom($request->input('kategori'))?->isPpdb() ?? false;
 
         if ($isPpdbKategori && $this->hasBillingPayload($request)) {
             return $this->errorResponse($request, 'Target sasaran, tarif berdimensi, dan keringanan hanya berlaku untuk kategori selain Pendaftaran/Daftar Ulang.');
@@ -173,7 +174,7 @@ class JenisTagihanController extends Controller
     {
         $this->authorize('jenis-tagihan.edit');
 
-        $isPpdbKategori = in_array($request->input('kategori'), self::PPDB_KATEGORI, true);
+        $isPpdbKategori = KategoriTagihan::tryFrom($request->input('kategori'))?->isPpdb() ?? false;
 
         if ($isPpdbKategori && $this->hasBillingPayload($request)) {
             return $this->errorResponse($request, 'Target sasaran, tarif berdimensi, dan keringanan hanya berlaku untuk kategori selain Pendaftaran/Daftar Ulang.');
