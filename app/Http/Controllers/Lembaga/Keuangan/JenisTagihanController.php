@@ -9,13 +9,14 @@ use App\Domains\Keuangan\Actions\JenisTagihan\SimpanNominalJenisTagihanAction;
 use App\Domains\Keuangan\Actions\JenisTagihan\UpdateJenisTagihanAction;
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Http\Controllers\Controller;
 use App\Models\JalurPpdb;
-use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Models\Kelas;
 use App\Models\Lembaga;
+use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +43,7 @@ class JenisTagihanController extends Controller
         $query = JenisTagihan::withCount(['nominalJalur', 'tagihanItem'])->orderBy('nama');
 
         if ($search = $request->input('search')) {
-            $query->where('nama', 'like', '%' . $search . '%');
+            $query->where('nama', 'like', '%'.$search.'%');
         }
 
         if ($kategori = $request->input('kategori')) {
@@ -58,26 +59,26 @@ class JenisTagihanController extends Controller
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return view('portals.lembaga.keuangan.jenis-tagihan._daftar', [
                 'jenisTagihanList' => $paginated,
-                'perPage'          => $perPage,
+                'perPage' => $perPage,
             ]);
         }
 
         return view('portals.lembaga.keuangan.jenis-tagihan.index', [
             'jenisTagihanList' => $paginated,
-            'perPage'          => $perPage,
-            'totalJenis'       => JenisTagihan::count(),
-            'totalAktif'       => JenisTagihan::where('is_active', true)->count(),
-            'totalDipakai'     => JenisTagihan::has('tagihanItem')->count(),
-            'kategoriList'     => [
-                'pendaftaran'  => 'Pendaftaran',
+            'perPage' => $perPage,
+            'totalJenis' => JenisTagihan::count(),
+            'totalAktif' => JenisTagihan::where('is_active', true)->count(),
+            'totalDipakai' => JenisTagihan::has('tagihanItem')->count(),
+            'kategoriList' => [
+                'pendaftaran' => 'Pendaftaran',
                 'daftar_ulang' => 'Daftar Ulang',
-                'spp'          => 'SPP',
-                'tahunan'      => 'Tahunan',
-                'kegiatan'     => 'Kegiatan',
-                'lainnya'      => 'Lainnya',
-                'custom'       => 'Custom',
+                'spp' => 'SPP',
+                'tahunan' => 'Tahunan',
+                'kegiatan' => 'Kegiatan',
+                'lainnya' => 'Lainnya',
+                'custom' => 'Custom',
             ],
-            'statusList'       => [
+            'statusList' => [
                 '1' => 'Aktif',
                 '0' => 'Tidak Aktif',
             ],
@@ -154,7 +155,7 @@ class JenisTagihanController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'data'     => $jenisTagihan,
+                'data' => $jenisTagihan,
                 'redirect' => $isPpdbKategori ? route('admin.jenis-tagihan.nominal', $jenisTagihan) : null,
             ], 201);
         }
@@ -227,9 +228,9 @@ class JenisTagihanController extends Controller
     ): JsonResponse {
         $this->authorize('jenis-tagihan.edit');
 
-        if (in_array($jenisTagihan->kategori, self::PPDB_KATEGORI, true)) {
+        if ($jenisTagihan->kategori->isPpdb()) {
             return response()->json([
-                'message' => "Jenis tagihan berkategori {$jenisTagihan->kategori} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB.",
+                'message' => "Jenis tagihan berkategori {$jenisTagihan->kategori->label()} tidak bisa diproses lewat billing engine — gunakan alur pendaftaran PPDB.",
             ], 422);
         }
 
@@ -243,16 +244,16 @@ class JenisTagihanController extends Controller
         $sudahTertagih = $targetCount - $log->bills_generated - $gagal;
 
         return response()->json([
-            'message'                 => "{$log->bills_generated} tagihan dibuat, {$sudahTertagih} sudah tertagih, {$tidakMemenuhiKriteria} tidak memenuhi kriteria, {$gagal} gagal.",
-            'bills_generated'         => $log->bills_generated,
-            'sudah_tertagih'          => $sudahTertagih,
+            'message' => "{$log->bills_generated} tagihan dibuat, {$sudahTertagih} sudah tertagih, {$tidakMemenuhiKriteria} tidak memenuhi kriteria, {$gagal} gagal.",
+            'bills_generated' => $log->bills_generated,
+            'sudah_tertagih' => $sudahTertagih,
             'tidak_memenuhi_kriteria' => $tidakMemenuhiKriteria,
-            'gagal'                   => $gagal,
-            'status_text'             => match ($log->status) {
+            'gagal' => $gagal,
+            'status_text' => match ($log->status) {
                 'success' => 'Berhasil',
                 'partial' => 'Selesai Parsial',
-                'failed'  => 'Gagal Total',
-                default   => 'Selesai',
+                'failed' => 'Gagal Total',
+                default => 'Selesai',
             },
         ]);
     }
@@ -269,11 +270,11 @@ class JenisTagihanController extends Controller
         $tahunAjaranAktif = TahunAjaran::where('lembaga_id', $jenisTagihan->lembaga_id)->where('status_aktif', true)->first();
 
         return view('portals.lembaga.keuangan.jenis-tagihan.nominal', [
-            'jenisTagihan'     => $jenisTagihan,
-            'jalurList'        => $tahunAjaranAktif
+            'jenisTagihan' => $jenisTagihan,
+            'jalurList' => $tahunAjaranAktif
                 ? JalurPpdb::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
                 : collect(),
-            'nominalMap'       => NominalTagihanJalur::where('jenis_tagihan_id', $jenisTagihan->id)->pluck('nominal', 'jalur_ppdb_id'),
+            'nominalMap' => NominalTagihanJalur::where('jenis_tagihan_id', $jenisTagihan->id)->pluck('nominal', 'jalur_ppdb_id'),
             'tahunAjaranAktif' => $tahunAjaranAktif,
         ]);
     }
@@ -291,7 +292,7 @@ class JenisTagihanController extends Controller
         }
 
         $data = $request->validate([
-            'nominal'   => ['required', 'array'],
+            'nominal' => ['required', 'array'],
             'nominal.*' => ['nullable', 'numeric', 'min:0'],
         ]);
 
@@ -312,12 +313,12 @@ class JenisTagihanController extends Controller
     private function referenceData(int $lembagaId): array
     {
         return [
-            'lembagaList'            => Lembaga::orderBy('nama')->get(['id', 'nama']),
-            'tahunAjaranList'        => TahunAjaran::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']),
-            'kelasList'              => Kelas::where('lembaga_id', $lembagaId)
-                ->with(['tahunAjaran' => fn ($q) => $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class)])
+            'lembagaList' => Lembaga::orderBy('nama')->get(['id', 'nama']),
+            'tahunAjaranList' => TahunAjaran::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']),
+            'kelasList' => Kelas::where('lembaga_id', $lembagaId)
+                ->with(['tahunAjaran' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
                 ->orderBy('nama')->get(['id', 'nama', 'tahun_ajaran_id']),
-            'tingkatList'            => Kelas::where('lembaga_id', $lembagaId)->whereNotNull('tingkat')->distinct()->orderBy('tingkat')->pluck('tingkat'),
+            'tingkatList' => Kelas::where('lembaga_id', $lembagaId)->whereNotNull('tingkat')->distinct()->orderBy('tingkat')->pluck('tingkat'),
             'kategoriKeringananList' => KategoriKeringanan::where('lembaga_id', $lembagaId)->orderBy('nama')->get(['id', 'nama']),
         ];
     }
@@ -330,42 +331,42 @@ class JenisTagihanController extends Controller
     private function baseRules(int $lembagaId, ?JenisTagihan $editing): array
     {
         return [
-            'nama'             => ['required', 'string', 'max:255', Rule::unique('jenis_tagihan', 'nama')
+            'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_tagihan', 'nama')
                 ->where(fn ($query) => $query->where('lembaga_id', $lembagaId))
                 ->ignore($editing?->id)],
-            'kategori'         => ['required', Rule::in(['pendaftaran', 'daftar_ulang', 'lainnya', 'spp', 'tahunan', 'kegiatan', 'custom'])],
-            'bisa_dicicil'     => ['nullable', 'boolean'],
-            'maks_cicilan'     => ['nullable', 'integer', 'min:2', 'required_if:bisa_dicicil,1'],
-            'default_amount'   => ['nullable', 'numeric', 'min:0'],
-            'mode'             => ['nullable', Rule::in(['manual', 'otomatis'])],
-            'tanggal_mulai'    => ['nullable', 'date', 'required_if:mode,otomatis'],
-            'tanggal_selesai'  => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
+            'kategori' => ['required', Rule::in(['pendaftaran', 'daftar_ulang', 'lainnya', 'spp', 'tahunan', 'kegiatan', 'custom'])],
+            'bisa_dicicil' => ['nullable', 'boolean'],
+            'maks_cicilan' => ['nullable', 'integer', 'min:2', 'required_if:bisa_dicicil,1'],
+            'default_amount' => ['nullable', 'numeric', 'min:0'],
+            'mode' => ['nullable', Rule::in(['manual', 'otomatis'])],
+            'tanggal_mulai' => ['nullable', 'date', 'required_if:mode,otomatis'],
+            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
             'tanggal_generate' => ['nullable', 'integer', 'between:1,31', 'required_if:mode,otomatis'],
             'hari_jatuh_tempo' => ['nullable', 'integer', 'min:0'],
-            'is_active'        => ['nullable', 'boolean'],
+            'is_active' => ['nullable', 'boolean'],
         ];
     }
 
     private function billingRules(int $lembagaId, Request $request): array
     {
         return [
-            'sasaran'                              => ['nullable', 'array'],
-            'sasaran.*.kriteria'                   => ['required', 'array', 'min:1'],
-            'sasaran.*.kriteria.*.field'           => ['required', Rule::in(self::KRITERIA_FIELDS)],
-            'sasaran.*.kriteria.*.operator'        => ['required', Rule::in(['in', 'not_in'])],
-            'sasaran.*.kriteria.*.value'           => ['required', 'array', 'min:1'],
-            'sasaran.*.kriteria.*.value.*'         => ['string', 'max:255'],
-            'tarif'                                => ['nullable', 'array'],
-            'tarif.*.nominal'                      => ['required', 'numeric', 'min:0'],
-            'tarif.*.kriteria'                     => ['required', 'array', 'min:1'],
-            'tarif.*.kriteria.*.field'             => ['required', Rule::in(self::KRITERIA_FIELDS)],
-            'tarif.*.kriteria.*.operator'          => ['required', Rule::in(['in', 'not_in'])],
-            'tarif.*.kriteria.*.value'             => ['required', 'array', 'min:1'],
-            'tarif.*.kriteria.*.value.*'           => ['string', 'max:255'],
-            'keringanan'                           => ['nullable', 'array'],
-            'keringanan.*.kategori_keringanan_id'  => ['required', 'integer', Rule::exists('kategori_keringanan', 'id')->where('lembaga_id', $lembagaId)],
-            'keringanan.*.tipe_potongan'           => ['required', Rule::in(['fixed', 'persen'])],
-            'keringanan.*.nilai'                   => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
+            'sasaran' => ['nullable', 'array'],
+            'sasaran.*.kriteria' => ['required', 'array', 'min:1'],
+            'sasaran.*.kriteria.*.field' => ['required', Rule::in(self::KRITERIA_FIELDS)],
+            'sasaran.*.kriteria.*.operator' => ['required', Rule::in(['in', 'not_in'])],
+            'sasaran.*.kriteria.*.value' => ['required', 'array', 'min:1'],
+            'sasaran.*.kriteria.*.value.*' => ['string', 'max:255'],
+            'tarif' => ['nullable', 'array'],
+            'tarif.*.nominal' => ['required', 'numeric', 'min:0'],
+            'tarif.*.kriteria' => ['required', 'array', 'min:1'],
+            'tarif.*.kriteria.*.field' => ['required', Rule::in(self::KRITERIA_FIELDS)],
+            'tarif.*.kriteria.*.operator' => ['required', Rule::in(['in', 'not_in'])],
+            'tarif.*.kriteria.*.value' => ['required', 'array', 'min:1'],
+            'tarif.*.kriteria.*.value.*' => ['string', 'max:255'],
+            'keringanan' => ['nullable', 'array'],
+            'keringanan.*.kategori_keringanan_id' => ['required', 'integer', Rule::exists('kategori_keringanan', 'id')->where('lembaga_id', $lembagaId)],
+            'keringanan.*.tipe_potongan' => ['required', Rule::in(['fixed', 'persen'])],
+            'keringanan.*.nilai' => ['required', 'numeric', 'min:0', function ($attribute, $value, $fail) use ($request) {
                 preg_match('/keringanan\.(\d+)\.nilai/', $attribute, $matches);
                 $index = $matches[1] ?? null;
                 $tipe = $request->input("keringanan.{$index}.tipe_potongan");
@@ -373,7 +374,7 @@ class JenisTagihanController extends Controller
                     $fail('Potongan persentase tidak boleh lebih dari 100.');
                 }
             }],
-            'keringanan.*.keterangan'              => ['nullable', 'string', 'max:255'],
+            'keringanan.*.keterangan' => ['nullable', 'string', 'max:255'],
         ];
     }
 
