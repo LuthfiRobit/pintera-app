@@ -21,7 +21,6 @@ use App\Models\Karyawan;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
-use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -129,12 +128,7 @@ class DashboardController extends BaseController
                 }
 
                 $tagihanBelumLunas = (int) Tagihan::withoutGlobalScope(TenantScope::class)
-                    ->where(function ($q) use ($siswa) {
-                        $q->where(fn ($q2) => $q2->where('tagihable_type', Siswa::class)->where('tagihable_id', $siswa->id));
-                        if ($siswa->pendaftaran_asal_id !== null) {
-                            $q->orWhere('pendaftaran_id', $siswa->pendaftaran_asal_id);
-                        }
-                    })
+                    ->where('person_id', $siswa->person_id)
                     ->whereIn('status', ['belum_bayar', 'dicicil'])
                     ->sum('total_tagihan');
 
@@ -197,15 +191,9 @@ class DashboardController extends BaseController
                     ->with(['kelas' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
                     ->get();
                 $siswaIds = $anakList->pluck('id')->all();
-                $pendaftaranIds = $anakList->pluck('pendaftaran_asal_id')->filter()->all();
 
                 $tagihanBelumLunas = (int) Tagihan::withoutGlobalScope(TenantScope::class)
-                    ->where(function ($q) use ($siswaIds, $pendaftaranIds) {
-                        $q->where(fn ($q2) => $q2->where('tagihable_type', Siswa::class)->whereIn('tagihable_id', $siswaIds));
-                        if (! empty($pendaftaranIds)) {
-                            $q->orWhereIn('pendaftaran_id', $pendaftaranIds);
-                        }
-                    })
+                    ->whereIn('person_id', $anakList->pluck('person_id'))
                     ->whereIn('status', ['belum_bayar', 'dicicil'])
                     ->sum('total_tagihan');
 
