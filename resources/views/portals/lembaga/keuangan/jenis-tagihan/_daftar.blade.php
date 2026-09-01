@@ -16,7 +16,7 @@
                         <x-table-actions>
                             @can('jenis-tagihan.edit')
                                 <x-dropdown-link href="{{ route('admin.jenis-tagihan.edit', $item->id) }}">Edit</x-dropdown-link>
-                                @if (in_array($item->kategori, ['pendaftaran', 'daftar_ulang']))
+                                @if ($item->kategori->isPpdb())
                                     <x-dropdown-link href="{{ route('admin.jenis-tagihan.nominal', $item->id) }}">Kelola Nominal</x-dropdown-link>
                                 @else
                                     <x-dropdown-link href="#" @click.prevent="prosesTagihan({{ $item->id }}, '{{ addslashes($item->nama) }}')">Proses Tagihan</x-dropdown-link>
@@ -30,15 +30,7 @@
                     </td>
                     <td class="px-5 py-4 font-bold text-gray-900">{{ $item->nama }}</td>
                     <td class="px-5 py-4 font-medium text-gray-600">
-                        @switch($item->kategori)
-                            @case('pendaftaran') Pendaftaran @break
-                            @case('daftar_ulang') Daftar Ulang @break
-                            @case('spp') SPP @break
-                            @case('tahunan') Tahunan @break
-                            @case('kegiatan') Kegiatan @break
-                            @case('custom') Custom @break
-                            @default Lainnya
-                        @endswitch
+                        {{ $item->kategori->label() }}
                     </td>
                     <td class="px-5 py-4 text-gray-600">{{ $item->bisa_dicicil ? 'Maks ' . $item->maks_cicilan . 'x' : 'Tidak dicicil' }}</td>
                     <td class="px-5 py-4">
