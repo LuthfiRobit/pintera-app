@@ -107,5 +107,18 @@ it('explains what each mode otomatis field controls', function () {
 
     $response->assertOk();
     $response->assertSee('Tanggal setiap bulan saat tagihan otomatis dibuat');
-    $response->assertSee('Jumlah hari setelah tanggal generate sampai batas waktu pembayaran');
+    $response->assertSee('Tanggal di bulan yang sama dengan Tanggal Generate saat tagihan jatuh tempo');
 });
+
+it('labels hari_jatuh_tempo as an absolute day-of-month, not an offset', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
+
+    $response->assertDontSeeText('Jumlah hari setelah tanggal generate sampai batas waktu pembayaran');
+    $response->assertSeeText('Tanggal jatuh tempo (tanggal di bulan yang sama, bukan jarak hari)');
+});
+

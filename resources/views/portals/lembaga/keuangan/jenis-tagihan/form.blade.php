@@ -147,9 +147,9 @@
                                     <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal setiap bulan saat tagihan otomatis dibuat (mis. isi 1 untuk tanggal 1 tiap bulan).</p>
                                 </div>
                                 <div>
-                                    <x-input-label value="Hari Jatuh Tempo (setelah generate)" />
-                                    <x-text-input type="number" min="0" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" />
-                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Jumlah hari setelah tanggal generate sampai batas waktu pembayaran.</p>
+                                    <x-input-label value="Tanggal jatuh tempo (tanggal di bulan yang sama, bukan jarak hari)" />
+                                    <x-text-input type="number" min="1" max="31" name="hari_jatuh_tempo" :value="old('hari_jatuh_tempo', $jenisTagihan?->hari_jatuh_tempo)" class="mt-1.5" />
+                                    <p class="mt-1.5 text-[10px] text-gray-400 leading-tight">Tanggal di bulan yang sama dengan Tanggal Generate saat tagihan jatuh tempo (mis. isi 25 untuk tanggal 25 di bulan itu).</p>
                                 </div>
                             </div>
                         </template>
