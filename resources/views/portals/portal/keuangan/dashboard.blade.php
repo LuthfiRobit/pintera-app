@@ -243,22 +243,30 @@
                     @else
                         <div class="divide-y divide-gray-100">
                             @foreach ($tagihans as $tagihan)
-                                <label class="flex items-start gap-4 py-4 cursor-pointer hover:bg-gray-50/50 transition-colors px-2 rounded-xl">
-                                    <input 
-                                        type="checkbox" 
-                                        value="{{ $tagihan->id }}" 
-                                        x-model="selected" 
-                                        class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                                <label class="flex items-start gap-4 py-4 {{ $tagihan->perlu_ditinjau_ulang ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50/50' }} transition-colors px-2 rounded-xl">
+                                    <input
+                                        type="checkbox"
+                                        value="{{ $tagihan->id }}"
+                                        x-model="selected"
+                                        @if ($tagihan->perlu_ditinjau_ulang) disabled @endif
+                                        class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 disabled:cursor-not-allowed"
                                     >
                                     <div class="flex-1">
                                         <p class="text-xs font-semibold text-gray-900">{{ $tagihan->jenisTagihan->nama }}</p>
                                         <p class="text-[10px] text-gray-400 mt-0.5">Jatuh tempo: {{ $tagihan->jatuh_tempo?->translatedFormat('d M Y') ?? '-' }}</p>
+                                        @if ($tagihan->perlu_ditinjau_ulang)
+                                            <p class="text-[10px] text-amber-600 mt-1 font-medium">Nominal sedang ditinjau ulang oleh admin, sementara belum bisa dibayar. Silakan cek kembali nanti.</p>
+                                        @endif
                                     </div>
                                     <div class="text-right">
                                         <p class="text-xs font-bold text-gray-900">Rp{{ number_format($tagihan->net_amount - $tagihan->paid_amount, 0, ',', '.') }}</p>
-                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase mt-1 {{ $tagihan->status === 'sebagian' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800' }}">
-                                            {{ str_replace('_', ' ', $tagihan->status) }}
-                                        </span>
+                                        @if ($tagihan->perlu_ditinjau_ulang)
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase mt-1 bg-amber-100 text-amber-800">Sedang Ditinjau</span>
+                                        @else
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold tracking-wider uppercase mt-1 {{ $tagihan->status === 'sebagian' ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ str_replace('_', ' ', $tagihan->status) }}
+                                            </span>
+                                        @endif
                                     </div>
                                 </label>
                             @endforeach

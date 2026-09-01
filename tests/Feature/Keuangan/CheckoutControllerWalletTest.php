@@ -74,6 +74,22 @@ it('rejects wallet checkout when balance is insufficient', function () {
     $this->assertEquals(10000, $siswa->wallet->balance);
 });
 
+it('rejects wallet checkout for a tagihan flagged perlu_ditinjau_ulang', function () {
+    [$user, , $siswa, $tagihan] = actingAsOrangTuaForWalletCheckout();
+    $tagihan->update(['perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh']);
+
+    $response = $this->actingAs($user)->post(route('keuangan.checkout.wallet'), [
+        'tagihan_ids' => [$tagihan->id],
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('tagihan_ids');
+    $this->assertEquals(0, Pembayaran::where('metode', 'wallet_saldo')->count());
+
+    $siswa->wallet->refresh();
+    $this->assertEquals(200000, $siswa->wallet->balance);
+});
+
 it('shows the success page after a wallet payment', function () {
     [$user, , , $tagihan] = actingAsOrangTuaForWalletCheckout();
     $this->actingAs($user)->post(route('keuangan.checkout.wallet'), ['tagihan_ids' => [$tagihan->id]]);

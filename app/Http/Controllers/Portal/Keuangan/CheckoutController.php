@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/Portal/Keuangan/CheckoutController.php
 
 namespace App\Http\Controllers\Portal\Keuangan;
@@ -9,6 +10,7 @@ use App\Domains\Keuangan\Actions\Pembayaran\CreateWalletPaymentAction;
 use App\Domains\Keuangan\Concerns\AuthorizesPembayaran;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Keuangan\Services\PaymentService;
 use App\Exceptions\InsufficientBalanceException;
 use App\Exceptions\PaymentException;
 use App\Http\Controllers\Controller;
@@ -19,14 +21,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class CheckoutController extends Controller
 {
     use AuthorizesPembayaran;
 
-    public function __construct(private readonly \App\Domains\Keuangan\Services\PaymentService $paymentService)
-    {
-    }
+    public function __construct(private readonly PaymentService $paymentService) {}
 
     public function create(Request $request): View
     {
@@ -41,6 +42,7 @@ class CheckoutController extends Controller
         $tagihans = Tagihan::where('tagihable_type', get_class($activeSiswa))
             ->where('tagihable_id', $activeSiswa->id)
             ->whereIn('status', ['belum_bayar', 'sebagian'])
+            ->where('perlu_ditinjau_ulang', false)
             ->whereIn('id', $tagihanIds)
             ->with(['jenisTagihan' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)])
             ->get();
@@ -85,6 +87,7 @@ class CheckoutController extends Controller
             $va = $this->paymentService->getOrCreatePermanentVa($activeSiswa);
         } catch (PaymentException $e) {
             Log::error('Gagal membuat VA BRI Permanen: '.$e->getMessage());
+
             return back()->withErrors(['tagihan_ids' => 'Gagal mendapatkan VA, silakan coba lagi.']);
         }
 
@@ -108,7 +111,7 @@ class CheckoutController extends Controller
 
         if ($tagihans->count() !== count(array_unique($requestedIds))) {
             return redirect()->route('keuangan.tagihan.index')
-                ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas, silakan cek kembali.']);
+                ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas atau sedang ditinjau ulang oleh admin, silakan cek kembali.']);
         }
 
         if ($topupAmount <= 0) {
@@ -122,6 +125,7 @@ class CheckoutController extends Controller
             $pembayaran = $action->execute($activeSiswa, $tagihans, $topupAmount);
         } catch (PaymentException $e) {
             Log::error('Gagal membuat QRIS: '.$e->getMessage());
+
             return back()->withErrors(['tagihan_ids' => 'Gagal membuat pembayaran, silakan coba lagi.']);
         }
 
@@ -140,7 +144,7 @@ class CheckoutController extends Controller
 
         if ($tagihans->count() !== count(array_unique($requestedIds))) {
             return redirect()->route('keuangan.tagihan.index')
-                ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas, silakan cek kembali.']);
+                ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas atau sedang ditinjau ulang oleh admin, silakan cek kembali.']);
         }
 
         try {
@@ -164,7 +168,7 @@ class CheckoutController extends Controller
 
         if ($tagihans->count() !== count(array_unique($requestedIds))) {
             return redirect()->route('keuangan.tagihan.index')
-                ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas, silakan cek kembali.']);
+                ->withErrors(['tagihan_ids' => 'Sebagian tagihan yang dipilih sudah lunas atau sedang ditinjau ulang oleh admin, silakan cek kembali.']);
         }
 
         $totalTagihan = $tagihans->reduce(
@@ -215,7 +219,7 @@ class CheckoutController extends Controller
 
         $qrCodeDataUri = null;
         if ($pembayaran->briQrisPayment) {
-            $svg = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(180)->generate($pembayaran->briQrisPayment->qr_code);
+            $svg = QrCode::size(180)->generate($pembayaran->briQrisPayment->qr_code);
             $qrCodeDataUri = 'data:image/svg+xml;base64,'.base64_encode($svg);
         }
 
@@ -241,6 +245,7 @@ class CheckoutController extends Controller
         return Tagihan::where('tagihable_type', get_class($activeSiswa))
             ->where('tagihable_id', $activeSiswa->id)
             ->whereIn('status', ['belum_bayar', 'sebagian'])
+            ->where('perlu_ditinjau_ulang', false)
             ->whereIn('id', $tagihanIds)
             ->get();
     }

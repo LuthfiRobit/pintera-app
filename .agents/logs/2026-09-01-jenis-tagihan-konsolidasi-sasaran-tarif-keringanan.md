@@ -105,3 +105,24 @@ Saat menjelaskan alur form ke user, ditemukan **Task 17 (plan) tidak selesai**: 
 Test baru: `JenisTagihanPreviewSiswaKeringananTest.php`, `JenisTagihanFormKeringananWidgetTest.php`, plus 2 test tambahan di `SiswaKeringananControllerTest.php` untuk mode JSON. Regresi diverifikasi: 425 test keuangan/jenis-tagihan/siswa-keringanan terkait — semua PASS, 0 gagal. Full suite proyek dijalankan ulang secara langsung (bukan cuma dipercaya) sebelum dan sesudah gap-closing ini, keduanya hijau (~2644 passed).
 
 Dengan ini, permintaan inti user ("semua pengaturan Jenis Tagihan, termasuk assign siswa ke keringanan, selesai di 1 form") sudah tercapai penuh.
+
+---
+
+## 7. Analisa Sisi Siswa/Orang Tua & Penutupan Gap Risiko (2026-09-01, sesi lanjutan kedua)
+
+Diminta user menganalisa bagaimana portal Ruang Orang Tua (`/keuangan`, BUKAN `/portal` PPDB) berinteraksi dengan engine recalculate yang baru. Temuan (via Explore subagent, diverifikasi baca kode langsung):
+
+1. `perlu_ditinjau_ulang` 100% admin-only — tidak ada satupun view/controller di `portals/portal/keuangan/**` yang query kolom ini.
+2. **Risiko nyata**: tagihan yang gagal guard recalc (overpayment/cicilan/lunas) tetap tampil dengan nominal LAMA apa adanya di dashboard/list orang tua, tanpa keterangan sedang ditinjau — orang tua berisiko membayar nominal yang sebentar lagi direvisi.
+3. `TagihanDirevisiNotification` sampai tapi tenggelam di bell notifikasi generik (sama seperti notifikasi finance lain, tanpa diferensiasi/link balik).
+4. Tidak ada breakdown tarif vs diskon di UI orang tua — tidak transparan kenapa nominal segitu.
+
+**Ditutup pada sesi ini (poin #2, risiko finansial paling nyata)**:
+
+- `CheckoutController::create()` dan `resolveSelectedTagihan()` (dipakai `wallet()`/`qris()`/`transfer()`/`vaInfo()`) sekarang menambahkan `->where('perlu_ditinjau_ulang', false)` — tagihan yang sedang ditinjau TIDAK BISA dipilih untuk dibayar lewat jalur apapun (wallet/QRIS/VA/transfer manual), baik lewat UI normal maupun request yang di-craft manual.
+- Pesan error mismatch-jumlah tagihan ("Sebagian tagihan yang dipilih sudah lunas...") diperluas jadi "...sudah lunas atau sedang ditinjau ulang oleh admin..." supaya tetap akurat.
+- `resources/views/portals/portal/keuangan/dashboard.blade.php` dan `tagihan/index.blade.php`: tagihan yang di-flag tetap TAMPIL di list (transparansi bahwa tagihan itu ada), tapi checkbox-nya disabled dan ada badge "Sedang Ditinjau" + pesan umum "Nominal sedang ditinjau ulang oleh admin, sementara belum bisa dibayar." — **alasan detail teknis (`alasan_perlu_ditinjau`) sengaja TIDAK diekspos ke orang tua**, cuma admin yang lihat detailnya di halaman "Tagihan Perlu Ditinjau".
+
+Poin #3 (notifikasi tenggelam) dan #4 (breakdown tarif/diskon) BELUM dikerjakan — disepakati sebagai peningkatan UX terpisah, bukan risiko finansial mendesak, menunggu prioritas user berikutnya.
+
+Test baru: 2 di `TagihanControllerTest.php`/`DashboardControllerTest.php` (badge + non-leak alasan), 1 di `CheckoutControllerWalletTest.php`, 1 di `CheckoutControllerCreateTest.php`. Semua PASS, regresi 35 test controller terkait PASS, full suite proyek dijalankan ulang untuk verifikasi akhir.

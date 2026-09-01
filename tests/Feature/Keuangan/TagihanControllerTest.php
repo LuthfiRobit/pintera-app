@@ -72,6 +72,25 @@ it('shows the auto-debit banner only when the setting is enabled for the lembaga
     $response->assertSee('Sistem Auto-Debit Aktif');
 });
 
+it('shows a Sedang Ditinjau badge and disables the checkbox for a flagged tagihan', function () {
+    [$user, , $siswa] = actingAsOrangTuaForTagihan();
+    $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bulanan']);
+
+    Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'net_amount' => 100000, 'paid_amount' => 0,
+        'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh alasan internal',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.tagihan.index'));
+
+    $response->assertOk();
+    $response->assertSee('sedang ditinjau', false);
+    $response->assertSee(':disabled="item.perlu_ditinjau_ulang"', false);
+    // Alasan internal admin tidak boleh bocor ke orang tua -- cuma pesan umum yang ditampilkan.
+    $response->assertDontSee('contoh alasan internal');
+});
+
 it('denies access without keuangan.akses permission', function () {
     $user = User::factory()->create(['lembaga_id' => null]);
 

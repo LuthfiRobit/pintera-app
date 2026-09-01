@@ -14,15 +14,20 @@
                  'paid_amount' => (float) $t->paid_amount,
                  'sisa' => (float) ($t->net_amount - $t->paid_amount),
                  'status' => $t->status,
-                 'badge_tone' => $t->status === 'sebagian' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200',
-                 'badge_label' => str_replace('_', ' ', $t->status)
+                 'perlu_ditinjau_ulang' => (bool) $t->perlu_ditinjau_ulang,
+                 'badge_tone' => $t->perlu_ditinjau_ulang ? 'bg-amber-50 text-amber-700 border-amber-200' : ($t->status === 'sebagian' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-700 border-red-200'),
+                 'badge_label' => $t->perlu_ditinjau_ulang ? 'sedang ditinjau' : str_replace('_', ' ', $t->status)
              ])->values()->all()),
-             
+
              get filteredItems() {
                  if (this.activeFilter === 'jatuh_tempo') {
                      return this.items.filter(item => item.is_overdue);
                  }
                  return this.items;
+             },
+
+             get selectableItems() {
+                 return this.filteredItems.filter(item => !item.perlu_ditinjau_ulang);
              },
              
              get countSemua() {
@@ -117,8 +122,8 @@
                                 <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500 border-b border-gray-100 bg-gray-50/50">
                                     <th class="px-5 py-3 w-12 text-center">
                                         <input type="checkbox"
-                                               @change="selected = $el.checked ? filteredItems.map(i => i.id) : []"
-                                               :checked="filteredItems.length > 0 && selected.length === filteredItems.length"
+                                               @change="selected = $el.checked ? selectableItems.map(i => i.id) : []"
+                                               :checked="selectableItems.length > 0 && selected.length === selectableItems.length"
                                                class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
                                         >
                                     </th>
@@ -134,9 +139,12 @@
                                 <template x-for="item in filteredItems" :key="item.id">
                                     <tr class="transition hover:bg-gray-50" :class="item.is_overdue ? 'bg-red-50/10' : ''">
                                         <td class="px-5 py-3 text-center">
-                                            <input type="checkbox" :value="item.id" x-model="selected" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer">
+                                            <input type="checkbox" :value="item.id" x-model="selected" :disabled="item.perlu_ditinjau_ulang" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 cursor-pointer disabled:cursor-not-allowed">
                                         </td>
-                                        <td class="px-5 py-3.5 font-medium text-gray-900" x-text="item.nama"></td>
+                                        <td class="px-5 py-3.5 font-medium text-gray-900">
+                                            <span x-text="item.nama"></span>
+                                            <p x-show="item.perlu_ditinjau_ulang" class="text-[10px] font-normal text-amber-600 mt-0.5">Nominal sedang ditinjau ulang oleh admin, sementara belum bisa dibayar.</p>
+                                        </td>
                                         <td class="px-5 py-3.5 text-gray-600 font-mono text-xs">
                                             <span x-text="item.jatuh_tempo_formatted"></span>
                                             <span x-show="item.is_overdue" class="ml-1.5 inline-flex items-center rounded bg-red-100 px-1.5 py-0.5 text-[8px] font-bold text-red-800 uppercase tracking-wider">Terlambat</span>

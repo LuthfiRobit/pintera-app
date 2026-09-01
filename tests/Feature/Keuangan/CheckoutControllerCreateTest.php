@@ -53,6 +53,22 @@ it('shows the checkout tabs with the selected tagihan total', function () {
     $response->assertSee('Transfer Manual');
 });
 
+it('excludes a tagihan flagged perlu_ditinjau_ulang from the checkout total', function () {
+    [$user, , $siswa] = actingAsOrangTuaForCheckout();
+
+    $jenis = JenisTagihan::factory()->create();
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'net_amount' => 777000, 'paid_amount' => 0,
+        'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.checkout.create', ['tagihan_ids' => [$tagihan->id]]));
+
+    $response->assertOk();
+    $response->assertDontSee('777.000', false);
+});
+
 it('ignores tagihan ids that do not belong to the active child', function () {
     [$user, , $siswa] = actingAsOrangTuaForCheckout();
     $otherSiswa = Siswa::factory()->create();

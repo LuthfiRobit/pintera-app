@@ -136,6 +136,23 @@ it('does not show the skip-alert banner when balance fully covers all tagihan', 
     $response->assertDontSee('Top-up Rp');
 });
 
+it('shows a Sedang Ditinjau badge and disables the checkbox for a flagged tagihan', function () {
+    [$user, , $siswa] = actingAsOrangTuaForDashboard();
+    $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bulanan']);
+    Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'status' => 'belum_bayar', 'net_amount' => 100000, 'paid_amount' => 0,
+        'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh alasan internal',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Sedang Ditinjau', false);
+    $response->assertSee('Nominal sedang ditinjau ulang oleh admin, sementara belum bisa dibayar.', false);
+    $response->assertDontSee('contoh alasan internal');
+});
+
 it('shows the "tanpa anak" page for an orang tua with zero linked siswa', function () {
     Permission::firstOrCreate(['name' => 'keuangan.akses', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
