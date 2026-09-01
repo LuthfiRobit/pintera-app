@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lembaga\Keuangan;
 use App\Domains\Keuangan\Actions\JenisTagihan\CreateJenisTagihanAction;
 use App\Domains\Keuangan\Actions\JenisTagihan\DeleteJenisTagihanAction;
 use App\Domains\Keuangan\Actions\JenisTagihan\ProsesJenisTagihanBillingAction;
+use App\Domains\Keuangan\Actions\JenisTagihan\ReorderTarifGrupAction;
 use App\Domains\Keuangan\Actions\JenisTagihan\SimpanNominalJenisTagihanAction;
 use App\Domains\Keuangan\Actions\JenisTagihan\UpdateJenisTagihanAction;
 use App\Domains\Keuangan\DataTransferObjects\JenisTagihanData;
@@ -437,5 +438,16 @@ class JenisTagihanController extends Controller
         }
 
         return back()->withErrors(['jenis_tagihan' => $message])->withInput();
+    }
+
+    public function reorderTarif(Request $request, JenisTagihan $jenisTagihan, ReorderTarifGrupAction $action): JsonResponse
+    {
+        $this->authorize('jenis-tagihan.edit');
+
+        $data = $request->validate(['urutan_grup_id' => ['required', 'array']]);
+
+        $action->execute($jenisTagihan, $data['urutan_grup_id']);
+
+        return response()->json(['message' => 'Urutan prioritas Tarif berhasil disimpan.']);
     }
 }
