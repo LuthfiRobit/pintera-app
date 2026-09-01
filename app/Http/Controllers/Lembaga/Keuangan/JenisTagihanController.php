@@ -132,6 +132,10 @@ class JenisTagihanController extends Controller
             return $this->errorResponse($request, 'Target sasaran, tarif berdimensi, dan keringanan hanya berlaku untuk kategori selain Pendaftaran/Daftar Ulang.');
         }
 
+        if ($request->input('mode') === 'otomatis' && $request->input('tipe') === 'sekali') {
+            return $this->errorResponse($request, "Tipe 'Sekali' tidak bisa dipasangkan dengan Mode Otomatis karena kontradiktif (generate berulang vs sekali saja).");
+        }
+
         $data = $request->validate($this->baseRules($lembagaId, null));
         $data['bisa_dicicil'] = $request->boolean('bisa_dicicil');
         $data['is_active'] = $request->boolean('is_active');
@@ -176,6 +180,10 @@ class JenisTagihanController extends Controller
 
         if ($isPpdbKategori && $this->hasBillingPayload($request)) {
             return $this->errorResponse($request, 'Target sasaran, tarif berdimensi, dan keringanan hanya berlaku untuk kategori selain Pendaftaran/Daftar Ulang.');
+        }
+
+        if ($request->input('mode') === 'otomatis' && $request->input('tipe') === 'sekali') {
+            return $this->errorResponse($request, "Tipe 'Sekali' tidak bisa dipasangkan dengan Mode Otomatis karena kontradiktif (generate berulang vs sekali saja).");
         }
 
         $data = $request->validate($this->baseRules($jenisTagihan->lembaga_id, $jenisTagihan));
@@ -324,7 +332,8 @@ class JenisTagihanController extends Controller
 
     private function hasBillingPayload(Request $request): bool
     {
-        return $request->has('sasaran') || $request->has('tarif') || $request->has('keringanan');
+        return $request->has('sasaran') || $request->has('tarif') || $request->has('keringanan')
+            || $request->has('tipe') || $request->has('hari_generate') || $request->has('bulan_generate') || $request->has('offset_hari_jatuh_tempo');
     }
 
     private function baseRules(int $lembagaId, ?JenisTagihan $editing): array
@@ -338,10 +347,14 @@ class JenisTagihanController extends Controller
             'maks_cicilan' => ['nullable', 'integer', 'min:2', 'required_if:bisa_dicicil,1'],
             'default_amount' => ['nullable', 'numeric', 'min:0'],
             'mode' => ['nullable', Rule::in(['manual', 'otomatis'])],
+            'tipe' => [Rule::requiredIf(fn () => ! (KategoriTagihan::tryFrom(request('kategori'))?->isPpdb() ?? false)), 'nullable', Rule::in(['harian', 'mingguan', 'bulanan', 'tahunan', 'sekali'])],
             'tanggal_mulai' => ['nullable', 'date', 'required_if:mode,otomatis'],
             'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
-            'tanggal_generate' => ['nullable', 'integer', 'between:1,31', 'required_if:mode,otomatis'],
-            'hari_jatuh_tempo' => ['nullable', 'integer', 'min:0'],
+            'hari_generate' => ['nullable', 'integer', 'between:1,7', Rule::requiredIf(fn () => request('mode') === 'otomatis' && request('tipe') === 'mingguan')],
+            'bulan_generate' => ['nullable', 'integer', 'between:1,12', Rule::requiredIf(fn () => request('mode') === 'otomatis' && request('tipe') === 'tahunan')],
+            'tanggal_generate' => ['nullable', 'integer', 'between:1,31', Rule::requiredIf(fn () => request('mode') === 'otomatis' && in_array(request('tipe'), ['bulanan', 'tahunan'], true))],
+            'hari_jatuh_tempo' => ['nullable', 'integer', 'between:1,31', Rule::requiredIf(fn () => request('mode') === 'otomatis' && in_array(request('tipe'), ['bulanan', 'tahunan'], true))],
+            'offset_hari_jatuh_tempo' => ['nullable', 'integer', 'min:0', Rule::requiredIf(fn () => request('mode') === 'otomatis' && in_array(request('tipe'), ['harian', 'mingguan'], true))],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

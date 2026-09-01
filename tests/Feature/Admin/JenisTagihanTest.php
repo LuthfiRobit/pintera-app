@@ -106,7 +106,7 @@ it('does not send kategori lainnya through the jalur-based nominal flow after cr
     $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
-        'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false,
+        'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'tipe' => 'bulanan', 'bisa_dicicil' => false,
     ]);
 
     $response->assertRedirect(route('admin.jenis-tagihan.index'));
@@ -284,7 +284,7 @@ it('responds with json and a null redirect after creating a kategori lainnya jen
     $user->assignRole('bendahara_lembaga');
 
     $response = $this->actingAs($user)->postJson(route('admin.jenis-tagihan.store'), [
-        'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'bisa_dicicil' => false,
+        'nama' => 'SPP Bulanan', 'kategori' => 'lainnya', 'tipe' => 'bulanan', 'bisa_dicicil' => false,
     ]);
 
     $response->assertCreated()->assertJson(['redirect' => null]);

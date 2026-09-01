@@ -38,6 +38,7 @@ it('creates a non-ppdb jenis tagihan with sasaran, tarif, and keringanan in one 
         'kategori' => 'spp',
         'bisa_dicicil' => false,
         'mode' => 'otomatis',
+        'tipe' => 'bulanan',
         'default_amount' => 500000,
         'tanggal_mulai' => '2026-07-01',
         'tanggal_generate' => 1,
@@ -115,7 +116,7 @@ it('replaces sasaran on update without touching already-generated tagihan for th
 
     $response = $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $jenisTagihan), [
         'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false,
-        'mode' => 'manual', 'default_amount' => 500000,
+        'mode' => 'manual', 'tipe' => 'bulanan', 'default_amount' => 500000,
         'sasaran' => [
             ['kriteria' => [['field' => 'status_siswa', 'operator' => 'in', 'value' => ['lulus']]]],
         ],
