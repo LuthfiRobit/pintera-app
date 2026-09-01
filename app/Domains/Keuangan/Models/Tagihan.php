@@ -40,6 +40,7 @@ class Tagihan extends Model
         return [
             'jatuh_tempo' => 'date',
             'discount_amount' => 'decimal:2',
+            'kategori' => \App\Domains\Keuangan\Enums\KategoriTagihan::class,
             'net_amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'cancelled_at' => 'datetime',

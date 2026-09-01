@@ -38,6 +38,7 @@ class JenisTagihan extends Model
         return [
             'bisa_dicicil' => 'boolean',
             'default_amount' => 'decimal:2',
+            'kategori' => \App\Domains\Keuangan\Enums\KategoriTagihan::class,
             'tanggal_mulai' => 'date',
             'tanggal_selesai' => 'date',
             'is_active' => 'boolean',
