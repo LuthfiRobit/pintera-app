@@ -30,7 +30,7 @@ it('PembayaranController shows the correct kategori label for a non-PPDB tagihan
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $calonMurid = CalonMurid::factory()->create(['yayasan_id' => $yayasan->id]);
     $pendaftaran = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'calon_murid_id' => $calonMurid->id, 'status' => 'diterima']);
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'spp', 'total_tagihan' => 250000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'spp', 'total_tagihan' => 250000, 'status' => 'belum_bayar']);
     Pembayaran::create(['tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
@@ -51,7 +51,7 @@ it('portal/tagihan/index shows the correct kategori label for a non-PPDB tagihan
         'lembaga_id' => $lembaga->id, 'calon_murid_id' => $calonMurid->id,
         'akun_pendaftar_id' => $akun->id, 'status' => 'diterima',
     ]);
-    Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'spp', 'total_tagihan' => 250000, 'status' => 'belum_bayar']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'spp', 'total_tagihan' => 250000, 'status' => 'belum_bayar']);
 
     $response = $this->actingAs($akun, 'portal')->get(route('portal.tagihan.index'));
 

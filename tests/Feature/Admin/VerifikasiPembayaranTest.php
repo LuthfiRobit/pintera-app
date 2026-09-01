@@ -24,7 +24,7 @@ beforeEach(function () {
 function buatPembayaranViaCicilan(?Lembaga $lembaga = null, string $namaCalon = 'Ahmad Fauzan'): array
 {
     [$lembagaAktual, , , $pendaftaran] = buatPendaftaranUntukAdmin($lembaga, namaCalon: $namaCalon, status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
     $skema = app(PembayaranService::class)->buatSkemaCicilan($tagihan, 3, 'calon_siswa');
     $termin1 = $skema->cicilan()->where('urutan', 1)->first();
     $pembayaran = Pembayaran::create(['cicilan_id' => $termin1->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
@@ -34,8 +34,8 @@ function buatPembayaranViaCicilan(?Lembaga $lembaga = null, string $namaCalon = 
 
 it('labels two pending payments for the same candidate distinguishably by kategori and nominal', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihanPendaftaran = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar']);
-    $tagihanDaftarUlang = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
+    $tagihanPendaftaran = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar']);
+    $tagihanDaftarUlang = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
     Pembayaran::create(['tagihan_id' => $tagihanPendaftaran->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     Pembayaran::create(['tagihan_id' => $tagihanDaftarUlang->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -59,8 +59,8 @@ it('denies access to the payment verification queue without pembayaran.view', fu
 it('only lists pending payments belonging to the acting user own lembaga', function () {
     [$lembagaA, , , $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Milik A', status: 'diterima');
     [, , , $pendaftaranB] = buatPendaftaranUntukAdmin(namaCalon: 'Milik B', status: 'diterima');
-    $tagihanA = Tagihan::create(['pendaftaran_id' => $pendaftaranA->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
-    $tagihanB = Tagihan::create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihanA = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranA->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihanB = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     Pembayaran::create(['tagihan_id' => $tagihanA->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     Pembayaran::create(['tagihan_id' => $tagihanB->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembagaA->id]);
@@ -75,7 +75,7 @@ it('only lists pending payments belonging to the acting user own lembaga', funct
 
 it('lets bendahara_lembaga approve a pending payment', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaran = Pembayaran::create(['tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
@@ -89,7 +89,7 @@ it('lets bendahara_lembaga approve a pending payment', function () {
 
 it('requires catatan when rejecting a pending payment', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaran = Pembayaran::create(['tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
@@ -102,7 +102,7 @@ it('requires catatan when rejecting a pending payment', function () {
 
 it('404s verifying a payment belonging to a pendaftaran in a different lembaga', function () {
     [, , , $pendaftaranLain] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihanLain = Tagihan::create(['pendaftaran_id' => $pendaftaranLain->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihanLain = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranLain->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaranLain = Pembayaran::create(['tagihan_id' => $tagihanLain->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $lembagaSaya = Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
@@ -150,7 +150,7 @@ it('lets bendahara_lembaga approve a cicilan-reachable pending payment', functio
 
 it('renders Terima/Tolak verification controls and the bukti transfer link on the pendaftaran detail page for a pending lump-sum payment', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaran = Pembayaran::create([
         'tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual',
         'file_path' => 'bukti-transfer/contoh.pdf', 'status' => 'menunggu_verifikasi',
@@ -169,7 +169,7 @@ it('renders Terima/Tolak verification controls and the bukti transfer link on th
 
 it('does not render verification controls for a user without pembayaran.verifikasi permission', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaran = Pembayaran::create([
         'tagihan_id' => $tagihan->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual',
         'file_path' => 'bukti-transfer/contoh.pdf', 'status' => 'menunggu_verifikasi',

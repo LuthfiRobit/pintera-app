@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Admin/SkemaCicilanTest.php
 
 use App\Domains\Keuangan\Models\Cicilan;
@@ -6,6 +7,8 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Keuangan\Models\TagihanItem;
+use App\Models\Lembaga;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,8 +24,8 @@ function siapkanTagihanDaftarUlangBisaDicicil(): array
     [$lembaga, $jalur, , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Uang Pangkal', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => true, 'maks_cicilan' => 3]);
     NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 900000]);
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
-    \App\Domains\Keuangan\Models\TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => $jenisTagihan->id, 'jumlah' => 900000]);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
+    TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => $jenisTagihan->id, 'jumlah' => 900000]);
 
     return [$lembaga, $pendaftaran, $tagihan];
 }
@@ -49,7 +52,7 @@ it('lets bendahara_lembaga create a skema cicilan for a tagihan', function () {
 
 it('404s creating a skema cicilan for a tagihan belonging to a different lembaga', function () {
     [, , $tagihanLembagaLain] = siapkanTagihanDaftarUlangBisaDicicil();
-    $lembagaSaya = \App\Models\Lembaga::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
     $user->assignRole('bendahara_lembaga');
 
@@ -83,7 +86,7 @@ it('404s editing nominal manually for a skema cicilan belonging to a different l
     $this->actingAs($user)->post(route('admin.tagihan.skema-cicilan.store', $tagihan), ['jumlah_termin' => 3]);
     $skema = SkemaCicilan::where('tagihan_id', $tagihan->id)->first();
 
-    $lembagaLain = \App\Models\Lembaga::factory()->create();
+    $lembagaLain = Lembaga::factory()->create();
     $userLain = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
     $userLain->assignRole('bendahara_lembaga');
 

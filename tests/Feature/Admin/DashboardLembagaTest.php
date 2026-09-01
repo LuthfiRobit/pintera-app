@@ -1,10 +1,12 @@
 <?php
+
 // tests/Feature/Admin/DashboardLembagaTest.php
 
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Models\TahunAjaran;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,7 +35,7 @@ it('shows both spmb and keuangan sections for bendahara_lembaga, with correct nu
     $lembaga = Lembaga::factory()->create();
     $tahunAjaran = TahunAjaran::create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true]);
     $pendaftaran = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'status' => 'diterima']);
-    Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
 
@@ -96,7 +98,7 @@ it('does not change the guru dashboard', function () {
 
 it('shows the rapor fill progress table only for a user with komponen-penilaian.kelola permission', function () {
     $lembaga = Lembaga::factory()->create();
-    $kelas = \App\Models\Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Kelas Uji Progress']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Kelas Uji Progress']);
 
     $userDitolak = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $userDitolak->assignRole('admin_administrasi');

@@ -1,10 +1,13 @@
 <?php
+
 // tests/Feature/Admin/DashboardYayasanTest.php
 
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Models\TahunAjaran;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
@@ -39,7 +42,7 @@ it('shows the lembaga dashboard, not the yayasan dashboard, once active_lembaga_
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $tahunAjaran = TahunAjaran::create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true]);
     $pendaftaran = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
-    Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
     $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $user->assignRole('yayasan_super_admin');
 
@@ -73,9 +76,9 @@ it('renders the yayasan dashboard without error when there is no lembaga in the 
 it('shows SDM attendance summary and unassigned eskalasi count across every lembaga in the yayasan', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $guru = \App\Models\Guru::factory()->create(['lembaga_id' => $lembaga->id]);
-    \App\Domains\Sdm\Models\AttendanceRecord::create([
-        'lembaga_id' => $lembaga->id, 'pegawai_type' => \App\Models\Guru::class, 'pegawai_id' => $guru->id,
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    AttendanceRecord::create([
+        'lembaga_id' => $lembaga->id, 'pegawai_type' => Guru::class, 'pegawai_id' => $guru->id,
         'tanggal' => now()->toDateString(), 'status' => 'hadir',
     ]);
 

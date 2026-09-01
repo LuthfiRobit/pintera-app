@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Admin/CatatManualPembayaranTest.php
 
 use App\Domains\Keuangan\Models\Cicilan;
@@ -7,8 +8,9 @@ use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
-use App\Models\User;
 use App\Domains\Keuangan\Services\PembayaranService;
+use App\Models\Lembaga;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -23,7 +25,7 @@ function siapkanCicilanTermin1(): array
     [$lembaga, $jalur, , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Uang Pangkal', 'kategori' => 'daftar_ulang', 'bisa_dicicil' => true, 'maks_cicilan' => 3]);
     NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 900000]);
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'belum_bayar']);
     TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => $jenisTagihan->id, 'jumlah' => 900000]);
 
     $skema = app(PembayaranService::class)->buatSkemaCicilan($tagihan, 3, 'admin', null);
@@ -34,7 +36,7 @@ function siapkanCicilanTermin1(): array
 
 it('denies catat manual without the pembayaran.catat-manual permission', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $this->actingAs($user)->post(route('admin.tagihan.catat-manual', $tagihan))->assertForbidden();
@@ -42,7 +44,7 @@ it('denies catat manual without the pembayaran.catat-manual permission', functio
 
 it('lets bendahara_lembaga record a lump-sum tagihan payment directly as lunas', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
 
@@ -55,9 +57,9 @@ it('lets bendahara_lembaga record a lump-sum tagihan payment directly as lunas',
 
 it('404s catat manual tagihan for a tagihan belonging to a different lembaga', function () {
     [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $tagihan = Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
+    $tagihan = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
 
-    $lembagaLain = \App\Models\Lembaga::factory()->create();
+    $lembagaLain = Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
     $user->assignRole('bendahara_lembaga');
 
@@ -88,7 +90,7 @@ it('lets bendahara_lembaga record a cicilan termin payment directly as lunas', f
 it('404s catat manual cicilan for a cicilan belonging to a different lembaga', function () {
     [, $cicilan] = siapkanCicilanTermin1();
 
-    $lembagaLain = \App\Models\Lembaga::factory()->create();
+    $lembagaLain = Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
     $user->assignRole('bendahara_lembaga');
 

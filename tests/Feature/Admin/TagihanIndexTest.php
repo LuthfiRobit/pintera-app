@@ -54,8 +54,8 @@ it('returns only tagihan belonging to the acting user own lembaga, via the linke
     [$lembagaB, $jalurB, , $pendaftaranB] = buatPendaftaranUntukAdmin(namaCalon: 'Milik B');
     $jenisTagihanA = JenisTagihan::create(['lembaga_id' => $lembagaA->id, 'nama' => 'Biaya A', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
     $jenisTagihanB = JenisTagihan::create(['lembaga_id' => $lembagaB->id, 'nama' => 'Biaya B', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false]);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranA->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 200000, 'status' => 'belum_bayar']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranA->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 200000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembagaA->id]);
     $user->assignRole('bendahara_lembaga');
 
@@ -69,8 +69,8 @@ it('returns only tagihan belonging to the acting user own lembaga, via the linke
 it('filters by search on candidate name or kode pendaftaran', function () {
     [$lembaga, , , $pendaftaranAhmad] = buatPendaftaranUntukAdmin(namaCalon: 'Ahmad Fauzan');
     $pendaftaranBudi = buatPendaftaranSatuLembagaTagihan($lembaga, 'Budi Santoso');
-    Tagihan::create(['pendaftaran_id' => $pendaftaranAhmad->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranBudi->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranAhmad->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranBudi->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
 
@@ -90,8 +90,8 @@ it('filters by search on candidate name or kode pendaftaran', function () {
 it('filters by status', function () {
     [$lembaga, , , $pendaftaranLunas] = buatPendaftaranUntukAdmin(namaCalon: 'Sudah Lunas');
     [, , , $pendaftaranBelumBayar] = buatPendaftaranUntukAdmin($lembaga, 'Belum Bayar');
-    Tagihan::create(['pendaftaran_id' => $pendaftaranLunas->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 0, 'status' => 'lunas']);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranBelumBayar->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranLunas->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 0, 'status' => 'lunas']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranBelumBayar->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 100000, 'status' => 'belum_bayar']);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
 
@@ -105,7 +105,7 @@ it('filters by status', function () {
 it('404s on catatManualTagihan when tagihan belongs to a different lembaga', function () {
     [$lembagaA, , , $pendaftaranA] = buatPendaftaranUntukAdmin(namaCalon: 'Milik A');
     [$lembagaB, , , $pendaftaranB] = buatPendaftaranUntukAdmin(namaCalon: 'Milik B');
-    $tagihanB = Tagihan::create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 200000, 'status' => 'belum_bayar']);
+    $tagihanB = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranB->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 200000, 'status' => 'belum_bayar']);
     $userA = User::factory()->create(['lembaga_id' => $lembagaA->id]);
     $userA->assignRole('bendahara_lembaga');
 

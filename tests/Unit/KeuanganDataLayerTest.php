@@ -1,17 +1,19 @@
 <?php
+
 // tests/Unit/KeuanganDataLayerTest.php
 
-use App\Models\JalurPpdb;
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
-use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
-use App\Models\TahunAjaran;
+use App\Models\JalurPpdb;
+use App\Models\Lembaga;
+use App\Models\Pendaftaran;
 use App\Models\Role;
+use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -52,7 +54,7 @@ it('exposes nominal_tagihan_jalur enforcing a unique jenis_tagihan+jalur pair', 
     NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
 
     expect(fn () => NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 200000]))
-        ->toThrow(\Illuminate\Database\QueryException::class);
+        ->toThrow(QueryException::class);
 
     expect($jenisTagihan->nominalJalur()->count())->toBe(1);
 });
@@ -64,7 +66,7 @@ it('links a tagihan and its items back to the pendaftaran that owns them', funct
         'lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran', 'bisa_dicicil' => false,
     ]);
 
-    $tagihan = Tagihan::create([
+    $tagihan = Tagihan::factory()->create([
         'pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar',
     ]);
     TagihanItem::create(['tagihan_id' => $tagihan->id, 'jenis_tagihan_id' => $jenisTagihan->id, 'jumlah' => 150000]);

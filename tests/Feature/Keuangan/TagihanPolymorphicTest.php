@@ -1,15 +1,18 @@
 <?php
+
 // tests/Feature/Keuangan/TagihanPolymorphicTest.php
 
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Pendaftaran;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 
 it('lets a tagihan target a siswa via the tagihable polymorphic relation', function () {
     $siswa = Siswa::factory()->create();
 
-    $tagihan = Tagihan::create([
+    $tagihan = Tagihan::factory()->create([
+        'pendaftaran_id' => null,
         'tagihable_type' => Siswa::class,
         'tagihable_id' => $siswa->id,
         'kategori' => 'spp',
@@ -29,7 +32,7 @@ it('lets a tagihan target a siswa via the tagihable polymorphic relation', funct
 it('still resolves the pendaftaran relation for PPDB tagihan rows created without tagihable columns set', function () {
     $pendaftaran = Pendaftaran::factory()->create();
 
-    $tagihan = Tagihan::create([
+    $tagihan = Tagihan::factory()->create([
         'pendaftaran_id' => $pendaftaran->id,
         'kategori' => 'pendaftaran',
         'total_tagihan' => 150000,
@@ -59,7 +62,7 @@ it('allows the dibatalkan status with a cancellation audit trail', function () {
 it('still enforces the unique constraint on pendaftaran_id + kategori for PPDB rows', function () {
     $pendaftaran = Pendaftaran::factory()->create();
 
-    Tagihan::create([
+    Tagihan::factory()->create([
         'pendaftaran_id' => $pendaftaran->id,
         'kategori' => 'pendaftaran',
         'total_tagihan' => 150000,
@@ -67,11 +70,11 @@ it('still enforces the unique constraint on pendaftaran_id + kategori for PPDB r
         'status' => 'belum_bayar',
     ]);
 
-    expect(fn () => Tagihan::create([
+    expect(fn () => Tagihan::factory()->create([
         'pendaftaran_id' => $pendaftaran->id,
         'kategori' => 'pendaftaran',
         'total_tagihan' => 150000,
         'net_amount' => 150000,
         'status' => 'belum_bayar',
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
+    ]))->toThrow(QueryException::class);
 });

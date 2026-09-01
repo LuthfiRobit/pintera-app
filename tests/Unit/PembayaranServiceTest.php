@@ -1,14 +1,13 @@
 <?php
+
 // tests/Unit/PembayaranServiceTest.php
 
-use App\Domains\Keuangan\Models\Cicilan;
-use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\Pendaftaran;
-use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\User;
 use App\Domains\Keuangan\Services\PembayaranService;
+use App\Models\Lembaga;
+use App\Models\Pendaftaran;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -19,7 +18,7 @@ function buatTagihanDaftarUlangUntukPembayaran(int $total = 1000000): Tagihan
     $lembaga = Lembaga::factory()->create();
     $pendaftaran = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'status' => 'diterima']);
 
-    return Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => $total, 'status' => 'belum_bayar']);
+    return Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => $total, 'status' => 'belum_bayar']);
 }
 
 it('splits nominal evenly with the rounding remainder absorbed by the last termin', function () {

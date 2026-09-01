@@ -1,15 +1,23 @@
 <?php
+
 // tests/Unit/DashboardStatsServiceTest.php
 
 use App\Domains\Keuangan\Models\Cicilan;
-use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\SkemaCicilan;
+use App\Domains\Keuangan\Models\Tagihan;
+use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\KuotaCutiConfig;
+use App\Models\Guru;
+use App\Models\Karyawan;
+use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Pendaftaran;
 use App\Models\Role;
-use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Models\TahunAjaran;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
+use App\Models\Yayasan;
 use App\Services\DashboardStatsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -69,9 +77,9 @@ it('computes rpTerkumpul and rpBelumLunas from tagihan status, scoped to lembaga
     $pendaftaranLunas = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $pendaftaranCicil = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $pendaftaranBelum = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranLunas->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranCicil->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'dicicil']);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranBelum->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranLunas->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranCicil->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'dicicil']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranBelum->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar']);
 
     $hasil = app(DashboardStatsService::class)->statistikKeuangan($lembaga->id);
 
@@ -84,11 +92,11 @@ it('counts pembayaran menunggu verifikasi through both the direct tagihan and th
     $lembaga = Lembaga::factory()->create();
     $tahunAjaran = siapkanTahunAjaranAktifUntukDashboard($lembaga);
     $pendaftaranLangsung = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
-    $tagihanLangsung = Tagihan::create(['pendaftaran_id' => $pendaftaranLangsung->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar']);
+    $tagihanLangsung = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranLangsung->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar']);
     Pembayaran::create(['tagihan_id' => $tagihanLangsung->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
 
     $pendaftaranCicil = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
-    $tagihanCicil = Tagihan::create(['pendaftaran_id' => $pendaftaranCicil->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'dicicil']);
+    $tagihanCicil = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranCicil->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'dicicil']);
     $skema = SkemaCicilan::create(['tagihan_id' => $tagihanCicil->id, 'jumlah_termin' => 3, 'dibuat_oleh' => 'calon_siswa']);
     $termin = Cicilan::create(['skema_cicilan_id' => $skema->id, 'urutan' => 1, 'nominal' => 300000, 'jatuh_tempo' => now(), 'status' => 'belum_bayar']);
     Pembayaran::create(['cicilan_id' => $termin->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
@@ -113,12 +121,12 @@ it('does not leak keuangan data from another lembaga into the requested lembaga\
     $lembaga = Lembaga::factory()->create();
     $tahunAjaran = siapkanTahunAjaranAktifUntukDashboard($lembaga);
     $pendaftaran = Pendaftaran::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
-    Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
 
     $lembagaLain = Lembaga::factory()->create();
     $tahunAjaranLain = siapkanTahunAjaranAktifUntukDashboard($lembagaLain);
     $pendaftaranLain = Pendaftaran::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $tahunAjaranLain->id]);
-    $tagihanLain = Tagihan::create(['pendaftaran_id' => $pendaftaranLain->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'dicicil']);
+    $tagihanLain = Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranLain->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 900000, 'status' => 'dicicil']);
     Pembayaran::create(['tagihan_id' => $tagihanLain->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
     $skemaLain = SkemaCicilan::create(['tagihan_id' => $tagihanLain->id, 'jumlah_termin' => 3, 'dibuat_oleh' => 'calon_siswa']);
     $terminLain = Cicilan::create(['skema_cicilan_id' => $skemaLain->id, 'urutan' => 1, 'nominal' => 300000, 'jatuh_tempo' => now(), 'status' => 'belum_bayar']);
@@ -176,7 +184,7 @@ it('bypasses TahunAjaran tenant scoping: statistikKeuangan still finds the reque
     $lembagaTarget = Lembaga::factory()->create();
     $tahunAjaranTarget = siapkanTahunAjaranAktifUntukDashboard($lembagaTarget);
     $pendaftaranTarget = Pendaftaran::factory()->create(['lembaga_id' => $lembagaTarget->id, 'tahun_ajaran_id' => $tahunAjaranTarget->id]);
-    Tagihan::create(['pendaftaran_id' => $pendaftaranTarget->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaranTarget->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'lunas']);
 
     $hasil = app(DashboardStatsService::class)->statistikKeuangan($lembagaTarget->id);
 
@@ -186,13 +194,13 @@ it('bypasses TahunAjaran tenant scoping: statistikKeuangan still finds the reque
 
 it('aggregates SDM attendance counts across the given lembaga ids for today', function () {
     $lembaga = Lembaga::factory()->create();
-    $guru = \App\Models\Guru::factory()->create(['lembaga_id' => $lembaga->id]);
-    \App\Domains\Sdm\Models\AttendanceRecord::create([
-        'lembaga_id' => $lembaga->id, 'pegawai_type' => \App\Models\Guru::class, 'pegawai_id' => $guru->id,
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    AttendanceRecord::create([
+        'lembaga_id' => $lembaga->id, 'pegawai_type' => Guru::class, 'pegawai_id' => $guru->id,
         'tanggal' => now()->toDateString(), 'status' => 'hadir',
     ]);
 
-    $service = new DashboardStatsService();
+    $service = new DashboardStatsService;
     $hasil = $service->statistikPresensiSdm([$lembaga->id]);
 
     expect($hasil['hadir'])->toBe(1);
@@ -200,9 +208,9 @@ it('aggregates SDM attendance counts across the given lembaga ids for today', fu
 });
 
 it('computes rapor fill progress as zero when there is no active semester', function () {
-    $kelas = \App\Models\Kelas::factory()->create();
+    $kelas = Kelas::factory()->create();
 
-    $service = new DashboardStatsService();
+    $service = new DashboardStatsService;
     $hasil = $service->statistikProgressRaporKelas($kelas);
 
     expect($hasil['persen'])->toBe(0.0);
@@ -210,9 +218,9 @@ it('computes rapor fill progress as zero when there is no active semester', func
 });
 
 it('returns null sisa kuota cuti when no KuotaCutiConfig matches the karyawan', function () {
-    $karyawan = \App\Models\Karyawan::factory()->create();
+    $karyawan = Karyawan::factory()->create();
 
-    $service = new DashboardStatsService();
+    $service = new DashboardStatsService;
     $hasil = $service->statistikSisaKuotaCuti($karyawan);
 
     expect($hasil)->toBeNull();
@@ -220,11 +228,11 @@ it('returns null sisa kuota cuti when no KuotaCutiConfig matches the karyawan', 
 
 it('computes sisa kuota cuti as jatah minus approved days this year', function () {
     $lembaga = Lembaga::factory()->create();
-    $jenis = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
-    $karyawan = \App\Models\Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenis->id]);
-    \App\Domains\Sdm\Models\KuotaCutiConfig::create(['yayasan_id' => $lembaga->yayasan_id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenis->id, 'jenis_ptk' => 'karyawan', 'jatah_hari_per_tahun' => 12]);
+    $jenis = JenisKaryawanMaster::factory()->create();
+    $karyawan = Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenis->id]);
+    KuotaCutiConfig::create(['yayasan_id' => $lembaga->yayasan_id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenis->id, 'jenis_ptk' => 'karyawan', 'jatah_hari_per_tahun' => 12]);
 
-    $service = new DashboardStatsService();
+    $service = new DashboardStatsService;
     $hasil = $service->statistikSisaKuotaCuti($karyawan);
 
     expect($hasil['jatah'])->toBe(12);
@@ -232,13 +240,12 @@ it('computes sisa kuota cuti as jatah minus approved days this year', function (
 });
 
 it('returns 6 months of yayasan growth trend labels and data', function () {
-    \App\Models\Yayasan::factory()->create();
+    Yayasan::factory()->create();
 
-    $service = new DashboardStatsService();
+    $service = new DashboardStatsService;
     $hasil = $service->trenPertumbuhanYayasan();
 
     expect($hasil['labels'])->toHaveCount(6);
     expect($hasil['data'])->toHaveCount(6);
     expect(array_sum($hasil['data']))->toBeGreaterThanOrEqual(1);
 });
-

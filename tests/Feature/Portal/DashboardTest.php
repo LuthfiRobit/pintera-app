@@ -1,8 +1,14 @@
 <?php
+
 // tests/Feature/Portal/DashboardTest.php
 
+use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\NominalTagihanJalur;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\AkunPendaftar;
 use App\Models\CalonMurid;
+use App\Models\DokumenPendaftaran;
+use App\Models\DokumenSyaratPpdb;
 use App\Models\JalurPpdb;
 use App\Models\Lembaga;
 use App\Models\Pendaftaran;
@@ -135,7 +141,7 @@ it('advances the progress percentage and continue link as wizard session steps a
 it('shows the dokumen-terupload count against the jalur\'s required syarat', function () {
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
     foreach (['Kartu Keluarga', 'Akta Kelahiran', 'Ijazah'] as $urutan => $namaDokumen) {
-        \App\Models\DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'lembaga_id' => $lembaga->id, 'nama_dokumen' => $namaDokumen, 'wajib' => true, 'urutan' => $urutan]);
+        DokumenSyaratPpdb::create(['jalur_ppdb_id' => $jalur->id, 'lembaga_id' => $lembaga->id, 'nama_dokumen' => $namaDokumen, 'wajib' => true, 'urutan' => $urutan]);
     }
     $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
     session(["spmb_wizard.{$lembaga->id}.{$jalur->id}" => [
@@ -158,8 +164,8 @@ it('shows the batas gelombang date on the progress card', function () {
 
 it('shows the biaya pendaftaran nominal without a payment-status claim on the progress card', function () {
     [$lembaga, $tahunAjaran, $jalur, $gelombang] = buatLembagaDenganGelombangBuka();
-    $jenisTagihan = \App\Domains\Keuangan\Models\JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran']);
-    \App\Domains\Keuangan\Models\NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Biaya Pendaftaran', 'kategori' => 'pendaftaran']);
+    NominalTagihanJalur::create(['jenis_tagihan_id' => $jenisTagihan->id, 'jalur_ppdb_id' => $jalur->id, 'nominal' => 150000]);
     $akun = loginAkunDenganPilihanSpmb($lembaga, $jalur);
 
     $response = $this->get(route('portal.dashboard'));
@@ -285,10 +291,10 @@ it('shows a status card for a pendaftaran already submitted and awaiting a decis
 it('shows the real dokumen-verified count on the submitted status card', function () {
     $akun = AkunPendaftar::factory()->create();
     $pendaftaran = buatPendaftaranUntukAkun($akun);
-    $syarat = \App\Models\DokumenSyaratPpdb::create(['jalur_ppdb_id' => $pendaftaran->jalur_ppdb_id, 'lembaga_id' => $pendaftaran->lembaga_id, 'nama_dokumen' => 'Kartu Keluarga', 'wajib' => true, 'urutan' => 0]);
-    \App\Models\DokumenPendaftaran::create(['pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syarat->id, 'file_path' => 'x', 'nama_file_asli' => 'kk.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 1024, 'status_verifikasi' => 'diterima']);
-    $syaratLain = \App\Models\DokumenSyaratPpdb::create(['jalur_ppdb_id' => $pendaftaran->jalur_ppdb_id, 'lembaga_id' => $pendaftaran->lembaga_id, 'nama_dokumen' => 'Akta Kelahiran', 'wajib' => true, 'urutan' => 1]);
-    \App\Models\DokumenPendaftaran::create(['pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syaratLain->id, 'file_path' => 'y', 'nama_file_asli' => 'akta.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 1024, 'status_verifikasi' => 'belum_diverifikasi']);
+    $syarat = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $pendaftaran->jalur_ppdb_id, 'lembaga_id' => $pendaftaran->lembaga_id, 'nama_dokumen' => 'Kartu Keluarga', 'wajib' => true, 'urutan' => 0]);
+    DokumenPendaftaran::create(['pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syarat->id, 'file_path' => 'x', 'nama_file_asli' => 'kk.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 1024, 'status_verifikasi' => 'diterima']);
+    $syaratLain = DokumenSyaratPpdb::create(['jalur_ppdb_id' => $pendaftaran->jalur_ppdb_id, 'lembaga_id' => $pendaftaran->lembaga_id, 'nama_dokumen' => 'Akta Kelahiran', 'wajib' => true, 'urutan' => 1]);
+    DokumenPendaftaran::create(['pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syaratLain->id, 'file_path' => 'y', 'nama_file_asli' => 'akta.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 1024, 'status_verifikasi' => 'belum_diverifikasi']);
 
     $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
         ->assertOk()
@@ -299,7 +305,7 @@ it('shows the real dokumen-verified count on the submitted status card', functio
 it('shows the real payment status on the submitted status card', function () {
     $akun = AkunPendaftar::factory()->create();
     $pendaftaran = buatPendaftaranUntukAkun($akun);
-    \App\Domains\Keuangan\Models\Tagihan::create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar', 'jatuh_tempo' => now()->addWeek()]);
+    Tagihan::factory()->create(['pendaftaran_id' => $pendaftaran->id, 'kategori' => 'pendaftaran', 'total_tagihan' => 150000, 'status' => 'belum_bayar', 'jatuh_tempo' => now()->addWeek()]);
 
     $this->actingAs($akun, 'portal')->get(route('portal.dashboard'))
         ->assertOk()
