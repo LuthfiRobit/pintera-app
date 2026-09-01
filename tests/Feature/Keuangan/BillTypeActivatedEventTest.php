@@ -37,7 +37,7 @@ it('generates tagihan for matching siswa when is_active flips from false to true
 
     $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $jenisTagihan), [
         'nama' => $jenisTagihan->nama, 'kategori' => $jenisTagihan->kategori->value, 'bisa_dicicil' => false,
-        'mode' => 'manual', 'default_amount' => 300000, 'is_active' => '1',
+        'mode' => 'manual', 'tipe' => 'bulanan', 'default_amount' => 300000, 'is_active' => '1',
     ]);
 
     expect(Tagihan::where('tagihable_id', $siswa->id)->where('jenis_tagihan_id', $jenisTagihan->id)->exists())->toBeTrue();
@@ -51,7 +51,7 @@ it('does not fire again when is_active is saved as true a second time without ch
 
     $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $jenisTagihan), [
         'nama' => 'Nama Diperbarui', 'kategori' => $jenisTagihan->kategori->value, 'bisa_dicicil' => false,
-        'mode' => 'manual', 'default_amount' => 300000, 'is_active' => '1', // is_active tidak berubah
+        'mode' => 'manual', 'tipe' => 'bulanan', 'default_amount' => 300000, 'is_active' => '1', // is_active tidak berubah
     ]);
 
     expect(Tagihan::count())->toBe(0);
