@@ -30,6 +30,7 @@ Route::get('siswa/{siswa}/keringanan', [SiswaKeringananController::class, 'index
 Route::post('siswa/{siswa}/keringanan', [SiswaKeringananController::class, 'store'])->name('siswa.keringanan.store');
 Route::delete('siswa-keringanan/{siswaKeringanan}', [SiswaKeringananController::class, 'destroy'])->name('siswa-keringanan.destroy');
 
+Route::get('tagihan/perlu-ditinjau', [TagihanController::class, 'perluDitinjau'])->name('tagihan.perlu-ditinjau');
 Route::get('tagihan', [TagihanController::class, 'index'])->name('tagihan.index');
 Route::get('tagihan/data', [TagihanController::class, 'data'])->name('tagihan.data');
 Route::post('tagihan/{tagihan}/skema-cicilan', [TagihanController::class, 'buatSkemaCicilan'])->name('tagihan.skema-cicilan.store');

@@ -12,6 +12,7 @@ use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\TagihanCicilanEligibilityService;
 use App\Http\Controllers\Controller;
+use App\Models\Siswa;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -186,5 +187,26 @@ class TagihanController extends Controller
         $action->execute($tagihan);
 
         return back()->with('status', 'Tagihan telah ditandai selesai ditinjau.');
+    }
+
+    public function perluDitinjau(Request $request): View
+    {
+        $this->authorize('tagihan.view');
+
+        $lembagaId = $this->lembagaId($request);
+
+        $tagihanList = Tagihan::with(['jenisTagihan', 'tagihable'])
+            ->where('perlu_ditinjau_ulang', true)
+            ->when($lembagaId, function ($query, $lembagaId) {
+                $query->where(function ($q) use ($lembagaId) {
+                    $q->whereHas('jenisTagihan', fn ($jt) => $jt->where('lembaga_id', $lembagaId))
+                        ->orWhereHas('pendaftaran', fn ($p) => $p->where('lembaga_id', $lembagaId))
+                        ->orWhereHasMorph('tagihable', [Siswa::class], fn ($s) => $s->withoutGlobalScopes()->where('lembaga_id', $lembagaId));
+                });
+            })
+            ->latest('updated_at')
+            ->paginate(20);
+
+        return view('portals.lembaga.keuangan.tagihan.perlu-ditinjau', compact('tagihanList'));
     }
 }
