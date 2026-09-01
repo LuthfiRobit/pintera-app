@@ -3,7 +3,6 @@
 namespace App\Domains\Keuangan\Services;
 
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Domains\Keuangan\Models\PembayaranTagihan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\Wallet;
 use App\Exceptions\AutoAllocationFailedException;
@@ -15,9 +14,10 @@ use Illuminate\Support\Facades\Log;
 
 class PaymentAllocationService
 {
-    public function __construct(private readonly NotificationDispatcher $dispatcher)
-    {
-    }
+    public function __construct(
+        private readonly NotificationDispatcher $dispatcher,
+        private readonly TagihanStatusResolver $statusResolver = new TagihanStatusResolver,
+    ) {}
 
     /**
      * Allocate payment amount to related bills (tagihan) and update their statuses.
@@ -45,13 +45,13 @@ class PaymentAllocationService
             $lockedTagihan->paid_amount += $pt->amount_allocated;
 
             // Update status based on the new paid amount compared to net_amount
-            $becameLunas = false;
-            if ($lockedTagihan->paid_amount >= $lockedTagihan->net_amount) {
-                $becameLunas = $lockedTagihan->status !== 'lunas';
-                $lockedTagihan->status = 'lunas';
-            } elseif ($lockedTagihan->paid_amount > 0) {
-                $lockedTagihan->status = 'sebagian';
-            }
+            $oldStatus = $lockedTagihan->status;
+            $lockedTagihan->status = $this->statusResolver->resolve(
+                (float) $lockedTagihan->paid_amount,
+                (float) $lockedTagihan->net_amount,
+                $lockedTagihan->status
+            );
+            $becameLunas = $oldStatus !== 'lunas' && $lockedTagihan->status === 'lunas';
 
             $lockedTagihan->save();
 
@@ -90,6 +90,7 @@ class PaymentAllocationService
 
         if ($porsiTopup <= 0) {
             Log::warning("topupSisaJikaAda: sisa <= 0 untuk pembayaran id={$pembayaran->id}, tidak ada yang perlu di-topup.");
+
             return;
         }
 
@@ -102,6 +103,7 @@ class PaymentAllocationService
         if ($wallet === null) {
             Log::error("Gagal topup dari pembayaran {$pembayaran->id}: Wallet siswa tidak ditemukan.");
             $pembayaran->update(['topup_status' => 'failed']);
+
             return;
         }
 
