@@ -1,10 +1,10 @@
 <?php
+
 // app/Domains/Keuangan/Models/Tagihan.php
 
 namespace App\Domains\Keuangan\Models;
 
-use App\Domains\Keuangan\Models\Pembayaran;
-use App\Domains\Keuangan\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Enums\KategoriTagihan;
 use App\Models\Pendaftaran;
 use Database\Factories\TagihanFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,7 +29,7 @@ class Tagihan extends Model
     protected $table = 'tagihan';
 
     protected $fillable = [
-        'pendaftaran_id', 'tagihable_type', 'tagihable_id', 'jenis_tagihan_id',
+        'pendaftaran_id', 'tagihable_type', 'tagihable_id', 'person_id', 'jenis_tagihan_id',
         'kategori', 'billing_period', 'source_trigger',
         'total_tagihan', 'discount_amount', 'discount_type', 'net_amount', 'paid_amount',
         'status', 'jatuh_tempo', 'cancelled_by', 'cancelled_at', 'cancel_reason',
@@ -40,7 +40,7 @@ class Tagihan extends Model
         return [
             'jatuh_tempo' => 'date',
             'discount_amount' => 'decimal:2',
-            'kategori' => \App\Domains\Keuangan\Enums\KategoriTagihan::class,
+            'kategori' => KategoriTagihan::class,
             'net_amount' => 'decimal:2',
             'paid_amount' => 'decimal:2',
             'cancelled_at' => 'datetime',

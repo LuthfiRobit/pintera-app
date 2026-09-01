@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
-use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;
+use App\Models\Pendaftaran;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /** @extends Factory<Tagihan> */
@@ -19,6 +19,7 @@ class TagihanFactory extends Factory
             'total_tagihan' => 150000,
             'net_amount' => 150000,
             'status' => 'belum_bayar',
+            'person_id' => null,
         ];
     }
 
