@@ -328,7 +328,11 @@ class JenisTagihanController extends Controller
             return response()->json(['siswa' => []]);
         }
 
-        $data = $request->validate(['sasaran' => ['nullable', 'array']]);
+        $data = $request->validate([
+            'sasaran' => ['nullable', 'array'],
+            'search' => ['nullable', 'string', 'max:255'],
+            'kelas_id' => ['nullable', 'integer'],
+        ]);
 
         $draftJenisTagihan = new JenisTagihan(['lembaga_id' => $lembagaId]);
         $draftGrups = collect($data['sasaran'] ?? [])->map(function ($grupData) {
@@ -339,9 +343,19 @@ class JenisTagihanController extends Controller
         });
         $draftJenisTagihan->setRelation('sasaranGrup', $draftGrups);
 
-        $siswaList = Siswa::withoutGlobalScope(TenantScope::class)
+        $query = Siswa::withoutGlobalScope(TenantScope::class)
             ->where('lembaga_id', $lembagaId)
-            ->get()
+            ->with('kelas');
+
+        if (! empty($data['search'])) {
+            $query->search($data['search']);
+        }
+
+        if (! empty($data['kelas_id'])) {
+            $query->where('kelas_id', $data['kelas_id']);
+        }
+
+        $siswaList = $query->get()
             ->filter(fn (Siswa $siswa) => $matcher->siswaMatchesJenisTagihan($siswa, $draftJenisTagihan))
             ->values();
 
@@ -355,6 +369,7 @@ class JenisTagihanController extends Controller
         $result = $siswaList->map(fn (Siswa $siswa) => [
             'id' => $siswa->id,
             'nama' => $siswa->nama_lengkap,
+            'kelas' => $siswa->kelas->nama ?? '-',
             'assignments' => ($assignmentsBySiswa->get($siswa->id) ?? collect())
                 ->mapWithKeys(fn ($row) => [(string) $row->kategori_keringanan_id => $row->id]),
         ])->values();

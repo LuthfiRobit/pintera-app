@@ -70,6 +70,7 @@ export function jenisTagihanForm(config) {
         siswaKeringananList: [],
         siswaKeringananLoading: false,
         siswaKeringananSearch: '',
+        siswaKeringananKelasFilter: '',
         siswaKeringananTogglingKey: null,
         tomSelectInstances: {},
 
@@ -140,12 +141,6 @@ export function jenisTagihanForm(config) {
             }
         },
 
-        get siswaKeringananListFiltered() {
-            const term = this.siswaKeringananSearch.trim().toLowerCase();
-            if (!term) return this.siswaKeringananList;
-            return this.siswaKeringananList.filter((s) => s.nama.toLowerCase().includes(term));
-        },
-
         toggleSiswaKeringananPanel() {
             this.showSiswaKeringananPanel = !this.showSiswaKeringananPanel;
             if (this.showSiswaKeringananPanel && this.siswaKeringananList.length === 0) {
@@ -160,6 +155,8 @@ export function jenisTagihanForm(config) {
                 const payload = this.sasaranMode === 'kriteria'
                     ? { sasaran: this.form.sasaran.map((g) => ({ kriteria: (g.kriteria || []).map((k) => ({ field: k.field, operator: k.operator, value: k.value })) })) }
                     : { sasaran: [] };
+                if (this.siswaKeringananSearch) payload.search = this.siswaKeringananSearch;
+                if (this.siswaKeringananKelasFilter) payload.kelas_id = this.siswaKeringananKelasFilter;
                 const res = await fetch(this.previewSiswaKeringananUrl, {
                     method: 'POST',
                     headers: {

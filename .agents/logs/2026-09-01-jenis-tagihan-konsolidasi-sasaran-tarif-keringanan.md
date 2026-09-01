@@ -145,3 +145,15 @@ Spec: `.agents/specs/2026-09-01-portal-ortu-detail-tagihan-notifikasi.md`. Scope
 Test baru: 5 di `TagihanControllerTest.php` (breakdown, hide-zero-discount, banner tanpa leak, akses anak non-aktif, tolak orang tua lain), 2 di `TopbarNotificationBellTest.php`, 1 di `DashboardNotificationMarkAsReadTest.php`. Regresi: seluruh namespace `Keuangan` (368 test) PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.
 
 Dengan ini, kedua gap transparansi orang tua yang tersisa dari §7 sudah ditutup. Status: Admin selesai, Orang Tua selesai (risiko + transparansi), Siswa tidak punya portal terpisah (di luar scope, belum pernah dibangun sama sekali).
+
+---
+
+## 9. Perbaikan UI Widget Assignment Siswa (2026-09-02)
+
+User feedback: list siswa di widget Keringanan (Task 17 sebelumnya) kurang informatif (tidak ada info kelas) dan terlalu panjang ke bawah kalau siswa banyak. Diminta meniru pola tampilan modal "Generate Virtual Account" (`resources/views/portals/lembaga/keuangan/virtual-account/_generate-modal.blade.php`) yang sudah punya UX serupa: search + filter kelas + tabel scrollable.
+
+**Backend** (`JenisTagihanController::previewSiswaKeringanan()`): tambah parameter opsional `search` (pakai `Siswa::search()` scope yang sudah ada) dan `kelas_id`, plus field `kelas` (nama kelas) di tiap baris hasil — pola query & response persis meniru `VirtualAccountController::calonGenerate()`.
+
+**Frontend** (`jenis-tagihan-form.js` + `form.blade.php`): ganti filter client-side (`siswaKeringananListFiltered` getter) jadi server-side (fetch ulang saat search/kelas berubah, dengan debounce 400ms) — konsisten dengan pola `virtualAccountGenerateModal`. Tabel sekarang dibungkus `max-h-64 overflow-y-auto` (tidak lagi meluas tak terbatas ke bawah), header sticky, kolom baru "Kelas" antara Nama dan kolom-kolom kategori keringanan. Dropdown filter kelas reuse `referenceOptions.kelas` yang sudah ada di config form (tidak perlu data baru dari controller).
+
+Test baru: 3 di `JenisTagihanPreviewSiswaKeringananTest.php` (kolom kelas, filter search, filter kelas_id). Regresi widget/preview test (9 test) PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.

@@ -647,40 +647,51 @@
 
                         {{-- Widget assignment siswa-ke-kategori-keringanan, tanpa perlu ke halaman edit Siswa --}}
                         <div x-show="showSiswaKeringananPanel" x-cloak class="mt-2 rounded-xl border border-gray-200 bg-gray-50/60 p-4 space-y-3">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                <p class="text-xs text-gray-500">
-                                    Daftar siswa yang cocok dengan Target Sasaran di atas. Centang untuk assign, hilangkan centang untuk mencabut &mdash; berlaku langsung, tanpa perlu ke halaman edit Siswa.
-                                </p>
-                                <button type="button" @click="fetchSiswaKeringananList()" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition shrink-0">
+                            <p class="text-xs text-gray-500">
+                                Daftar siswa yang cocok dengan Target Sasaran di atas. Centang untuk assign, hilangkan centang untuk mencabut &mdash; berlaku langsung, tanpa perlu ke halaman edit Siswa.
+                            </p>
+
+                            <div class="flex flex-wrap items-center gap-3">
+                                <div class="flex flex-1 h-[38px] items-center gap-2 rounded-lg border border-gray-200 bg-white px-3">
+                                    <x-icon name="search" class="h-4 w-4 shrink-0 text-gray-400" />
+                                    <input type="text" x-model="siswaKeringananSearch" @input.debounce.400ms="fetchSiswaKeringananList()" placeholder="Cari nama atau NIS siswa..." class="w-full border-0 bg-transparent p-0 text-xs text-gray-900 placeholder:text-gray-400 focus:ring-0">
+                                </div>
+                                <select x-model="siswaKeringananKelasFilter" @change="fetchSiswaKeringananList()" class="rounded-lg border-gray-200 bg-white text-xs text-gray-700 h-[38px]">
+                                    <option value="">Semua Kelas</option>
+                                    <template x-for="opt in referenceOptions.kelas" :key="opt.value">
+                                        <option :value="opt.value" x-text="opt.label"></option>
+                                    </template>
+                                </select>
+                                <button type="button" @click="fetchSiswaKeringananList()" class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition shrink-0">
                                     <x-icon name="refresh" class="h-3.5 w-3.5" />
                                     <span>Muat Ulang</span>
                                 </button>
                             </div>
 
-                            <input type="text" x-model="siswaKeringananSearch" placeholder="Cari nama siswa..." class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">
-
                             <div x-show="siswaKeringananLoading" class="py-6 text-center text-xs text-gray-400">Memuat daftar siswa...</div>
 
                             <div x-show="!siswaKeringananLoading && siswaKeringananList.length === 0" class="py-6 text-center text-xs text-gray-400">
-                                Belum ada siswa yang cocok dengan Target Sasaran di atas (atau tidak ada siswa di lembaga ini).
+                                Belum ada siswa yang cocok dengan Target Sasaran &amp; filter di atas (atau tidak ada siswa di lembaga ini).
                             </div>
 
-                            <div x-show="!siswaKeringananLoading && siswaKeringananList.length > 0" class="overflow-x-auto">
+                            <div x-show="!siswaKeringananLoading && siswaKeringananList.length > 0" class="max-h-64 overflow-y-auto overflow-x-auto rounded-xl bg-white border border-gray-200 shadow-sm">
                                 <table class="min-w-full text-left text-xs">
                                     <thead>
-                                        <tr class="border-b border-gray-200 text-gray-500">
-                                            <th class="py-2 pr-3 font-semibold">Nama Siswa</th>
+                                        <tr class="sticky top-0 border-b border-gray-100 bg-gray-50/95 text-[11px] font-bold uppercase tracking-wider text-gray-500">
+                                            <th class="px-3 py-2.5">Nama Siswa</th>
+                                            <th class="px-3 py-2.5">Kelas</th>
                                             <template x-for="opt in kategoriKeringananOptions" :key="opt.id">
-                                                <th class="py-2 px-2 font-semibold text-center" x-text="opt.nama"></th>
+                                                <th class="px-3 py-2.5 text-center" x-text="opt.nama"></th>
                                             </template>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <template x-for="siswa in siswaKeringananListFiltered" :key="siswa.id">
-                                            <tr class="border-b border-gray-100">
-                                                <td class="py-2 pr-3 font-medium text-gray-800" x-text="siswa.nama"></td>
+                                    <tbody class="divide-y divide-gray-50">
+                                        <template x-for="siswa in siswaKeringananList" :key="siswa.id">
+                                            <tr>
+                                                <td class="px-3 py-2.5 font-semibold text-gray-800" x-text="siswa.nama"></td>
+                                                <td class="px-3 py-2.5 text-gray-600" x-text="siswa.kelas"></td>
                                                 <template x-for="opt in kategoriKeringananOptions" :key="opt.id">
-                                                    <td class="py-2 px-2 text-center">
+                                                    <td class="px-3 py-2.5 text-center">
                                                         <input
                                                             type="checkbox"
                                                             class="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
