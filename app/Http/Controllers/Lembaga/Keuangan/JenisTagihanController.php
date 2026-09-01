@@ -15,6 +15,7 @@ use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
 use App\Domains\Keuangan\Models\KategoriKeringanan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
+use App\Domains\Keuangan\Models\SiswaKeringanan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\JenisTagihanSasaranMatcher;
 use App\Http\Controllers\Controller;
@@ -270,6 +271,52 @@ class JenisTagihanController extends Controller
             ->count();
 
         return response()->json(['count' => $count]);
+    }
+
+    public function previewTarifKeringanan(Request $request, JenisTagihanSasaranMatcher $matcher): JsonResponse
+    {
+        $this->authorize('jenis-tagihan.create');
+
+        $lembagaId = $this->resolveLembagaIdOrFail($request);
+        if ($lembagaId === null) {
+            return response()->json(['tarif_counts' => [], 'keringanan_counts' => []]);
+        }
+
+        $data = $request->validate([
+            'tarif' => ['nullable', 'array'],
+            'keringanan' => ['nullable', 'array'],
+        ]);
+
+        $siswaList = Siswa::withoutGlobalScope(TenantScope::class)
+            ->where('lembaga_id', $lembagaId)
+            ->get();
+
+        $tarifCounts = [];
+        foreach ($data['tarif'] ?? [] as $tarifData) {
+            $grup = new JenisTagihanSasaranGrup(['tipe' => 'tarif']);
+            $grup->setRelation('kriteria', collect($tarifData['kriteria'] ?? [])->map(fn ($k) => new JenisTagihanSasaranKriteria($k)));
+
+            $tarifCounts[] = $siswaList->filter(fn (Siswa $siswa) => $matcher->siswaMatchesGrup($siswa, $grup))->count();
+        }
+
+        $keringananCounts = [];
+        $kategoriIds = collect($data['keringanan'] ?? [])->pluck('kategori_keringanan_id')->filter()->unique();
+        if ($kategoriIds->isNotEmpty()) {
+            $counts = SiswaKeringanan::whereIn('kategori_keringanan_id', $kategoriIds)
+                ->whereHas('siswa', fn ($q) => $q->withoutGlobalScope(TenantScope::class)->where('lembaga_id', $lembagaId))
+                ->selectRaw('kategori_keringanan_id, count(distinct siswa_id) as total')
+                ->groupBy('kategori_keringanan_id')
+                ->pluck('total', 'kategori_keringanan_id');
+
+            foreach ($kategoriIds as $katId) {
+                $keringananCounts[(string) $katId] = (int) ($counts[$katId] ?? 0);
+            }
+        }
+
+        return response()->json([
+            'tarif_counts' => $tarifCounts,
+            'keringanan_counts' => $keringananCounts,
+        ]);
     }
 
     public function prosesTagihan(
