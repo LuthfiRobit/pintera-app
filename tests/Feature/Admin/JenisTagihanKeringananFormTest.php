@@ -24,9 +24,9 @@ it('renders the keringanan section with existing kategori keringanan options', f
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
-    // The 2026-08-11 "gold standard" UI rework renamed this section from "4. Keringanan" to
-    // "Keringanan Tagihan" (see .agents/logs/2026-08-11-jenis-tagihan-ui-ux.md).
-    $response->assertSee('Keringanan Tagihan');
+    // The 2026-09-01 Tipe Penjadwalan UI polish pass renamed this section from
+    // "Keringanan Tagihan" to "Keringanan & Potongan Biaya" (more descriptive).
+    $response->assertSee('Keringanan & Potongan Biaya', false);
     $response->assertSee('Yatim Piatu');
 });
 
@@ -54,5 +54,5 @@ it('shows a reactive placeholder on nilai potongan indicating rupiah vs percent'
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
-    $response->assertSee(":placeholder=\"rule.tipe_potongan === 'persen' ? 'Contoh: 20 (%)' : 'Contoh: 50000 (Rupiah)'\"", false);
+    $response->assertSee(":placeholder=\"rule.tipe_potongan === 'persen' ? '0-100' : '0'\"", false);
 });

@@ -3,10 +3,12 @@
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Models\Kelas;
 use App\Models\Lembaga;
+use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Js;
 
 uses(RefreshDatabase::class);
 
@@ -54,7 +56,7 @@ it('exposes both the stored kriteria value and the matching reference option id 
     // a TahunAjaran with its own random lembaga_id, which used to crash this page via the
     // TenantScope eager-load mismatch, and even now would make the expected label below
     // non-deterministic (random faker year).
-    $tahunAjaran = \App\Models\TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
 
     $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'SPP Kelas', 'kategori' => 'spp', 'bisa_dicicil' => false]);
@@ -78,7 +80,7 @@ it('exposes both the stored kriteria value and the matching reference option id 
     // inner escaped JSON fragment (which is what actually appears embedded in the larger
     // referenceOptions/initialSasaran config blob in the rendered HTML).
     $asEmbeddedJs = function ($data) {
-        $wrapped = (string) \Illuminate\Support\Js::from($data);
+        $wrapped = (string) Js::from($data);
 
         return preg_replace('/^JSON\.parse\\(\'(.*)\'\\)$/s', '$1', $wrapped);
     };
@@ -119,11 +121,12 @@ it('explains the and/or relationship between kriteria rows and grup cards for bo
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
-    // Appears once per section (Sasaran, Tarif) = 2 occurrences each string.
+    // Sasaran and Tarif each state their own DAN rule with section-specific wording,
+    // then their own ATAU rule (identical wording, since "grup" alone is unambiguous there).
     $response->assertSeeInOrder([
-        'Semua kriteria di atas harus terpenuhi bersamaan (DAN).',
+        'Semua kriteria di dalam satu grup harus terpenuhi bersamaan (DAN).',
         'Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).',
-        'Semua kriteria di atas harus terpenuhi bersamaan (DAN).',
+        'Semua kriteria di dalam satu grup tarif harus terpenuhi bersamaan (DAN).',
         'Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).',
     ]);
 });
@@ -137,5 +140,5 @@ it('explains that tarif grup cards are evaluated in priority order', function ()
     $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.create'));
 
     $response->assertOk();
-    $response->assertSee('Diproses berurutan dari atas — Grup pertama yang cocok dengan siswa akan dipakai nominalnya.');
+    $response->assertSee('Diproses berurutan dari atas — Grup pertama yang cocok dengan data siswa akan dipakai nominalnya.');
 });

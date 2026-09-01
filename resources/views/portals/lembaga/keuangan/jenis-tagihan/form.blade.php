@@ -534,6 +534,7 @@
                             <button type="button" class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 bg-white px-4 py-2.5 text-sm font-bold text-brand-600 hover:bg-gray-50 transition" @click="form.tarif.push(newGrup())">
                                 <x-icon name="add" class="h-4 w-4" /> Tambah Grup Tarif Baru
                             </button>
+                            <p class="text-[10px] text-gray-400">Setiap Grup adalah alternatif terpisah — siswa cukup cocok salah satu (ATAU).</p>
                         </div>
                     </div>
                 </template>
