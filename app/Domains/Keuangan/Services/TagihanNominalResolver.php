@@ -70,22 +70,33 @@ class TagihanNominalResolver
 
         $rules = JenisTagihanKeringanan::where('jenis_tagihan_id', $jenisTagihan->id)
             ->whereIn('kategori_keringanan_id', $kategoriIds)
+            ->with('kategoriKeringanan')
             ->get();
 
-        $bestAmount = 0.0;
+        $bestNonCombinable = 0.0;
         $bestType = null;
+        $totalCombinable = 0.0;
 
         foreach ($rules as $rule) {
             $amount = $rule->tipe_potongan === 'persen'
                 ? round($nominal * ((float) $rule->nilai) / 100, 2)
                 : (float) $rule->nilai;
 
-            if ($amount > $bestAmount) {
-                $bestAmount = $amount;
+            if ($rule->kategoriKeringanan->bisa_digabung) {
+                $totalCombinable += $amount;
+
+                continue;
+            }
+
+            if ($amount > $bestNonCombinable) {
+                $bestNonCombinable = $amount;
                 $bestType = $rule->tipe_potongan;
             }
         }
 
-        return [$bestAmount, $bestType];
+        $totalDiscount = min($nominal, $bestNonCombinable + $totalCombinable);
+        $discountType = $bestType ?? ($totalCombinable > 0 ? 'gabungan' : null);
+
+        return [$totalDiscount, $discountType];
     }
 }

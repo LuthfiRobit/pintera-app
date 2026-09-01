@@ -23,7 +23,14 @@ class KategoriKeringanan extends Model
 
     protected $table = 'kategori_keringanan';
 
-    protected $fillable = ['lembaga_id', 'nama', 'keterangan'];
+    protected $fillable = ['lembaga_id', 'nama', 'keterangan', 'bisa_digabung'];
+
+    protected function casts(): array
+    {
+        return [
+            'bisa_digabung' => 'boolean',
+        ];
+    }
 
     public function lembaga(): BelongsTo
     {
