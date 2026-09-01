@@ -21,7 +21,7 @@
                             @php $pembayaranAktifTagihan = $tagihan->pembayaran->whereIn('status', ['menunggu_verifikasi', 'lunas'])->isNotEmpty(); @endphp
                             <div class="flex items-center justify-between">
                                 <p class="text-sm font-medium text-ink">
-                                    {{ $tagihan->kategori === 'pendaftaran' ? 'Tagihan Pendaftaran' : 'Tagihan Daftar Ulang' }}
+                                    {{ $tagihan->kategori->label() }}
                                     — Rp {{ number_format($tagihan->total_tagihan, 0, ',', '.') }}
                                 </p>
                                 <x-badge :tone="$tagihan->status === 'lunas' ? 'green' : ($tagihan->status === 'dicicil' ? 'blue' : 'amber')">

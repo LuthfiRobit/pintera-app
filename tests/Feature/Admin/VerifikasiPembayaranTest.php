@@ -1,11 +1,12 @@
 <?php
+
 // tests/Feature/Admin/VerifikasiPembayaranTest.php
 
-use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\User;
 use App\Domains\Keuangan\Services\PembayaranService;
+use App\Models\Lembaga;
+use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -43,8 +44,8 @@ it('labels two pending payments for the same candidate distinguishably by katego
     $response = $this->actingAs($user)->getJson(route('admin.pembayaran.data'));
 
     $jenis = collect($response->json('data'))->pluck('jenis');
-    expect($jenis)->toContain('Tagihan Pendaftaran — Rp 150.000');
-    expect($jenis)->toContain('Tagihan Daftar Ulang — Rp 900.000');
+    expect($jenis)->toContain('Pendaftaran — Rp 150.000');
+    expect($jenis)->toContain('Daftar Ulang — Rp 900.000');
 });
 
 it('denies access to the payment verification queue without pembayaran.view', function () {
@@ -103,7 +104,7 @@ it('404s verifying a payment belonging to a pendaftaran in a different lembaga',
     [, , , $pendaftaranLain] = buatPendaftaranUntukAdmin(status: 'diterima');
     $tagihanLain = Tagihan::create(['pendaftaran_id' => $pendaftaranLain->id, 'kategori' => 'daftar_ulang', 'total_tagihan' => 500000, 'status' => 'belum_bayar']);
     $pembayaranLain = Pembayaran::create(['tagihan_id' => $tagihanLain->id, 'sumber' => 'calon_siswa', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
-    $lembagaSaya = \App\Models\Lembaga::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create();
     $user = User::factory()->create(['lembaga_id' => $lembagaSaya->id]);
     $user->assignRole('bendahara_lembaga');
 

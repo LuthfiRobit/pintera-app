@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/Lembaga/Keuangan/PembayaranController.php
 
 namespace App\Http\Controllers\Lembaga\Keuangan;
@@ -31,7 +32,7 @@ class PembayaranController extends Controller
             return "Cicilan Termin {$pembayaran->cicilan->urutan} — Rp {$nominal}";
         }
 
-        $label = $pembayaran->tagihan->kategori === 'pendaftaran' ? 'Tagihan Pendaftaran' : 'Tagihan Daftar Ulang';
+        $label = $pembayaran->tagihan->kategori->label();
         $nominal = number_format($pembayaran->tagihan->total_tagihan, 0, ',', '.');
 
         return "{$label} — Rp {$nominal}";
