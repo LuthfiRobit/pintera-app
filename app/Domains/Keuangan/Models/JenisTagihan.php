@@ -23,14 +23,16 @@ class JenisTagihan extends Model
 
     protected $attributes = [
         'mode' => 'manual',
+        'tipe' => 'bulanan',
         'is_active' => true,
     ];
 
     protected $fillable = [
         'lembaga_id', 'nama', 'kategori', 'bisa_dicicil', 'maks_cicilan',
-        'priority_score', 'default_amount', 'mode',
-        'tanggal_mulai', 'tanggal_selesai', 'tanggal_generate', 'hari_jatuh_tempo',
-        'va_expire_hours', 'is_active', 'last_generated_period',
+        'priority_score', 'default_amount', 'mode', 'tipe',
+        'tanggal_mulai', 'tanggal_selesai', 'tanggal_generate', 'hari_generate', 'bulan_generate',
+        'hari_jatuh_tempo', 'offset_hari_jatuh_tempo',
+        'va_expire_hours', 'is_active',
     ];
 
     protected function casts(): array
@@ -39,6 +41,7 @@ class JenisTagihan extends Model
             'bisa_dicicil' => 'boolean',
             'default_amount' => 'decimal:2',
             'kategori' => \App\Domains\Keuangan\Enums\KategoriTagihan::class,
+            'tipe' => \App\Domains\Keuangan\Enums\TipeTagihan::class,
             'tanggal_mulai' => 'date',
             'tanggal_selesai' => 'date',
             'is_active' => 'boolean',
