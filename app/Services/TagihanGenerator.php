@@ -1,13 +1,14 @@
 <?php
+
 // app/Services/TagihanGenerator.php
 
 namespace App\Services;
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\NominalTagihanJalur;
-use App\Models\Pendaftaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
+use App\Models\Pendaftaran;
 use Illuminate\Support\Facades\DB;
 
 class TagihanGenerator
@@ -53,10 +54,14 @@ class TagihanGenerator
         $total = array_sum(array_column($items, 'jumlah'));
 
         return DB::transaction(function () use ($pendaftaran, $kategori, $items, $total) {
+            $personId = $pendaftaran->calonMurid?->person_id
+                ?? throw new \RuntimeException("Tidak bisa membuat tagihan: Pendaftaran #{$pendaftaran->id} tidak punya CalonMurid dengan person_id yang valid — data kemungkinan cacat.");
+
             $tagihan = Tagihan::create([
                 'pendaftaran_id' => $pendaftaran->id,
                 'tagihable_type' => Pendaftaran::class,
                 'tagihable_id' => $pendaftaran->id,
+                'person_id' => $personId,
                 'kategori' => $kategori,
                 'total_tagihan' => $total,
                 'net_amount' => $total,
