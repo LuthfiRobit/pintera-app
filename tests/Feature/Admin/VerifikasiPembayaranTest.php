@@ -2,10 +2,12 @@
 
 // tests/Feature/Admin/VerifikasiPembayaranTest.php
 
+use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\PembayaranService;
 use App\Models\Lembaga;
+use App\Models\Siswa;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -134,6 +136,22 @@ it('404s verifying a cicilan-reachable payment belonging to a pendaftaran in a d
     $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaranLain), ['keputusan' => 'lunas'])
+        ->assertNotFound();
+});
+
+it('404s (not crashes) verifying a payment tied to a non-PPDB (siswa) tagihan, which has no pendaftaran relation', function () {
+    $lembaga = Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tagihanSiswa = Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihan->id,
+        'status' => 'belum_bayar',
+    ]);
+    $pembayaranSiswa = Pembayaran::create(['tagihan_id' => $tagihanSiswa->id, 'sumber' => 'orang_tua', 'metode' => 'transfer_manual', 'status' => 'menunggu_verifikasi']);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $this->actingAs($user)->post(route('admin.pembayaran.verifikasi', $pembayaranSiswa), ['keputusan' => 'lunas'])
         ->assertNotFound();
 });
 

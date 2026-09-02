@@ -183,3 +183,17 @@ Saat menelusuri poin di atas, ditemukan 4 method di `TagihanController` (`buatSk
 **Perbaikan**: tambah helper `TagihanController::resolvePendaftaranLembagaId(Tagihan $tagihan): int` yang null-safe (`$tagihan->pendaftaran?->lembaga_id`, `abort_if(null, 404)`), dipakai di keempat method tersebut menggantikan akses langsung yang rawan crash.
 
 Test baru: 4 test "404s (not crashes)" di `SkemaCicilanTest.php` (2) dan `CatatManualPembayaranTest.php` (2), masing-masing membuktikan tagihan siswa reguler mendapat 404 rapi, bukan exception. Regresi 27 test terkait PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.
+
+---
+
+## 12. Re-Screening Sisi Admin: 1 Bug Serupa Ditemukan & Diperbaiki (2026-09-02)
+
+Diminta user re-screening sisi admin sebelum lanjut ke sisi orang tua. Dispatch review agent untuk mencari pola bug yang sama (null-dereference tanpa guard) di seluruh controller Keuangan admin, plus verifikasi ulang invariant engine recalculate & konsistensi validasi PPDB/non-PPDB setelah semua perubahan sesi ini.
+
+**Hasil**: 4 dari 5 area CONFIRMED SAFE (validasi server-side `bisa_dicicil` tetap permisif sesuai desain, invariant `RecalculateTagihanNominalAction` tidak tersentuh oleh commit-commit terakhir, ke-4 method `TagihanController` yang sudah diperbaiki sebelumnya benar, tidak ada method ke-5 yang lolos di file itu, controller lain — `JenisTagihanController`/`KategoriKeringananController`/`SiswaKeringananController`/`VirtualAccountController`/`ManualPaymentController` — bersih).
+
+**1 bug baru ditemukan**: `PembayaranController::verifikasi()` (`app/Http/Controllers/Lembaga/Keuangan/PembayaranController.php:100-101` sebelum fix) — pola identik dengan yang barusan diperbaiki di `TagihanController`: `$pembayaran->tagihan?->pendaftaran->lembaga_id ?? $pembayaran->cicilan->skemaCicilan->tagihan->pendaftaran->lembaga_id` crash kalau `$pembayaran->tagihan` adalah tagihan siswa reguler (non-PPDB, `pendaftaran` selalu null). Endpoint ini normalnya cuma di-link dari halaman detail Pendaftaran PPDB, tapi route `POST admin/pembayaran/{pembayaran}/verifikasi` tidak dibatasi jenis tagihan-nya — bisa dipanggil paksa dengan id pembayaran manapun.
+
+**Perbaikan**: helper `resolvePendaftaranLembagaId(Pembayaran $pembayaran): int` (pola sama seperti di `TagihanController`, pakai `?->` berantai + `abort_if(null, 404)`).
+
+Test baru: 1 test "404s (not crashes)" di `VerifikasiPembayaranTest.php`. Regresi 430 test Keuangan/Pembayaran-related PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.

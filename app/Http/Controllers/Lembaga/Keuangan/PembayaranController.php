@@ -24,6 +24,21 @@ class PembayaranController extends Controller
             : $request->user()->lembaga_id;
     }
 
+    // Pembayaran verifikasi manual (transfer_manual) di controller ini cuma dijangkau dari
+    // halaman detail Pendaftaran PPDB (lihat admin.spmb-pendaftaran.show), tapi route-nya
+    // sendiri tidak dibatasi ke pembayaran PPDB saja -- pembayaran siswa reguler (dibuat lewat
+    // portal orang tua/keuangan self-service, tagihan_id menunjuk Tagihan bertype Siswa) tetap
+    // punya id yang bisa dipanggil paksa. Null-safe supaya 404 rapi, bukan crash, sama seperti
+    // TagihanController::resolvePendaftaranLembagaId().
+    private function resolvePendaftaranLembagaId(Pembayaran $pembayaran): int
+    {
+        $lembagaId = $pembayaran->tagihan?->pendaftaran?->lembaga_id
+            ?? $pembayaran->cicilan?->skemaCicilan?->tagihan?->pendaftaran?->lembaga_id;
+        abort_if($lembagaId === null, 404);
+
+        return $lembagaId;
+    }
+
     private function labelJenis(Pembayaran $pembayaran): string
     {
         if ($pembayaran->cicilan_id) {
@@ -97,9 +112,7 @@ class PembayaranController extends Controller
     {
         $this->authorize('pembayaran.verifikasi');
 
-        $pendaftaranLembagaId = $pembayaran->tagihan?->pendaftaran->lembaga_id
-            ?? $pembayaran->cicilan->skemaCicilan->tagihan->pendaftaran->lembaga_id;
-        abort_unless($pendaftaranLembagaId === $this->lembagaId($request), 404);
+        abort_unless($this->resolvePendaftaranLembagaId($pembayaran) === $this->lembagaId($request), 404);
 
         $data = $request->validate([
             'keputusan' => ['required', 'in:lunas,ditolak'],
