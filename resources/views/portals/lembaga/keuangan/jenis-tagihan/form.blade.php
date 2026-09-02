@@ -95,17 +95,24 @@
                         </div>
 
                         <div class="rounded-xl border border-gray-100 bg-gray-50/70 p-3.5 space-y-3">
-                            <div>
-                                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
-                                    <input type="checkbox" name="bisa_dicicil" value="1" x-model="form.bisaDicicil" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition" {{ old('bisa_dicicil', $jenisTagihan?->bisa_dicicil) ? 'checked' : '' }}>
-                                    <span class="font-medium text-gray-800">Bisa Dicicil</span>
-                                </label>
-                                <div x-show="form.bisaDicicil" x-cloak class="mt-2.5 pt-2.5 border-t border-gray-200/60" x-transition>
-                                    <x-input-label value="Maksimal Jumlah Cicilan" />
-                                    <x-text-input type="number" min="2" name="maks_cicilan" :value="old('maks_cicilan', $jenisTagihan?->maks_cicilan)" placeholder="mis. 3" class="mt-1.5" />
-                                    <p class="mt-1 text-[10px] text-gray-400">Batas frekuensi pembayaran per tagihan.</p>
+                            {{-- Skema cicilan cuma relevan untuk PPDB (pendaftaran/daftar ulang) -- nominal
+                                 besar sekali bayar. Kategori lain (SPP/Tahunan/Kegiatan/dst) sudah recurring
+                                 per periode, jadi opsi ini sengaja disembunyikan di form untuk menghindari
+                                 admin mengaktifkan cicilan di luar PPDB, walau backend-nya (bisa_dicicil,
+                                 PembayaranService, dst) tetap generik untuk kategori manapun. --}}
+                            <template x-if="kategoriPpdb">
+                                <div>
+                                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                        <input type="checkbox" name="bisa_dicicil" value="1" x-model="form.bisaDicicil" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition" {{ old('bisa_dicicil', $jenisTagihan?->bisa_dicicil) ? 'checked' : '' }}>
+                                        <span class="font-medium text-gray-800">Bisa Dicicil</span>
+                                    </label>
+                                    <div x-show="form.bisaDicicil" x-cloak class="mt-2.5 pt-2.5 border-t border-gray-200/60" x-transition>
+                                        <x-input-label value="Maksimal Jumlah Cicilan" />
+                                        <x-text-input type="number" min="2" name="maks_cicilan" :value="old('maks_cicilan', $jenisTagihan?->maks_cicilan)" placeholder="mis. 3" class="mt-1.5" />
+                                        <p class="mt-1 text-[10px] text-gray-400">Batas frekuensi pembayaran per tagihan.</p>
+                                    </div>
                                 </div>
-                            </div>
+                            </template>
 
                             <div class="pt-2 border-t border-gray-200/60">
                                 <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">

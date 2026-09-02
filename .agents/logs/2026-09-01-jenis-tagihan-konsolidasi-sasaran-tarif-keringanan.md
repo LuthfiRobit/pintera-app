@@ -61,7 +61,7 @@ Telah diimplementasikan secara menyeluruh 9 Tahap (17 Task) Subagent-Driven Deve
 
 ## 4. Hal yang Perlu Direview Manusia / Claude
 
-1. **WhatsApp Notification Provider Staging**: Template WhatsApp `tagihan_direvisi` sudah ditambahkan ke seeder `WhatsAppTemplateSeeder`. Pada production, pastikan template tersebut didaftarkan / disetujui di provider WhatsApp Gateway jika menggunakan provider eksternal (seperti Fonnte / Waba).
+1. ~~**WhatsApp Notification Provider Staging**~~ — **DIKOREKSI 2026-09-02, BUKAN masalah.** Sudah diverifikasi langsung: `WhatsAppChannel::send()` mengirim teks bebas ke `https://api.fonnte.com/send` tanpa ID template apapun, dan `WhatsAppTemplate::renderKode()` cuma `strtr()` lokal terhadap tabel `whatsapp_template` — tidak pernah memanggil API provider manapun untuk registrasi template. Fonnte (provider yang memang dipakai) bukan WhatsApp Business Cloud API resmi yang mewajibkan template pre-approved. Template `tagihan_direvisi` sudah otomatis siap pakai, dan bisa diedit lewat halaman admin `WhatsAppTemplateController` kalau perlu. Tidak ada tindakan lanjutan diperlukan.
 2. **Status Git Saat Ini**:
    - Branch: `keuangan-v2`
    - Semua perubahan tersimpan rapi dalam commit-commit atomik per task.
@@ -157,3 +157,19 @@ User feedback: list siswa di widget Keringanan (Task 17 sebelumnya) kurang infor
 **Frontend** (`jenis-tagihan-form.js` + `form.blade.php`): ganti filter client-side (`siswaKeringananListFiltered` getter) jadi server-side (fetch ulang saat search/kelas berubah, dengan debounce 400ms) — konsisten dengan pola `virtualAccountGenerateModal`. Tabel sekarang dibungkus `max-h-64 overflow-y-auto` (tidak lagi meluas tak terbatas ke bawah), header sticky, kolom baru "Kelas" antara Nama dan kolom-kolom kategori keringanan. Dropdown filter kelas reuse `referenceOptions.kelas` yang sudah ada di config form (tidak perlu data baru dari controller).
 
 Test baru: 3 di `JenisTagihanPreviewSiswaKeringananTest.php` (kolom kelas, filter search, filter kelas_id). Regresi widget/preview test (9 test) PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.
+
+---
+
+## 10. Keputusan Bisnis: Cicilan Dibatasi ke Tampilan Form PPDB Saja (2026-09-02)
+
+Diskusi lanjutan soal gap rekonsiliasi cicilan (§ sebelumnya) menemukan: `bisa_dicicil` secara struktur tersedia untuk SEMUA kategori Jenis Tagihan, tapi di data yang ada sekarang cuma pernah dipakai 1 kali untuk `daftar_ulang` (PPDB) — nol untuk SPP/Tahunan/Kegiatan/Lainnya.
+
+**Keputusan user**: backend TIDAK diubah/dibatasi (tetap generik untuk kategori manapun, "karena memang sudah disiapkan untuk semua kategori") — tapi di **form admin**, opsi "Bisa Dicicil" hanya ditampilkan untuk kategori PPDB (`pendaftaran`/`daftar_ulang`), disembunyikan untuk kategori lain.
+
+**Implementasi**: `resources/views/portals/lembaga/keuangan/jenis-tagihan/form.blade.php` — blok checkbox "Bisa Dicicil" + field "Maksimal Jumlah Cicilan" dibungkus `<template x-if="kategoriPpdb">` (kebalikan dari pola Sasaran/Tarif/Keringanan yang dibungkus `!kategoriPpdb`). Tidak ada perubahan validasi backend, model, atau `PembayaranService` — murni pembatasan UI.
+
+**Efek samping yang diterima sadar**: guard cicilan di `RecalculateTagihanNominalAction` (§5.2 spec awal) jadi praktis tidak akan pernah trigger lagi untuk tagihan baru, karena engine recalculate memang sudah tidak pernah menyentuh tagihan PPDB (`tagihable_type !== Siswa::class` guard). Guard itu TETAP DIPERTAHANKAN di kode sebagai defense-in-depth (bukan dihapus), untuk berjaga-jaga kalau ada data lama/edge-case yang lolos dari pembatasan form ini.
+
+Test baru: `JenisTagihanCicilanFormVisibilityTest.php` (2 test, create & edit page) memverifikasi markup `x-if="kategoriPpdb"` membungkus field `bisa_dicicil`. Regresi 125 test JenisTagihan-related PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.
+
+Dengan ini, gap "rekonsiliasi cicilan" dari §7-8 dianggap SELESAI lewat jalur pencegahan (tidak bisa dikonfigurasi lagi di luar PPDB), bukan lewat membangun UI reconciliation yang sempat diusulkan sebelumnya.
