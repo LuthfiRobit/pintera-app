@@ -82,6 +82,32 @@ it('shows Ruang Orang Tua group with dalam-pengembangan links plus keuangan self
     $response->assertSee('Dompet &amp; Tagihan Saya', false);
 });
 
+it('hides the PPDB-only Tagihan and Verifikasi Pembayaran links from the Keuangan sidebar group while keeping regular-billing links visible', function () {
+    foreach (['pembayaran.virtual-account', 'jenis-tagihan.view', 'tagihan.view', 'pembayaran.view', 'pembayaran.verifikasi'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $lembaga = Lembaga::factory()->create();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->givePermissionTo(['pembayaran.virtual-account', 'jenis-tagihan.view', 'tagihan.view', 'pembayaran.view', 'pembayaran.verifikasi']);
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    // Dibekukan 2026-09-02 bareng modul SPMB/PPDB (route/controller tidak disentuh) -- lihat
+    // komentar di resources/views/layouts/sidebar.blade.php untuk alasan lengkapnya. Cari khusus
+    // markup <nav> sidebar (bukan seluruh halaman) supaya tidak salah tangkap widget KPI PPDB
+    // lain di dashboard utama (admin.dashboard.lembaga) yang juga link ke admin.pembayaran.index
+    // tapi di luar cakupan perubahan ini (murni sidebar).
+    preg_match('/<nav.*?<\/nav>/s', $response->getContent(), $matches);
+    $sidebarHtml = $matches[0] ?? '';
+    expect($sidebarHtml)->not->toContain(route('admin.tagihan.index'));
+    expect($sidebarHtml)->not->toContain(route('admin.pembayaran.index'));
+    // Item billing reguler yang TIDAK terkait PPDB tetap harus tampil.
+    expect($sidebarHtml)->toContain('Virtual Account');
+    expect($sidebarHtml)->toContain('Jenis Tagihan');
+    expect($sidebarHtml)->toContain('Verifikasi Transfer Manual');
+});
+
 it('does not duplicate RPP into Akademik for a guru account, but still shows it there for kepala_sekolah', function () {
     $guru = siapkanGuruUntukSidebar();
 

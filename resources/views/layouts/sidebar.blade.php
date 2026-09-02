@@ -94,8 +94,16 @@
             'items' => array_filter([
                 Auth::user()->can('pembayaran.virtual-account') ? ['route' => 'admin.virtual-account.index', 'pattern' => 'admin.virtual-account.*', 'label' => 'Virtual Account', 'icon' => 'credit-card'] : null,
                 Auth::user()->can('jenis-tagihan.view') ? ['route' => 'admin.jenis-tagihan.index', 'pattern' => 'admin.jenis-tagihan.*', 'label' => 'Jenis Tagihan', 'icon' => 'wallet'] : null,
-                Auth::user()->can('tagihan.view') && Route::has('admin.tagihan.index') ? ['route' => 'admin.tagihan.index', 'pattern' => 'admin.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt'] : null,
-                Auth::user()->can('pembayaran.view') ? ['route' => 'admin.pembayaran.index', 'pattern' => 'admin.pembayaran.*', 'label' => 'Verifikasi Pembayaran', 'icon' => 'banknote'] : null,
+                // "Tagihan" dan "Verifikasi Pembayaran" di bawah ini sengaja disembunyikan (2026-09-02)
+                // -- keduanya PPDB-only by design (TagihanController/PembayaranController cuma pernah
+                // menangani Tagihan bertype Pendaftaran, lihat komentar developer di kedua file itu),
+                // dan modul SPMB/PPDB sendiri sudah dibekukan dari sidebar sejak 24 Agustus 2026 sambil
+                // menunggu rombakan. Membiarkan menu ini terbuka tanpa jalur ke halaman Pendaftaran
+                // (yang juga sudah disembunyikan) cuma bikin bingung staff. Route & controller TIDAK
+                // disentuh, murni navigasi. Billing reguler (SPP dll) TIDAK terpengaruh -- itu lewat
+                // "Jenis Tagihan" + "Verifikasi Transfer Manual" di bawah, keduanya tetap tampil.
+                // Auth::user()->can('tagihan.view') && Route::has('admin.tagihan.index') ? ['route' => 'admin.tagihan.index', 'pattern' => 'admin.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt'] : null,
+                // Auth::user()->can('pembayaran.view') ? ['route' => 'admin.pembayaran.index', 'pattern' => 'admin.pembayaran.*', 'label' => 'Verifikasi Pembayaran', 'icon' => 'banknote'] : null,
                 Auth::user()->can('pembayaran.verifikasi') ? ['route' => 'admin.manual-payment.index', 'pattern' => 'admin.manual-payment.*', 'label' => 'Verifikasi Transfer Manual', 'icon' => 'file-check'] : null,
             ]),
         ],
