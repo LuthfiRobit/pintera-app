@@ -61,3 +61,22 @@ it('rejects discount_amount greater than total_tagihan at validation level', fun
         'total_tagihan' => 100000, 'discount_amount' => 200000,
     ])->assertSessionHasErrors('discount_amount');
 });
+
+it('404s correcting a tagihan belonging to a different lembaga', function () {
+    $lembagaLain = Lembaga::factory()->create();
+    $admin = User::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $admin->assignRole('bendahara_lembaga');
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $lembagaAsli = Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembagaAsli->id]);
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class,
+        'total_tagihan' => 500000, 'net_amount' => 500000, 'paid_amount' => 100000,
+        'status' => 'sebagian', 'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh',
+    ]);
+
+    $this->actingAs($admin)->post(route('admin.tagihan.koreksi-nominal', $tagihan), [
+        'total_tagihan' => 400000, 'discount_amount' => 0,
+    ])->assertNotFound();
+});

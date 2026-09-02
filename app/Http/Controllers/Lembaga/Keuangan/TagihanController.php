@@ -44,6 +44,23 @@ class TagihanController extends Controller
         return $lembagaId;
     }
 
+    // koreksiNominal() melayani tagihan reguler (Siswa-tagihable) maupun tagihan PPDB
+    // (Pendaftaran-tagihable), jadi tidak bisa memakai resolvePendaftaranLembagaId() yang
+    // selalu 404 untuk tagihan siswa reguler. Resolusi ini meniru urutan yang sama dipakai
+    // perluDitinjau(): jenisTagihan dulu, lalu tagihable Siswa, baru pendaftaran.
+    private function resolveTagihanLembagaId(Tagihan $tagihan): ?int
+    {
+        if ($tagihan->jenisTagihan !== null) {
+            return $tagihan->jenisTagihan->lembaga_id;
+        }
+
+        if ($tagihan->tagihable_type === Siswa::class) {
+            return Siswa::withoutGlobalScopes()->find($tagihan->tagihable_id)?->lembaga_id;
+        }
+
+        return $tagihan->pendaftaran?->lembaga_id;
+    }
+
     public function index(Request $request): View
     {
         $this->authorize('tagihan.view');
@@ -209,6 +226,7 @@ class TagihanController extends Controller
         KoreksiNominalTagihanAction $action,
     ): RedirectResponse {
         $this->authorize('tagihan.edit');
+        abort_unless($this->resolveTagihanLembagaId($tagihan) === $this->lembagaId($request), 404);
 
         $data = $request->validate([
             'total_tagihan' => ['required', 'numeric', 'min:0'],
