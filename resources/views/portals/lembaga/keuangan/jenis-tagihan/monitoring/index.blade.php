@@ -90,6 +90,9 @@
                                             ">
                                                 {{ str_replace('_', ' ', Str::title($tagihan->status)) }}
                                             </span>
+                                            @if ($tagihan->perlu_ditinjau_ulang)
+                                                <span class="ml-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 border border-amber-200">Sedang Ditinjau</span>
+                                            @endif
                                         </td>
                                         <td class="px-5 py-3.5 text-right font-medium text-gray-900">
                                             Rp{{ number_format($tagihan->net_amount, 0, ',', '.') }}

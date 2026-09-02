@@ -347,3 +347,41 @@ it('rejects cancelling a belum_bayar tagihan that is flagged perlu_ditinjau_ulan
 
     expect($tagihan->fresh()->status)->toBe('belum_bayar');
 });
+
+it('shows a Sedang Ditinjau badge for a flagged tagihan in the Daftar Penerima table', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id, 'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class,
+        'status' => 'belum_bayar', 'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.monitoring.index', $jenisTagihan));
+
+    $response->assertOk();
+    $response->assertSee('Sedang Ditinjau', false);
+});
+
+it('does not show the Sedang Ditinjau badge for a normal (non-flagged) tagihan', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id, 'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class,
+        'status' => 'belum_bayar', 'perlu_ditinjau_ulang' => false,
+    ]);
+
+    $response = $this->actingAs($user)->get(route('admin.jenis-tagihan.monitoring.index', $jenisTagihan));
+
+    $response->assertOk();
+    $response->assertDontSee('Sedang Ditinjau', false);
+});
