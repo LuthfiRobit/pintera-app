@@ -1,4 +1,5 @@
 <?php
+
 // app/Domains/Keuangan/Services/SkipAlertResolver.php
 
 namespace App\Domains\Keuangan\Services;
@@ -39,6 +40,7 @@ class SkipAlertResolver
             ->withoutGlobalScope(TenantScope::class)
             ->join('jenis_tagihan', 'tagihan.jenis_tagihan_id', '=', 'jenis_tagihan.id')
             ->whereIn('tagihan.status', ['belum_bayar', 'sebagian'])
+            ->where('tagihan.perlu_ditinjau_ulang', false)
             ->orderBy('jenis_tagihan.priority_score', 'asc')
             ->orderBy('tagihan.jatuh_tempo', 'asc')
             ->orderBy('tagihan.id', 'asc')

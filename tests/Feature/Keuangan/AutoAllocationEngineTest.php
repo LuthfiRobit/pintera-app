@@ -1,11 +1,10 @@
 <?php
 
-use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
-use App\Domains\Keuangan\Models\Wallet;
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\AutoAllocationEngine;
+use App\Models\Siswa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -107,7 +106,7 @@ it('allocates wallet balance partially top-down', function () {
     $tagihan3->refresh();
 
     expect($wallet->balance)->toEqual(0);
-    
+
     // Prioritas 1 lunas (200.000)
     expect($tagihan1->status)->toBe('lunas');
     expect($tagihan1->paid_amount)->toEqual(200000);
@@ -189,4 +188,35 @@ it('does not allocate to dibatalkan tagihan', function () {
 
     expect($tagihan->paid_amount)->toEqual(0);
     expect($wallet->balance)->toEqual(100000); // Saldo utuh
+});
+
+it('does not allocate to a tagihan flagged perlu_ditinjau_ulang even when it has top priority', function () {
+    $siswa = Siswa::factory()->create();
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 100000]);
+
+    $jenisFlagged = JenisTagihan::factory()->create(['priority_score' => 1]);
+    $jenisNormal = JenisTagihan::factory()->create(['priority_score' => 2]);
+
+    $tagihanFlagged = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenisFlagged->id,
+        'total_tagihan' => 100000, 'net_amount' => 100000, 'paid_amount' => 0, 'status' => 'belum_bayar',
+        'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh',
+    ]);
+
+    $tagihanNormal = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenisNormal->id,
+        'total_tagihan' => 100000, 'net_amount' => 100000, 'paid_amount' => 0, 'status' => 'belum_bayar',
+    ]);
+
+    $engine = app(AutoAllocationEngine::class);
+    $engine->run($wallet);
+
+    $tagihanFlagged->refresh();
+    $tagihanNormal->refresh();
+
+    expect($tagihanFlagged->status)->toBe('belum_bayar');
+    expect($tagihanFlagged->paid_amount)->toEqual(0);
+    expect($tagihanNormal->status)->toBe('lunas');
+    expect($tagihanNormal->paid_amount)->toEqual(100000);
 });

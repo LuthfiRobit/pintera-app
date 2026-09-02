@@ -14,9 +14,7 @@ use Illuminate\Support\Str;
 
 class AutoAllocationEngine
 {
-    public function __construct(private readonly NotificationDispatcher $dispatcher)
-    {
-    }
+    public function __construct(private readonly NotificationDispatcher $dispatcher) {}
 
     public function run(Wallet $wallet): void
     {
@@ -35,6 +33,7 @@ class AutoAllocationEngine
             $tagihans = $wallet->siswa->tagihan()
                 ->join('jenis_tagihan', 'tagihan.jenis_tagihan_id', '=', 'jenis_tagihan.id')
                 ->whereIn('tagihan.status', ['belum_bayar', 'sebagian'])
+                ->where('tagihan.perlu_ditinjau_ulang', false)
                 ->orderBy('jenis_tagihan.priority_score', 'asc')
                 ->orderBy('tagihan.jatuh_tempo', 'asc')
                 ->orderBy('tagihan.id', 'asc')
@@ -79,7 +78,7 @@ class AutoAllocationEngine
                     'is_auto_allocation' => true,
                     'status' => 'lunas',
                     'diverifikasi_pada' => now(),
-                    'channel_reference' => 'AUTO-' . strtoupper(Str::random(10)),
+                    'channel_reference' => 'AUTO-'.strtoupper(Str::random(10)),
                 ]);
 
                 // Debit wallet and create mutasi (within existing transaction — no nested lock)
