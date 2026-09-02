@@ -3,16 +3,15 @@
 namespace App\Domains\Keuangan\Services;
 
 use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
-use App\Exceptions\InsufficientBalanceException;
-use App\Exceptions\PaymentException;
 use App\Domains\Keuangan\Models\BriQrisPayment;
 use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Domains\Keuangan\Models\ManualPaymentRequest;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
-use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Domains\Keuangan\Services\PaymentAllocationService;
+use App\Exceptions\InsufficientBalanceException;
+use App\Exceptions\PaymentException;
+use App\Models\Siswa;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,8 +21,7 @@ class PaymentService
     public function __construct(
         protected PaymentGatewayInterface $gateway,
         protected PaymentAllocationService $allocationService
-    ) {
-    }
+    ) {}
 
     /**
      * Create QRIS payment.
@@ -93,7 +91,7 @@ class PaymentService
     public function getOrCreatePermanentVa(Siswa $siswa): BriVirtualAccount
     {
         $wallet = $siswa->wallet;
-        if (!$wallet) {
+        if (! $wallet) {
             throw new PaymentException('Siswa tidak memiliki wallet.');
         }
 
@@ -214,6 +212,7 @@ class PaymentService
             // already does its own row-level locking further down this flow.
             $tagihans = Tagihan::whereIn('id', $tagihanIds)
                 ->whereIn('status', ['belum_bayar', 'sebagian'])
+                ->where('perlu_ditinjau_ulang', false)
                 ->get();
 
             if ($tagihans->count() !== $tagihanIds->count()) {
@@ -264,8 +263,8 @@ class PaymentService
     protected function guardAgainstInvalidTagihan(Collection $tagihans): void
     {
         foreach ($tagihans as $tagihan) {
-            if (in_array($tagihan->status, ['dibatalkan', 'lunas'])) {
-                throw new PaymentException('Terdapat tagihan yang sudah dibatalkan atau lunas.');
+            if (in_array($tagihan->status, ['dibatalkan', 'lunas']) || $tagihan->perlu_ditinjau_ulang) {
+                throw new PaymentException('Terdapat tagihan yang sudah dibatalkan, lunas, atau sedang ditinjau ulang.');
             }
         }
     }

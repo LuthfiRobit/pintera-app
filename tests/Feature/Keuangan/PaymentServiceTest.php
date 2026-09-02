@@ -3,14 +3,13 @@
 namespace Tests\Feature\Keuangan;
 
 use App\Domains\Keuangan\Contracts\PaymentGatewayInterface;
+use App\Domains\Keuangan\DataTransferObjects\QrisResult;
 use App\Domains\Keuangan\Models\Pembayaran;
-use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Domains\Keuangan\Models\TagihanItem;
-use App\Models\User;
 use App\Domains\Keuangan\Services\PaymentService;
 use App\Exceptions\PaymentException;
+use App\Models\Siswa;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,24 +24,23 @@ class PaymentServiceTest extends TestCase
         parent::setUp();
         // Ensure mock gateway is bound
         config(['services.bri.gateway' => 'mock']);
-        
+
         // AppServiceProvider already binds it, but just in case:
         $this->app->forgetInstance(PaymentGatewayInterface::class);
 
         $this->service = app()->make(PaymentService::class);
     }
 
-
     public function test_cannot_create_payment_if_bill_cancelled()
     {
         $siswa = Siswa::factory()->create();
-        
+
         $tagihan = Tagihan::factory()->create([
-            'status' => 'dibatalkan'
+            'status' => 'dibatalkan',
         ]);
 
         $this->expectException(PaymentException::class);
-        $this->expectExceptionMessage('Terdapat tagihan yang sudah dibatalkan atau lunas.');
+        $this->expectExceptionMessage('Terdapat tagihan yang sudah dibatalkan, lunas, atau sedang ditinjau ulang.');
 
         $this->service->createQrisPayment($siswa, collect([$tagihan]));
     }
@@ -51,11 +49,11 @@ class PaymentServiceTest extends TestCase
     {
         $siswa = Siswa::factory()->create();
         // Auto wallet creation should have made a wallet for the student
-        
+
         $va1 = $this->service->getOrCreatePermanentVa($siswa);
         $this->assertStringStartsWith('MOCK-VA-', $va1->va_number);
         $this->assertEquals('WALLET_PERMANENT', $va1->va_type);
-        
+
         // Calling it again should return the exact same VA
         $va2 = $this->service->getOrCreatePermanentVa($siswa);
         $this->assertEquals($va1->id, $va2->id);
@@ -85,7 +83,7 @@ class PaymentServiceTest extends TestCase
         $user = User::factory()->create();
 
         $tagihan = Tagihan::factory()->create([
-            'status' => 'belum_bayar'
+            'status' => 'belum_bayar',
         ]);
 
         $dto = [
@@ -114,7 +112,7 @@ class PaymentServiceTest extends TestCase
             'status' => 'belum_bayar',
             'net_amount' => 50000,
             'total_tagihan' => 50000,
-            'paid_amount' => 0
+            'paid_amount' => 0,
         ]);
 
         $pembayaran = $this->service->createCashPayment($siswa, collect([$tagihan]), $user->id);
@@ -122,24 +120,25 @@ class PaymentServiceTest extends TestCase
         $this->assertEquals('cash', $pembayaran->metode);
         $this->assertEquals('lunas', $pembayaran->status); // Cash is instantly paid
         $this->assertEquals($user->id, $pembayaran->diverifikasi_oleh_user_id);
-        
+
         $tagihan->refresh();
         $this->assertEquals(50000, $tagihan->paid_amount);
         $this->assertEquals('lunas', $tagihan->status);
     }
+
     public function test_create_qris_payment_saves_reference_no()
     {
         $siswa = Siswa::factory()->create();
         $tagihan = Tagihan::factory()->create(['status' => 'belum_bayar', 'net_amount' => 10000]);
 
-        $mockGateway = \Mockery::mock(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class);
+        $mockGateway = \Mockery::mock(PaymentGatewayInterface::class);
         $mockGateway->shouldReceive('createQris')
             ->once()
-            ->andReturn(new \App\Domains\Keuangan\DataTransferObjects\QrisResult('QR123', 10000, now()->addMinutes(15), ['referenceNo' => 'REF-001']));
-            
-        $this->app->instance(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class, $mockGateway);
+            ->andReturn(new QrisResult('QR123', 10000, now()->addMinutes(15), ['referenceNo' => 'REF-001']));
 
-        $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
+        $this->app->instance(PaymentGatewayInterface::class, $mockGateway);
+
+        $pembayaran = app(PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 
         $this->assertEquals('qris', $pembayaran->metode);
         $this->assertNotNull($pembayaran->briQrisPayment);
@@ -151,14 +150,14 @@ class PaymentServiceTest extends TestCase
         $siswa = Siswa::factory()->create();
         $tagihan = Tagihan::factory()->create(['status' => 'belum_bayar', 'net_amount' => 10000]);
 
-        $mockGateway = \Mockery::mock(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class);
+        $mockGateway = \Mockery::mock(PaymentGatewayInterface::class);
         $mockGateway->shouldReceive('createQris')
             ->once()
-            ->andReturn(new \App\Domains\Keuangan\DataTransferObjects\QrisResult('QR123', 10000, now()->addMinutes(15), ['someOtherField' => 'val']));
-            
-        $this->app->instance(\App\Domains\Keuangan\Contracts\PaymentGatewayInterface::class, $mockGateway);
+            ->andReturn(new QrisResult('QR123', 10000, now()->addMinutes(15), ['someOtherField' => 'val']));
 
-        $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
+        $this->app->instance(PaymentGatewayInterface::class, $mockGateway);
+
+        $pembayaran = app(PaymentService::class)->createQrisPayment($siswa, collect([$tagihan]));
 
         $this->assertNull($pembayaran->briQrisPayment->reference_no);
     }
