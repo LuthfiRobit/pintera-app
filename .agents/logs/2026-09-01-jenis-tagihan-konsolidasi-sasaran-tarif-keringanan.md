@@ -197,3 +197,23 @@ Diminta user re-screening sisi admin sebelum lanjut ke sisi orang tua. Dispatch 
 **Perbaikan**: helper `resolvePendaftaranLembagaId(Pembayaran $pembayaran): int` (pola sama seperti di `TagihanController`, pakai `?->` berantai + `abort_if(null, 404)`).
 
 Test baru: 1 test "404s (not crashes)" di `VerifikasiPembayaranTest.php`. Regresi 430 test Keuangan/Pembayaran-related PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.
+
+---
+
+## 13. Menu Sidebar "Tagihan" & "Verifikasi Pembayaran" Dibekukan (2026-09-02)
+
+Analisa mendalam (bukan cuma rename) menemukan: kedua menu ini PPDB-only secara struktural (query-nya join lewat `Tagihan.pendaftaran`, yang selalu null untuk tagihan siswa reguler) — bukan bug, memang didesain begitu sejak awal (ada komentar developer eksplisit di kedua controller). "Jenis Tagihan Monitoring" TIDAK BISA menggantikan perannya sekarang: `Tagihan` PPDB tidak pernah mengisi `jenis_tagihan_id` (satu Tagihan PPDB adalah invoice gabungan lewat `TagihanItem`, bisa mencakup beberapa Jenis Tagihan sekaligus), sementara Monitoring seluruhnya berbasis `where('jenis_tagihan_id', ...)` — datanya secara struktur tidak sepadan, konsolidasi asal akan membuat data PPDB tidak pernah muncul di Monitoring.
+
+**Keputusan user**: bekukan (sembunyikan) dulu, bukan konsolidasi/rombak sekarang — karena masih development (aman) dan modul SPMB/PPDB sendiri memang sudah dibekukan dari sidebar sejak 24 Agustus 2026 menunggu rombakan terpisah. Konsolidasi sungguhan (kalau nanti terjadi) sebaiknya menunggu rombakan SPMB itu sendiri, supaya desain data baru bisa langsung kompatibel dengan monitoring terpadu.
+
+**Implementasi**: 2 item (`Tagihan`, `Verifikasi Pembayaran`) di grup sidebar "Keuangan" dikomentari (bukan dihapus), mengikuti pola persis yang sudah dipakai untuk grup SPMB — route & controller TIDAK disentuh. Item billing reguler (Virtual Account, Jenis Tagihan, Verifikasi Transfer Manual) tetap tampil.
+
+**Catatan yang SENGAJA belum ditindaklanjuti** (atas instruksi user): ada 1 kartu KPI lagi di dashboard utama admin (`admin.dashboard.lembaga.blade.php`, "Pembayaran Menunggu Verifikasi") yang juga PPDB-only dan link ke halaman yang sama — dibiarkan dulu, bukan lupa.
+
+Test baru: 1 test di `SidebarPengelompokanTest.php` (assert lewat href karena "Tagihan"/"Verifikasi Pembayaran" adalah substring dari label lain yang harus tetap tampil). **Insiden non-bug**: 2 full-suite run sempat dijalankan TIDAK SENGAJA bersamaan, menghasilkan false failure 119 dan 869 (`SQLSTATE[HY000]: 1412 Table definition has changed` — gejala klasik migrasi RefreshDatabase 2 proses bentrok di database yang sama, bukan regresi). Re-run bersih (1 proses saja) mengonfirmasi hijau: 2673 passed, 0 gagal.
+
+## 14. Skrining Sisi Orang Tua (2026-09-02) — BERSIH
+
+Diminta user skrining sisi orang tua dengan rigor yang sama seperti admin. Hasil: **tidak ada bug ditemukan**, semua 6 area dicek CONFIRMED SAFE — akses relasi sudah null-safe/ada guard exception, exclusion `perlu_ditinjau_ulang` konsisten di semua jalur pembayaran (termasuk `va()` yang cuma redirect), guard kepemilikan (`AuthorizesTagihanAccess`/`AuthorizesPembayaran`) terpasang di semua endpoint id-mentah, deep-link notifikasi tetap lewat guard tanpa bypass, `alasan_perlu_ditinjau` tidak pernah bocor ke tampilan orang tua, dan gap transparansi breakdown di tab checkout (qris/va/wallet/transfer) masih seperti yang sudah didokumentasikan (belum berubah, bukan regresi baru).
+
+**Status akhir modul per 2026-09-02**: Admin selesai (termasuk 2 bug crash ditemukan+diperbaiki lewat re-screening, dan menu PPDB dibekukan). Orang Tua selesai & bersih dari 2 putaran skrining terpisah. Siswa tidak punya portal sendiri (di luar scope, belum pernah dibangun). PPDB/SPMB dibekukan sementara menunggu rombakan modul terpisah.
