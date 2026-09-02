@@ -29,7 +29,7 @@ class TagihanController extends Controller
             ->orderBy('jatuh_tempo')
             ->get();
 
-        $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, false);
+        $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, true);
 
         return view('portals.portal.keuangan.tagihan.index', [
             'activeSiswa' => $activeSiswa,

@@ -72,6 +72,15 @@ it('shows the auto-debit banner only when the setting is enabled for the lembaga
     $response->assertSee('Sistem Auto-Debit Aktif');
 });
 
+it('shows the auto-debit banner by default when the system setting has never been explicitly set', function () {
+    [$user] = actingAsOrangTuaForTagihan();
+
+    $response = $this->actingAs($user)->get(route('keuangan.tagihan.index'));
+
+    $response->assertOk();
+    $response->assertSee('Sistem Auto-Debit Aktif');
+});
+
 it('shows a Sedang Ditinjau badge and disables the checkbox for a flagged tagihan', function () {
     [$user, , $siswa] = actingAsOrangTuaForTagihan();
     $jenis = JenisTagihan::factory()->create(['nama' => 'SPP Bulanan']);

@@ -1,4 +1,5 @@
 <?php
+
 // app/Http/Controllers/Portal/Keuangan/DashboardController.php
 
 namespace App\Http\Controllers\Portal\Keuangan;
@@ -21,8 +22,7 @@ class DashboardController extends Controller
         private readonly SkipAlertResolver $skipAlertResolver,
         private readonly NotificationFeedResolver $notificationFeedResolver,
         private readonly PaymentService $paymentService,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
@@ -51,7 +51,7 @@ class DashboardController extends Controller
             ->orderBy('jatuh_tempo')
             ->get();
 
-        $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, false);
+        $autoDebitEnabled = (bool) SystemSetting::getResolved('auto_debit_enabled', $activeSiswa->lembaga_id, true);
 
         return view('portals.portal.keuangan.dashboard', [
             'activeSiswa' => $activeSiswa,

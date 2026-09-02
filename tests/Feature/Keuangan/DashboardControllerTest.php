@@ -170,6 +170,16 @@ it('shows the "tanpa anak" page for an orang tua with zero linked siswa', functi
     $response->assertSee('Belum ada anak terdaftar', false);
 });
 
+it('shows the auto-debit banner by default when the system setting has never been explicitly set', function () {
+    [$user, , $siswa] = actingAsOrangTuaForDashboard();
+    // TIDAK membuat SystemSetting apapun -- mengandalkan default getResolved() murni.
+
+    $response = $this->actingAs($user)->get(route('keuangan.dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Sistem Auto-Debit Aktif');
+});
+
 it('blocks a user without keuangan.akses permission', function () {
     $user = User::factory()->create();
 
