@@ -14,7 +14,10 @@ use Illuminate\Support\Str;
 
 class AutoAllocationEngine
 {
-    public function __construct(private readonly NotificationDispatcher $dispatcher) {}
+    public function __construct(
+        private readonly NotificationDispatcher $dispatcher,
+        private readonly TagihanStatusResolver $statusResolver,
+    ) {}
 
     public function run(Wallet $wallet): void
     {
@@ -96,11 +99,7 @@ class AutoAllocationEngine
                     ]);
 
                     $tagihan->paid_amount += $amount;
-                    if ($tagihan->paid_amount >= $tagihan->net_amount) {
-                        $tagihan->status = 'lunas';
-                    } else {
-                        $tagihan->status = 'sebagian';
-                    }
+                    $tagihan->status = $this->statusResolver->resolve((float) $tagihan->paid_amount, (float) $tagihan->net_amount, $tagihan->status);
                     $tagihan->save();
                 }
             }

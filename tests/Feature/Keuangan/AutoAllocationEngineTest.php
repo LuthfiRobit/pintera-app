@@ -4,6 +4,7 @@ use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Services\AutoAllocationEngine;
+use App\Domains\Keuangan\Services\TagihanStatusResolver;
 use App\Models\Siswa;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -219,4 +220,26 @@ it('does not allocate to a tagihan flagged perlu_ditinjau_ulang even when it has
     expect($tagihanFlagged->paid_amount)->toEqual(0);
     expect($tagihanNormal->status)->toBe('lunas');
     expect($tagihanNormal->paid_amount)->toEqual(100000);
+});
+
+it('produces the same status as TagihanStatusResolver would for the same paid/net amounts', function () {
+    $siswa = Siswa::factory()->create();
+    $wallet = $siswa->wallet;
+    $wallet->update(['balance' => 60000]);
+
+    $jenis = JenisTagihan::factory()->create(['priority_score' => 1]);
+    $tagihan = Tagihan::factory()->create([
+        'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class, 'jenis_tagihan_id' => $jenis->id,
+        'total_tagihan' => 100000, 'net_amount' => 100000, 'paid_amount' => 0, 'status' => 'belum_bayar',
+    ]);
+
+    $engine = app(AutoAllocationEngine::class);
+    $engine->run($wallet);
+
+    $tagihan->refresh();
+    $expectedStatus = app(TagihanStatusResolver::class)
+        ->resolve((float) $tagihan->paid_amount, (float) $tagihan->net_amount, 'belum_bayar');
+
+    expect($tagihan->status)->toBe($expectedStatus);
+    expect($tagihan->status)->toBe('sebagian'); // sanity check nilai konkret: 60rb dari 100rb
 });
