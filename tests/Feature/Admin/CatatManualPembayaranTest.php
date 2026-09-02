@@ -10,6 +10,7 @@ use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
 use App\Domains\Keuangan\Services\PembayaranService;
 use App\Models\Lembaga;
+use App\Models\Siswa;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -66,6 +67,20 @@ it('404s catat manual tagihan for a tagihan belonging to a different lembaga', f
     $this->actingAs($user)->post(route('admin.tagihan.catat-manual', $tagihan))->assertNotFound();
 });
 
+it('404s (not crashes) catat manual tagihan for a non-PPDB (siswa) tagihan, which has no pendaftaran relation', function () {
+    $lembaga = Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tagihanSiswa = Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihan->id,
+        'status' => 'belum_bayar',
+    ]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $this->actingAs($user)->post(route('admin.tagihan.catat-manual', $tagihanSiswa))->assertNotFound();
+});
+
 it('denies catat manual cicilan without the pembayaran.catat-manual permission', function () {
     [$lembaga, $cicilan] = siapkanCicilanTermin1();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -95,4 +110,20 @@ it('404s catat manual cicilan for a cicilan belonging to a different lembaga', f
     $user->assignRole('bendahara_lembaga');
 
     $this->actingAs($user)->post(route('admin.cicilan.catat-manual', $cicilan))->assertNotFound();
+});
+
+it('404s (not crashes) catat manual cicilan for a cicilan on a non-PPDB (siswa) tagihan', function () {
+    $lembaga = Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tagihanSiswa = Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihan->id,
+        'status' => 'belum_bayar', 'total_tagihan' => 900000,
+    ]);
+    $skema = app(PembayaranService::class)->buatSkemaCicilan($tagihanSiswa, 3, 'admin', null);
+    $cicilanSiswa = Cicilan::where('skema_cicilan_id', $skema->id)->where('urutan', 1)->first();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $this->actingAs($user)->post(route('admin.cicilan.catat-manual', $cicilanSiswa))->assertNotFound();
 });

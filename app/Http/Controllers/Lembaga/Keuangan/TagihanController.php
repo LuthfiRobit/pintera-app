@@ -30,6 +30,19 @@ class TagihanController extends Controller
             : $request->user()->lembaga_id;
     }
 
+    // Skema cicilan hanya berlaku untuk tagihan PPDB (tagihable_type = Pendaftaran::class) --
+    // TagihanCicilanEligibilityService sudah membuat ini mustahil dicapai lewat tagihan siswa
+    // reguler (TagihanItem cuma pernah diisi oleh TagihanGenerator, yang cuma dipanggil untuk
+    // Pendaftaran), tapi endpoint ini tidak boleh crash (null->lembaga_id) kalau tetap ada yang
+    // mencoba akses paksa dengan id Tagihan siswa reguler -- 404 rapi, bukan 500.
+    private function resolvePendaftaranLembagaId(Tagihan $tagihan): int
+    {
+        $lembagaId = $tagihan->pendaftaran?->lembaga_id;
+        abort_if($lembagaId === null, 404);
+
+        return $lembagaId;
+    }
+
     public function index(Request $request): View
     {
         $this->authorize('tagihan.view');
@@ -104,7 +117,7 @@ class TagihanController extends Controller
         TagihanCicilanEligibilityService $eligibility,
     ): RedirectResponse {
         $this->authorize('cicilan.kelola');
-        abort_unless($tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+        abort_unless($this->resolvePendaftaranLembagaId($tagihan) === $this->lembagaId($request), 404);
 
         $maks = $eligibility->maksCicilan($tagihan) ?? 2;
 
@@ -127,7 +140,7 @@ class TagihanController extends Controller
         SimpanNominalCicilanAction $action,
     ): RedirectResponse {
         $this->authorize('cicilan.kelola');
-        abort_unless($skemaCicilan->tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+        abort_unless($this->resolvePendaftaranLembagaId($skemaCicilan->tagihan) === $this->lembagaId($request), 404);
 
         $data = $request->validate([
             'nominal' => ['required', 'array'],
@@ -149,7 +162,7 @@ class TagihanController extends Controller
         CatatManualTagihanAction $action,
     ): RedirectResponse {
         $this->authorize('pembayaran.catat-manual');
-        abort_unless($tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+        abort_unless($this->resolvePendaftaranLembagaId($tagihan) === $this->lembagaId($request), 404);
 
         try {
             $action->execute($tagihan, 'admin', $request->user()->id);
@@ -166,7 +179,7 @@ class TagihanController extends Controller
         CatatManualCicilanAction $action,
     ): RedirectResponse {
         $this->authorize('pembayaran.catat-manual');
-        abort_unless($cicilan->skemaCicilan->tagihan->pendaftaran->lembaga_id === $this->lembagaId($request), 404);
+        abort_unless($this->resolvePendaftaranLembagaId($cicilan->skemaCicilan->tagihan) === $this->lembagaId($request), 404);
 
         try {
             $action->execute($cicilan, 'admin', $request->user()->id);

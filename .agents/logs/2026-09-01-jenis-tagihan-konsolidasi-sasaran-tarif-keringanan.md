@@ -173,3 +173,13 @@ Diskusi lanjutan soal gap rekonsiliasi cicilan (§ sebelumnya) menemukan: `bisa_
 Test baru: `JenisTagihanCicilanFormVisibilityTest.php` (2 test, create & edit page) memverifikasi markup `x-if="kategoriPpdb"` membungkus field `bisa_dicicil`. Regresi 125 test JenisTagihan-related PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.
 
 Dengan ini, gap "rekonsiliasi cicilan" dari §7-8 dianggap SELESAI lewat jalur pencegahan (tidak bisa dikonfigurasi lagi di luar PPDB), bukan lewat membangun UI reconciliation yang sempat diusulkan sebelumnya.
+
+**Temuan tambahan yang menguatkan kesimpulan "selesai"**: ditelusuri lebih dalam, endpoint pembuatan skema cicilan (`TagihanController::buatSkemaCicilan()`) TERNYATA sudah mustahil dicapai untuk tagihan non-PPDB SEJAK SEBELUM sesi ini — `TagihanCicilanEligibilityService::bisaDicicil()` mengecek `$tagihan->item()` (relasi ke `TagihanItem`), dan `TagihanItem` cuma pernah diisi oleh `TagihanGenerator` yang cuma dipanggil untuk `Pendaftaran` (PPDB). Tagihan siswa reguler (jalur `TagihanBillingGenerator`) tidak pernah punya baris `TagihanItem`, jadi `bisaDicicil()` selalu `false` untuk mereka. Pembatasan form yang baru ditambahkan adalah lapis kedua (mencegah admin salah konfigurasi), bukan satu-satunya pertahanan.
+
+## 11. Bug Kecil Ditemukan & Diperbaiki: Crash 500 (bukan 404) untuk Aksi Cicilan pada Tagihan Non-PPDB (2026-09-02)
+
+Saat menelusuri poin di atas, ditemukan 4 method di `TagihanController` (`buatSkemaCicilan`, `simpanNominalCicilan`, `catatManualTagihan`, `catatManualCicilan`) semuanya mengakses `$tagihan->pendaftaran->lembaga_id` tanpa null-check. Karena endpoint ini memang tidak pernah reachable untuk tagihan non-PPDB lewat UI manapun (lihat temuan di atas), bug ini tidak pernah ter-trigger di praktik — tapi kalau ada yang mencoba akses paksa (id tagihan siswa reguler), hasilnya error PHP mentah (500), bukan 404 yang rapi.
+
+**Perbaikan**: tambah helper `TagihanController::resolvePendaftaranLembagaId(Tagihan $tagihan): int` yang null-safe (`$tagihan->pendaftaran?->lembaga_id`, `abort_if(null, 404)`), dipakai di keempat method tersebut menggantikan akses langsung yang rawan crash.
+
+Test baru: 4 test "404s (not crashes)" di `SkemaCicilanTest.php` (2) dan `CatatManualPembayaranTest.php` (2), masing-masing membuktikan tagihan siswa reguler mendapat 404 rapi, bukan exception. Regresi 27 test terkait PASS. Full suite proyek dijalankan ulang untuk verifikasi akhir.

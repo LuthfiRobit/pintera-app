@@ -8,7 +8,9 @@ use App\Domains\Keuangan\Models\NominalTagihanJalur;
 use App\Domains\Keuangan\Models\SkemaCicilan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\TagihanItem;
+use App\Domains\Keuangan\Services\PembayaranService;
 use App\Models\Lembaga;
+use App\Models\Siswa;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,6 +62,21 @@ it('404s creating a skema cicilan for a tagihan belonging to a different lembaga
         ->assertNotFound();
 });
 
+it('404s (not crashes) creating a skema cicilan for a non-PPDB (siswa) tagihan, which has no pendaftaran relation', function () {
+    $lembaga = Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tagihanSiswa = Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihan->id,
+        'status' => 'belum_bayar',
+    ]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $this->actingAs($user)->post(route('admin.tagihan.skema-cicilan.store', $tagihanSiswa), ['jumlah_termin' => 3])
+        ->assertNotFound();
+});
+
 it('lets bendahara_lembaga edit nominal manually and rejects a mismatched total', function () {
     [$lembaga, , $tagihan] = siapkanTagihanDaftarUlangBisaDicicil();
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -92,5 +109,25 @@ it('404s editing nominal manually for a skema cicilan belonging to a different l
 
     $this->actingAs($userLain)->post(route('admin.skema-cicilan.nominal.store', $skema), [
         'nominal' => [1 => 500000, 2 => 200000, 3 => 200000],
+    ])->assertNotFound();
+});
+
+it('404s (not crashes) editing nominal manually for a skema cicilan on a non-PPDB (siswa) tagihan', function () {
+    $lembaga = Lembaga::factory()->create();
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tagihanSiswa = Tagihan::factory()->create([
+        'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'jenis_tagihan_id' => $jenisTagihan->id,
+        'status' => 'belum_bayar', 'total_tagihan' => 900000,
+    ]);
+    // Skema ini hanya bisa dibuat lewat pemanggilan service langsung (bypass eligibility
+    // service & endpoint admin.tagihan.skema-cicilan.store, yang memang sudah menolak
+    // tagihan non-PPDB) -- mensimulasikan data yang lolos lewat jalur lain di luar UI normal.
+    $skema = app(PembayaranService::class)->buatSkemaCicilan($tagihanSiswa, 3, 'admin', null);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+
+    $this->actingAs($user)->post(route('admin.skema-cicilan.nominal.store', $skema), [
+        'nominal' => [1 => 300000, 2 => 300000, 3 => 300000],
     ])->assertNotFound();
 });
