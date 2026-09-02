@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Lembaga\Keuangan;
 use App\Domains\Keuangan\Actions\Tagihan\BuatSkemaCicilanAction;
 use App\Domains\Keuangan\Actions\Tagihan\CatatManualCicilanAction;
 use App\Domains\Keuangan\Actions\Tagihan\CatatManualTagihanAction;
+use App\Domains\Keuangan\Actions\Tagihan\KoreksiNominalTagihanAction;
 use App\Domains\Keuangan\Actions\Tagihan\SelesaikanTinjauanTagihanAction;
 use App\Domains\Keuangan\Actions\Tagihan\SimpanNominalCicilanAction;
 use App\Domains\Keuangan\Models\Cicilan;
@@ -200,6 +201,23 @@ class TagihanController extends Controller
         $action->execute($tagihan);
 
         return back()->with('status', 'Tagihan telah ditandai selesai ditinjau.');
+    }
+
+    public function koreksiNominal(
+        Request $request,
+        Tagihan $tagihan,
+        KoreksiNominalTagihanAction $action,
+    ): RedirectResponse {
+        $this->authorize('tagihan.edit');
+
+        $data = $request->validate([
+            'total_tagihan' => ['required', 'numeric', 'min:0'],
+            'discount_amount' => ['required', 'numeric', 'min:0', 'lte:total_tagihan'],
+        ]);
+
+        $action->execute($tagihan, (float) $data['total_tagihan'], (float) $data['discount_amount']);
+
+        return back()->with('status', 'Nominal tagihan berhasil dikoreksi.');
     }
 
     public function perluDitinjau(Request $request): View

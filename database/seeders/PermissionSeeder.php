@@ -46,7 +46,7 @@ class PermissionSeeder extends Seeder
             'spmb-pendaftaran.view', 'spmb-pendaftaran.verifikasi-dokumen', 'spmb-pendaftaran.nilai-seleksi',
             'spmb-pendaftaran.tetapkan-keputusan', 'spmb-pendaftaran.terbitkan-sk',
             'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
-            'tagihan.view', 'tagihan.buat-susulan',
+            'tagihan.view', 'tagihan.buat-susulan', 'tagihan.edit',
             'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual', 'pembayaran.virtual-account',
             'cicilan.kelola',
             'keuangan.akses',

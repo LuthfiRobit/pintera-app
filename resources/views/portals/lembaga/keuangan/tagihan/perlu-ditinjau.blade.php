@@ -75,17 +75,72 @@
                                         </div>
                                     </td>
                                     <td class="px-5 py-4 text-right">
-                                        <form action="{{ route('admin.tagihan.selesai-ditinjau', $tagihan) }}" method="POST" class="inline">
-                                            @csrf
-                                            <button
-                                                type="submit"
-                                                class="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3 py-1.5 text-xs font-semibold text-paper shadow-sm hover:bg-ink/90 transition"
-                                                onclick="return confirm('Tandai tagihan ini telah selesai ditinjau?');"
-                                            >
-                                                <x-icon name="check" class="h-3.5 w-3.5" />
-                                                Selesai Ditinjau
-                                            </button>
-                                        </form>
+                                        <div class="flex flex-col items-end gap-2">
+                                            <div class="flex items-center justify-end gap-2">
+                                                <form action="{{ route('admin.tagihan.selesai-ditinjau', $tagihan) }}" method="POST" class="inline">
+                                                    @csrf
+                                                    <button
+                                                        type="submit"
+                                                        class="inline-flex items-center gap-1.5 rounded-xl bg-ink px-3 py-1.5 text-xs font-semibold text-paper shadow-sm hover:bg-ink/90 transition"
+                                                        onclick="return confirm('Tandai tagihan ini telah selesai ditinjau?');"
+                                                    >
+                                                        <x-icon name="check" class="h-3.5 w-3.5" />
+                                                        Selesai Ditinjau
+                                                    </button>
+                                                </form>
+
+                                                <div x-data="{ open: false }" class="relative inline-block">
+                                                    <button
+                                                        type="button"
+                                                        @click="open = !open"
+                                                        class="inline-flex items-center gap-1.5 rounded-xl border border-ink/15 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-paper transition"
+                                                    >
+                                                        <x-icon name="edit" class="h-3.5 w-3.5" />
+                                                        Koreksi Nominal
+                                                    </button>
+
+                                                    <div
+                                                        x-show="open"
+                                                        x-cloak
+                                                        @click.outside="open = false"
+                                                        class="absolute z-10 mt-2 w-64 rounded-xl border border-ink/10 bg-white p-3 text-left shadow-elevated"
+                                                    >
+                                                        <form action="{{ route('admin.tagihan.koreksi-nominal', $tagihan) }}" method="POST" class="space-y-2">
+                                                            @csrf
+                                                            <div>
+                                                                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate">Total Tagihan</label>
+                                                                <input
+                                                                    type="number"
+                                                                    name="total_tagihan"
+                                                                    value="{{ (int) $tagihan->total_tagihan }}"
+                                                                    min="0"
+                                                                    class="w-full rounded-lg border-ink/15 text-xs focus:border-ink focus:ring-ink"
+                                                                    required
+                                                                >
+                                                            </div>
+                                                            <div>
+                                                                <label class="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate">Potongan</label>
+                                                                <input
+                                                                    type="number"
+                                                                    name="discount_amount"
+                                                                    value="{{ (int) $tagihan->discount_amount }}"
+                                                                    min="0"
+                                                                    class="w-full rounded-lg border-ink/15 text-xs focus:border-ink focus:ring-ink"
+                                                                    required
+                                                                >
+                                                            </div>
+                                                            <button
+                                                                type="submit"
+                                                                class="w-full rounded-lg bg-ink px-3 py-1.5 text-xs font-semibold text-paper hover:bg-ink/90 transition"
+                                                                onclick="return confirm('Terapkan koreksi nominal ini? Perubahan akan langsung berlaku.');"
+                                                            >
+                                                                Terapkan Koreksi
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

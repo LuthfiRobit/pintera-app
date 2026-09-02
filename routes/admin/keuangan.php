@@ -40,6 +40,7 @@ Route::post('tagihan/{tagihan}/skema-cicilan', [TagihanController::class, 'buatS
 Route::post('skema-cicilan/{skemaCicilan}/nominal', [TagihanController::class, 'simpanNominalCicilan'])->name('skema-cicilan.nominal.store');
 Route::post('tagihan/{tagihan}/catat-manual', [TagihanController::class, 'catatManualTagihan'])->name('tagihan.catat-manual');
 Route::post('tagihan/{tagihan}/selesai-ditinjau', [TagihanController::class, 'tandaiSelesaiDitinjau'])->name('tagihan.selesai-ditinjau');
+Route::post('tagihan/{tagihan}/koreksi-nominal', [TagihanController::class, 'koreksiNominal'])->name('tagihan.koreksi-nominal');
 Route::post('cicilan/{cicilan}/catat-manual', [TagihanController::class, 'catatManualCicilan'])->name('cicilan.catat-manual');
 
 Route::get('pembayaran', [PembayaranController::class, 'index'])->name('pembayaran.index');

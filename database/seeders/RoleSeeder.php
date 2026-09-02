@@ -72,7 +72,7 @@ class RoleSeeder extends Seeder
             if ($name === 'bendahara_lembaga') {
                 $role->givePermissionTo([
                     'jenis-tagihan.view', 'jenis-tagihan.create', 'jenis-tagihan.edit', 'jenis-tagihan.delete',
-                    'tagihan.view', 'tagihan.buat-susulan',
+                    'tagihan.view', 'tagihan.buat-susulan', 'tagihan.edit',
                     'pembayaran.view', 'pembayaran.verifikasi', 'pembayaran.catat-manual', 'pembayaran.virtual-account',
                     'cicilan.kelola',
                     'spmb-pendaftaran.view',
