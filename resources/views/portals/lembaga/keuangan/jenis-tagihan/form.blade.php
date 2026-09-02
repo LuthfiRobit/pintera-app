@@ -114,6 +114,12 @@
                                 </div>
                             </template>
 
+                            <div>
+                                <x-input-label value="Prioritas Auto-Debit" />
+                                <x-text-input type="number" min="0" name="priority_score" :value="old('priority_score', $jenisTagihan?->priority_score)" placeholder="mis. 1 (lebih kecil = lebih diprioritaskan)" class="mt-1.5" />
+                                <p class="mt-1 text-[10px] text-gray-400">Menentukan urutan tagihan mana yang dibayar lebih dulu saat wallet siswa di-top-up dengan auto-debit aktif. Angka lebih kecil = didahulukan. Kosongkan kalau tidak perlu urutan khusus.</p>
+                            </div>
+
                             <div class="pt-2 border-t border-gray-200/60">
                                 <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
                                     <input type="checkbox" name="is_active" value="1" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition" {{ old('is_active', $jenisTagihan?->is_active ?? true) ? 'checked' : '' }}>

@@ -1,14 +1,14 @@
 <?php
+
 // tests/Feature/Admin/JenisTagihanFormTest.php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Domains\Keuangan\Models\KategoriKeringanan;
-use App\Models\Lembaga;
-
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\User;
 use App\Domains\Keuangan\Services\TagihanBillingGenerator as BillingGenerator;
+use App\Models\Lembaga;
+use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -138,4 +138,43 @@ it('still creates a ppdb jenis tagihan without any billing fields, unchanged fro
     $response->assertRedirect();
     $jenisTagihan = JenisTagihan::where('nama', 'Biaya Pendaftaran')->firstOrFail();
     $response->assertRedirect(route('admin.jenis-tagihan.nominal', $jenisTagihan));
+});
+
+it('accepts and persists priority_score on create', function () {
+    [$user, $lembaga] = buatUserKeuangan();
+
+    $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
+        'nama' => 'SPP Bulanan', 'kategori' => 'spp', 'bisa_dicicil' => false,
+        'mode' => 'manual', 'tipe' => 'bulanan', 'priority_score' => 1,
+    ]);
+
+    $response->assertRedirect();
+    $jenisTagihan = JenisTagihan::where('nama', 'SPP Bulanan')->first();
+    expect($jenisTagihan->priority_score)->toBe(1);
+});
+
+it('accepts priority_score being left empty (nullable)', function () {
+    [$user, $lembaga] = buatUserKeuangan();
+
+    $response = $this->actingAs($user)->post(route('admin.jenis-tagihan.store'), [
+        'nama' => 'SPP Bulanan Tanpa Prioritas', 'kategori' => 'spp', 'bisa_dicicil' => false,
+        'mode' => 'manual', 'tipe' => 'bulanan',
+    ]);
+
+    $response->assertRedirect();
+    $jenisTagihan = JenisTagihan::where('nama', 'SPP Bulanan Tanpa Prioritas')->first();
+    expect($jenisTagihan->priority_score)->toBeNull();
+});
+
+it('updates priority_score on an existing jenis tagihan', function () {
+    [$user, $lembaga] = buatUserKeuangan();
+    $jenisTagihan = JenisTagihan::create(['lembaga_id' => $lembaga->id, 'nama' => 'Uji', 'kategori' => 'spp', 'bisa_dicicil' => false, 'priority_score' => 5]);
+
+    $response = $this->actingAs($user)->put(route('admin.jenis-tagihan.update', $jenisTagihan), [
+        'nama' => 'Uji', 'kategori' => 'spp', 'bisa_dicicil' => false,
+        'mode' => 'manual', 'tipe' => 'sekali', 'priority_score' => 2,
+    ]);
+
+    $response->assertRedirect();
+    expect($jenisTagihan->fresh()->priority_score)->toBe(2);
 });

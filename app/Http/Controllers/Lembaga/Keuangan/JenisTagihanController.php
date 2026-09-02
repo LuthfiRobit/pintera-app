@@ -493,6 +493,7 @@ class JenisTagihanController extends Controller
                 ->ignore($editing?->id)],
             'kategori' => ['required', Rule::in(['pendaftaran', 'daftar_ulang', 'lainnya', 'spp', 'tahunan', 'kegiatan', 'custom'])],
             'bisa_dicicil' => ['nullable', 'boolean'],
+            'priority_score' => ['nullable', 'integer', 'min:0'],
             'maks_cicilan' => ['nullable', 'integer', 'min:2', 'required_if:bisa_dicicil,1'],
             'default_amount' => ['nullable', 'numeric', 'min:0'],
             'mode' => ['nullable', Rule::in(['manual', 'otomatis'])],
