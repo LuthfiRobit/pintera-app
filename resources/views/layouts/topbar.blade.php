@@ -99,6 +99,7 @@
                             this.readIds.push(id);
                             const data = await response.json();
                             this.unreadCount = data.unread_count;
+                            window.dispatchEvent(new CustomEvent('notifikasi-updated', { detail: { count: data.unread_count, id: id } }));
                         }
                     }
                     if (url) {
@@ -113,8 +114,11 @@
                     if (!response.ok) return;
                     this.readIds = @js($notificationFeed->pluck('id')->all());
                     this.unreadCount = 0;
+                    window.dispatchEvent(new CustomEvent('notifikasi-updated', { detail: { count: 0, all: true, ids: this.readIds } }));
                 }
-            }">
+            }"
+            @notifikasi-updated.window="if ($event.detail.all) { readIds = $event.detail.ids; unreadCount = 0; } else if ($event.detail.id && !readIds.includes($event.detail.id)) { readIds.push($event.detail.id); unreadCount = $event.detail.count; }"
+        >
             <x-dropdown align="right" width="w-80">
                 <x-slot name="trigger">
                     <button type="button" class="relative flex h-[38px] w-[38px] items-center justify-center rounded-full border border-gray-200 text-gray-500 transition hover:bg-gray-50" aria-label="Notifikasi">
