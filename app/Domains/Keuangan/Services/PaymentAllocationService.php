@@ -30,14 +30,14 @@ class PaymentAllocationService
         foreach ($pembayaranTagihans as $pt) {
             $tagihan = $pt->tagihan;
 
-            // Skip cancelled bills
-            if ($tagihan->status === 'dibatalkan') {
+            // Skip cancelled bills or bills flagged for review (net_amount not yet trustworthy)
+            if ($tagihan->status === 'dibatalkan' || $tagihan->perlu_ditinjau_ulang) {
                 continue;
             }
 
             // Lock row for update just to be safe if within a transaction
             $lockedTagihan = $tagihan->lockForUpdate()->find($tagihan->id);
-            if ($lockedTagihan->status === 'dibatalkan') {
+            if ($lockedTagihan->status === 'dibatalkan' || $lockedTagihan->perlu_ditinjau_ulang) {
                 continue;
             }
 
