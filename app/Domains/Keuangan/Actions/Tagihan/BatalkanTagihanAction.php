@@ -26,6 +26,10 @@ class BatalkanTagihanAction
             abort(422, 'Hanya tagihan dengan status belum bayar yang dapat dibatalkan.');
         }
 
+        if ($tagihan->perlu_ditinjau_ulang) {
+            abort(422, 'Tagihan ini sedang ditinjau ulang, selesaikan peninjauannya dulu sebelum membatalkan.');
+        }
+
         $tagihan->update([
             'status' => 'dibatalkan',
             'cancelled_by' => $userId,

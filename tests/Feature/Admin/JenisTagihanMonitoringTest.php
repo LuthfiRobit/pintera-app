@@ -1,10 +1,11 @@
 <?php
+
 // tests/Feature/Admin/JenisTagihanMonitoringTest.php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
+use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\Lembaga;
 use App\Models\Siswa;
-use App\Domains\Keuangan\Models\Tagihan;
 use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
@@ -20,7 +21,7 @@ it('denies access to monitoring page without jenis-tagihan.view permission', fun
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    
+
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $this->actingAs($user)
@@ -32,7 +33,7 @@ it('enforces tenant scope on monitoring page', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga1 = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembaga2 = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    
+
     $user1 = User::factory()->create(['lembaga_id' => $lembaga1->id]);
     $user1->assignRole('bendahara_lembaga');
 
@@ -48,7 +49,7 @@ it('allows access to monitoring page with proper permission and tenant', functio
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
-    
+
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $this->actingAs($user)
@@ -61,7 +62,7 @@ it('calculates ringkasan metrics correctly', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
-    
+
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $siswa1 = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -115,7 +116,7 @@ it('calculates ringkasan metrics correctly', function () {
 
     $response->assertOk();
     $response->assertViewHas('ringkasan');
-    
+
     $ringkasan = $response->viewData('ringkasan');
     // total_penerima includes ALL tagihan (4 in total)
     expect($ringkasan['total_penerima'])->toBe(4);
@@ -132,11 +133,11 @@ it('lists daftar penerima correctly with pagination', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
-    
+
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
-    
+
     Tagihan::query()->delete();
 
     Tagihan::factory()->create([
@@ -151,7 +152,7 @@ it('lists daftar penerima correctly with pagination', function () {
 
     $response->assertOk();
     $response->assertViewHas('tagihanPenerima');
-    
+
     $tagihanPenerima = $response->viewData('tagihanPenerima');
     expect($tagihanPenerima->count())->toBe(1);
     expect($tagihanPenerima->first()->tagihable->id)->toBe($siswa->id);
@@ -162,11 +163,11 @@ it('lists daftar tunggakan correctly with pagination', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
-    
+
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
-    
+
     Tagihan::query()->delete();
 
     // 2 belum_bayar items for the same student
@@ -193,10 +194,10 @@ it('lists daftar tunggakan correctly with pagination', function () {
 
     $response->assertOk();
     $response->assertViewHas('tagihanTunggakan');
-    
+
     $tagihanTunggakan = $response->viewData('tagihanTunggakan');
     expect($tagihanTunggakan->count())->toBe(1); // Grouped by siswa
-    
+
     $firstTunggakan = $tagihanTunggakan->first();
     expect($firstTunggakan->tagihable->id)->toBe($siswa->id);
     expect((float) $firstTunggakan->total_tunggakan)->toBe(200000.0);
@@ -208,11 +209,11 @@ it('can cancel a tagihan if status is belum_bayar', function () {
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $user->assignRole('bendahara_lembaga');
-    
+
     $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
-    
+
     Tagihan::query()->delete();
 
     $tagihan = Tagihan::factory()->create([
@@ -228,7 +229,7 @@ it('can cancel a tagihan if status is belum_bayar', function () {
         ]);
 
     $response->assertRedirect();
-    
+
     $tagihan->refresh();
     expect($tagihan->status)->toBe('dibatalkan');
     expect($tagihan->cancel_reason)->toBe('Salah input');
@@ -326,3 +327,23 @@ it('returns 403 (not 422) when batalTagihan targets a tagihan belonging to a dif
     expect($tagihanMilikB->fresh()->status)->toBe('belum_bayar');
 });
 
+it('rejects cancelling a belum_bayar tagihan that is flagged perlu_ditinjau_ulang', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole('bendahara_lembaga');
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $jenisTagihan = JenisTagihan::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tagihan = Tagihan::factory()->create([
+        'jenis_tagihan_id' => $jenisTagihan->id, 'tagihable_id' => $siswa->id, 'tagihable_type' => Siswa::class,
+        'status' => 'belum_bayar', 'perlu_ditinjau_ulang' => true, 'alasan_perlu_ditinjau' => 'contoh',
+    ]);
+
+    $this->actingAs($user)
+        ->post(route('admin.jenis-tagihan.monitoring.batal', [$jenisTagihan, $tagihan]), ['cancel_reason' => 'Salah input'])
+        ->assertStatus(422);
+
+    expect($tagihan->fresh()->status)->toBe('belum_bayar');
+});
