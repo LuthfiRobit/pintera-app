@@ -22,6 +22,12 @@
             </div>
         @endif
 
+        @if ($errors->any())
+            <div class="rounded-xl border border-error-200 bg-error-50 p-4 text-sm font-medium text-error-700">
+                {{ $errors->first() }}
+            </div>
+        @endif
+
         <x-panel>
             @if ($tagihanList->isEmpty())
                 <div class="flex flex-col items-center justify-center p-12 text-center">
