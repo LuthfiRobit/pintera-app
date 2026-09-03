@@ -281,3 +281,26 @@ it('does not carry a siswa Keluar along when promoting the rest of the kelas (ke
 // dengan cara yang SAMA PERSIS seperti dibuktikan test di atas. Sengaja TIDAK diduplikasi
 // per file -- keputusan sadar, bukan celah yang terlewat (lihat spec
 // .agents/specs/2026-09-03-siklus-hidup-kelas-id-siswa.md §10 test #11).
+
+it('does not block promoting a siswa into a kelas at the same tingkat (tinggal kelas) -- backend never validates tingkat by design', function () {
+    // Pembuktian eksplisit keputusan spec: backend TIDAK PERNAH menolak kombinasi
+    // tingkat apapun (sama/lompat/mundur) -- warning hanya di frontend (Task 1).
+    // Test ini HARUS lolos tanpa perubahan kode apapun di ProsesKenaikanKelasAction,
+    // karena action itu memang tidak pernah memvalidasi tingkat sejak awal.
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '3A', 'tingkat' => '3']);
+    $kelasBaruSamaTingkat = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => '3B', 'tingkat' => '3']);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLama->id, 'status' => StatusSiswa::Aktif->value]);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $this->actingAs($manager)->post(route('admin.kenaikan-kelas.store'), [
+        'mapping' => [
+            $kelasLama->id => ['tindakan' => 'naik', 'kelas_baru_id' => $kelasBaruSamaTingkat->id],
+        ],
+    ])->assertRedirect(route('admin.kelas.index'));
+
+    expect($siswa->fresh()->kelas_id)->toBe($kelasBaruSamaTingkat->id);
+});
