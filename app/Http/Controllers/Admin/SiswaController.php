@@ -18,6 +18,7 @@ use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SiswaController extends BaseController
@@ -300,6 +301,12 @@ class SiswaController extends BaseController
             'tanggal_lahir' => ['nullable', 'date'],
             'agama' => ['nullable', 'string', 'max:50'],
         ]);
+
+        if ($current && $current->status !== StatusSiswa::Aktif && ! empty($data['kelas_id'])) {
+            throw ValidationException::withMessages([
+                'kelas_id' => 'Tidak bisa menempatkan kelas untuk siswa berstatus non-aktif. Ubah status ke Aktif terlebih dahulu.',
+            ]);
+        }
 
         if (! empty($data['kelas_id'])) {
             $lembagaId = $current?->lembaga_id ?? auth()->user()->lembaga_id ?? session('active_lembaga_id');

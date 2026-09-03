@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\StatusSiswa;
 use App\Enums\SumberDataSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
@@ -252,4 +253,29 @@ it('rejects resetting the password of a siswa with no linked account', function 
 
     $this->actingAs($manager)->patch(route('admin.siswa.reset-password', $siswa))
         ->assertSessionHasErrors();
+});
+
+it('rejects setting kelas_id on update for a siswa with non-aktif status', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $siswaKeluar = Siswa::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'kelas_id' => null,
+        'status' => StatusSiswa::Keluar->value,
+        'nis' => '9990001',
+    ]);
+
+    $response = $this->actingAs($manager)->put(route('admin.siswa.update', $siswaKeluar), [
+        'kelas_id' => $kelas->id,
+        'nis' => $siswaKeluar->nis,
+        'nisn' => $siswaKeluar->nisn,
+        'nama_lengkap' => $siswaKeluar->nama_lengkap,
+        'jenis_kelamin' => 'L',
+    ]);
+
+    $response->assertSessionHasErrors('kelas_id');
+    expect($siswaKeluar->fresh()->kelas_id)->toBeNull();
 });
