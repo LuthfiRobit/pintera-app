@@ -1,6 +1,6 @@
 # Siklus Hidup `kelas_id` Siswa Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Menutup akar masalah `kelas_id` siswa yang tidak pernah dibersihkan saat status berubah ke Lulus/Pindah/Keluar, dengan invariant terjamin di level database (CHECK constraint), snapshot historis (`kelas_terakhir_id`), dan accessor terpusat untuk tampilan.
 
@@ -33,11 +33,11 @@
 - Konsumsi: `App\Enums\StatusSiswa` (enum existing, sudah diimport di file ini).
 - Produksi: `validateSiswa()` sekarang melempar `ValidationException` dengan key `kelas_id` kalau siswa yang diedit berstatus non-`Aktif` dan `kelas_id` yang disubmit tidak kosong. Task lain tidak bergantung pada perubahan ini.
 
-- [ ] **Step 1: Baca method `validateSiswa()` saat ini**
+- [x] **Step 1: Baca method `validateSiswa()` saat ini**
 
 Baca `app/Http/Controllers/Admin/SiswaController.php` baris 279-310 untuk memastikan baris yang akan diedit masih persis sama sebelum melangkah (nomor baris bisa bergeser sedikit kalau ada perubahan lain sebelumnya).
 
-- [ ] **Step 2: Tulis test yang gagal**
+- [x] **Step 2: Tulis test yang gagal**
 
 Buka `tests/Feature/Admin/SiswaCrudTest.php`, cek pola `actingAs`/factory yang sudah dipakai test lain di file itu untuk membuat `$manager` (user dengan permission `siswa.edit`) dan `Lembaga`. Tambahkan test baru di akhir file:
 
@@ -71,12 +71,12 @@ it('rejects setting kelas_id on update for a siswa with non-aktif status', funct
 
 Sesuaikan cara `givePermissionTo`/pembuatan `$manager` persis dengan pola yang sudah ada di file test ini (cek 1-2 test lain di file yang sama untuk memastikan format yang benar dipakai proyek ini, mis. apakah permission perlu `Permission::firstOrCreate()` dulu).
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="rejects setting kelas_id on update for a siswa with non-aktif status"`
 Expected: FAIL — `kelas_id` benar-benar ter-update (tidak ada error validasi), assertion `assertSessionHasErrors('kelas_id')` gagal.
 
-- [ ] **Step 4: Tambahkan guard di `validateSiswa()`**
+- [x] **Step 4: Tambahkan guard di `validateSiswa()`**
 
 Di `app/Http/Controllers/Admin/SiswaController.php`, tambahkan `use Illuminate\Validation\ValidationException;` ke daftar `use` di atas (setelah `use Illuminate\Support\Facades\Log;`). Lalu di method `validateSiswa()`, setelah blok `$data = $request->validate([...]);` selesai (baris kira-kira 302, sebelum `return $data;` atau blok berikutnya), tambahkan:
 
@@ -88,17 +88,17 @@ if ($current && $current->status !== StatusSiswa::Aktif && ! empty($data['kelas_
 }
 ```
 
-- [ ] **Step 5: Jalankan test lagi, pastikan lolos**
+- [x] **Step 5: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="rejects setting kelas_id on update for a siswa with non-aktif status"`
 Expected: PASS
 
-- [ ] **Step 6: Regresi file test terkait**
+- [x] **Step 6: Regresi file test terkait**
 
 Run: `php artisan test --filter=SiswaCrudTest`
 Expected: semua test di file itu PASS (tidak ada regresi ke test edit siswa aktif biasa).
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -119,7 +119,7 @@ git commit -m "fix(akademik): tolak set kelas_id lewat form edit untuk siswa ber
 - Produksi: kolom `siswa.kelas_terakhir_id` (`bigint unsigned`, nullable, FK ke `kelas.id` `ON DELETE SET NULL`); CHECK constraint `chk_siswa_kelas_id_null_saat_nonaktif` aktif di tabel `siswa`. Task 3 (Action) dan Task 5 (accessor) bergantung pada kolom ini ada.
 - **PENTING**: begitu migration ini jalan, RefreshDatabase di SEMUA test suite akan menerapkan CHECK constraint baru. Test manapun yang membuat `Siswa` dengan `kelas_id` terisi DAN status non-`aktif` dalam 1 factory call akan gagal dengan DB exception. Step 6 di task ini menambal SATU test yang diketahui melanggar (`SesiPembelajaranGeneratorTest.php:187`) dengan perbaikan interim minimal (hapus `kelas_id` dari factory call) — perbaikan versi lengkap (pakai `UpdateStatusSiswaAction`) menyusul di Task 4 setelah Action itu ada.
 
-- [ ] **Step 1: Tulis test migration yang gagal (backfill)**
+- [x] **Step 1: Tulis test migration yang gagal (backfill)**
 
 Buat file baru `tests/Feature/Akademik/KelasTerakhirIdMigrationTest.php`:
 
@@ -171,12 +171,12 @@ it('menolak insert siswa non-aktif dengan kelas_id terisi lewat query mentah (CH
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=KelasTerakhirIdMigrationTest`
 Expected: FAIL — kolom `kelas_terakhir_id` belum ada (`Column not found` error), dan constraint belum ada sehingga test kedua tidak melempar exception apapun.
 
-- [ ] **Step 3: Buat migration**
+- [x] **Step 3: Buat migration**
 
 ```bash
 php artisan make:migration add_kelas_terakhir_id_to_siswa_table --no-interaction
@@ -224,18 +224,18 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=KelasTerakhirIdMigrationTest`
 Expected: PASS (2 test)
 
-- [ ] **Step 5: Jalankan full regresi cepat untuk menemukan test yang pecah**
+- [x] **Step 5: Jalankan full regresi cepat untuk menemukan test yang pecah**
 
 Run: `php artisan test --compact 2>&1 | grep -B2 "FAILED\|Error"`
 
 Expected: kemungkinan besar HANYA `tests/Unit/Services/SesiPembelajaranGeneratorTest.php` (test `'excludes non-aktif siswa from auto-generated presensi'`) yang gagal, dengan error `QueryException` soal CHECK constraint. Kalau ada test LAIN yang gagal karena alasan yang sama (siswa non-aktif dibuat dengan `kelas_id` terisi dalam 1 factory call), catat nama file dan baris persis, lalu tambal dengan pola yang sama seperti Step 6 di bawah (hapus `kelas_id` dari factory call yang melanggar) — jangan lanjut ke Task 3 sebelum SEMUA kegagalan akibat constraint ini ditambal.
 
-- [ ] **Step 6: Tambal interim `SesiPembelajaranGeneratorTest.php:187`**
+- [x] **Step 6: Tambal interim `SesiPembelajaranGeneratorTest.php:187`**
 
 Baca `tests/Unit/Services/SesiPembelajaranGeneratorTest.php` baris 185-193. Ganti baris 187 dari:
 
@@ -249,7 +249,7 @@ Menjadi (interim — TIDAK mengubah assertion, cuma menghapus kombinasi yang sek
 $siswaLulus = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => null, 'status' => 'lulus']);
 ```
 
-- [ ] **Step 7: Jalankan test itu + full suite lagi**
+- [x] **Step 7: Jalankan test itu + full suite lagi**
 
 Run: `php artisan test --filter=SesiPembelajaranGeneratorTest`
 Expected: PASS
@@ -257,7 +257,7 @@ Expected: PASS
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures — kalau masih ada yang gagal karena constraint, ulangi Step 5-6 untuk test itu sebelum lanjut.
 
-- [ ] **Step 8: Pint dan commit**
+- [x] **Step 8: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -278,7 +278,7 @@ git commit -m "feat(akademik): tambah kolom kelas_terakhir_id + backfill + CHECK
 - Konsumsi: `App\Models\Siswa`, `App\Enums\StatusSiswa` (sudah ada).
 - Produksi: `App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction::execute(Siswa $siswa, StatusSiswa $statusBaru): Siswa`. Task 4 (fix test) dan Task 9 (test navigasi) memanggil Action ini persis dengan signature ini.
 
-- [ ] **Step 1: Tulis test yang gagal (siklus dasar + reversal)**
+- [x] **Step 1: Tulis test yang gagal (siklus dasar + reversal)**
 
 Buat file baru `tests/Feature/Akademik/UpdateStatusSiswaActionTest.php`:
 
@@ -375,12 +375,12 @@ it('transisi Aktif langsung memanggil execute dengan status Aktif tanpa perubaha
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=UpdateStatusSiswaActionTest`
 Expected: FAIL — `Class "App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction" not found`
 
-- [ ] **Step 3: Buat Action**
+- [x] **Step 3: Buat Action**
 
 Buat direktori `app/Domains/Akademik/Actions/Siswa/` kalau belum ada, lalu buat file `app/Domains/Akademik/Actions/Siswa/UpdateStatusSiswaAction.php`:
 
@@ -425,12 +425,12 @@ final class UpdateStatusSiswaAction
 }
 ```
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=UpdateStatusSiswaActionTest`
 Expected: PASS (5 test)
 
-- [ ] **Step 5: Wire ke `SiswaController::updateStatus()`**
+- [x] **Step 5: Wire ke `SiswaController::updateStatus()`**
 
 Di `app/Http/Controllers/Admin/SiswaController.php`, tambahkan import `use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;` ke daftar `use` di atas. Ganti method `updateStatus()` (baris 186-203) dari:
 
@@ -472,12 +472,12 @@ Menjadi:
     }
 ```
 
-- [ ] **Step 6: Regresi test controller siswa**
+- [x] **Step 6: Regresi test controller siswa**
 
 Run: `php artisan test --filter=SiswaCrudTest`
 Expected: PASS, tidak ada regresi (termasuk test dari Task 1 dan test existing `it('...update-status...')` di baris 215 file itu kalau ada).
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -495,11 +495,11 @@ git commit -m "feat(akademik): tambah UpdateStatusSiswaAction, pindahkan logic t
 **Interfaces:**
 - Konsumsi: `App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction::execute()` dari Task 3.
 
-- [ ] **Step 1: Baca kondisi test saat ini (hasil interim Task 2)**
+- [x] **Step 1: Baca kondisi test saat ini (hasil interim Task 2)**
 
 Baca `tests/Unit/Services/SesiPembelajaranGeneratorTest.php` baris 185-193 — pastikan masih versi interim (`'kelas_id' => null`) dari Task 2 Step 6.
 
-- [ ] **Step 2: Ganti jadi versi final memakai Action**
+- [x] **Step 2: Ganti jadi versi final memakai Action**
 
 Tambahkan import di atas file (kalau belum ada blok `use` untuk file Pest ini, tambahkan di baris paling atas setelah `<?php`):
 
@@ -537,12 +537,12 @@ it('excludes non-aktif siswa from auto-generated presensi', function () {
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan lolos**
+- [x] **Step 3: Jalankan test, pastikan lolos**
 
 Run: `php artisan test --filter=SesiPembelajaranGeneratorTest`
 Expected: PASS
 
-- [ ] **Step 4: Pint dan commit**
+- [x] **Step 4: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -562,7 +562,7 @@ git commit -m "test(akademik): sempurnakan test presensi non-aktif pakai UpdateS
 **Interfaces:**
 - Produksi: `Siswa::kelasTerakhir(): BelongsTo` (relasi baru), `$siswa->kelas_efektif` (accessor, magic property, return `?Kelas`). Task 6 (blade views) memakai accessor dan relasi `kelasTerakhir` yang sama persis ini.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Buat file baru `tests/Unit/Models/SiswaKelasEfektifTest.php`:
 
@@ -610,12 +610,12 @@ it('mengembalikan null kalau kelas_id maupun kelas_terakhir_id kosong', function
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=SiswaKelasEfektifTest`
 Expected: FAIL — `kelas_efektif` accessor belum ada, dan factory belum mendukung field `kelas_terakhir_id` (error "Unknown column" atau accessor return null/error tergantung urutan).
 
-- [ ] **Step 3: Tambah relasi dan accessor di model**
+- [x] **Step 3: Tambah relasi dan accessor di model**
 
 Baca `app/Models/Siswa.php` baris 85-90 untuk menemukan method `kelas(): BelongsTo` yang sudah ada. Tepat setelah method itu, tambahkan:
 
@@ -631,7 +631,7 @@ Baca `app/Models/Siswa.php` baris 85-90 untuk menemukan method `kelas(): Belongs
     }
 ```
 
-- [ ] **Step 4: Tambah `kelas_terakhir_id` ke `$fillable`**
+- [x] **Step 4: Tambah `kelas_terakhir_id` ke `$fillable`**
 
 Di `app/Models/Siswa.php` baris 33-36, tambahkan `'kelas_terakhir_id'` ke array `$fillable` (setelah `'kelas_id'`):
 
@@ -642,7 +642,7 @@ Di `app/Models/Siswa.php` baris 33-36, tambahkan `'kelas_terakhir_id'` ke array 
     ];
 ```
 
-- [ ] **Step 5: Tambah `kelas_terakhir_id` ke `SiswaFactory`**
+- [x] **Step 5: Tambah `kelas_terakhir_id` ke `SiswaFactory`**
 
 Di `database/factories/SiswaFactory.php`, tambahkan `'kelas_terakhir_id' => null` ke `definition()` (setelah baris `'kelas_id' => null,`):
 
@@ -651,12 +651,12 @@ Di `database/factories/SiswaFactory.php`, tambahkan `'kelas_terakhir_id' => null
             'kelas_terakhir_id' => null,
 ```
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=SiswaKelasEfektifTest`
 Expected: PASS (3 test)
 
-- [ ] **Step 7: Terapkan ke `RaporPdfDataBuilder`**
+- [x] **Step 7: Terapkan ke `RaporPdfDataBuilder`**
 
 Di `app/Domains/Akademik/Services/RaporPdfDataBuilder.php` baris 45, ganti:
 
@@ -671,7 +671,7 @@ Menjadi:
         abort_if($kelas === null, 404);
 ```
 
-- [ ] **Step 8: Tulis test regresi untuk `RaporPdfDataBuilder`**
+- [x] **Step 8: Tulis test regresi untuk `RaporPdfDataBuilder`**
 
 Cari test file existing untuk `RaporPdfDataBuilder` atau endpoint `cetak` (cek `tests/Feature/Guru/RaporControllerTest.php`, sudah ada test `'streams a pdf for a siswa the guru is wali kelas of'`). Tambahkan test baru di file yang sama:
 
@@ -700,18 +700,18 @@ it('builds rapor data for a siswa who has since left the kelas (kelas_id null, k
 });
 ```
 
-- [ ] **Step 9: Jalankan test, pastikan lolos**
+- [x] **Step 9: Jalankan test, pastikan lolos**
 
 Run: `php artisan test --filter=RaporControllerTest`
 Expected: PASS, termasuk test baru.
 
-- [ ] **Step 10: Regresi luas model Siswa dan Rapor**
+- [x] **Step 10: Regresi luas model Siswa dan Rapor**
 
 Run: `php artisan test --filter=Siswa`
 Run: `php artisan test --filter=Rapor`
 Expected: semua PASS.
 
-- [ ] **Step 11: Pint dan commit**
+- [x] **Step 11: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -732,7 +732,7 @@ git commit -m "feat(akademik): accessor kelas_efektif di model Siswa, dipakai Ra
 **Interfaces:**
 - Konsumsi: `$siswa->kelas_efektif`, `$siswa->kelasTerakhir` dari Task 5.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan test baru di `tests/Feature/Admin/SiswaCrudTest.php`:
 
@@ -757,12 +757,12 @@ it('shows the last known kelas with a "(kelas terakhir)" label for a non-aktif s
 
 Sesuaikan permission `siswa.view` dan pola pembuatan `$manager` dengan yang sudah dipakai test lain di file ini.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows the last known kelas"`
 Expected: FAIL — `_daftar.blade.php` masih menampilkan badge "Belum ditempatkan" untuk siswa ini (kelas_id sudah null), teks "Kelas 9C" dan "(kelas terakhir)" tidak muncul.
 
-- [ ] **Step 3: Update `_daftar.blade.php`**
+- [x] **Step 3: Update `_daftar.blade.php`**
 
 Baca `resources/views/admin/siswa/_daftar.blade.php` baris 91-97. Ganti:
 
@@ -791,7 +791,7 @@ Menjadi:
                     </td>
 ```
 
-- [ ] **Step 4: Update eager loading di controller (cegah N+1)**
+- [x] **Step 4: Update eager loading di controller (cegah N+1)**
 
 Di `app/Http/Controllers/Admin/SiswaController.php` baris 33, ganti:
 
@@ -805,12 +805,12 @@ Menjadi:
         $query = Siswa::with(['kelas', 'kelasTerakhir', 'person'])
 ```
 
-- [ ] **Step 5: Jalankan test lagi, pastikan lolos**
+- [x] **Step 5: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="shows the last known kelas"`
 Expected: PASS
 
-- [ ] **Step 6: Update `profil.blade.php` dan tulis test-nya**
+- [x] **Step 6: Update `profil.blade.php` dan tulis test-nya**
 
 Tambahkan test baru di `tests/Feature/Admin/SiswaCrudTest.php` (cek route `show`/`profil` yang benar dengan membaca `routes/admin.php` atau controller `show()` kalau ada — sesuaikan nama route persis):
 
@@ -860,12 +860,12 @@ Menjadi:
                         </div>
 ```
 
-- [ ] **Step 7: Jalankan test lagi, pastikan lolos**
+- [x] **Step 7: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=SiswaCrudTest`
 Expected: PASS, semua test termasuk 2 test baru.
 
-- [ ] **Step 8: Pint dan commit**
+- [x] **Step 8: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -884,7 +884,7 @@ git commit -m "feat(akademik): tampilkan kelas terakhir siswa non-aktif di dafta
 **Interfaces:**
 - Konsumsi: `App\Enums\StatusSiswa` (di Blade, dipanggil fully-qualified).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan test baru di `tests/Feature/Admin/SiswaCrudTest.php`:
 
@@ -911,12 +911,12 @@ it('disables the kelas_id select on the edit form for a non-aktif siswa', functi
 
 Sesuaikan nama route `admin.siswa.edit` dan permission `siswa.edit` dengan yang sudah dipakai test lain di file ini.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="disables the kelas_id select"`
 Expected: FAIL — field `kelas_id` tidak punya atribut `disabled`, teks "Siswa berstatus non-aktif" tidak muncul.
 
-- [ ] **Step 3: Update `_form.blade.php`**
+- [x] **Step 3: Update `_form.blade.php`**
 
 Baca `resources/views/admin/siswa/_form.blade.php` baris 71-81. Ganti:
 
@@ -955,17 +955,17 @@ Menjadi:
             </div>
 ```
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="disables the kelas_id select"`
 Expected: PASS
 
-- [ ] **Step 5: Regresi form create siswa (pastikan `$siswa` null tidak error)**
+- [x] **Step 5: Regresi form create siswa (pastikan `$siswa` null tidak error)**
 
 Run: `php artisan test --filter=SiswaCrudTest`
 Expected: semua PASS — perhatikan khusus test yang meng-hit halaman `create` (di mana `$siswa` bernilai `null`, jadi `$siswaNonAktif` harus `false`, bukan error).
 
-- [ ] **Step 6: Pint dan commit**
+- [x] **Step 6: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -983,7 +983,7 @@ git commit -m "feat(akademik): disable field kelas_id di form edit untuk siswa b
 **Interfaces:**
 - Konsumsi: `App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction` dari Task 3.
 
-- [ ] **Step 1: Tulis test**
+- [x] **Step 1: Tulis test**
 
 Tambahkan test baru di `tests/Feature/Admin/KenaikanKelasControllerTest.php` (mengikuti pola helper `actingAsKenaikanKelasManager` yang sudah ada di file ini):
 
@@ -1020,17 +1020,17 @@ it('does not carry a siswa Keluar along when promoting the rest of the kelas (ke
 // .agents/specs/2026-09-03-siklus-hidup-kelas-id-siswa.md §10 test #11).
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="does not carry a siswa Keluar along"`
 Expected: FAIL kalau dijalankan sebelum Task 2-3 selesai (kolom/Action belum ada) — tapi karena task ini dieksekusi TERAKHIR dalam plan, seharusnya justru langsung PASS begitu ditulis (semua dependency sudah ada). Kalau langsung PASS di percobaan pertama, itu MEMBUKTIKAN klaim "gratis" di spec — bukan tanda test salah. Jalankan tetap untuk konfirmasi, dan verifikasi manual dengan membaca assertion bahwa test ini benar-benar menguji hal yang benar (bukan tautologi).
 
-- [ ] **Step 3: Jalankan test, pastikan lolos**
+- [x] **Step 3: Jalankan test, pastikan lolos**
 
 Run: `php artisan test --filter=KenaikanKelasControllerTest`
 Expected: semua PASS.
 
-- [ ] **Step 4: Pint dan commit**
+- [x] **Step 4: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1048,7 +1048,7 @@ git commit -m "test(akademik): buktikan siswa Keluar tidak ikut Kenaikan Kelas, 
 **Interfaces:**
 - Konsumsi: `App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction` dari Task 3.
 
-- [ ] **Step 1: Tulis test listing (index) yang gagal-jika-salah**
+- [x] **Step 1: Tulis test listing (index) yang gagal-jika-salah**
 
 Tambahkan test baru di `tests/Feature/Guru/RaporControllerTest.php`:
 
@@ -1068,12 +1068,12 @@ it('excludes a siswa Keluar from the wali kelas rapor catatan listing', function
 });
 ```
 
-- [ ] **Step 2: Jalankan test**
+- [x] **Step 2: Jalankan test**
 
 Run: `php artisan test --filter="excludes a siswa Keluar from the wali kelas rapor catatan listing"`
 Expected: PASS (sudah "gratis" sejak Task 2, ini murni test pembuktian).
 
-- [ ] **Step 3: Tulis test navigasi next/previous**
+- [x] **Step 3: Tulis test navigasi next/previous**
 
 Tambahkan test baru di file yang sama, mendesain urutan nama supaya siswa Keluar SEHARUSNYA berada di TENGAH kalau tidak dikecualikan (membuktikan tidak ada pergeseran index):
 
@@ -1097,17 +1097,17 @@ it('skips a siswa Keluar entirely when computing siswaSebelumnya/siswaBerikutnya
 });
 ```
 
-- [ ] **Step 4: Jalankan test**
+- [x] **Step 4: Jalankan test**
 
 Run: `php artisan test --filter="skips a siswa Keluar entirely"`
 Expected: PASS. Kalau FAIL, periksa apakah `$ahmad` berhasil ditemukan (factory `siapkanWaliKelasUntukRapor()` mungkin memberi nama berbeda dari "Ahmad Fauzi" — baca definisinya di file test yang sama untuk memastikan nama persis, sesuaikan query `where('nama_lengkap', 'like', ...)` kalau perlu).
 
-- [ ] **Step 5: Regresi penuh file test**
+- [x] **Step 5: Regresi penuh file test**
 
 Run: `php artisan test --filter=RaporControllerTest`
 Expected: semua PASS.
 
-- [ ] **Step 6: Pint dan commit**
+- [x] **Step 6: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1121,17 +1121,17 @@ git commit -m "test(akademik): buktikan siswa Keluar dikecualikan dari listing d
 
 **Files:** Tidak ada file diubah — verifikasi akhir.
 
-- [ ] **Step 1: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 1: Pastikan tidak ada proses test lain berjalan**
 
 Run: `ps aux | grep artisan | grep -v grep`
 Expected: kosong (tidak ada proses `php artisan test` lain).
 
-- [ ] **Step 2: Jalankan full suite sendirian**
+- [x] **Step 2: Jalankan full suite sendirian**
 
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures.
 
-- [ ] **Step 3: Pint final**
+- [x] **Step 3: Pint final**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}` atau auto-fix tanpa error — commit lagi kalau ada file yang diformat ulang.
