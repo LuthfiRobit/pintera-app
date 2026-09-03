@@ -25,7 +25,11 @@ it('bisa lihat sesi kemarin lewat query param tanggal', function () {
 
     $kemarin = now()->subDay();
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $guru->lembaga_id, 'status_aktif' => true]);
-    Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+    Semester::factory()->create([
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'status_aktif' => true,
+        'tanggal_mulai' => now()->subMonth(),
+    ]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $guru->lembaga_id, 'tahun_ajaran_id' => $tahunAjaran->id]);
     $jadwal = JadwalPelajaran::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id]);
     $sesiKemarin = SesiPembelajaran::factory()->create([
@@ -52,6 +56,27 @@ it('menolak tanggal di masa depan', function () {
     $besok = now()->addDay()->toDateString();
 
     $response = $this->actingAs($user)->get(route('guru.jurnal-kbm.index', ['tanggal' => $besok]));
+
+    $response->assertRedirect(route('guru.jurnal-kbm.index'));
+    $response->assertSessionHas('error');
+});
+
+it('menolak tanggal sebelum semester aktif dimulai', function () {
+    $guru = Guru::factory()->create();
+    $user = User::factory()->create(['lembaga_id' => $guru->lembaga_id]);
+    Person::where('id', $guru->person_id)->update(['user_id' => $user->id]);
+    $user->assignRole('guru');
+
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $guru->lembaga_id, 'status_aktif' => true]);
+    Semester::factory()->create([
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'status_aktif' => true,
+        'tanggal_mulai' => now()->toDateString(),
+    ]);
+
+    $sebelumSemester = now()->subDays(3)->toDateString();
+
+    $response = $this->actingAs($user)->get(route('guru.jurnal-kbm.index', ['tanggal' => $sebelumSemester]));
 
     $response->assertRedirect(route('guru.jurnal-kbm.index'));
     $response->assertSessionHas('error');

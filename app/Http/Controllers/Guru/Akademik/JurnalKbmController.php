@@ -8,6 +8,8 @@ use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Http\Requests\Akademik\UpdateJurnalPresensiRequest;
 use App\Models\JadwalPelajaran;
+use App\Models\Semester;
+use App\Models\TahunAjaran;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -37,6 +39,17 @@ class JurnalKbmController extends BaseController
 
         if ($tanggal->isFuture()) {
             return redirect()->route('guru.jurnal-kbm.index')->with('error', 'Tidak bisa mengisi jurnal untuk tanggal yang belum terjadi.');
+        }
+
+        if ($guru) {
+            $tahunAjaranAktif = TahunAjaran::where('lembaga_id', $guru->lembaga_id)->where('status_aktif', true)->first();
+            $semesterAktif = $tahunAjaranAktif
+                ? Semester::where('tahun_ajaran_id', $tahunAjaranAktif->id)->where('status_aktif', true)->first()
+                : null;
+
+            if ($semesterAktif && $semesterAktif->tanggal_mulai && $tanggal->lt($semesterAktif->tanggal_mulai)) {
+                return redirect()->route('guru.jurnal-kbm.index')->with('error', 'Tidak bisa mengisi jurnal untuk tanggal sebelum semester aktif dimulai.');
+            }
         }
 
         $hariIni = $tanggal;
