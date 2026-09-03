@@ -79,7 +79,7 @@ it('does not let a siswa Pindah/Keluar whose kelas_id was never cleared block su
     // nyata di lapangan (guru tidak akan pernah mengisi catatan untuk siswa yang sudah pergi).
     $siswaKeluar = Siswa::factory()->create([
         'lembaga_id' => $kelas->lembaga_id,
-        'kelas_id' => $kelas->id,
+        'kelas_id' => null,
         'status' => StatusSiswa::Keluar,
     ]);
 

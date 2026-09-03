@@ -1,15 +1,15 @@
 <?php
 
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Akademik\Services\SesiPembelajaranGenerator;
 use App\Enums\Hari;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
@@ -184,7 +184,7 @@ it('does not overwrite a manually-edited presensi status when the generator runs
 
 it('excludes non-aktif siswa from auto-generated presensi', function () {
     ['kelas' => $kelas, 'semester' => $semester] = siapkanKelasDenganJadwal();
-    $siswaLulus = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'lulus']);
+    $siswaLulus = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => null, 'status' => 'lulus']);
 
     $hasil = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
 
