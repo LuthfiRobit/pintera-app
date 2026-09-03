@@ -68,15 +68,20 @@
                 <x-input-error :messages="$errors->get('tanggal_lahir')" class="mt-1.5" />
             </div>
 
+            @php $siswaNonAktif = $siswa && $siswa->status !== \App\Enums\StatusSiswa::Aktif; @endphp
             <div class="sm:col-span-12">
                 <x-input-label value="Penempatan Kelas" />
-                <x-select name="kelas_id" class="mt-1.5 block w-full transition duration-150" :error="$errors->has('kelas_id')">
+                <x-select name="kelas_id" :disabled="$siswaNonAktif" class="mt-1.5 block w-full transition duration-150" :error="$errors->has('kelas_id')">
                     <option value="">— Belum ditempatkan —</option>
                     @foreach ($kelasList as $kelas)
                         <option value="{{ $kelas->id }}" @selected($val('kelas_id') == $kelas->id)>{{ $kelas->nama }}</option>
                     @endforeach
                 </x-select>
-                <x-input-hint>(Opsional)</x-input-hint>
+                @if ($siswaNonAktif)
+                    <x-input-hint>Siswa berstatus non-aktif — ubah status ke Aktif dulu untuk menempatkan kelas.</x-input-hint>
+                @else
+                    <x-input-hint>(Opsional)</x-input-hint>
+                @endif
                 <x-input-error :messages="$errors->get('kelas_id')" class="mt-1.5" />
             </div>
         </div>

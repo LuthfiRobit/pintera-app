@@ -312,3 +312,21 @@ it('shows the last known kelas with a "(kelas terakhir)" label on the siswa prof
     $response->assertSee('Kelas 9D');
     $response->assertSee('(kelas terakhir)');
 });
+
+it('disables the kelas_id select on the edit form for a non-aktif siswa', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+    $siswaKeluar = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => null, 'status' => 'keluar']);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.edit', $siswaKeluar));
+
+    $response->assertOk();
+    $html = $response->getContent();
+    $selectPos = strpos($html, 'name="kelas_id"');
+    expect($selectPos)->not->toBeFalse();
+    $selectTagEnd = strpos($html, '>', $selectPos);
+    $selectOpenTag = substr($html, strrpos(substr($html, 0, $selectPos), '<select'), $selectTagEnd - strrpos(substr($html, 0, $selectPos), '<select') + 1);
+    expect($selectOpenTag)->toContain('disabled');
+    $response->assertSee('Siswa berstatus non-aktif');
+});
