@@ -10,6 +10,7 @@ use App\Domains\Akademik\Enums\KurikulumFramework;
 use App\Domains\Akademik\Models\KurikulumAssignment;
 use App\Http\Requests\Akademik\StoreKurikulumAssignmentRequest;
 use App\Http\Requests\Akademik\UpdateKurikulumAssignmentRequest;
+use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -131,6 +132,19 @@ class KurikulumAssignmentController extends BaseController
     {
         $this->authorize('kurikulum-assignment.delete');
         $this->authorizeAssignmentScope($request, $kurikulumAssignment->lembaga_id);
+
+        if ($kurikulumAssignment->lembaga_id !== null) {
+            $jumlahKelasTerdampak = Kelas::where('lembaga_id', $kurikulumAssignment->lembaga_id)
+                ->where('tahun_ajaran_id', $kurikulumAssignment->tahun_ajaran_id)
+                ->where('tingkat', $kurikulumAssignment->tingkat)
+                ->where('kurikulum', $kurikulumAssignment->kurikulum)
+                ->count();
+
+            if ($jumlahKelasTerdampak > 0) {
+                return redirect()->route('admin.kurikulum-assignment.index')
+                    ->with('error', "Assignment ini masih dipakai {$jumlahKelasTerdampak} Kelas. Reassign kelas-kelas itu dulu, atau gunakan tool \"Cek & Perbaiki Kurikulum/Fase\".");
+            }
+        }
 
         $kurikulumAssignment->delete();
 

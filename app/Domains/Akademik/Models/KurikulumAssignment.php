@@ -7,11 +7,20 @@ namespace App\Domains\Akademik\Models;
 use App\Domains\Akademik\Enums\KurikulumFramework;
 use App\Models\Lembaga;
 use App\Models\TahunAjaran;
+use Database\Factories\KurikulumAssignmentFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KurikulumAssignment extends Model
 {
+    use HasFactory;
+
+    protected static function newFactory(): KurikulumAssignmentFactory
+    {
+        return KurikulumAssignmentFactory::new();
+    }
+
     protected $table = 'kurikulum_assignment';
 
     protected $fillable = [

@@ -4,6 +4,10 @@
             <div class="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-700" x-data x-init="$store.toast.push('success', @js(session('status')))">{{ session('status') }}</div>
         @endif
 
+        @if (session('error'))
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700">{{ session('error') }}</div>
+        @endif
+
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Pengaturan Kurikulum</h1>
