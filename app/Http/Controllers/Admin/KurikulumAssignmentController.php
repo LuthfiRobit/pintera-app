@@ -12,6 +12,7 @@ use App\Http\Requests\Akademik\StoreKurikulumAssignmentRequest;
 use App\Http\Requests\Akademik\UpdateKurikulumAssignmentRequest;
 use App\Models\Kelas;
 use App\Models\Lembaga;
+use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -134,7 +135,8 @@ class KurikulumAssignmentController extends BaseController
         $this->authorizeAssignmentScope($request, $kurikulumAssignment->lembaga_id);
 
         if ($kurikulumAssignment->lembaga_id !== null) {
-            $jumlahKelasTerdampak = Kelas::where('lembaga_id', $kurikulumAssignment->lembaga_id)
+            $jumlahKelasTerdampak = Kelas::withoutGlobalScope(TenantScope::class)
+                ->where('lembaga_id', $kurikulumAssignment->lembaga_id)
                 ->where('tahun_ajaran_id', $kurikulumAssignment->tahun_ajaran_id)
                 ->where('tingkat', $kurikulumAssignment->tingkat)
                 ->where('kurikulum', $kurikulumAssignment->kurikulum)
