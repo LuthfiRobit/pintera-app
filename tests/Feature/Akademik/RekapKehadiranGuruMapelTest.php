@@ -4,6 +4,7 @@ use App\Domains\Akademik\Models\Presensi;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Identity\Models\Person;
 use App\Models\Guru;
+use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Role;
 use App\Models\Siswa;
@@ -27,6 +28,8 @@ it('guru mapel (bukan wali kelas) bisa lihat Rekap Kehadiran, difilter ke sesiny
     $userMapel->assignRole('guru');
 
     $siswa = Siswa::factory()->create(['kelas_id' => $kelas->id, 'lembaga_id' => $kelas->lembaga_id, 'status' => 'aktif']);
+
+    JadwalPelajaran::factory()->create(['kelas_id' => $kelas->id, 'guru_id' => $guruMapel->id]);
 
     $sesiMapel = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'guru_id' => $guruMapel->id]);
     $sesiWaliHadir = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'guru_id' => $guruWali->id]);

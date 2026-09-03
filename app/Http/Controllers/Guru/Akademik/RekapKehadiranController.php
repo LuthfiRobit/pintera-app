@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Guru\Akademik;
 
-use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Akademik\Services\PresensiAggregationService;
+use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -59,8 +59,12 @@ class RekapKehadiranController extends BaseController
             : ($semesterAktif?->id ?? null);
 
         // Daftar Kelas yang bisa diakses Guru: sebagai wali kelas (rekap penuh) ATAU sebagai guru mapel
-        // yang pernah mengisi sesi pembelajaran di kelas tsb (rekap difilter ke sesinya sendiri).
-        $kelasIdDiajar = SesiPembelajaran::where('guru_id', $guru->id)->distinct()->pluck('kelas_id');
+        // yang terjadwal (JadwalPelajaran) mengajar di kelas tsb (rekap difilter ke sesinya sendiri).
+        // Sumber "kelas apa yang diajar guru" pakai JadwalPelajaran (jadwal resmi semester), konsisten
+        // dengan Guru\KomponenPenilaianController dan Guru\AsesmenController -- BUKAN SesiPembelajaran,
+        // supaya guru mapel yang terjadwal tapi belum sempat generate/isi sesi hari itu tidak kehilangan
+        // akses ke Rekap Kehadiran kelas yang sebenarnya dia ajar.
+        $kelasIdDiajar = JadwalPelajaran::where('guru_id', $guru->id)->distinct()->pluck('kelas_id');
         $kelasQuery = Kelas::where(function ($q) use ($guru, $kelasIdDiajar) {
             $q->where('wali_kelas_guru_id', $guru->id)->orWhereIn('id', $kelasIdDiajar);
         });
