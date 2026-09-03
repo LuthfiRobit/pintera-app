@@ -75,7 +75,12 @@ class PersetujuanController extends BaseController
     public function show(PengajuanRapor $pengajuanRapor, Request $request): View
     {
         abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
-        abort_unless($pengajuanRapor->status === $this->statusUntukAktor($request), 404, 'Pengajuan ini bukan berada di tahap Anda.');
+
+        $statusUntukAktor = $this->statusUntukAktor($request);
+        $statusBolehDilihat = [$statusUntukAktor, StatusPengajuanRapor::Disetujui, StatusPengajuanRapor::Ditolak];
+        abort_unless(in_array($pengajuanRapor->status, $statusBolehDilihat, true), 404, 'Pengajuan ini tidak ditemukan atau bukan wewenang Anda.');
+
+        $isReadOnly = $pengajuanRapor->status !== $statusUntukAktor;
 
         $pengajuanRapor->load(['kelas', 'semester', 'approvalRequest.logs.user', 'approvalRequest.currentStep']);
 
@@ -88,6 +93,7 @@ class PersetujuanController extends BaseController
         return view('portals.lembaga.rapor.persetujuan.show', array_merge([
             'pengajuanRapor' => $pengajuanRapor,
             'catatanList' => $catatanList,
+            'isReadOnly' => $isReadOnly,
         ], $rekap));
     }
 

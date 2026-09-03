@@ -95,6 +95,20 @@ it('shows Kepsek the show page once the pengajuan is Diverifikasi, with rekap ni
     $response->assertViewHas('catatanList', fn ($list) => $list->has($siswa->id));
 });
 
+it('lets Kepsek open the read-only show page for a pengajuan already Disetujui, without the decision form', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'userKepsek' => $userKepsek, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    (new VerifyPengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan, $userWaka, ApprovalAction::Approve);
+    $this->actingAs($userKepsek)->post(route('admin.rapor.persetujuan.decision', $pengajuan->fresh()), ['action' => 'APPROVE']);
+
+    $response = $this->actingAs($userKepsek)->get(route('admin.rapor.persetujuan.show', $pengajuan->fresh()));
+
+    $response->assertOk();
+    $response->assertViewHas('isReadOnly', true);
+    $response->assertDontSee('Kirim Keputusan');
+});
+
 it('is tenant-scoped: PengajuanRapor from another lembaga 404s via route model binding', function () {
     $this->seed(WorkflowDefinitionSeeder::class);
     ['userWaka' => $userWaka] = siapkanAktorPersetujuan();

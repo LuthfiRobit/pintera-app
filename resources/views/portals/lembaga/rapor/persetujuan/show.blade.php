@@ -79,26 +79,49 @@
             @endforeach
         </div>
 
-        <form method="POST" action="{{ route('admin.rapor.persetujuan.decision', $pengajuanRapor) }}" x-data="{ action: 'APPROVE' }" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
-            @csrf
-            <label class="block text-xs font-semibold text-gray-700">Keputusan</label>
-            <div class="flex flex-wrap gap-4">
-                <label class="flex items-center gap-2 text-xs font-medium text-gray-800 cursor-pointer">
-                    <input type="radio" name="action" value="APPROVE" x-model="action" class="text-brand-600 focus:ring-brand-500">
-                    <span>Setujui</span>
-                </label>
-                <label class="flex items-center gap-2 text-xs font-medium text-rose-800 cursor-pointer">
-                    <input type="radio" name="action" value="REJECT" x-model="action" class="text-rose-600 focus:ring-rose-500">
-                    <span>Tolak, Minta Revisi Wali Kelas</span>
-                </label>
+        @if ($isReadOnly)
+            <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-display text-sm font-bold text-gray-900">Status Keputusan</h2>
+                    <span @class([
+                        'inline-block rounded-lg px-2.5 py-1 text-xs font-semibold',
+                        'bg-emerald-50 text-emerald-700' => $pengajuanRapor->status === \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui,
+                        'bg-rose-50 text-rose-700' => $pengajuanRapor->status === \App\Domains\Akademik\Enums\StatusPengajuanRapor::Ditolak,
+                    ])>{{ $pengajuanRapor->status->label() }}</span>
+                </div>
+                <p class="text-xs text-gray-500">
+                    Tanggal keputusan:
+                    {{ optional($pengajuanRapor->status === \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui ? $pengajuanRapor->disetujui_pada : $pengajuanRapor->diverifikasi_pada)->translatedFormat('d F Y, H:i') ?? '—' }}
+                </p>
+                @if ($pengajuanRapor->catatan_revisi)
+                    <div class="rounded-lg bg-gray-50 p-3 text-xs text-gray-700">
+                        <p class="font-semibold text-gray-600">Catatan</p>
+                        <p class="mt-1">{{ $pengajuanRapor->catatan_revisi }}</p>
+                    </div>
+                @endif
             </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Catatan (Opsional)</label>
-                <textarea name="catatan" rows="2" placeholder="Catatan untuk wali kelas..." class="w-full rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500"></textarea>
-            </div>
-            <div class="flex items-center justify-end">
-                <x-primary-button type="submit">Kirim Keputusan</x-primary-button>
-            </div>
-        </form>
+        @else
+            <form method="POST" action="{{ route('admin.rapor.persetujuan.decision', $pengajuanRapor) }}" x-data="{ action: 'APPROVE' }" class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
+                @csrf
+                <label class="block text-xs font-semibold text-gray-700">Keputusan</label>
+                <div class="flex flex-wrap gap-4">
+                    <label class="flex items-center gap-2 text-xs font-medium text-gray-800 cursor-pointer">
+                        <input type="radio" name="action" value="APPROVE" x-model="action" class="text-brand-600 focus:ring-brand-500">
+                        <span>Setujui</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-xs font-medium text-rose-800 cursor-pointer">
+                        <input type="radio" name="action" value="REJECT" x-model="action" class="text-rose-600 focus:ring-rose-500">
+                        <span>Tolak, Minta Revisi Wali Kelas</span>
+                    </label>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Catatan (Opsional)</label>
+                    <textarea name="catatan" rows="2" placeholder="Catatan untuk wali kelas..." class="w-full rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500"></textarea>
+                </div>
+                <div class="flex items-center justify-end">
+                    <x-primary-button type="submit">Kirim Keputusan</x-primary-button>
+                </div>
+            </form>
+        @endif
     </div>
 </x-app-layout>
