@@ -8,6 +8,7 @@ use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Http\Requests\Akademik\UpdateJurnalPresensiRequest;
 use App\Models\JadwalPelajaran;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -23,15 +24,22 @@ class JurnalKbmController extends BaseController
     public function __construct(
         private readonly GenerateSesiHarianAction $generateSesiHarianAction,
         private readonly RecordJurnalDanPresensiAction $recordJurnalDanPresensiAction,
-    ) {
-    }
+    ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $this->authorize('presensi.isi');
 
         $guru = $request->user()->guru;
-        $hariIni = now();
+
+        $tanggalInput = $request->query('tanggal');
+        $tanggal = $tanggalInput ? Carbon::parse($tanggalInput) : now();
+
+        if ($tanggal->isFuture()) {
+            return redirect()->route('guru.jurnal-kbm.index')->with('error', 'Tidak bisa mengisi jurnal untuk tanggal yang belum terjadi.');
+        }
+
+        $hariIni = $tanggal;
 
         if ($guru) {
             $this->generateSesiHarianAction->execute($guru, $hariIni);
@@ -44,6 +52,7 @@ class JurnalKbmController extends BaseController
         return view('portals.guru.akademik.jurnal-kbm.index', [
             'sesiList' => $sesiList,
             'mapelTerjadwal' => $this->mapelTerjadwalUntukSesiTematik($sesiList, $hariIni),
+            'tanggalDipilih' => $hariIni->toDateString(),
         ]);
     }
 

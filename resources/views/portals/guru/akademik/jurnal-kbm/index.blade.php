@@ -19,13 +19,20 @@
             </p>
         </div>
 
+        {{-- Navigasi Tanggal --}}
+        <form method="GET" action="{{ route('guru.jurnal-kbm.index') }}" class="mb-4 flex items-center gap-2">
+            <a href="{{ route('guru.jurnal-kbm.index', ['tanggal' => \Carbon\Carbon::parse($tanggalDipilih)->subDay()->toDateString()]) }}" class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50">&larr; Sebelumnya</a>
+            <input type="date" name="tanggal" value="{{ $tanggalDipilih }}" max="{{ now()->toDateString() }}" class="rounded-lg border-gray-200 text-sm" onchange="this.form.submit()">
+            <a href="{{ route('guru.jurnal-kbm.index') }}" class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm hover:bg-gray-50">Hari Ini</a>
+        </form>
+
         {{-- Stats Grid --}}
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {{-- Stat 1: Total Sesi --}}
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Sesi Hari Ini</p>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Sesi</p>
                         <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $sesiList->count() }}</p>
                     </div>
                     <div class="rounded-xl bg-blue-50 p-3 text-blue-600">
@@ -70,8 +77,8 @@
                     <div>
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Hari &amp; Tanggal</p>
                         <p class="mt-1 text-sm font-bold text-gray-800 leading-tight">
-                            {{ now()->locale('id')->isoFormat('dddd') }}<br>
-                            <span class="text-xs font-normal text-gray-500">{{ now()->locale('id')->isoFormat('D MMMM YYYY') }}</span>
+                            {{ \Carbon\Carbon::parse($tanggalDipilih)->locale('id')->isoFormat('dddd') }}<br>
+                            <span class="text-xs font-normal text-gray-500">{{ \Carbon\Carbon::parse($tanggalDipilih)->locale('id')->isoFormat('D MMMM YYYY') }}</span>
                         </p>
                     </div>
                     <div class="rounded-xl bg-purple-50 p-3 text-purple-600">
@@ -85,7 +92,7 @@
         <div class="space-y-4">
             <h2 class="font-display text-sm font-bold text-gray-700 flex items-center gap-2">
                 <x-icon name="schedule" class="h-4 w-4 text-brand-500" />
-                Jadwal Kelas Hari Ini
+                Jadwal Kelas {{ \Carbon\Carbon::parse($tanggalDipilih)->isToday() ? 'Hari Ini' : \Carbon\Carbon::parse($tanggalDipilih)->locale('id')->isoFormat('D MMMM YYYY') }}
             </h2>
 
             @forelse ($sesiList as $sesi)
@@ -170,7 +177,7 @@
                         <x-icon name="calendar_month" class="h-6 w-6" />
                     </div>
                     <h3 class="mt-3 text-sm font-semibold text-gray-900">Tidak ada sesi mengajar</h3>
-                    <p class="mt-1 text-xs text-gray-500">Anda tidak memiliki jadwal mengajar yang terdaftar untuk hari ini.</p>
+                    <p class="mt-1 text-xs text-gray-500">Anda tidak memiliki jadwal mengajar yang terdaftar untuk tanggal ini.</p>
                 </div>
             @endforelse
         </div>
