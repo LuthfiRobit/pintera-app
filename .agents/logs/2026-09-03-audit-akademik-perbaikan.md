@@ -178,10 +178,27 @@ Keduanya dijalankan dengan `ps aux | grep artisan` dicek bersih dulu (tidak ada 
 
 ## Catatan Pola Berulang (untuk plan/audit berikutnya)
 
-**3 dari 9 task (5, 6, 7) memerlukan koreksi setelah review pertama** — bukan karena implementer salah kerja, tapi karena PLAN yang ditulis kurang lengkap dibanding spec asli, atau melewatkan file terkait (mis. `_daftar.blade.php` yang punya link ke `show()`, tapi tidak masuk daftar file Task 7). Untuk audit/plan berikutnya: baca ulang spec asli secara utuh sebelum menganggap brief plan sudah lengkap, dan pertimbangkan file-file terkait yang mungkin tidak eksplisit disebut di plan tapi terpengaruh perubahan.
+**~~3 dari 9 task (5, 6, 7) memerlukan koreksi setelah review pertama~~ — KOREKSI, lihat "Putaran Verifikasi Ulang" di bawah: sebenarnya 4 dari 9 (5, 6, 7, DAN 2).** Bukan karena implementer salah kerja, tapi karena PLAN yang ditulis kurang lengkap dibanding spec asli, atau melewatkan file/skenario terkait. Untuk audit/plan berikutnya: baca ulang spec asli secara utuh sebelum menganggap brief plan sudah lengkap, dan pertimbangkan file-file/skenario terkait yang mungkin tidak eksplisit disebut di plan tapi terpengaruh perubahan — termasuk MENJALANKAN skenario yang diklaim "sudah aman" (bukan cuma membaca kode), karena reviewer Task 2 salah menyimpulkan "tidak ada yang perlu dikecualikan" tanpa benar-benar mencoba submit form dengan baris kosong.
 
-**Catatan terbuka (belum jadi task resmi, di luar scope plan ini)**: `bottom-nav.blade.php` (mobile) masih punya label stub yang sama seperti yang disembunyikan di Task 4 — perlu keputusan user apakah dibuatkan task serupa terpisah.
+**Catatan terbuka (belum jadi task resmi, di luar scope plan ini, JANGAN dikerjakan tanpa instruksi user)**: `bottom-nav.blade.php` (mobile) masih punya label stub yang sama seperti yang disembunyikan di Task 4 — sudah ditanyakan ke user 2026-09-03, user menjawab "abaikan saja". Tetap dicatat di sini untuk histori, TIDAK PERLU ditanyakan lagi atau dikerjakan di masa depan kecuali user mengubah keputusan.
 
 Ledger progress ada di `.superpowers/sdd/progress.md` (git-ignored, scratch).
 
-**Plan `.agents/plans/2026-09-03-audit-akademik-perbaikan.md` dianggap SELESAI TOTAL** per handoff ini.
+---
+
+## Putaran Verifikasi Ulang (Post-SELESAI-TOTAL, diminta user 2026-09-03)
+
+User secara eksplisit meminta review ulang lebih skeptis terhadap klaim "3 dari 9 task perlu koreksi", curiga masih ada gap lain yang lolos. Dilakukan pengecekan ulang SETIAP requirement di spec asli (bukan cuma plan) terhadap kode final, per baris demi baris untuk file-file frontend (§2.1, §2.3, §2.4, §3.1, §3.2, §3.3) — semuanya CONFIRMED PRESENT dan sesuai, TIDAK ada gap baru di area itu.
+
+Ditemukan 2 gap nyata tambahan lewat pengujian aktif (bukan cuma baca kode):
+
+1. **Task 2 (Kenaikan Kelas) — gap yang lolos dari reviewer aslinya.** Spec §2.2 minta kelas kosong "jangan centang/include secara default di form submit massal". Reviewer Task 2 memeriksa kode dan menyimpulkan "tidak ada checkbox pilih-massal di halaman ini, jadi bagian ini tidak berlaku" — kesimpulan yang BENAR secara literal (memang tidak ada checkbox) tapi SALAH secara substansi: form mapping tetap mewajibkan setiap baris kelas (termasuk yang kosong) diisi `kelas_baru_id` kalau tindakan defaultnya "naik" (`required_if` validation) — dibuktikan dengan test probe langsung (POST submit dengan kelas kosong tanpa `kelas_baru_id`) yang mengonfirmasi submission GAGAL dengan validation error, memblokir SELURUH proses kenaikan kelas massal kalau ada 1 saja kelas kosong yang tidak disentuh admin. Ditambal: opsi baru `"lewati"` di select tindakan, dipilih default untuk `siswa_count === 0` (admin tetap bisa override manual), `ProsesKenaikanKelasAction` skip baris ber-tindakan `lewati` tanpa efek. Commit `0e8d4405`. Test baru: 2 test UX (default-selected + submit-massal-tanpa-error) + 1 test lama (`KenaikanKelasControllerUxTest` skenario tingkat-akhir) diperbaiki fixture-nya (tadinya kebetulan siswa_count=0 juga, jadi sekarang butuh Siswa eksplisit supaya tetap menguji jalur naik/lulus, bukan jalur lewati yang baru).
+2. **`JurnalKbmController::index()` — robustness gap yang pernah dicatat Minor oleh reviewer Task 6 tapi tidak pernah ditambal.** `Carbon::parse($tanggalInput)` pada string bukan-tanggal (mis. `?tanggal=bukan-tanggal`) melempar exception tak tertangani → 500, bukan redirect-dengan-pesan seperti 2 validasi lain di method yang sama (masa depan / sebelum semester). Ditambal: bungkus `try/catch`, redirect dengan `session('error')` yang jelas. Commit `76115a80`. Test baru: 1 test di `JurnalKbmTanggalSusulanTest.php`.
+
+Item lain yang dicek dan CONFIRMED tidak ada gap: §2.1 banner+disable tombol (`catatan/index.blade.php`), §2.3 link resync di `kurikulum-assignment/index.blade.php`, §2.4 sidebar comment-out (`sidebar.blade.php`, commit `1e41adcc`, sudah benar), §3.1 indikator rekap difilter (`rekap.blade.php:83-86`), §3.2 navigasi tanggal (`jurnal-kbm/index.blade.php:24-26`), §3.3 tab Riwayat + `show()` read-only (`persetujuan/index.blade.php`, `show.blade.php`), §3.4 `lockForUpdate()` + test race condition (`RaporApprovalLockTest.php`).
+
+**HEAD final (setelah putaran verifikasi ulang):** `0e8d4405` (branch `akademik-v2`). Full test suite dijalankan ulang standalone (dicek dulu tidak ada proses `php artisan test` lain aktif): **2720 passed (7431 assertions), 0 failures** — persis +3 dari 2717 sebelumnya (3 test baru dari 2 fix di atas). `vendor/bin/pint --dirty --format agent` bersih di kedua commit.
+
+**Pelajaran untuk audit berikutnya**: kesimpulan reviewer "tidak ada X di kode, jadi requirement Y tidak berlaku" HARUS diverifikasi dengan mencoba skenario end-to-end (submit form sungguhan), bukan cuma pembacaan statis — gap Task 2 lolos persis karena baik implementer, reviewer, maupun review akhir plan semuanya cuma membaca struktur form tanpa mencoba submit baris kosong yang tidak disentuh.
+
+**Plan `.agents/plans/2026-09-03-audit-akademik-perbaikan.md` dianggap SELESAI TOTAL** per putaran verifikasi ulang ini (per 2026-09-03), dengan 2 gap tambahan di atas sudah ditambal dan diregresi.
