@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Enums\StatusSiswa;
 use App\Enums\SumberDataSiswa;
 use App\Models\Kelas;
@@ -278,4 +279,36 @@ it('rejects setting kelas_id on update for a siswa with non-aktif status', funct
 
     $response->assertSessionHasErrors('kelas_id');
     expect($siswaKeluar->fresh()->kelas_id)->toBeNull();
+});
+
+it('shows the last known kelas with a "(kelas terakhir)" label for a non-aktif siswa in the daftar list', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Kelas 9C']);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'status' => 'aktif', 'nama_lengkap' => 'Siswa Keluar Uji']);
+    app(UpdateStatusSiswaAction::class)->execute($siswa, StatusSiswa::Keluar);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
+
+    $response->assertOk();
+    $response->assertSee('Kelas 9C');
+    $response->assertSee('(kelas terakhir)');
+});
+
+it('shows the last known kelas with a "(kelas terakhir)" label on the siswa profil tab', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Kelas 9D']);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'status' => 'aktif']);
+    app(UpdateStatusSiswaAction::class)->execute($siswa, StatusSiswa::Keluar);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.edit', $siswa));
+
+    $response->assertOk();
+    $response->assertSee('Kelas 9D');
+    $response->assertSee('(kelas terakhir)');
 });

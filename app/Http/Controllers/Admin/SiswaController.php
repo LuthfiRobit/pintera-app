@@ -32,7 +32,7 @@ class SiswaController extends BaseController
 
         $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = Siswa::with(['kelas', 'person'])
+        $query = Siswa::with(['kelas', 'kelasTerakhir', 'person'])
             ->when($request->input('search'), fn ($q, $search) => $q->search($search))
             ->when($request->input('kelas_id'), fn ($q, $kelasId) => $q->where('siswa.kelas_id', $kelasId))
             ->when($request->input('status'), fn ($q, $status) => $q->where('siswa.status', $status))

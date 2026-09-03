@@ -89,8 +89,11 @@
                     <td class="px-5 py-3.5 font-mono text-gray-500">{{ $siswa->nis }}</td>
                     <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $siswa->nama_lengkap }}</td>
                     <td class="px-5 py-3.5 text-gray-600">
-                        @if ($siswa->kelas)
-                            {{ $siswa->kelas->nama }}
+                        @if ($siswa->kelas_efektif)
+                            {{ $siswa->kelas_efektif->nama }}
+                            @if (! $siswa->kelas && $siswa->kelasTerakhir)
+                                <span class="text-xs text-gray-400">(kelas terakhir)</span>
+                            @endif
                         @else
                             <x-badge tone="amber">Belum ditempatkan</x-badge>
                         @endif

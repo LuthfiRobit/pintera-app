@@ -77,7 +77,12 @@
                         </div>
                         <div class="flex justify-between py-2.5">
                             <dt class="text-gray-500">Rombel / Kelas Aktif</dt>
-                            <dd class="font-medium text-brand-600">{{ $siswa->kelas?->nama ?? 'Belum ada kelas' }}</dd>
+                            <dd class="font-medium text-brand-600">
+                                {{ $siswa->kelas_efektif?->nama ?? 'Belum ada kelas' }}
+                                @if (! $siswa->kelas && $siswa->kelasTerakhir)
+                                    <span class="text-xs text-gray-400">(kelas terakhir)</span>
+                                @endif
+                            </dd>
                         </div>
                     </dl>
                 </div>
