@@ -42,7 +42,7 @@ it('shows RPP, QR Kehadiran, Izin/Cuti, and Kasus Pendampingan under Ruang Guru 
     $response->assertSee('Izin/Cuti Saya');
 });
 
-it('shows Ruang Siswa group with 3 dalam-pengembangan links for a siswa account', function () {
+it('shows Ruang Siswa group with only Kasus Pendampingan for a siswa account (stub links hidden)', function () {
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
@@ -56,12 +56,19 @@ it('shows Ruang Siswa group with 3 dalam-pengembangan links for a siswa account'
 
     $response->assertOk();
     $response->assertSee('Ruang Siswa');
-    $response->assertSee('Nilai &amp; Rapor', false);
-    $response->assertSee('Jadwal Pelajaran');
-    $response->assertSee('Presensi Saya');
+    $response->assertSee('Kasus Pendampingan');
+    // Nilai & Rapor / Jadwal Pelajaran / Presensi Saya disembunyikan (2026-09-03) -- lihat
+    // komentar di resources/views/layouts/sidebar.blade.php. Cari khusus markup <nav> sidebar
+    // (bukan seluruh halaman) supaya tidak salah tangkap bottom-nav mobile yang masih memuat
+    // label placeholder yang sama di luar cakupan perubahan ini.
+    preg_match('/<nav.*?<\/nav>/s', $response->getContent(), $matches);
+    $sidebarHtml = $matches[0] ?? '';
+    expect($sidebarHtml)->not->toContain('Nilai &amp; Rapor');
+    expect($sidebarHtml)->not->toContain('Jadwal Pelajaran');
+    expect($sidebarHtml)->not->toContain('Presensi Saya');
 });
 
-it('shows Ruang Orang Tua group with dalam-pengembangan links plus keuangan self-service items, moved out of the Keuangan group', function () {
+it('shows Ruang Orang Tua group with keuangan self-service items, dalam-pengembangan stub links hidden', function () {
     foreach (['kasus.view', 'keuangan.akses'] as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
@@ -76,10 +83,16 @@ it('shows Ruang Orang Tua group with dalam-pengembangan links plus keuangan self
 
     $response->assertOk();
     $response->assertSee('Ruang Orang Tua');
-    $response->assertSee('Nilai Anak');
-    $response->assertSee('Jadwal Anak');
-    $response->assertSee('Riwayat Izin/Sakit Anak');
     $response->assertSee('Dompet &amp; Tagihan Saya', false);
+    // Nilai Anak / Jadwal Anak / Riwayat Izin-Sakit Anak disembunyikan (2026-09-03) -- lihat
+    // komentar di resources/views/layouts/sidebar.blade.php. Cari khusus markup <nav> sidebar
+    // (bukan seluruh halaman) supaya tidak salah tangkap bottom-nav mobile yang masih memuat
+    // label placeholder yang sama di luar cakupan perubahan ini.
+    preg_match('/<nav.*?<\/nav>/s', $response->getContent(), $matches);
+    $sidebarHtml = $matches[0] ?? '';
+    expect($sidebarHtml)->not->toContain('Nilai Anak');
+    expect($sidebarHtml)->not->toContain('Jadwal Anak');
+    expect($sidebarHtml)->not->toContain('Riwayat Izin/Sakit Anak');
 });
 
 it('hides the PPDB-only Tagihan and Verifikasi Pembayaran links from the Keuangan sidebar group while keeping regular-billing links visible', function () {

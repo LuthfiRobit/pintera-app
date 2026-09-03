@@ -26,9 +26,13 @@
             'label' => 'Ruang Siswa',
             'group_icon' => 'backpack',
             'items' => array_filter([
-                Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'nilai-rapor'], 'pattern' => 'dalam-pengembangan', 'label' => 'Nilai & Rapor', 'icon' => 'award'] : null,
-                Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'jadwal-pelajaran'], 'pattern' => 'dalam-pengembangan', 'label' => 'Jadwal Pelajaran', 'icon' => 'calendar-clock'] : null,
-                Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'presensi-saya'], 'pattern' => 'dalam-pengembangan', 'label' => 'Presensi Saya', 'icon' => 'clipboard-check'] : null,
+                // Nilai & Rapor / Jadwal Pelajaran / Presensi Saya sengaja disembunyikan (2026-09-03)
+                // -- halaman detailnya belum dibangun (masih arah ke placeholder dalam-pengembangan),
+                // datanya sudah ada ringkas di widget Dashboard. Bangun sebagai proyek fitur terpisah
+                // sebelum dikembalikan ke sini.
+                // Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'nilai-rapor'], 'pattern' => 'dalam-pengembangan', 'label' => 'Nilai & Rapor', 'icon' => 'award'] : null,
+                // Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'jadwal-pelajaran'], 'pattern' => 'dalam-pengembangan', 'label' => 'Jadwal Pelajaran', 'icon' => 'calendar-clock'] : null,
+                // Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'presensi-saya'], 'pattern' => 'dalam-pengembangan', 'label' => 'Presensi Saya', 'icon' => 'clipboard-check'] : null,
                 Auth::user()->hasRole('siswa') && Auth::user()->can('viewAny', \App\Domains\Kasus\Models\Kasus::class) ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'stethoscope'] : null,
             ]),
         ],
@@ -36,9 +40,13 @@
             'label' => 'Ruang Orang Tua',
             'group_icon' => 'users',
             'items' => array_filter([
-                Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'nilai-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Nilai Anak', 'icon' => 'award'] : null,
-                Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'jadwal-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Jadwal Anak', 'icon' => 'calendar-clock'] : null,
-                Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'riwayat-izin-sakit-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Riwayat Izin/Sakit Anak', 'icon' => 'clipboard-check'] : null,
+                // Nilai Anak / Jadwal Anak / Riwayat Izin-Sakit Anak sengaja disembunyikan (2026-09-03)
+                // -- halaman detailnya belum dibangun (masih arah ke placeholder dalam-pengembangan),
+                // datanya sudah ada ringkas di widget Dashboard. Bangun sebagai proyek fitur terpisah
+                // sebelum dikembalikan ke sini.
+                // Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'nilai-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Nilai Anak', 'icon' => 'award'] : null,
+                // Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'jadwal-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Jadwal Anak', 'icon' => 'calendar-clock'] : null,
+                // Auth::user()->orangTua !== null ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'riwayat-izin-sakit-anak'], 'pattern' => 'dalam-pengembangan', 'label' => 'Riwayat Izin/Sakit Anak', 'icon' => 'clipboard-check'] : null,
                 Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.dashboard', 'pattern' => 'keuangan.dashboard', 'label' => 'Dompet & Tagihan Saya', 'icon' => 'wallet'] : null,
                 Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.tagihan.index', 'pattern' => 'keuangan.tagihan.*', 'label' => 'Tagihan', 'icon' => 'receipt'] : null,
                 Auth::user()->can('keuangan.akses') && Auth::user()->orangTua !== null ? ['route' => 'keuangan.riwayat.index', 'pattern' => 'keuangan.riwayat.*', 'label' => 'Riwayat', 'icon' => 'history'] : null,
