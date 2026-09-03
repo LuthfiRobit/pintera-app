@@ -81,7 +81,14 @@
                                             this.tingkatTujuan = opt?.dataset.tingkat || null;
                                         },
                                     }">
-                                        <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }} <span class="text-xs font-normal text-gray-400">(Tingkat {{ $kelasLama->tingkat ?? '-' }})</span></td>
+                                        <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }}
+                                            @if ($kelasLama->siswa_count === 0)
+                                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                                                    Sudah diproses / kosong
+                                                </span>
+                                            @endif
+                                            <span class="text-xs font-normal text-gray-400">(Tingkat {{ $kelasLama->tingkat ?? '-' }})</span>
+                                        </td>
                                         <td class="px-4 py-4 text-center text-gray-500">{{ $kelasLama->siswa_count }}</td>
                                         @php
                                             $isTingkatAkhir = $kelasLama->lembaga
