@@ -35,7 +35,12 @@ class JurnalKbmController extends BaseController
         $guru = $request->user()->guru;
 
         $tanggalInput = $request->query('tanggal');
-        $tanggal = $tanggalInput ? Carbon::parse($tanggalInput) : now();
+
+        try {
+            $tanggal = $tanggalInput ? Carbon::parse($tanggalInput) : now();
+        } catch (\Exception) {
+            return redirect()->route('guru.jurnal-kbm.index')->with('error', 'Format tanggal tidak valid.');
+        }
 
         if ($tanggal->isFuture()) {
             return redirect()->route('guru.jurnal-kbm.index')->with('error', 'Tidak bisa mengisi jurnal untuk tanggal yang belum terjadi.');

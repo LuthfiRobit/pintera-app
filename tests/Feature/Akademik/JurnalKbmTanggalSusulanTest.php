@@ -81,3 +81,15 @@ it('menolak tanggal sebelum semester aktif dimulai', function () {
     $response->assertRedirect(route('guru.jurnal-kbm.index'));
     $response->assertSessionHas('error');
 });
+
+it('menolak format tanggal yang tidak valid tanpa error 500', function () {
+    $guru = Guru::factory()->create();
+    $user = User::factory()->create(['lembaga_id' => $guru->lembaga_id]);
+    Person::where('id', $guru->person_id)->update(['user_id' => $user->id]);
+    $user->assignRole('guru');
+
+    $response = $this->actingAs($user)->get(route('guru.jurnal-kbm.index', ['tanggal' => 'bukan-tanggal']));
+
+    $response->assertRedirect(route('guru.jurnal-kbm.index'));
+    $response->assertSessionHas('error');
+});
