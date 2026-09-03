@@ -9,6 +9,7 @@ use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
 use App\Domains\Workflow\Actions\InitializeApprovalRequestAction;
 use App\Domains\Workflow\Enums\ApprovalStatus;
+use App\Enums\StatusSiswa;
 use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\User;
@@ -34,7 +35,7 @@ final class SubmitPengajuanRaporAction
             ]);
         }
 
-        $siswaList = $kelas->siswa()->get();
+        $siswaList = $kelas->siswa()->where('status', StatusSiswa::Aktif->value)->get();
         $siswaIdsWithCatatan = CatatanWaliKelas::where('semester_id', $semester->id)
             ->whereIn('siswa_id', $siswaList->pluck('id'))
             ->pluck('siswa_id');

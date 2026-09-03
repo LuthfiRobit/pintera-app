@@ -4,7 +4,9 @@ use App\Domains\Akademik\Actions\Rapor\SimpanCatatanWaliKelasAction;
 use App\Domains\Akademik\Actions\Rapor\SubmitPengajuanRaporAction;
 use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
+use App\Domains\Workflow\Actions\InitializeApprovalRequestAction;
 use App\Domains\Workflow\Enums\ApprovalStatus;
+use App\Enums\StatusSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Semester;
@@ -14,6 +16,7 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
+use Illuminate\Validation\ValidationException;
 
 function siapkanKelasDenganSiswa(int $jumlahSiswa = 2): array
 {
@@ -31,14 +34,14 @@ function siapkanKelasDenganSiswa(int $jumlahSiswa = 2): array
 it('throws when at least one siswa in the kelas has no CatatanWaliKelas yet', function () {
     ['semester' => $semester, 'kelas' => $kelas, 'siswaList' => $siswaList, 'user' => $user] = siapkanKelasDenganSiswa(2);
 
-    (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray([
+    (new SimpanCatatanWaliKelasAction)->execute(CatatanWaliKelasData::fromArray([
         'siswa_id' => $siswaList[0]->id,
         'semester_id' => $semester->id,
     ]));
     // siswaList[1] sengaja tidak dikasih catatan
 
-    expect(fn () => (new SubmitPengajuanRaporAction(app(\App\Domains\Workflow\Actions\InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $user))
-        ->toThrow(\Illuminate\Validation\ValidationException::class);
+    expect(fn () => (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $user))
+        ->toThrow(ValidationException::class);
 });
 
 it('creates a PengajuanRapor and initializes an ApprovalRequest when every siswa has a CatatanWaliKelas', function () {
@@ -46,13 +49,13 @@ it('creates a PengajuanRapor and initializes an ApprovalRequest when every siswa
     ['semester' => $semester, 'kelas' => $kelas, 'siswaList' => $siswaList, 'user' => $user] = siapkanKelasDenganSiswa(2);
 
     foreach ($siswaList as $siswa) {
-        (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray([
+        (new SimpanCatatanWaliKelasAction)->execute(CatatanWaliKelasData::fromArray([
             'siswa_id' => $siswa->id,
             'semester_id' => $semester->id,
         ]));
     }
 
-    $pengajuan = (new SubmitPengajuanRaporAction(app(\App\Domains\Workflow\Actions\InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $user);
+    $pengajuan = (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $user);
 
     expect($pengajuan->status)->toBe(StatusPengajuanRapor::Diajukan);
     expect($pengajuan->diajukan_oleh)->toBe($user->id);
@@ -60,12 +63,39 @@ it('creates a PengajuanRapor and initializes an ApprovalRequest when every siswa
     expect($pengajuan->approvalRequest->status)->toBe(ApprovalStatus::Pending);
 });
 
+it('does not let a siswa Pindah/Keluar whose kelas_id was never cleared block submission, and still processes active siswa normally', function () {
+    $this->seed([RoleSeeder::class, WorkflowDefinitionSeeder::class]);
+    ['semester' => $semester, 'kelas' => $kelas, 'siswaList' => $siswaAktifList, 'user' => $user] = siapkanKelasDenganSiswa(2);
+
+    foreach ($siswaAktifList as $siswa) {
+        (new SimpanCatatanWaliKelasAction)->execute(CatatanWaliKelasData::fromArray([
+            'siswa_id' => $siswa->id,
+            'semester_id' => $semester->id,
+        ]));
+    }
+
+    // Siswa yang sudah Keluar tapi kelas_id-nya belum dibersihkan (bug terpisah, tidak
+    // ditambal di sini) -- sengaja TIDAK dikasih CatatanWaliKelas, sama seperti kondisi
+    // nyata di lapangan (guru tidak akan pernah mengisi catatan untuk siswa yang sudah pergi).
+    $siswaKeluar = Siswa::factory()->create([
+        'lembaga_id' => $kelas->lembaga_id,
+        'kelas_id' => $kelas->id,
+        'status' => StatusSiswa::Keluar,
+    ]);
+
+    $pengajuan = (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $user);
+
+    expect($pengajuan->status)->toBe(StatusPengajuanRapor::Diajukan);
+    expect($pengajuan->approvalRequest)->not->toBeNull();
+    expect(Siswa::find($siswaKeluar->id)->status)->toBe(StatusSiswa::Keluar);
+});
+
 it('resets the same ApprovalRequest to its first step on resubmission after rejection, instead of creating a new one', function () {
     $this->seed([RoleSeeder::class, WorkflowDefinitionSeeder::class]);
     ['semester' => $semester, 'kelas' => $kelas, 'siswaList' => $siswaList, 'user' => $user] = siapkanKelasDenganSiswa(1);
-    (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswaList[0]->id, 'semester_id' => $semester->id]));
+    (new SimpanCatatanWaliKelasAction)->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswaList[0]->id, 'semester_id' => $semester->id]));
 
-    $action = new SubmitPengajuanRaporAction(app(\App\Domains\Workflow\Actions\InitializeApprovalRequestAction::class));
+    $action = new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class));
     $pengajuan = $action->execute($kelas, $semester, $user);
     $approvalRequestIdPertama = $pengajuan->approvalRequest->id;
 
