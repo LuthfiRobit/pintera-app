@@ -75,10 +75,19 @@
                                         kurikulumAsal: {{ Js::from($kelasLama->kurikulum?->value) }},
                                         kurikulumTujuan: null,
                                         tingkatTujuan: null,
+                                        tingkatAsal: {{ Js::from($kelasLama->tingkat) }},
+                                        daftarTingkat: {{ Js::from($kelasLama->lembaga ? BentukPendidikan::from($kelasLama->lembaga->bentuk_pendidikan)->validTingkatValues() : []) }},
                                         onKelasTujuanChange(event) {
                                             const opt = event.target.selectedOptions[0];
                                             this.kurikulumTujuan = opt?.dataset.kurikulum || null;
                                             this.tingkatTujuan = opt?.dataset.tingkat || null;
+                                        },
+                                        get selisihIndexTingkat() {
+                                            if (this.tingkatTujuan === null || this.tingkatAsal === null) return null;
+                                            const indexAsal = this.daftarTingkat.indexOf(this.tingkatAsal);
+                                            const indexTujuan = this.daftarTingkat.indexOf(this.tingkatTujuan);
+                                            if (indexAsal === -1 || indexTujuan === -1) return null;
+                                            return indexTujuan - indexAsal;
                                         },
                                     }">
                                         <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }}
@@ -118,6 +127,10 @@
                                             <p x-show="kurikulumTujuan !== null && kurikulumAsal !== null && kurikulumTujuan !== kurikulumAsal"
                                                class="mt-1 text-xs font-medium text-amber-600"
                                                x-text="'⚠ Kurikulum berbeda: kelas asal ' + kurikulumAsal + ', kelas tujuan ' + kurikulumTujuan"></p>
+                                            <p x-show="selisihIndexTingkat === 0" class="mt-1 text-xs text-gray-400" x-text="'↔ Tinggal kelas: tingkat tidak berubah (' + tingkatAsal + ')'"></p>
+                                            <p x-show="selisihIndexTingkat !== null && selisihIndexTingkat !== 0 && selisihIndexTingkat !== 1"
+                                               class="mt-1 text-xs font-medium text-amber-600"
+                                               x-text="'⚠ Tingkat tidak wajar: dari tingkat ' + tingkatAsal + ' ke ' + tingkatTujuan + ' — periksa kembali pilihan kelas tujuan'"></p>
                                         </td>
                                         <td class="px-4 py-4">
                                             <label class="flex items-center gap-2">

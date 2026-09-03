@@ -7,6 +7,7 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Support\Js;
 use Spatie\Permission\Models\Permission;
 
 function siapkanKenaikanKelasUxUser(): array
@@ -177,4 +178,74 @@ it('memproses mapping massal tanpa error meski ada kelas kosong yang dilewati', 
 
     $response->assertSessionDoesntHaveErrors();
     $response->assertRedirect(route('admin.kelas.index'));
+});
+
+it('wires up index-based tingkat comparison data for a numeric jenjang (SD)', function () {
+    [$manager, $lembaga] = siapkanKenaikanKelasUxUser();
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLama = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id,
+        'nama' => 'Kelas Tingkat 3', 'tingkat' => '3',
+    ]);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => 'Kelas Tingkat 2', 'tingkat' => '2']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => 'Kelas Tingkat 4', 'tingkat' => '4']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => 'Kelas Tingkat 6', 'tingkat' => '6']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunLalu->id,
+        'tahun_ajaran_tujuan_id' => $tahunBaru->id,
+    ]));
+    $response->assertOk();
+    $html = $response->getContent();
+
+    $namaPos = strpos($html, 'Kelas Tingkat 3');
+    expect($namaPos)->not->toBeFalse();
+    $trOpenPos = strrpos(substr($html, 0, $namaPos), '<tr');
+    expect($trOpenPos)->not->toBeFalse();
+    $trChunk = substr($html, $trOpenPos, ($namaPos - $trOpenPos) + 3000);
+
+    expect($trChunk)->toContain('tingkatAsal: '.Js::from('3'));
+    expect($trChunk)->toContain('daftarTingkat: '.Js::from(['1', '2', '3', '4', '5', '6']));
+    expect($trChunk)->toContain('data-tingkat="2"');
+    expect($trChunk)->toContain('data-tingkat="4"');
+    expect($trChunk)->toContain('data-tingkat="6"');
+    expect($html)->toContain('get selisihIndexTingkat()');
+    expect($html)->toContain('↔ Tinggal kelas: tingkat tidak berubah');
+    expect($html)->toContain('⚠ Tingkat tidak wajar: dari tingkat');
+});
+
+it('wires up index-based tingkat comparison data for an alphabetic jenjang (TK), proving it is not numeric arithmetic', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaTk = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    Permission::firstOrCreate(['name' => 'kenaikan-kelas.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'operator_kenaikan_ux_tk', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $role->givePermissionTo(['kenaikan-kelas.kelola']);
+    $manager = User::factory()->create(['lembaga_id' => $lembagaTk->id]);
+    $manager->assignRole($role);
+
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembagaTk->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembagaTk->id]);
+    $kelasLama = Kelas::factory()->create([
+        'lembaga_id' => $lembagaTk->id, 'tahun_ajaran_id' => $tahunLalu->id,
+        'nama' => 'Kelas TK A Uji', 'tingkat' => 'A',
+    ]);
+    Kelas::factory()->create(['lembaga_id' => $lembagaTk->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => 'Kelas TK B Uji', 'tingkat' => 'B']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunLalu->id,
+        'tahun_ajaran_tujuan_id' => $tahunBaru->id,
+    ]));
+    $response->assertOk();
+    $html = $response->getContent();
+
+    $namaPos = strpos($html, 'Kelas TK A Uji');
+    expect($namaPos)->not->toBeFalse();
+    $trOpenPos = strrpos(substr($html, 0, $namaPos), '<tr');
+    expect($trOpenPos)->not->toBeFalse();
+    $trChunk = substr($html, $trOpenPos, ($namaPos - $trOpenPos) + 3000);
+
+    expect($trChunk)->toContain('tingkatAsal: '.Js::from('A'));
+    expect($trChunk)->toContain('daftarTingkat: '.Js::from(['A', 'B']));
+    expect($trChunk)->toContain('data-tingkat="B"');
 });
