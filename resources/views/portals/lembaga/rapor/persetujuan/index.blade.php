@@ -17,10 +17,21 @@
         <div
             class="space-y-4"
             x-data="dataTableFilter({
-                filters: { search: @js(request('search', '')) },
+                filters: { search: @js(request('search', '')), tab: @js($tab) },
                 indexUrlBase: @js(route('admin.rapor.persetujuan.index')),
             })"
         >
+            <div class="flex items-center gap-2">
+                <a href="{{ route('admin.rapor.persetujuan.index') }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 {{ $tab === 'menunggu' ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+                    <span>Menunggu Keputusan Saya</span>
+                </a>
+                <a href="{{ route('admin.rapor.persetujuan.index', ['tab' => 'riwayat']) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-200 {{ $tab === 'riwayat' ? 'bg-brand-50 text-brand-700 border border-brand-200 shadow-xs' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100' }}">
+                    <span>Riwayat</span>
+                </a>
+            </div>
+
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
                 <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Kelas</label>
                 <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">

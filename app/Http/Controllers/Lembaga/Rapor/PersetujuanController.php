@@ -32,29 +32,44 @@ class PersetujuanController extends BaseController
         private readonly VerifyPengajuanRaporAction $verifyPengajuanRaporAction,
         private readonly ApprovePengajuanRaporAction $approvePengajuanRaporAction,
         private readonly RaporPdfDataBuilder $raporPdfDataBuilder,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View|string
     {
         abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
 
-        $statusYangDicari = $this->statusUntukAktor($request);
+        $tab = $request->query('tab', 'menunggu');
 
-        $query = PengajuanRapor::where('status', $statusYangDicari)
-            ->with(['kelas.tahunAjaran', 'semester'])
-            ->when($request->search, function ($q, $search) {
-                $q->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
-            })
-            ->latest();
+        if ($tab === 'riwayat') {
+            $effectiveLembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+                ? session('active_lembaga_id')
+                : $request->user()->lembaga_id;
+
+            $query = PengajuanRapor::whereIn('status', [StatusPengajuanRapor::Disetujui, StatusPengajuanRapor::Ditolak])
+                ->when($effectiveLembagaId, fn ($q) => $q->where('lembaga_id', $effectiveLembagaId))
+                ->with(['kelas.tahunAjaran', 'semester'])
+                ->when($request->search, function ($q, $search) {
+                    $q->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
+                })
+                ->latest();
+        } else {
+            $statusYangDicari = $this->statusUntukAktor($request);
+
+            $query = PengajuanRapor::where('status', $statusYangDicari)
+                ->with(['kelas.tahunAjaran', 'semester'])
+                ->when($request->search, function ($q, $search) {
+                    $q->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
+                })
+                ->latest();
+        }
 
         $pengajuanList = $query->get();
 
         if ($request->ajax()) {
-            return view('portals.lembaga.rapor.persetujuan._daftar', compact('pengajuanList'))->render();
+            return view('portals.lembaga.rapor.persetujuan._daftar', compact('pengajuanList', 'tab'))->render();
         }
 
-        return view('portals.lembaga.rapor.persetujuan.index', compact('pengajuanList'));
+        return view('portals.lembaga.rapor.persetujuan.index', compact('pengajuanList', 'tab'));
     }
 
     public function show(PengajuanRapor $pengajuanRapor, Request $request): View
