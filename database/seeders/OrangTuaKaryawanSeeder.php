@@ -189,6 +189,10 @@ class OrangTuaKaryawanSeeder extends Seeder
                     $this->tautkanOrangTuaSiswa($existing, $siswa, $item['hubungan'], true);
                 }
 
+                if ($siswa) {
+                    $this->pastikanSiswaBisaLogin($siswa);
+                }
+
                 continue;
             }
 
@@ -222,10 +226,52 @@ class OrangTuaKaryawanSeeder extends Seeder
             ]);
 
             $this->tautkanOrangTuaSiswa($orangTua, $siswa, $item['hubungan'], true);
+
+            // Orang tua ini bisa login -- anaknya juga WAJIB bisa login, supaya
+            // pasangan akun ortu+anak bisa sama-sama dipraktikkan (bukan cuma
+            // salah satu pihak yang bisa masuk ke sistem).
+            $this->pastikanSiswaBisaLogin($siswa);
         }
 
         // 1 Akun Orang Tua Demo untuk Login (password: 'password')
         $this->seedOrangTuaDemoLogin($sdit);
+    }
+
+    /**
+     * Pastikan Siswa punya akun login sendiri (role `siswa`), username = NISN,
+     * password awal = NISN (konsisten dengan pola username=NIK/password=NIK
+     * yang dipakai orang tua di atas). Idempotent -- aman dipanggil ulang.
+     */
+    private function pastikanSiswaBisaLogin(Siswa $siswa): void
+    {
+        $person = $siswa->person;
+        if (! $person) {
+            return;
+        }
+
+        if ($person->user_id) {
+            return; // sudah punya akun login (mis. dari SiswaSeeder::seedSiswaAccount()).
+        }
+
+        $username = $siswa->nisn;
+
+        $user = User::firstOrCreate(
+            ['username' => $username],
+            [
+                'name' => $person->nama_lengkap,
+                'password' => Hash::make($username),
+                'lembaga_id' => $siswa->lembaga_id,
+                'email_verified_at' => now(),
+                'is_active' => true,
+                'must_change_password' => true,
+            ]
+        );
+
+        if (! $user->hasRole('siswa')) {
+            $user->assignRole('siswa');
+        }
+
+        $person->update(['user_id' => $user->id]);
     }
 
     private function seedOrangTuaDemoLogin(Lembaga $sdit): void
@@ -267,6 +313,28 @@ class OrangTuaKaryawanSeeder extends Seeder
         ]);
 
         $this->tautkanOrangTuaSiswa($orangTua, $siswaTarget, 'ibu', true);
+
+        // Anak dari akun demo login ini juga dapat login mudah (email + password
+        // "password"), simetris dengan kemudahan akun orang tuanya -- pasangan
+        // ortu.sd@demo.test + anaknya jadi bisa dipraktikkan bersamaan.
+        $childPerson = $siswaTarget->person;
+        if ($childPerson && ! $childPerson->user_id) {
+            $childUser = User::firstOrCreate(
+                ['email' => 'siswa.sd2@demo.test'],
+                [
+                    'name' => $childPerson->nama_lengkap,
+                    'password' => 'password',
+                    'lembaga_id' => $siswaTarget->lembaga_id,
+                    'email_verified_at' => now(),
+                    'is_active' => true,
+                    'must_change_password' => false,
+                ]
+            );
+            if (! $childUser->hasRole('siswa')) {
+                $childUser->assignRole('siswa');
+            }
+            $childPerson->update(['user_id' => $childUser->id]);
+        }
     }
 
     // ── Helper ───────────────────────────────────────────────────────────────

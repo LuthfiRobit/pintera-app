@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class BriVirtualAccountFactory extends Factory
 {
     protected $model = BriVirtualAccount::class;
+
     /**
      * Define the model's default state.
      *
@@ -19,7 +20,11 @@ class BriVirtualAccountFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'va_type' => 'WALLET_PERMANENT',
+            'va_number' => (string) $this->faker->unique()->numerify('1288800############'),
+            'status' => 'PERMANENT',
+            'amount' => null,
+            'expired_at' => null,
         ];
     }
 }

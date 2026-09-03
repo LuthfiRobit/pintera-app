@@ -1,4 +1,5 @@
 <?php
+
 // database/seeders/SeleksiPpdbSeeder.php
 
 namespace Database\Seeders;
@@ -28,15 +29,19 @@ class SeleksiPpdbSeeder extends Seeder
         }
     }
 
+    // Jadwal seleksi sengaja di masa LALU (bukan addDays/masa depan) -- HasilSeleksiSeeder
+    // dan SkPpdbSeeder mencatat nilai/SK di "now()" (hari ini), yang cuma valid kalau tes
+    // seleksinya sendiri sudah benar-benar berlangsung. Urutan subDays menurun (9 -> 8 -> 7)
+    // supaya tes yang lebih dulu dijadwalkan tetap terjadi lebih dulu secara kronologis.
     private function seleksiPaud(): array
     {
         return [
             'Reguler' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Anak', 'jadwal' => now()->addDays(7)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Perkembangan usia sesuai', 'bobot' => 60],
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara Orang Tua', 'jadwal' => now()->addDays(8)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Komitmen pola asuh', 'bobot' => 40],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Anak', 'jadwal' => now()->subDays(9)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Perkembangan usia sesuai', 'bobot' => 60],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara Orang Tua', 'jadwal' => now()->subDays(8)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Komitmen pola asuh', 'bobot' => 40],
             ],
             'Prestasi' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Anak', 'jadwal' => now()->addDays(9)->setTime(9, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Verifikasi bakat khusus', 'bobot' => 100],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Anak', 'jadwal' => now()->subDays(7)->setTime(9, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Verifikasi bakat khusus', 'bobot' => 100],
             ],
             'Afirmasi' => [],
         ];
@@ -46,11 +51,11 @@ class SeleksiPpdbSeeder extends Seeder
     {
         return [
             'Reguler' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Kesiapan Sekolah', 'jadwal' => now()->addDays(7)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Kematangan motorik & emosional', 'bobot' => 60],
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara Orang Tua', 'jadwal' => now()->addDays(8)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Komitmen kemitraan orang tua', 'bobot' => 40],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Observasi Kesiapan Sekolah', 'jadwal' => now()->subDays(9)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Kematangan motorik & emosional', 'bobot' => 60],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara Orang Tua', 'jadwal' => now()->subDays(8)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Komitmen kemitraan orang tua', 'bobot' => 40],
             ],
             'Prestasi' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Baca Al-Qur\'an', 'jadwal' => now()->addDays(9)->setTime(9, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Kemampuan membaca / tahfizh', 'bobot' => 100],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Baca Al-Qur\'an', 'jadwal' => now()->subDays(7)->setTime(9, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Kemampuan membaca / tahfizh', 'bobot' => 100],
             ],
             'Afirmasi' => [],
         ];
@@ -60,11 +65,11 @@ class SeleksiPpdbSeeder extends Seeder
     {
         return [
             'Reguler' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Tulis', 'jadwal' => now()->addDays(7)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Nilai minimal 65', 'bobot' => 60],
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara', 'jadwal' => now()->addDays(8)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Lolos wawancara motivasi', 'bobot' => 40],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Tes Tulis', 'jadwal' => now()->subDays(9)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Nilai minimal 65', 'bobot' => 60],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara', 'jadwal' => now()->subDays(8)->setTime(8, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Lolos wawancara motivasi', 'bobot' => 40],
             ],
             'Prestasi' => [
-                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara', 'jadwal' => now()->addDays(9)->setTime(9, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Verifikasi keaslian sertifikat & wawancara', 'bobot' => 100],
+                ['gelombang' => 'Gelombang 1', 'jenis_tes' => 'Wawancara', 'jadwal' => now()->subDays(7)->setTime(9, 0)->format('Y-m-d H:i:s'), 'kriteria' => 'Verifikasi keaslian sertifikat & wawancara', 'bobot' => 100],
             ],
             'Afirmasi' => [],
         ];

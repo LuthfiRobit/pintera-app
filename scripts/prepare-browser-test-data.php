@@ -1,8 +1,13 @@
 <?php
 
 use App\Domains\Identity\Models\Person;
+use App\Domains\Keuangan\Models\BriVirtualAccount;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\KategoriKeringanan;
+use App\Domains\Keuangan\Models\ManualPaymentRequest;
+use App\Domains\Keuangan\Models\Pembayaran;
+use App\Domains\Keuangan\Models\PembayaranTagihan;
+use App\Domains\Keuangan\Models\SiswaKeringanan;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Keuangan\Models\Wallet;
 use App\Models\Kelas;
@@ -126,7 +131,7 @@ $siswa = Siswa::firstOrCreate(
 );
 
 if (! $siswa->orangTua()->where('orang_tua.id', $orangTua->id)->exists()) {
-    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_wali' => true, 'is_kontak_darurat' => true]);
+    $siswa->orangTua()->attach($orangTua->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 }
 
 $wallet = Wallet::firstOrCreate(
@@ -134,6 +139,17 @@ $wallet = Wallet::firstOrCreate(
     ['balance' => 1500000, 'va_number' => '1288800012345678']
 );
 $wallet->update(['balance' => 1500000, 'va_number' => '1288800012345678']);
+
+// Seed BRI Permanent Virtual Account for Admin VA List
+BriVirtualAccount::firstOrCreate(
+    ['wallet_id' => $wallet->id, 'va_type' => 'WALLET_PERMANENT'],
+    [
+        'va_number' => '1288800012345678',
+        'status' => 'PERMANENT',
+        'amount' => 0,
+        'customer_name' => 'Ahmad Santoso',
+    ]
+);
 
 $jenisTagihan = JenisTagihan::firstOrCreate(
     ['nama' => 'SPP Reguler Bulanan', 'lembaga_id' => $lembaga->id],
@@ -145,6 +161,17 @@ $jenisTagihan = JenisTagihan::firstOrCreate(
         'is_active' => true,
         'hari_generate' => 1,
         'jatuh_tempo_hari' => 10,
+    ]
+);
+
+$jenisTagihanUangPangkal = JenisTagihan::firstOrCreate(
+    ['nama' => 'Uang Pangkal Gedung', 'lembaga_id' => $lembaga->id],
+    [
+        'kategori' => 'tahunan',
+        'mode' => 'manual',
+        'tipe' => 'sekali',
+        'default_amount' => 2500000,
+        'is_active' => true,
     ]
 );
 
@@ -163,10 +190,7 @@ $tagihan1 = Tagihan::updateOrCreate(
     ]
 );
 
-// Tagihan sengaja diflag perlu_ditinjau_ulang secara langsung via seed (bukan lewat
-// RecalculateTagihanNominalAction) -- ini murni untuk menyiapkan state UI yang stabil
-// untuk verifikasi browser, bukan untuk membuktikan logic recalculate itu sendiri
-// (yang sudah punya test Pest tersendiri).
+// Tagihan sengaja diflag perlu_ditinjau_ulang secara langsung via seed untuk verifikasi UI
 $tagihanDitinjau = Tagihan::updateOrCreate(
     ['jenis_tagihan_id' => $jenisTagihan->id, 'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'billing_period' => '2026-08'],
     [
@@ -183,9 +207,74 @@ $tagihanDitinjau = Tagihan::updateOrCreate(
     ]
 );
 
-KategoriKeringanan::firstOrCreate(
+// Tagihan Lunas untuk Riwayat & Kwitansi
+$tagihanLunas = Tagihan::updateOrCreate(
+    ['jenis_tagihan_id' => $jenisTagihan->id, 'tagihable_type' => Siswa::class, 'tagihable_id' => $siswa->id, 'billing_period' => '2026-07'],
+    [
+        'lembaga_id' => $lembaga->id,
+        'person_id' => $siswa->person_id,
+        'total_tagihan' => 500000,
+        'discount_amount' => 50000,
+        'net_amount' => 450000,
+        'paid_amount' => 450000,
+        'status' => 'lunas',
+        'jatuh_tempo' => '2026-07-10',
+        'perlu_ditinjau_ulang' => false,
+    ]
+);
+
+$pembayaranLunas = Pembayaran::firstOrCreate(
+    ['tagihan_id' => $tagihanLunas->id, 'status' => 'lunas'],
+    [
+        'siswa_id' => $siswa->id,
+        'wallet_id' => $wallet->id,
+        'sumber' => 'admin',
+        'metode' => 'transfer_manual',
+        'amount' => 450000,
+        'identifier_method' => 'manual',
+        'diverifikasi_pada' => now()->subMonth(),
+    ]
+);
+
+PembayaranTagihan::firstOrCreate(
+    ['pembayaran_id' => $pembayaranLunas->id, 'tagihan_id' => $tagihanLunas->id],
+    ['amount_allocated' => 450000]
+);
+
+// Pending Manual Payment Request for Admin Manual Payment Approval
+$pembayaranPendingManual = Pembayaran::firstOrCreate(
+    ['tagihan_id' => $tagihan1->id, 'sumber' => 'orang_tua', 'status' => 'menunggu_verifikasi'],
+    [
+        'siswa_id' => $siswa->id,
+        'metode' => 'transfer_manual',
+        'amount' => 450000,
+        'file_path' => 'bukti-transfer/sample.jpg',
+        'identifier_method' => 'manual',
+    ]
+);
+
+ManualPaymentRequest::firstOrCreate(
+    ['pembayaran_id' => $pembayaranPendingManual->id],
+    [
+        'requested_by' => $userOrtu->id,
+        'amount' => 450000,
+        'transfer_date' => now()->format('Y-m-d'),
+        'bank_name' => 'Bank Mandiri',
+        'account_name' => 'Budi Santoso',
+        'account_number' => '1400012345678',
+        'transfer_proof_path' => 'bukti-transfer/sample.jpg',
+        'status' => 'PENDING',
+    ]
+);
+
+$kategoriKeringanan = KategoriKeringanan::firstOrCreate(
     ['nama' => 'Tahfidz 30 Juz', 'lembaga_id' => $lembaga->id],
     ['bisa_digabung' => true, 'is_active' => true]
+);
+
+SiswaKeringanan::firstOrCreate(
+    ['siswa_id' => $siswa->id, 'kategori_keringanan_id' => $kategoriKeringanan->id],
+    ['berlaku_dari' => '2026-07-01', 'berlaku_sampai' => '2027-06-30']
 );
 
 // Notifications for OrangTua user
@@ -212,7 +301,7 @@ $userOrtu->notifications()->create([
     'read_at' => null,
 ]);
 
-echo "SUCCESS! Test users created:\n";
+echo "SUCCESS! Test users and full finance fixtures created:\n";
 echo "1. Bendahara: bendahara.test@pintera.id / password\n";
 echo "2. Orang Tua: orangtua.test@pintera.id / password\n";
 echo "3. Yayasan: yayasan.test@pintera.id / password\n";
