@@ -324,3 +324,34 @@ it('builds rapor data for a siswa who has since left the kelas (kelas_id null, k
 
     expect($data)->toBeArray();
 });
+
+it('excludes a siswa Keluar from the wali kelas rapor catatan listing', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswaAktif, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    $siswaKeluar = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'aktif', 'nama_lengkap' => 'Zainal Keluar']);
+    app(UpdateStatusSiswaAction::class)->execute($siswaKeluar, StatusSiswa::Keluar);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('Zainal Keluar');
+    $response->assertViewHas('siswaList', function ($list) use ($siswaAktif, $siswaKeluar) {
+        return $list->contains('id', $siswaAktif->id) && ! $list->contains('id', $siswaKeluar->id);
+    });
+});
+
+it('skips a siswa Keluar entirely when computing siswaSebelumnya/siswaBerikutnya, without shifting the index of the remaining aktif siswa', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $ahmad, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    // siapkanWaliKelasUntukRapor() sudah membuat 1 siswa "Ahmad Fauzi" -- tambahkan 2 lagi
+    // supaya urutan alfabetis: Ahmad Fauzi, Budi Keluar (akan dikeluarkan), Citra Wulandari.
+    $budiKeluar = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'aktif', 'nama_lengkap' => 'Budi Keluar']);
+    app(UpdateStatusSiswaAction::class)->execute($budiKeluar, StatusSiswa::Keluar);
+    $citra = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'aktif', 'nama_lengkap' => 'Citra Wulandari']);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.edit', ['siswa' => $ahmad->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertViewHas('siswaSebelumnya', null);
+    $response->assertViewHas('siswaBerikutnya', function ($siswa) use ($citra) {
+        return $siswa !== null && $siswa->id === $citra->id;
+    });
+});
