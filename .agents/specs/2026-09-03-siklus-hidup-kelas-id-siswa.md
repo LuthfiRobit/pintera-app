@@ -16,8 +16,60 @@
 - **Arsitektur**: logic dipindah dari inline `SiswaController::updateStatus()` ke Action baru `App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction`, sesuai konvensi proyek yang sudah direkam (`.ai/rules/controllers.md`: *state-transition endpoints inject a Domain Action*) — sekaligus membetulkan inkonsistensi arsitektur yang sudah ada sebelum spec ini.
 - **`kelas_terakhir_id`**: kolom baru `BIGINT UNSIGNED NULL` di tabel `siswa`, dengan FK ke `kelas.id` `ON DELETE SET NULL` — menyamai definisi `kelas_id` yang sudah ada (dikonfirmasi lewat schema: `kelas_id` sudah punya FK asli dengan `ON DELETE SET NULL`, bukan kolom polos seperti dugaan awal).
 - **Branch**: tetap di `akademik-v2`, tidak dipindah ke branch baru.
+- **Accessor terpusat, bukan 3 logic fallback terpisah**: model `Siswa` mendapat 1 accessor (`getKelasEfektifAttribute()`, dipanggil sebagai `$siswa->kelas_efektif` — mengikuti pola magic-accessor legacy yang SUDAH dipakai konsisten di model ini, bukan `Attribute` class) yang return `$this->kelas ?? $this->kelasTerakhir`. **Dipakai di KETIGA tempat** yang butuh tampilkan kelas siswa non-aktif: `RaporPdfDataBuilder`, `_daftar.blade.php`, `profil.blade.php` — bukan logic fallback terpisah di masing-masing tempat yang bisa menyimpang seiring waktu.
 
-## 2. Perubahan Database (1 Migration)
+## 2. Urutan Implementasi Wajib
+
+Audit tambahan (dilakukan sebelum spec ini dianggap siap ditulis jadi plan) menemukan 2 titik yang akan RUSAK begitu migration (§4) di-deploy, kalau tidak ditambal DULUAN. Urutan berikut WAJIB diikuti persis:
+
+1. **Perbaikan pra-migration #1**: guard validasi di `SiswaController::validateSiswa()` (§3.1).
+2. **Perbaikan pra-migration #2**: perbaiki `tests/Unit/Services/SesiPembelajaranGeneratorTest.php:187` (§3.2).
+3. **Migration**: kolom `kelas_terakhir_id` + backfill + CHECK constraint (§4).
+4. **`UpdateStatusSiswaAction`** (§5).
+5. **Accessor `kelas_efektif`** di model `Siswa` + terapkan ke 3 konsumen (§6).
+6. **Frontend**: guard form edit + label "(kelas terakhir)" (§7).
+7. Sisa test regresi untuk titik "gratis" (§9).
+
+Kalau urutan ini dibalik (mis. migration dijalankan sebelum 2 perbaikan pra-migration), test suite akan merah dan/atau form edit siswa non-aktif akan crash 500 di produksi — lihat bukti di §3.
+
+## 3. Perbaikan Pra-Migration (WAJIB PALING AWAL)
+
+### 3.1. Guard validasi `kelas_id` untuk siswa non-aktif di `SiswaController`
+
+**Masalah** (ditemukan lewat audit, dibuktikan dengan pembacaan kode langsung): `SiswaController::update()` (baris 178-180) mengizinkan mengubah `kelas_id` lewat form edit profil biasa — field ini (`_form.blade.php:73`, `<x-select name="kelas_id">`) SELALU ditampilkan sebagai editable, TANPA guard berdasarkan status siswa saat ini. `validateSiswa()` (baris 279+) memvalidasi `kelas_id` cuma `['nullable', 'integer']`, tidak mengecek status siswa yang sedang diedit sama sekali. Kalau admin membuka form edit untuk siswa yang SUDAH `Lulus`/`Pindah`/`Keluar` dan submit `kelas_id` non-kosong, `update()` akan set `kelas_id` sementara `status` tetap non-aktif — melanggar CHECK constraint baru begitu di-deploy, menghasilkan **500 error mentah dari database**, bukan pesan validasi.
+
+**Perbaikan**: tambah validasi di `validateSiswa()` — kalau `$current` (siswa yang diedit) ada DAN `$current->status !== StatusSiswa::Aktif` DAN `$data['kelas_id']` tidak kosong, gagalkan validasi:
+
+```php
+if ($current && $current->status !== StatusSiswa::Aktif && ! empty($data['kelas_id'])) {
+    throw ValidationException::withMessages([
+        'kelas_id' => 'Tidak bisa menempatkan kelas untuk siswa berstatus non-aktif. Ubah status ke Aktif terlebih dahulu.',
+    ]);
+}
+```
+
+**Test**: submit `update()` dengan `kelas_id` terisi untuk siswa berstatus `Keluar` — assert `ValidationException`/`assertSessionHasErrors('kelas_id')`, assert `kelas_id` siswa TIDAK berubah di database.
+
+### 3.2. Perbaiki `SesiPembelajaranGeneratorTest.php:187`
+
+**Masalah**: test ini SENGAJA membuat kondisi `Siswa::factory()->create(['kelas_id' => $kelas->id, 'status' => 'lulus'])` — kombinasi yang setelah spec ini deploy jadi MUSTAHIL secara struktural (dijamin CHECK constraint). Baris factory ini sendiri akan melempar DB exception begitu constraint aktif, sebelum sempat sampai ke assertion.
+
+**Perbaikan**: ubah konstruksi test supaya lewat alur yang benar — buat siswa `Aktif` dulu di kelas itu, panggil `UpdateStatusSiswaAction` untuk transisi ke `Lulus` (otomatis null-kan `kelas_id` sesuai desain baru di §5), baru jalankan `SesiPembelajaranGenerator`. Assertion akhir tetap sama (siswa itu tidak dapat presensi ter-generate), tapi sekarang menguji alur nyata end-to-end:
+
+```php
+it('excludes non-aktif siswa from auto-generated presensi', function () {
+    ['kelas' => $kelas, 'semester' => $semester] = siapkanKelasDenganJadwal();
+    $siswaLulus = Siswa::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'kelas_id' => $kelas->id, 'status' => 'aktif']);
+    app(UpdateStatusSiswaAction::class)->execute($siswaLulus, StatusSiswa::Lulus);
+
+    $hasil = (new SesiPembelajaranGenerator)->generateUntukTanggal($kelas, Carbon::parse('2026-08-19'), $semester->id);
+
+    expect($hasil->first()->presensi()->count())->toBe(3);
+    expect($hasil->first()->presensi()->where('siswa_id', $siswaLulus->id)->exists())->toBeFalse();
+});
+```
+
+## 4. Perubahan Database (1 Migration)
 
 Isi migration, urutan HARUS seperti ini:
 
@@ -37,7 +89,7 @@ Isi migration, urutan HARUS seperti ini:
 
 **Down migration**: drop constraint, drop FK, drop kolom — tidak perlu me-restore `kelas_id` dari `kelas_terakhir_id` saat rollback (rollback migration ini secara alami berarti fitur ini dibatalkan sepenuhnya, bukan operasi yang butuh dipertahankan datanya).
 
-## 3. `UpdateStatusSiswaAction`
+## 5. `UpdateStatusSiswaAction`
 
 **File baru**: `app/Domains/Akademik/Actions/Siswa/UpdateStatusSiswaAction.php`
 
@@ -76,27 +128,77 @@ Catatan desain: transisi non-aktif → non-aktif lain (mis. `Pindah` → `Keluar
 
 **`SiswaController::updateStatus()`** diubah untuk memanggil action ini (method-injected), validasi input (`in:aktif,lulus,pindah,keluar`) tetap di controller seperti sekarang.
 
-## 4. `RaporPdfDataBuilder` — Fallback ke Kelas Terakhir
+## 6. Accessor `kelas_efektif` — Dipakai di 3 Konsumen
 
-**File**: `app/Domains/Akademik/Services/RaporPdfDataBuilder.php:45`
+**Model**: `app/Models/Siswa.php` — tambah relasi baru dan 1 accessor:
 
-Ubah:
 ```php
-$kelas = $siswa->kelas;
+public function kelasTerakhir(): BelongsTo
+{
+    return $this->belongsTo(Kelas::class, 'kelas_terakhir_id');
+}
+
+public function getKelasEfektifAttribute(): ?Kelas
+{
+    return $this->kelas ?? $this->kelasTerakhir;
+}
 ```
-Menjadi:
-```php
-$kelas = $siswa->kelas ?? Kelas::find($siswa->kelas_terakhir_id);
-abort_if($kelas === null, 404);
-```
+
+Dipakai (menggantikan akses `$siswa->kelas` langsung) di:
+
+1. **`RaporPdfDataBuilder.php:45`**:
+   ```php
+   $kelas = $siswa->kelas_efektif;
+   abort_if($kelas === null, 404);
+   ```
+2. **`resources/views/admin/siswa/_daftar.blade.php:92-93`**:
+   ```blade
+   @if ($siswa->kelas_efektif)
+       {{ $siswa->kelas_efektif->nama }}
+       @if (! $siswa->kelas && $siswa->kelasTerakhir)
+           <span class="text-xs text-gray-400">(kelas terakhir)</span>
+       @endif
+   @endif
+   ```
+3. **`resources/views/admin/siswa/tabs/profil.blade.php:80`**:
+   ```blade
+   {{ $siswa->kelas_efektif?->nama ?? 'Belum ada kelas' }}
+   @if (! $siswa->kelas && $siswa->kelasTerakhir)
+       <span class="text-xs text-gray-400">(kelas terakhir)</span>
+   @endif
+   ```
+
+**Label "(kelas terakhir)"**: ditambahkan supaya admin tidak bingung kenapa siswa yang sudah `Keluar`/`Pindah`/`Lulus` masih "punya kelas" di tampilan — sinyal visual bahwa ini snapshot historis, bukan penempatan aktif.
+
+**Eager loading**: query yang memberi data ke `_daftar.blade.php` (listing siswa, kemungkinan di `SiswaController::index()`) harus ditambah `->with(['kelas', 'kelasTerakhir'])` supaya accessor tidak memicu N+1 query per baris siswa di daftar.
 
 **Known-limitation, didokumentasikan (bukan diperbaiki di spec ini)**: `kelas_terakhir_id` cuma menyimpan 1 kelas "terakhir diketahui". Kalau siswa pernah pindah kelas beberapa kali sebelum status berubah jadi non-aktif, cetak ulang rapor untuk semester LAMA (bukan semester terakhir) akan tetap menampilkan kelas TERAKHIR, bukan kelas yang benar untuk semester itu. Ini bukan regresi baru — `$siswa->kelas` hari ini pun sudah selalu mengambil kelas TERKINI siswa untuk semester manapun yang dicetak (tidak historis per-semester).
 
-## 5. Known-Limitation Tambahan (didokumentasikan, tidak diperbaiki)
+## 7. Frontend — Perubahan UI Eksplisit
 
-FK `kelas_terakhir_id` menggunakan `ON DELETE SET NULL` ke `kelas.id`. Kalau nanti ada fitur hapus-Kelas ditambahkan (hari ini tidak mungkin — `KelasController` tidak punya `destroy()`), snapshot di `kelas_terakhir_id` akan hilang diam-diam tanpa constraint yang mendeteksi (CHECK constraint yang ada cuma mengunci `kelas_id`, tidak menyentuh `kelas_terakhir_id`). Tidak perlu solusi sekarang — dicatat supaya tidak jadi kejutan kalau fitur hapus-Kelas dibangun di masa depan.
+1. **Guard di `_form.blade.php`** (dipakai bersama create + edit): field `kelas_id` (baris 71-81) di-disable dan diberi pesan jelas saat mengedit siswa yang berstatus non-aktif — mencerminkan validasi backend di §3.1 supaya admin tidak dikagetkan error setelah submit:
+   ```blade
+   @php $siswaNonAktif = $siswa && $siswa->status !== \App\Enums\StatusSiswa::Aktif; @endphp
+   <div class="sm:col-span-12">
+       <x-input-label value="Penempatan Kelas" />
+       <x-select name="kelas_id" :disabled="$siswaNonAktif" class="mt-1.5 block w-full transition duration-150" :error="$errors->has('kelas_id')">
+           <option value="">— Belum ditempatkan —</option>
+           @foreach ($kelasList as $kelas)
+               <option value="{{ $kelas->id }}" @selected($val('kelas_id') == $kelas->id)>{{ $kelas->nama }}</option>
+           @endforeach
+       </x-select>
+       @if ($siswaNonAktif)
+           <x-input-hint>Siswa berstatus non-aktif — ubah status ke Aktif dulu untuk menempatkan kelas.</x-input-hint>
+       @else
+           <x-input-hint>(Opsional)</x-input-hint>
+       @endif
+       <x-input-error :messages="$errors->get('kelas_id')" class="mt-1.5" />
+   </div>
+   ```
+   Field yang `disabled` tidak ikut ter-submit oleh browser — jadi selaras otomatis dengan guard backend (kalaupun field di-enable paksa lewat devtools, backend §3.1 tetap menolak).
+2. **`_daftar.blade.php` dan `profil.blade.php`** — pakai `kelas_efektif` (§6), verifikasi manual (screenshot) bahwa siswa non-aktif menampilkan nama kelas terakhirnya dengan label "(kelas terakhir)", bukan "Belum ada kelas".
 
-## 6. Titik Konsumen — Perlakuan per Kelompok
+## 8. Titik Konsumen — Perlakuan per Kelompok
 
 **5 titik "gratis"** (tidak butuh perubahan kode — begitu `kelas_id` null, query `where('kelas_id', ...)` otomatis tidak match):
 - `ProsesKenaikanKelasAction`
@@ -109,31 +211,37 @@ FK `kelas_terakhir_id` menggunakan `ON DELETE SET NULL` ke `kelas.id`. Kalau nan
 - `SubmitPengajuanRaporAction.php:37` — sudah ditambal minimal+terisolasi sebelum spec ini ditulis.
 - `PresensiAggregationService.php:20` — sudah benar sejak awal (pola rujukan).
 
-**1 titik butuh kode eksplisit**: `RaporPdfDataBuilder.php:45` (lihat §4).
+**3 titik pakai accessor `kelas_efektif`** (§6): `RaporPdfDataBuilder`, `_daftar.blade.php`, `profil.blade.php`.
 
-**1 titik di luar scope, catatan serah-terima** (lihat §7 Non-Goals): `JenisTagihanSasaranMatcher` + `TagihanBillingGenerator`.
+**2 titik perbaikan pra-migration** (§3): guard validasi `SiswaController`, fix `SesiPembelajaranGeneratorTest`.
 
-## 7. Non-Goals
+**1 titik di luar scope, catatan serah-terima** (lihat §10 Non-Goals): `JenisTagihanSasaranMatcher` + `TagihanBillingGenerator`.
+
+## 9. Non-Goals
 
 - **Validasi tingkat Kenaikan Kelas + konsep "siswa tinggal kelas"** — spec/topik terpisah (Kelompok B), tidak digarap di sini.
-- **`JenisTagihanSasaranMatcher::resolveTargetSiswa()`/`countTotalSiswaPool()` dan `TagihanBillingGenerator`** — base query-nya tidak filter status SAMA SEKALI (independen dari masalah `kelas_id`; siswa non-aktif dengan kriteria sasaran non-kelas, mis. "semua siswa", tetap akan kena tagihan baru walau `kelas_id` sudah null). **TIDAK disentuh di spec ini** karena file yang sama sedang aktif digarap di spec Keuangan lain (`keuangan-v2`, dikonfirmasi lewat `git log` — ada histori kerja baru-baru ini di area billing dan referensi eksplisit ke file ini di brainstorming redesain form Jenis Tagihan). **Catatan serah-terima untuk direlay ke spec/sesi Keuangan yang berjalan paralel itu**: base query `resolveTargetSiswa()`/`countTotalSiswaPool()` perlu ditambah `->where('status', StatusSiswa::Aktif->value)`, terpisah dan tidak bergantung pada mekanisme `kelas_terakhir_id` di spec ini.
-- **Akurasi kelas historis per-semester** di `RaporPdfDataBuilder` — batasan lama (lihat §4), tidak diperbaiki.
+- **`JenisTagihanSasaranMatcher::resolveTargetSiswa()`/`countTotalSiswaPool()` dan `TagihanBillingGenerator`** — base query-nya tidak filter status SAMA SEKALI (independen dari masalah `kelas_id`; siswa non-aktif dengan kriteria sasaran non-kelas, mis. "semua siswa", tetap akan kena tagihan baru walau `kelas_id` sudah null). **TIDAK disentuh di spec ini** karena file yang sama sedang aktif digarap di spec Keuangan lain (`keuangan-v2`, dikonfirmasi lewat `git log` — ada histori kerja baru-baru ini di area billing dan referensi eksplisit ke file ini di brainstorming redesain form Jenis Tagihan). **Catatan serah-terima untuk direlay ke spec/sesi Keuangan yang berjalan paralel itu**: base query `resolveTargetSiswa()`/`countTotalSiswaPool()` perlu ditambah `->where('status', StatusSiswa::Aktif->value)`, terpisah dan tidak bergantung pada mekanisme `kelas_terakhir_id` di spec ini. Juga dicatat di kickoff (`.agents/kickoff/`).
+- **Akurasi kelas historis per-semester** di `RaporPdfDataBuilder`/`kelas_efektif` — batasan lama (lihat §6), tidak diperbaiki.
+- **FK `kelas_terakhir_id` bisa hilang diam-diam kalau fitur hapus-Kelas dibangun nanti** — CHECK constraint tidak menyentuh kolom ini. Dicatat, tidak mungkin terjadi hari ini (`KelasController` tidak punya `destroy()`).
 - **Migrasi/pindah branch** — tetap di `akademik-v2`.
 - **Tidak ada perubahan pada halaman/endpoint lain** di luar yang disebutkan eksplisit di atas.
 
-## 8. Test Plan
+## 10. Test Plan
 
 | # | Area | Skenario |
 |---|---|---|
-| 1 | `UpdateStatusSiswaAction` | Aktif → Keluar: `kelas_terakhir_id` = `kelas_id` lama, `kelas_id` jadi null. |
-| 2 | `UpdateStatusSiswaAction` | Keluar → Aktif: `kelas_id` pulih dari `kelas_terakhir_id`, `kelas_terakhir_id` jadi null lagi. |
-| 3 | `UpdateStatusSiswaAction` | **Siklus ganda**: Aktif→Keluar→Aktif→Keluar lagi (dengan `kelas_id` yang BERBEDA di siklus kedua, mis. siswa sempat pindah kelas saat aktif kembali) — assert `kelas_terakhir_id` di akhir siklus kedua adalah snapshot dari kelas SAAT ITU, bukan sisa data basi dari siklus pertama. |
-| 4 | `UpdateStatusSiswaAction` | **Idempotency**: panggil dengan status target = status sekarang (mis. sudah Keluar, dipanggil Keluar lagi) — assert `kelas_id`/`kelas_terakhir_id` tidak berubah. |
-| 5 | CHECK constraint | Percobaan insert/update mentah lewat query builder yang melanggar invariant (`status != 'aktif'` dengan `kelas_id` terisi) — assert exception database dilempar (bukti constraint aktif di level DB). |
-| 6 | Migration | Seed siswa non-aktif dengan `kelas_id` terisi sebelum migration backfill dijalankan (test migration terpisah, atau assert langsung lewat `RefreshDatabase` + query pasca-migrate) — assert `kelas_terakhir_id` terisi benar, `kelas_id` null setelahnya. |
-| 7 | `RaporPdfDataBuilder` | Cetak rapor untuk siswa berstatus Keluar (`kelas_id` null, `kelas_terakhir_id` terisi) — assert tidak crash, data kelas terbaca dari `kelas_terakhir_id`. |
-| 8 | Kelompok "gratis" — 1 representatif | `ProsesKenaikanKelasAction`: kelas dengan siswa aktif+keluar campur — assert siswa keluar tidak ikut naik/lulus. **Sertakan komentar eksplisit di kode test**: menjelaskan bahwa `RaporCalculationService` dan `DashboardStatsService` punya pola query identik (`where('kelas_id', ...)`) dan dianggap terbukti benar oleh test ini + invariant CHECK constraint di database, sengaja tidak diduplikasi per file. |
-| 9 | `Guru\RaporController` (listing) | Kelas dengan siswa aktif+keluar campur — assert siswa keluar tidak muncul di listing. |
-| 10 | `Guru\RaporController` (navigasi next/previous) | Kelas dengan siswa aktif+keluar campur dalam urutan tertentu — assert navigasi "siswa berikutnya/sebelumnya" cuma menghitung siswa aktif, tidak meleset index karena siswa keluar seharusnya sudah tidak ada di daftar sama sekali. |
+| 1 | `SiswaController::update()` guard (§3.1) | Submit `kelas_id` untuk siswa berstatus `Keluar` — assert `assertSessionHasErrors('kelas_id')`, `kelas_id` tidak berubah di database. |
+| 2 | `SesiPembelajaranGeneratorTest` (§3.2) | Diperbaiki memakai `UpdateStatusSiswaAction`, assertion tetap sama (lihat kode di §3.2). |
+| 3 | `UpdateStatusSiswaAction` | Aktif → Keluar: `kelas_terakhir_id` = `kelas_id` lama, `kelas_id` jadi null. |
+| 4 | `UpdateStatusSiswaAction` | Keluar → Aktif: `kelas_id` pulih dari `kelas_terakhir_id`, `kelas_terakhir_id` jadi null lagi. |
+| 5 | `UpdateStatusSiswaAction` | **Siklus ganda**: Aktif→Keluar→Aktif→Keluar lagi (dengan `kelas_id` yang BERBEDA di siklus kedua) — assert `kelas_terakhir_id` di akhir siklus kedua adalah snapshot dari kelas SAAT ITU, bukan sisa data basi dari siklus pertama. |
+| 6 | `UpdateStatusSiswaAction` | **Idempotency**: panggil dengan status target = status sekarang — assert `kelas_id`/`kelas_terakhir_id` tidak berubah. |
+| 7 | CHECK constraint | Percobaan insert/update mentah yang melanggar invariant — assert exception database dilempar. |
+| 8 | Migration | Seed siswa non-aktif dengan `kelas_id` terisi sebelum backfill — assert `kelas_terakhir_id` terisi benar, `kelas_id` null setelahnya. |
+| 9 | Accessor `kelas_efektif` | Siswa aktif → return `kelas`; siswa non-aktif dengan `kelas_terakhir_id` terisi → return `kelasTerakhir`; siswa tanpa keduanya → return `null`. |
+| 10 | `RaporPdfDataBuilder` | Cetak rapor untuk siswa berstatus Keluar — assert tidak crash, data kelas terbaca lewat `kelas_efektif`. |
+| 11 | Kelompok "gratis" — 1 representatif | `ProsesKenaikanKelasAction`: kelas dengan siswa aktif+keluar campur — assert siswa keluar tidak ikut naik/lulus. **Sertakan komentar eksplisit di kode test**: `RaporCalculationService` dan `DashboardStatsService` punya pola query identik, dianggap terbukti benar oleh test ini + invariant CHECK constraint, sengaja tidak diduplikasi. |
+| 12 | `Guru\RaporController` (listing) | Kelas dengan siswa aktif+keluar campur — assert siswa keluar tidak muncul di listing. |
+| 13 | `Guru\RaporController` (navigasi next/previous) | Kelas dengan siswa aktif+keluar campur dalam urutan tertentu — assert navigasi cuma menghitung siswa aktif, tidak meleset index. |
 
-Test #9 dan #10 WAJIB terpisah dan eksplisit (bukan diringkas jadi 1) karena navigasi next/previous punya logic tambahan (index-based) di luar sekadar filter WHERE — tidak otomatis terbukti benar hanya dari fakta "kelas_id null tidak match where clause".
+Test #12 dan #13 WAJIB terpisah dan eksplisit (bukan diringkas jadi 1) karena navigasi next/previous punya logic tambahan (index-based) di luar sekadar filter WHERE.
