@@ -202,3 +202,15 @@ Item lain yang dicek dan CONFIRMED tidak ada gap: §2.1 banner+disable tombol (`
 **Pelajaran untuk audit berikutnya**: kesimpulan reviewer "tidak ada X di kode, jadi requirement Y tidak berlaku" HARUS diverifikasi dengan mencoba skenario end-to-end (submit form sungguhan), bukan cuma pembacaan statis — gap Task 2 lolos persis karena baik implementer, reviewer, maupun review akhir plan semuanya cuma membaca struktur form tanpa mencoba submit baris kosong yang tidak disentuh.
 
 **Plan `.agents/plans/2026-09-03-audit-akademik-perbaikan.md` dianggap SELESAI TOTAL** per putaran verifikasi ulang ini (per 2026-09-03), dengan 2 gap tambahan di atas sudah ditambal dan diregresi.
+
+---
+
+## Audit Bisnis Lanjutan: Kenaikan Kelas (2026-09-03, di luar scope plan ini)
+
+User meminta audit bisnis lebih dalam ke fitur Kenaikan Kelas (bukan cuma UI). Ditemukan 1 gap kecil (langsung ditambal, commit `9bfb5c04`) dan 1 temuan besar lintas-modul yang **DISENGAJA TIDAK ditambal di sini** karena scope-nya melebihi plan Akademik ini — direkomendasikan jadi spec/plan tersendiri.
+
+**Ditambal (commit `9bfb5c04`)**: `ProsesKenaikanKelasAction`'s guard `semester_tujuan_id` cuma cek `lembaga_id`, tidak cek `tahun_ajaran_id`-nya cocok dengan kelas tujuan — backend percaya filter dropdown UI, pola bug sama seperti validasi kelas lintas-lembaga yang berulang kali ditutup sepanjang sesi ini. Test regresi baru ditambahkan.
+
+**TIDAK ditambal, direkomendasikan jadi plan terpisah**: `SiswaController::updateStatus()` tidak pernah null-kan `kelas_id` saat status diubah ke `Pindah`/`Keluar`. Audit lintas-modul menemukan **6 titik konsumsi `kelas_id`** yang tidak filter status (`ProsesKenaikanKelasAction`, `SubmitPengajuanRaporAction` — **sudah aktif memblokir submit rapor kalau ada siswa keluar yang belum dibersihkan `kelas_id`-nya**, `RaporCalculationService`, `Guru\RaporController`, `DashboardStatsService`, `JenisTagihanSasaranMatcher`+`TagihanBillingGenerator` di modul Keuangan — siswa yang sudah keluar berisiko tetap kena tagihan baru). Satu-satunya tempat yang sudah benar: `PresensiAggregationService` (sudah filter `status='aktif'`). Di sisi lain, `admin/siswa/_daftar.blade.php` dan `admin/siswa/tabs/profil.blade.php` memang butuh `kelas_id` tetap ada untuk menampilkan "kelas terakhir" siswa non-aktif — jadi solusinya BUKAN null begitu saja, tapi kolom snapshot baru (`kelas_terakhir_id`) diisi sebelum `kelas_id` di-null-kan, plus perbaikan di 6 titik konsumen di atas. Juga ditemukan: jalur "Lulus" manual (via edit Siswa) vs "Lulus" via Kenaikan Kelas sudah TIDAK KONSISTEN sekarang (yang kedua null-kan kelas_id, yang pertama tidak).
+
+Juga dikonfirmasi: **tidak ada konsep "siswa tinggal kelas/mengulang tingkat"** di manapun dalam sistem (bukan cuma di Kenaikan Kelas) — dicatat sebagai gap kebijakan terpisah. Validasi tingkat di Kenaikan Kelas (tidak ada pengecekan tingkat tujuan = tingkat asal + 1) direkomendasikan jadi WARNING non-blocking (pola sama seperti peringatan kurikulum berbeda yang sudah ada) supaya skenario tinggal kelas tetap bisa diproses — dikonfirmasi aman karena tidak ada laporan lain yang mengasumsikan tingkat selalu naik +1.
