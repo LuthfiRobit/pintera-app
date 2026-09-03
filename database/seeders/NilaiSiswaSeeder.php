@@ -1,4 +1,5 @@
 <?php
+
 // database/seeders/NilaiSiswaSeeder.php
 
 namespace Database\Seeders;
@@ -8,7 +9,6 @@ use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use Illuminate\Database\Seeder;
@@ -31,16 +31,16 @@ class NilaiSiswaSeeder extends Seeder
         }
     }
 
+    /**
+     * Sebelumnya cuma mengisi nilai untuk "Kelas 1-A" (2 mapel), jadi 11 dari 12 kelas
+     * selalu 0 NilaiSiswa meski sudah ada Asesmen (setelah AsesmenSeeder diperbaiki
+     * mencakup semua kelas). Sekarang generic: ambil SEMUA Asesmen tiap kelas (apa pun
+     * mapelnya) dan isi nilai utk semua siswa di kelas itu, dengan skor & catatan
+     * bervariasi per siswa (bukan nilai flat sama rata) supaya rekap rapor terasa nyata.
+     */
     private function seedSdNilai(Lembaga $sd, TahunAjaran $aktif): void
     {
-        $kelasA = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-A')->first();
-        if (! $kelasA) {
-            return;
-        }
-
-        $siswaA = Siswa::where('kelas_id', $kelasA->id)->orderBy('nis')->get();
-        $mtk = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
-        $ipas = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
+        $kelasList = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->get();
 
         $catatanVariasi = [
             'Menunjukkan pemahaman yang sangat baik, mampu mengerjakan latihan tanpa bantuan.',
@@ -50,31 +50,25 @@ class NilaiSiswaSeeder extends Seeder
             'Baik, konsisten dalam menyelesaikan latihan harian.',
         ];
 
-        if ($mtk && $siswaA->isNotEmpty()) {
-            $asesmenMtk = Asesmen::where('kelas_id', $kelasA->id)->where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->first();
-            $tpMtk1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->first();
-
-            if ($asesmenMtk && $tpMtk1) {
-                foreach ($siswaA as $i => $siswa) {
-                    $skor = 70 + (($i * 7 + 13) % 30); // rentang 70-99, bervariasi per siswa
-                    NilaiSiswa::updateOrCreate(
-                        ['asesmen_id' => $asesmenMtk->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tpMtk1->id],
-                        ['nilai_angka' => $skor, 'catatan' => $catatanVariasi[$i % count($catatanVariasi)]]
-                    );
-                }
+        foreach ($kelasList as $kelas) {
+            $siswaList = Siswa::where('kelas_id', $kelas->id)->orderBy('nis')->get();
+            if ($siswaList->isEmpty()) {
+                continue;
             }
-        }
 
-        if ($ipas && $siswaA->isNotEmpty()) {
-            $asesmenIpas = Asesmen::where('kelas_id', $kelasA->id)->where('subjek_type', 'mata_pelajaran')->where('subjek_id', $ipas->id)->first();
-            $tpIpas1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $ipas->id)->first();
+            $asesmenList = Asesmen::where('kelas_id', $kelas->id)->where('subjek_type', 'mata_pelajaran')->get();
 
-            if ($asesmenIpas && $tpIpas1) {
-                foreach ($siswaA as $i => $siswa) {
-                    $skor = 72 + (($i * 5 + 9) % 28); // rentang 72-99, bervariasi per siswa
+            foreach ($asesmenList as $asesmen) {
+                $tp = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $asesmen->subjek_id)->where('semester_id', $asesmen->semester_id)->first();
+                if (! $tp) {
+                    continue;
+                }
+
+                foreach ($siswaList as $i => $siswa) {
+                    $skor = 70 + (($i * 7 + $asesmen->id * 3 + 13) % 30); // rentang 70-99, bervariasi per siswa & asesmen
                     NilaiSiswa::updateOrCreate(
-                        ['asesmen_id' => $asesmenIpas->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tpIpas1->id],
-                        ['nilai_angka' => $skor, 'catatan' => $catatanVariasi[($i + 2) % count($catatanVariasi)]]
+                        ['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $tp->id],
+                        ['nilai_angka' => $skor, 'catatan' => $catatanVariasi[$i % count($catatanVariasi)]]
                     );
                 }
             }

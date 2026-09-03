@@ -8,6 +8,7 @@ use App\Models\Yayasan;
 use Database\Seeders\AsesmenSeeder;
 use Database\Seeders\EssentialUserSeeder;
 use Database\Seeders\GuruSeeder;
+use Database\Seeders\JadwalPelajaranSeeder;
 use Database\Seeders\JamPelajaranSeeder;
 use Database\Seeders\KelasSeeder;
 use Database\Seeders\KomponenPenilaianSeeder;
@@ -25,24 +26,25 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    (new PermissionSeeder())->run();
-    (new RoleSeeder())->run();
+    (new PermissionSeeder)->run();
+    (new RoleSeeder)->run();
     Yayasan::factory()->create();
-    (new LembagaSeeder())->run();
-    (new EssentialUserSeeder())->run();
-    (new UserSeeder())->run();
-    (new TahunAjaranSeeder())->run();
-    (new SemesterSeeder())->run();
-    (new GuruSeeder())->run();
-    (new PolaJamSeeder())->run();
-    (new JamPelajaranSeeder())->run();
-    (new MataPelajaranSeeder())->run();
-    (new KelasSeeder())->run();
-    (new KomponenPenilaianSeeder())->run();
+    (new LembagaSeeder)->run();
+    (new EssentialUserSeeder)->run();
+    (new UserSeeder)->run();
+    (new TahunAjaranSeeder)->run();
+    (new SemesterSeeder)->run();
+    (new GuruSeeder)->run();
+    (new PolaJamSeeder)->run();
+    (new JamPelajaranSeeder)->run();
+    (new MataPelajaranSeeder)->run();
+    (new KelasSeeder)->run();
+    (new JadwalPelajaranSeeder)->run();
+    (new KomponenPenilaianSeeder)->run();
 });
 
 it('seeds assessments and links components across all K-9 institutions', function () {
-    (new AsesmenSeeder())->run();
+    (new AsesmenSeeder)->run();
 
     foreach (Lembaga::all() as $lembaga) {
         $aktif = TahunAjaran::where('lembaga_id', $lembaga->id)->where('status_aktif', true)->first();
@@ -54,9 +56,9 @@ it('seeds assessments and links components across all K-9 institutions', functio
 });
 
 it('is idempotent when run twice', function () {
-    (new AsesmenSeeder())->run();
+    (new AsesmenSeeder)->run();
     $sebelum = Asesmen::count();
-    (new AsesmenSeeder())->run();
+    (new AsesmenSeeder)->run();
 
     expect(Asesmen::count())->toBe($sebelum);
 });

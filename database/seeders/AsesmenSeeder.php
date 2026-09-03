@@ -9,11 +9,11 @@ use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\Guru;
+use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class AsesmenSeeder extends Seeder
@@ -41,41 +41,40 @@ class AsesmenSeeder extends Seeder
         }
     }
 
+    /**
+     * Buat 1 Asesmen per kombinasi (kelas, mata pelajaran) yang BENAR-BENAR terjadwal
+     * di kelas itu (`JadwalPelajaran`), untuk SEMUA kelas -- sebelumnya cuma "Kelas 1-A"
+     * + 2 mapel yang di-hardcode, jadi 11 dari 12 kelas selalu 0 Asesmen (Rekap Rapor
+     * kosong total untuk kelas manapun selain 1-A). Guru pengajar & subjek diambil dari
+     * jadwal yang sama supaya konsisten dengan siapa yang benar-benar mengajar apa.
+     */
     private function seedSdAsesmen(Lembaga $sd, TahunAjaran $aktif, Semester $semester): void
     {
-        $kelasA = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-A')->first();
-        if (! $kelasA) {
-            return;
-        }
+        $kelasList = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->get();
 
-        $mtk = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
-        $ipas = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
-        $guruHendra = User::where('email', 'hendra.gunawan@demo.test')->first()?->guru;
-        $guruMaya = User::where('email', 'maya.anggraini@demo.test')->first()?->guru;
+        foreach ($kelasList as $kelas) {
+            $kombinasi = JadwalPelajaran::where('kelas_id', $kelas->id)
+                ->where('semester_id', $semester->id)
+                ->whereNotNull('mata_pelajaran_id')
+                ->get(['mata_pelajaran_id', 'guru_id'])
+                ->unique(fn ($j) => $j->mata_pelajaran_id.'-'.$j->guru_id);
 
-        if ($mtk && $guruHendra) {
-            $tpMtk1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mtk->id)->where('semester_id', $semester->id)->first();
+            foreach ($kombinasi as $i => $jadwal) {
+                $mapel = MataPelajaran::find($jadwal->mata_pelajaran_id);
+                if (! $mapel) {
+                    continue;
+                }
 
-            $asesmenMtk = Asesmen::firstOrCreate(
-                ['guru_id' => $guruHendra->id, 'kelas_id' => $kelasA->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mtk->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Bilangan Cacah'],
-                ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(5)->toDateString()]
-            );
+                $tp = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mapel->id)->where('semester_id', $semester->id)->first();
 
-            if ($tpMtk1) {
-                $asesmenMtk->komponenPenilaian()->syncWithoutDetaching([$tpMtk1->id]);
-            }
-        }
+                $asesmen = Asesmen::firstOrCreate(
+                    ['guru_id' => $jadwal->guru_id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'judul' => "Sumatif Lingkup Materi 1: {$mapel->nama}"],
+                    ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(3 + ($i % 5))->toDateString()]
+                );
 
-        if ($ipas && $guruMaya) {
-            $tpIpas1 = KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->where('subjek_id', $ipas->id)->where('semester_id', $semester->id)->first();
-
-            $asesmenIpas = Asesmen::firstOrCreate(
-                ['guru_id' => $guruMaya->id, 'kelas_id' => $kelasA->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $ipas->id, 'semester_id' => $semester->id, 'judul' => 'Sumatif Lingkup Materi 1: Pengenalan Ekosistem'],
-                ['jenis' => JenisAsesmen::SumatifLingkupMateri, 'tanggal' => now()->subDays(3)->toDateString()]
-            );
-
-            if ($tpIpas1) {
-                $asesmenIpas->komponenPenilaian()->syncWithoutDetaching([$tpIpas1->id]);
+                if ($tp) {
+                    $asesmen->komponenPenilaian()->syncWithoutDetaching([$tp->id]);
+                }
             }
         }
     }

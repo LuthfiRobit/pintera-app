@@ -10,6 +10,7 @@ use App\Models\Yayasan;
 use Database\Seeders\AsesmenSeeder;
 use Database\Seeders\EssentialUserSeeder;
 use Database\Seeders\GuruSeeder;
+use Database\Seeders\JadwalPelajaranSeeder;
 use Database\Seeders\JamPelajaranSeeder;
 use Database\Seeders\KelasSeeder;
 use Database\Seeders\KomponenPenilaianSeeder;
@@ -29,26 +30,27 @@ use Tests\TestCase;
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    (new PermissionSeeder())->run();
-    (new RoleSeeder())->run();
+    (new PermissionSeeder)->run();
+    (new RoleSeeder)->run();
     Yayasan::factory()->create();
-    (new LembagaSeeder())->run();
-    (new EssentialUserSeeder())->run();
-    (new UserSeeder())->run();
-    (new TahunAjaranSeeder())->run();
-    (new SemesterSeeder())->run();
-    (new GuruSeeder())->run();
-    (new PolaJamSeeder())->run();
-    (new JamPelajaranSeeder())->run();
-    (new MataPelajaranSeeder())->run();
-    (new KelasSeeder())->run();
-    (new SiswaSeeder())->run();
-    (new KomponenPenilaianSeeder())->run();
-    (new AsesmenSeeder())->run();
+    (new LembagaSeeder)->run();
+    (new EssentialUserSeeder)->run();
+    (new UserSeeder)->run();
+    (new TahunAjaranSeeder)->run();
+    (new SemesterSeeder)->run();
+    (new GuruSeeder)->run();
+    (new PolaJamSeeder)->run();
+    (new JamPelajaranSeeder)->run();
+    (new MataPelajaranSeeder)->run();
+    (new KelasSeeder)->run();
+    (new SiswaSeeder)->run();
+    (new JadwalPelajaranSeeder)->run();
+    (new KomponenPenilaianSeeder)->run();
+    (new AsesmenSeeder)->run();
 });
 
 it('seeds student grades for the SD institution', function () {
-    (new NilaiSiswaSeeder())->run();
+    (new NilaiSiswaSeeder)->run();
 
     $sdit = Lembaga::where('npsn', '20223333')->first();
     $aktif = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
@@ -63,9 +65,9 @@ it('seeds student grades for the SD institution', function () {
 });
 
 it('is idempotent when run twice', function () {
-    (new NilaiSiswaSeeder())->run();
+    (new NilaiSiswaSeeder)->run();
     $sebelum = NilaiSiswa::count();
-    (new NilaiSiswaSeeder())->run();
+    (new NilaiSiswaSeeder)->run();
 
     expect(NilaiSiswa::count())->toBe($sebelum);
 });
