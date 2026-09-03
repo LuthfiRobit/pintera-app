@@ -3,11 +3,11 @@
 **Tanggal:** 2026-09-03
 **Branch:** `akademik-v2`
 **Base commit:** `cd0ecc85`
-**HEAD final:** `4f8e3bdd`
+**HEAD final:** `05acb1e8`
 **Spec:** `.agents/specs/2026-09-03-audit-akademik-perbaikan.md`
 **Plan:** `.agents/plans/2026-09-03-audit-akademik-perbaikan.md`
 
-> **STATUS: SELESAI TOTAL.** Semua 9 task (Task 9 opsional, tetap dikerjakan sebagai defense-in-depth) sudah diimplementasikan, direview, dan diverifikasi. Full test suite dijalankan sendirian di akhir: **2716 passed (7418 assertions), 0 failures**. Detail per-task ada di bawah; ringkasan tabel + hasil full suite ada di penutup dokumen ini.
+> **STATUS: SELESAI TOTAL.** Semua 9 task (Task 9 opsional, tetap dikerjakan sebagai defense-in-depth) sudah diimplementasikan dan direview per-task, DITAMBAH satu final whole-plan review lintas-task yang menemukan 1 bug Important tambahan (lihat §"Final Whole-Plan Review" di bawah) — sudah ditambal dan direview ulang bersih. Full test suite dijalankan sendirian dan diverifikasi independen 2x (oleh implementer dan oleh controller/saya sendiri secara terpisah): **2716 passed → 2717 passed setelah fix terakhir (7422 assertions), 0 failures** kedua kali.
 
 ---
 
@@ -155,16 +155,26 @@ Ini murni defense-in-depth — `TenantScope` global sudah menutup akses cross-te
 | 7. Riwayat Persetujuan Rapor | `acfab2c`+`901b39c0`+`3479383f` | ✅ | 17/17 |
 | 8. Race condition approve/reject rapor | `ce21ed35` | ✅ | test baru + regresi |
 | 9. Hardening tenant Jadwal Pelajaran (opsional) | `4f8e3bdd` | ✅ | 58/58 |
+| Final review: fix TenantScope bypass Kurikulum Assignment | `05acb1e8` | ✅ | 3/3 |
 
-**HEAD final:** `4f8e3bdd` (branch `akademik-v2`)
+**HEAD final:** `05acb1e8` (branch `akademik-v2`)
 
-## Full Test Suite (Final Step)
+## Final Whole-Plan Review (Lintas-Task) — 1 Temuan Important Ditambal
 
-Dijalankan sendirian (`php artisan test --compact`, tidak ada proses `php artisan test` lain berjalan bersamaan) setelah Task 9 commit:
+Setelah Task 9 selesai, dijalankan satu review tambahan atas SELURUH diff plan (16 commit, `cd0ecc85..4f8e3bdd`) khusus mencari interaksi lintas-task yang tidak mungkin ketahuan dari review per-task terisolasi. Ditemukan 1 bug nyata:
 
-**2716 passed (7418 assertions), 0 failures.** Durasi 708.71s.
+**Guard hapus Kurikulum Assignment (Task 3) silently defeated oleh `TenantScope` untuk actor yayasan.** `KurikulumAssignmentController::destroy()` menghitung `Kelas` terdampak sebelum mengizinkan hapus — tapi `Kelas` memakai `BelongsToTenant`/`TenantScope` global scope yang otomatis menambahkan `WHERE lembaga_id = session('active_lembaga_id')` ke SEMUA query terhadapnya. Untuk actor yayasan yang lembaga aktifnya (session) BEDA dari lembaga assignment yang mau dihapus — skenario yang valid, karena `authorizeAssignmentScope()` di controller yang sama memang mengizinkan yayasan actor menghapus assignment lembaga MANAPUN, tidak terikat ke lembaga aktif — query guard jadi efektif `WHERE lembaga_id = B AND lembaga_id = A` → selalu 0 hasil → guard tidak pernah memblokir, membuka kembali persis bug yang Task 3 tujukan untuk ditutup. Test Task 3 yang asli tidak menangkap ini karena cuma pakai actor lembaga biasa (lembaga_id user selalu sama dengan lembaga assignment).
 
-`vendor/bin/pint --dirty --format agent` juga dijalankan setelah Task 9 — tidak ada perubahan format yang perlu di-commit.
+**Ditambal** (`05acb1e8`): query guard sekarang `Kelas::withoutGlobalScope(TenantScope::class)->where('lembaga_id', $kurikulumAssignment->lembaga_id)->...` — bypass scope implisit, pakai `lembaga_id` milik assignment sebagai filter eksplisit yang sudah otentik. Test regresi baru ditambahkan (actor yayasan, lembaga aktif A, coba hapus assignment lembaga B yang masih dipakai Kelas B — assert tetap ditolak). Review ulang: APPROVED, tidak ada efek samping (bypass scope cuma di 1 query ini, tidak di tempat lain).
+
+Area lain yang dicek tapi TIDAK ada temuan baru: interaksi Task 5×6 (JadwalPelajaran vs SesiPembelajaran — beda controller, tidak ada konflik), Task 7×1 (perluasan akses baca `show()` tidak bocor ke status yang harusnya terkunci), Task 7×8 (read-only `show()` tidak butuh lock, tidak konflik dengan `lockForUpdate()`), dan pola guard tenant lain yang ditambahkan plan ini (Task 7 riwayat, Task 9 JadwalPelajaran) — keduanya aman dari kelas bug yang sama.
+
+## Full Test Suite (Final Step, dijalankan 2x independen)
+
+1. Setelah Task 9 (`4f8e3bdd`): **2716 passed (7418 assertions), 0 failures**, dijalankan sendirian oleh implementer, lalu diverifikasi ULANG independen oleh controller sesi ini — hasil identik.
+2. Setelah fix final whole-plan review (`05acb1e8`): **2717 passed (7422 assertions), 0 failures**, dijalankan sendirian.
+
+Keduanya dijalankan dengan `ps aux | grep artisan` dicek bersih dulu (tidak ada proses `php artisan test` lain bersamaan). `vendor/bin/pint --dirty --format agent` dijalankan setelah masing-masing — tidak ada perubahan format yang perlu di-commit di kedua titik itu.
 
 ## Catatan Pola Berulang (untuk plan/audit berikutnya)
 
