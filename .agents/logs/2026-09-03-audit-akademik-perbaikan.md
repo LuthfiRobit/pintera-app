@@ -1,4 +1,4 @@
-# Handoff Log (Parsial): Perbaikan Audit Menyeluruh Modul Akademik — Task 1-5
+# Handoff Log (Parsial): Perbaikan Audit Menyeluruh Modul Akademik — Task 1-7
 
 **Tanggal:** 2026-09-03
 **Branch:** `akademik-v2`
@@ -6,7 +6,7 @@
 **Spec:** `.agents/specs/2026-09-03-audit-akademik-perbaikan.md`
 **Plan:** `.agents/plans/2026-09-03-audit-akademik-perbaikan.md`
 
-> **STATUS: PARSIAL.** Dikerjakan lewat `superpowers:subagent-driven-development` sampai Task 5 selesai, sesuai instruksi eksplisit user ("lanjut task 4 dan 5 dulu"). **Task 6-9 BELUM dikerjakan** — masih menunggu instruksi lanjutan. Jangan anggap plan ini selesai; full test suite penuh (2698+ test) juga BELUM dijalankan ulang (itu bagian "Final Step" plan, baru relevan setelah semua 9 task selesai) — tiap task di bawah sudah diverifikasi lewat regresi test area terkait secara terpisah, bukan full suite.
+> **STATUS: PARSIAL.** Dikerjakan lewat `superpowers:subagent-driven-development` sampai Task 7 selesai, sesuai instruksi eksplisit user ("lanjut task 6-7 dulu"). **Task 8-9 BELUM dikerjakan** — masih menunggu instruksi lanjutan. Jangan anggap plan ini selesai; full test suite penuh (2698+ test) juga BELUM dijalankan ulang (itu bagian "Final Step" plan, baru relevan setelah semua 9 task selesai) — tiap task di bawah sudah diverifikasi lewat regresi test area terkait secara terpisah, bukan full suite.
 
 ---
 
@@ -78,6 +78,36 @@ Guru mapel (bukan wali kelas) sekarang bisa membuka Rekap Kehadiran, tapi datany
 
 ---
 
+## Task 6: Jurnal & Presensi — Dukung Isi Susulan Tanggal Sebelumnya — ✅ SELESAI
+
+**Commit:** `533a3bc` (implementasi awal) + `95524408` (koreksi setelah review)
+
+`JurnalKbmController::index()` sekarang menerima `?tanggal=` (default hari ini, perilaku tanpa parameter TIDAK berubah). Ditambah navigasi tanggal (Sebelumnya/date-picker/Hari Ini) di view.
+
+**Gap ditemukan & ditambal** (kesalahan saya sendiri saat menerjemahkan spec → plan): spec asli (§3.2) mensyaratkan 2 lapis validasi — tolak masa depan DAN tolak sebelum tanggal mulai semester aktif — tapi plan yang saya tulis cuma memuat cek `isFuture()`, lupa batas mundurnya. Reviewer putaran 1 menangkap ini sebagai gap Important terhadap spec asli (bukan cuma brief). Ditambal: cek kedua ditambahkan, fail-open (skip validasi, bukan block) kalau data semester aktif tidak lengkap — supaya tidak mengunci akses guru gara-gara data master kurang.
+
+**Test:** 17/17 `JurnalKbm*` passing setelah koreksi (termasuk test baru utk tolak-sebelum-semester-mulai), dijalankan sendirian.
+
+**Review:** APPROVED bersih setelah koreksi.
+
+---
+
+## Task 7: Halaman Riwayat Persetujuan Rapor — ✅ SELESAI
+
+**Commit:** `acfab2c` (implementasi awal) + `901b39c0` (koreksi #1) + `3479383f` (koreksi #2)
+
+Tab "Riwayat" ditambahkan di halaman Persetujuan Rapor (`?tab=riwayat`) — wakasek/kepsek sekarang bisa melihat kembali pengajuan yang sudah Disetujui/Ditolak (sebelumnya hilang total dari daftar begitu diputuskan). Tab default tanpa parameter tidak berubah perilakunya.
+
+**2 putaran gap ditemukan & ditambal** (bukan bug implementer, murni scope yang kurang lengkap di plan saya):
+1. **Putaran 1**: link "Review & Keputusan" di baris tab Riwayat mengarah ke `show()` yang akan 404 (guard lama cuma izinkan status yang PERSIS `statusUntukAktor()` aktor). Ditambal: `show()` sekarang bisa dibuka read-only untuk status Disetujui/Ditolak (form keputusan disembunyikan otomatis untuk kasus ini) — `decision()` (endpoint submit keputusan) TIDAK ikut dilonggarkan, tetap ketat seperti semula.
+2. **Putaran 2**: tampilan tanggal keputusan di view read-only salah/kosong untuk kasus reject-langsung-dari-status-Diajukan (kolom `diverifikasi_pada` yang dipakai ternyata tidak pernah terisi di jalur reject itu). Ditambal: sumber tanggal+nama pengambil keputusan diganti pakai log approval terakhir (`approvalRequest->logs`, sudah di-eager-load, tidak ada query N+1 baru) yang andal di semua jalur keputusan, bukan kolom timestamp langsung yang ternyata jalurnya tidak konsisten.
+
+**Test:** 17/17 `RaporPersetujuanControllerTest` + test riwayat, semua passing setelah 2 putaran koreksi, dijalankan sendirian.
+
+**Review:** APPROVED bersih setelah 2 putaran fix — reviewer putaran akhir mengonfirmasi tidak ada temuan baru dan otorisasi tulis (`decision()`) tidak ikut terlonggar oleh perluasan akses baca (`show()`).
+
+---
+
 ## Ringkasan Sejauh Ini
 
 | Task | Commit | Status | Test |
@@ -87,13 +117,17 @@ Guru mapel (bukan wali kelas) sekarang bisa membuka Rekap Kehadiran, tapi datany
 | 3. Guard hapus Kurikulum Assignment | `c1fcddcc` | ✅ | 2/2 + 27 regresi |
 | 4. Sembunyikan menu sidebar stub | `1e41adcc` | ✅ | 67/67 |
 | 5. Rekap Kehadiran guru mapel | `7949654f`+`ebf7bd1e` | ✅ | 9/9 |
+| 6. Jurnal & Presensi susulan tanggal | `533a3bc`+`95524408` | ✅ | 17/17 |
+| 7. Riwayat Persetujuan Rapor | `acfab2c`+`901b39c0`+`3479383f` | ✅ | 17/17 |
 
-**HEAD saat ini:** `ebf7bd1e` (branch `akademik-v2`)
+**HEAD saat ini:** `3479383f` (branch `akademik-v2`)
 
-## Yang Masih Pending (Task 6-9)
+## Catatan Pola Berulang (penting untuk task selanjutnya)
 
-- Task 6: Jurnal & Presensi — dukung isi susulan tanggal sebelumnya
-- Task 7: Halaman Riwayat Persetujuan Rapor
+**3 dari 7 task sejauh ini (5, 6, 7) memerlukan koreksi setelah review pertama** — bukan karena implementer salah kerja, tapi karena PLAN yang saya tulis sendiri kurang lengkap dibanding spec asli, atau melewatkan file terkait (mis. `_daftar.blade.php` yang punya link ke `show()`, tapi tidak masuk daftar file Task 7). Task 8-9 perlu diwaspadai pola yang sama: baca ulang spec asli §3.4 dan §4 sebelum menganggap brief plan sudah lengkap, dan pertimbangkan file-file terkait yang mungkin tidak eksplisit disebut di plan tapi terpengaruh perubahan (mis. partial view lain yang dipakai bersama).
+
+## Yang Masih Pending (Task 8-9)
+
 - Task 8: Cegah race condition approve/reject rapor ganda
 - Task 9 (opsional, Prioritas Rendah): hardening validasi tenant eksplisit di Jadwal Pelajaran
 
@@ -101,4 +135,4 @@ Guru mapel (bukan wali kelas) sekarang bisa membuka Rekap Kehadiran, tapi datany
 
 Ledger progress ada di `.superpowers/sdd/progress.md` (git-ignored, scratch) — kalau sesi berikutnya kehilangan konteks, ledger ini + `git log` adalah sumber kebenaran progress yang sebenarnya.
 
-**Lanjutkan dari Task 6** begitu ada instruksi lanjutan dari user — jangan re-dispatch Task 1-5, sudah selesai dan direview bersih.
+**Lanjutkan dari Task 8** begitu ada instruksi lanjutan dari user — jangan re-dispatch Task 1-7, sudah selesai dan direview bersih.
