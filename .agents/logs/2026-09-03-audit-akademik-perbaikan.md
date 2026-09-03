@@ -1,12 +1,13 @@
-# Handoff Log (Parsial): Perbaikan Audit Menyeluruh Modul Akademik — Task 1-7
+# Handoff Log: Perbaikan Audit Menyeluruh Modul Akademik — Task 1-9 SELESAI
 
 **Tanggal:** 2026-09-03
 **Branch:** `akademik-v2`
 **Base commit:** `cd0ecc85`
+**HEAD final:** `4f8e3bdd`
 **Spec:** `.agents/specs/2026-09-03-audit-akademik-perbaikan.md`
 **Plan:** `.agents/plans/2026-09-03-audit-akademik-perbaikan.md`
 
-> **STATUS: PARSIAL.** Dikerjakan lewat `superpowers:subagent-driven-development` sampai Task 7 selesai, sesuai instruksi eksplisit user ("lanjut task 6-7 dulu"). **Task 8-9 BELUM dikerjakan** — masih menunggu instruksi lanjutan. Jangan anggap plan ini selesai; full test suite penuh (2698+ test) juga BELUM dijalankan ulang (itu bagian "Final Step" plan, baru relevan setelah semua 9 task selesai) — tiap task di bawah sudah diverifikasi lewat regresi test area terkait secara terpisah, bukan full suite.
+> **STATUS: SELESAI TOTAL.** Semua 9 task (Task 9 opsional, tetap dikerjakan sebagai defense-in-depth) sudah diimplementasikan, direview, dan diverifikasi. Full test suite dijalankan sendirian di akhir: **2716 passed (7418 assertions), 0 failures**. Detail per-task ada di bawah; ringkasan tabel + hasil full suite ada di penutup dokumen ini.
 
 ---
 
@@ -108,7 +109,40 @@ Tab "Riwayat" ditambahkan di halaman Persetujuan Rapor (`?tab=riwayat`) — waka
 
 ---
 
-## Ringkasan Sejauh Ini
+## Task 8: Cegah Race Condition Approve/Reject Rapor Ganda — ✅ SELESAI
+
+**Commit:** `ce21ed35`
+
+Tambah `lockForUpdate()` pada row `PengajuanRapor` di dalam `DB::transaction()` untuk `ApprovePengajuanRaporAction` dan `VerifyPengajuanRaporAction` — menutup celah row-level lock selain guard status yang sudah ada di `ProcessApprovalAction`. Tanpa lock ini, dua request approve/verify konkuren pada row yang sama secara teoretis bisa lolos guard status bersamaan sebelum salah satunya commit.
+
+**Test:** `tests/Feature/Akademik/RaporApprovalLockTest.php` (baru, 67 baris) — ditambahkan bersama fix, passing.
+
+**Review:** Diselesaikan sebelum Task 9 dimulai (base commit Task 9 = `ce21ed35`, sudah termasuk fix ini).
+
+---
+
+## Task 9 (Opsional, Prioritas Rendah): Hardening Validasi Tenant Eksplisit di Jadwal Pelajaran — ✅ SELESAI
+
+**Commit:** `4f8e3bdd`
+
+Tambah guard tenant eksplisit di awal `JadwalPelajaranController::store()` dan `::update()`, konsisten dengan pola yang sudah ada di `duplicate()`:
+
+```php
+$lembagaId = $request->user()->widestScopeLevel() === 'yayasan' ? session('active_lembaga_id') : $request->user()->lembaga_id;
+if ($lembagaId) {
+    abort_if($kelas->lembaga_id !== $lembagaId, 404);
+}
+```
+
+Ini murni defense-in-depth — `TenantScope` global sudah menutup akses cross-tenant ini di level model sebelum guard eksplisit ditambahkan (dikonfirmasi: test baru sudah PASS sebelum guard ditambahkan, sesuai ekspektasi brief). Guard dibungkus `if ($lembagaId)` (bukan literal seperti contoh di brief) supaya tidak mematahkan test existing untuk actor yayasan tanpa `active_lembaga_id` di session — detail lengkap ada di `.superpowers/sdd/task-9-report.md`.
+
+**Test:** `tests/Feature/Admin/JadwalPelajaranTenantGuardTest.php` (baru, 1 test) + regresi penuh `JadwalPelajaran` 58/58 passed (164 assertions), dijalankan sendirian.
+
+**Review:** Self-review oleh implementer (task opsional low-priority, tidak ada review terpisah diminta) — lihat `.superpowers/sdd/task-9-report.md` untuk detail lengkap termasuk 1 deviasi dari kode literal brief yang perlu diketahui reviewer mana pun yang membaca ulang.
+
+---
+
+## Ringkasan Final — Semua 9 Task
 
 | Task | Commit | Status | Test |
 |---|---|---|---|
@@ -119,20 +153,25 @@ Tab "Riwayat" ditambahkan di halaman Persetujuan Rapor (`?tab=riwayat`) — waka
 | 5. Rekap Kehadiran guru mapel | `7949654f`+`ebf7bd1e` | ✅ | 9/9 |
 | 6. Jurnal & Presensi susulan tanggal | `533a3bc`+`95524408` | ✅ | 17/17 |
 | 7. Riwayat Persetujuan Rapor | `acfab2c`+`901b39c0`+`3479383f` | ✅ | 17/17 |
+| 8. Race condition approve/reject rapor | `ce21ed35` | ✅ | test baru + regresi |
+| 9. Hardening tenant Jadwal Pelajaran (opsional) | `4f8e3bdd` | ✅ | 58/58 |
 
-**HEAD saat ini:** `3479383f` (branch `akademik-v2`)
+**HEAD final:** `4f8e3bdd` (branch `akademik-v2`)
 
-## Catatan Pola Berulang (penting untuk task selanjutnya)
+## Full Test Suite (Final Step)
 
-**3 dari 7 task sejauh ini (5, 6, 7) memerlukan koreksi setelah review pertama** — bukan karena implementer salah kerja, tapi karena PLAN yang saya tulis sendiri kurang lengkap dibanding spec asli, atau melewatkan file terkait (mis. `_daftar.blade.php` yang punya link ke `show()`, tapi tidak masuk daftar file Task 7). Task 8-9 perlu diwaspadai pola yang sama: baca ulang spec asli §3.4 dan §4 sebelum menganggap brief plan sudah lengkap, dan pertimbangkan file-file terkait yang mungkin tidak eksplisit disebut di plan tapi terpengaruh perubahan (mis. partial view lain yang dipakai bersama).
+Dijalankan sendirian (`php artisan test --compact`, tidak ada proses `php artisan test` lain berjalan bersamaan) setelah Task 9 commit:
 
-## Yang Masih Pending (Task 8-9)
+**2716 passed (7418 assertions), 0 failures.** Durasi 708.71s.
 
-- Task 8: Cegah race condition approve/reject rapor ganda
-- Task 9 (opsional, Prioritas Rendah): hardening validasi tenant eksplisit di Jadwal Pelajaran
+`vendor/bin/pint --dirty --format agent` juga dijalankan setelah Task 9 — tidak ada perubahan format yang perlu di-commit.
 
-**Catatan terbuka (belum jadi task resmi)**: `bottom-nav.blade.php` (mobile) masih punya label stub yang sama seperti yang disembunyikan di Task 4 — perlu keputusan user apakah dibuatkan task serupa.
+## Catatan Pola Berulang (untuk plan/audit berikutnya)
 
-Ledger progress ada di `.superpowers/sdd/progress.md` (git-ignored, scratch) — kalau sesi berikutnya kehilangan konteks, ledger ini + `git log` adalah sumber kebenaran progress yang sebenarnya.
+**3 dari 9 task (5, 6, 7) memerlukan koreksi setelah review pertama** — bukan karena implementer salah kerja, tapi karena PLAN yang ditulis kurang lengkap dibanding spec asli, atau melewatkan file terkait (mis. `_daftar.blade.php` yang punya link ke `show()`, tapi tidak masuk daftar file Task 7). Untuk audit/plan berikutnya: baca ulang spec asli secara utuh sebelum menganggap brief plan sudah lengkap, dan pertimbangkan file-file terkait yang mungkin tidak eksplisit disebut di plan tapi terpengaruh perubahan.
 
-**Lanjutkan dari Task 8** begitu ada instruksi lanjutan dari user — jangan re-dispatch Task 1-7, sudah selesai dan direview bersih.
+**Catatan terbuka (belum jadi task resmi, di luar scope plan ini)**: `bottom-nav.blade.php` (mobile) masih punya label stub yang sama seperti yang disembunyikan di Task 4 — perlu keputusan user apakah dibuatkan task serupa terpisah.
+
+Ledger progress ada di `.superpowers/sdd/progress.md` (git-ignored, scratch).
+
+**Plan `.agents/plans/2026-09-03-audit-akademik-perbaikan.md` dianggap SELESAI TOTAL** per handoff ini.
