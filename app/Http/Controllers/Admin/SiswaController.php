@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Domains\Identity\Actions\UpdatePersonAction;
 use App\Enums\StatusSiswa;
@@ -184,7 +185,7 @@ class SiswaController extends BaseController
         return redirect()->route('admin.siswa.index')->with('status', 'Siswa berhasil diperbarui.');
     }
 
-    public function updateStatus(Request $request, Siswa $siswa): RedirectResponse
+    public function updateStatus(Request $request, Siswa $siswa, UpdateStatusSiswaAction $action): RedirectResponse
     {
         $this->authorize('siswa.edit');
 
@@ -192,13 +193,7 @@ class SiswaController extends BaseController
             'status' => ['required', 'in:aktif,lulus,pindah,keluar'],
         ]);
 
-        DB::transaction(function () use ($data, $siswa) {
-            $siswa->update(['status' => $data['status']]);
-
-            if ($siswa->user_id) {
-                $siswa->user()->update(['is_active' => $data['status'] === StatusSiswa::Aktif->value]);
-            }
-        });
+        $action->execute($siswa, StatusSiswa::from($data['status']));
 
         return redirect()->route('admin.siswa.index')->with('status', 'Status siswa berhasil diperbarui.');
     }
