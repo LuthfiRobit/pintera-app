@@ -3,6 +3,7 @@
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Role;
+use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -48,6 +49,9 @@ it('pre-selects Lulus for a kelas at the terminal tingkat of its jenjang', funct
     $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $kelasTingkatAkhir = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => 'Kelas 6 Akhir', 'tingkat' => '6']);
     $kelasBukanTingkatAkhir = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => 'Kelas 3 Biasa', 'tingkat' => '3']);
+    // Kelas tidak boleh kosong (siswa_count = 0), kalau tidak default tindakan akan "lewati", bukan naik/lulus.
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasTingkatAkhir->id]);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasBukanTingkatAkhir->id]);
 
     $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
         'tahun_ajaran_id' => $tahunLalu->id,
@@ -137,4 +141,40 @@ it('renders kurikulumAsal as null in x-data when the source kelas has no kurikul
     $trChunk = substr($html, $trOpenPos, ($namaPos - $trOpenPos) + 3000);
     expect($trChunk)->toContain('kurikulumAsal');
     expect($trChunk)->toContain('null');
+});
+
+it('pre-selects Lewati for a kelas that is already empty, instead of forcing naik/lulus', function () {
+    [$manager, $lembaga] = siapkanKenaikanKelasUxUser();
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasKosong = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => 'Kelas Kosong', 'tingkat' => '3']);
+    // Sengaja tidak buat Siswa -> siswa_count = 0
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunLalu->id,
+        'tahun_ajaran_tujuan_id' => $tahunBaru->id,
+    ]));
+    $response->assertOk();
+    $html = $response->getContent();
+
+    $select = htmlSelectByName($html, "mapping[{$kelasKosong->id}][tindakan]");
+    expect($select)->not->toBe('');
+    expect(selectedOptionValue($select))->toBe('lewati');
+});
+
+it('memproses mapping massal tanpa error meski ada kelas kosong yang dilewati', function () {
+    [$manager, $lembaga] = siapkanKenaikanKelasUxUser();
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasKosong = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'tingkat' => '3']);
+    $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'tingkat' => '4']);
+
+    $response = $this->actingAs($manager)->post(route('admin.kenaikan-kelas.store'), [
+        'mapping' => [
+            $kelasKosong->id => ['tindakan' => 'lewati', 'kelas_baru_id' => ''],
+        ],
+    ]);
+
+    $response->assertSessionDoesntHaveErrors();
+    $response->assertRedirect(route('admin.kelas.index'));
 });

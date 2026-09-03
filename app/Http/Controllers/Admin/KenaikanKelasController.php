@@ -46,7 +46,7 @@ class KenaikanKelasController extends BaseController
 
         $data = $request->validate([
             'mapping' => ['required', 'array'],
-            'mapping.*.tindakan' => ['required', 'in:naik,lulus'],
+            'mapping.*.tindakan' => ['required', 'in:naik,lulus,lewati'],
             'mapping.*.kelas_baru_id' => ['required_if:mapping.*.tindakan,naik', 'nullable', 'integer'],
             'mapping.*.salin_jadwal' => ['nullable', 'boolean'],
             'mapping.*.semester_tujuan_id' => ['nullable', 'integer'],

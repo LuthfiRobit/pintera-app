@@ -33,6 +33,10 @@ final class ProsesKenaikanKelasAction
 
         DB::transaction(function () use ($data, &$jadwalGagal) {
             foreach ($data->mapping as $kelasLamaId => $aksi) {
+                if ($aksi['tindakan'] === 'lewati') {
+                    continue;
+                }
+
                 $kelasLama = Kelas::findOrFail($kelasLamaId);
 
                 if ($aksi['tindakan'] === 'lulus') {

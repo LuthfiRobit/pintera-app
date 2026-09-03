@@ -97,8 +97,11 @@
                                         @endphp
                                         <td class="px-4 py-4">
                                             <select name="mapping[{{ $kelasLama->id }}][tindakan]" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                <option value="naik" @selected(! $isTingkatAkhir)>Naik Kelas</option>
-                                                <option value="lulus" @selected($isTingkatAkhir)>Lulus</option>
+                                                @if ($kelasLama->siswa_count === 0)
+                                                    <option value="lewati" selected>Lewati (sudah kosong)</option>
+                                                @endif
+                                                <option value="naik" @selected(! $isTingkatAkhir && $kelasLama->siswa_count > 0)>Naik Kelas</option>
+                                                <option value="lulus" @selected($isTingkatAkhir && $kelasLama->siswa_count > 0)>Lulus</option>
                                             </select>
                                             @if ($isTingkatAkhir)
                                                 <p class="mt-1 text-xs text-amber-600">Disarankan: tingkat akhir jenjang</p>
