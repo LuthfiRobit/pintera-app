@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\PolaJam;
@@ -249,3 +250,34 @@ it('rejects copying jadwal into a semester belonging to a different tahun ajaran
     expect($siswa->kelas_id)->toBe($kelasLama->id);
     expect(JadwalPelajaran::where('kelas_id', $kelasBaru->id)->exists())->toBeFalse();
 });
+
+it('does not carry a siswa Keluar along when promoting the rest of the kelas (kelas_id already null via UpdateStatusSiswaAction)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '5A']);
+    $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => '6A']);
+    $siswaAktif = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLama->id, 'status' => StatusSiswa::Aktif->value]);
+    $siswaKeluar = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLama->id, 'status' => StatusSiswa::Aktif->value]);
+    app(UpdateStatusSiswaAction::class)->execute($siswaKeluar, StatusSiswa::Keluar);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $this->actingAs($manager)->post(route('admin.kenaikan-kelas.store'), [
+        'mapping' => [
+            $kelasLama->id => ['tindakan' => 'naik', 'kelas_baru_id' => $kelasBaru->id],
+        ],
+    ])->assertRedirect(route('admin.kelas.index'));
+
+    expect($siswaAktif->fresh()->kelas_id)->toBe($kelasBaru->id);
+    expect($siswaKeluar->fresh()->kelas_id)->toBeNull(); // tidak ikut naik, dan tetap null (bukan ke kelasBaru)
+    expect($siswaKeluar->fresh()->kelas_terakhir_id)->toBe($kelasLama->id); // snapshot tetap ke kelas lama, tidak berubah
+});
+
+// Catatan: RaporCalculationService.php:27 dan DashboardStatsService.php:138 punya pola query
+// IDENTIK (Siswa::where('kelas_id', $kelasId), tanpa filter status) -- setelah kelas_id
+// dijamin null untuk siswa non-aktif oleh CHECK constraint (lihat migration
+// 2026_09_03_000001_add_kelas_terakhir_id_to_siswa_table), kedua titik itu otomatis benar
+// dengan cara yang SAMA PERSIS seperti dibuktikan test di atas. Sengaja TIDAK diduplikasi
+// per file -- keputusan sadar, bukan celah yang terlewat (lihat spec
+// .agents/specs/2026-09-03-siklus-hidup-kelas-id-siswa.md §10 test #11).
