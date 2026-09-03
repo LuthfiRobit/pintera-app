@@ -179,6 +179,11 @@ class JadwalPelajaranController extends BaseController
         $kelas = Kelas::find($data['kelas_id']);
         abort_if(! $kelas, 404);
 
+        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan' ? session('active_lembaga_id') : $request->user()->lembaga_id;
+        if ($lembagaId) {
+            abort_if($kelas->lembaga_id !== $lembagaId, 404);
+        }
+
         $guru = Guru::find($data['guru_id']);
         abort_if(! $guru, 404);
 
@@ -326,6 +331,12 @@ class JadwalPelajaranController extends BaseController
     {
         $data = $request->validated();
         $kelas = Kelas::findOrFail($jadwalPelajaran->kelas_id);
+
+        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan' ? session('active_lembaga_id') : $request->user()->lembaga_id;
+        if ($lembagaId) {
+            abort_if($kelas->lembaga_id !== $lembagaId, 404);
+        }
+
         $guru = Guru::findOrFail($data['guru_id']);
 
         $jamPelajaran = JamPelajaran::where('id', $data['jam_pelajaran_id'])
