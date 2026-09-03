@@ -6,6 +6,7 @@ use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Models\PengajuanRapor;
 use App\Models\EkstrakurikulerLembaga;
 use App\Models\Guru;
 use App\Models\Kelas;
@@ -270,6 +271,28 @@ it('rejects printing a pdf when semester_id belongs to a different tahun ajaran 
     $this->actingAs($guruUser)
         ->get(route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semesterLain->id]))
         ->assertNotFound();
+});
+
+it('shows an info banner and disables Ajukan Rapor when pengajuan sudah Diverifikasi', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    CatatanWaliKelas::factory()->create(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]);
+    PengajuanRapor::factory()->create([
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'status' => StatusPengajuanRapor::Diverifikasi,
+    ]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('Tidak bisa diajukan ulang', false);
+    $html = $response->getContent();
+    $btnPos = strpos($html, 'Ajukan Rapor untuk Verifikasi');
+    expect($btnPos)->not->toBeFalse();
+    $btnOpenPos = strrpos(substr($html, 0, $btnPos), '<button');
+    expect($btnOpenPos)->not->toBeFalse();
+    $btnTag = substr($html, $btnOpenPos, $btnPos - $btnOpenPos);
+    expect($btnTag)->toContain('disabled');
 });
 
 it('rejects saving catatan wali kelas when semester_id belongs to a different tahun ajaran than the siswa kelas', function () {
