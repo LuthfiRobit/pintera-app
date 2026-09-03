@@ -19,14 +19,21 @@ final class SubmitPengajuanRaporAction
 {
     public function __construct(
         private readonly InitializeApprovalRequestAction $initializeApprovalRequestAction,
-    ) {
-    }
+    ) {}
 
     /**
      * @throws ValidationException
      */
     public function execute(Kelas $kelas, Semester $semester, User $user): PengajuanRapor
     {
+        $existing = PengajuanRapor::where('kelas_id', $kelas->id)->where('semester_id', $semester->id)->first();
+
+        if ($existing && in_array($existing->status, [StatusPengajuanRapor::Diverifikasi, StatusPengajuanRapor::Disetujui], true)) {
+            throw ValidationException::withMessages([
+                'status' => "Rapor kelas ini sudah berstatus \"{$existing->status->label()}\" dan tidak bisa diajukan ulang dari halaman ini.",
+            ]);
+        }
+
         $siswaList = $kelas->siswa()->get();
         $siswaIdsWithCatatan = CatatanWaliKelas::where('semester_id', $semester->id)
             ->whereIn('siswa_id', $siswaList->pluck('id'))

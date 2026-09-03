@@ -66,6 +66,12 @@
                 </div>
             @endif
 
+            @if ($pengajuanRapor && in_array($pengajuanRapor->status, [\App\Domains\Akademik\Enums\StatusPengajuanRapor::Diverifikasi, \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui]))
+                <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm font-medium text-blue-700">
+                    Rapor kelas ini sudah berstatus "{{ $pengajuanRapor->status->label() }}" sejak {{ $pengajuanRapor->diajukan_pada?->translatedFormat('d F Y, H:i') }}. Tidak bisa diajukan ulang dari halaman ini.
+                </div>
+            @endif
+
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-gray-700">
@@ -110,7 +116,7 @@
                             @csrf
                             <input type="hidden" name="kelas_id" value="{{ $kelas->id }}">
                             <input type="hidden" name="semester_id" value="{{ $semester->id }}">
-                            <x-primary-button type="submit" :disabled="! $siswaList->every(fn($s) => $s->catatan_lengkap)">
+                            <x-primary-button type="submit" :disabled="! $siswaList->every(fn($s) => $s->catatan_lengkap) || in_array($pengajuanRapor?->status, [\App\Domains\Akademik\Enums\StatusPengajuanRapor::Diverifikasi, \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui])">
                                 Ajukan Rapor untuk Verifikasi
                             </x-primary-button>
                         </form>
