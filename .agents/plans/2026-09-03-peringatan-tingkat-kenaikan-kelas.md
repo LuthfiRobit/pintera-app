@@ -1,6 +1,6 @@
 # Peringatan Validasi Tingkat Kenaikan Kelas Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Tambahkan peringatan non-blocking di halaman Kenaikan Kelas saat admin memetakan kelas ke tingkat yang tidak wajar (sama/lompat/mundur), berbasis perbandingan index terhadap daftar tingkat valid milik jenjang lembaga.
 
@@ -29,11 +29,11 @@
 - Konsumsi: `App\Domains\Akademik\Enums\BentukPendidikan::validTingkatValues(): array` (method sudah ada, sudah `use`-import di baris 1 file blade ini).
 - Produksi: tidak ada interface baru untuk task lain — task ini berdiri sendiri, Task 2 tidak bergantung padanya.
 
-- [ ] **Step 1: Baca state file saat ini untuk konfirmasi baris**
+- [x] **Step 1: Baca state file saat ini untuk konfirmasi baris**
 
 Baca `resources/views/portals/lembaga/akademik/kenaikan-kelas/index.blade.php` baris 74-121 dan pastikan masih sama persis dengan yang didokumentasikan di spec (`x-data` di baris 74-83, blok peringatan kurikulum di baris 117-120). Kalau nomor baris bergeser, sesuaikan lokasi edit di step berikutnya tapi isi kodenya tetap identik.
 
-- [ ] **Step 2: Tulis test yang gagal — jenjang numerik (SD)**
+- [x] **Step 2: Tulis test yang gagal — jenjang numerik (SD)**
 
 Buka `tests/Feature/Akademik/KenaikanKelasControllerUxTest.php`. File ini sudah punya helper `siapkanKenaikanKelasUxUser()`, `htmlSelectByName()`, dan pola ekstraksi chunk `<tr>` (lihat test `'renders the kurikulum-asal value...'` sebagai contoh pola yang harus diikuti persis). Tambahkan test baru di akhir file:
 
@@ -76,12 +76,12 @@ it('wires up index-based tingkat comparison data for a numeric jenjang (SD)', fu
 
 Sesuaikan nama import `TahunAjaran`/`Kelas` dengan yang sudah ada di `use` block file ini (sudah ter-import dari test lain di file yang sama).
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="wires up index-based tingkat comparison data for a numeric jenjang"`
 Expected: FAIL — `tingkatAsal`, `daftarTingkat`, `selisihIndexTingkat`, dan kedua teks peringatan belum ada di markup.
 
-- [ ] **Step 4: Tulis test yang gagal — jenjang alfabet (TK)**
+- [x] **Step 4: Tulis test yang gagal — jenjang alfabet (TK)**
 
 Tambahkan test kedua di file yang sama:
 
@@ -122,12 +122,12 @@ it('wires up index-based tingkat comparison data for an alphabetic jenjang (TK),
 });
 ```
 
-- [ ] **Step 5: Jalankan test kedua, pastikan gagal**
+- [x] **Step 5: Jalankan test kedua, pastikan gagal**
 
 Run: `php artisan test --filter="wires up index-based tingkat comparison data for an alphabetic jenjang"`
 Expected: FAIL — sama seperti Step 3.
 
-- [ ] **Step 6: Update `x-data` di view**
+- [x] **Step 6: Update `x-data` di view**
 
 Baca `resources/views/portals/lembaga/akademik/kenaikan-kelas/index.blade.php` baris 74-83. Ganti:
 
@@ -168,7 +168,7 @@ Menjadi:
                                     }">
 ```
 
-- [ ] **Step 7: Tambah markup peringatan baru**
+- [x] **Step 7: Tambah markup peringatan baru**
 
 Baca baris 117-120 (blok peringatan kurikulum yang sudah ada). Tepat SETELAH baris itu (sebelum penutup `</td>`), tambahkan:
 
@@ -181,16 +181,16 @@ Baca baris 117-120 (blok peringatan kurikulum yang sudah ada). Tepat SETELAH bar
 
 Baris `<p x-show="tingkatTujuan !== null" ...>Tingkat tujuan: ...</p>` yang sudah ada TIDAK disentuh — 2 baris baru ini ditambahkan setelahnya, dalam `<td>` yang sama.
 
-- [ ] **Step 8: Jalankan kedua test lagi, pastikan lolos**
+- [x] **Step 8: Jalankan kedua test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=KenaikanKelasControllerUxTest`
 Expected: SEMUA test PASS (termasuk 2 test baru dan test existing yang tidak boleh regresi).
 
-- [ ] **Step 9: Verifikasi manual (opsional tapi disarankan untuk perubahan UI)**
+- [x] **Step 9: Verifikasi manual (opsional tapi disarankan untuk perubahan UI)**
 
 Kalau memungkinkan menjalankan `npm run dev`/`npm run build` dan membuka halaman `admin/kenaikan-kelas` di browser dengan data nyata: pilih kelas tujuan dengan tingkat sama seperti kelas asal, konfirmasi pesan "↔ Tinggal kelas" muncul dengan warna netral (bukan amber); pilih kelas tujuan tingkat lain (bukan +1), konfirmasi pesan "⚠ Tingkat tidak wajar" muncul warna amber. Kalau tidak ada akses browser, lewati langkah ini dan andalkan test otomatis di atas — sebutkan eksplisit di laporan task kalau verifikasi manual dilewati.
 
-- [ ] **Step 10: Pint dan commit**
+- [x] **Step 10: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -208,7 +208,7 @@ git commit -m "feat(akademik): peringatan tingkat tidak wajar di Kenaikan Kelas 
 **Interfaces:**
 - Tidak ada interface baru — task ini murni menambah 1 test pembuktian, tidak bergantung pada Task 1.
 
-- [ ] **Step 1: Tulis test**
+- [x] **Step 1: Tulis test**
 
 Tambahkan test baru di `tests/Feature/Admin/KenaikanKelasControllerTest.php` (mengikuti pola test lain di file ini, mis. `'moves siswa to the target kelas when mapped to promotion'`):
 
@@ -237,17 +237,17 @@ it('does not block promoting a siswa into a kelas at the same tingkat (tinggal k
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan LANGSUNG lolos**
+- [x] **Step 2: Jalankan test, pastikan LANGSUNG lolos**
 
 Run: `php artisan test --filter="does not block promoting a siswa into a kelas at the same tingkat"`
 Expected: **PASS pada percobaan pertama** — ini BUKAN alur TDD merah-dulu biasa, karena tujuan test ini justru membuktikan perilaku yang SUDAH ADA (backend memang tidak pernah validasi tingkat). Kalau test ini GAGAL, itu berarti ada validasi tingkat tersembunyi di `ProsesKenaikanKelasAction` yang tidak diketahui — STOP, jangan lanjutkan, laporkan temuan itu (bertentangan dengan premis spec §1 yang menyatakan backend tidak pernah validasi tingkat).
 
-- [ ] **Step 3: Regresi file test**
+- [x] **Step 3: Regresi file test**
 
 Run: `php artisan test --filter=KenaikanKelasControllerTest`
 Expected: semua PASS, tidak ada regresi.
 
-- [ ] **Step 4: Pint dan commit**
+- [x] **Step 4: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -261,17 +261,17 @@ git commit -m "test(akademik): buktikan backend Kenaikan Kelas tidak pernah blok
 
 **Files:** Tidak ada file diubah — verifikasi akhir.
 
-- [ ] **Step 1: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 1: Pastikan tidak ada proses test lain berjalan**
 
 Run: `ps aux | grep artisan | grep -v grep`
 Expected: kosong.
 
-- [ ] **Step 2: Jalankan full suite sendirian**
+- [x] **Step 2: Jalankan full suite sendirian**
 
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures (kecuali kegagalan yang SUDAH DIKETAHUI tidak berkaitan, mis. test SPMB dengan data Faker acak yang mengandung apostrof — kalau muncul, jalankan ulang test itu sendirian untuk konfirmasi flaky, bukan regresi dari plan ini).
 
-- [ ] **Step 3: Pint final**
+- [x] **Step 3: Pint final**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}` atau auto-fix tanpa error.
