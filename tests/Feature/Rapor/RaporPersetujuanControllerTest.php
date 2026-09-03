@@ -156,6 +156,28 @@ it('lets Waka reject, setting status to Ditolak with catatan_revisi', function (
     ]);
 });
 
+it('shows the real decision date on the read-only show page for a pengajuan rejected directly from Diajukan (diverifikasi_pada never set)', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $this->actingAs($userWaka)->post(route('admin.rapor.persetujuan.decision', $pengajuan), [
+        'action' => 'REJECT', 'catatan' => 'Nilai belum lengkap.',
+    ]);
+
+    $pengajuan->refresh();
+    expect($pengajuan->status)->toBe(StatusPengajuanRapor::Ditolak);
+    expect($pengajuan->diverifikasi_pada)->toBeNull();
+
+    $logTerakhir = $pengajuan->approvalRequest->logs()->latest('created_at')->first();
+    expect($logTerakhir)->not->toBeNull();
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.show', $pengajuan));
+
+    $response->assertOk();
+    $response->assertSee($logTerakhir->created_at->translatedFormat('d F Y, H:i'));
+    $response->assertDontSee('Tanggal keputusan: —', false);
+});
+
 it('lets Kepsek approve a Diverifikasi pengajuan, advancing status to Disetujui', function () {
     $this->seed(WorkflowDefinitionSeeder::class);
     ['userWaka' => $userWaka, 'userKepsek' => $userKepsek, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();

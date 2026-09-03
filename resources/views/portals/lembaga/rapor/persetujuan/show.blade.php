@@ -91,7 +91,8 @@
                 </div>
                 <p class="text-xs text-gray-500">
                     Tanggal keputusan:
-                    {{ optional($pengajuanRapor->status === \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui ? $pengajuanRapor->disetujui_pada : $pengajuanRapor->diverifikasi_pada)->translatedFormat('d F Y, H:i') ?? '—' }}
+                    {{ optional($tanggalKeputusan)->translatedFormat('d F Y, H:i') ?? '—' }}
+                    {{ $namaPengambilKeputusan ? 'oleh '.$namaPengambilKeputusan : '' }}
                 </p>
                 @if ($pengajuanRapor->catatan_revisi)
                     <div class="rounded-lg bg-gray-50 p-3 text-xs text-gray-700">

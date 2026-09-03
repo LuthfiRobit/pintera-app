@@ -84,6 +84,14 @@ class PersetujuanController extends BaseController
 
         $pengajuanRapor->load(['kelas', 'semester', 'approvalRequest.logs.user', 'approvalRequest.currentStep']);
 
+        $logKeputusanTerakhir = $pengajuanRapor->approvalRequest?->logs?->sortByDesc('created_at')->first();
+
+        $tanggalFallback = $pengajuanRapor->status === StatusPengajuanRapor::Disetujui
+            ? $pengajuanRapor->disetujui_pada
+            : $pengajuanRapor->diverifikasi_pada;
+        $tanggalKeputusan = $logKeputusanTerakhir?->created_at ?? $tanggalFallback;
+        $namaPengambilKeputusan = $logKeputusanTerakhir?->user?->name;
+
         $rekap = $this->raporCalculationService->hitungRekapKelas($pengajuanRapor->kelas, $pengajuanRapor->semester);
         $catatanList = CatatanWaliKelas::where('semester_id', $pengajuanRapor->semester_id)
             ->whereIn('siswa_id', $rekap['siswaList']->pluck('id'))
@@ -94,6 +102,8 @@ class PersetujuanController extends BaseController
             'pengajuanRapor' => $pengajuanRapor,
             'catatanList' => $catatanList,
             'isReadOnly' => $isReadOnly,
+            'tanggalKeputusan' => $tanggalKeputusan,
+            'namaPengambilKeputusan' => $namaPengambilKeputusan,
         ], $rekap));
     }
 
