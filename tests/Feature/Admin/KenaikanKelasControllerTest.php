@@ -1,13 +1,13 @@
 <?php
 
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Enums\StatusSiswa;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -211,6 +211,36 @@ it('rejects copying jadwal into a semester belonging to a different lembaga', fu
                 'kelas_baru_id' => $kelasBaru->id,
                 'salin_jadwal' => '1',
                 'semester_tujuan_id' => $semesterLain->id,
+            ],
+        ],
+    ])->assertNotFound();
+
+    $siswa->refresh();
+    expect($siswa->kelas_id)->toBe($kelasLama->id);
+    expect(JadwalPelajaran::where('kelas_id', $kelasBaru->id)->exists())->toBeFalse();
+});
+
+it('rejects copying jadwal into a semester belonging to a different tahun ajaran than the kelas tujuan, even in the same lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunTakTerkait = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '5A']);
+    $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => '6A']);
+    // Semester ini SATU LEMBAGA dengan kelasLama, tapi milik tahun ajaran yang sama sekali tidak
+    // berhubungan dengan tahun ajaran kelas TUJUAN -- guard lembaga saja tidak cukup untuk menolak ini.
+    $semesterTakTerkait = Semester::factory()->create(['tahun_ajaran_id' => $tahunTakTerkait->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLama->id, 'status' => StatusSiswa::Aktif->value]);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $this->actingAs($manager)->post(route('admin.kenaikan-kelas.store'), [
+        'mapping' => [
+            $kelasLama->id => [
+                'tindakan' => 'naik',
+                'kelas_baru_id' => $kelasBaru->id,
+                'salin_jadwal' => '1',
+                'semester_tujuan_id' => $semesterTakTerkait->id,
             ],
         ],
     ])->assertNotFound();

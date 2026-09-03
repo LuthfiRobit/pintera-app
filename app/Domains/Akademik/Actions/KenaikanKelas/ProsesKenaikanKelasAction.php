@@ -66,7 +66,12 @@ final class ProsesKenaikanKelasAction
 
                 if (($aksi['salin_jadwal'] ?? false) && ! empty($aksi['semester_tujuan_id'])) {
                     $semesterTujuan = Semester::find($aksi['semester_tujuan_id']);
-                    abort_if($semesterTujuan === null || $semesterTujuan->lembaga_id !== $kelasLama->lembaga_id, 404);
+                    abort_if(
+                        $semesterTujuan === null
+                        || $semesterTujuan->lembaga_id !== $kelasLama->lembaga_id
+                        || $semesterTujuan->tahun_ajaran_id !== $kelasBaru->tahun_ajaran_id,
+                        404
+                    );
 
                     $gagalDiBaris = $this->salinJadwal($kelasLama, $kelasBaru, $semesterTujuan->id);
                     $jadwalGagal = array_merge($jadwalGagal, $gagalDiBaris);
