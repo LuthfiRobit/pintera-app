@@ -2,6 +2,7 @@
 
 use App\Domains\Akademik\Actions\Rapor\SimpanCatatanWaliKelasAction;
 use App\Domains\Akademik\Actions\Rapor\SubmitPengajuanRaporAction;
+use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Workflow\Actions\InitializeApprovalRequestAction;
@@ -79,9 +80,10 @@ it('does not let a siswa Pindah/Keluar whose kelas_id was never cleared block su
     // nyata di lapangan (guru tidak akan pernah mengisi catatan untuk siswa yang sudah pergi).
     $siswaKeluar = Siswa::factory()->create([
         'lembaga_id' => $kelas->lembaga_id,
-        'kelas_id' => null,
-        'status' => StatusSiswa::Keluar,
+        'kelas_id' => $kelas->id,
+        'status' => StatusSiswa::Aktif,
     ]);
+    app(UpdateStatusSiswaAction::class)->execute($siswaKeluar, StatusSiswa::Keluar);
 
     $pengajuan = (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $user);
 
