@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\TahunAjaran;
 use Illuminate\Database\Seeder;
 
@@ -15,7 +15,12 @@ class KelasSeeder extends Seeder
     {
         foreach (Lembaga::all() as $lembaga) {
             $polaJam = PolaJam::where('lembaga_id', $lembaga->id)->first();
-            $gurus = Guru::where('lembaga_id', $lembaga->id)->get();
+            // Wali kelas WAJIB guru_kelas -- sebelumnya query ini mengambil SEMUA guru
+            // (termasuk kepala_sekolah/tenaga_administrasi), jadi staf non-pengajar bisa
+            // kebagian jadi wali kelas secara acak. Fallback ke semua guru cuma kalau
+            // memang tidak ada satupun guru_kelas (jenjang tanpa data jenis_ptk).
+            $guruKelasSaja = Guru::where('lembaga_id', $lembaga->id)->where('jenis_ptk', 'guru_kelas')->get();
+            $gurus = $guruKelasSaja->isNotEmpty() ? $guruKelasSaja : Guru::where('lembaga_id', $lembaga->id)->get();
             $tahunAjaranList = TahunAjaran::where('lembaga_id', $lembaga->id)->get();
 
             $kelasConfigs = match ($lembaga->bentuk_pendidikan) {

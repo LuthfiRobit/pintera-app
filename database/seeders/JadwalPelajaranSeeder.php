@@ -45,67 +45,59 @@ class JadwalPelajaranSeeder extends Seeder
         }
     }
 
+    /**
+     * Jadwal SD realistis untuk SEMUA kelas (bukan cuma 2 kelas seperti sebelumnya):
+     * setiap kelas diajar oleh wali kelasnya sendiri (`guru_kelas`) untuk mayoritas
+     * mata pelajaran -- pola guru kelas SD yang mengajar hampir semua mapel ke
+     * rombelnya sendiri -- KECUALI 2 mapel spesialis (PJOK, Bahasa Inggris) yang
+     * diajar guru_mapel lintas kelas. Ini memastikan SETIAP akun guru demo (bukan
+     * cuma 2 dari 21) benar-benar punya JadwalPelajaran, supaya fitur Tambah TP /
+     * Buat Asesmen / RPP bisa dipraktikkan dari akun manapun.
+     */
     private function seedSdJadwal(Lembaga $sd, TahunAjaran $aktif, Semester $semester, PolaJam $polaJam, array $daftarHari): void
     {
-        $kelasA = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-A')->first();
-        $kelasB = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->where('nama', 'Kelas 1-B')->first();
+        $kelasList = Kelas::where('lembaga_id', $sd->id)->where('tahun_ajaran_id', $aktif->id)->whereNotNull('wali_kelas_guru_id')->get();
+        $mapelList = MataPelajaran::where('lembaga_id', $sd->id)->orderBy('id')->get();
 
-        $mapelMatematika = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Matematika')->first();
-        $mapelIPAS = MataPelajaran::where('lembaga_id', $sd->id)->where('nama', 'Ilmu Pengetahuan Alam dan Sosial (IPAS)')->first();
-
-        $guruHendra = User::where('email', 'hendra.gunawan@demo.test')->first()?->guru;
-        $guruMaya = User::where('email', 'maya.anggraini@demo.test')->first()?->guru;
-
-        if (! $kelasA || ! $kelasB || ! $mapelMatematika || ! $mapelIPAS || ! $guruHendra || ! $guruMaya) {
+        if ($kelasList->isEmpty() || $mapelList->isEmpty()) {
             return;
         }
 
-        foreach ($daftarHari as $hari) {
-            $jam1 = JamPelajaran::where('pola_jam_id', $polaJam->id)->where('hari', $hari)->where('urutan', 1)->first();
-            $jam2 = JamPelajaran::where('pola_jam_id', $polaJam->id)->where('hari', $hari)->where('urutan', 2)->first();
-            $jam4 = JamPelajaran::where('pola_jam_id', $polaJam->id)->where('hari', $hari)->where('urutan', 4)->first();
-            $jam5 = JamPelajaran::where('pola_jam_id', $polaJam->id)->where('hari', $hari)->where('urutan', 5)->first();
+        $mapelSpesialis = [
+            'Pendidikan Jasmani dan Olahraga' => User::where('email', 'maya.anggraini@demo.test')->first()?->guru,
+            'Bahasa Inggris' => User::where('email', 'taufik.hidayat@demo.test')->first()?->guru,
+        ];
 
-            if ($jam1 && $jam2 && $jam4 && $jam5) {
-                // Kelas 1-A: Jam 1 & 2 Matematika (Hendra)
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam1->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
-                );
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam2->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
-                );
+        $hariKerja = array_values(array_intersect($daftarHari, ['senin', 'selasa', 'rabu', 'kamis', 'jumat']));
 
-                // Kelas 1-A: Jam 4 & 5 IPAS (Maya)
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam4->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
-                );
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasA->id, 'jam_pelajaran_id' => $jam5->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
-                );
+        foreach ($kelasList as $kelas) {
+            $waliKelasGuru = $kelas->waliKelas;
+            if (! $waliKelasGuru) {
+                continue;
+            }
 
-                // Kelas 1-B: Jam 1 & 2 IPAS (Maya)
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam1->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
-                );
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam2->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelIPAS->id, 'guru_id' => $guruMaya->id]
-                );
+            $slotKe = 0;
+            foreach ($hariKerja as $hari) {
+                $jamList = JamPelajaran::where('pola_jam_id', $polaJam->id)
+                    ->where('hari', $hari)
+                    ->where('is_pelajaran', true)
+                    ->orderBy('urutan')
+                    ->get();
 
-                // Kelas 1-B: Jam 4 & 5 Matematika (Hendra)
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam4->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
-                );
-                JadwalPelajaran::firstOrCreate(
-                    ['kelas_id' => $kelasB->id, 'jam_pelajaran_id' => $jam5->id, 'semester_id' => $semester->id],
-                    ['mata_pelajaran_id' => $mapelMatematika->id, 'guru_id' => $guruHendra->id]
-                );
+                foreach ($jamList as $jam) {
+                    $mapel = $mapelList[$slotKe % $mapelList->count()];
+                    $guruPengajar = $mapelSpesialis[$mapel->nama] ?? $waliKelasGuru;
+                    $slotKe++;
+
+                    if (! $guruPengajar) {
+                        continue;
+                    }
+
+                    JadwalPelajaran::firstOrCreate(
+                        ['kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'semester_id' => $semester->id],
+                        ['mata_pelajaran_id' => $mapel->id, 'guru_id' => $guruPengajar->id]
+                    );
+                }
             }
         }
     }
