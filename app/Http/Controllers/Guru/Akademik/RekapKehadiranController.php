@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Guru\Akademik;
 
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Akademik\Services\PresensiAggregationService;
 use App\Models\Kelas;
 use App\Models\Semester;
@@ -57,8 +58,12 @@ class RekapKehadiranController extends BaseController
             ? ($request->query('semester_id') !== '' ? (int) $request->query('semester_id') : null)
             : ($semesterAktif?->id ?? null);
 
-        // Daftar Kelas yang diampu oleh Guru sebagai wali kelas (difilter berdasarkan Tahun Ajaran jika dipilih)
-        $kelasQuery = Kelas::where('wali_kelas_guru_id', $guru->id);
+        // Daftar Kelas yang bisa diakses Guru: sebagai wali kelas (rekap penuh) ATAU sebagai guru mapel
+        // yang pernah mengisi sesi pembelajaran di kelas tsb (rekap difilter ke sesinya sendiri).
+        $kelasIdDiajar = SesiPembelajaran::where('guru_id', $guru->id)->distinct()->pluck('kelas_id');
+        $kelasQuery = Kelas::where(function ($q) use ($guru, $kelasIdDiajar) {
+            $q->where('wali_kelas_guru_id', $guru->id)->orWhereIn('id', $kelasIdDiajar);
+        });
         if ($tahunAjaranId) {
             $kelasQuery->where('tahun_ajaran_id', $tahunAjaranId);
         }
@@ -73,8 +78,10 @@ class RekapKehadiranController extends BaseController
         $selectedSemester = $semesterId ? $semesterList->firstWhere('id', $semesterId) : null;
 
         $rekap = collect();
+        $isWaliKelas = false;
         if ($kelas) {
-            $rekap = $this->aggregationService->agregasiPerKelas($kelas->id, $selectedSemester);
+            $isWaliKelas = $kelas->wali_kelas_guru_id === $guru->id;
+            $rekap = $this->aggregationService->agregasiPerKelas($kelas->id, $selectedSemester, $isWaliKelas ? null : $guru->id);
         }
 
         return view('portals.guru.akademik.jurnal-kbm.rekap', [
@@ -88,6 +95,7 @@ class RekapKehadiranController extends BaseController
             'semester' => $selectedSemester,
             'rekap' => $rekap,
             'isSemuaSemester' => $selectedSemester === null,
+            'isWaliKelas' => $isWaliKelas,
         ]);
     }
 }

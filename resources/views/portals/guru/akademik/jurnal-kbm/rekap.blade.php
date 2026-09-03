@@ -79,6 +79,13 @@
                 <p class="font-medium text-gray-700">Kelas tidak ditemukan atau bukan kelas yang Anda wali-i.</p>
             </div>
         @else
+            <p class="mb-3 text-xs font-medium text-gray-500">
+                @if ($isWaliKelas)
+                    Rekap penuh kelas (semua mata pelajaran) &mdash; Anda wali kelas ini.
+                @else
+                    Rekap disaring untuk sesi yang Anda ajar saja.
+                @endif
+            </p>
             @if ($isSemuaSemester)
                 <div class="mb-3 inline-flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
                     <x-icon name="info" class="h-4 w-4" />
