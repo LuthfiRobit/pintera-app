@@ -43,6 +43,8 @@ final class VerifyPengajuanRaporAction
         }
 
         return DB::transaction(function () use ($pengajuanRapor, $approvalRequest, $user, $action, $catatan) {
+            $pengajuanRapor = PengajuanRapor::lockForUpdate()->findOrFail($pengajuanRapor->id);
+
             $this->processApprovalAction->execute($approvalRequest, $user, $action, $catatan);
             $approvalRequest->refresh();
 
