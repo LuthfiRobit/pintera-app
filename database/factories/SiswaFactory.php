@@ -58,6 +58,7 @@ class SiswaFactory extends Factory
             },
             'lembaga_id' => Lembaga::factory(),
             'kelas_id' => null,
+            'kelas_terakhir_id' => null,
             'calon_murid_id' => null,
             'pendaftaran_asal_id' => null,
             'sumber_data' => SumberDataSiswa::Manual->value,

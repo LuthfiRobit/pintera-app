@@ -31,7 +31,7 @@ class Siswa extends Model
     protected $table = 'siswa';
 
     protected $fillable = [
-        'person_id', 'lembaga_id', 'kelas_id', 'calon_murid_id', 'pendaftaran_asal_id',
+        'person_id', 'lembaga_id', 'kelas_id', 'kelas_terakhir_id', 'calon_murid_id', 'pendaftaran_asal_id',
         'sumber_data', 'nis', 'nisn', 'status',
     ];
 
@@ -86,6 +86,16 @@ class Siswa extends Model
     public function kelas(): BelongsTo
     {
         return $this->belongsTo(Kelas::class);
+    }
+
+    public function kelasTerakhir(): BelongsTo
+    {
+        return $this->belongsTo(Kelas::class, 'kelas_terakhir_id');
+    }
+
+    public function getKelasEfektifAttribute(): ?Kelas
+    {
+        return $this->kelas ?? $this->kelasTerakhir;
     }
 
     public function calonMurid(): BelongsTo

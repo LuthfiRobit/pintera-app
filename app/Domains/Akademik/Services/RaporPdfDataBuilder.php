@@ -42,7 +42,8 @@ final class RaporPdfDataBuilder
      */
     public function build(Siswa $siswa, Semester $semester): array
     {
-        $kelas = $siswa->kelas;
+        $kelas = $siswa->kelas_efektif;
+        abort_if($kelas === null, 404);
         $lembaga = $kelas->lembaga;
 
         $rekap = $this->raporCalculationService->hitungRekapKelas($kelas, $semester);

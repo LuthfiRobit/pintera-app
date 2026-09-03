@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
@@ -7,6 +8,8 @@ use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
 use App\Domains\Akademik\Models\PengajuanRapor;
+use App\Domains\Akademik\Services\RaporPdfDataBuilder;
+use App\Enums\StatusSiswa;
 use App\Models\EkstrakurikulerLembaga;
 use App\Models\Guru;
 use App\Models\Kelas;
@@ -311,4 +314,13 @@ it('rejects saving catatan wali kelas when semester_id belongs to a different ta
         'siswa_id' => $siswa->id,
         'semester_id' => $semesterLain->id,
     ]);
+});
+
+it('builds rapor data for a siswa who has since left the kelas (kelas_id null, kelas_terakhir_id terisi)', function () {
+    ['kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    app(UpdateStatusSiswaAction::class)->execute($siswa, StatusSiswa::Keluar);
+
+    $data = app(RaporPdfDataBuilder::class)->build($siswa->fresh(), $semester);
+
+    expect($data)->toBeArray();
 });
