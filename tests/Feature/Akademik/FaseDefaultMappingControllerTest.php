@@ -1,16 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Domains\Akademik\Models\Fase;
 use App\Domains\Akademik\Models\FaseDefaultMapping;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
-function buatUserDenganRole(string $roleName, ?int $lembagaId = null): User
+function buatUserDenganRole(string $roleName, ?int $lembagaId = null, ?int $yayasanId = null): User
 {
     foreach (['fase-mapping.view', 'fase-mapping.create', 'fase-mapping.edit', 'fase-mapping.delete'] as $perm) {
         Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
@@ -19,17 +22,18 @@ function buatUserDenganRole(string $roleName, ?int $lembagaId = null): User
     $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web'], ['scope_level' => match ($roleName) {
         'operator_akademik' => 'lembaga',
         'yayasan_super_admin' => 'yayasan',
+        'platform_super_admin' => 'platform',
         default => 'lembaga',
     }]);
 
     if ($roleName === 'operator_akademik') {
         $role->givePermissionTo(['fase-mapping.view', 'fase-mapping.create', 'fase-mapping.edit', 'fase-mapping.delete']);
     }
-    if ($roleName === 'yayasan_super_admin') {
+    if (in_array($roleName, ['yayasan_super_admin', 'platform_super_admin'], true)) {
         $role->givePermissionTo(Permission::query()->pluck('name')->all());
     }
 
-    $user = User::factory()->create(['lembaga_id' => $lembagaId]);
+    $user = User::factory()->create(['lembaga_id' => $lembagaId, 'yayasan_id' => $yayasanId]);
     $user->assignRole($role);
 
     return $user;
@@ -68,33 +72,52 @@ it('rejects a lembaga-scope user trying to create a platform-wide mapping (lemba
     expect(FaseDefaultMapping::first()->lembaga_id)->toBe($lembaga->id);
 });
 
-it('lets a yayasan-scope user create a platform-wide mapping', function () {
+it('memakai session active_lembaga_id untuk lembaga_id mapping yayasan, mengabaikan lembaga_id yang dikirim di body', function () {
     $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
-    $user = buatUserDenganRole('yayasan_super_admin');
+    $yayasan = Yayasan::factory()->create();
+    $lembagaAktif = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = buatUserDenganRole('yayasan_super_admin', null, $yayasan->id);
+    session(['active_lembaga_id' => $lembagaAktif->id]);
+
+    $this->actingAs($user)->post(route('admin.fase-mapping.store'), [
+        'lembaga_id' => $lembagaLain->id,
+        'bentuk_pendidikan' => 'SD',
+        'tingkat' => '1',
+        'fase_id' => $fase->id,
+    ])->assertRedirect(route('admin.fase-mapping.index'));
+
+    expect(FaseDefaultMapping::first()->lembaga_id)->toBe($lembagaAktif->id);
+});
+
+it('menolak yayasan membuat mapping global -- hanya platform yang boleh', function () {
+    $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
+    $yayasan = Yayasan::factory()->create();
+    $lembagaAktif = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = buatUserDenganRole('yayasan_super_admin', null, $yayasan->id);
+    session(['active_lembaga_id' => $lembagaAktif->id]);
+
+    $this->actingAs($user)->post(route('admin.fase-mapping.store'), [
+        'lembaga_id' => '',
+        'bentuk_pendidikan' => 'SD',
+        'tingkat' => '1',
+        'fase_id' => $fase->id,
+    ]);
+
+    expect(FaseDefaultMapping::first()?->lembaga_id)->toBe($lembagaAktif->id);
+});
+
+it('platform BISA membuat mapping global', function () {
+    $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
+    $user = buatUserDenganRole('platform_super_admin');
 
     $this->actingAs($user)->post(route('admin.fase-mapping.store'), [
         'bentuk_pendidikan' => 'SD',
         'tingkat' => '1',
         'fase_id' => $fase->id,
-        'lembaga_id' => '',
     ])->assertRedirect(route('admin.fase-mapping.index'));
 
     expect(FaseDefaultMapping::first()->lembaga_id)->toBeNull();
-});
-
-it('lets a yayasan-scope user create a mapping for any specific lembaga', function () {
-    $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
-    $lembagaTarget = Lembaga::factory()->create();
-    $user = buatUserDenganRole('yayasan_super_admin');
-
-    $this->actingAs($user)->post(route('admin.fase-mapping.store'), [
-        'bentuk_pendidikan' => 'SD',
-        'tingkat' => '1',
-        'fase_id' => $fase->id,
-        'lembaga_id' => $lembagaTarget->id,
-    ])->assertRedirect(route('admin.fase-mapping.index'));
-
-    expect(FaseDefaultMapping::first()->lembaga_id)->toBe($lembagaTarget->id);
 });
 
 it('rejects a duplicate mapping in the same scope with a clear validation error', function () {
@@ -145,13 +168,64 @@ it('forbids a user without fase-mapping permission from accessing the index', fu
     $this->actingAs($user)->get(route('admin.fase-mapping.index'))->assertForbidden();
 });
 
-it('lets a yayasan-scope user delete any lembaga\'s mapping', function () {
+it('menolak yayasan A menghapus mapping milik lembaga di yayasan B', function () {
     $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
-    $lembaga = Lembaga::factory()->create();
-    $mapping = FaseDefaultMapping::create(['lembaga_id' => $lembaga->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $fase->id]);
-    $user = buatUserDenganRole('yayasan_super_admin');
+    $yayasanA = Yayasan::factory()->create();
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $mapping = FaseDefaultMapping::create(['lembaga_id' => $lembagaB->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $fase->id]);
+    $userA = buatUserDenganRole('yayasan_super_admin', null, $yayasanA->id);
+
+    $this->actingAs($userA)->delete(route('admin.fase-mapping.destroy', $mapping))->assertForbidden();
+
+    expect(FaseDefaultMapping::find($mapping->id))->not->toBeNull();
+});
+
+it('mengizinkan yayasan menghapus mapping milik lembaga di yayasannya sendiri', function () {
+    $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
+    $yayasan = Yayasan::factory()->create();
+    $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $mapping = FaseDefaultMapping::create(['lembaga_id' => $lembagaSendiri->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $fase->id]);
+    $user = buatUserDenganRole('yayasan_super_admin', null, $yayasan->id);
 
     $this->actingAs($user)->delete(route('admin.fase-mapping.destroy', $mapping))->assertRedirect(route('admin.fase-mapping.index'));
 
     expect(FaseDefaultMapping::find($mapping->id))->toBeNull();
+});
+
+it('yayasan cuma lihat mapping global + milik yayasannya sendiri di index, TIDAK lihat milik yayasan lain', function () {
+    $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
+    $yayasanA = Yayasan::factory()->create();
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $mappingA = FaseDefaultMapping::create(['lembaga_id' => $lembagaA->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $fase->id]);
+    $mappingB = FaseDefaultMapping::create(['lembaga_id' => $lembagaB->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $fase->id]);
+    $mappingGlobal = FaseDefaultMapping::create(['lembaga_id' => null, 'bentuk_pendidikan' => 'SMP', 'tingkat' => '7', 'fase_id' => $fase->id]);
+    $userA = buatUserDenganRole('yayasan_super_admin', null, $yayasanA->id);
+
+    $response = $this->actingAs($userA)->get(route('admin.fase-mapping.index'));
+
+    $response->assertViewHas('mappingList', function ($list) use ($mappingA, $mappingB, $mappingGlobal) {
+        return $list->contains('id', $mappingA->id)
+            && $list->contains('id', $mappingGlobal->id)
+            && ! $list->contains('id', $mappingB->id);
+    });
+});
+
+it('platform TETAP lihat SEMUA mapping lintas yayasan di index', function () {
+    $fase = Fase::create(['kode' => 'a', 'nama' => 'Fase A', 'urutan' => 1]);
+    $yayasanA = Yayasan::factory()->create();
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $mappingA = FaseDefaultMapping::create(['lembaga_id' => $lembagaA->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $fase->id]);
+    $mappingB = FaseDefaultMapping::create(['lembaga_id' => $lembagaB->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'fase_id' => $fase->id]);
+    $user = buatUserDenganRole('platform_super_admin');
+
+    $response = $this->actingAs($user)->get(route('admin.fase-mapping.index'));
+
+    $response->assertViewHas('mappingList', function ($list) use ($mappingA, $mappingB) {
+        return $list->contains('id', $mappingA->id) && $list->contains('id', $mappingB->id);
+    });
 });

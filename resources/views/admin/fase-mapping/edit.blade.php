@@ -9,7 +9,7 @@
         <form method="POST" action="{{ route('admin.fase-mapping.update', $mapping) }}">
             @csrf
             @method('PUT')
-            @include('admin.fase-mapping._form', ['mapping' => $mapping, 'faseList' => $faseList, 'isPlatformOrYayasan' => false, 'bentukPendidikanList' => $bentukPendidikanList, 'submitText' => 'Simpan Perubahan'])
+            @include('admin.fase-mapping._form', ['mapping' => $mapping, 'faseList' => $faseList, 'isPlatform' => $isPlatform, 'bentukPendidikanList' => $bentukPendidikanList, 'submitText' => 'Simpan Perubahan'])
         </form>
     </div>
 </x-app-layout>

@@ -8,7 +8,7 @@
 
         <form method="POST" action="{{ route('admin.fase-mapping.store') }}">
             @csrf
-            @include('admin.fase-mapping._form', ['faseList' => $faseList, 'lembagaList' => $lembagaList, 'isPlatformOrYayasan' => $isPlatformOrYayasan, 'bentukPendidikanList' => $bentukPendidikanList, 'submitText' => 'Simpan Mapping'])
+            @include('admin.fase-mapping._form', ['faseList' => $faseList, 'lembagaList' => $lembagaList, 'isPlatform' => $isPlatform, 'bentukPendidikanList' => $bentukPendidikanList, 'submitText' => 'Simpan Mapping'])
         </form>
     </div>
 </x-app-layout>
