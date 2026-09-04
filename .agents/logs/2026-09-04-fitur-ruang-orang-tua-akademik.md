@@ -72,6 +72,11 @@ Fitur baru Ruang Orang Tua Akademik berhasil dibangun secara menyeluruh menggant
 4. **Penyesuaian Tes Sidebar Existing**:
    - `SidebarStubMenuHiddenTest` dan `SidebarPengelompokanTest` sebelumnya ditulis pada 2026-09-03 untuk menguji penonaktifan stub placeholder. Kedua test disesuaikan agar mengonfirmasi rute aktif telah menggantikan tautan stub `/dalam-pengembangan`.
 
+5. **Pembaruan Konsistensi UI Jadwal Anak (Pill Jam Mono & Toggle Matriks Mingguan)**:
+   - Menyelaraskan tampilan Jadwal Anak (`jadwal-anak.blade.php`) dengan Jadwal Siswa:
+     - **Tampilan Daftar**: Memperbarui penanda jam dengan style pill mono ber-ikon `<x-icon name="schedule" />` (`07:30 - 08:05`).
+     - **Tampilan Matriks**: Menambahkan segmented control via Alpine.js (`x-data="{ viewMode: 'list' }"`) untuk beralih instan antara Tampilan Daftar harian dan Tampilan Matriks Mingguan multi-kolom yang rapi.
+
 ---
 
 ## 3. Hal yang Masih Perlu Direview Manusia / Claude

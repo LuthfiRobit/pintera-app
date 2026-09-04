@@ -65,6 +65,11 @@ Fitur self-service Ruang Siswa Akademik berhasil dibangun menggantikan placehold
 6. **Polesan UI/UX Menyeluruh Sesuai Desain Sistem Pintera (TailAdmin)**:
    - Ketiga view (`nilai-rapor.blade.php`, `jadwal-pelajaran.blade.php`, `presensi-saya.blade.php`) telah dipoles secara menyeluruh menggunakan komponen standar Pintera: `<x-panel>`, `<x-badge>`, `<x-icon>`, tipografi `font-display` (Outfit), warna token `text-ink`, `text-slate`, `bg-paper`, serta kartu dan empty state yang interaktif dan serasi dengan Ruang Orang Tua.
 
+7. **Standardisasi Tampilan Jadwal: List Horizontal + Time Pill Mono + Toggle Matriks Mingguan**:
+   - Menyamakan format tampilan jadwal antara Ruang Siswa dan Ruang Orang Tua.
+   - **Tampilan Daftar (List Mode)**: Menggunakan baris horizontal memanjang (`space-y-3`) per hari dengan time pill presisi mono (`<span class="... font-mono ..."><x-icon name="schedule" /> 07:30 - 08:05</span>`).
+   - **Tampilan Matriks (Matrix Mode)**: Menyediakan segmented control toggle via Alpine.js (`x-data="{ viewMode: 'list' }"`) untuk beralih instan ke Tampilan Matriks Mingguan (kolom multi-hari sejajar yang menampilkan seluruh sesi belajar mingguan secara terorganisir).
+
 ---
 
 ## 3. Hal yang Masih Perlu Direview Manusia / Claude
