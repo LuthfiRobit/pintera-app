@@ -57,11 +57,12 @@
                         </p>
 
                         <div class="overflow-x-auto rounded-xl border border-gray-200">
-                            <table class="w-full min-w-[600px] text-sm">
+                            <table class="w-full min-w-[750px] text-sm">
                                 <thead>
                                     <tr class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
                                         <th class="px-5 py-3">Nama Siswa</th>
                                         <th class="px-5 py-3">Status Kehadiran</th>
+                                        <th class="px-5 py-3">Keterangan</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-150 bg-white">
@@ -114,6 +115,20 @@
                                                         </label>
                                                     @endforeach
                                                 </div>
+                                            </td>
+                                            <td class="px-5 py-2.5">
+                                                <template x-if="status === 'izin' || status === 'sakit'">
+                                                    <input
+                                                        type="text"
+                                                        name="keterangan[{{ $presensi->siswa_id }}]"
+                                                        value="{{ old('keterangan.'.$presensi->siswa_id, $presensi->keterangan) }}"
+                                                        placeholder="Contoh: Demam, surat dari orang tua, dll."
+                                                        class="w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                                                    >
+                                                </template>
+                                                <template x-if="status !== 'izin' && status !== 'sakit'">
+                                                    <span class="text-xs text-gray-400">&mdash;</span>
+                                                </template>
                                             </td>
                                         </tr>
                                     @endforeach

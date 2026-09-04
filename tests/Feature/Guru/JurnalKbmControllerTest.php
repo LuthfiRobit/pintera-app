@@ -1,14 +1,14 @@
 <?php
 
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -89,6 +89,26 @@ it('saves jurnal materi and per-student presensi status', function () {
 
     expect($sesi->fresh()->materi)->toBe('Perkalian dan pembagian');
     expect($sesi->fresh()->presensi()->where('siswa_id', $siswa->id)->first()->status->value)->toBe('izin');
+});
+
+it('saves keterangan per siswa alongside status izin/sakit', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index')); // triggers generation
+    $sesi = SesiPembelajaran::firstOrFail();
+
+    $this->actingAs($guruUser)->put(route('guru.jurnal-kbm.update', $sesi), [
+        'materi' => 'Perkalian dan pembagian',
+        'presensi' => [
+            $siswa->id => 'sakit',
+        ],
+        'keterangan' => [
+            $siswa->id => 'Demam tinggi, ada surat dari orang tua',
+        ],
+    ])->assertRedirect(route('guru.jurnal-kbm.index'));
+
+    $presensi = $sesi->fresh()->presensi()->where('siswa_id', $siswa->id)->first();
+    expect($presensi->status->value)->toBe('sakit');
+    expect($presensi->keterangan)->toBe('Demam tinggi, ada surat dari orang tua');
 });
 
 it('forbids a guru from updating a sesi that does not belong to them', function () {

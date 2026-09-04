@@ -24,6 +24,8 @@ final class UpdateJurnalPresensiRequest extends FormRequest
             'materi' => ['nullable', 'string'],
             'presensi' => ['required', 'array'],
             'presensi.*' => ['required', 'in:hadir,izin,sakit,alpa,terlambat'],
+            'keterangan' => ['nullable', 'array'],
+            'keterangan.*' => ['nullable', 'string', 'max:255'],
         ];
     }
 

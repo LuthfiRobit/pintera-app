@@ -14,7 +14,10 @@ final class RecordJurnalDanPresensiAction
             $sesi->update(['materi' => $data->materi]);
 
             foreach ($data->presensi as $siswaId => $status) {
-                $sesi->presensi()->where('siswa_id', $siswaId)->update(['status' => $status]);
+                $sesi->presensi()->where('siswa_id', $siswaId)->update([
+                    'status' => $status,
+                    'keterangan' => $data->keterangan[$siswaId] ?? null,
+                ]);
             }
 
             return $sesi->fresh();
