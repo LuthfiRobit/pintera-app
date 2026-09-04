@@ -113,6 +113,7 @@ it('graduates siswa when mapped to lulus, clearing kelas_id', function () {
     $siswa->refresh();
     expect($siswa->status)->toBe(StatusSiswa::Lulus);
     expect($siswa->kelas_id)->toBeNull();
+    expect($siswa->kelas_terakhir_id)->toBe($kelasLama->id);
 });
 
 it('optionally copies jadwal pelajaran structure to the target kelas and semester', function () {

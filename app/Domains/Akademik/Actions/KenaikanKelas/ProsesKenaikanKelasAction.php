@@ -42,6 +42,7 @@ final class ProsesKenaikanKelasAction
                 if ($aksi['tindakan'] === 'lulus') {
                     Siswa::where('kelas_id', $kelasLama->id)->update([
                         'status' => StatusSiswa::Lulus->value,
+                        'kelas_terakhir_id' => DB::raw('kelas_id'),
                         'kelas_id' => null,
                     ]);
 
