@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Akademik\Actions\Jadwal;
 
 use App\Domains\Akademik\DataTransferObjects\JadwalPelajaranData;
+use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Sarpras\Actions\ValidateRoomClashAction;
 use App\Models\JadwalPelajaran;
 use Illuminate\Support\Facades\DB;
@@ -49,11 +50,18 @@ final class CreateJadwalPelajaranAction
             ]);
         }
 
-        // 3. Validasi Bentrok Guru Pengampu
+        $jamPelajaranBaru = JamPelajaran::findOrFail($data->jamPelajaranId);
+
+        // 3. Validasi Bentrok Guru Pengampu (berbasis waktu wall-clock, bukan ID slot --
+        // 2 Pola Jam berbeda bisa punya jam_pelajaran_id berbeda untuk jam yang sama persis).
         $isGuruClash = JadwalPelajaran::query()
             ->where('guru_id', $data->guruId)
             ->where('semester_id', $data->semesterId)
-            ->where('jam_pelajaran_id', $data->jamPelajaranId)
+            ->whereHas('jamPelajaran', function ($q) use ($jamPelajaranBaru) {
+                $q->where('hari', $jamPelajaranBaru->hari)
+                    ->where('jam_mulai', '<', $jamPelajaranBaru->jam_selesai)
+                    ->where('jam_selesai', '>', $jamPelajaranBaru->jam_mulai);
+            })
             ->exists();
 
         if ($isGuruClash) {
