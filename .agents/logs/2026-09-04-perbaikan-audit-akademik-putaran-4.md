@@ -17,43 +17,42 @@ Paket perbaikan ke-4 dari rangkaian audit modul Akademik berhasil menyelesaikan 
    - Memperbaiki root-cause celah session basi pada pembacaan data tenant-scoped di seluruh aplikasi.
    - Pada `TenantScope::apply()`, `session('active_lembaga_id')` kini diverifikasi ulang kepemilikannya: lembaga tersebut harus benar-benar milik yayasan actor (`$actor->yayasan_id !== null && Lembaga::where('id', $sessionLembagaId)->where('yayasan_id', $actor->yayasan_id)->exists()`).
    - Jika session basi terdeteksi (atau lembaga milik yayasan lain), scope secara otomatis jatuh ke fallback existing (membatasi ke seluruh lembaga milik yayasan actor), bukan melempar exception atau membiarkan query lintas-yayasan bocor.
-   - Test komprehensif ditambahkan di `tests/Feature/TenantScopeTest.php` (mencakup kasus session valid, session milik yayasan lain, session ID non-existent, dan session milik lembaga tanpa yayasan).
+   - Test baru ditambahkan di `tests/Feature/TenantScopeTest.php` (skenario session basi menunjuk ke lembaga milik yayasan lain), plus 1 test lama di file yang sama diperbaiki (`yayasan_id` actor sebelumnya tidak diset eksplisit).
    - Commit: `8e1e78d9` `fix(core): TenantScope verifikasi ulang kepemilikan yayasan atas active_lembaga_id session, cegah akses lintas-yayasan dari session basi`.
 
-2. **Task 2 (Important Multi-Tenant Write-Path Guard - Kelas)**: `app/Http/Controllers/Akademik/KelasController.php`
+2. **Task 2 (Important Multi-Tenant Write-Path Guard - Kelas)**: `app/Http/Controllers/Admin/KelasController.php`
    - Memperbaiki jalur tulis `store()` pada `KelasController` dengan mengganti pembacaan session mentah `session('active_lembaga_id')` menjadi `resolveActiveLembagaId($user)`.
-   - Menolak pembuatan kelas jika session basi/tidak valid milik yayasan actor saat ini (abort 422).
-   - Test regression & security guard ditambahkan di `tests/Feature/Admin/KelasTenantGuardTest.php`.
+   - Menolak pembuatan kelas jika session basi/tidak valid milik yayasan actor saat ini (redirect back dengan error `lembaga_id`).
+   - Test regresi ditambahkan di `tests/Feature/Admin/KelasCrudTest.php`.
    - Commit: `c2fd9e9f` `fix(akademik): KelasController::store() verifikasi ulang active_lembaga_id via resolveActiveLembagaId()`.
 
-3. **Task 3 (Important Multi-Tenant Write-Path Guard - Tahun Ajaran)**: `app/Http/Controllers/Akademik/TahunAjaranController.php`
-   - Memperbaiki jalur tulis `store()` pada `TahunAjaranController` dengan mengganti pembacaan session mentah `session('active_lembaga_id')` menjadi `resolveActiveLembagaId($user)`.
-   - Mengganti pesan error menjadi standar `"Pilih lembaga aktif terlebih dahulu."` (redirect back with error).
-   - Test regression & security guard ditambahkan di `tests/Feature/Admin/TahunAjaranTenantGuardTest.php`.
+3. **Task 3 (Important Multi-Tenant Write-Path Guard - Tahun Ajaran)**: `app/Http/Controllers/Admin/TahunAjaranController.php`
+   - Memperbaiki jalur tulis `store()` pada `TahunAjaranController` dengan mengganti pembacaan session mentah `session('active_lembaga_id')` menjadi `resolveActiveLembagaId($user)`. Pesan error TIDAK berubah (`"Pilih lembaga aktif melalui pengalih lembaga sebelum membuat tahun ajaran."`).
+   - Test regresi ditambahkan di `tests/Feature/Admin/TahunAjaranSemesterFeatureTest.php`; 1 test lama di `tests/Feature/Admin/TahunAjaranSemesterPanelTest.php` ikut diperbaiki (`yayasan_id` actor sebelumnya tidak diset, cuma "berhasil" karena kelemahan `TenantScope` lama).
    - Commit: `847029f3` `fix(akademik): TahunAjaranController::store() verifikasi ulang active_lembaga_id via resolveActiveLembagaId()`.
 
-4. **Task 4 (Important Multi-Tenant Write-Path Guard - Pola Jam)**: `app/Http/Controllers/Akademik/PolaJamController.php`
+4. **Task 4 (Important Multi-Tenant Write-Path Guard - Pola Jam)**: `app/Http/Controllers/Admin/PolaJamController.php`
    - Mengganti pembacaan `session('active_lembaga_id')` pada `store()` dengan `$this->resolveActiveLembagaId($user)`.
    - Mempertahankan struktur ternary `$user->widestScopeLevel() === 'yayasan' ? ... : $user->lembaga_id` sehingga actor platform tidak ikut membaca session.
-   - Test regression & security guard ditambahkan di `tests/Feature/Admin/PolaJamTenantGuardTest.php`.
+   - Test regresi ditambahkan di `tests/Feature/Admin/PolaJamCrudTest.php`.
    - Commit: `00aaaf35` `fix(akademik): PolaJamController::store() verifikasi ulang active_lembaga_id via resolveActiveLembagaId()`.
 
-5. **Task 5 (Important Multi-Tenant Write-Path Guard - Jenis Tes Master)**: `app/Http/Controllers/Akademik/JenisTesMasterController.php`
+5. **Task 5 (Important Multi-Tenant Write-Path Guard - Jenis Tes Master)**: `app/Http/Controllers/Admin/JenisTesMasterController.php`
    - Mengganti pembacaan `session('active_lembaga_id')` pada `store()` dengan `$this->resolveActiveLembagaId($user)` di dalam blok pengecekan `isYayasanScope`.
-   - Test regression & security guard ditambahkan di `tests/Feature/Admin/JenisTesMasterTenantGuardTest.php`.
+   - Test regresi ditambahkan di `tests/Feature/Admin/JenisTesMasterTest.php`.
    - Commit: `4ca76298` `fix(akademik): JenisTesMasterController::store() verifikasi ulang active_lembaga_id via resolveActiveLembagaId()`.
 
-6. **Task 6 (Important Multi-Tenant Write-Path Guard - RPP Verify)**: `app/Http/Controllers/Akademik/RppController.php`
-   - Mengganti pembacaan `session('active_lembaga_id')` pada `verify()` dengan `$this->resolveActiveLembagaId($user)`.
-   - Mempertahankan struktur percabangan ternary `$user->widestScopeLevel() === 'yayasan' ? ... : $user->lembaga_id` dan mempertahankan `abort_if(! $lembagaId, 422, 'Lembaga aktif belum dipilih.')`.
-   - Test regression & security guard ditambahkan di `tests/Feature/Admin/RppTenantGuardTest.php`.
+6. **Task 6 (Important Multi-Tenant Write-Path Guard - RPP Verify)**: `app/Http/Controllers/Admin/RppController.php`
+   - Mengganti pembacaan `session('active_lembaga_id')` pada `verify()` dengan `$this->resolveActiveLembagaId($user)`. Pesan error TIDAK berubah (`"Pilih lembaga aktif melalui pengalih lembaga sebelum memverifikasi RPP."`, tetap `abort_if(..., 422, ...)`).
+   - Mempertahankan struktur percabangan ternary `$user->widestScopeLevel() === 'yayasan' ? ... : $user->lembaga_id`.
+   - Test regresi ditambahkan di `tests/Feature/Akademik/RppWorkflowTest.php`.
    - Commit: `ed99fbc2` `fix(akademik): RppController::verify() verifikasi ulang active_lembaga_id via resolveActiveLembagaId()`.
 
-7. **Task 7 (Important Multi-Tenant Write-Path Guard & Dead Code Cleanup - Jadwal Pelajaran)**: `app/Http/Controllers/Akademik/JadwalPelajaranController.php`
-   - Mengganti pembacaan `session('active_lembaga_id')` pada `store()` dan `update()` dengan `$this->resolveActiveLembagaId($user)`.
-   - Memperbaiki bug kode mati pada `duplicate()` di baris 179 yang sebelumnya membaca properti tidak ada `$user->active_lembaga_id` (selalu bernilai null), kini menggunakan `$this->resolveActiveLembagaId($user)`.
+7. **Task 7 (Important Multi-Tenant Write-Path Guard & Dead Code Cleanup - Jadwal Pelajaran)**: `app/Http/Controllers/Admin/JadwalPelajaranController.php`
+   - Mengganti pembacaan `session('active_lembaga_id')` pada `store()` (baris ~182) dan `update()` (baris ~336) dengan `$this->resolveActiveLembagaId($user)`.
+   - Memperbaiki bug kode mati pada `duplicate()` (baris ~448) yang sebelumnya membaca properti tidak ada `$user->active_lembaga_id` (selalu bernilai null), kini menggunakan `$user->widestScopeLevel() === 'yayasan' ? $this->resolveActiveLembagaId($user) : $user->lembaga_id`.
    - Mempertahankan seluruh struktur percabangan ternary di ketiga method (`store`, `update`, `duplicate`).
-   - 4 test ditambahkan di `tests/Feature/Admin/JadwalPelajaranTenantGuardTest.php`.
+   - 3 test baru ditambahkan di `tests/Feature/Admin/JadwalPelajaranTenantGuardTest.php` (total 4 test di file itu setelah perubahan, termasuk 1 test lama). Sesuai catatan kejujuran di plan (lihat §2 poin 4 di bawah), ketiga test baru untuk `update()`/`duplicate()` bersifat regresi jalur normal, bukan pembuktian penutup celah aktif.
    - Commit: `ee45bae4` `fix(akademik): JadwalPelajaranController verifikasi ulang active_lembaga_id di store/update, perbaiki bug kode-mati active_lembaga_id di duplicate()`.
 
 8. **Task 8 (Important Concurrency / Race Condition - Jadwal Pelajaran)**: `CreateJadwalPelajaranAction.php` & `UpdateJadwalPelajaranAction.php`
@@ -105,4 +104,4 @@ Paket perbaikan ke-4 dari rangkaian audit modul Akademik berhasil menyelesaikan 
 2. **Git State Saat Ini**:
    - **Branch**: `akademik-v2` (tetap di branch yang sama).
    - **Status**: Semua task (Task 1-9) selesai dikerjakan, diuji, dan di-commit di lokal.
-   - **Total Commits Paket Ini**: 9 commits (termasuk kickoff). Belum di-push ke remote.
+   - **Total Commits Paket Ini**: 10 commit sejak kickoff (`228c4c37`) sampai `05e6cbe3` (commit ini sendiri) — 8 commit fix/task (Task 1-8), 1 commit perbaikan fixture test SPMB (Task 9), 1 commit dokumentasi checklist+handoff. Belum di-push ke remote.
