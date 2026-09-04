@@ -34,7 +34,7 @@ class NilaiAnakController extends BaseController
         $anak = $this->resolveAnakTerpilih($anakList, $request->integer('siswa_id') ?: null);
 
         $semesterList = $anak && $anak->kelas
-            ? Semester::where('tahun_ajaran_id', $anak->kelas->tahun_ajaran_id)->orderByDesc('id')->get()
+            ? Semester::withoutGlobalScope(TenantScope::class)->where('tahun_ajaran_id', $anak->kelas->tahun_ajaran_id)->orderByDesc('id')->get()
             : collect();
         $semesterId = $request->integer('semester_id') ?: $semesterList->first()?->id;
 

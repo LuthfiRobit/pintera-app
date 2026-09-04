@@ -50,6 +50,24 @@ it('menampilkan nilai anak untuk semester yang dipilih', function () {
     $response->assertViewHas('nilaiList', fn ($list) => $list->contains(fn ($n) => $n->nilai_angka === 88));
 });
 
+it('menampilkan daftar semester untuk dropdown tanpa perlu semester_id eksplisit di query string', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    [$user, $anak] = buatOrangTuaDenganAnak($lembaga, $kelas);
+
+    // Sengaja TIDAK mengirim semester_id -- ini yang membuktikan bug lama:
+    // Semester::where(...) tanpa withoutGlobalScope(TenantScope::class) selalu
+    // mengembalikan collection kosong untuk actor orang tua (lembaga_id null).
+    $response = $this->actingAs($user)->get(route('admin.nilai-anak.index', ['siswa_id' => $anak->id]));
+
+    $response->assertOk();
+    $response->assertViewHas('semesterList', fn ($list) => $list->contains('id', $semester->id));
+    $response->assertViewHas('semesterId', $semester->id);
+});
+
 it('menolak kebocoran nilai anak orang tua lain lewat siswa_id di query string (IDOR)', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
