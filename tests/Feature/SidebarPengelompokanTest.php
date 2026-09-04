@@ -42,7 +42,7 @@ it('shows RPP, QR Kehadiran, Izin/Cuti, and Kasus Pendampingan under Ruang Guru 
     $response->assertSee('Izin/Cuti Saya');
 });
 
-it('shows Ruang Siswa group with only Kasus Pendampingan for a siswa account (stub links hidden)', function () {
+it('shows Ruang Siswa group with real routes, dalam-pengembangan stub links hidden', function () {
     Permission::firstOrCreate(['name' => 'kasus.view', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'siswa', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $role->givePermissionTo(['kasus.view']);
@@ -57,15 +57,16 @@ it('shows Ruang Siswa group with only Kasus Pendampingan for a siswa account (st
     $response->assertOk();
     $response->assertSee('Ruang Siswa');
     $response->assertSee('Kasus Pendampingan');
-    // Nilai & Rapor / Jadwal Pelajaran / Presensi Saya disembunyikan (2026-09-03) -- lihat
-    // komentar di resources/views/layouts/sidebar.blade.php. Cari khusus markup <nav> sidebar
-    // (bukan seluruh halaman) supaya tidak salah tangkap bottom-nav mobile yang masih memuat
-    // label placeholder yang sama di luar cakupan perubahan ini.
+
     preg_match('/<nav.*?<\/nav>/s', $response->getContent(), $matches);
     $sidebarHtml = $matches[0] ?? '';
-    expect($sidebarHtml)->not->toContain('Nilai &amp; Rapor');
-    expect($sidebarHtml)->not->toContain('Jadwal Pelajaran');
-    expect($sidebarHtml)->not->toContain('Presensi Saya');
+    expect($sidebarHtml)->toContain('Nilai &amp; Rapor');
+    expect($sidebarHtml)->toContain('Jadwal Pelajaran');
+    expect($sidebarHtml)->toContain('Presensi Saya');
+    expect($sidebarHtml)->toContain(route('admin.nilai-rapor-saya.index'));
+    expect($sidebarHtml)->toContain(route('admin.jadwal-pelajaran-saya.index'));
+    expect($sidebarHtml)->toContain(route('admin.presensi-saya.index'));
+    expect($sidebarHtml)->not->toContain('dalam-pengembangan');
 });
 
 it('shows Ruang Orang Tua group with keuangan and academic self-service items', function () {

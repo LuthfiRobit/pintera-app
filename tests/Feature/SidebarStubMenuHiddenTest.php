@@ -26,9 +26,13 @@ it('tidak menampilkan menu sidebar stub untuk siswa', function () {
 
     $response->assertOk();
     $sidebarHtml = sidebarNavHtml($response);
-    expect($sidebarHtml)->not->toContain('Nilai &amp; Rapor');
-    expect($sidebarHtml)->not->toContain('Jadwal Pelajaran');
-    expect($sidebarHtml)->not->toContain('Presensi Saya');
+    // Menu stub placeholder /dalam-pengembangan sudah digantikan oleh rute mandiri resmi (2026-09-04)
+    expect($sidebarHtml)->not->toContain('dalam-pengembangan?fitur=nilai-rapor');
+    expect($sidebarHtml)->not->toContain('dalam-pengembangan?fitur=jadwal-pelajaran');
+    expect($sidebarHtml)->not->toContain('dalam-pengembangan?fitur=presensi-saya');
+    expect($sidebarHtml)->toContain(route('admin.nilai-rapor-saya.index'));
+    expect($sidebarHtml)->toContain(route('admin.jadwal-pelajaran-saya.index'));
+    expect($sidebarHtml)->toContain(route('admin.presensi-saya.index'));
 });
 
 it('tidak menampilkan menu sidebar stub untuk orang tua', function () {

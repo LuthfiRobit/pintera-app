@@ -26,13 +26,9 @@
             'label' => 'Ruang Siswa',
             'group_icon' => 'backpack',
             'items' => array_filter([
-                // Nilai & Rapor / Jadwal Pelajaran / Presensi Saya sengaja disembunyikan (2026-09-03)
-                // -- halaman detailnya belum dibangun (masih arah ke placeholder dalam-pengembangan),
-                // datanya sudah ada ringkas di widget Dashboard. Bangun sebagai proyek fitur terpisah
-                // sebelum dikembalikan ke sini.
-                // Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'nilai-rapor'], 'pattern' => 'dalam-pengembangan', 'label' => 'Nilai & Rapor', 'icon' => 'award'] : null,
-                // Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'jadwal-pelajaran'], 'pattern' => 'dalam-pengembangan', 'label' => 'Jadwal Pelajaran', 'icon' => 'calendar-clock'] : null,
-                // Auth::user()->hasRole('siswa') ? ['route' => 'dalam-pengembangan', 'params' => ['fitur' => 'presensi-saya'], 'pattern' => 'dalam-pengembangan', 'label' => 'Presensi Saya', 'icon' => 'clipboard-check'] : null,
+                Auth::user()->hasRole('siswa') ? ['route' => 'admin.nilai-rapor-saya.index', 'pattern' => 'admin.nilai-rapor-saya.*', 'label' => 'Nilai & Rapor', 'icon' => 'award'] : null,
+                Auth::user()->hasRole('siswa') ? ['route' => 'admin.jadwal-pelajaran-saya.index', 'pattern' => 'admin.jadwal-pelajaran-saya.*', 'label' => 'Jadwal Pelajaran', 'icon' => 'calendar-clock'] : null,
+                Auth::user()->hasRole('siswa') ? ['route' => 'admin.presensi-saya.index', 'pattern' => 'admin.presensi-saya.*', 'label' => 'Presensi Saya', 'icon' => 'clipboard-check'] : null,
                 Auth::user()->hasRole('siswa') && Auth::user()->can('viewAny', \App\Domains\Kasus\Models\Kasus::class) ? ['route' => 'kasus.index', 'pattern' => 'kasus.*', 'label' => 'Kasus Pendampingan', 'icon' => 'stethoscope'] : null,
             ]),
         ],
