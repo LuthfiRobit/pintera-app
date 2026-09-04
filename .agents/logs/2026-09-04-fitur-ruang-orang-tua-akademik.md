@@ -75,7 +75,7 @@ Fitur baru Ruang Orang Tua Akademik berhasil dibangun secara menyeluruh menggant
 5. **Pembaruan Konsistensi UI Jadwal Anak (Pill Jam Mono, Toggle Matriks Mingguan, & Auto-Scroll Hari Ini dengan Estetika Halus)**:
    - Menyelaraskan tampilan Jadwal Anak (`jadwal-anak.blade.php`) dengan Jadwal Siswa:
      - **Tampilan Daftar**: Memperbarui penanda jam dengan style pill mono ber-ikon `<x-icon name="schedule" />` (`07:30 - 08:05`).
-     - **Tampilan Matriks**: Menambahkan segmented control via Alpine.js (`x-data="{ viewMode: 'list' }"`) untuk beralih instan antara Tampilan Daftar harian dan Tampilan Matriks Mingguan multi-kolom yang rapi.
+     - **Tampilan Matriks (Default)**: Menampilkan Matriks Mingguan multi-kolom sebagai tampilan utama secara default via Alpine.js (`x-data="{ viewMode: 'matrix' }"`) dengan segmented control untuk beralih instan ke Tampilan Daftar harian.
      - **Highlight Hari Ini & Auto-Scroll (Estetika Halus & Bernyawa)**: Mengganti border tebal 2px dengan kontainer natural ber-hairline border (`border border-brand-300/80 ring-1 ring-brand-500/20 shadow-card`), aksen garis gradasi halus atas (`h-1 bg-gradient-to-r from-brand-500 to-brand-600`), dan live status pill bernyawa (`bg-brand-50/80 text-brand-700`) dengan mini animated pulse dot (`animate-ping`). Auto-scroll otomatis mengarahkan fokus ke hari ini saat render awal atau perpindahan mode.
 
 ---

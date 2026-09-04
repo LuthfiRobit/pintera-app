@@ -68,7 +68,7 @@ Fitur self-service Ruang Siswa Akademik berhasil dibangun menggantikan placehold
 7. **Standardisasi Tampilan Jadwal: List Horizontal + Time Pill Mono + Toggle Matriks Mingguan**:
    - Menyamakan format tampilan jadwal antara Ruang Siswa dan Ruang Orang Tua.
    - **Tampilan Daftar (List Mode)**: Menggunakan baris horizontal memanjang (`space-y-3`) per hari dengan time pill presisi mono (`<span class="... font-mono ..."><x-icon name="schedule" /> 07:30 - 08:05</span>`).
-   - **Tampilan Matriks (Matrix Mode)**: Menyediakan segmented control toggle via Alpine.js (`x-data="{ viewMode: 'list' }"`) untuk beralih instan ke Tampilan Matriks Mingguan (kolom multi-hari sejajar yang menampilkan seluruh sesi belajar mingguan secara terorganisir).
+   - **Tampilan Matriks (Matrix Mode - Default)**: Menyediakan segmented control toggle via Alpine.js (`x-data="{ viewMode: 'matrix' }"`) di mana Matriks Mingguan tampil sebagai tampilan utama saat pertama kali dibuka, dengan opsi beralih instan ke Tampilan Daftar.
 
 8. **Highlight "Hari Ini" & Fitur Auto-Scroll (List & Matriks) dengan Estetika Halus**:
    - Mendeteksi hari saat ini secara dinamis melalui `\App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek)->value`.
