@@ -75,8 +75,8 @@ it('renders Orang Tua bottom nav with 5 flat slots for orang tua account', funct
     $response->assertSee('aria-label="Presensi Anak"', false);
     $response->assertSee('aria-label="Buka menu"', false);
     $response->assertSee(route('keuangan.dashboard'));
-    $response->assertSee(route('dalam-pengembangan', ['fitur' => 'nilai-anak']));
-    $response->assertSee(route('dalam-pengembangan', ['fitur' => 'riwayat-izin-sakit-anak']));
+    $response->assertSee(route('admin.nilai-anak.index'));
+    $response->assertSee(route('admin.riwayat-izin-sakit-anak.index'));
 });
 
 it('renders Siswa bottom nav with 5 flat slots for siswa account', function () {
@@ -90,9 +90,9 @@ it('renders Siswa bottom nav with 5 flat slots for siswa account', function () {
     $response->assertSee('aria-label="Presensi Saya"', false);
     $response->assertSee('aria-label="Nilai &amp; Rapor"', false);
     $response->assertSee('aria-label="Buka menu"', false);
-    $response->assertSee(route('dalam-pengembangan', ['fitur' => 'jadwal-pelajaran']));
-    $response->assertSee(route('dalam-pengembangan', ['fitur' => 'presensi-saya']));
-    $response->assertSee(route('dalam-pengembangan', ['fitur' => 'nilai-rapor']));
+    $response->assertSee(route('admin.jadwal-pelajaran-saya.index'));
+    $response->assertSee(route('admin.presensi-saya.index'));
+    $response->assertSee(route('admin.nilai-rapor-saya.index'));
 });
 
 it('does not render bottom nav for non-personal accounts (admin, staff, yayasan)', function () {
@@ -107,10 +107,10 @@ it('does not render bottom nav for non-personal accounts (admin, staff, yayasan)
     $response->assertDontSee('aria-label="Buka menu"', false);
 });
 
-it('correctly matches active state for placeholder routes based on fitur query parameter', function () {
+it('correctly matches active state for Ruang Siswa routes', function () {
     $siswa = siapkanUserPersonal('siswa');
 
-    $response = $this->actingAs($siswa)->get(route('dalam-pengembangan', ['fitur' => 'jadwal-pelajaran']));
+    $response = $this->actingAs($siswa)->get(route('admin.jadwal-pelajaran-saya.index'));
 
     $response->assertOk();
     $response->assertSee('data-active="jadwal-pelajaran"', false);

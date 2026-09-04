@@ -19,12 +19,11 @@
     $isNilaiGuruActive = request()->routeIs('guru.asesmen.*');
     $isTagihanActive = request()->routeIs('keuangan.*');
 
-    $fiturParam = request()->query('fitur');
-    $isNilaiOrtuActive = request()->routeIs('dalam-pengembangan') && $fiturParam === 'nilai-anak';
-    $isPresensiOrtuActive = request()->routeIs('dalam-pengembangan') && $fiturParam === 'riwayat-izin-sakit-anak';
-    $isJadwalSiswaActive = request()->routeIs('dalam-pengembangan') && $fiturParam === 'jadwal-pelajaran';
-    $isPresensiSiswaActive = request()->routeIs('dalam-pengembangan') && $fiturParam === 'presensi-saya';
-    $isNilaiSiswaActive = request()->routeIs('dalam-pengembangan') && $fiturParam === 'nilai-rapor';
+    $isNilaiOrtuActive = request()->routeIs('admin.nilai-anak.*');
+    $isPresensiOrtuActive = request()->routeIs('admin.riwayat-izin-sakit-anak.*');
+    $isJadwalSiswaActive = request()->routeIs('admin.jadwal-pelajaran-saya.*');
+    $isPresensiSiswaActive = request()->routeIs('admin.presensi-saya.*');
+    $isNilaiSiswaActive = request()->routeIs('admin.nilai-rapor-saya.*');
 @endphp
 
 <nav
@@ -116,7 +115,7 @@
 
             {{-- Slot 2: Nilai Anak --}}
             <a
-                href="{{ route('dalam-pengembangan', ['fitur' => 'nilai-anak']) }}"
+                href="{{ route('admin.nilai-anak.index') }}"
                 class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
                 aria-label="Nilai Anak"
                 @if($isNilaiOrtuActive) data-active="nilai-anak" @endif
@@ -144,7 +143,7 @@
 
             {{-- Slot 4: Presensi Anak --}}
             <a
-                href="{{ route('dalam-pengembangan', ['fitur' => 'riwayat-izin-sakit-anak']) }}"
+                href="{{ route('admin.riwayat-izin-sakit-anak.index') }}"
                 class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
                 aria-label="Presensi Anak"
                 @if($isPresensiOrtuActive) data-active="riwayat-izin-sakit-anak" @endif
@@ -172,7 +171,7 @@
 
             {{-- Slot 2: Jadwal Pelajaran --}}
             <a
-                href="{{ route('dalam-pengembangan', ['fitur' => 'jadwal-pelajaran']) }}"
+                href="{{ route('admin.jadwal-pelajaran-saya.index') }}"
                 class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
                 aria-label="Jadwal Pelajaran"
                 @if($isJadwalSiswaActive) data-active="jadwal-pelajaran" @endif
@@ -186,7 +185,7 @@
 
             {{-- Slot 3: Presensi Saya (Flat) --}}
             <a
-                href="{{ route('dalam-pengembangan', ['fitur' => 'presensi-saya']) }}"
+                href="{{ route('admin.presensi-saya.index') }}"
                 class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
                 aria-label="Presensi Saya"
                 @if($isPresensiSiswaActive) data-active="presensi-saya" @endif
@@ -200,7 +199,7 @@
 
             {{-- Slot 4: Nilai & Rapor --}}
             <a
-                href="{{ route('dalam-pengembangan', ['fitur' => 'nilai-rapor']) }}"
+                href="{{ route('admin.nilai-rapor-saya.index') }}"
                 class="flex flex-col items-center justify-center p-2 transition duration-150 ease-out active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/30 rounded-full"
                 aria-label="Nilai &amp; Rapor"
                 @if($isNilaiSiswaActive) data-active="nilai-rapor" @endif
