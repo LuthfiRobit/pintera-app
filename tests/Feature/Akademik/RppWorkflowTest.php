@@ -392,3 +392,21 @@ it('actor dengan profil Guru sendiri tetap bisa membuat RPP tanpa guru_id (regre
 
     $response->assertSessionDoesntHaveErrors();
 });
+
+it('menolak mata_pelajaran_id milik lembaga lain pada jalur admin (guru null)', function () {
+    $guruTarget = Guru::factory()->create(['lembaga_id' => $this->lembaga->id]);
+    $lembagaLain = Lembaga::factory()->create();
+    $mapelLembagaLain = MataPelajaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
+        'guru_id' => $guruTarget->id,
+        'mata_pelajaran_id' => $mapelLembagaLain->id,
+        'judul_topik' => 'Uji Topik',
+        'alokasi_waktu' => '2 x 35 Menit',
+        'file' => UploadedFile::fake()->create('rpp.pdf', 100),
+    ]);
+
+    $response->assertNotFound();
+});

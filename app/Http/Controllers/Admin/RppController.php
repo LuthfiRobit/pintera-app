@@ -153,6 +153,11 @@ class RppController extends BaseController
 
         $guruId = $guru ? $guru->id : (int) $request->input('guru_id');
 
+        if ($guru === null && $request->filled('mata_pelajaran_id')) {
+            $mapel = MataPelajaran::find($request->input('mata_pelajaran_id'));
+            abort_if($mapel === null || $mapel->lembaga_id !== $kelas->lembaga_id, 404);
+        }
+
         if ($guru !== null) {
             if ($request->filled('mata_pelajaran_id')) {
                 $mengajarKombinasiIni = JadwalPelajaran::where('guru_id', $guru->id)
