@@ -77,8 +77,13 @@ class SiswaController extends BaseController
     {
         $this->authorize('siswa.create');
 
+        $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
+        $kelasList = $tahunAjaranAktif
+            ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
+            : collect();
+
         return view('admin.siswa.create', [
-            'kelasList' => Kelas::orderBy('nama')->get(),
+            'kelasList' => $kelasList,
         ]);
     }
 
@@ -137,9 +142,21 @@ class SiswaController extends BaseController
 
         $siswa->load(['orangTua', 'person', 'siswaKeringanan.kategoriKeringanan']);
 
+        $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first();
+        $kelasList = $tahunAjaranAktif
+            ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
+            : collect();
+
+        if ($siswa->kelas_id !== null && ! $kelasList->contains('id', $siswa->kelas_id)) {
+            $kelasSaatIni = Kelas::find($siswa->kelas_id);
+            if ($kelasSaatIni !== null) {
+                $kelasList = $kelasList->push($kelasSaatIni)->sortBy('nama')->values();
+            }
+        }
+
         return view('admin.siswa.edit', [
             'siswa' => $siswa,
-            'kelasList' => Kelas::orderBy('nama')->get(),
+            'kelasList' => $kelasList,
             'keringanan' => $siswa->siswaKeringanan->sortByDesc('berlaku_dari')->values(),
         ]);
     }

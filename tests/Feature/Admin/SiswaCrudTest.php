@@ -330,3 +330,46 @@ it('disables the kelas_id select on the edit form for a non-aktif siswa', functi
     expect($selectOpenTag)->toContain('disabled');
     $response->assertSee('Siswa berstatus non-aktif');
 });
+
+it('kelasList di create() dan edit() cuma berisi kelas dari tahun ajaran aktif', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $kelasAktif = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id, 'nama' => 'Kelas Aktif']);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taLama->id, 'nama' => 'Kelas Lama']);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasAktif->id, 'status' => 'aktif']);
+
+    $responseCreate = $this->actingAs($manager)->get(route('admin.siswa.create'));
+    $responseCreate->assertViewHas('kelasList', fn ($list) => $list->contains('id', $kelasAktif->id) && ! $list->contains('id', $kelasLama->id));
+
+    $responseEdit = $this->actingAs($manager)->get(route('admin.siswa.edit', $siswa));
+    $responseEdit->assertViewHas('kelasList', fn ($list) => $list->contains('id', $kelasAktif->id) && ! $list->contains('id', $kelasLama->id));
+});
+
+it('mempertahankan kelas siswa saat ini di kelasList meski dari TA tidak aktif, dan submit tanpa ubah field tidak memindahkan siswa', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id, 'nama' => 'Kelas Aktif']);
+    $kelasLamaSiswa = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taLama->id, 'nama' => 'Kelas Lama Siswa']);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLamaSiswa->id, 'status' => 'aktif', 'nis' => '99999']);
+
+    $responseEdit = $this->actingAs($manager)->get(route('admin.siswa.edit', $siswa));
+    $responseEdit->assertViewHas('kelasList', fn ($list) => $list->contains('id', $kelasLamaSiswa->id));
+
+    // Submit form TANPA mengubah kelas_id -- kirim value kelas lama itu (form asli akan
+    // mengirim value yang sedang ter-selected, yaitu kelas lama siswa itu sendiri).
+    $this->actingAs($manager)->put(route('admin.siswa.update', $siswa), [
+        'kelas_id' => $kelasLamaSiswa->id,
+        'nis' => $siswa->nis,
+        'nisn' => $siswa->nisn,
+        'nama_lengkap' => $siswa->nama_lengkap,
+        'jenis_kelamin' => 'L',
+    ]);
+
+    expect($siswa->fresh()->kelas_id)->toBe($kelasLamaSiswa->id);
+});
