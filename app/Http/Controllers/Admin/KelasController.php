@@ -9,6 +9,7 @@ use App\Domains\Akademik\Exceptions\KurikulumAssignmentNotFoundException;
 use App\Domains\Akademik\Models\Fase;
 use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Akademik\Services\FaseDefaultResolver;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Http\Requests\Akademik\StoreKelasRequest;
 use App\Http\Requests\Akademik\UpdateKelasRequest;
 use App\Models\Guru;
@@ -24,6 +25,7 @@ use Illuminate\View\View;
 class KelasController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function faseSuggestion(Request $request): JsonResponse
     {
@@ -98,7 +100,7 @@ class KelasController extends BaseController
 
         $lembagaIdOverride = null;
         if ($request->user()->widestScopeLevel() === 'yayasan') {
-            $lembagaIdOverride = session('active_lembaga_id');
+            $lembagaIdOverride = $this->resolveActiveLembagaId($request->user());
 
             if ($lembagaIdOverride === null) {
                 return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat kelas.'])->withInput();

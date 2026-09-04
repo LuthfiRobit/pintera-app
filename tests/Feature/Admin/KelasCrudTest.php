@@ -210,3 +210,27 @@ it('updates a kelas including assigning a wali kelas', function () {
 
     expect($kelas->fresh()->wali_kelas_guru_id)->toBe($guru->id);
 });
+
+it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasannya) saat membuat kelas', function () {
+    Permission::firstOrCreate(['name' => 'kelas.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_kelas_stale_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['kelas.create']);
+
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.kelas.store'), [
+        'nama' => 'Kelas Uji Stale',
+        'tahun_ajaran_id' => $tahunAjaranLain->id,
+        'tingkat' => '1',
+    ]);
+
+    $response->assertSessionHasErrors('lembaga_id');
+    expect(Kelas::where('nama', 'Kelas Uji Stale')->exists())->toBeFalse();
+});
