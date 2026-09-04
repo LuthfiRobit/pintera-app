@@ -26,7 +26,7 @@
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal — matcher menolak siswa non-aktif**
+- [x] **Step 1: Tulis test yang gagal — matcher menolak siswa non-aktif**
 
 Baca `tests/Feature/Keuangan/JenisTagihanSasaranMatcherTest.php` untuk pola factory/setup yang sudah dipakai (cek 1-2 test lain di file itu). Tambahkan test baru:
 
@@ -59,13 +59,13 @@ it('resolveTargetSiswa dan countTotalSiswaPool mengecualikan siswa non-aktif', f
 
 Sesuaikan `use` import (`Siswa`, `Lembaga`, `JenisTagihan`, `JenisTagihanSasaranMatcher`) dengan yang sudah ada di file.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="siswaMatchesJenisTagihan menolak siswa non-aktif"`
 Run: `php artisan test --filter="resolveTargetSiswa dan countTotalSiswaPool mengecualikan"`
 Expected: FAIL — siswa non-aktif masih ikut match/terhitung.
 
-- [ ] **Step 3: Tulis test end-to-end (reproduksi persis skenario awal)**
+- [x] **Step 3: Tulis test end-to-end (reproduksi persis skenario awal)**
 
 Buat file baru `tests/Feature/Akademik/DeaktivasiSiswaTidakMemicuTagihanTest.php`:
 
@@ -108,12 +108,12 @@ it('deaktivasi siswa via UpdateStatusSiswaAction TIDAK memicu tagihan baru meski
 
 Sesuaikan nama kolom `kategori`/relasi morph `tagihable` dengan struktur `Tagihan` yang sebenarnya (cek `app/Domains/Keuangan/Models/Tagihan.php` dulu untuk nama relasi & enum kategori yang valid — pakai kategori yang BUKAN `pendaftaran`/`daftar_ulang`, karena `GenerateTagihanForUpdatedClass::handle()` sudah mengecualikan 2 kategori itu).
 
-- [ ] **Step 4: Jalankan test end-to-end, pastikan gagal**
+- [x] **Step 4: Jalankan test end-to-end, pastikan gagal**
 
 Run: `php artisan test --filter="deaktivasi siswa via UpdateStatusSiswaAction TIDAK memicu tagihan baru"`
 Expected: FAIL — `$tagihanSesudah` > `$tagihanSebelum` (bukti bug nyata sebelum fix).
 
-- [ ] **Step 5: Perbaiki `JenisTagihanSasaranMatcher`**
+- [x] **Step 5: Perbaiki `JenisTagihanSasaranMatcher`**
 
 Baca `app/Domains/Keuangan/Services/JenisTagihanSasaranMatcher.php` baris 1-84 (mungkin sudah bergeser). Tambahkan `use App\Enums\StatusSiswa;` ke import. Ganti `resolveTargetSiswa()`:
 ```php
@@ -180,18 +180,18 @@ Ganti `siswaMatchesJenisTagihan()`:
     }
 ```
 
-- [ ] **Step 6: Jalankan semua test, pastikan lolos**
+- [x] **Step 6: Jalankan semua test, pastikan lolos**
 
 Run: `php artisan test --filter=JenisTagihanSasaranMatcherTest`
 Run: `php artisan test --filter="DeaktivasiSiswaTidakMemicuTagihan"`
 Expected: semua PASS.
 
-- [ ] **Step 7: Regresi Keuangan billing**
+- [x] **Step 7: Regresi Keuangan billing**
 
 Run: `php artisan test --filter=Keuangan`
 Expected: semua PASS — perbaikan ini menyempitkan hasil match (exclude non-aktif), jadi test yang mengasumsikan siswa AKTIF match tidak boleh regresi; test yang secara implisit mengandalkan siswa non-aktif ikut match (kalau ada) perlu ditinjau — kalau ada test yang gagal karena ini, itu artinya test itu SENDIRI mengasumsikan bug lama sebagai "benar", perbaiki assertion test itu sesuai perilaku baru yang benar (jangan lemahkan fix ini untuk membuat test lama lolos).
 
-- [ ] **Step 8: Pint dan commit**
+- [x] **Step 8: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -211,7 +211,7 @@ git commit -m "fix(keuangan): JenisTagihanSasaranMatcher exclude siswa non-aktif
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis 4 test yang gagal**
+- [x] **Step 1: Tulis 4 test yang gagal**
 
 Baca `tests/Feature/Akademik/RppWorkflowTest.php`. `beforeEach` di file ini sudah menyiapkan `$this->userKurikulum` (role `wakasek_kurikulum`, permission `rpp.kelola`, **TIDAK punya relasi Guru** — inilah actor "tanpa profil Guru" yang dimaksud spec) dan `$this->userGuru` (role `guru`, PUNYA relasi `$this->guru`). `$this->kelas`, `$this->semester`, `$this->lembaga` juga sudah ada. Tambahkan 4 test ini (gunakan `$this->` seperti test lain di file, BUKAN variabel bare):
 
@@ -277,12 +277,12 @@ it('actor dengan profil Guru sendiri tetap bisa membuat RPP tanpa guru_id (regre
 
 Catatan: test ke-4 menyertakan `mata_pelajaran_id` supaya lolos guard `abort_unless($mengajarKombinasiIni, ...)` di `RppController::store()` (sudah ada `JadwalPelajaran` untuk kombinasi `$this->guru`+`$this->kelas`+`$this->mapel`+`$this->semester` dari `beforeEach`).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="RppWorkflowTest"`
 Expected: 3 dari 4 test baru FAIL (fallback lama masih aktif); test #4 kemungkinan PASS kebetulan (actor ber-guru tidak terpengaruh bug).
 
-- [ ] **Step 3: Update `StoreRppRequest`**
+- [x] **Step 3: Update `StoreRppRequest`**
 
 Baca `app/Http/Requests/Akademik/StoreRppRequest.php` baris 1-88. Tambahkan `use App\Models\Guru;` ke import. Ganti `rules()` — tambah baris:
 ```php
@@ -322,7 +322,7 @@ Ganti `withValidator()`:
     }
 ```
 
-- [ ] **Step 4: Update `RppController::store()`**
+- [x] **Step 4: Update `RppController::store()`**
 
 Baca baris 139-152 (mungkin bergeser). Ganti baris 147:
 ```php
@@ -330,7 +330,7 @@ Baca baris 139-152 (mungkin bergeser). Ganti baris 147:
 ```
 (Hapus fallback `Guru::where('lembaga_id', $kelas->lembaga_id)->value('id')` dan `abort(422, ...)` di baris 149-151 — `StoreRppRequest` sudah menolak sebelum sampai ke sini kalau `guru_id` kosong/tidak valid untuk actor tanpa profil guru.)
 
-- [ ] **Step 5: Update `RppController::index()` — tambah `guruList` untuk view**
+- [x] **Step 5: Update `RppController::index()` — tambah `guruList` untuk view**
 
 Baca baris 95-119 (mungkin bergeser). Setelah blok `$mataPelajaranList = ...` (baris 109), tambahkan:
 ```php
@@ -342,7 +342,7 @@ Baca baris 95-119 (mungkin bergeser). Setelah blok `$mataPelajaranList = ...` (b
 ```
 (`Guru` TIDAK punya kolom `nama_lengkap` langsung — nama guru berasal dari relasi `person` lewat accessor `getNamaAttribute()`. Model `Guru` sudah punya scope `scopeOrderByNama()` yang join ke tabel `persons` untuk urutan yang benar — pakai scope itu, JANGAN `orderBy('nama_lengkap')` yang akan gagal dengan SQL error kolom tidak ditemukan.) Tambahkan `'guruList' => $guruList,` ke array data view di baris `return view('portals.lembaga.akademik.rpp.index', [...])`.
 
-- [ ] **Step 6: Update view `_modal-form.blade.php`**
+- [x] **Step 6: Update view `_modal-form.blade.php`**
 
 Baca baris 62-72 (blok Mata Pelajaran). Tepat SEBELUM blok itu, tambahkan (cuma tampil kalau actor login tidak punya profil Guru):
 ```blade
@@ -359,17 +359,17 @@ Baca baris 62-72 (blok Mata Pelajaran). Tepat SEBELUM blok itu, tambahkan (cuma 
             @endif
 ```
 
-- [ ] **Step 7: Jalankan test lagi, pastikan lolos**
+- [x] **Step 7: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="RppWorkflowTest"`
 Expected: semua PASS.
 
-- [ ] **Step 8: Regresi RPP**
+- [x] **Step 8: Regresi RPP**
 
 Run: `php artisan test --filter=Rpp`
 Expected: semua PASS.
 
-- [ ] **Step 9: Pint dan commit**
+- [x] **Step 9: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -388,7 +388,7 @@ git commit -m "fix(akademik): guru_id eksplisit tervalidasi di RPP, hapus fallba
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal (behavioral, bukan concurrency asli)**
+- [x] **Step 1: Tulis test yang gagal (behavioral, bukan concurrency asli)**
 
 Baca `tests/Feature/Admin/KomponenPenilaianCrudTest.php` — setiap `it()` di file itu bangun sendiri `Yayasan`/`Lembaga`/`TahunAjaran`/`Semester`/`MataPelajaran` (tidak ada `beforeEach` bersama). `KomponenPenilaianData` constructor (readonly, urutan positional): `string $subjekType, int $subjekId, int $semesterId, ?string $kode, string $deskripsi, int $bobot, ?string $kktp, ?int $kktpMinimal, ?string $assessmentType`. Tambahkan test ini (import `KomponenPenilaianData` dan `CreateKomponenPenilaianAction` sudah ada di file, tambah `use App\Models\Yayasan;`/`TahunAjaran`/`MataPelajaran`/`Semester`/`Lembaga` kalau belum ada):
 
@@ -412,12 +412,12 @@ it('tetap konsisten menolak bobot melebihi 100% setelah dibungkus lock (regresi,
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan LOLOS di percobaan pertama**
+- [x] **Step 2: Jalankan test, pastikan LOLOS di percobaan pertama**
 
 Run: `php artisan test --filter="tetap konsisten menolak bobot melebihi 100"`
 Expected: **PASS** — ini BUKAN pola TDD merah-dulu, karena validasi "≤100%" itu sendiri sudah benar SEBELUM fix ini (yang belum benar adalah PROTEKSI SAAT PARALEL, bukan logic single-request). Test ini jadi regression-guard untuk Step 3-4 (pastikan pembungkusan transaction tidak merusak logic yang sudah benar).
 
-- [ ] **Step 3: Perbaiki `CreateKomponenPenilaianAction`**
+- [x] **Step 3: Perbaiki `CreateKomponenPenilaianAction`**
 
 Baca file penuh (baris 1-54 versi awal, cek pergeseran). Tambahkan `use Illuminate\Support\Facades\DB;` ke import. Bungkus SELURUH isi `execute()` dengan transaction + lock:
 ```php
@@ -465,14 +465,14 @@ final class CreateKomponenPenilaianAction
 }
 ```
 
-- [ ] **Step 4: Perbaiki `UpdateKomponenPenilaianAction`** — pola identik, bungkus SELURUH isi `execute()` (baris 17-53 versi awal) dengan `DB::transaction()`, tambah `Semester::where('id', $komponen->semester_id)->lockForUpdate()->first();` di awal closure SEBELUM `sum('bobot')` dihitung. **WAJIB pertahankan `->where('id', '!=', $komponen->id)`** pada query `$existingSum` (baris yang SUDAH BENAR, jangan dihapus) dan seluruh logic lain (blok `if (! $dipakai && ...)`, update field, `$komponen->save()`) TETAP UTUH di dalam closure yang sama.
+- [x] **Step 4: Perbaiki `UpdateKomponenPenilaianAction`** — pola identik, bungkus SELURUH isi `execute()` (baris 17-53 versi awal) dengan `DB::transaction()`, tambah `Semester::where('id', $komponen->semester_id)->lockForUpdate()->first();` di awal closure SEBELUM `sum('bobot')` dihitung. **WAJIB pertahankan `->where('id', '!=', $komponen->id)`** pada query `$existingSum` (baris yang SUDAH BENAR, jangan dihapus) dan seluruh logic lain (blok `if (! $dipakai && ...)`, update field, `$komponen->save()`) TETAP UTUH di dalam closure yang sama.
 
-- [ ] **Step 5: Jalankan test lagi + regresi**
+- [x] **Step 5: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=KomponenPenilaian`
 Expected: semua PASS, termasuk test baru dan seluruh test existing (`KomponenPenilaianCrudTest`, `KomponenPenilaianControllerTest`, dll).
 
-- [ ] **Step 6: Pint dan commit**
+- [x] **Step 6: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -490,7 +490,7 @@ git commit -m "fix(akademik): cegah race condition validasi total bobot Komponen
 
 **Interfaces:** Konsumsi: Task 2 (mengubah blok `store()` yang sama) — kerjakan Task 4 SETELAH Task 2 selesai supaya tidak konflik edit pada method yang sama.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan di `tests/Feature/Akademik/RppWorkflowTest.php`:
 
@@ -515,12 +515,12 @@ it('menolak mata_pelajaran_id milik lembaga lain pada jalur admin (guru null)', 
 ```
 (`MataPelajaran` sudah di-import di bagian atas `RppWorkflowTest.php`.)
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak mata_pelajaran_id milik lembaga lain"`
 Expected: FAIL — request lolos (tidak ada 404), RPP kemungkinan tetap dibuat dengan `mata_pelajaran_id` lintas-lembaga.
 
-- [ ] **Step 3: Perbaiki `RppController::store()`**
+- [x] **Step 3: Perbaiki `RppController::store()`**
 
 Baca baris 139-165 (mungkin bergeser setelah Task 2). Cari blok `if ($guru !== null) { ... }` (baris ~153+). Tepat SEBELUM blok itu (jalur `$guru === null`), tambahkan:
 ```php
@@ -531,12 +531,12 @@ Baca baris 139-165 (mungkin bergeser setelah Task 2). Cari blok `if ($guru !== n
 ```
 Tambahkan `use App\Domains\Akademik\Models\MataPelajaran;` ke import kalau belum ada.
 
-- [ ] **Step 4: Jalankan test lagi + regresi**
+- [x] **Step 4: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter="RppWorkflowTest"`
 Expected: semua PASS.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -554,7 +554,7 @@ git commit -m "fix(akademik): re-check tenant mata_pelajaran_id di jalur admin R
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal — filter TA aktif**
+- [x] **Step 1: Tulis test yang gagal — filter TA aktif**
 
 Tambahkan di `tests/Feature/Admin/SiswaCrudTest.php` — file ini SUDAH punya helper `actingAsSiswaManager(Lembaga $lembaga): User` (baris 16-28, sudah handle `Permission::firstOrCreate`+`Role::firstOrCreate`+`assignRole`) — PAKAI helper itu, jangan bikin permission-grant manual:
 
@@ -577,7 +577,7 @@ it('kelasList di create() dan edit() cuma berisi kelas dari tahun ajaran aktif',
 });
 ```
 
-- [ ] **Step 2: Tulis test yang gagal — preservasi kelas existing (regresi negatif #10b)**
+- [x] **Step 2: Tulis test yang gagal — preservasi kelas existing (regresi negatif #10b)**
 
 Tambahkan di file yang sama:
 
@@ -609,13 +609,13 @@ it('mempertahankan kelas siswa saat ini di kelasList meski dari TA tidak aktif, 
 });
 ```
 
-- [ ] **Step 3: Jalankan kedua test, pastikan gagal**
+- [x] **Step 3: Jalankan kedua test, pastikan gagal**
 
 Run: `php artisan test --filter="kelasList di create"`
 Run: `php artisan test --filter="mempertahankan kelas siswa saat ini"`
 Expected: FAIL — `kelasList` masih berisi SEMUA kelas tanpa filter TA.
 
-- [ ] **Step 4: Perbaiki `SiswaController::create()`**
+- [x] **Step 4: Perbaiki `SiswaController::create()`**
 
 Baca baris 76-83 (mungkin bergeser). Ganti:
 ```php
@@ -634,7 +634,7 @@ Baca baris 76-83 (mungkin bergeser). Ganti:
     }
 ```
 
-- [ ] **Step 5: Perbaiki `SiswaController::edit()`**
+- [x] **Step 5: Perbaiki `SiswaController::edit()`**
 
 Baca baris 134-145 (mungkin bergeser). Ganti:
 ```php
@@ -664,12 +664,12 @@ Baca baris 134-145 (mungkin bergeser). Ganti:
     }
 ```
 
-- [ ] **Step 6: Jalankan test lagi + regresi**
+- [x] **Step 6: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=SiswaCrudTest`
 Expected: semua PASS.
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -684,14 +684,7 @@ git commit -m "fix(akademik): filter dropdown kelas ke TA aktif di create/edit s
 **Files:**
 - Modify: `app/Domains/Akademik/Support/ResolveLembagaScopeTrait.php` (file SUDAH ADA dari paket sebelumnya — TAMBAH method baru, jangan buat file baru)
 - Modify: `app/Http/Controllers/Admin/GuruController.php`
-- Modify: `app/Http/Controllers/Admin/KalenderAkademikController.php`
-- Modify: `app/Http/Controllers/Admin/PengaturanAkademikController.php`
-- Test: `tests/Feature/Admin/GuruCrudTest.php`, `tests/Feature/Admin/KalenderAkademikCrudTest.php`, `tests/Feature/Admin/PengaturanAkademikControllerTest.php`
-
-**Interfaces:**
-- Produksi: `ResolveLembagaScopeTrait::resolveActiveLembagaId(User $actor): ?int` — method BARU, TERPISAH dari `resolveLembagaId(User, ?int)` yang sudah ada dari paket sebelumnya (beda semantik: yang ini untuk READ/filter, bukan CREATE).
-
-- [ ] **Step 1: Tulis test yang gagal — trait**
+- [x] **Step 1: Tulis test yang gagal — trait**
 
 Baca `tests/Unit/Support/ResolveLembagaScopeTraitTest.php` (file sudah ada dari paket sebelumnya) untuk pola helper `objekPakaiResolveLembagaScope()`. Perluas helper itu (tambah method `panggilResolveActive`) atau buat anonymous class kedua, lalu tambahkan test:
 
@@ -725,12 +718,12 @@ it('resolveActiveLembagaId: yayasan dengan session valid dikembalikan, session s
 
 **PENTING**: `$actor->assignRole(...)` dengan `scope_level: 'yayasan'` WAJIB ada persis seperti di atas — `User::widestScopeLevel()` (`app/Models/User.php:129-139`) mengembalikan `'diri_sendiri'` kalau actor tidak punya role sama sekali, BUKAN `'yayasan'`, meski `yayasan_id`-nya terisi. Tanpa `assignRole` ini, `resolveActiveLembagaId()` akan lewat cabang `return $lembagaId;` di akhir (tanpa verifikasi kepemilikan), dan skenario "session stale" pada test ini tidak akan pernah gagal seperti yang diharapkan — test jadi tidak menguji apa-apa. Pola `Role::firstOrCreate(['name' => ..., 'guard_name' => 'web'], ['scope_level' => 'yayasan'])` sama seperti di `tests/Unit/Support/ResolveLembagaScopeTraitTest.php` yang sudah ada (`use App\Models\Role;` sudah diimport di file itu).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="resolveActiveLembagaId"`
 Expected: FAIL — method belum ada.
 
-- [ ] **Step 3: Tambah method ke trait**
+- [x] **Step 3: Tambah method ke trait**
 
 Baca `app/Domains/Akademik/Support/ResolveLembagaScopeTrait.php` (file sudah ada). Tambahkan method baru SETELAH `resolveLembagaId()`/`resolveLembagaIdUntukYayasan()` yang sudah ada (jangan hapus/ubah yang sudah ada):
 ```php
@@ -755,12 +748,12 @@ Baca `app/Domains/Akademik/Support/ResolveLembagaScopeTrait.php` (file sudah ada
     }
 ```
 
-- [ ] **Step 4: Jalankan test trait lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test trait lagi, pastikan lolos**
 
 Run: `php artisan test --filter="resolveActiveLembagaId"`
 Expected: PASS.
 
-- [ ] **Step 5: Tulis test yang gagal — `GuruController`**
+- [x] **Step 5: Tulis test yang gagal — `GuruController`**
 
 Cek nama file test existing untuk `GuruController` (`find tests -iname "*Guru*Controller*"`). Tambahkan:
 
@@ -774,6 +767,7 @@ it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasa
     $yayasanLain = Yayasan::factory()->create();
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
     Permission::firstOrCreate(['name' => 'guru.create', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
     $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
     $manager->givePermissionTo('guru.create');
     $role = Role::firstOrCreate(['name' => 'yayasan_uji_guru', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
@@ -787,12 +781,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasa
 });
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan gagal**
+- [x] **Step 6: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale"`
 Expected: FAIL — request lolos memakai lembaga milik yayasan lain.
 
-- [ ] **Step 7: Perbaiki `GuruController`**
+- [x] **Step 7: Perbaiki `GuruController`**
 
 Baca baris 257-263 (mungkin bergeser). Tambahkan `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;` ke import dan `use ResolveLembagaScopeTrait;` di dalam class body (setelah `use AuthorizesRequests;`). Ganti ISI method (JANGAN ganti nama method — `resolveLembagaId(Request)` TETAP dipakai nama itu di GuruController, TIDAK bentrok dengan `resolveLembagaId(User, ?int)` milik trait karena PHP membedakan method trait vs method class sendiri: method class sendiri MENANG/override otomatis atas method trait dengan nama sama tanpa error, tapi supaya TIDAK MEMBINGUNGKAN, method GuruController ini akan memanggil method BARU `resolveActiveLembagaId` dari trait, bukan `resolveLembagaId` milik trait):
 ```php
@@ -802,12 +796,12 @@ Baca baris 257-263 (mungkin bergeser). Tambahkan `use App\Domains\Akademik\Suppo
     }
 ```
 
-- [ ] **Step 8: Jalankan test lagi + regresi Guru**
+- [x] **Step 8: Jalankan test lagi + regresi Guru**
 
 Run: `php artisan test --filter=Guru`
 Expected: semua PASS.
 
-- [ ] **Step 9: Tulis test yang gagal — `KalenderAkademikController`**
+- [x] **Step 9: Tulis test yang gagal — `KalenderAkademikController`**
 
 Tambahkan di `tests/Feature/Admin/KalenderAkademikCrudTest.php`. File ini punya helper `actingAsKalenderManager(Lembaga $lembaga, bool $bolehNasional = false): User` tapi itu SELALU bikin actor lembaga-scope langsung (`lembaga_id` di-set langsung ke user) — TIDAK cocok untuk test ini yang butuh actor yayasan-scope lewat session. Buat actor manual, dan **WAJIB** daftarkan permission `kalender-akademik.kelola` dulu lewat `Permission::firstOrCreate` (test ini tidak lewat `actingAsKalenderManager()` yang biasanya mendaftarkannya):
 
@@ -833,12 +827,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale saat menambah entri kal
 });
 ```
 
-- [ ] **Step 10: Jalankan test, pastikan gagal**
+- [x] **Step 10: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale saat menambah entri kalender"`
 Expected: FAIL.
 
-- [ ] **Step 11: Perbaiki `KalenderAkademikController::store()`**
+- [x] **Step 11: Perbaiki `KalenderAkademikController::store()`**
 
 Baca baris 1-137 (file penuh — controller ini pendek, seluruhnya relevan). Tambahkan import `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;` dan `use ResolveLembagaScopeTrait;` di dalam class body (setelah `use AuthorizesRequests;`).
 
@@ -852,9 +846,8 @@ Ganti `store()` baris 40-44 (guard + resolve `$lembagaId` untuk kasus non-nasion
             }
         }
 ```
-(Menggantikan baris lama `if (! $nasional && $request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {...}` dan `$lembagaId = $nasional ? null : ($request->user()->lembaga_id ?? session('active_lembaga_id'));`.)
 
-Ganti `update()` baris 69-76 (spec menyebut baris 73 sebagai titik resolve di method ini):
+Ganti `update()` baris 69-76:
 ```php
     public function update(Request $request, KalenderAkademik $kalenderAkademik, UpdateKalenderAkademikAction $action): RedirectResponse|JsonResponse
     {
@@ -869,9 +862,8 @@ Ganti `update()` baris 69-76 (spec menyebut baris 73 sebagai titik resolve di me
             $this->authorize('kalender-akademik.kelola-nasional');
         }
 ```
-(Baris `$data = $request->validate([...])` dan seterusnya di bawahnya TETAP TIDAK BERUBAH.)
 
-Ganti `destroy()` baris 107-118 (spec menyebut baris 111 sebagai titik resolve di method ini):
+Ganti `destroy()` baris 107-118:
 ```php
     public function destroy(Request $request, KalenderAkademik $kalenderAkademik, DeleteKalenderAkademikAction $action): RedirectResponse|JsonResponse
     {
@@ -888,16 +880,13 @@ Ganti `destroy()` baris 107-118 (spec menyebut baris 111 sebagai titik resolve d
 
         $action->execute($kalenderAkademik);
 ```
-(Sisa body `destroy()` di bawahnya TETAP TIDAK BERUBAH.)
 
-**Kenapa `update()`/`destroy()` juga wajib diperbaiki, bukan cuma `store()`**: pola lama `$request->user()->lembaga_id ?? session('active_lembaga_id')` dipakai untuk cek kepemilikan (`$kalenderAkademik->lembaga_id !== $lembagaId`) TANPA verifikasi bahwa `session('active_lembaga_id')` benar-benar milik yayasan actor — actor yayasan bisa set session ke lembaga milik yayasan LAIN, dan kalau entri kalender itu kebetulan `lembaga_id`-nya sama dengan nilai session yang di-set, pengecekan lolos padahal actor tidak berhak. Ini persis pola IDOR yang sama dengan `store()`, cuma di titik pakai yang berbeda.
-
-- [ ] **Step 12: Jalankan test lagi + regresi**
+- [x] **Step 12: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=KalenderAkademikCrud`
 Expected: semua PASS.
 
-- [ ] **Step 13: Tulis test yang gagal — `PengaturanAkademikController`**
+- [x] **Step 13: Tulis test yang gagal — `PengaturanAkademikController`**
 
 Tambahkan di `tests/Feature/Admin/PengaturanAkademikControllerTest.php`. Route `index()` bernama `admin.pengaturan.akademik.index` (BUKAN `admin.pengaturan-akademik.index` — perhatikan titik, bukan strip, lihat `KalenderAkademikController::store()` yang redirect ke route ini). File ini punya helper `actingAsPengaturanAkademikManager(Lembaga $lembaga, array $permissions = [...]): User` tapi SELALU bikin actor lembaga-scope langsung — TIDAK cocok untuk test ini. Buat actor manual, **WAJIB** daftarkan permission `kalender-akademik.view` dulu lewat `Permission::firstOrCreate`:
 
@@ -920,12 +909,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale mengakses Pengaturan Ak
 });
 ```
 
-- [ ] **Step 14: Jalankan test, pastikan gagal**
+- [x] **Step 14: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale mengakses Pengaturan Akademik"`
 Expected: FAIL — request lolos (halaman ter-render memakai lembaga asing).
 
-- [ ] **Step 15: Perbaiki `PengaturanAkademikController`**
+- [x] **Step 15: Perbaiki `PengaturanAkademikController`**
 
 Baca baris 1-66 (file penuh). Tambahkan import `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;` dan `use ResolveLembagaScopeTrait;` di dalam class body (setelah `use AuthorizesRequests;`).
 
@@ -943,7 +932,6 @@ Ganti `index()` baris 20-30:
 
         $lembaga = Lembaga::findOrFail($lembagaId);
 ```
-(Baris `return view('portals.lembaga.akademik.pengaturan.akademik', [...])` di bawahnya TETAP TIDAK BERUBAH.)
 
 Ganti `updateHariAktif()` baris 42-59 seluruhnya:
 ```php
@@ -966,22 +954,19 @@ Ganti `updateHariAktif()` baris 42-59 seluruhnya:
 
         $lembaga = Lembaga::findOrFail($lembagaId);
 ```
-(Baris `$lembaga = $action->execute($lembaga, new HariAktifLembagaData(hariAktif: $data['hari_aktif']));` dan `return response()->json(...)` di bawahnya TETAP TIDAK BERUBAH.)
 
-- [ ] **Step 16: Jalankan test lagi + regresi**
+- [x] **Step 16: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=PengaturanAkademik`
 Expected: semua PASS.
 
-- [ ] **Step 17: Pint dan commit**
+- [x] **Step 17: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
 git add app/Domains/Akademik/Support/ResolveLembagaScopeTrait.php app/Http/Controllers/Admin/GuruController.php app/Http/Controllers/Admin/KalenderAkademikController.php app/Http/Controllers/Admin/PengaturanAkademikController.php tests/Unit/Support/ResolveLembagaScopeTraitTest.php
 git commit -m "fix(akademik): verifikasi ulang session active_lembaga_id di titik pakai -- GuruController, KalenderAkademikController, PengaturanAkademikController"
 ```
-
-(Sesuaikan daftar file test yang di-`git add` dengan nama file test aktual yang ditemukan/dipakai di Step 5, 9, 13.)
 
 ---
 
@@ -993,7 +978,7 @@ git commit -m "fix(akademik): verifikasi ulang session active_lembaga_id di titi
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tambah assertion ke test yang SUDAH ADA (jangan duplikasi test baru)**
+- [x] **Step 1: Tambah assertion ke test yang SUDAH ADA (jangan duplikasi test baru)**
 
 `tests/Feature/Admin/KenaikanKelasControllerTest.php` baris 99-116 SUDAH punya test persis untuk skenario ini — `it('graduates siswa when mapped to lulus, clearing kelas_id', ...)` — tinggal tambah 1 assertion `kelas_terakhir_id` di dalamnya (JANGAN bikin test baru terpisah dengan setup duplikat). Ubah body test itu jadi:
 
@@ -1021,12 +1006,12 @@ it('graduates siswa when mapped to lulus, clearing kelas_id', function () {
 
 (Satu-satunya perubahan dari versi asli: baris terakhir `expect($siswa->kelas_terakhir_id)->toBe($kelasLama->id);` ditambahkan.)
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="graduates siswa when mapped to lulus"`
 Expected: FAIL — `kelas_terakhir_id` masih `null`.
 
-- [ ] **Step 3: Perbaiki `ProsesKenaikanKelasAction`**
+- [x] **Step 3: Perbaiki `ProsesKenaikanKelasAction`**
 
 Baca baris 42-49 (mungkin bergeser). Ganti:
 ```php
@@ -1042,12 +1027,12 @@ Baca baris 42-49 (mungkin bergeser). Ganti:
 ```
 **PENTING**: urutan array HARUS `kelas_terakhir_id` SEBELUM `kelas_id => null` persis seperti di atas — MySQL mengevaluasi klausa `SET` berurutan kiri-ke-kanan, kalau dibalik `kelas_terakhir_id` akan ikut ter-null-kan.
 
-- [ ] **Step 4: Jalankan test lagi + regresi**
+- [x] **Step 4: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=KenaikanKelasController`
 Expected: semua PASS.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1061,17 +1046,17 @@ git commit -m "fix(akademik): isi kelas_terakhir_id saat siswa lulus massal lewa
 
 **Files:** Tidak ada file diubah — verifikasi akhir.
 
-- [ ] **Step 1: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 1: Pastikan tidak ada proses test lain berjalan**
 
 Run: `ps aux | grep artisan | grep -v grep`
 Expected: kosong.
 
-- [ ] **Step 2: Jalankan full suite sendirian**
+- [x] **Step 2: Jalankan full suite sendirian**
 
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures (kecuali test SPMB flaky yang sudah diketahui tidak berkaitan — data Faker acak mengandung apostrof; kalau muncul, jalankan ulang sendirian untuk konfirmasi flaky, bukan regresi paket ini).
 
-- [ ] **Step 3: Pint final**
+- [x] **Step 3: Pint final**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}` atau auto-fix tanpa error.
