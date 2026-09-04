@@ -22,55 +22,55 @@ final class CreateJadwalPelajaranAction
      */
     public function execute(JadwalPelajaranData $data): JadwalPelajaran
     {
-        // 1. Validasi Bentrok Ruangan Sarpras
-        if ($data->ruanganId !== null) {
-            $isRoomClash = $this->validateRoomClashAction->execute(
-                ruanganId: $data->ruanganId,
-                semesterId: $data->semesterId,
-                jamPelajaranId: $data->jamPelajaranId
-            );
+        return DB::transaction(function () use ($data) {
+            $jamPelajaranBaru = JamPelajaran::where('id', $data->jamPelajaranId)->lockForUpdate()->first();
 
-            if ($isRoomClash) {
+            // 1. Validasi Bentrok Ruangan Sarpras
+            if ($data->ruanganId !== null) {
+                $isRoomClash = $this->validateRoomClashAction->execute(
+                    ruanganId: $data->ruanganId,
+                    semesterId: $data->semesterId,
+                    jamPelajaranId: $data->jamPelajaranId
+                );
+
+                if ($isRoomClash) {
+                    throw ValidationException::withMessages([
+                        'ruangan_id' => 'Ruangan yang dipilih sudah digunakan oleh kelas lain pada jam pelajaran ini.',
+                    ]);
+                }
+            }
+
+            // 2. Validasi Slot Jam Kelas
+            $isSlotTaken = JadwalPelajaran::query()
+                ->where('kelas_id', $data->kelasId)
+                ->where('semester_id', $data->semesterId)
+                ->where('jam_pelajaran_id', $data->jamPelajaranId)
+                ->exists();
+
+            if ($isSlotTaken) {
                 throw ValidationException::withMessages([
-                    'ruangan_id' => 'Ruangan yang dipilih sudah digunakan oleh kelas lain pada jam pelajaran ini.',
+                    'jam_pelajaran_id' => 'Kelas ini sudah punya jadwal pada slot ini di semester yang sama.',
                 ]);
             }
-        }
 
-        // 2. Validasi Slot Jam Kelas
-        $isSlotTaken = JadwalPelajaran::query()
-            ->where('kelas_id', $data->kelasId)
-            ->where('semester_id', $data->semesterId)
-            ->where('jam_pelajaran_id', $data->jamPelajaranId)
-            ->exists();
+            // 3. Validasi Bentrok Guru Pengampu (berbasis waktu wall-clock, bukan ID slot --
+            // 2 Pola Jam berbeda bisa punya jam_pelajaran_id berbeda untuk jam yang sama persis).
+            $isGuruClash = JadwalPelajaran::query()
+                ->where('guru_id', $data->guruId)
+                ->where('semester_id', $data->semesterId)
+                ->whereHas('jamPelajaran', function ($q) use ($jamPelajaranBaru) {
+                    $q->where('hari', $jamPelajaranBaru->hari)
+                        ->where('jam_mulai', '<', $jamPelajaranBaru->jam_selesai)
+                        ->where('jam_selesai', '>', $jamPelajaranBaru->jam_mulai);
+                })
+                ->exists();
 
-        if ($isSlotTaken) {
-            throw ValidationException::withMessages([
-                'jam_pelajaran_id' => 'Kelas ini sudah punya jadwal pada slot ini di semester yang sama.',
-            ]);
-        }
+            if ($isGuruClash) {
+                throw ValidationException::withMessages([
+                    'guru_id' => 'Guru ini sudah mengajar kelas lain pada jam dan semester yang sama.',
+                ]);
+            }
 
-        $jamPelajaranBaru = JamPelajaran::findOrFail($data->jamPelajaranId);
-
-        // 3. Validasi Bentrok Guru Pengampu (berbasis waktu wall-clock, bukan ID slot --
-        // 2 Pola Jam berbeda bisa punya jam_pelajaran_id berbeda untuk jam yang sama persis).
-        $isGuruClash = JadwalPelajaran::query()
-            ->where('guru_id', $data->guruId)
-            ->where('semester_id', $data->semesterId)
-            ->whereHas('jamPelajaran', function ($q) use ($jamPelajaranBaru) {
-                $q->where('hari', $jamPelajaranBaru->hari)
-                    ->where('jam_mulai', '<', $jamPelajaranBaru->jam_selesai)
-                    ->where('jam_selesai', '>', $jamPelajaranBaru->jam_mulai);
-            })
-            ->exists();
-
-        if ($isGuruClash) {
-            throw ValidationException::withMessages([
-                'guru_id' => 'Guru ini sudah mengajar kelas lain pada jam dan semester yang sama.',
-            ]);
-        }
-
-        return DB::transaction(function () use ($data) {
             return JadwalPelajaran::create($data->toArray());
         });
     }

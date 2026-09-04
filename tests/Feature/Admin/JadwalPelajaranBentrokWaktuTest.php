@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Akademik\Actions\Jadwal\CreateJadwalPelajaranAction;
+use App\Domains\Akademik\DataTransferObjects\JadwalPelajaranData;
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\PolaJam;
@@ -16,6 +18,7 @@ use App\Models\Semester;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 
 it('menolak guru mengajar 2 kelas pada jam yang sama walau kelas-kelas itu pakai Pola Jam berbeda', function () {
@@ -214,4 +217,53 @@ it('menolak jadwal jika ruangan bentrok waktu walau pola jam berbeda', function 
     );
 
     expect($isClash)->toBeTrue();
+});
+
+it('tetap konsisten menolak bentrok guru setelah dibungkus lock (regresi, bukan tes concurrency asli)', function () {
+    $lembaga = Lembaga::factory()->create();
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $polaJam = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jam = JamPelajaran::factory()->create([
+        'pola_jam_id' => $polaJam->id,
+        'hari' => 'senin',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:40',
+        'is_pelajaran' => true,
+    ]);
+    $kelasA = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'pola_jam_id' => $polaJam->id,
+    ]);
+    $kelasB = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'pola_jam_id' => $polaJam->id,
+    ]);
+
+    $action = app(CreateJadwalPelajaranAction::class);
+
+    $dtoA = new JadwalPelajaranData(
+        lembagaId: $lembaga->id,
+        kelasId: $kelasA->id,
+        guruId: $guru->id,
+        jamPelajaranId: $jam->id,
+        semesterId: $semester->id,
+    );
+
+    $action->execute($dtoA);
+
+    $dtoB = new JadwalPelajaranData(
+        lembagaId: $lembaga->id,
+        kelasId: $kelasB->id,
+        guruId: $guru->id,
+        jamPelajaranId: $jam->id,
+        semesterId: $semester->id,
+    );
+
+    expect(fn () => $action->execute($dtoB))
+        ->toThrow(ValidationException::class);
 });
