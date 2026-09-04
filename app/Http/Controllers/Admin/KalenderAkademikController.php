@@ -7,6 +7,7 @@ use App\Domains\Akademik\Actions\Kalender\DeleteKalenderAkademikAction;
 use App\Domains\Akademik\Actions\Kalender\UpdateKalenderAkademikAction;
 use App\Domains\Akademik\DataTransferObjects\KalenderAkademikData;
 use App\Domains\Akademik\Models\KalenderAkademik;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 
 class KalenderAkademikController extends BaseController
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, ResolveLembagaScopeTrait;
 
     public function store(Request $request, CreateKalenderAkademikAction $action): RedirectResponse|JsonResponse
     {
@@ -37,11 +38,13 @@ class KalenderAkademikController extends BaseController
             $this->authorize('kalender-akademik.kelola-nasional');
         }
 
-        if (! $nasional && $request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
-            return $this->errorResponse($request, 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah entri kalender.', 'lembaga_id');
+        $lembagaId = null;
+        if (! $nasional) {
+            $lembagaId = $this->resolveActiveLembagaId($request->user());
+            if ($lembagaId === null) {
+                return $this->errorResponse($request, 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah entri kalender.', 'lembaga_id');
+            }
         }
-
-        $lembagaId = $nasional ? null : ($request->user()->lembaga_id ?? session('active_lembaga_id'));
 
         try {
             $entri = $action->execute(
@@ -70,7 +73,7 @@ class KalenderAkademikController extends BaseController
     {
         $this->authorize('kalender-akademik.kelola');
 
-        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
         if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
             abort(404);
         }
@@ -108,7 +111,7 @@ class KalenderAkademikController extends BaseController
     {
         $this->authorize('kalender-akademik.kelola');
 
-        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
         if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
             abort(404);
         }

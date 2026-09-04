@@ -276,3 +276,21 @@ it('denies status change without guru.edit permission', function () {
         ->patch(route('admin.guru.update-status', $guru), ['status_aktif' => 'non_aktif'])
         ->assertForbidden();
 });
+
+it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasannya) saat membuat data guru', function () {
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    Permission::firstOrCreate(['name' => 'guru.create', 'guard_name' => 'web']);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $manager->givePermissionTo('guru.create');
+    $role = Role::firstOrCreate(['name' => 'yayasan_uji_guru', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload(['nama' => 'Guru Uji Stale', 'email' => 'guru.uji.stale@example.test']));
+
+    $response->assertSessionHasErrors('lembaga_id');
+    expect(findGuruByNama('Guru Uji Stale'))->toBeNull();
+});

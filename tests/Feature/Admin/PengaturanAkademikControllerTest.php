@@ -1,12 +1,14 @@
 <?php
 
-use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Domains\Akademik\Models\KalenderAkademik;
+use App\Http\Controllers\Admin\PengaturanAkademikController;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Contracts\View\Factory;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 use Spatie\Permission\Models\Permission;
 
 function actingAsPengaturanAkademikManager(Lembaga $lembaga, array $permissions = ['kalender-akademik.view', 'pengaturan-akademik.kelola']): User
@@ -57,7 +59,7 @@ it('shows the acting lembaga-scoped user\'s own hari_libur_mingguan and kalender
 
     $realFactory = app('view');
     $engine = app('view.engine.resolver')->resolve('blade');
-    app()->instance('view', new class($realFactory, $engine) implements \Illuminate\Contracts\View\Factory
+    app()->instance('view', new class($realFactory, $engine) implements Factory
     {
         public function __construct(private $factory, private $engine) {}
 
@@ -73,7 +75,7 @@ it('shows the acting lembaga-scoped user\'s own hari_libur_mingguan and kalender
 
         public function make($view, $data = [], $mergeData = [])
         {
-            return new \Illuminate\View\View($this->factory, $this->engine, $view, 'stub-path', array_merge((array) $data, (array) $mergeData));
+            return new View($this->factory, $this->engine, $view, 'stub-path', array_merge((array) $data, (array) $mergeData));
         }
 
         public function share($key, $value = null)
@@ -201,4 +203,21 @@ it('redirects a yayasan-scoped user without an active lembaga away from the peng
         ->get(route('admin.pengaturan.akademik.index'))
         ->assertRedirect(route('dashboard'))
         ->assertSessionHasErrors('lembaga_id');
+});
+
+it('menolak actor yayasan dengan active_lembaga_id stale mengakses Pengaturan Akademik', function () {
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    Permission::firstOrCreate(['name' => 'kalender-akademik.view', 'guard_name' => 'web']);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $manager->givePermissionTo('kalender-akademik.view');
+    $role = Role::firstOrCreate(['name' => 'yayasan_uji_pengaturan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pengaturan.akademik.index'));
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('lembaga_id');
 });

@@ -28,4 +28,24 @@ trait ResolveLembagaScopeTrait
 
         return $lembagaId;
     }
+
+    private function resolveActiveLembagaId(User $actor): ?int
+    {
+        if ($actor->lembaga_id !== null) {
+            return $actor->lembaga_id;
+        }
+
+        $lembagaId = session('active_lembaga_id');
+        if ($lembagaId === null) {
+            return null;
+        }
+
+        if ($actor->widestScopeLevel() === 'yayasan') {
+            $milikYayasan = Lembaga::where('id', $lembagaId)->where('yayasan_id', $actor->yayasan_id)->exists();
+
+            return $milikYayasan ? $lembagaId : null;
+        }
+
+        return $lembagaId;
+    }
 }

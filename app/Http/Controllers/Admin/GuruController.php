@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Domains\Identity\Actions\UpdatePersonAction;
 use App\Domains\Identity\Models\Person;
@@ -20,7 +21,7 @@ use Illuminate\View\View;
 
 class GuruController extends BaseController
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, ResolveLembagaScopeTrait;
 
     private const JENIS_KELAMIN_OPTIONS = ['L' => 'Laki-laki', 'P' => 'Perempuan'];
 
@@ -256,11 +257,7 @@ class GuruController extends BaseController
 
     private function resolveLembagaId(Request $request): ?int
     {
-        if ($request->user()->widestScopeLevel() === 'yayasan') {
-            return session('active_lembaga_id');
-        }
-
-        return $request->user()->lembaga_id;
+        return $this->resolveActiveLembagaId($request->user());
     }
 
     private function validateProfil(Request $request, ?Guru $guru = null): array

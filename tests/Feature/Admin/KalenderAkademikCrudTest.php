@@ -1,7 +1,7 @@
 <?php
 
-use App\Enums\TipeKalenderAkademik;
 use App\Domains\Akademik\Models\KalenderAkademik;
+use App\Enums\TipeKalenderAkademik;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
@@ -323,4 +323,24 @@ it('rejects deleting a national entry without kalender-akademik.kelola-nasional'
     $this->actingAs($manager)->deleteJson(route('admin.kalender-akademik.destroy', $entriNasional))->assertForbidden();
 
     expect(KalenderAkademik::find($entriNasional->id))->not->toBeNull();
+});
+
+it('menolak actor yayasan dengan active_lembaga_id stale saat menambah entri kalender', function () {
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    Permission::firstOrCreate(['name' => 'kalender-akademik.kelola', 'guard_name' => 'web']);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $manager->givePermissionTo('kalender-akademik.kelola');
+    $role = Role::firstOrCreate(['name' => 'yayasan_uji_kalender', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.kalender-akademik.store'), [
+        'tanggal' => now()->addDays(5)->toDateString(),
+        'nama' => 'Uji Libur', 'tipe' => 'libur',
+    ]);
+
+    $response->assertSessionHasErrors('lembaga_id');
+    expect(KalenderAkademik::where('nama', 'Uji Libur')->exists())->toBeFalse();
 });

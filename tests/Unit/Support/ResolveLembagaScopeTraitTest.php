@@ -88,3 +88,45 @@ it('lembaga-scope selalu memakai lembaga_id miliknya sendiri, mengabaikan lembag
 
     expect($obj->panggilResolve($actor, $lembagaLain->id))->toBe($lembagaSaya->id);
 });
+
+it('resolveActiveLembagaId: lembaga-scope selalu pakai lembaga_id sendiri', function () {
+    $actor = User::factory()->create(['lembaga_id' => 55]);
+    $obj = new class
+    {
+        use ResolveLembagaScopeTrait;
+
+        public function panggil(User $a): ?int
+        {
+            return $this->resolveActiveLembagaId($a);
+        }
+    };
+
+    expect($obj->panggil($actor))->toBe(55);
+});
+
+it('resolveActiveLembagaId: yayasan dengan session valid dikembalikan, session stale dikembalikan null', function () {
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasanSaya->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    $actor = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $actor->assignRole(Role::firstOrCreate(['name' => 'yayasan_admin_uji_active', 'guard_name' => 'web'], ['scope_level' => 'yayasan']));
+    $obj = new class
+    {
+        use ResolveLembagaScopeTrait;
+
+        public function panggil(User $a): ?int
+        {
+            return $this->resolveActiveLembagaId($a);
+        }
+    };
+
+    session(['active_lembaga_id' => $lembagaSaya->id]);
+    expect($obj->panggil($actor))->toBe($lembagaSaya->id);
+
+    session(['active_lembaga_id' => $lembagaLain->id]);
+    expect($obj->panggil($actor))->toBeNull();
+
+    session()->forget('active_lembaga_id');
+    expect($obj->panggil($actor))->toBeNull();
+});

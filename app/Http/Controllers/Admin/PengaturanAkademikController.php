@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Akademik\Actions\Kalender\UpdateHariAktifLembagaAction;
 use App\Domains\Akademik\DataTransferObjects\HariAktifLembagaData;
 use App\Domains\Akademik\Models\KalenderAkademik;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -15,18 +16,18 @@ use Illuminate\View\View;
 
 class PengaturanAkademikController extends BaseController
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, ResolveLembagaScopeTrait;
 
     public function index(Request $request): View|RedirectResponse
     {
         $this->authorize('kalender-akademik.view');
 
-        if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+        if ($lembagaId === null) {
             return redirect()->route('dashboard')
                 ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga untuk mengakses Pengaturan Akademik.']);
         }
 
-        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
         $lembaga = Lembaga::findOrFail($lembagaId);
 
         return view('portals.lembaga.akademik.pengaturan.akademik', [
@@ -43,7 +44,8 @@ class PengaturanAkademikController extends BaseController
     {
         $this->authorize('pengaturan-akademik.kelola');
 
-        if ($request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+        if ($lembagaId === null) {
             return response()->json([
                 'message' => 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.',
                 'errors' => ['lembaga_id' => ['Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.']],
@@ -55,7 +57,6 @@ class PengaturanAkademikController extends BaseController
             'hari_aktif.*' => ['integer', 'between:0,6'],
         ]);
 
-        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
         $lembaga = Lembaga::findOrFail($lembagaId);
 
         $lembaga = $action->execute($lembaga, new HariAktifLembagaData(hariAktif: $data['hari_aktif']));
