@@ -62,15 +62,14 @@ Fitur self-service Ruang Siswa Akademik berhasil dibangun menggantikan placehold
 5. **Kondisi Guard Sidebar Konsisten**:
    - Guard menu Ruang Siswa pada sidebar tetap menggunakan `Auth::user()->hasRole('siswa')` persis seperti baris aslinya sebelum dikomentari.
 
-6. **UI Minimal Sesuai Batasan Scope**:
-   - Ketiga view (`nilai-rapor.blade.php`, `jadwal-pelajaran.blade.php`, `presensi-saya.blade.php`) dibuat minimal/fungsional menggunakan `<x-app-layout>` dan elemen HTML/Tailwind dasar tanpa token styling khusus, sesuai instruksi bahwa styling visual akan ditangani oleh user secara mandiri melalui agent lain.
+6. **Polesan UI/UX Menyeluruh Sesuai Desain Sistem Pintera (TailAdmin)**:
+   - Ketiga view (`nilai-rapor.blade.php`, `jadwal-pelajaran.blade.php`, `presensi-saya.blade.php`) telah dipoles secara menyeluruh menggunakan komponen standar Pintera: `<x-panel>`, `<x-badge>`, `<x-icon>`, tipografi `font-display` (Outfit), warna token `text-ink`, `text-slate`, `bg-paper`, serta kartu dan empty state yang interaktif dan serasi dengan Ruang Orang Tua.
 
 ---
 
 ## 3. Hal yang Masih Perlu Direview Manusia / Claude
 
 1. **Item di Luar Scope (Sengaja Tidak Disentuh)**:
-   - **Visual Polish / UI Styling**: View yang dibuat saat ini murni fungsional dan minimal, siap untuk didesain ulang oleh agen frontend user.
    - **DashboardController & Widget**: Widget ringkasan dashboard siswa existing tetap berjalan normal tanpa perubahan.
    - **Bottom Navigation Mobile**: Tidak diubah (di luar cakupan tugas ini).
 
