@@ -4,7 +4,9 @@
 
 namespace Database\Seeders;
 
+use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Domains\Identity\Models\Person;
+use App\Enums\StatusSiswa;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Siswa;
@@ -73,7 +75,7 @@ class SiswaSeeder extends Seeder
                         'agama' => 'Islam',
                     ]);
 
-                    Siswa::create([
+                    $siswa = Siswa::create([
                         'person_id' => $person->id,
                         'lembaga_id' => $lembaga->id,
                         'nis' => $nis,
@@ -82,6 +84,15 @@ class SiswaSeeder extends Seeder
                         'sumber_data' => 'manual',
                         'status' => 'aktif',
                     ]);
+
+                    // Data demo realistis: 1 siswa terakhir tiap kelas ditandai sudah
+                    // keluar, supaya fitur kelas_terakhir_id/badge "(kelas terakhir)"
+                    // punya data untuk didemokan. Lewat UpdateStatusSiswaAction (bukan
+                    // set status langsung) supaya snapshot kelas_terakhir_id terisi
+                    // benar dan invariant CHECK constraint kelas_id tetap terjaga.
+                    if ($i === 28) {
+                        app(UpdateStatusSiswaAction::class)->execute($siswa, StatusSiswa::Keluar);
+                    }
                 }
 
                 $counter++;

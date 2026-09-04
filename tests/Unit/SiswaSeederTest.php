@@ -42,8 +42,19 @@ it('seeds students into active classes for the SD institution', function () {
     $aktif = TahunAjaran::where('lembaga_id', $sdit->id)->where('status_aktif', true)->first();
     $kelasIds = Kelas::where('lembaga_id', $sdit->id)->where('tahun_ajaran_id', $aktif->id)->pluck('id');
 
-    $siswaCount = Siswa::whereIn('kelas_id', $kelasIds)->count();
+    // Total siswa yang PERNAH dibuat untuk lembaga ini (bukan cuma yang kelas_id-nya
+    // masih menunjuk ke kelas aktif) -- sebagian sengaja ditandai Keluar oleh seeder
+    // (kelas_id jadi null via UpdateStatusSiswaAction), jadi hitung by lembaga_id.
+    $siswaCount = Siswa::where('lembaga_id', $sdit->id)->count();
     expect($siswaCount)->toBe(336);
+
+    $jumlahKelas = $kelasIds->count();
+    $siswaAktifCount = Siswa::whereIn('kelas_id', $kelasIds)->count();
+    expect($siswaAktifCount)->toBe(336 - $jumlahKelas);
+
+    $siswaKeluarCount = Siswa::where('lembaga_id', $sdit->id)->where('status', 'keluar')->count();
+    expect($siswaKeluarCount)->toBe($jumlahKelas);
+    expect(Siswa::where('lembaga_id', $sdit->id)->where('status', 'keluar')->whereNotNull('kelas_terakhir_id')->count())->toBe($jumlahKelas);
 
     $siswaWithUser = Siswa::whereIn('kelas_id', $kelasIds)->whereHas('person', fn ($q) => $q->whereNotNull('user_id'))->first();
     expect($siswaWithUser)->not->toBeNull();
