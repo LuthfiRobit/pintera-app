@@ -14,7 +14,7 @@
         <form method="POST" action="{{ route('admin.kurikulum-assignment.update', $assignment) }}">
             @csrf
             @method('PUT')
-            @include('admin.kurikulum-assignment._form', ['assignment' => $assignment, 'kurikulumList' => $kurikulumList, 'bentukPendidikanList' => $bentukPendidikanList, 'isPlatformOrYayasan' => false, 'submitText' => 'Simpan Perubahan'])
+            @include('admin.kurikulum-assignment._form', ['assignment' => $assignment, 'kurikulumList' => $kurikulumList, 'bentukPendidikanList' => $bentukPendidikanList, 'isPlatform' => $isPlatform, 'submitText' => 'Simpan Perubahan'])
         </form>
     </div>
 </x-app-layout>

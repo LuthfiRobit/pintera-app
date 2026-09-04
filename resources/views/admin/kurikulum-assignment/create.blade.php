@@ -8,7 +8,7 @@
 
         <form method="POST" action="{{ route('admin.kurikulum-assignment.store') }}">
             @csrf
-            @include('admin.kurikulum-assignment._form', ['kurikulumList' => $kurikulumList, 'bentukPendidikanList' => $bentukPendidikanList, 'tahunAjaranList' => $tahunAjaranList, 'lembagaList' => $lembagaList, 'isPlatformOrYayasan' => $isPlatformOrYayasan, 'submitText' => 'Simpan Assignment'])
+            @include('admin.kurikulum-assignment._form', ['kurikulumList' => $kurikulumList, 'bentukPendidikanList' => $bentukPendidikanList, 'tahunAjaranList' => $tahunAjaranList, 'lembagaList' => $lembagaList, 'isPlatform' => $isPlatform, 'submitText' => 'Simpan Assignment'])
         </form>
     </div>
 </x-app-layout>

@@ -5,6 +5,7 @@ use App\Domains\Akademik\Models\KurikulumAssignment;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\User;
+use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
 
 beforeEach(function () {
@@ -45,8 +46,9 @@ it('tetap bisa hapus Kurikulum Assignment yang tidak dipakai Kelas manapun', fun
 });
 
 it('menolak hapus Kurikulum Assignment lembaga lain oleh aktor yayasan meski active_lembaga_id-nya beda (TenantScope tidak boleh menyamarkan guard)', function () {
-    $lembagaA = Lembaga::factory()->create();
-    $lembagaB = Lembaga::factory()->create();
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $kelasB = Kelas::factory()->create([
         'lembaga_id' => $lembagaB->id,
@@ -61,7 +63,7 @@ it('menolak hapus Kurikulum Assignment lembaga lain oleh aktor yayasan meski act
         'kurikulum' => KurikulumFramework::Merdeka,
     ]);
 
-    $userYayasan = User::factory()->create(['lembaga_id' => null]);
+    $userYayasan = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
     $userYayasan->assignRole('yayasan_super_admin');
 
     session(['active_lembaga_id' => $lembagaA->id]);

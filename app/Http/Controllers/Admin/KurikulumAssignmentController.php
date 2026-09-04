@@ -1,19 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Admin;
 
-use App\Domains\Akademik\Actions\KurikulumAssignment\CreateKurikulumAssignmentAction;
+use App\Domains\Akademik\Actions\KurikulumAssignment\AssignKurikulumAction;
 use App\Domains\Akademik\Actions\KurikulumAssignment\UpdateKurikulumAssignmentAction;
 use App\Domains\Akademik\DataTransferObjects\KurikulumAssignmentData;
 use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Enums\KurikulumFramework;
 use App\Domains\Akademik\Models\KurikulumAssignment;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Http\Requests\Akademik\StoreKurikulumAssignmentRequest;
 use App\Http\Requests\Akademik\UpdateKurikulumAssignmentRequest;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,16 +27,21 @@ use Illuminate\View\View;
 class KurikulumAssignmentController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function index(Request $request): View
     {
         $this->authorize('kurikulum-assignment.view');
 
-        $isPlatformOrYayasan = $this->isPlatformOrYayasan($request);
-
+        $scope = $request->user()->widestScopeLevel();
         $query = KurikulumAssignment::with(['lembaga', 'tahunAjaran']);
 
-        if (! $isPlatformOrYayasan) {
+        if ($scope === 'yayasan') {
+            $lembagaIds = Lembaga::where('yayasan_id', $request->user()->yayasan_id)->pluck('id');
+            $query->where(function ($q) use ($lembagaIds) {
+                $q->whereNull('lembaga_id')->orWhereIn('lembaga_id', $lembagaIds);
+            });
+        } elseif ($scope !== 'platform') {
             $query->where(function ($q) use ($request) {
                 $q->whereNull('lembaga_id')->orWhere('lembaga_id', $request->user()->lembaga_id);
             });
@@ -40,7 +49,7 @@ class KurikulumAssignmentController extends BaseController
 
         return view('admin.kurikulum-assignment.index', [
             'assignmentList' => $query->orderByDesc('tahun_ajaran_id')->orderBy('bentuk_pendidikan')->orderByRaw('tingkat IS NULL')->orderBy('tingkat')->get(),
-            'isPlatformOrYayasan' => $isPlatformOrYayasan,
+            'isPlatformOrYayasan' => in_array($scope, ['platform', 'yayasan'], true),
         ]);
     }
 
@@ -48,29 +57,29 @@ class KurikulumAssignmentController extends BaseController
     {
         $this->authorize('kurikulum-assignment.create');
 
+        $isPlatform = $request->user()->widestScopeLevel() === 'platform';
+
         return view('admin.kurikulum-assignment.create', [
             'kurikulumList' => KurikulumFramework::cases(),
             'bentukPendidikanList' => BentukPendidikan::cases(),
             'tahunAjaranList' => $this->tahunAjaranListForScope($request),
-            'lembagaList' => $this->isPlatformOrYayasan($request) ? Lembaga::orderBy('nama')->get() : collect(),
-            'isPlatformOrYayasan' => $this->isPlatformOrYayasan($request),
+            'lembagaList' => $isPlatform ? Lembaga::orderBy('nama')->get() : collect(),
+            'isPlatform' => $isPlatform,
         ]);
     }
 
-    public function store(StoreKurikulumAssignmentRequest $request, CreateKurikulumAssignmentAction $action): RedirectResponse
+    public function store(StoreKurikulumAssignmentRequest $request, AssignKurikulumAction $action): RedirectResponse
     {
         $this->authorize('kurikulum-assignment.create');
 
         $validated = $request->validated();
         $tingkat = ($validated['tingkat'] ?? '') !== '' ? $validated['tingkat'] : null;
-
-        $isPlatformOrYayasan = $this->isPlatformOrYayasan($request);
-        $lembagaId = $isPlatformOrYayasan ? ($validated['lembaga_id'] ?? null) : $request->user()->lembaga_id;
-
-        $this->authorizeAssignmentScope($request, $lembagaId);
+        $lembagaIdDiminta = $request->user()->widestScopeLevel() === 'platform' ? ($validated['lembaga_id'] ?? null) : null;
+        $lembagaId = $this->resolveLembagaId($request->user(), $lembagaIdDiminta);
 
         if ($lembagaId !== null) {
-            $tahunAjaranValid = TahunAjaran::whereKey($validated['tahun_ajaran_id'])
+            $tahunAjaranValid = TahunAjaran::withoutGlobalScope(TenantScope::class)
+                ->whereKey($validated['tahun_ajaran_id'])
                 ->where('lembaga_id', $lembagaId)
                 ->exists();
 
@@ -83,13 +92,7 @@ class KurikulumAssignmentController extends BaseController
             return back()->withErrors(['bentuk_pendidikan' => 'Sudah ada assignment kurikulum untuk kombinasi tahun ajaran, jenjang, dan tingkat ini. Edit baris yang ada, jangan buat duplikat.'])->withInput();
         }
 
-        $action->execute(new KurikulumAssignmentData(
-            bentukPendidikan: $validated['bentuk_pendidikan'],
-            tingkat: $tingkat,
-            kurikulum: $validated['kurikulum'],
-            lembagaId: $lembagaId,
-            tahunAjaranId: (int) $validated['tahun_ajaran_id'],
-        ));
+        $action->executeCreate($request->user(), $validated['bentuk_pendidikan'], $tingkat, $validated['kurikulum'], $lembagaIdDiminta, (int) $validated['tahun_ajaran_id']);
 
         return redirect()->route('admin.kurikulum-assignment.index')->with('status', 'Assignment kurikulum berhasil disimpan.');
     }
@@ -97,19 +100,22 @@ class KurikulumAssignmentController extends BaseController
     public function edit(Request $request, KurikulumAssignment $kurikulumAssignment): View
     {
         $this->authorize('kurikulum-assignment.edit');
-        $this->authorizeAssignmentScope($request, $kurikulumAssignment->lembaga_id);
+        $this->authorizeExistingAssignmentScope($request->user(), $kurikulumAssignment->lembaga_id);
+
+        $isPlatform = $request->user()->widestScopeLevel() === 'platform';
 
         return view('admin.kurikulum-assignment.edit', [
-            'assignment' => $kurikulumAssignment,
+            'assignment' => $kurikulumAssignment->loadMissing('tahunAjaran', 'lembaga'),
             'kurikulumList' => KurikulumFramework::cases(),
             'bentukPendidikanList' => BentukPendidikan::cases(),
+            'isPlatform' => $isPlatform,
         ]);
     }
 
     public function update(UpdateKurikulumAssignmentRequest $request, KurikulumAssignment $kurikulumAssignment, UpdateKurikulumAssignmentAction $action): RedirectResponse
     {
         $this->authorize('kurikulum-assignment.edit');
-        $this->authorizeAssignmentScope($request, $kurikulumAssignment->lembaga_id);
+        $this->authorizeExistingAssignmentScope($request->user(), $kurikulumAssignment->lembaga_id);
 
         $validated = $request->validated();
         $tingkat = ($validated['tingkat'] ?? '') !== '' ? $validated['tingkat'] : null;
@@ -132,7 +138,7 @@ class KurikulumAssignmentController extends BaseController
     public function destroy(Request $request, KurikulumAssignment $kurikulumAssignment): RedirectResponse
     {
         $this->authorize('kurikulum-assignment.delete');
-        $this->authorizeAssignmentScope($request, $kurikulumAssignment->lembaga_id);
+        $this->authorizeExistingAssignmentScope($request->user(), $kurikulumAssignment->lembaga_id);
 
         if ($kurikulumAssignment->lembaga_id !== null) {
             $jumlahKelasTerdampak = Kelas::withoutGlobalScope(TenantScope::class)
@@ -153,28 +159,43 @@ class KurikulumAssignmentController extends BaseController
         return redirect()->route('admin.kurikulum-assignment.index')->with('status', 'Assignment kurikulum berhasil dihapus.');
     }
 
-    private function isPlatformOrYayasan(Request $request): bool
+    private function authorizeExistingAssignmentScope(User $actor, ?int $existingLembagaId): void
     {
-        return in_array($request->user()->widestScopeLevel(), ['platform', 'yayasan'], true);
-    }
+        if ($actor->widestScopeLevel() === 'platform') {
+            return;
+        }
 
-    private function authorizeAssignmentScope(Request $request, ?int $lembagaIdDiminta): void
-    {
-        $isPlatformOrYayasan = $this->isPlatformOrYayasan($request);
+        if ($existingLembagaId === null) {
+            abort(403, 'Assignment global hanya bisa diubah/dihapus oleh Platform Admin.');
+        }
 
-        if ($lembagaIdDiminta === null) {
-            abort_unless($isPlatformOrYayasan, 403);
+        if ($actor->widestScopeLevel() === 'yayasan') {
+            $milikYayasan = Lembaga::where('id', $existingLembagaId)->where('yayasan_id', $actor->yayasan_id)->exists();
+            abort_unless($milikYayasan, 403, 'Assignment ini bukan milik yayasan Anda.');
 
             return;
         }
 
-        abort_unless($isPlatformOrYayasan || $lembagaIdDiminta === $request->user()->lembaga_id, 403);
+        abort_unless($existingLembagaId === $actor->lembaga_id, 403);
     }
 
     private function tahunAjaranListForScope(Request $request)
     {
-        if ($this->isPlatformOrYayasan($request)) {
+        $scope = $request->user()->widestScopeLevel();
+
+        if ($scope === 'platform') {
             return TahunAjaran::orderByDesc('tanggal_mulai')->get();
+        }
+
+        if ($scope === 'yayasan') {
+            $activeLembagaId = session('active_lembaga_id');
+            if ($activeLembagaId) {
+                return TahunAjaran::where('lembaga_id', $activeLembagaId)->orderByDesc('tanggal_mulai')->get();
+            }
+
+            $lembagaIds = Lembaga::where('yayasan_id', $request->user()->yayasan_id)->pluck('id');
+
+            return TahunAjaran::whereIn('lembaga_id', $lembagaIds)->orderByDesc('tanggal_mulai')->get();
         }
 
         return TahunAjaran::where('lembaga_id', $request->user()->lembaga_id)->orderByDesc('tanggal_mulai')->get();

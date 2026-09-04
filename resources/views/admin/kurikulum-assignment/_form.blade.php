@@ -14,7 +14,7 @@
 
     <div class="p-6">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-            @if ($isPlatformOrYayasan ?? false)
+            @if ($isPlatform ?? false)
                 <div class="sm:col-span-6">
                     <x-input-label value="Berlaku Untuk" />
                     <select name="lembaga_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
@@ -24,6 +24,16 @@
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('lembaga_id')" class="mt-1.5" />
+                </div>
+            @elseif (! $assignment)
+                <div class="sm:col-span-6">
+                    <x-input-label value="Berlaku Untuk" />
+                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga yang sedang aktif di sesi Anda.</p>
+                </div>
+            @else
+                <div class="sm:col-span-6">
+                    <x-input-label value="Berlaku Untuk" />
+                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $assignment->lembaga?->nama ?? '— Global (semua lembaga) —' }}</p>
                 </div>
             @endif
 
@@ -40,7 +50,7 @@
             @else
                 <div class="sm:col-span-6">
                     <x-input-label value="Tahun Ajaran" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $assignment->tahunAjaran->nama }} (tidak bisa diubah setelah dibuat)</p>
+                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $assignment->tahunAjaran?->nama ?? '-' }} (tidak bisa diubah setelah dibuat)</p>
                 </div>
             @endif
 
