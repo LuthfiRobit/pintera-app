@@ -33,6 +33,29 @@ it('denies access without jadwal-pelajaran.kelola permission', function () {
     $this->actingAs(User::factory()->create())->get(route('admin.jadwal-pelajaran.index'))->assertForbidden();
 });
 
+it('filters dropdown guru/mapel/ruangan to active_lembaga_id for a yayasan-scoped manager (regresi resolveActiveLembagaId)', function () {
+    Permission::firstOrCreate(['name' => 'jadwal-pelajaran.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_jadwal_index_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['jadwal-pelajaran.kelola']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaAktif = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guruAktif = Guru::factory()->create(['lembaga_id' => $lembagaAktif->id]);
+    $guruLain = Guru::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaAktif->id]);
+
+    // Tanpa kelas_id dan dengan tahun_ajaran_id yang tidak eksis -- memaksa $targetLembagaId
+    // jatuh ke baris resolveActiveLembagaId(), bukan diturunkan dari kelas/tahun ajaran.
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', ['tahun_ajaran_id' => 999999]));
+
+    $response->assertOk();
+    $response->assertViewHas('guruList', fn ($list) => $list->contains('id', $guruAktif->id) && ! $list->contains('id', $guruLain->id));
+});
+
 it('creates a jadwal pelajaran entry', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

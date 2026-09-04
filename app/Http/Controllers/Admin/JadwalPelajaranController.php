@@ -70,7 +70,7 @@ class JadwalPelajaranController extends BaseController
 
         $targetLembagaId = $kelas?->lembaga_id
             ?? ($tahunAjaranId ? TahunAjaran::find($tahunAjaranId)?->lembaga_id : null)
-            ?? ($request->user()->widestScopeLevel() === 'yayasan' ? session('active_lembaga_id') : $request->user()->lembaga_id);
+            ?? ($request->user()->widestScopeLevel() === 'yayasan' ? $this->resolveActiveLembagaId($request->user()) : $request->user()->lembaga_id);
 
         $mataPelajaranList = $targetLembagaId
             ? MataPelajaran::where('lembaga_id', $targetLembagaId)->orderBy('nama')->get()
