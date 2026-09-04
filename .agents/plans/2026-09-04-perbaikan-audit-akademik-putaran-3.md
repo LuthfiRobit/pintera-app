@@ -213,28 +213,28 @@ git commit -m "fix(keuangan): JenisTagihanSasaranMatcher exclude siswa non-aktif
 
 - [ ] **Step 1: Tulis 4 test yang gagal**
 
-Baca `tests/Feature/Akademik/RppWorkflowTest.php` untuk pola setup actor/kelas/semester yang sudah ada. Tambahkan:
+Baca `tests/Feature/Akademik/RppWorkflowTest.php`. `beforeEach` di file ini sudah menyiapkan `$this->userKurikulum` (role `wakasek_kurikulum`, permission `rpp.kelola`, **TIDAK punya relasi Guru** — inilah actor "tanpa profil Guru" yang dimaksud spec) dan `$this->userGuru` (role `guru`, PUNYA relasi `$this->guru`). `$this->kelas`, `$this->semester`, `$this->lembaga` juga sudah ada. Tambahkan 4 test ini (gunakan `$this->` seperti test lain di file, BUKAN variabel bare):
 
 ```php
 it('menolak actor tanpa profil Guru membuat RPP tanpa guru_id', function () {
-    // Setup: $manager tanpa relasi Guru, $kelas, $semester -- sesuaikan dgn helper existing di file ini.
-    $response = $this->actingAs($managerTanpaGuru)->post(route('admin.rpp.store'), [
-        'kelas_id' => $kelas->id,
-        'semester_id' => $semester->id,
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
         'judul_topik' => 'Uji Topik',
         'alokasi_waktu' => '2 x 35 Menit',
         'file' => \Illuminate\Http\UploadedFile::fake()->create('rpp.pdf', 100),
     ]);
 
     $response->assertSessionHasErrors('guru_id');
+    expect(Rpp::where('judul_topik', 'Uji Topik')->exists())->toBeFalse();
 });
 
 it('mengizinkan actor tanpa profil Guru membuat RPP dengan guru_id valid', function () {
-    $guruTarget = Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $guruTarget = Guru::factory()->create(['lembaga_id' => $this->lembaga->id]);
 
-    $response = $this->actingAs($managerTanpaGuru)->post(route('admin.rpp.store'), [
-        'kelas_id' => $kelas->id,
-        'semester_id' => $semester->id,
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
         'guru_id' => $guruTarget->id,
         'judul_topik' => 'Uji Topik',
         'alokasi_waktu' => '2 x 35 Menit',
@@ -242,16 +242,16 @@ it('mengizinkan actor tanpa profil Guru membuat RPP dengan guru_id valid', funct
     ]);
 
     $response->assertSessionDoesntHaveErrors();
-    expect(\App\Domains\Akademik\Models\Rpp::where('guru_id', $guruTarget->id)->exists())->toBeTrue();
+    expect(Rpp::where('guru_id', $guruTarget->id)->exists())->toBeTrue();
 });
 
 it('menolak guru_id milik lembaga lain', function () {
     $lembagaLain = Lembaga::factory()->create();
     $guruLembagaLain = Guru::factory()->create(['lembaga_id' => $lembagaLain->id]);
 
-    $response = $this->actingAs($managerTanpaGuru)->post(route('admin.rpp.store'), [
-        'kelas_id' => $kelas->id,
-        'semester_id' => $semester->id,
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
         'guru_id' => $guruLembagaLain->id,
         'judul_topik' => 'Uji Topik',
         'alokasi_waktu' => '2 x 35 Menit',
@@ -262,10 +262,10 @@ it('menolak guru_id milik lembaga lain', function () {
 });
 
 it('actor dengan profil Guru sendiri tetap bisa membuat RPP tanpa guru_id (regresi)', function () {
-    // $managerGuru sudah punya relasi Guru -- pola sudah ada di test lain file ini.
-    $response = $this->actingAs($managerGuru)->post(route('admin.rpp.store'), [
-        'kelas_id' => $kelas->id,
-        'semester_id' => $semester->id,
+    $response = $this->actingAs($this->userGuru)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
+        'mata_pelajaran_id' => $this->mapel->id,
         'judul_topik' => 'Uji Topik',
         'alokasi_waktu' => '2 x 35 Menit',
         'file' => \Illuminate\Http\UploadedFile::fake()->create('rpp.pdf', 100),
@@ -275,7 +275,7 @@ it('actor dengan profil Guru sendiri tetap bisa membuat RPP tanpa guru_id (regre
 });
 ```
 
-Baca test lain di file ini untuk pola PERSIS pembuatan `$managerTanpaGuru`/`$managerGuru`/`$kelas`/`$semester` (harus konsisten dengan permission `rpp.kelola` dan tenant yang sudah dipakai file ini), sesuaikan 4 test di atas memakainya alih-alih variabel placeholder.
+Catatan: test ke-4 menyertakan `mata_pelajaran_id` supaya lolos guard `abort_unless($mengajarKombinasiIni, ...)` di `RppController::store()` (sudah ada `JadwalPelajaran` untuk kombinasi `$this->guru`+`$this->kelas`+`$this->mapel`+`$this->semester` dari `beforeEach`).
 
 - [ ] **Step 2: Jalankan test, pastikan gagal**
 
@@ -338,9 +338,9 @@ Baca baris 95-119 (mungkin bergeser). Setelah blok `$mataPelajaranList = ...` (b
         if ($targetLembagaId) {
             $guruQuery->where('lembaga_id', $targetLembagaId);
         }
-        $guruList = $guruQuery->orderBy('nama_lengkap')->get();
+        $guruList = $guruQuery->orderByNama()->get();
 ```
-(Cek nama kolom urut yang benar di model `Guru` — kemungkinan lewat relasi `person->nama_lengkap`, bukan kolom langsung; sesuaikan kalau berbeda, baca `App\Models\Guru` dulu.) Tambahkan `'guruList' => $guruList,` ke array data view di baris `return view('portals.lembaga.akademik.rpp.index', [...])`.
+(`Guru` TIDAK punya kolom `nama_lengkap` langsung — nama guru berasal dari relasi `person` lewat accessor `getNamaAttribute()`. Model `Guru` sudah punya scope `scopeOrderByNama()` yang join ke tabel `persons` untuk urutan yang benar — pakai scope itu, JANGAN `orderBy('nama_lengkap')` yang akan gagal dengan SQL error kolom tidak ditemukan.) Tambahkan `'guruList' => $guruList,` ke array data view di baris `return view('portals.lembaga.akademik.rpp.index', [...])`.
 
 - [ ] **Step 6: Update view `_modal-form.blade.php`**
 
@@ -352,7 +352,7 @@ Baca baris 62-72 (blok Mata Pelajaran). Tepat SEBELUM blok itu, tambahkan (cuma 
                     <select name="guru_id" required x-model="formModal.guru_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Guru Pengampu —</option>
                         @foreach ($guruList as $guruOpsi)
-                            <option value="{{ $guruOpsi->id }}">{{ $guruOpsi->nama_lengkap }}</option>
+                            <option value="{{ $guruOpsi->id }}">{{ $guruOpsi->nama }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -390,24 +390,27 @@ git commit -m "fix(akademik): guru_id eksplisit tervalidasi di RPP, hapus fallba
 
 - [ ] **Step 1: Tulis test yang gagal (behavioral, bukan concurrency asli)**
 
-Baca `tests/Feature/Admin/KomponenPenilaianCrudTest.php` untuk pola setup `subjekType`/`subjekId`/`semesterId` yang sudah ada. Tambahkan:
+Baca `tests/Feature/Admin/KomponenPenilaianCrudTest.php` — setiap `it()` di file itu bangun sendiri `Yayasan`/`Lembaga`/`TahunAjaran`/`Semester`/`MataPelajaran` (tidak ada `beforeEach` bersama). `KomponenPenilaianData` constructor (readonly, urutan positional): `string $subjekType, int $subjekId, int $semesterId, ?string $kode, string $deskripsi, int $bobot, ?string $kktp, ?int $kktpMinimal, ?string $assessmentType`. Tambahkan test ini (import `KomponenPenilaianData` dan `CreateKomponenPenilaianAction` sudah ada di file, tambah `use App\Models\Yayasan;`/`TahunAjaran`/`MataPelajaran`/`Semester`/`Lembaga` kalau belum ada):
 
 ```php
 it('tetap konsisten menolak bobot melebihi 100% setelah dibungkus lock (regresi, bukan tes concurrency asli)', function () {
-    // Setup subjek+semester yang sama dengan pola existing di file ini.
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
     app(CreateKomponenPenilaianAction::class)->execute(new KomponenPenilaianData(
-        subjekType: $subjekType, subjekId: $subjekId, semesterId: $semesterId,
+        subjekType: 'mata_pelajaran', subjekId: $mapel->id, semesterId: $semester->id,
         kode: 'A', deskripsi: 'Komponen A', bobot: 60, kktp: null, kktpMinimal: null, assessmentType: null,
     ));
 
     expect(fn () => app(CreateKomponenPenilaianAction::class)->execute(new KomponenPenilaianData(
-        subjekType: $subjekType, subjekId: $subjekId, semesterId: $semesterId,
+        subjekType: 'mata_pelajaran', subjekId: $mapel->id, semesterId: $semester->id,
         kode: 'B', deskripsi: 'Komponen B', bobot: 50, kktp: null, kktpMinimal: null, assessmentType: null,
     )))->toThrow(\Illuminate\Validation\ValidationException::class);
 });
 ```
-
-Sesuaikan constructor `KomponenPenilaianData` dengan signature aktual (baca DTO-nya dulu).
 
 - [ ] **Step 2: Jalankan test, pastikan LOLOS di percobaan pertama**
 
@@ -493,13 +496,13 @@ Tambahkan di `tests/Feature/Akademik/RppWorkflowTest.php`:
 
 ```php
 it('menolak mata_pelajaran_id milik lembaga lain pada jalur admin (guru null)', function () {
-    $guruTarget = Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $guruTarget = Guru::factory()->create(['lembaga_id' => $this->lembaga->id]);
     $lembagaLain = Lembaga::factory()->create();
-    $mapelLembagaLain = \App\Domains\Akademik\Models\MataPelajaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $mapelLembagaLain = MataPelajaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
 
-    $response = $this->actingAs($managerTanpaGuru)->post(route('admin.rpp.store'), [
-        'kelas_id' => $kelas->id,
-        'semester_id' => $semester->id,
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
         'guru_id' => $guruTarget->id,
         'mata_pelajaran_id' => $mapelLembagaLain->id,
         'judul_topik' => 'Uji Topik',
@@ -510,6 +513,7 @@ it('menolak mata_pelajaran_id milik lembaga lain pada jalur admin (guru null)', 
     $response->assertNotFound();
 });
 ```
+(`MataPelajaran` sudah di-import di bagian atas `RppWorkflowTest.php`.)
 
 - [ ] **Step 2: Jalankan test, pastikan gagal**
 
@@ -552,14 +556,13 @@ git commit -m "fix(akademik): re-check tenant mata_pelajaran_id di jalur admin R
 
 - [ ] **Step 1: Tulis test yang gagal — filter TA aktif**
 
-Tambahkan di `tests/Feature/Admin/SiswaCrudTest.php`:
+Tambahkan di `tests/Feature/Admin/SiswaCrudTest.php` — file ini SUDAH punya helper `actingAsSiswaManager(Lembaga $lembaga): User` (baris 16-28, sudah handle `Permission::firstOrCreate`+`Role::firstOrCreate`+`assignRole`) — PAKAI helper itu, jangan bikin permission-grant manual:
 
 ```php
 it('kelasList di create() dan edit() cuma berisi kelas dari tahun ajaran aktif', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $manager->givePermissionTo(['siswa.create', 'siswa.edit']);
+    $manager = actingAsSiswaManager($lembaga);
     $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
     $kelasAktif = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id, 'nama' => 'Kelas Aktif']);
@@ -582,8 +585,7 @@ Tambahkan di file yang sama:
 it('mempertahankan kelas siswa saat ini di kelasList meski dari TA tidak aktif, dan submit tanpa ubah field tidak memindahkan siswa', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $manager->givePermissionTo(['siswa.edit']);
+    $manager = actingAsSiswaManager($lembaga);
     $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $taLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
     Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id, 'nama' => 'Kelas Aktif']);
@@ -684,7 +686,7 @@ git commit -m "fix(akademik): filter dropdown kelas ke TA aktif di create/edit s
 - Modify: `app/Http/Controllers/Admin/GuruController.php`
 - Modify: `app/Http/Controllers/Admin/KalenderAkademikController.php`
 - Modify: `app/Http/Controllers/Admin/PengaturanAkademikController.php`
-- Test: `tests/Feature/Admin/GuruControllerTest.php`, `tests/Feature/Admin/KalenderAkademikControllerTest.php` (atau nama file test existing yang sesuai — cek dulu), `tests/Feature/Admin/PengaturanAkademikControllerTest.php`
+- Test: `tests/Feature/Admin/GuruCrudTest.php`, `tests/Feature/Admin/KalenderAkademikCrudTest.php`, `tests/Feature/Admin/PengaturanAkademikControllerTest.php`
 
 **Interfaces:**
 - Produksi: `ResolveLembagaScopeTrait::resolveActiveLembagaId(User $actor): ?int` — method BARU, TERPISAH dari `resolveLembagaId(User, ?int)` yang sudah ada dari paket sebelumnya (beda semantik: yang ini untuk READ/filter, bukan CREATE).
@@ -707,6 +709,7 @@ it('resolveActiveLembagaId: yayasan dengan session valid dikembalikan, session s
     $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasanSaya->id]);
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
     $actor = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $actor->assignRole(Role::firstOrCreate(['name' => 'yayasan_admin_uji_active', 'guard_name' => 'web'], ['scope_level' => 'yayasan']));
     $obj = new class { use ResolveLembagaScopeTrait; public function panggil(User $a): ?int { return $this->resolveActiveLembagaId($a); } };
 
     session(['active_lembaga_id' => $lembagaSaya->id]);
@@ -720,7 +723,7 @@ it('resolveActiveLembagaId: yayasan dengan session valid dikembalikan, session s
 });
 ```
 
-(`$actor->widestScopeLevel()` untuk kedua test di atas perlu role yang sesuai — baca `ResolveLembagaScopeTraitTest.php` existing untuk pola `assignRole`/`Role::firstOrCreate` yang benar, terapkan sama di sini.)
+**PENTING**: `$actor->assignRole(...)` dengan `scope_level: 'yayasan'` WAJIB ada persis seperti di atas — `User::widestScopeLevel()` (`app/Models/User.php:129-139`) mengembalikan `'diri_sendiri'` kalau actor tidak punya role sama sekali, BUKAN `'yayasan'`, meski `yayasan_id`-nya terisi. Tanpa `assignRole` ini, `resolveActiveLembagaId()` akan lewat cabang `return $lembagaId;` di akhir (tanpa verifikasi kepemilikan), dan skenario "session stale" pada test ini tidak akan pernah gagal seperti yang diharapkan — test jadi tidak menguji apa-apa. Pola `Role::firstOrCreate(['name' => ..., 'guard_name' => 'web'], ['scope_level' => 'yayasan'])` sama seperti di `tests/Unit/Support/ResolveLembagaScopeTraitTest.php` yang sudah ada (`use App\Models\Role;` sudah diimport di file itu).
 
 - [ ] **Step 2: Jalankan test, pastikan gagal**
 
@@ -761,27 +764,28 @@ Expected: PASS.
 
 Cek nama file test existing untuk `GuruController` (`find tests -iname "*Guru*Controller*"`). Tambahkan:
 
+`GuruController::store()` tidak pakai FormRequest terpisah — validasi lewat `validateProfil()` private method (baca `app/Http/Controllers/Admin/GuruController.php:266-323`), field WAJIB: `nik` (digits:16), `nip`, `nama` (BUKAN `nama_lengkap`), `email` (unique), `jenis_kelamin`, `jenis_ptk`, `status_kepegawaian`. `store()` memvalidasi (`validateProfil()`) DULU baru cek `resolveLembagaId()` — payload test WAJIB lengkap supaya request lolos validasi dan benar-benar sampai ke pengecekan `lembaga_id` yang sedang diuji.
+
+`GuruCrudTest.php` SUDAH punya helper `guruFormPayload(array $overrides = [])` (payload valid siap pakai) dan `findGuruByNama(string $nama): ?Guru` (lookup lewat relasi `person`, karena `Guru` TIDAK punya kolom `nama` asli di DB — itu accessor `getNamaAttribute()` ke `person->nama_lengkap`, jadi `Guru::where('nama', ...)` akan error "unknown column"). Helper `actingAsGuruManager()` di file itu TIDAK bisa dipakai untuk test ini (dia selalu bikin actor lembaga-scope langsung via `lembaga_id`, bukan actor yayasan-scope lewat session) — actor untuk test ini dibuat manual. **WAJIB** daftarkan permission `guru.create` dulu lewat `Permission::firstOrCreate` SEBELUM `givePermissionTo` — Spatie melempar exception kalau permission belum terdaftar di DB, dan test ini TIDAK lewat `actingAsGuruManager()` yang biasanya mendaftarkannya:
+
 ```php
 it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasannya) saat membuat data guru', function () {
     $yayasanSaya = Yayasan::factory()->create();
     $yayasanLain = Yayasan::factory()->create();
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    Permission::firstOrCreate(['name' => 'guru.create', 'guard_name' => 'web']);
     $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
     $manager->givePermissionTo('guru.create');
     $role = Role::firstOrCreate(['name' => 'yayasan_uji_guru', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $manager->assignRole($role);
     session(['active_lembaga_id' => $lembagaLain->id]);
 
-    $response = $this->actingAs($manager)->post(route('admin.guru.store'), [
-        'nama_lengkap' => 'Guru Uji', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas',
-    ]);
+    $response = $this->actingAs($manager)->post(route('admin.guru.store'), guruFormPayload(['nama' => 'Guru Uji Stale', 'email' => 'guru.uji.stale@example.test']));
 
     $response->assertSessionHasErrors('lembaga_id');
-    expect(Guru::where('nama', 'like', '%Guru Uji%')->exists())->toBeFalse();
+    expect(findGuruByNama('Guru Uji Stale'))->toBeNull();
 });
 ```
-
-Sesuaikan field wajib `admin.guru.store` dan pesan error dengan `StoreGuruRequest`/validasi yang sebenarnya (baca dulu). Baca juga apakah `resolveLembagaId(Request)` yang sudah ada mengembalikan `null` lalu ditangani gimana di `store()` — pastikan test ini menguji jalur error yang sama seperti kondisi "session kosong" yang sudah ada (baris 98-99).
 
 - [ ] **Step 6: Jalankan test, pastikan gagal**
 
@@ -805,13 +809,14 @@ Expected: semua PASS.
 
 - [ ] **Step 9: Tulis test yang gagal — `KalenderAkademikController`**
 
-Cek nama file test existing. Tambahkan pola serupa Step 5 tapi untuk `admin.kalender-akademik.store` (baca route/field wajib dulu):
+Tambahkan di `tests/Feature/Admin/KalenderAkademikCrudTest.php`. File ini punya helper `actingAsKalenderManager(Lembaga $lembaga, bool $bolehNasional = false): User` tapi itu SELALU bikin actor lembaga-scope langsung (`lembaga_id` di-set langsung ke user) — TIDAK cocok untuk test ini yang butuh actor yayasan-scope lewat session. Buat actor manual, dan **WAJIB** daftarkan permission `kalender-akademik.kelola` dulu lewat `Permission::firstOrCreate` (test ini tidak lewat `actingAsKalenderManager()` yang biasanya mendaftarkannya):
 
 ```php
 it('menolak actor yayasan dengan active_lembaga_id stale saat menambah entri kalender', function () {
     $yayasanSaya = Yayasan::factory()->create();
     $yayasanLain = Yayasan::factory()->create();
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    Permission::firstOrCreate(['name' => 'kalender-akademik.kelola', 'guard_name' => 'web']);
     $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
     $manager->givePermissionTo('kalender-akademik.kelola');
     $role = Role::firstOrCreate(['name' => 'yayasan_uji_kalender', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
@@ -835,7 +840,9 @@ Expected: FAIL.
 
 - [ ] **Step 11: Perbaiki `KalenderAkademikController::store()`**
 
-Baca baris 21-52 (mungkin bergeser). Tambahkan `use ResolveLembagaScopeTrait;` (dan importnya). Ganti baris 40-44:
+Baca baris 1-137 (file penuh — controller ini pendek, seluruhnya relevan). Tambahkan import `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;` dan `use ResolveLembagaScopeTrait;` di dalam class body (setelah `use AuthorizesRequests;`).
+
+Ganti `store()` baris 40-44 (guard + resolve `$lembagaId` untuk kasus non-nasional):
 ```php
         $lembagaId = null;
         if (! $nasional) {
@@ -845,29 +852,68 @@ Baca baris 21-52 (mungkin bergeser). Tambahkan `use ResolveLembagaScopeTrait;` (
             }
         }
 ```
-(Hapus baris lama `if (! $nasional && $request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {...}` dan `$lembagaId = $nasional ? null : (...)` — digantikan blok di atas.) Baca juga apakah ada method lain di controller ini (baris ~73, ~111 disebut di audit) yang pakai pola sama — kalau ada method `update()`/`destroy()` dengan pola identik, terapkan perbaikan yang sama di situ.
+(Menggantikan baris lama `if (! $nasional && $request->user()->widestScopeLevel() === 'yayasan' && session('active_lembaga_id') === null) {...}` dan `$lembagaId = $nasional ? null : ($request->user()->lembaga_id ?? session('active_lembaga_id'));`.)
+
+Ganti `update()` baris 69-76 (spec menyebut baris 73 sebagai titik resolve di method ini):
+```php
+    public function update(Request $request, KalenderAkademik $kalenderAkademik, UpdateKalenderAkademikAction $action): RedirectResponse|JsonResponse
+    {
+        $this->authorize('kalender-akademik.kelola');
+
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+        if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
+            abort(404);
+        }
+
+        if ($kalenderAkademik->lembaga_id === null) {
+            $this->authorize('kalender-akademik.kelola-nasional');
+        }
+```
+(Baris `$data = $request->validate([...])` dan seterusnya di bawahnya TETAP TIDAK BERUBAH.)
+
+Ganti `destroy()` baris 107-118 (spec menyebut baris 111 sebagai titik resolve di method ini):
+```php
+    public function destroy(Request $request, KalenderAkademik $kalenderAkademik, DeleteKalenderAkademikAction $action): RedirectResponse|JsonResponse
+    {
+        $this->authorize('kalender-akademik.kelola');
+
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+        if ($kalenderAkademik->lembaga_id !== null && $kalenderAkademik->lembaga_id !== $lembagaId) {
+            abort(404);
+        }
+
+        if ($kalenderAkademik->lembaga_id === null) {
+            $this->authorize('kalender-akademik.kelola-nasional');
+        }
+
+        $action->execute($kalenderAkademik);
+```
+(Sisa body `destroy()` di bawahnya TETAP TIDAK BERUBAH.)
+
+**Kenapa `update()`/`destroy()` juga wajib diperbaiki, bukan cuma `store()`**: pola lama `$request->user()->lembaga_id ?? session('active_lembaga_id')` dipakai untuk cek kepemilikan (`$kalenderAkademik->lembaga_id !== $lembagaId`) TANPA verifikasi bahwa `session('active_lembaga_id')` benar-benar milik yayasan actor — actor yayasan bisa set session ke lembaga milik yayasan LAIN, dan kalau entri kalender itu kebetulan `lembaga_id`-nya sama dengan nilai session yang di-set, pengecekan lolos padahal actor tidak berhak. Ini persis pola IDOR yang sama dengan `store()`, cuma di titik pakai yang berbeda.
 
 - [ ] **Step 12: Jalankan test lagi + regresi**
 
-Run: `php artisan test --filter=KalenderAkademik`
+Run: `php artisan test --filter=KalenderAkademikCrud`
 Expected: semua PASS.
 
 - [ ] **Step 13: Tulis test yang gagal — `PengaturanAkademikController`**
 
-Pola serupa untuk `admin.pengaturan-akademik.index` atau `updateHariAktif` (baca route yang ada dulu):
+Tambahkan di `tests/Feature/Admin/PengaturanAkademikControllerTest.php`. Route `index()` bernama `admin.pengaturan.akademik.index` (BUKAN `admin.pengaturan-akademik.index` — perhatikan titik, bukan strip, lihat `KalenderAkademikController::store()` yang redirect ke route ini). File ini punya helper `actingAsPengaturanAkademikManager(Lembaga $lembaga, array $permissions = [...]): User` tapi SELALU bikin actor lembaga-scope langsung — TIDAK cocok untuk test ini. Buat actor manual, **WAJIB** daftarkan permission `kalender-akademik.view` dulu lewat `Permission::firstOrCreate`:
 
 ```php
 it('menolak actor yayasan dengan active_lembaga_id stale mengakses Pengaturan Akademik', function () {
     $yayasanSaya = Yayasan::factory()->create();
     $yayasanLain = Yayasan::factory()->create();
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    Permission::firstOrCreate(['name' => 'kalender-akademik.view', 'guard_name' => 'web']);
     $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
     $manager->givePermissionTo('kalender-akademik.view');
     $role = Role::firstOrCreate(['name' => 'yayasan_uji_pengaturan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $manager->assignRole($role);
     session(['active_lembaga_id' => $lembagaLain->id]);
 
-    $response = $this->actingAs($manager)->get(route('admin.pengaturan-akademik.index'));
+    $response = $this->actingAs($manager)->get(route('admin.pengaturan.akademik.index'));
 
     $response->assertRedirect();
     $response->assertSessionHasErrors('lembaga_id');
@@ -881,15 +927,46 @@ Expected: FAIL — request lolos (halaman ter-render memakai lembaga asing).
 
 - [ ] **Step 15: Perbaiki `PengaturanAkademikController`**
 
-Baca baris 20-64 (mungkin bergeser). Tambahkan `use ResolveLembagaScopeTrait;`. Ganti `index()` baris 24-29:
+Baca baris 1-66 (file penuh). Tambahkan import `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;` dan `use ResolveLembagaScopeTrait;` di dalam class body (setelah `use AuthorizesRequests;`).
+
+Ganti `index()` baris 20-30:
 ```php
+    public function index(Request $request): View|RedirectResponse
+    {
+        $this->authorize('kalender-akademik.view');
+
         $lembagaId = $this->resolveActiveLembagaId($request->user());
         if ($lembagaId === null) {
             return redirect()->route('dashboard')
                 ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga untuk mengakses Pengaturan Akademik.']);
         }
+
+        $lembaga = Lembaga::findOrFail($lembagaId);
 ```
-Ganti `updateHariAktif()` baris 46-58 dengan pola sama (guard null di awal, `resolveActiveLembagaId` menggantikan `$request->user()->lembaga_id ?? session('active_lembaga_id')`).
+(Baris `return view('portals.lembaga.akademik.pengaturan.akademik', [...])` di bawahnya TETAP TIDAK BERUBAH.)
+
+Ganti `updateHariAktif()` baris 42-59 seluruhnya:
+```php
+    public function updateHariAktif(Request $request, UpdateHariAktifLembagaAction $action): JsonResponse
+    {
+        $this->authorize('pengaturan-akademik.kelola');
+
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+        if ($lembagaId === null) {
+            return response()->json([
+                'message' => 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.',
+                'errors' => ['lembaga_id' => ['Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.']],
+            ], 422);
+        }
+
+        $data = $request->validate([
+            'hari_aktif' => ['present', 'array'],
+            'hari_aktif.*' => ['integer', 'between:0,6'],
+        ]);
+
+        $lembaga = Lembaga::findOrFail($lembagaId);
+```
+(Baris `$lembaga = $action->execute($lembaga, new HariAktifLembagaData(hariAktif: $data['hari_aktif']));` dan `return response()->json(...)` di bawahnya TETAP TIDAK BERUBAH.)
 
 - [ ] **Step 16: Jalankan test lagi + regresi**
 
@@ -916,16 +993,16 @@ git commit -m "fix(akademik): verifikasi ulang session active_lembaga_id di titi
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [ ] **Step 1: Tambah assertion ke test yang SUDAH ADA (jangan duplikasi test baru)**
 
-Tambahkan di `tests/Feature/Admin/KenaikanKelasControllerTest.php`:
+`tests/Feature/Admin/KenaikanKelasControllerTest.php` baris 99-116 SUDAH punya test persis untuk skenario ini — `it('graduates siswa when mapped to lulus, clearing kelas_id', ...)` — tinggal tambah 1 assertion `kelas_terakhir_id` di dalamnya (JANGAN bikin test baru terpisah dengan setup duplikat). Ubah body test itu jadi:
 
 ```php
-it('mengisi kelas_terakhir_id saat siswa lulus lewat Kenaikan Kelas massal', function () {
+it('graduates siswa when mapped to lulus, clearing kelas_id', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'tingkat' => '6']);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '6A']);
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLama->id, 'status' => StatusSiswa::Aktif->value]);
     $manager = actingAsKenaikanKelasManager($lembaga);
 
@@ -942,9 +1019,11 @@ it('mengisi kelas_terakhir_id saat siswa lulus lewat Kenaikan Kelas massal', fun
 });
 ```
 
+(Satu-satunya perubahan dari versi asli: baris terakhir `expect($siswa->kelas_terakhir_id)->toBe($kelasLama->id);` ditambahkan.)
+
 - [ ] **Step 2: Jalankan test, pastikan gagal**
 
-Run: `php artisan test --filter="mengisi kelas_terakhir_id saat siswa lulus"`
+Run: `php artisan test --filter="graduates siswa when mapped to lulus"`
 Expected: FAIL — `kelas_terakhir_id` masih `null`.
 
 - [ ] **Step 3: Perbaiki `ProsesKenaikanKelasAction`**
@@ -965,7 +1044,7 @@ Baca baris 42-49 (mungkin bergeser). Ganti:
 
 - [ ] **Step 4: Jalankan test lagi + regresi**
 
-Run: `php artisan test --filter=KenaikanKelasControllerTest`
+Run: `php artisan test --filter=KenaikanKelasController`
 Expected: semua PASS.
 
 - [ ] **Step 5: Pint dan commit**
