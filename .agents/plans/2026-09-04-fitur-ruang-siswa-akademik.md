@@ -29,7 +29,7 @@
 
 **Interfaces:** Tidak ada — berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Feature/Admin/NilaiAnakControllerTest.php` (paket Orang Tua, sudah selesai & lolos review) untuk pola factory `Asesmen`/`KomponenPenilaian`/`PengajuanRapor` yang SUDAH terbukti benar — `Asesmen` dan `KomponenPenilaian` adalah entitas TERPISAH dan SEJAJAR (masing-masing `subjek_type`/`subjek_id` sendiri, BUKAN nested), `NilaiSiswa` punya `asesmen_id` DAN `komponen_penilaian_id` sebagai 2 FK independen. `JenisAsesmen` valid case: `SumatifLingkupMateri`/`SumatifAkhirSemester`/`SumatifAkhirJenjang`/dst — BUKAN `Sumatif`. `Siswa::factory()->create(['user_id' => $user->id, ...])` (baca `database/factories/SiswaFactory.php` — pola SAMA seperti `OrangTuaFactory`, `user_id` dibaca sebagai override untuk link `Person`, BUKAN kolom asli — kalau `user_id` tidak diisi, Person dibuat TANPA link ke User manapun).
 
@@ -129,12 +129,12 @@ it('menolak unduh rapor kalau PengajuanRapor belum Disetujui', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=NilaiRaporSiswaControllerTest`
 Expected: FAIL — route/controller belum ada.
 
-- [ ] **Step 3: Buat file route**
+- [x] **Step 3: Buat file route**
 
 Buat `routes/admin/siswa-akademik.php`:
 ```php
@@ -148,7 +148,7 @@ Route::get('nilai-rapor-saya/unduh-rapor', [NilaiRaporSiswaController::class, 'u
 ```
 Tambahkan `require base_path('routes/admin/siswa-akademik.php');` ke `routes/admin.php` (baca dulu isinya — kalau baris `require base_path('routes/admin/orang-tua-akademik.php');` sudah ada dari paket sebelumnya, taruh setelah itu; kalau belum ada, taruh setelah `require base_path('routes/admin/kasus-admin.php');`).
 
-- [ ] **Step 4: Buat `NilaiRaporSiswaController`**
+- [x] **Step 4: Buat `NilaiRaporSiswaController`**
 
 ```php
 <?php
@@ -233,7 +233,7 @@ class NilaiRaporSiswaController extends BaseController
 }
 ```
 
-- [ ] **Step 5: Buat view minimal**
+- [x] **Step 5: Buat view minimal**
 
 ```blade
 <x-app-layout>
@@ -272,12 +272,12 @@ class NilaiRaporSiswaController extends BaseController
 </x-app-layout>
 ```
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=NilaiRaporSiswaControllerTest`
 Expected: PASS.
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -297,7 +297,7 @@ git commit -m "feat(akademik): halaman Nilai & Rapor untuk Ruang Siswa"
 
 **Interfaces:** Tidak ada — berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -369,12 +369,12 @@ it('regresi identitas: siswa A hanya melihat jadwal kelasnya sendiri, bukan kela
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=JadwalPelajaranSiswaControllerTest`
 Expected: FAIL.
 
-- [ ] **Step 3: Tambah route**
+- [x] **Step 3: Tambah route**
 
 Tambahkan ke `routes/admin/siswa-akademik.php`:
 ```php
@@ -385,7 +385,7 @@ dan:
 Route::get('jadwal-pelajaran-saya', [JadwalPelajaranSiswaController::class, 'index'])->name('jadwal-pelajaran-saya.index');
 ```
 
-- [ ] **Step 4: Buat `JadwalPelajaranSiswaController`**
+- [x] **Step 4: Buat `JadwalPelajaranSiswaController`**
 
 ```php
 <?php
@@ -449,7 +449,7 @@ class JadwalPelajaranSiswaController extends BaseController
 }
 ```
 
-- [ ] **Step 5: Buat view minimal**
+- [x] **Step 5: Buat view minimal**
 
 ```blade
 <x-app-layout>
@@ -487,12 +487,12 @@ class JadwalPelajaranSiswaController extends BaseController
 </x-app-layout>
 ```
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=JadwalPelajaranSiswaControllerTest`
 Expected: PASS.
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -512,7 +512,7 @@ git commit -m "feat(akademik): halaman Jadwal Pelajaran untuk Ruang Siswa"
 
 **Interfaces:** Tidak ada — berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -586,12 +586,12 @@ it('regresi identitas: siswa A hanya melihat presensinya sendiri, bukan milik si
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=PresensiSayaControllerTest`
 Expected: FAIL (belum ada route/controller). Perhatikan HASIL test pertama setelah controller dibuat di Step 4 — kalau ternyata `riwayatList` kosong padahal seharusnya ada 2, itu bukti `withoutGlobalScope(TenantScope::class)` diperlukan untuk `sesiPembelajaran` (lihat catatan di Step 4).
 
-- [ ] **Step 3: Tambah route**
+- [x] **Step 3: Tambah route**
 
 Tambahkan ke `routes/admin/siswa-akademik.php`:
 ```php
@@ -602,7 +602,7 @@ dan:
 Route::get('presensi-saya', [PresensiSayaController::class, 'index'])->name('presensi-saya.index');
 ```
 
-- [ ] **Step 4: Buat `PresensiSayaController`**
+- [x] **Step 4: Buat `PresensiSayaController`**
 
 ```php
 <?php
@@ -650,7 +650,7 @@ class PresensiSayaController extends BaseController
 
 **PENTING — jalankan Step 2 (test gagal) dan Step 6 (test lolos) dengan teliti**: kode di atas SENGAJA TIDAK memakai `withoutGlobalScope(TenantScope::class)` pada `whereHas('sesiPembelajaran', ...)`/`with('sesiPembelajaran...')`, meniru pola dashboard existing. KALAU test "menampilkan riwayat presensi..." di Step 6 GAGAL (riwayat kosong padahal seharusnya ada 2 baris), itu BUKTI EMPIRIS bahwa bypass diperlukan di sini (beda dari asumsi awal) — kalau itu terjadi, tambahkan `withoutGlobalScope(TenantScope::class)` ke KEDUA closure (`whereHas` dan `with`) lalu jalankan ulang test sampai lolos. JANGAN mengubah assertion test untuk memaksa lolos — assertion-nya sudah benar (`count() === 2`), yang boleh diubah cuma kode controller.
 
-- [ ] **Step 5: Buat view minimal**
+- [x] **Step 5: Buat view minimal**
 
 ```blade
 <x-app-layout>
@@ -689,12 +689,12 @@ class PresensiSayaController extends BaseController
 </x-app-layout>
 ```
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=PresensiSayaControllerTest`
 Expected: PASS. (Lihat catatan penting di Step 4 kalau test pertama gagal.)
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -712,7 +712,7 @@ git commit -m "feat(akademik): halaman Presensi Saya untuk Ruang Siswa"
 
 **Interfaces:** Tidak ada — task penutup.
 
-- [ ] **Step 1: Tulis test yang gagal — sidebar**
+- [x] **Step 1: Tulis test yang gagal — sidebar**
 
 Baca `tests/Feature/SidebarStubMenuHiddenTest.php`/`tests/Feature/SidebarPengelompokanTest.php` (sudah disesuaikan di paket Orang Tua untuk grup Ruang Orang Tua — pola acuan PERSIS untuk grup Ruang Siswa). Tambahkan test setara untuk grup Ruang Siswa (kemungkinan di file yang SAMA, cek dulu apakah ada test existing untuk grup Ruang Siswa yang perlu disesuaikan seperti pola Orang Tua, atau perlu ditambah baru):
 ```php
@@ -724,12 +724,12 @@ it('shows Ruang Siswa group with real routes, dalam-pengembangan stub links hidd
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows Ruang Siswa group"`
 Expected: FAIL — menu masih mengarah ke `dalam-pengembangan`.
 
-- [ ] **Step 3: Buka kembali komentar di sidebar**
+- [x] **Step 3: Buka kembali komentar di sidebar**
 
 Baca `resources/views/layouts/sidebar.blade.php` baris 27-35 (grup Ruang Siswa). Ganti baris yang dikomentari:
 ```php
@@ -739,27 +739,27 @@ Auth::user()->hasRole('siswa') ? ['route' => 'admin.presensi-saya.index', 'patte
 ```
 **PENTING**: kondisi guard TETAP `Auth::user()->hasRole('siswa')` PERSIS seperti baris asli sebelum dikomentari — JANGAN diubah ke `Auth::user()->siswa !== null` meski tampak lebih konsisten dengan pola Orang Tua (`Auth::user()->orangTua !== null`). Baris asli sudah pakai `hasRole('siswa')`, ubah HANYA `route`/`pattern`.
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="shows Ruang Siswa group"`
 Expected: PASS.
 
-- [ ] **Step 5: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 5: Pastikan tidak ada proses test lain berjalan**
 
 Run: `ps aux | grep artisan | grep -v grep`
 Expected: kosong.
 
-- [ ] **Step 6: Jalankan full suite sendirian**
+- [x] **Step 6: Jalankan full suite sendirian**
 
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures (kecuali test SPMB flaky yang sudah diketahui, jalankan ulang sendirian untuk konfirmasi kalau muncul).
 
-- [ ] **Step 7: Pint final**
+- [x] **Step 7: Pint final**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add resources/views/layouts/sidebar.blade.php tests/Feature/SidebarStubMenuHiddenTest.php tests/Feature/SidebarPengelompokanTest.php
