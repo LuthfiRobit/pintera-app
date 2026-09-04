@@ -30,7 +30,7 @@
 **Interfaces:**
 - Produksi: `trait ResolveLembagaScopeTrait` dengan method `resolveLembagaId(User $actor, ?int $lembagaIdDiminta): ?int` (private, dipakai class yang `use` trait ini). Task 2 dan 3 memakai trait ini persis dengan signature ini.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Buat `tests/Unit/Support/ResolveLembagaScopeTraitTest.php`:
 
@@ -119,12 +119,12 @@ it('lembaga-scope selalu memakai lembaga_id miliknya sendiri, mengabaikan lembag
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=ResolveLembagaScopeTraitTest`
 Expected: FAIL — `App\Domains\Akademik\Support\ResolveLembagaScopeTrait` belum ada.
 
-- [ ] **Step 3: Buat trait**
+- [x] **Step 3: Buat trait**
 
 Buat direktori `app/Domains/Akademik/Support/` kalau belum ada. Buat `app/Domains/Akademik/Support/ResolveLembagaScopeTrait.php`:
 
@@ -162,12 +162,12 @@ trait ResolveLembagaScopeTrait
 }
 ```
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=ResolveLembagaScopeTraitTest`
 Expected: PASS (5 test).
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -190,11 +190,11 @@ git commit -m "feat(akademik): ResolveLembagaScopeTrait -- lembaga_id non-platfo
 - Konsumsi: `ResolveLembagaScopeTrait` dari Task 1.
 - Produksi: `AssignKurikulumAction::executeCreate(User $actor, array $validated): KurikulumAssignment` — dipakai `store()`. `KurikulumAssignmentController::authorizeExistingAssignmentScope(User $actor, ?int $existingLembagaId): void` — dipakai `edit()`/`update()`/`destroy()`.
 
-- [ ] **Step 1: Baca 3 test yang HARUS ditulis ulang (bukan dihapus)**
+- [x] **Step 1: Baca 3 test yang HARUS ditulis ulang (bukan dihapus)**
 
 Baca `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php` baris 113-190. Ada 1 helper (`actingAsPlatformKurikulumManager()`, baris 113-126) dan 3 test (baris 144-190) yang meng-encode perilaku LAMA (aktor `scope_level: 'yayasan'` diberi hak akses seperti `platform` sungguhan). Ini akan ditulis ulang di Step 6 — CATAT dulu isinya sekarang, jangan diedit di step ini.
 
-- [ ] **Step 2: Tulis test BARU yang gagal (pintu #1 — nilai yang ditulis)**
+- [x] **Step 2: Tulis test BARU yang gagal (pintu #1 — nilai yang ditulis)**
 
 Tambahkan di akhir `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php` (helper `actingAsPlatformKurikulumManager` akan diganti nanti di Step 6 jadi 2 helper terpisah — untuk sekarang tulis test baru pakai helper baru `actingAsYayasanKurikulumManager`/`actingAsPlatformScopeKurikulumManager` yang akan dibuat di Step 6):
 
@@ -283,7 +283,7 @@ it('platform BISA membuat assignment untuk lembaga manapun lintas yayasan', func
 });
 ```
 
-- [ ] **Step 3: Tulis test BARU yang gagal (pintu #2 — akses baris existing)**
+- [x] **Step 3: Tulis test BARU yang gagal (pintu #2 — akses baris existing)**
 
 Tambahkan di file yang sama:
 
@@ -353,12 +353,12 @@ it('yayasan cuma lihat assignment global + milik yayasannya sendiri di index, TI
 });
 ```
 
-- [ ] **Step 4: Jalankan test baru, pastikan gagal**
+- [x] **Step 4: Jalankan test baru, pastikan gagal**
 
 Run: `php artisan test --filter=KurikulumAssignmentControllerTest`
 Expected: FAIL — helper `actingAsYayasanKurikulumManager`/`actingAsPlatformScopeKurikulumManager` belum ada, dan logic lama masih memperlakukan yayasan seperti platform.
 
-- [ ] **Step 5: Buat `AssignKurikulumAction`**
+- [x] **Step 5: Buat `AssignKurikulumAction`**
 
 ```php
 <?php
@@ -395,7 +395,7 @@ final class AssignKurikulumAction
 }
 ```
 
-- [ ] **Step 6: Update `KurikulumAssignmentController`**
+- [x] **Step 6: Update `KurikulumAssignmentController`**
 
 Baca file penuh dulu untuk konfirmasi baris (mungkin sudah bergeser dari yang dibaca sebelumnya). Ganti method `store()` (baris 60-95 versi lama) — hapus logic `$isPlatformOrYayasan`/`$lembagaId`/`authorizeAssignmentScope` manual, ganti pemanggilan jadi lewat `AssignKurikulumAction`.
 
@@ -501,11 +501,11 @@ Ganti `index()` — filter yayasan cuma lihat global + lembaga di bawah yayasann
     }
 ```
 
-- [ ] **Step 7: Tulis ulang view `create.blade.php`/`edit.blade.php` — dropdown lembaga cuma untuk platform**
+- [x] **Step 7: Tulis ulang view `create.blade.php`/`edit.blade.php` — dropdown lembaga cuma untuk platform**
 
 Baca `resources/views/admin/kurikulum-assignment/create.blade.php`. Cari blok yang merender `<select name="lembaga_id">` berdasarkan `$isPlatformOrYayasan` (variabel lama) — ganti kondisinya ke `$isPlatform` (variabel baru dari Step 6), dan untuk non-platform tampilkan teks info read-only nama lembaga aktif (`session('active_lembaga_id')` di-resolve ke nama lembaga di controller kalau perlu, atau cukup teks generik "Assignment ini akan dibuat untuk lembaga yang sedang aktif di sesi Anda."). Detail exact markup disesuaikan dengan struktur file aktual (baca dulu sebelum edit) — prinsipnya: dropdown lembaga+opsi "Global" HANYA muncul kalau `$isPlatform` true.
 
-- [ ] **Step 8: Tulis ulang 4 test lama yang meng-encode perilaku LAMA**
+- [x] **Step 8: Tulis ulang 4 test lama yang meng-encode perilaku LAMA**
 
 Di `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php`, ganti helper `actingAsPlatformKurikulumManager()` (baris 113-126 versi lama) jadi 2 helper terpisah:
 
@@ -542,7 +542,7 @@ function actingAsPlatformScopeKurikulumManager(): User
 
 Ganti isi 3 test yang tadinya memakai `actingAsPlatformKurikulumManager()` (baris 144-190 versi lama: `'allows platform/yayasan to store with an explicit lembaga_id...'`, `'rejects platform/yayasan store when explicit lembaga_id does not match...'`, `'does not reject a platform/yayasan store for ownership when lembaga_id is left null...'`) — HAPUS ketiganya (perilaku yang mereka uji sekarang SALAH secara sengaja diganti), gantikan dengan test-test baru yang SUDAH ditulis di Step 2 dan 3 di atas (jangan duplikasi, cukup pastikan 3 test lama itu tidak ada lagi di file, sudah tergantikan test baru yang lebih presisi).
 
-- [ ] **Step 9: Jalankan semua test, pastikan lolos**
+- [x] **Step 9: Jalankan semua test, pastikan lolos**
 
 Run: `php artisan test --filter=KurikulumAssignmentControllerTest`
 Expected: PASS semua.
@@ -550,12 +550,12 @@ Expected: PASS semua.
 Run: `php artisan test --filter=KurikulumAssignmentDestroyGuardTest`
 Expected: kemungkinan test `'menolak hapus Kurikulum Assignment lembaga lain oleh aktor yayasan meski active_lembaga_id-nya beda'` (baris 47-74) GAGAL — guard baru (`authorizeExistingAssignmentScope`) menolak dengan 403 SEBELUM sempat sampai ke pengecekan "masih dipakai Kelas" yang jadi fokus test itu, padahal test mengharapkan redirect+session-error (bukan 403). **Kalau gagal**: baca ulang test itu, perbaiki SETUP-nya (bukan assertion-nya) supaya `$userYayasan` benar-benar berada di yayasan yang SAMA dengan `$lembagaB` (tambahkan `'yayasan_id' => $lembagaB->yayasan_id` ke factory `$userYayasan`) — dengan begitu guard otorisasi baru LOLOS (actor memang berhak akses lembaga B), dan request lanjut ke pengecekan "masih dipakai Kelas" yang jadi fokus asli test tersebut, sehingga assertion lama (redirect+session-error, assignment tidak terhapus) tetap valid dan somad tujuan test (TenantScope tidak menyamarkan guard in-use) tetap teruji dengan cara yang benar.
 
-- [ ] **Step 10: Regresi test terkait lain**
+- [x] **Step 10: Regresi test terkait lain**
 
 Run: `php artisan test --filter=KurikulumAssignment`
 Expected: semua PASS.
 
-- [ ] **Step 11: Pint dan commit**
+- [x] **Step 11: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -576,7 +576,7 @@ git commit -m "fix(akademik): tutup 2 pintu IDOR KurikulumAssignment -- nilai di
 **Interfaces:**
 - Konsumsi: `ResolveLembagaScopeTrait` dari Task 1 (pola identik Task 2, TIDAK bergantung pada `AssignKurikulumAction`).
 
-- [ ] **Step 1: Identifikasi 3 test lama yang meng-encode perilaku LAMA**
+- [x] **Step 1: Identifikasi 3 test lama yang meng-encode perilaku LAMA**
 
 Di `tests/Feature/Akademik/FaseDefaultMappingControllerTest.php`:
 - `'lets a yayasan-scope user create a platform-wide mapping'` (baris 71-83) — HARUS diganti jadi menguji PENOLAKAN.
@@ -585,7 +585,7 @@ Di `tests/Feature/Akademik/FaseDefaultMappingControllerTest.php`:
 
 Juga perhatikan: `buatUserDenganRole('yayasan_super_admin')` (baris 13-36) tidak pernah set `yayasan_id` pada user yang dibuat — perlu ditambah parameter `?int $yayasanId = null` supaya test bisa mengontrol yayasan_id actor secara eksplisit.
 
-- [ ] **Step 2: Tulis test BARU yang gagal (cerminan Task 2 Step 2-3, disesuaikan struktur `FaseDefaultMapping` yang tidak punya `tahun_ajaran_id`)**
+- [x] **Step 2: Tulis test BARU yang gagal (cerminan Task 2 Step 2-3, disesuaikan struktur `FaseDefaultMapping` yang tidak punya `tahun_ajaran_id`)**
 
 Ubah `buatUserDenganRole()` (baris 13-36) jadi menerima `?int $yayasanId = null`:
 ```php
@@ -692,12 +692,12 @@ it('mengizinkan yayasan menghapus mapping milik lembaga di yayasannya sendiri', 
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=FaseDefaultMappingControllerTest`
 Expected: FAIL.
 
-- [ ] **Step 4: Buat `SetFaseDefaultMappingAction`**
+- [x] **Step 4: Buat `SetFaseDefaultMappingAction`**
 
 ```php
 <?php
@@ -733,7 +733,7 @@ final class SetFaseDefaultMappingAction
 }
 ```
 
-- [ ] **Step 5: Update `FaseDefaultMappingController`** — pola identik Task 2 Step 6
+- [x] **Step 5: Update `FaseDefaultMappingController`** — pola identik Task 2 Step 6
 
 Tambahkan `use ResolveLembagaScopeTrait;` di controller. Ganti `store()`:
 ```php
@@ -781,18 +781,18 @@ Ganti `edit()`/`update()`/`destroy()`: ganti `authorizeMappingScope($request, $f
 
 Ganti `create()` — dropdown lembaga cuma platform (pola identik Task 2 Step 6). Ganti `index()` — filter yayasan cuma lihat global + lembaga di bawah yayasannya (pola identik Task 2 Step 6, tanpa `orderByDesc('tahun_ajaran_id')` karena `FaseDefaultMapping` tidak punya kolom itu).
 
-- [ ] **Step 6: Update view `create.blade.php`/`edit.blade.php`** — pola identik Task 2 Step 7.
+- [x] **Step 6: Update view `create.blade.php`/`edit.blade.php`** — pola identik Task 2 Step 7.
 
-- [ ] **Step 7: Hapus 3 test lama yang meng-encode perilaku LAMA**
+- [x] **Step 7: Hapus 3 test lama yang meng-encode perilaku LAMA**
 
 Hapus `'lets a yayasan-scope user create a platform-wide mapping'`, `'lets a yayasan-scope user create a mapping for any specific lembaga'`, `'lets a yayasan-scope user delete any lembaga's mapping'` dari `tests/Feature/Akademik/FaseDefaultMappingControllerTest.php` — sudah tergantikan test baru di Step 2.
 
-- [ ] **Step 8: Jalankan semua test, pastikan lolos**
+- [x] **Step 8: Jalankan semua test, pastikan lolos**
 
 Run: `php artisan test --filter=FaseDefaultMapping`
 Expected: semua PASS.
 
-- [ ] **Step 9: Pint dan commit**
+- [x] **Step 9: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -810,11 +810,11 @@ git commit -m "fix(akademik): tutup 2 pintu IDOR FaseDefaultMapping -- cerminan 
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri, tidak dipakai task lain.
 
-- [ ] **Step 1: Baca method `verify()` saat ini**
+- [x] **Step 1: Baca method `verify()` saat ini**
 
 Baca `app/Http/Controllers/Admin/RppController.php` baris 255-280 untuk konfirmasi struktur (nomor baris bisa bergeser).
 
-- [ ] **Step 2: Tulis test yang gagal**
+- [x] **Step 2: Tulis test yang gagal**
 
 Cek dulu dengan `php artisan route:list --name=rpp` apakah route verify sudah punya nama pasti (mis. `admin.rpp.verify`). Tambahkan test baru:
 
@@ -841,12 +841,12 @@ it('lets a yayasan-scope actor verify an RPP belonging to a lembaga under their 
 
 Sesuaikan nama route, field request (`status` vs nama lain), dan factory `Rpp`/`Guru` dengan struktur aktual (baca `StoreRppRequest`/`VerifyRppRequest`/route list dulu untuk memastikan nama field dan route benar sebelum menulis test final).
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="lets a yayasan-scope actor verify an RPP"`
 Expected: FAIL — `ValidationException` "tidak berwenang" dilempar (bug lama).
 
-- [ ] **Step 4: Perbaiki `RppController::verify()`**
+- [x] **Step 4: Perbaiki `RppController::verify()`**
 
 Ganti:
 ```php
@@ -862,17 +862,17 @@ abort_if($effectiveLembagaId === null, 422, 'Pilih lembaga aktif melalui pengali
 ```
 (tambahkan sebelum pemanggilan `$this->verifyRppAction->execute(...)`, lalu pakai `verifierLembagaId: (int) $effectiveLembagaId`) — pola identik `VerifyPengajuanRaporAction.php:27-29`.
 
-- [ ] **Step 5: Jalankan test lagi, pastikan lolos**
+- [x] **Step 5: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="lets a yayasan-scope actor verify an RPP"`
 Expected: PASS.
 
-- [ ] **Step 6: Regresi RPP**
+- [x] **Step 6: Regresi RPP**
 
 Run: `php artisan test --filter=Rpp`
 Expected: semua PASS (termasuk verify oleh actor lembaga-scope biasa yang sudah ada sebelumnya, tidak boleh regresi).
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -892,7 +892,7 @@ git commit -m "fix(akademik): verifikasi RPP oleh actor yayasan pakai effectiveL
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Buat `tests/Feature/Admin/JadwalPelajaranBentrokWaktuTest.php`:
 
@@ -949,12 +949,12 @@ it('menolak guru mengajar 2 kelas pada jam yang sama walau kelas-kelas itu pakai
 
 Sesuaikan nama route (`admin.jadwal-pelajaran.store`), field request, dan factory yang dipakai dengan struktur aktual `JadwalPelajaranController`/`StoreJadwalPelajaranRequest` (baca dulu untuk konfirmasi nama field persis sebelum finalisasi test).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak guru mengajar 2 kelas pada jam yang sama"`
 Expected: FAIL — request berhasil (bukti bug: bentrok berbasis ID slot tidak mendeteksi 2 slot beda-ID dengan jam sama).
 
-- [ ] **Step 3: Perbaiki `CreateJadwalPelajaranAction`**
+- [x] **Step 3: Perbaiki `CreateJadwalPelajaranAction`**
 
 Baca file penuh dulu (baris bisa bergeser). Sebelum blok "Validasi Bentrok Guru Pengampu", tambahkan resolusi `$jamPelajaranBaru`:
 ```php
@@ -981,9 +981,9 @@ Ganti blok bentrok guru (baris 52-63 versi lama):
         }
 ```
 
-- [ ] **Step 4: Perbaiki `UpdateJadwalPelajaranAction`** — pola identik, tambahkan `->where('id', '!=', $jadwal->id)` ke query (mengabaikan self-record, seperti versi lama).
+- [x] **Step 4: Perbaiki `UpdateJadwalPelajaranAction`** — pola identik, tambahkan `->where('id', '!=', $jadwal->id)` ke query (mengabaikan self-record, seperti versi lama).
 
-- [ ] **Step 5: Perbaiki `ValidateRoomClashAction`**
+- [x] **Step 5: Perbaiki `ValidateRoomClashAction`**
 
 Ganti:
 ```php
@@ -1012,17 +1012,17 @@ Ganti:
     }
 ```
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="menolak guru mengajar 2 kelas pada jam yang sama"`
 Expected: PASS.
 
-- [ ] **Step 7: Regresi Jadwal Pelajaran**
+- [x] **Step 7: Regresi Jadwal Pelajaran**
 
 Run: `php artisan test --filter=JadwalPelajaran`
 Expected: semua PASS (termasuk test bentrok berbasis slot yang sama, mis. 2 kelas yang MEMANG pakai `jam_pelajaran_id` sama persis harus tetap terdeteksi bentrok — perbaikan ini superset dari deteksi lama, bukan pengganti yang lebih sempit).
 
-- [ ] **Step 8: Pint dan commit**
+- [x] **Step 8: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1041,7 +1041,7 @@ git commit -m "fix(akademik): deteksi bentrok guru/ruangan berbasis waktu wall-c
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal (reproduksi persis skenario bug)**
+- [x] **Step 1: Tulis test yang gagal (reproduksi persis skenario bug)**
 
 Tambahkan di `tests/Unit/Services/FaseDefaultResolverTest.php`:
 
@@ -1064,12 +1064,12 @@ it('tidak membiarkan tingkat spesifik yang TIDAK cocok mengalahkan catch-all dal
 
 Tambahkan test cerminan di `tests/Unit/Services/KurikulumAssignmentResolverTest.php` (baca dulu struktur file existing untuk pola factory/setup yang benar, sesuaikan — `KurikulumAssignmentResolver::resolve()` butuh `$tahunAjaranId` tambahan sebagai parameter pertama).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="tidak membiarkan tingkat spesifik yang TIDAK cocok"`
 Expected: FAIL — hasil `'lima'`, bukan `'umum'` (bukti bug).
 
-- [ ] **Step 3: Perbaiki `FaseDefaultResolver`**
+- [x] **Step 3: Perbaiki `FaseDefaultResolver`**
 
 Ganti isi `resolve()`:
 ```php
@@ -1091,20 +1091,20 @@ Ganti isi `resolve()`:
     }
 ```
 
-- [ ] **Step 4: Perbaiki `KurikulumAssignmentResolver`** — pola identik, tambahkan filter WHERE `tingkat` yang sama sebelum `orderBy`, pertahankan filter `tahun_ajaran_id` yang sudah ada (EKSAK, tidak masuk precedence).
+- [x] **Step 4: Perbaiki `KurikulumAssignmentResolver`** — pola identik, tambahkan filter WHERE `tingkat` yang sama sebelum `orderBy`, pertahankan filter `tahun_ajaran_id` yang sudah ada (EKSAK, tidak masuk precedence).
 
-- [ ] **Step 5: Jalankan test lagi, pastikan lolos**
+- [x] **Step 5: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=FaseDefaultResolverTest`
 Run: `php artisan test --filter=KurikulumAssignmentResolverTest`
 Expected: semua PASS, termasuk test lama (precedence lembaga-vs-global dan tingkat-exact-vs-catchall yang SUDAH ADA sebelumnya) — perbaikan ini menambah filter, bukan mengubah urutan `orderBy` yang sudah benar untuk kasus-kasus itu.
 
-- [ ] **Step 6: Regresi konsumen resolver**
+- [x] **Step 6: Regresi konsumen resolver**
 
 Run: `php artisan test --filter=KelasController`
 Expected: semua PASS (endpoint `faseSuggestion` konsumen `FaseDefaultResolver`).
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1118,17 +1118,17 @@ git commit -m "fix(akademik): resolver Fase/Kurikulum -- filter tingkat di WHERE
 
 **Files:** Tidak ada file diubah — verifikasi akhir.
 
-- [ ] **Step 1: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 1: Pastikan tidak ada proses test lain berjalan**
 
 Run: `ps aux | grep artisan | grep -v grep`
 Expected: kosong.
 
-- [ ] **Step 2: Jalankan full suite sendirian**
+- [x] **Step 2: Jalankan full suite sendirian**
 
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures (kecuali kegagalan yang SUDAH DIKETAHUI tidak berkaitan, mis. test SPMB dengan data Faker acak mengandung apostrof — kalau muncul, jalankan ulang sendirian untuk konfirmasi flaky).
 
-- [ ] **Step 3: Pint final**
+- [x] **Step 3: Pint final**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}` atau auto-fix tanpa error.
