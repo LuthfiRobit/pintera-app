@@ -6,12 +6,12 @@
     <div class="py-6 max-w-7xl mx-auto sm:px-6 lg:px-8">
         <form method="GET" action="{{ route('admin.presensi-saya.index') }}" class="mb-4 flex gap-4">
             <div>
-                <label for="start_date" class="block text-sm font-medium text-gray-700">Dari</label>
-                <input type="date" id="start_date" name="start_date" value="{{ $startDate }}" class="mt-1 block rounded-md border-gray-300">
+                <label for="dari_tanggal" class="block text-sm font-medium text-gray-700">Dari</label>
+                <input type="date" id="dari_tanggal" name="dari_tanggal" value="{{ $dariTanggal }}" class="mt-1 block rounded-md border-gray-300">
             </div>
             <div>
-                <label for="end_date" class="block text-sm font-medium text-gray-700">Sampai</label>
-                <input type="date" id="end_date" name="end_date" value="{{ $endDate }}" class="mt-1 block rounded-md border-gray-300">
+                <label for="sampai_tanggal" class="block text-sm font-medium text-gray-700">Sampai</label>
+                <input type="date" id="sampai_tanggal" name="sampai_tanggal" value="{{ $sampaiTanggal }}" class="mt-1 block rounded-md border-gray-300">
             </div>
             <div class="self-end">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Filter</button>

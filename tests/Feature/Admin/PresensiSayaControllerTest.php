@@ -73,3 +73,35 @@ it('regresi identitas: siswa A hanya melihat presensinya sendiri, bukan milik si
     $response->assertOk();
     $response->assertViewHas('riwayatList', fn ($list) => $list->count() === 1 && $list->first()->siswa_id === $siswaA->id);
 });
+
+it('filter tanggal eksplisit lewat dari_tanggal/sampai_tanggal membatasi hasil sesuai rentang', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    [$user, $siswa] = buatSiswaDenganAkunDanPresensi($lembaga, $kelas);
+    $sesiDalamRentang = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => '2026-01-15']);
+    $sesiDiLuarRentang = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => '2026-03-01']);
+    Presensi::factory()->create(['siswa_id' => $siswa->id, 'sesi_pembelajaran_id' => $sesiDalamRentang->id, 'status' => 'hadir']);
+    Presensi::factory()->create(['siswa_id' => $siswa->id, 'sesi_pembelajaran_id' => $sesiDiLuarRentang->id, 'status' => 'hadir']);
+
+    $response = $this->actingAs($user)->get(route('admin.presensi-saya.index', [
+        'dari_tanggal' => '2026-01-01',
+        'sampai_tanggal' => '2026-01-31',
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('riwayatList', fn ($list) => $list->count() === 1);
+});
+
+it('menolak format tanggal tidak valid dengan error validasi, bukan error server', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    [$user, $siswa] = buatSiswaDenganAkunDanPresensi($lembaga, $kelas);
+
+    $response = $this->actingAs($user)->get(route('admin.presensi-saya.index', ['dari_tanggal' => 'bukan-tanggal']));
+
+    $response->assertSessionHasErrors('dari_tanggal');
+});
