@@ -2,7 +2,7 @@
 
 > **Cermin dari Artifact**: https://claude.ai/code/artifact/ee114dde-1058-4bff-a43a-be904f90d667
 > Baca file ini dulu sebelum fetch artifact via network — hanya fetch ulang kalau ada perubahan besar yang belum tercermin di sini (dan update file ini + artifact bersamaan setelahnya).
-> Terakhir disinkronkan: 2026-09-03 (Modul Keuangan reguler: konsolidasi Sasaran/Tarif/Keringanan, engine Recalculate + flag Perlu Ditinjau Ulang, audit billing 10 temuan, verifikasi browser 20 alur, audit seeder/factory lintas domain — lihat bagian baru di bawah). **Artifact belum ikut diupdate untuk sinkron ini** — file lokal ini sudah lebih baru dari artifact publik untuk bagian Keuangan sampai artifact di-publish ulang.
+> Terakhir disinkronkan: 2026-09-04 (Modul Akademik: audit lanjutan IDOR+RPP+bentrok jadwal, audit putaran 3 & 4 (root-fix `TenantScope` session-staleness lintas-yayasan), fitur baru Ruang Orang Tua & Ruang Siswa Akademik dibuka dari placeholder, polesan UI/UX menyeluruh, bug fix list semester Nilai Anak — lihat bagian baru di bawah). **Artifact belum ikut diupdate untuk sinkron ini** — file lokal ini sudah lebih baru dari artifact publik untuk bagian Akademik sampai artifact di-publish ulang.
 
 Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/direfaktor, dan yang belum ada sama sekali. Disusun dari pembacaan kode & spec/plan langsung, bukan asumsi.
 
@@ -194,7 +194,7 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
-**Technical debt baru dicatat — `TD-AKADEMIK-003` (kandidat)**: `bentuk_pendidikan` masih di-hardcode terpisah di 4 lokasi lama (`StoreFaseDefaultMappingRequest.php`, `LembagaController.php`, `AcademicProfile.php`, `RaporPdfDataBuilder.php`) dengan daftar yang tidak selalu identik. Enum `BentukPendidikan` baru (`app/Domains/Akademik/Enums/BentukPendidikan.php`, dibuat khusus utk fitur ini) bisa jadi sumber tunggal kalau 4 lokasi ini di-retrofit — effort Kecil-Sedang, tidak urgent.
+**`TD-AKADEMIK-003` — SELESAI (5 September 2026)**: `bentuk_pendidikan` di-retrofit ke enum `BentukPendidikan` sebagai sumber tunggal. `RaporPdfDataBuilder.php` ternyata sudah beres duluan (Sprint 5, 26 Agustus — delegasi ke `AcademicProfile`). 3 lokasi tersisa diperbaiki: `LembagaController::validated()` & `StoreFaseDefaultMappingRequest`/`UpdateFaseDefaultMappingRequest` ganti string `in:KB,TPA,...`/const array duplikat jadi `Rule::enum(BentukPendidikan::class)` (pola yang sudah dipakai `StoreKurikulumAssignmentRequest`); `FaseDefaultMappingController` ganti `private const BENTUK_PENDIDIKAN` jadi `array_column(BentukPendidikan::cases(), 'value')`; `AcademicProfile::fromBentukPendidikan()` ganti `in_array()` string mentah jadi `match()` di atas kasus enum (`BentukPendidikan::tryFrom()` + pesan error persis sama, perilaku tidak berubah). `ModePembelajaran::fromBentukPendidikan()` SENGAJA tidak disentuh (negative-whitelist yang memang harus menerima nilai jenjang masa depan yang belum dikenal). Test: 52 passed (108 assertions) lintas `FaseDefaultMappingControllerTest`, `LembagaCrudTest`, `AcademicProfileTest`, `CreateFaseDefaultMappingActionTest`, `UpdateFaseDefaultMappingActionTest`.
 
 **Urutan kerja disarankan**: 1 → 2 → 3 → (4, 5, 6 urutannya tergantung siapa customer nyata — kalau semua Kemendikbud/umum, 6 lebih mendesak drpd 5; kalau ada madrasah, sebaliknya) → 7 kapan saja (tidak mengganggu apa pun).
 
@@ -215,6 +215,60 @@ Lanjutan setelah "Migrasi domain Keuangan" (24 Agustus 2026, lihat §3) — peke
 **4. Verifikasi Browser Frontend — 20 Alur (2-3 September 2026)**: seluruh UI yang dibangun di atas (form Jenis Tagihan, halaman Perlu Ditinjau, Monitoring, dashboard & checkout Orang Tua, topbar/sidebar) sebelumnya cuma pernah diuji lewat Pest HTTP-assertion, belum pernah diklik nyata di browser. Verifikasi Playwright penuh menemukan & memperbaiki: bug nyata di aplikasi (halaman Perlu Ditinjau tidak pernah menampilkan `$errors` validasi), 2 root cause lingkungan (permission `tagihan.edit` belum ter-seed ke DB dev, URL salah di skrip verifikasi), sinkronisasi event `notifikasi-updated` antara topbar & dashboard Orang Tua (badge tidak update real-time sebelumnya). **Catatan proses penting**: laporan verifikasi PERTAMA dari agent lain mengklaim "20/20 PASS" padahal screenshot buktinya menunjukkan error 403/404 pada 6 dari 20 alur — butuh 2 putaran audit independen (baca screenshot mentah + cross-check kode langsung, bukan percaya ringkasan) sebelum status "genuinely PASS" benar-benar valid. Log: `.agents/logs/2026-09-02-verifikasi-browser-frontend-keuangan.md`.
 
 **5. Audit Seeder & Factory Lintas Domain (3 September 2026)**: audit sistematis `database/seeders` (66 file) + `database/factories` (52 file) menemukan & memperbaiki: `APP_FAKER_LOCALE` ternyata `en_US` (bukan `id_ID`) sejak awal — root cause nama/kota gaya Barat di HAMPIR SEMUA factory sekaligus (Person/Guru/Siswa/OrangTua/Karyawan dll), diperbaiki dengan satu baris config; `SeleksiPpdbSeeder` menjadwalkan tes seleksi di masa depan (`addDays`) padahal `HasilSeleksiSeeder`/`SkPpdbSeeder` mencatat hasil/SK di hari yang sama — diperbaiki jadi `subDays` agar rantai tanggal PPDB logis; `BriVirtualAccountFactory` definition() kosong (gagal NOT NULL constraint), `CicilanFactory` urutan hardcode `1` (tabrakan UNIQUE constraint kalau bikin >1 cicilan per skema) — keduanya diperbaiki. **Tindak lanjut**: `OrangTuaKaryawanSeeder`/`KeuanganDemoSeeder` diperluas supaya ke-5 pasangan demo Orang Tua ↔ Siswa bisa SALING login (sebelumnya cuma 1 dari 5 anak yang punya akun login), masing-masing dengan data akademik (presensi, nilai) dan Keuangan (tagihan) nyata — siap dipraktikkan end-to-end. Diverifikasi lewat `migrate:fresh --seed` bersih + full suite 2698 passed berulang kali. Commit: `f687b924`.
+
+---
+
+## 🟢 Audit Sistematis Akademik Lanjutan, Putaran 3 & 4 + Fitur Ruang Orang Tua/Siswa (4 September 2026) — SELESAI
+
+Satu sesi panjang di branch `akademik-v2`: 3 putaran audit keamanan/integritas tambahan menyusul "Audit Sistematis Akademik Tahap 2" (27-28 Agustus, lihat bagian di atas), lalu 2 fitur self-service baru yang membuka menu yang selama ini disembunyikan (dikomentari) di sidebar. Semua lewat `superpowers:brainstorming` → `writing-plans` → `subagent-driven-development`, tiap paket full test suite hijau sebelum lanjut.
+
+**1. Audit Lanjutan — IDOR, RPP Verify, Bentrok Jadwal, Resolver Precedence**:
+   - **`ResolveLembagaScopeTrait`** (baru, `app/Domains/Akademik/Support/`): `lembaga_id` untuk aktor non-platform TIDAK PERNAH lagi diambil mentah dari request/payload klien.
+   - Menutup 2 pintu IDOR di `KurikulumAssignmentController` (nilai ditulis lewat `resolveLembagaId()` + akses baris existing lewat `authorizeExistingAssignmentScope()`) dan cerminan yang sama di `FaseDefaultMappingController`.
+   - Verifikasi RPP oleh aktor yayasan diperbaiki pakai `effectiveLembagaId` (sebelumnya `lembaga_id` mentah yang SELALU `null` untuk aktor yayasan — verify RPP oleh yayasan diam-diam tidak pernah berfungsi).
+   - Deteksi bentrok guru/ruangan diperbaiki dari perbandingan `jam_pelajaran_id` mentah (rapuh, salah kalau ID beda tapi jam sama) jadi wall-clock time overlap yang benar.
+   - Resolver Fase/Kurikulum: filter tingkat dipindah ke klausa `WHERE` (bukan cuma `ORDER BY`), mencegah baris catch-all tingkat-tidak-cocok memenangkan resolusi.
+   - Spec: `.agents/specs/2026-09-04-akademik-fix-idor-rpp-verify-bentrok-jadwal-resolver.md`, Plan: `.agents/plans/2026-09-04-akademik-fix-idor-rpp-verify-bentrok-jadwal-resolver.md`, Handoff Log: `.agents/logs/2026-09-04-perbaikan-audit-akademik-lanjutan.md`.
+   - Test: **2.766 passed (7.543 assertions), 0 failures**.
+
+**2. Audit Putaran 3 — Billing Trigger, RPP `guru_id`, Race Condition, Dropdown Kelas, Session Staleness, Kelas Terakhir**:
+   1. **`JenisTagihanSasaranMatcher`** kini exclude siswa non-aktif dari SEMUA jalur billing (root fix di satu tempat, `TagihanBillingGenerator` & `GenerateTagihanForUpdatedClass` sengaja tidak disentuh) — menutup celah tagihan baru muncul untuk siswa yang sudah keluar/lulus/pindah saat event `StudentUpdatedClass`.
+   2. **`StoreRppRequest`** memvalidasi `guru_id` eksplisit; `RppController::store()` tidak lagi fallback ke guru acak.
+   3. **Race condition** validasi total bobot Komponen Penilaian dicegah via `DB::transaction()` + `lockForUpdate()` pada `Semester` di `CreateKomponenPenilaianAction` dan `UpdateKomponenPenilaianAction`.
+   4. Re-check tenant `mata_pelajaran_id` di jalur admin `RppController::store()`.
+   5. Dropdown kelas di `SiswaController::create()`/`edit()` difilter ke Tahun Ajaran aktif, dengan preservasi kelas existing siswa di `edit()` (dibuktikan test regresi-negatif submit-tanpa-ubah-field).
+   6. `resolveActiveLembagaId()` baru di `ResolveLembagaScopeTrait`, diterapkan ke `GuruController`, `KalenderAkademikController`, `PengaturanAkademikController` (5 titik `session('active_lembaga_id')` mentah diganti).
+   7. `ProsesKenaikanKelasAction` cabang lulus kini mengisi `kelas_terakhir_id` (via `DB::raw('kelas_id')`) sebelum `kelas_id` diset `null`, mencegah riwayat kelas terakhir hilang saat kelulusan massal.
+   - Spec: `.agents/specs/2026-09-04-perbaikan-audit-akademik-putaran-3.md`, Plan: `.agents/plans/2026-09-04-perbaikan-audit-akademik-putaran-3.md`, Handoff Log: `.agents/logs/2026-09-04-perbaikan-audit-akademik-putaran-3.md`.
+   - Test: **2.782 passed (7.579 assertions), 0 failures**.
+
+**3. Audit Putaran 4 — Root Fix `TenantScope` Session-Staleness Lintas-Yayasan + Race Condition Jadwal**:
+   1. **Root fix kritis di `TenantScope`**: verifikasi ulang kepemilikan yayasan atas `active_lembaga_id` di session — sebelumnya aktor yayasan dengan session basi (mis. lembaga sudah dipindah/dihapus dari yayasannya, atau residu dari akun lain) bisa tetap melihat/menulis data lembaga yang bukan lagi miliknya.
+   2. Verifikasi ulang `active_lembaga_id` di titik pakai tambahan: `KelasController::store()`, `TahunAjaranController::store()`, `PolaJamController::store()`, `JenisTesMasterController::store()`, `RppController::verify()`.
+   3. `JadwalPelajaranController` verifikasi ulang `active_lembaga_id` di `store()`/`update()`, sekaligus memperbaiki bug kode-mati `active_lembaga_id` di `duplicate()`.
+   4. Race condition bentrok jadwal dicegah via `lockForUpdate()` pada `JamPelajaran`.
+   - Spec: `.agents/specs/2026-09-04-perbaikan-audit-akademik-putaran-4.md`, Plan: `.agents/plans/2026-09-04-perbaikan-audit-akademik-putaran-4.md`, Handoff Log: `.agents/logs/2026-09-04-perbaikan-audit-akademik-putaran-4.md`.
+   - Test: **2.792 passed (7.601 assertions), 0 failures**, durasi 717.91s.
+
+**4. Fix Standalone — Dropdown Filter Lembaga `JadwalPelajaranController::index()`**: diganti dari `session('active_lembaga_id')` mentah jadi `resolveActiveLembagaId($request->user())`, konsisten dengan pola putaran 3/4 di atas. Test ditambahkan di `JadwalPelajaranCrudTest.php`.
+
+**5. Fitur Baru — Ruang Orang Tua Akademik (Nilai Anak, Jadwal Anak, Riwayat Izin/Sakit Anak)**: membuka 3 menu yang sejak 3 September 2026 hanya jadi placeholder `/dalam-pengembangan` di sidebar.
+   - **`ResolveAnakOrangTuaTrait`** (baru): `resolveAnakList()` (semua anak milik satu akun orang tua) + `resolveAnakTerpilih()` — pola "derive, don't validate": `siswa_id` di query string yang tidak valid/bukan anak sendiri diam-diam fallback ke anak pertama (bukan error), sementara unduh Rapor PDF (`unduhRapor()`) pakai `abort_unless(...,403)` tegas karena substitusi diam-diam berbahaya (salah unduh berkas).
+   - 3 controller baru (`NilaiAnakController`, `JadwalAnakController`, `RiwayatIzinSakitAnakController`) di `app/Http/Controllers/Admin/`, reuse `RaporPdfDataBuilder` yang sama dengan `Guru\RaporController`.
+   - **3 bug kelas `TenantScope` ditemukan & diperbaiki saat review** (akun orang tua punya `lembaga_id = null`, beda dari siswa yang punya `lembaga_id` asli — query tanpa `withoutGlobalScope(TenantScope::class)` diam-diam mengembalikan collection kosong, bukan error): route-model-binding `unduhRapor()`, eager-load `kelas.tahunAjaran`, dan `whereHas('sesiPembelajaran', ...)` di Riwayat Izin/Sakit.
+   - Spec: `.agents/specs/2026-09-04-fitur-ruang-orang-tua-akademik.md`, Plan: `.agents/plans/2026-09-04-fitur-ruang-orang-tua-akademik.md`, Kickoff: `.agents/kickoff/2026-09-04-fitur-ruang-orang-tua-akademik-kickoff.md`, Handoff Log: `.agents/logs/2026-09-04-fitur-ruang-orang-tua-akademik.md`.
+   - Test: **2.813 passed (7.646 assertions), 0 failures**.
+
+**6. Fitur Baru — Ruang Siswa Akademik (Nilai & Rapor, Jadwal Pelajaran, Presensi Saya)**: kelanjutan langsung paket Ruang Orang Tua, membuka 3 menu siswa yang juga sejak 3 September hanya placeholder.
+   - Tidak butuh trait resolve-anak — akun siswa 1:1 lewat `$request->user()->siswa` (`User::siswa()` sudah bungkus `withoutGlobalScope(TenantScope::class)` di level relasi), dan `unduhRapor()` tidak menerima parameter ID sama sekali (nol permukaan IDOR).
+   - `PresensiSayaController` baru (halaman detail per-sesi — dashboard existing cuma py agregat rekap bulanan, bukan daftar) dengan filter rentang tanggal.
+   - **Bug ditemukan & diperbaiki saat review**: `PresensiSayaController` versi awal tidak validasi input tanggal (bisa 500 bukan 422) dan pakai nama field beda dari saudaranya di Ruang Orang Tua (`start_date`/`end_date` vs `dari_tanggal`/`sampai_tanggal`) — diperbaiki + 2 test baru.
+   - Spec: `.agents/specs/2026-09-04-fitur-ruang-siswa-akademik.md`, Plan: `.agents/plans/2026-09-04-fitur-ruang-siswa-akademik.md`, Kickoff: `.agents/kickoff/2026-09-04-fitur-ruang-siswa-akademik-kickoff.md`, Handoff Log: `.agents/logs/2026-09-04-fitur-ruang-siswa-akademik.md`.
+   - Test: **2.822 passed (7.671 assertions), 0 failures**.
+
+**7. Polesan UI/UX Menyeluruh (Ruang Orang Tua & Ruang Siswa)**: dikerjakan agent lain lewat 8 commit terpisah (+1094/-192 baris) di atas kedua fitur selesai — komponen standar Pintera (`<x-panel>`, `<x-badge>`, `<x-icon>`, token `text-ink`/`text-slate`/`bg-paper`), tampilan jadwal diseragamkan (list horizontal + time pill mono + toggle matriks mingguan sebagai default), highlight & auto-scroll ke hari ini, dan kartu ringkasan status kehadiran per status di Presensi Saya. Direview bersih (tidak ada `{!! !!}` mentah, null-safety terjaga).
+
+**8. Bug Fix — List Semester Kosong di Nilai Anak (dilaporkan user)**: `NilaiAnakController::index()` — query `Semester::where('tahun_ajaran_id', ...)` untuk isi dropdown semester tidak pernah membypass `TenantScope`, sehingga selalu kosong untuk akun orang tua (`lembaga_id = null`) — **instans ke-5 dari bug class yang sama** yang berulang muncul sepanjang sesi ini. Diperbaiki satu baris + test regresi baru yang sengaja TIDAK mengirim `semester_id` (test lama semuanya kebetulan selalu mengirim eksplisit, jadi tidak pernah menyentuh jalur default yang rusak). Commit: `a05fadda`.
 
 ---
 
