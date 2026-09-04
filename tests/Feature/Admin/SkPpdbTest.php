@@ -132,7 +132,7 @@ it('denies the terbitkan sk form without the terbitkan-sk permission', function 
 it('issues a SK for a yayasan-scoped user once an active lembaga is selected in session', function () {
     Storage::fake('public');
     [$lembaga, , $gelombang, $diterima] = buatPendaftaranUntukAdmin(namaCalon: 'Sudah Diterima', status: 'diterima');
-    $user = User::factory()->create(['lembaga_id' => null]);
+    $user = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $user->assignRole('yayasan_super_admin');
 
     $response = $this->actingAs($user)
@@ -150,8 +150,8 @@ it('issues a SK for a yayasan-scoped user once an active lembaga is selected in 
 });
 
 it('redirects back with a lembaga_id error, not a 500, for a yayasan-scoped user with no active lembaga selected', function () {
-    [, , $gelombang] = buatPendaftaranUntukAdmin(status: 'diterima');
-    $user = User::factory()->create(['lembaga_id' => null]);
+    [$lembaga, , $gelombang] = buatPendaftaranUntukAdmin(status: 'diterima');
+    $user = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $user->assignRole('yayasan_super_admin');
 
     $response = $this->actingAs($user)->post(route('admin.sk-ppdb.store'), [

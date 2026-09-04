@@ -4,15 +4,15 @@ use App\Models\DokumenPendaftaran;
 use App\Models\DokumenSyaratPpdb;
 use App\Models\HasilSeleksi;
 use App\Models\JenisTesMaster;
-use App\Models\Pendaftaran;
 use App\Models\SeleksiPpdb;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    (new RolePermissionSeeder())->run();
+    (new RolePermissionSeeder)->run();
 });
 
 it('shows the detail page with calon murid data, dokumen, and nilai panels', function () {
@@ -206,7 +206,7 @@ it('shows the detail page and verifies a dokumen for a yayasan-scoped user once 
         'pendaftaran_id' => $pendaftaran->id, 'dokumen_syarat_ppdb_id' => $syarat->id,
         'file_path' => 'x.pdf', 'nama_file_asli' => 'x.pdf', 'mime_type' => 'application/pdf', 'ukuran_bytes' => 10,
     ]);
-    $user = User::factory()->create(['lembaga_id' => null]);
+    $user = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $user->assignRole('yayasan_super_admin');
 
     $showResponse = $this->actingAs($user)
@@ -225,8 +225,8 @@ it('shows the detail page and verifies a dokumen for a yayasan-scoped user once 
 });
 
 it('404s the detail page, not a 500, for a yayasan-scoped user with no active lembaga selected', function () {
-    [, , , $pendaftaran] = buatPendaftaranUntukAdmin();
-    $user = User::factory()->create(['lembaga_id' => null]);
+    [$lembaga, , , $pendaftaran] = buatPendaftaranUntukAdmin();
+    $user = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $lembaga->yayasan_id]);
     $user->assignRole('yayasan_super_admin');
 
     $this->actingAs($user)->get(route('admin.spmb-pendaftaran.show', $pendaftaran))->assertNotFound();
