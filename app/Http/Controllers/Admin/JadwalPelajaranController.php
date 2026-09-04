@@ -10,6 +10,7 @@ use App\Domains\Akademik\Actions\Jadwal\UpdateJadwalPelajaranAction;
 use App\Domains\Akademik\DataTransferObjects\JadwalPelajaranData;
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Domains\Sarpras\Models\Ruangan;
 use App\Enums\Hari;
 use App\Http\Requests\Akademik\DuplicateJadwalRequest;
@@ -33,6 +34,7 @@ use Illuminate\View\View;
 class JadwalPelajaranController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function __construct(
         private readonly CreateJadwalPelajaranAction $createJadwalPelajaranAction,
@@ -179,7 +181,9 @@ class JadwalPelajaranController extends BaseController
         $kelas = Kelas::find($data['kelas_id']);
         abort_if(! $kelas, 404);
 
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan' ? session('active_lembaga_id') : $request->user()->lembaga_id;
+        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+            ? $this->resolveActiveLembagaId($request->user())
+            : $request->user()->lembaga_id;
         if ($lembagaId) {
             abort_if($kelas->lembaga_id !== $lembagaId, 404);
         }
@@ -332,7 +336,9 @@ class JadwalPelajaranController extends BaseController
         $data = $request->validated();
         $kelas = Kelas::findOrFail($jadwalPelajaran->kelas_id);
 
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan' ? session('active_lembaga_id') : $request->user()->lembaga_id;
+        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+            ? $this->resolveActiveLembagaId($request->user())
+            : $request->user()->lembaga_id;
         if ($lembagaId) {
             abort_if($kelas->lembaga_id !== $lembagaId, 404);
         }
@@ -442,7 +448,7 @@ class JadwalPelajaranController extends BaseController
         $targetSemester = Semester::findOrFail($data['target_semester_id']);
 
         $user = $request->user();
-        $lembagaId = $user->active_lembaga_id ?: ($user->lembaga_id ?: null);
+        $lembagaId = $user->widestScopeLevel() === 'yayasan' ? $this->resolveActiveLembagaId($user) : $user->lembaga_id;
 
         if ($lembagaId) {
             abort_if($sourceKelas->lembaga_id !== $lembagaId || $targetKelas->lembaga_id !== $lembagaId, 404);
