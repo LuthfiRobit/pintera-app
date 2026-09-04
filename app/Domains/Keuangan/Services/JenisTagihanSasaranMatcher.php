@@ -7,6 +7,7 @@ namespace App\Domains\Keuangan\Services;
 use App\Domains\Keuangan\Models\JenisTagihan;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranGrup;
 use App\Domains\Keuangan\Models\JenisTagihanSasaranKriteria;
+use App\Enums\StatusSiswa;
 use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,7 +24,8 @@ class JenisTagihanSasaranMatcher
 
         $query = Siswa::withoutGlobalScope(TenantScope::class)
             ->with('kelas')
-            ->where('lembaga_id', $jenisTagihan->lembaga_id);
+            ->where('lembaga_id', $jenisTagihan->lembaga_id)
+            ->where('status', StatusSiswa::Aktif->value);
 
         if ($sasaranGrups->isNotEmpty()) {
             $query->where(function (Builder $outer) use ($sasaranGrups) {
@@ -44,6 +46,7 @@ class JenisTagihanSasaranMatcher
     {
         return Siswa::withoutGlobalScope(TenantScope::class)
             ->where('lembaga_id', $jenisTagihan->lembaga_id)
+            ->where('status', StatusSiswa::Aktif->value)
             ->count();
     }
 
@@ -62,6 +65,10 @@ class JenisTagihanSasaranMatcher
 
     public function siswaMatchesJenisTagihan(Siswa $siswa, JenisTagihan $jenisTagihan): bool
     {
+        if ($siswa->status !== StatusSiswa::Aktif) {
+            return false;
+        }
+
         if ($siswa->lembaga_id !== $jenisTagihan->lembaga_id) {
             return false;
         }
