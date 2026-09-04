@@ -1,8 +1,12 @@
 <?php
 
+use App\Models\GelombangPpdb;
+use App\Models\JalurPpdb;
 use App\Models\JenisTesMaster;
 use App\Models\Lembaga;
 use App\Models\Role;
+use App\Models\SeleksiPpdb;
+use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
@@ -103,17 +107,17 @@ it('blocks deleting a jenis tes that is still referenced by a seleksi row', func
     [$lembaga, $user] = buatAdminPpdb();
     $this->actingAs($user);
 
-    $tahunAjaran = \App\Models\TahunAjaran::create([
+    $tahunAjaran = TahunAjaran::create([
         'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
         'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
     ]);
-    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
-    $gelombang = \App\Models\GelombangPpdb::create([
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
         'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
         'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
     ]);
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
-    \App\Models\SeleksiPpdb::create([
+    SeleksiPpdb::create([
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
         'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
     ]);
@@ -179,17 +183,17 @@ it('includes the seleksi usage count in the json response after updating a jenis
     [$lembaga, $user] = buatAdminPpdb();
     $this->actingAs($user);
 
-    $tahunAjaran = \App\Models\TahunAjaran::create([
+    $tahunAjaran = TahunAjaran::create([
         'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
         'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
     ]);
-    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
-    $gelombang = \App\Models\GelombangPpdb::create([
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
         'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
         'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
     ]);
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
-    \App\Models\SeleksiPpdb::create([
+    SeleksiPpdb::create([
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
         'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
     ]);
@@ -206,17 +210,17 @@ it('includes the exact number of blocking seleksi rows in the destroy error mess
     [$lembaga, $user] = buatAdminPpdb();
     $this->actingAs($user);
 
-    $tahunAjaran = \App\Models\TahunAjaran::create([
+    $tahunAjaran = TahunAjaran::create([
         'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
         'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
     ]);
-    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
-    $gelombang = \App\Models\GelombangPpdb::create([
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
         'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
         'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
     ]);
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
-    \App\Models\SeleksiPpdb::create([
+    SeleksiPpdb::create([
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
         'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
     ]);
@@ -232,17 +236,17 @@ it('responds with json when a jenis tes delete is blocked by a seleksi row', fun
     [$lembaga, $user] = buatAdminPpdb();
     $this->actingAs($user);
 
-    $tahunAjaran = \App\Models\TahunAjaran::create([
+    $tahunAjaran = TahunAjaran::create([
         'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
         'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
     ]);
-    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
-    $gelombang = \App\Models\GelombangPpdb::create([
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
         'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
         'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
     ]);
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
-    \App\Models\SeleksiPpdb::create([
+    SeleksiPpdb::create([
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
         'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
     ]);
@@ -267,17 +271,17 @@ it('includes the seleksi usage count for each jenis tes on the index page', func
     [$lembaga, $user] = buatAdminPpdb();
     $this->actingAs($user);
 
-    $tahunAjaran = \App\Models\TahunAjaran::create([
+    $tahunAjaran = TahunAjaran::create([
         'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
         'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => true,
     ]);
-    $jalur = \App\Models\JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
-    $gelombang = \App\Models\GelombangPpdb::create([
+    $jalur = JalurPpdb::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Reguler']);
+    $gelombang = GelombangPpdb::create([
         'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Gelombang 1',
         'tanggal_buka' => '2026-01-01', 'tanggal_tutup' => '2026-02-01', 'kuota' => 20,
     ]);
     $jenisTes = JenisTesMaster::create(['lembaga_id' => $lembaga->id, 'nama' => 'Tes Tulis']);
-    \App\Models\SeleksiPpdb::create([
+    SeleksiPpdb::create([
         'jalur_ppdb_id' => $jalur->id, 'gelombang_ppdb_id' => $gelombang->id,
         'jenis_tes_master_id' => $jenisTes->id, 'jadwal' => '2026-01-15 09:00:00',
     ]);
@@ -287,4 +291,24 @@ it('includes the seleksi usage count for each jenis tes on the index page', func
     $response->assertViewHas('jenisTesList', function ($jenisTesList) use ($jenisTes) {
         return (int) $jenisTesList->firstWhere('id', $jenisTes->id)->seleksi_count === 1;
     });
+});
+
+it('menolak actor yayasan dengan active_lembaga_id stale saat membuat jenis tes', function () {
+    Permission::firstOrCreate(['name' => 'jenis-tes.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_jenis_tes_stale_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['jenis-tes.create']);
+
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.jenis-tes.store'), [
+        'nama' => 'Jenis Tes Uji Stale',
+    ]);
+
+    $response->assertSessionHasErrors('lembaga_id');
+    expect(JenisTesMaster::where('nama', 'Jenis Tes Uji Stale')->exists())->toBeFalse();
 });

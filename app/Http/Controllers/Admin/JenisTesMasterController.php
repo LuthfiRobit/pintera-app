@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\JenisTesMaster;
 use App\Models\SeleksiPpdb;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -15,6 +16,7 @@ use Illuminate\View\View;
 class JenisTesMasterController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function index(): View
     {
@@ -31,7 +33,7 @@ class JenisTesMasterController extends BaseController
 
         $isYayasanScope = $request->user()->widestScopeLevel() === 'yayasan';
         if ($isYayasanScope) {
-            $lembagaId = session('active_lembaga_id');
+            $lembagaId = $this->resolveActiveLembagaId($request->user());
             if ($lembagaId === null) {
                 $message = 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jenis tes.';
 
