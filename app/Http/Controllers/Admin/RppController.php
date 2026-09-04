@@ -14,6 +14,7 @@ use App\Domains\Akademik\Enums\KurikulumFramework;
 use App\Domains\Akademik\Enums\StatusRpp;
 use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\Rpp;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Http\Requests\Akademik\StoreRppRequest;
 use App\Http\Requests\Akademik\UpdateRppRequest;
 use App\Http\Requests\Akademik\VerifyRppRequest;
@@ -35,6 +36,7 @@ use Symfony\Component\HttpFoundation\Response;
 class RppController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function __construct(
         private readonly CreateRppAction $createRppAction,
@@ -270,7 +272,7 @@ class RppController extends BaseController
         $catatanRevisi = $data['catatan_revisi'] ?? null;
 
         $effectiveLembagaId = $request->user()->widestScopeLevel() === 'yayasan'
-            ? session('active_lembaga_id')
+            ? $this->resolveActiveLembagaId($request->user())
             : $request->user()->lembaga_id;
 
         abort_if($effectiveLembagaId === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga sebelum memverifikasi RPP.');

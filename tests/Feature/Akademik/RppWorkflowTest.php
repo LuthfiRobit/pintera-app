@@ -178,6 +178,44 @@ it('mengizinkan verifikator menyetujui RPP diajukan', function () {
         ->and($rppFresh->verified_at)->not->toBeNull();
 });
 
+it('menolak actor yayasan dengan active_lembaga_id stale saat memverifikasi RPP', function () {
+    $roleYayasanVerify = Role::firstOrCreate(['name' => 'yayasan_rpp_verify_stale_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $roleYayasanVerify->givePermissionTo(['rpp.verify']);
+
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    $verifierYayasan = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $this->yayasan->id]);
+    $verifierYayasan->assignRole($roleYayasanVerify);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $file = UploadedFile::fake()->create('rpp_uji_stale.pdf', 200, 'application/pdf');
+    $path = $file->store("rpp/{$this->lembaga->id}", 'public');
+
+    $rpp = Rpp::create([
+        'yayasan_id' => $this->yayasan->id,
+        'lembaga_id' => $this->lembaga->id,
+        'guru_id' => $this->guru->id,
+        'tahun_ajaran_id' => $this->tahunAjaran->id,
+        'semester_id' => $this->semester->id,
+        'kelas_id' => $this->kelas->id,
+        'mata_pelajaran_id' => $this->mapel->id,
+        'judul_topik' => 'Uji Stale Verify',
+        'alokasi_waktu' => '2 JP',
+        'file_path' => $path,
+        'file_name' => 'rpp_uji_stale.pdf',
+        'file_size_bytes' => 2048,
+        'mime_type' => 'application/pdf',
+        'status' => StatusRpp::Diajukan,
+    ]);
+
+    $response = $this->actingAs($verifierYayasan)->post(route('admin.rpp.verify', $rpp), [
+        'status' => 'disetujui',
+    ]);
+
+    $response->assertStatus(422);
+    expect($rpp->fresh()->status)->toBe(StatusRpp::Diajukan);
+});
+
 it('mengizinkan verifikator meminta revisi dengan catatan wajib', function () {
     $file = UploadedFile::fake()->create('rpp_biologi.pdf', 200, 'application/pdf');
     $path = $file->store("rpp/{$this->lembaga->id}", 'public');
