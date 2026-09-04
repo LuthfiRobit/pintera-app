@@ -39,6 +39,48 @@
             </form>
         </x-panel>
 
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <x-panel class="p-4 flex items-center gap-3.5">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                    <x-icon name="check_circle" class="h-5 w-5" />
+                </span>
+                <div>
+                    <p class="text-xs font-medium text-slate">Hadir</p>
+                    <h4 class="font-display text-lg font-bold text-ink">{{ $ringkasan->hadir ?? 0 }} <span class="text-xs font-normal text-slate">Sesi</span></h4>
+                </div>
+            </x-panel>
+
+            <x-panel class="p-4 flex items-center gap-3.5">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                    <x-icon name="assignment" class="h-5 w-5" />
+                </span>
+                <div>
+                    <p class="text-xs font-medium text-slate">Izin</p>
+                    <h4 class="font-display text-lg font-bold text-ink">{{ $ringkasan->izin ?? 0 }} <span class="text-xs font-normal text-slate">Sesi</span></h4>
+                </div>
+            </x-panel>
+
+            <x-panel class="p-4 flex items-center gap-3.5">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                    <x-icon name="medical_services" class="h-5 w-5" />
+                </span>
+                <div>
+                    <p class="text-xs font-medium text-slate">Sakit</p>
+                    <h4 class="font-display text-lg font-bold text-ink">{{ $ringkasan->sakit ?? 0 }} <span class="text-xs font-normal text-slate">Sesi</span></h4>
+                </div>
+            </x-panel>
+
+            <x-panel class="p-4 flex items-center gap-3.5">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                    <x-icon name="cancel" class="h-5 w-5" />
+                </span>
+                <div>
+                    <p class="text-xs font-medium text-slate">Alpa / Terlambat</p>
+                    <h4 class="font-display text-lg font-bold text-ink">{{ ($ringkasan->alpa ?? 0) + ($ringkasan->terlambat ?? 0) }} <span class="text-xs font-normal text-slate">Sesi</span></h4>
+                </div>
+            </x-panel>
+        </div>
+
         <x-panel class="p-6">
             <div class="flex items-center justify-between border-b border-ink/10 pb-4">
                 <div>

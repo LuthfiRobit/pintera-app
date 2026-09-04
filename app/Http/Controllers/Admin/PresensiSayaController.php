@@ -26,12 +26,29 @@ class PresensiSayaController extends Controller
         // TIDAK ADA filter whereIn('status', ['izin', 'sakit']) seperti Ruang Orang Tua.
         // Catatan TenantScope: dibuktikan lewat test (PresensiSayaControllerTest) bahwa whereHas
         // biasa (tanpa bypass) sudah cukup untuk actor siswa (lembaga_id asli, beda dari orang tua).
-        $riwayatList = Presensi::query()
+        $baseQuery = Presensi::query()
             ->where('siswa_id', $siswa->id)
             ->whereHas('sesiPembelajaran', function ($query) use ($dariTanggal, $sampaiTanggal) {
                 $query->whereBetween('tanggal', [$dariTanggal->toDateString(), $sampaiTanggal->toDateString()]);
-            })
-            ->with(['sesiPembelajaran.jadwalPelajaran.mataPelajaran', 'sesiPembelajaran.mataPelajaran'])
+            });
+
+        $ringkasan = (clone $baseQuery)
+            ->selectRaw("
+                count(*) as total,
+                count(case when status = 'hadir' then 1 end) as hadir,
+                count(case when status = 'izin' then 1 end) as izin,
+                count(case when status = 'sakit' then 1 end) as sakit,
+                count(case when status = 'alpa' then 1 end) as alpa,
+                count(case when status = 'terlambat' then 1 end) as terlambat
+            ")
+            ->first();
+
+        $riwayatList = $baseQuery
+            ->with([
+                'sesiPembelajaran.jadwalPelajaran.mataPelajaran',
+                'sesiPembelajaran.mataPelajaran',
+                'sesiPembelajaran.guru',
+            ])
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -39,6 +56,7 @@ class PresensiSayaController extends Controller
         return view('admin.siswa-akademik.presensi-saya', [
             'siswa' => $siswa,
             'riwayatList' => $riwayatList,
+            'ringkasan' => $ringkasan,
             'dariTanggal' => $dariTanggal->toDateString(),
             'sampaiTanggal' => $sampaiTanggal->toDateString(),
         ]);

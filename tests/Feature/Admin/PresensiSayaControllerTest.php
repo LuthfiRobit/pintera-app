@@ -105,3 +105,24 @@ it('menolak format tanggal tidak valid dengan error validasi, bukan error server
 
     $response->assertSessionHasErrors('dari_tanggal');
 });
+
+it('menyediakan ringkasan akumulasi kehadiran per status', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    [$user, $siswa] = buatSiswaDenganAkunDanPresensi($lembaga, $kelas);
+
+    $sesi1 = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()->startOfMonth()->addDays(1)]);
+    $sesi2 = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()->startOfMonth()->addDays(2)]);
+    $sesi3 = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()->startOfMonth()->addDays(3)]);
+
+    Presensi::factory()->create(['siswa_id' => $siswa->id, 'sesi_pembelajaran_id' => $sesi1->id, 'status' => 'hadir']);
+    Presensi::factory()->create(['siswa_id' => $siswa->id, 'sesi_pembelajaran_id' => $sesi2->id, 'status' => 'izin']);
+    Presensi::factory()->create(['siswa_id' => $siswa->id, 'sesi_pembelajaran_id' => $sesi3->id, 'status' => 'sakit']);
+
+    $response = $this->actingAs($user)->get(route('admin.presensi-saya.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('ringkasan', fn ($r) => (int) $r->hadir === 1 && (int) $r->izin === 1 && (int) $r->sakit === 1 && (int) $r->total === 3);
+});

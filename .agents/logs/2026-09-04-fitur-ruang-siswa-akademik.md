@@ -80,6 +80,17 @@ Fitur self-service Ruang Siswa Akademik berhasil dibangun menggantikan placehold
    - **Auto-Scroll Halus**: Alpine.js secara otomatis menggulirkan viewport ke jadwal hari ini (`scrollIntoView({ behavior: 'smooth', block: 'center' })` pada List Mode, dan `inline: 'center'` pada Matrix Mode) setelah jeda render awal atau saat beralih mode.
    - **Quick Action Shortcut**: Menyediakan tombol shortcut interaktif "Fokus ke Jadwal Hari Ini" pada filter card serta pesan informatif bila hari ini akhir pekan/tidak ada KBM.
 
+9. **Penambahan Ringkasan Status Kehadiran & Optimasi Eager Loading (`presensi-saya.blade.php`)**:
+   - Menambahkan **4 Kartu Ringkasan Kehadiran (*Stat Summary Cards*)**:
+     - **Hadir**: Card hijau (`bg-emerald-50 text-emerald-600`) dengan `<x-icon name="check_circle" />`.
+     - **Izin**: Card amber (`bg-amber-50 text-amber-600`) dengan `<x-icon name="assignment" />`.
+     - **Sakit**: Card merah (`bg-red-50 text-red-600`) dengan `<x-icon name="medical_services" />`.
+     - **Alpa / Terlambat**: Card rose (`bg-rose-50 text-rose-600`) dengan `<x-icon name="cancel" />`.
+   - Menghitung rekapitulasi seluruh rentang tanggal via query agregasi SQL tunggal `selectRaw` di `PresensiSayaController`.
+   - Mengoptimasi *eager loading* relasi `'sesiPembelajaran.guru'` untuk mencegah N+1 query.
+   - Menambahkan test `menyediakan ringkasan akumulasi kehadiran per status` di `PresensiSayaControllerTest`.
+   - Menambahkan ikon SVG inline `medical_services` ke `components/icon.blade.php`.
+
 ---
 
 ## 3. Hal yang Masih Perlu Direview Manusia / Claude
