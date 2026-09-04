@@ -42,7 +42,11 @@ it('tidak menampilkan menu sidebar stub untuk orang tua', function () {
 
     $response->assertOk();
     $sidebarHtml = sidebarNavHtml($response);
-    expect($sidebarHtml)->not->toContain('Nilai Anak');
-    expect($sidebarHtml)->not->toContain('Jadwal Anak');
-    expect($sidebarHtml)->not->toContain('Riwayat Izin/Sakit Anak');
+    // Menu stub placeholder /dalam-pengembangan sudah digantikan oleh rute mandiri resmi (2026-09-04)
+    expect($sidebarHtml)->not->toContain('dalam-pengembangan?fitur=nilai-anak');
+    expect($sidebarHtml)->not->toContain('dalam-pengembangan?fitur=jadwal-anak');
+    expect($sidebarHtml)->not->toContain('dalam-pengembangan?fitur=riwayat-izin-sakit-anak');
+    expect($sidebarHtml)->toContain(route('admin.nilai-anak.index'));
+    expect($sidebarHtml)->toContain(route('admin.jadwal-anak.index'));
+    expect($sidebarHtml)->toContain(route('admin.riwayat-izin-sakit-anak.index'));
 });
