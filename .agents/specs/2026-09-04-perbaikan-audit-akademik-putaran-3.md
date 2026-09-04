@@ -120,12 +120,25 @@ if ($guru === null && $request->filled('mata_pelajaran_id')) {
 
 **Masalah**: `SiswaController::create()` (baris 81) DAN `edit()` (baris 142) — keduanya `Kelas::orderBy('nama')->get()`, tidak difilter ke tahun ajaran aktif (beda dari `index()` baris 45-47 yang sudah benar).
 
-**Perbaikan**: samakan pola `index()` di KEDUA method:
+**Perbaikan** — samakan pola `index()` di `create()`. Untuk `edit()`, ADA RISIKO TAMBAHAN yang wajib ditutup: markup `_form.blade.php:74-78` membangun `<option>` murni dari `$kelasList` dan `@selected($val('kelas_id') == $kelas->id)` — kalau `kelas_id` siswa SAAT INI tidak ada di `$kelasList` (siswa masih tercatat di kelas dari tahun ajaran yang sudah tidak aktif — skenario nyata: admin edit data siswa lama untuk keperluan lain, bukan ganti kelas), TIDAK ADA `<option>` yang ter-selected, browser HTML jatuh ke opsi PERTAMA secara default. Kalau admin submit form itu tanpa sengaja menyentuh dropdown kelas (mis. cuma perbaiki NISN), `kelas_id` siswa akan DIAM-DIAM berubah ke kelas pertama di daftar — regresi data tak disengaja.
+
 ```php
+// create() -- tidak ada siswa existing, jadi tidak perlu penanganan tambahan:
 $tahunAjaranAktif = TahunAjaran::where('status_aktif', true)->first(); // scoped otomatis via TenantScope
 $kelasList = $tahunAjaranAktif
     ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
     : collect();
+
+// edit($siswa) -- SAMA seperti di atas, DITAMBAH: pastikan kelas siswa SAAT INI tetap
+// jadi opsi yang bisa dipilih (dan otomatis ter-selected oleh markup existing), meski
+// kelas itu dari tahun ajaran yang sudah tidak aktif -- supaya submit form tanpa
+// menyentuh field ini TIDAK diam-diam memindahkan siswa ke kelas lain.
+if ($siswa->kelas_id !== null && ! $kelasList->contains('id', $siswa->kelas_id)) {
+    $kelasSaatIni = Kelas::find($siswa->kelas_id);
+    if ($kelasSaatIni !== null) {
+        $kelasList = $kelasList->push($kelasSaatIni)->sortBy('nama')->values();
+    }
+}
 ```
 
 ### 2.6. [Important, impact tinggi/likelihood rendah] Session-staleness — 3 controller non-PPDB
@@ -197,5 +210,6 @@ if ($aksi['tindakan'] === 'lulus') {
 | 8 | `CreateKomponenPenilaianAction`/`UpdateKomponenPenilaianAction` | Behavioral: 2 pemanggilan sekuensial cepat yang totalnya akan melebihi 100% tetap konsisten ditolak pada pemanggilan kedua (bukti lock/transaksi bekerja, bukan regresi ke kondisi lolos keduanya). |
 | 9 | `RppController::store()` | Jalur admin (guru null), `mata_pelajaran_id` milik lembaga LAIN → 404. |
 | 10 | `SiswaController::create()`/`edit()` | `kelasList` cuma berisi kelas dari tahun ajaran aktif. |
+| 10b | `SiswaController::edit()` | Siswa dengan `kelas_id` menunjuk ke kelas dari tahun ajaran YANG SUDAH TIDAK AKTIF — assert kelas itu tetap ada di `kelasList` (bisa dipilih/ter-selected), DAN submit form tanpa mengubah field `kelas_id` (kirim value kelas lama itu) tidak mengubah `kelas_id` siswa (regresi negatif — bukti dropdown tidak diam-diam memindahkan siswa ke kelas lain). |
 | 11-13 | `GuruController`/`KalenderAkademikController`/`PengaturanAkademikController` | Masing-masing 1 test: actor yayasan dengan `active_lembaga_id` stale (lembaga di luar yayasannya) → ditolak/diarahkan ke pesan "pilih lembaga aktif", BUKAN lolos diam-diam memakai lembaga asing. |
 | 14 | `ProsesKenaikanKelasAction` | Siswa lulus lewat Kenaikan Kelas MASSAL → assert `kelas_terakhir_id` terisi benar (bukan null), `kelas_id` null, status Lulus. |
