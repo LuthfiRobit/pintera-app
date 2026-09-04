@@ -17,12 +17,11 @@ class FaseDefaultResolver
             ->where(function ($q) use ($lembagaId) {
                 $q->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
             })
+            ->where(function ($q) use ($tingkat) {
+                $q->where('tingkat', $tingkat)->orWhereNull('tingkat');
+            })
             ->orderByRaw('lembaga_id IS NULL')
             ->orderByRaw('tingkat IS NULL');
-
-        if ($tingkat !== null) {
-            $query->orderByRaw('tingkat = ? DESC', [$tingkat]);
-        }
 
         $match = $query->first();
 

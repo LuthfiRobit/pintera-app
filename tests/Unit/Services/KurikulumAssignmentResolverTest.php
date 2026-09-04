@@ -93,3 +93,17 @@ it('does not leak another lembaga override into this lembaga resolution', functi
 
     expect($hasil->value)->toBe('k13');
 });
+
+it('tidak membiarkan tingkat spesifik yang TIDAK cocok mengalahkan catch-all dalam tier lembaga yang sama', function () {
+    $lembaga = Lembaga::factory()->create();
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    // Row A: override utk tingkat 5 SAJA -- tidak relevan utk permintaan tingkat 7.
+    KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SMP', 'tingkat' => '5', 'kurikulum' => 'k13']);
+    // Row B: catch-all utk lembaga ini (tingkat null) -- INI yang seharusnya dipilih utk tingkat 7.
+    KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SMP', 'tingkat' => null, 'kurikulum' => 'merdeka']);
+
+    $hasil = app(KurikulumAssignmentResolver::class)->resolve($ta->id, 'SMP', '7', $lembaga->id);
+
+    expect($hasil->value)->toBe('merdeka'); // BUKAN 'k13' -- tingkat 5 tidak cocok dengan permintaan tingkat 7
+});

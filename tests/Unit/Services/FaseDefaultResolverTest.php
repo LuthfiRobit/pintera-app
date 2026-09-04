@@ -81,3 +81,18 @@ it('does not leak another lembaga override into this lembaga resolution', functi
 
     expect($hasil?->kode)->toBe('a'); // lembagaA tidak terpengaruh override milik lembagaB
 });
+
+it('tidak membiarkan tingkat spesifik yang TIDAK cocok mengalahkan catch-all dalam tier lembaga yang sama', function () {
+    $faseTingkat5 = buatFaseResolverTest('lima', 5);
+    $faseCatchAll = buatFaseResolverTest('umum', 0);
+    $lembaga = Lembaga::factory()->create();
+
+    // Row A: override utk tingkat 5 SAJA -- tidak relevan utk permintaan tingkat 7.
+    FaseDefaultMapping::create(['lembaga_id' => $lembaga->id, 'bentuk_pendidikan' => 'SMP', 'tingkat' => '5', 'fase_id' => $faseTingkat5->id]);
+    // Row B: catch-all utk lembaga ini (tingkat null) -- INI yang seharusnya dipilih utk tingkat 7.
+    FaseDefaultMapping::create(['lembaga_id' => $lembaga->id, 'bentuk_pendidikan' => 'SMP', 'tingkat' => null, 'fase_id' => $faseCatchAll->id]);
+
+    $hasil = app(FaseDefaultResolver::class)->resolve('SMP', '7', $lembaga->id);
+
+    expect($hasil?->kode)->toBe('umum'); // BUKAN 'lima' -- tingkat 5 tidak cocok dengan permintaan tingkat 7
+});
