@@ -21,7 +21,13 @@ trait ResolveAnakOrangTuaTrait
             return collect();
         }
 
-        return $orangTua->siswa()->withoutGlobalScope(TenantScope::class)->with('kelas')->get();
+        return $orangTua->siswa()
+            ->withoutGlobalScope(TenantScope::class)
+            ->with(['kelas' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with([
+                'lembaga',
+                'tahunAjaran' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class),
+            ])])
+            ->get();
     }
 
     /**

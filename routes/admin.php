@@ -15,6 +15,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     require base_path('routes/admin/rpp.php');
     require base_path('routes/admin/penilaian-rapor.php');
     require base_path('routes/admin/kasus-admin.php');
+    require base_path('routes/admin/orang-tua-akademik.php');
 
     require base_path('routes/admin/sarpras.php');
 
