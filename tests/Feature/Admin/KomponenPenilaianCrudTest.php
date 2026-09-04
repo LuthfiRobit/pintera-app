@@ -15,6 +15,7 @@ use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 
 function actingAsKomponenManager(Lembaga $lembaga): User
@@ -703,4 +704,22 @@ it('does not touch lembaga_id when updating a komponen without changing semester
     $komponen->refresh();
     expect($komponen->deskripsi)->toBe('Deskripsi diubah tanpa ganti semester');
     expect($komponen->lembaga_id)->toBe($lembagaIdSebelum);
+});
+
+it('tetap konsisten menolak bobot melebihi 100% setelah dibungkus lock (regresi, bukan tes concurrency asli)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    app(CreateKomponenPenilaianAction::class)->execute(new KomponenPenilaianData(
+        subjekType: 'mata_pelajaran', subjekId: $mapel->id, semesterId: $semester->id,
+        kode: 'A', deskripsi: 'Komponen A', bobot: 60, kktp: null, kktpMinimal: null, assessmentType: null,
+    ));
+
+    expect(fn () => app(CreateKomponenPenilaianAction::class)->execute(new KomponenPenilaianData(
+        subjekType: 'mata_pelajaran', subjekId: $mapel->id, semesterId: $semester->id,
+        kode: 'B', deskripsi: 'Komponen B', bobot: 50, kktp: null, kktpMinimal: null, assessmentType: null,
+    )))->toThrow(ValidationException::class);
 });
