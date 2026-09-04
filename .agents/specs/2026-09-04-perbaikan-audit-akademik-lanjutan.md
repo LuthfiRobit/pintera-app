@@ -69,7 +69,32 @@ private function authorizeAssignmentScope(Request $request, ?int $lembagaIdDimin
 2. **`AssignKurikulumAction`** (baru, `app/Domains/Akademik/Actions/KurikulumAssignment/AssignKurikulumAction.php`) — satu-satunya pintu masuk create/update `KurikulumAssignment`. Memakai `ResolveLembagaScopeTrait::resolveLembagaId()` sebelum memanggil logic existing (`CreateKurikulumAssignmentAction`/`UpdateKurikulumAssignmentAction` bisa tetap jadi collaborator internal, atau logic-nya dipindah masuk — detail struktur file ditentukan saat writing-plans). `KurikulumAssignmentController::store()`/`update()` memanggil Action ini, TIDAK memproses `lembaga_id` dari request sama sekali untuk actor non-platform.
 3. **`SetFaseDefaultMappingAction`** (baru, pola identik) untuk `FaseDefaultMapping`.
 4. **Form create/edit untuk actor non-platform TIDAK lagi punya dropdown pilih lembaga** (mengikuti pola `GuruController`/`admin/guru/create.blade.php`) — cukup tampilkan nama lembaga aktif sebagai teks info read-only. Dropdown lembaga (`Lembaga::orderBy('nama')->get()`) HANYA dirender untuk `platform`, dengan tambahan opsi eksplisit "Global — berlaku semua yayasan" (value kosong/null).
-5. **`index()` listing**: `platform` tetap lihat semua; `yayasan` di-filter ke `whereNull('lembaga_id')->orWhereIn('lembaga_id', Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id'))`.
+5. **`index()` listing**: `platform` tetap lihat semua; `yayasan` di-filter ke `whereNull('lembaga_id')->orWhereIn('lembaga_id', Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id'))`. **Konfirmasi actor `lembaga`-scope biasa**: filter existing (`! $isPlatformOrYayasan` → `whereNull('lembaga_id')->orWhere('lembaga_id', $request->user()->lembaga_id)`) SUDAH BENAR dan tidak disentuh — bug IDOR cuma ada di cabang `isPlatformOrYayasan`, cabang `lembaga`-scope ini sudah ter-filter dengan tepat sejak awal.
+6. **[GAP TERPISAH, dikonfirmasi lewat pembacaan kode langsung] `edit()`/`update()`/`destroy()` punya celah IDOR SENDIRI, beda pintu dari create.** `update()` (baris 125 di kode existing) bahkan tidak pernah mengubah `lembaga_id` sama sekali (`lembagaId: $kurikulumAssignment->lembaga_id`, dikembalikan apa adanya) — jadi `resolveLembagaId()` di atas TIDAK relevan untuk 3 method ini. Proteksi ke-3 method ini 100% bertumpu pada `authorizeAssignmentScope($request, $kurikulumAssignment->lembaga_id)`, yang rusak dengan cara SAMA (`isPlatformOrYayasan` menyamakan yayasan dengan platform) — seorang yayasan_super_admin Yayasan A bisa `PUT`/`DELETE` assignment dengan `{id}` yang menunjuk ke baris milik Yayasan B, lolos otorisasi, walau tidak ada nilai `lembaga_id` baru yang salah ditulis.
+
+   **Perbaikan**: ganti `authorizeAssignmentScope()` dengan pemeriksaan yang memverifikasi kepemilikan baris EXISTING (bukan nilai yang akan ditulis):
+   ```php
+   private function authorizeExistingAssignmentScope(User $actor, ?int $existingLembagaId): void
+   {
+       if ($actor->widestScopeLevel() === 'platform') {
+           return;
+       }
+
+       if ($existingLembagaId === null) {
+           abort(403, 'Assignment global hanya bisa diubah/dihapus oleh Platform Admin.');
+       }
+
+       if ($actor->widestScopeLevel() === 'yayasan') {
+           $milikYayasan = Lembaga::where('id', $existingLembagaId)->where('yayasan_id', $actor->yayasan_id)->exists();
+           abort_unless($milikYayasan, 403, 'Assignment ini bukan milik yayasan Anda.');
+
+           return;
+       }
+
+       abort_unless($existingLembagaId === $actor->lembaga_id, 403);
+   }
+   ```
+   Dipanggil di `edit()`/`update()`/`destroy()` dengan `$kurikulumAssignment->lembaga_id` (baris EXISTING dari route-model-binding) SEBELUM logic apapun lain dijalankan (termasuk sebelum cek duplikat di `update()`). Pola identik untuk `FaseDefaultMappingController`.
 
 ### 2.2. [IMPORTANT] Verifikasi RPP gagal total untuk role yayasan
 
@@ -139,6 +164,9 @@ $query = FaseDefaultMapping::where('bentuk_pendidikan', $bentukPendidikan)
 | 11 | `KurikulumAssignmentController::index()` | Yayasan cuma lihat assignment global + milik yayasannya sendiri; TIDAK lihat milik yayasan lain. |
 | 12 | `KurikulumAssignmentController::index()` | **Platform TETAP lihat SEMUA assignment lintas yayasan** (regresi negatif — pastikan filter yayasan tidak ikut membatasi visibilitas platform). |
 | 13-14 | `FaseDefaultMappingController::index()` | Cerminan test #11-12 untuk `FaseDefaultMapping`. |
+| 15a | `edit()`/`update()`/`destroy()` — gap akses baris existing | Yayasan A coba `edit`/`update`/`destroy` assignment yang **benar-benar milik lembaga di Yayasan B** (bukan soal nilai yang ditulis, soal `{id}` yang diakses) → 403 ditolak di titik paling awal, SEBELUM logic lain (cek duplikat, dsb) sempat jalan. Beda dari test #1-10 (yang semuanya soal create/nilai ditulis) — ini pertama kali menguji akses ke baris existing milik pihak lain. |
+| 15b | Sama, untuk `FaseDefaultMapping` | Cerminan test #15a. |
+| 15c | `edit()`/`update()`/`destroy()` — assignment global | Yayasan coba `edit`/`update`/`destroy` assignment GLOBAL (`lembaga_id = null`) → 403 (cuma platform yang boleh sentuh baris global). |
 | 15 | `RppController::verify()` | `yayasan_super_admin` yang sebelumnya SELALU gagal (bug) sekarang BERHASIL verifikasi RPP milik lembaga di bawah yayasannya. |
 | 16 | `CreateJadwalPelajaranAction` | 2 kelas beda Pola Jam, `jam_mulai`/`jam_selesai` overlap, guru sama → DITOLAK (test ini gagal di kode lama, membuktikan bug nyata sebelum fix). |
 | 17 | `FaseDefaultResolver` | Reproduksi persis skenario bug: Row tingkat spesifik TIDAK cocok vs Row catch-all dalam tier lembaga sama → catch-all menang untuk tingkat yang diminta. |
