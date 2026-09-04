@@ -141,7 +141,7 @@ it('lets a yayasan-scoped user create a tahun ajaran for the lembaga they have s
 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $manager = User::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager->assignRole($role);
     $this->actingAs($manager);
 

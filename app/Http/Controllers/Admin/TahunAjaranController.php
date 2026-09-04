@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,7 @@ use Illuminate\View\View;
 class TahunAjaranController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function index(): View
     {
@@ -40,7 +42,7 @@ class TahunAjaranController extends BaseController
         ]);
 
         if ($request->user()->widestScopeLevel() === 'yayasan') {
-            $lembagaId = session('active_lembaga_id');
+            $lembagaId = $this->resolveActiveLembagaId($request->user());
 
             if ($lembagaId === null) {
                 return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum membuat tahun ajaran.'])->withInput();
