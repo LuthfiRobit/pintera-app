@@ -10,6 +10,7 @@ use App\Domains\Akademik\Actions\PolaJam\UpdatePolaJamAction;
 use App\Domains\Akademik\DataTransferObjects\AssignKelasData;
 use App\Domains\Akademik\DataTransferObjects\PolaJamData;
 use App\Domains\Akademik\Models\PolaJam;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\Kelas;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -21,6 +22,7 @@ use Illuminate\View\View;
 class PolaJamController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function index(): View
     {
@@ -48,7 +50,7 @@ class PolaJamController extends BaseController
         ]);
 
         $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
-            ? session('active_lembaga_id')
+            ? $this->resolveActiveLembagaId($request->user())
             : $request->user()->lembaga_id;
 
         if ($lembagaId === null) {
