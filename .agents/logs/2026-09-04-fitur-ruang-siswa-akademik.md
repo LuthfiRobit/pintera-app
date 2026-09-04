@@ -70,9 +70,13 @@ Fitur self-service Ruang Siswa Akademik berhasil dibangun menggantikan placehold
    - **Tampilan Daftar (List Mode)**: Menggunakan baris horizontal memanjang (`space-y-3`) per hari dengan time pill presisi mono (`<span class="... font-mono ..."><x-icon name="schedule" /> 07:30 - 08:05</span>`).
    - **Tampilan Matriks (Matrix Mode)**: Menyediakan segmented control toggle via Alpine.js (`x-data="{ viewMode: 'list' }"`) untuk beralih instan ke Tampilan Matriks Mingguan (kolom multi-hari sejajar yang menampilkan seluruh sesi belajar mingguan secara terorganisir).
 
-8. **Highlight "Hari Ini" & Fitur Auto-Scroll (List & Matriks)**:
+8. **Highlight "Hari Ini" & Fitur Auto-Scroll (List & Matriks) dengan Estetika Halus**:
    - Mendeteksi hari saat ini secara dinamis melalui `\App\Enums\Hari::fromCarbonDayOfWeek(now()->dayOfWeek)->value`.
-   - **Pembeda Visual**: Panel/kolom hari ini ditandai dengan badge solid `HARI INI`, border aktif `border-2 border-brand-500`, shadow aksen, dan ring fokus `ring-4 ring-brand-500/10`.
+   - **Estetika Halus & Bernyawa (Refined Polish)**:
+     - Menggantikan border tebal 2px dan hack negative margin dengan kontainer alami TailAdmin (`border border-brand-300/80 ring-1 ring-brand-500/20 shadow-card`).
+     - Menambahkan aksen garis gradasi halus atas (`h-1 bg-gradient-to-r from-brand-500 to-brand-600`) di bagian atas panel/kolom hari ini.
+     - Badge "Hari Ini" didesain sebagai live status pill bernyawa (`bg-brand-50/80 border border-brand-200/80 text-brand-700`) dilengkapi **mini live pulse dot** (`animate-ping`).
+     - Pada mode matriks, kolom hari ini memiliki gradasi latar halus (`bg-gradient-to-b from-brand-50/40 via-white to-white`) dan aksen garis atas tipis.
    - **Auto-Scroll Halus**: Alpine.js secara otomatis menggulirkan viewport ke jadwal hari ini (`scrollIntoView({ behavior: 'smooth', block: 'center' })` pada List Mode, dan `inline: 'center'` pada Matrix Mode) setelah jeda render awal atau saat beralih mode.
    - **Quick Action Shortcut**: Menyediakan tombol shortcut interaktif "Fokus ke Jadwal Hari Ini" pada filter card serta pesan informatif bila hari ini akhir pekan/tidak ada KBM.
 

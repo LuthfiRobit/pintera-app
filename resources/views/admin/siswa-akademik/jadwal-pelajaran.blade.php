@@ -116,34 +116,32 @@
                     @endphp
                     <x-panel
                         id="jadwal-list-{{ strtolower($hari) }}"
-                        class="p-6 transition duration-200 {{ $isHariIni ? 'border-2 border-brand-500 shadow-md ring-4 ring-brand-500/10' : '' }}"
+                        class="relative p-6 transition duration-200 {{ $isHariIni ? 'border-brand-300/80 ring-1 ring-brand-500/20 shadow-card' : '' }}"
                     >
                         @if ($isHariIni)
-                            <div class="flex items-center justify-between border-b border-brand-100 bg-brand-50/70 -mx-6 -mt-6 p-4 px-6 rounded-t-2xl mb-4">
-                                <div class="flex items-center gap-2.5">
-                                    <span class="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-white shadow-xs">
-                                        <x-icon name="calendar_month" class="h-4 w-4" />
-                                        <span>{{ ucfirst($hari) }}</span>
-                                    </span>
-                                    <span class="rounded-full bg-brand-600 px-2.5 py-0.5 text-[10px] font-bold tracking-wide uppercase text-white shadow-xs">
-                                        Hari Ini
-                                    </span>
-                                </div>
-                                <span class="text-xs font-semibold text-brand-700">
-                                    {{ count($jadwalHari) }} Sesi Pelajaran
-                                </span>
-                            </div>
-                        @else
-                            <div class="flex items-center justify-between border-b border-ink/10 pb-4">
+                            <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 to-brand-600"></div>
+                        @endif
+
+                        <div class="flex items-center justify-between border-b pb-4 {{ $isHariIni ? 'border-brand-100' : 'border-ink/10' }}">
+                            <div class="flex items-center gap-2.5">
                                 <span class="inline-flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider text-brand-600">
                                     <x-icon name="calendar_month" class="h-4 w-4" />
                                     <span>{{ ucfirst($hari) }}</span>
                                 </span>
-                                <span class="text-xs font-medium text-slate">
-                                    {{ count($jadwalHari) }} Sesi Pelajaran
-                                </span>
+                                @if ($isHariIni)
+                                    <span class="inline-flex items-center gap-1.5 rounded-full border border-brand-200/80 bg-brand-50/80 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-700">
+                                        <span class="relative flex h-1.5 w-1.5">
+                                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+                                            <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                                        </span>
+                                        <span>Hari Ini</span>
+                                    </span>
+                                @endif
                             </div>
-                        @endif
+                            <span class="text-xs {{ $isHariIni ? 'font-semibold text-brand-700' : 'font-medium text-slate' }}">
+                                {{ count($jadwalHari) }} Sesi Pelajaran
+                            </span>
+                        </div>
 
                         <ul class="mt-4 space-y-3">
                             @foreach ($jadwalHari as $jadwal)
@@ -152,7 +150,7 @@
                                     $jamSelesai = $jadwal->jamPelajaran?->jam_selesai ? substr($jadwal->jamPelajaran->jam_selesai, 0, 5) : '-';
                                     $ruanganNama = $jadwal->ruangan?->nama_ruangan ?? $jadwal->ruang?->nama;
                                 @endphp
-                                <li class="flex items-center justify-between gap-4 rounded-2xl border p-3.5 transition {{ $isHariIni ? 'border-brand-200 bg-white shadow-xs hover:border-brand-400' : 'border-ink/10 bg-paper/40 hover:border-brand-200 hover:bg-white hover:shadow-card' }}">
+                                <li class="flex items-center justify-between gap-4 rounded-2xl border p-3.5 transition {{ $isHariIni ? 'border-brand-200/80 bg-white hover:border-brand-300 hover:shadow-xs' : 'border-ink/10 bg-paper/40 hover:border-brand-200 hover:bg-white hover:shadow-card' }}">
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-2">
                                             <h4 class="truncate font-display font-bold text-sm text-ink">
@@ -209,21 +207,29 @@
                                 @endphp
                                 <div
                                     id="jadwal-matrix-{{ strtolower($hari) }}"
-                                    class="w-64 shrink-0 rounded-2xl border p-4 flex flex-col transition {{ $isHariIni ? 'border-2 border-brand-500 bg-brand-50/30 shadow-md ring-4 ring-brand-500/10' : 'border-ink/10 bg-paper/40' }}"
+                                    class="relative w-64 shrink-0 overflow-hidden rounded-2xl border p-4 flex flex-col transition {{ $isHariIni ? 'border-brand-300/80 bg-gradient-to-b from-brand-50/40 via-white to-white ring-1 ring-brand-500/20 shadow-card' : 'border-ink/10 bg-paper/40' }}"
                                 >
-                                    <div class="flex items-center justify-between pb-3 border-b {{ $isHariIni ? 'border-brand-200' : 'border-ink/10' }} mb-3">
+                                    @if ($isHariIni)
+                                        <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 to-brand-600"></div>
+                                    @endif
+
+                                    <div class="flex items-center justify-between pb-3 border-b {{ $isHariIni ? 'border-brand-100' : 'border-ink/10' }} mb-3">
                                         <div class="flex items-center gap-1.5">
-                                            <span class="inline-flex items-center gap-1 font-display text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg {{ $isHariIni ? 'text-white bg-brand-600 shadow-xs' : 'text-brand-700 bg-brand-50' }}">
-                                                <x-icon name="calendar_month" class="h-3.5 w-3.5 {{ $isHariIni ? 'text-white' : 'text-brand-500' }}" />
+                                            <span class="inline-flex items-center gap-1 font-display text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg text-brand-700 bg-brand-50">
+                                                <x-icon name="calendar_month" class="h-3.5 w-3.5 text-brand-500" />
                                                 <span>{{ ucfirst($hari) }}</span>
                                             </span>
                                             @if ($isHariIni)
-                                                <span class="rounded-full bg-brand-600 text-white px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide shadow-xs">
-                                                    Hari Ini
+                                                <span class="inline-flex items-center gap-1 rounded-full border border-brand-200/80 bg-brand-50/80 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-brand-700">
+                                                    <span class="relative flex h-1.5 w-1.5">
+                                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-400 opacity-75"></span>
+                                                        <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-500"></span>
+                                                    </span>
+                                                    <span>Hari Ini</span>
                                                 </span>
                                             @endif
                                         </div>
-                                        <span class="text-[11px] font-medium {{ $isHariIni ? 'text-brand-700 font-semibold' : 'text-slate' }}">
+                                        <span class="text-[11px] {{ $isHariIni ? 'text-brand-700 font-semibold' : 'text-slate font-medium' }}">
                                             {{ count($jadwalHari) }} Sesi
                                         </span>
                                     </div>

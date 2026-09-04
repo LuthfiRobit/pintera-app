@@ -72,11 +72,11 @@ Fitur baru Ruang Orang Tua Akademik berhasil dibangun secara menyeluruh menggant
 4. **Penyesuaian Tes Sidebar Existing**:
    - `SidebarStubMenuHiddenTest` dan `SidebarPengelompokanTest` sebelumnya ditulis pada 2026-09-03 untuk menguji penonaktifan stub placeholder. Kedua test disesuaikan agar mengonfirmasi rute aktif telah menggantikan tautan stub `/dalam-pengembangan`.
 
-5. **Pembaruan Konsistensi UI Jadwal Anak (Pill Jam Mono, Toggle Matriks Mingguan, & Auto-Scroll Hari Ini)**:
+5. **Pembaruan Konsistensi UI Jadwal Anak (Pill Jam Mono, Toggle Matriks Mingguan, & Auto-Scroll Hari Ini dengan Estetika Halus)**:
    - Menyelaraskan tampilan Jadwal Anak (`jadwal-anak.blade.php`) dengan Jadwal Siswa:
      - **Tampilan Daftar**: Memperbarui penanda jam dengan style pill mono ber-ikon `<x-icon name="schedule" />` (`07:30 - 08:05`).
      - **Tampilan Matriks**: Menambahkan segmented control via Alpine.js (`x-data="{ viewMode: 'list' }"`) untuk beralih instan antara Tampilan Daftar harian dan Tampilan Matriks Mingguan multi-kolom yang rapi.
-     - **Highlight Hari Ini & Auto-Scroll**: Kolom dan panel hari ini diberi styling aktif (badge `HARI INI`, `border-2 border-brand-500`, shadow aksen, dan ring fokus), disertai auto-scroll halus ke hari ini saat render awal atau saat beralih tampilan.
+     - **Highlight Hari Ini & Auto-Scroll (Estetika Halus & Bernyawa)**: Mengganti border tebal 2px dengan kontainer natural ber-hairline border (`border border-brand-300/80 ring-1 ring-brand-500/20 shadow-card`), aksen garis gradasi halus atas (`h-1 bg-gradient-to-r from-brand-500 to-brand-600`), dan live status pill bernyawa (`bg-brand-50/80 text-brand-700`) dengan mini animated pulse dot (`animate-ping`). Auto-scroll otomatis mengarahkan fokus ke hari ini saat render awal atau perpindahan mode.
 
 ---
 
