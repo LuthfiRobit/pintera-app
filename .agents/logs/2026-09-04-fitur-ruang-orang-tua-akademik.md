@@ -78,6 +78,20 @@ Fitur baru Ruang Orang Tua Akademik berhasil dibangun secara menyeluruh menggant
      - **Tampilan Matriks (Default)**: Menampilkan Matriks Mingguan multi-kolom sebagai tampilan utama secara default via Alpine.js (`x-data="{ viewMode: 'matrix' }"`) dengan segmented control untuk beralih instan ke Tampilan Daftar harian.
      - **Highlight Hari Ini & Auto-Scroll (Estetika Halus & Bernyawa)**: Mengganti border tebal 2px dengan kontainer natural ber-hairline border (`border border-brand-300/80 ring-1 ring-brand-500/20 shadow-card`), aksen garis gradasi halus atas (`h-1 bg-gradient-to-r from-brand-500 to-brand-600`), dan live status pill bernyawa (`bg-brand-50/80 text-brand-700`) dengan mini animated pulse dot (`animate-ping`). Auto-scroll otomatis mengarahkan fokus ke hari ini saat render awal atau perpindahan mode.
 
+6. **Modernisasi & Penyetaraan Nilai & Rapor Anak (`nilai-anak.blade.php`)**:
+   - Menyetarakan standar tampilan dengan `nilai-rapor.blade.php` (Siswa).
+   - Menambahkan badge identitas anak terpilih di header kanan atas (`<x-icon name="school" />`, nama, kelas).
+   - Mengubah tampilan list sederhana menjadi tabel bersih TailAdmin lengkap dengan nama mata pelajaran dan asesmen/komponen penilaian.
+   - Menerapkan pewarnaan badge skor dinamis berdasarkan rentang nilai (`green` $\ge 85$, `brass` $\ge 75$, `amber` $< 75$).
+   - Memperbarui banner Rapor Resmi Tersedia dengan styling premium (`bg-gradient-to-r from-brand-50/70`, badge "Disetujui", dan tombol unduh PDF yang elegan).
+
+7. **Revamp Riwayat Izin/Sakit Anak (`riwayat-izin-sakit-anak.blade.php`)**:
+   - Menambahkan badge identitas anak terpilih di header kanan atas.
+   - Menambahkan **3 Kartu Ringkasan Kehadiran (*Stat Summary Cards*)**: Total Izin (amber), Total Sakit (red), dan Total Riwayat (slate).
+   - Memperbarui form filter tanggal dengan styling TailAdmin (`rounded-xl border-ink/15`) dan tombol submit eksplisit "Filter Riwayat" ber-ikon `<x-icon name="filter" />`.
+   - Mengubah penyajian data menjadi tabel terstruktur TailAdmin dengan tanggal, rentang jam pelajaran mono, mata pelajaran, nama guru pengampu, badge status semantik, dan keterangan.
+   - Menambahkan eager loading relasi `'guru'` pada `RiwayatIzinSakitAnakController` untuk mencegah query N+1.
+
 ---
 
 ## 3. Hal yang Masih Perlu Direview Manusia / Claude

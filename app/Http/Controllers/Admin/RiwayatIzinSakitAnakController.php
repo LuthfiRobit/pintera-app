@@ -35,6 +35,7 @@ class RiwayatIzinSakitAnakController extends BaseController
                 ->with([
                     'sesiPembelajaran' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)->with([
                         'mataPelajaran' => fn ($q2) => $q2->withoutGlobalScope(TenantScope::class),
+                        'guru' => fn ($q3) => $q3->withoutGlobalScope(TenantScope::class),
                     ]),
                 ])
                 ->latest('id')
