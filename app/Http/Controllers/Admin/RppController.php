@@ -261,12 +261,18 @@ class RppController extends BaseController
         $targetStatus = StatusRpp::from($data['status']);
         $catatanRevisi = $data['catatan_revisi'] ?? null;
 
+        $effectiveLembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+            ? session('active_lembaga_id')
+            : $request->user()->lembaga_id;
+
+        abort_if($effectiveLembagaId === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga sebelum memverifikasi RPP.');
+
         try {
             $this->verifyRppAction->execute(
                 rpp: $rpp,
                 targetStatus: $targetStatus,
                 verifierUserId: (int) $request->user()->id,
-                verifierLembagaId: (int) $request->user()->lembaga_id,
+                verifierLembagaId: (int) $effectiveLembagaId,
                 catatanRevisi: $catatanRevisi
             );
         } catch (ValidationException $e) {
