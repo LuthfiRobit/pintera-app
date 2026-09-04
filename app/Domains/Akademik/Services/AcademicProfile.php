@@ -2,6 +2,7 @@
 
 namespace App\Domains\Akademik\Services;
 
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Enums\ModePembelajaran;
 use InvalidArgumentException;
 
@@ -20,19 +21,21 @@ final class AcademicProfile
 
     public static function fromBentukPendidikan(string $bentukPendidikan): self
     {
+        $bentuk = BentukPendidikan::tryFrom($bentukPendidikan)
+            ?? throw new InvalidArgumentException("Unsupported bentuk_pendidikan: {$bentukPendidikan}");
+
         return new self(
             learningMode: ModePembelajaran::fromBentukPendidikan($bentukPendidikan),
-            reportTemplate: match (true) {
-                in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) => 'paud',
-                $bentukPendidikan === 'SMK' => 'smk',
-                in_array($bentukPendidikan, ['SMP', 'SMA'], true) => 'smp-sma',
-                $bentukPendidikan === 'SD' => 'sd',
+            reportTemplate: match ($bentuk) {
+                BentukPendidikan::Kb, BentukPendidikan::Tpa, BentukPendidikan::Sps, BentukPendidikan::Tk => 'paud',
+                BentukPendidikan::Smk => 'smk',
+                BentukPendidikan::Smp, BentukPendidikan::Sma => 'smp-sma',
+                BentukPendidikan::Sd => 'sd',
                 // SLB memakai template SD sbg KEPUTUSAN FINAL yang disengaja (diformalkan
                 // Prioritas #3 Roadmap Kurikulum Dinamis, 27 Agustus 2026) -- bukan fallback
                 // diam-diam. Tidak ada pelanggan SLB nyata dgn kebutuhan struktur rapor
                 // berbeda saat ini; keputusan ini revisable kalau itu berubah.
-                $bentukPendidikan === 'SLB' => 'sd',
-                default => throw new InvalidArgumentException("Unsupported bentuk_pendidikan: {$bentukPendidikan}"),
+                BentukPendidikan::Slb => 'sd',
             },
         );
     }

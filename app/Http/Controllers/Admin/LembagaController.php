@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\Siswa;
@@ -162,7 +163,7 @@ class LembagaController extends BaseController
             'nss' => ['nullable', 'string', 'max:255'],
             'kode_lembaga' => ['required', 'string', 'max:20', 'alpha_dash', Rule::unique('lembaga', 'kode_lembaga')->ignore($lembaga?->id)],
             'nama' => ['required', 'string', 'max:255'],
-            'bentuk_pendidikan' => ['required', 'in:KB,TPA,SPS,TK,SD,SMP,SMA,SMK,SLB'],
+            'bentuk_pendidikan' => ['required', Rule::enum(BentukPendidikan::class)],
             'status_sekolah' => ['required', 'in:negeri,swasta'],
             'status_kepemilikan' => ['nullable', 'string', 'max:255'],
             'naungan' => ['required', 'in:kemendikdasmen,kemenag'],

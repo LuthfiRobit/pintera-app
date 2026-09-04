@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Akademik\Actions\FaseMapping\SetFaseDefaultMappingAction;
 use App\Domains\Akademik\Actions\FaseMapping\UpdateFaseDefaultMappingAction;
 use App\Domains\Akademik\DataTransferObjects\FaseDefaultMappingData;
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Models\Fase;
 use App\Domains\Akademik\Models\FaseDefaultMapping;
 use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
@@ -24,8 +25,6 @@ class FaseDefaultMappingController extends BaseController
 {
     use AuthorizesRequests;
     use ResolveLembagaScopeTrait;
-
-    private const BENTUK_PENDIDIKAN = ['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB'];
 
     public function index(Request $request): View
     {
@@ -61,7 +60,7 @@ class FaseDefaultMappingController extends BaseController
             'faseList' => Fase::orderBy('urutan')->get(),
             'lembagaList' => $isPlatform ? Lembaga::orderBy('nama')->get() : collect(),
             'isPlatform' => $isPlatform,
-            'bentukPendidikanList' => self::BENTUK_PENDIDIKAN,
+            'bentukPendidikanList' => array_column(BentukPendidikan::cases(), 'value'),
         ]);
     }
 
@@ -93,7 +92,7 @@ class FaseDefaultMappingController extends BaseController
         return view('admin.fase-mapping.edit', [
             'mapping' => $faseMapping->loadMissing('fase', 'lembaga'),
             'faseList' => Fase::orderBy('urutan')->get(),
-            'bentukPendidikanList' => self::BENTUK_PENDIDIKAN,
+            'bentukPendidikanList' => array_column(BentukPendidikan::cases(), 'value'),
             'isPlatform' => $isPlatform,
         ]);
     }
