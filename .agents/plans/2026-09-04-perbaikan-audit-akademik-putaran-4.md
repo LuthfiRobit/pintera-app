@@ -28,7 +28,7 @@
 **Interfaces:**
 - Produksi: `TenantScope::apply()` — signature TIDAK berubah (masih `implements Scope`). Method baru PRIVATE `lembagaMasihMilikYayasan(int $lembagaId, ?int $yayasanId): bool` — internal, tidak dipakai task lain.
 
-- [ ] **Step 1: Tulis test yang gagal — session stale di-fallback, bukan bocor**
+- [x] **Step 1: Tulis test yang gagal — session stale di-fallback, bukan bocor**
 
 Baca `tests/Feature/TenantScopeTest.php` baris 1-51 (definisi `TenantScopeTestModel`, `beforeEach`/`afterEach` yang membuat/menghapus tabel sementara) dan baris 155-170 (test "respects a yayasan-scoped user's active_lembaga_id session filter" — pola acuan). Tambahkan test baru setelah test itu:
 
@@ -55,12 +55,12 @@ it('falls back to own-yayasan pool when active_lembaga_id session points to a le
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="falls back to own-yayasan pool when active_lembaga_id session points to a lembaga outside"`
 Expected: FAIL — hasil masih `[]` (kosong, karena `where('lembaga_id', $lembagaLain->id)` tidak match `TenantScopeTestModel` manapun yang berlabel "Milik Saya"), bukan `['Milik Saya']`.
 
-- [ ] **Step 3: Perbaiki `TenantScope`**
+- [x] **Step 3: Perbaiki `TenantScope`**
 
 Baca `app/Models/Scopes/TenantScope.php` (file penuh, 91 baris). Tambahkan properti baru setelah `private static bool $resolvingActingUser = false;` (baris 13):
 ```php
@@ -97,24 +97,24 @@ Tambahkan method baru PRIVATE setelah method `apply()` (sebelum penutup class `}
     }
 ```
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="falls back to own-yayasan pool when active_lembaga_id session points to a lembaga outside"`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi TenantScope — pastikan skenario "session valid" tetap benar**
+- [x] **Step 5: Jalankan regresi TenantScope — pastikan skenario "session valid" tetap benar**
 
 Run: `php artisan test --filter=TenantScope`
 Expected: SEMUA test existing di `TenantScopeTest.php` (termasuk "respects a yayasan-scoped user's active_lembaga_id session filter" di baris 155-170) tetap PASS — fix ini TIDAK boleh mengubah perilaku untuk session yang valid.
 
-- [ ] **Step 6: Jalankan regresi lebih luas — pastikan TIDAK ada model lain yang meregresi**
+- [x] **Step 6: Jalankan regresi lebih luas — pastikan TIDAK ada model lain yang meregresi**
 
 Run: `php artisan test --filter=Akademik`
 Run: `php artisan test --filter=Guru`
 Run: `php artisan test --filter=Rpp`
 Expected: semua PASS — `TenantScope` dipakai hampir semua model `BelongsToTenant`, jadi regresi luas WAJIB dicek sebelum lanjut ke task berikutnya.
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -132,7 +132,7 @@ git commit -m "fix(core): TenantScope verifikasi ulang kepemilikan yayasan atas 
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri. Konsumsi: `ResolveLembagaScopeTrait::resolveActiveLembagaId(User $actor): ?int` (sudah ada).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Feature/Admin/KelasCrudTest.php` baris 1-30 (helper `actingAsKelasManager(Lembaga $lembaga): User` — lembaga-scope, TIDAK cocok untuk test ini). Tambahkan test baru mengikuti pola `tests/Feature/Admin/PolaJamCrudTest.php:62-80` (actor yayasan-scope manual):
 
@@ -164,12 +164,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasa
 
 Baca `StoreKelasRequest` (`app/Http/Requests/Akademik/StoreKelasRequest.php` atau lokasi sejenis — cari lewat `KelasController` use-statement) untuk field wajib LAIN yang mungkin belum tercakup di payload di atas (mis. `bentuk_pendidikan`, `pola_jam_id`, dll) — tambahkan kalau ternyata wajib, supaya request lolos validasi FormRequest dan benar-benar sampai ke pengecekan `lembaga_id` yang sedang diuji.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasannya) saat membuat kelas"`
 Expected: FAIL — request lolos memakai `lembagaLain` (session mentah, tanpa verifikasi kepemilikan).
 
-- [ ] **Step 3: Perbaiki `KelasController`**
+- [x] **Step 3: Perbaiki `KelasController`**
 
 Baca `app/Http/Controllers/Admin/KelasController.php` baris 1-30 (import + class header) dan baris 93-115 (`store()`). Tambahkan import `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;` dan `use ResolveLembagaScopeTrait;` di dalam class body (setelah trait/use lain yang sudah ada, cek dulu apakah ada `use AuthorizesRequests;` untuk pola penempatan yang konsisten). Ganti baris 99-106:
 ```php
@@ -184,12 +184,12 @@ Baca `app/Http/Controllers/Admin/KelasController.php` baris 1-30 (import + class
 ```
 (Struktur `if (widestScopeLevel() === 'yayasan')` TETAP DIPERTAHANKAN PERSIS — hanya `session('active_lembaga_id')` yang diganti jadi `$this->resolveActiveLembagaId($request->user())`. JANGAN dipanggil di luar percabangan ini.)
 
-- [ ] **Step 4: Jalankan test lagi + regresi**
+- [x] **Step 4: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=KelasCrudTest`
 Expected: semua PASS, termasuk test lama yang sudah ada di file ini.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -207,7 +207,7 @@ git commit -m "fix(akademik): KelasController::store() verifikasi ulang active_l
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Feature/Admin/TahunAjaranSemesterFeatureTest.php` baris 1-26 (helper `createAdminTahunAjaranFeatureUser(): array` — lembaga-scope, TIDAK cocok). Tambahkan test baru:
 
@@ -235,12 +235,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale saat membuat tahun ajar
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale saat membuat tahun ajaran"`
 Expected: FAIL.
 
-- [ ] **Step 3: Perbaiki `TahunAjaranController`**
+- [x] **Step 3: Perbaiki `TahunAjaranController`**
 
 Baca `app/Http/Controllers/Admin/TahunAjaranController.php` baris 1-55. Tambahkan import + `use ResolveLembagaScopeTrait;` di class body. Ganti baris 42-50:
 ```php
@@ -255,12 +255,12 @@ Baca `app/Http/Controllers/Admin/TahunAjaranController.php` baris 1-55. Tambahka
         }
 ```
 
-- [ ] **Step 4: Jalankan test lagi + regresi**
+- [x] **Step 4: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=TahunAjaran`
 Expected: semua PASS.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -278,7 +278,7 @@ git commit -m "fix(akademik): TahunAjaranController::store() verifikasi ulang ac
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Feature/Admin/PolaJamCrudTest.php` baris 62-95 (2 test yayasan-scope existing: "creates a pola jam with the active lembaga for a yayasan-scoped manager" dan "rejects creating a pola jam for a yayasan-scoped manager with no active lembaga" — pola acuan PERSIS untuk test baru ini). Tambahkan test ketiga setelah keduanya:
 
@@ -303,12 +303,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale saat membuat pola jam',
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale saat membuat pola jam"`
 Expected: FAIL.
 
-- [ ] **Step 3: Perbaiki `PolaJamController`**
+- [x] **Step 3: Perbaiki `PolaJamController`**
 
 Baca `app/Http/Controllers/Admin/PolaJamController.php` baris 1-61. Tambahkan import + `use ResolveLembagaScopeTrait;` di class body. Ganti baris 50-56:
 ```php
@@ -322,12 +322,12 @@ Baca `app/Http/Controllers/Admin/PolaJamController.php` baris 1-61. Tambahkan im
 ```
 **PENTING**: PERTAHANKAN struktur ternary PERSIS — JANGAN panggil `resolveActiveLembagaId()` unconditional di luar ternary (lihat Global Constraints).
 
-- [ ] **Step 4: Jalankan test lagi + regresi**
+- [x] **Step 4: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=PolaJam`
 Expected: semua PASS, termasuk 2 test yayasan-scope existing (baris 62-95) — pastikan TIDAK regresi.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -345,7 +345,7 @@ git commit -m "fix(akademik): PolaJamController::store() verifikasi ulang active
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Feature/Admin/JenisTesMasterTest.php` baris 1-40 (pola setup existing — cek nama helper/permission yang sudah dipakai). Tambahkan test baru:
 
@@ -373,12 +373,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale saat membuat jenis tes'
 
 Sesuaikan `use App\Models\JenisTesMaster;` kalau belum ada di import file ini.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale saat membuat jenis tes"`
 Expected: FAIL.
 
-- [ ] **Step 3: Perbaiki `JenisTesMasterController`**
+- [x] **Step 3: Perbaiki `JenisTesMasterController`**
 
 Baca `app/Http/Controllers/Admin/JenisTesMasterController.php` baris 1-55. Tambahkan import + `use ResolveLembagaScopeTrait;` di class body. Ganti baris 32-46:
 ```php
@@ -400,12 +400,12 @@ Baca `app/Http/Controllers/Admin/JenisTesMasterController.php` baris 1-55. Tamba
 ```
 **PENTING**: `resolveActiveLembagaId()` HANYA dipanggil di DALAM cabang `if ($isYayasanScope)` — JANGAN unconditional (lihat Global Constraints). Sisa method (`$data = $request->validate([...])` dan `if ($isYayasanScope) { $data['lembaga_id'] = $lembagaId; }`) TIDAK BERUBAH.
 
-- [ ] **Step 4: Jalankan test lagi + regresi**
+- [x] **Step 4: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=JenisTesMaster`
 Expected: semua PASS.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -423,7 +423,7 @@ git commit -m "fix(akademik): JenisTesMasterController::store() verifikasi ulang
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Feature/Akademik/RppWorkflowTest.php` baris 22-59 (`beforeEach` — `$this->userKurikulum` role `wakasek_kurikulum` scope `lembaga`, PUNYA permission `rpp.verify`) dan baris 147-179 ("mengizinkan verifikator menyetujui RPP diajukan" — pola acuan verify). `$this->userKurikulum` di file ini scope-nya `lembaga` (`lembaga_id` langsung terisi), BUKAN yayasan-scope — untuk test session-staleness, buat actor yayasan-scope baru secara manual di dalam test. Tambahkan test baru setelah test "mengizinkan verifikator menyetujui RPP diajukan":
 
@@ -469,12 +469,12 @@ it('menolak actor yayasan dengan active_lembaga_id stale saat memverifikasi RPP'
 
 **Catatan**: `$verifierYayasan->yayasan_id` diisi `$this->yayasan->id` (yayasan YANG SAMA dengan RPP), TAPI `active_lembaga_id` di session sengaja diisi `$lembagaLain->id` (milik `$yayasanLain`, yayasan LAIN) — supaya `resolveActiveLembagaId()` mengembalikan `null` (session tidak valid untuk yayasan actor), BUKAN untuk menguji cross-yayasan pada RPP itu sendiri (itu domain `TenantScope`, sudah diuji terpisah di Task 1).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale saat memverifikasi RPP"`
 Expected: FAIL — request lolos memakai `lembagaLain` sebagai `effectiveLembagaId` tanpa verifikasi.
 
-- [ ] **Step 3: Perbaiki `RppController::verify()`**
+- [x] **Step 3: Perbaiki `RppController::verify()`**
 
 Baca `app/Http/Controllers/Admin/RppController.php` baris 258-294. Tambahkan import + `use ResolveLembagaScopeTrait;` di class body. Ganti baris 264-268:
 ```php
@@ -486,12 +486,12 @@ Baca `app/Http/Controllers/Admin/RppController.php` baris 258-294. Tambahkan imp
 ```
 **PENTING**: PERTAHANKAN struktur ternary PERSIS — JANGAN unconditional. Sisa method TIDAK BERUBAH.
 
-- [ ] **Step 4: Jalankan test lagi + regresi**
+- [x] **Step 4: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=RppWorkflowTest`
 Expected: semua PASS, termasuk test verify existing (baris 147-220-an).
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -509,7 +509,7 @@ git commit -m "fix(akademik): RppController::verify() verifikasi ulang active_le
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis 3 test yang gagal**
+- [x] **Step 1: Tulis 3 test yang gagal**
 
 Baca `tests/Feature/Admin/JadwalPelajaranTenantGuardTest.php` (file penuh, 54 baris — helper `actingAsJadwalGuardManager(Lembaga $lembaga): User` lembaga-scope, dan 1 test existing "menolak store Jadwal Pelajaran untuk Kelas lembaga lain" sebagai pola acuan struktur data `store()`). Tambahkan 3 test baru:
 
@@ -615,14 +615,14 @@ it('duplicate Jadwal Pelajaran tetap berhasil untuk actor yayasan dengan active_
 
 Baca `StoreJadwalPelajaranRequest`/`UpdateJadwalPelajaranRequest`/`DuplicateJadwalRequest` untuk field wajib LAIN yang mungkin belum tercakup di payload di atas — sesuaikan kalau ternyata ada field wajib tambahan supaya request lolos validasi FormRequest.
 
-- [ ] **Step 2: Jalankan 3 test, pastikan semua PASS (regresi, bukan pola TDD merah-dulu)**
+- [x] **Step 2: Jalankan 3 test, pastikan semua PASS (regresi, bukan pola TDD merah-dulu)**
 
 Run: `php artisan test --filter="menolak actor yayasan dengan active_lembaga_id stale saat store Jadwal Pelajaran"`
 Run: `php artisan test --filter="update Jadwal Pelajaran tetap berhasil untuk actor yayasan dengan active_lembaga_id valid"`
 Run: `php artisan test --filter="duplicate Jadwal Pelajaran tetap berhasil untuk actor yayasan dengan active_lembaga_id valid"`
 Expected: SEMUA PASS sebelum maupun sesudah Step 3 — ketiga test ini adalah regression-guard (jalur normal harus tetap berfungsi), bukan bukti bug tertutup. Nilainya ada di Step 4-5: memastikan penggantian baris tidak merusak jalur normal yang sudah benar.
 
-- [ ] **Step 3: Perbaiki `JadwalPelajaranController`**
+- [x] **Step 3: Perbaiki `JadwalPelajaranController`**
 
 Baca `app/Http/Controllers/Admin/JadwalPelajaranController.php` baris 1-35 (import + class header) dan baris 175-460. Tambahkan import `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;` dan `use ResolveLembagaScopeTrait;` di class body (setelah `use AuthorizesRequests;`).
 
@@ -649,12 +649,12 @@ Ganti `duplicate()` baris 444-445:
 
 **PENTING**: di KETIGA titik, PERTAHANKAN struktur ternary/percabangan asli — JANGAN unconditional. Sisa logic di ketiga method (baris setelah masing-masing titik resolve) TIDAK BERUBAH.
 
-- [ ] **Step 4: Jalankan ulang 3 test + regresi**
+- [x] **Step 4: Jalankan ulang 3 test + regresi**
 
 Run: `php artisan test --filter=JadwalPelajaran`
 Expected: semua PASS, termasuk test existing di `JadwalPelajaranTenantGuardTest.php`, `JadwalPelajaranCrudTest.php`, `JadwalPelajaranBentrokWaktuTest.php`.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -673,7 +673,7 @@ git commit -m "fix(akademik): JadwalPelajaranController verifikasi ulang active_
 
 **Interfaces:** Tidak ada — perbaikan berdiri sendiri.
 
-- [ ] **Step 1: Tulis test yang gagal (behavioral, bukan concurrency asli)**
+- [x] **Step 1: Tulis test yang gagal (behavioral, bukan concurrency asli)**
 
 Baca `tests/Feature/Admin/JadwalPelajaranBentrokWaktuTest.php` (file penuh) untuk pola setup `Kelas`/`PolaJam`/`JamPelajaran`/`Semester`/`Guru` yang sudah dipakai, dan cara memanggil `CreateJadwalPelajaranAction`/data DTO-nya. Tambahkan test baru:
 
@@ -688,12 +688,12 @@ it('tetap konsisten menolak bentrok guru setelah dibungkus lock (regresi, bukan 
 ```
 Sesuaikan isi test dengan struktur DTO `JadwalPelajaranData` dan factory yang PERSIS dipakai di file ini (baca dulu 1-2 test existing di file yang sama, terutama yang menguji bentrok guru, untuk pola factory yang benar) — tulis assertion konkret memakai `app(CreateJadwalPelajaranAction::class)->execute(...)` dua kali berurutan, `expect(fn () => ...)->toThrow(\Illuminate\Validation\ValidationException::class);` untuk panggilan kedua.
 
-- [ ] **Step 2: Jalankan test, pastikan LOLOS di percobaan pertama**
+- [x] **Step 2: Jalankan test, pastikan LOLOS di percobaan pertama**
 
 Run: `php artisan test --filter="tetap konsisten menolak bentrok guru setelah dibungkus lock"`
 Expected: **PASS** — validasi bentrok guru single-request sudah benar SEBELUM fix ini; test ini jadi regression-guard untuk Step 3-4 (pastikan pembungkusan transaction tidak merusak logic yang sudah benar), BUKAN pola TDD merah-dulu.
 
-- [ ] **Step 3: Perbaiki `CreateJadwalPelajaranAction`**
+- [x] **Step 3: Perbaiki `CreateJadwalPelajaranAction`**
 
 Baca `app/Domains/Akademik/Actions/Jadwal/CreateJadwalPelajaranAction.php` (file penuh, 78 baris). Ganti SELURUH isi `execute()`:
 ```php
@@ -754,14 +754,14 @@ Baca `app/Domains/Akademik/Actions/Jadwal/CreateJadwalPelajaranAction.php` (file
 ```
 **PENTING**: `$jamPelajaranBaru = JamPelajaran::where('id', $data->jamPelajaranId)->lockForUpdate()->first();` di AWAL closure (SEBELUM pengecekan #1) — bukan di antara pengecekan #2 dan #3 seperti kode asli.
 
-- [ ] **Step 4: Perbaiki `UpdateJadwalPelajaranAction`** — pola identik, bungkus SELURUH isi `execute()` ke `DB::transaction()`, `$jamPelajaranBaru = JamPelajaran::where('id', $data->jamPelajaranId)->lockForUpdate()->first();` di awal closure. WAJIB pertahankan `->where('id', '!=', $jadwal->id)` (2 pengecekan yang sudah punya klausa ini) dan `ignoreJadwalId: $jadwal->id` (pengecekan #1) tetap utuh, dan `$jadwal->update($data->toArray()); return $jadwal->fresh();` di akhir closure.
+- [x] **Step 4: Perbaiki `UpdateJadwalPelajaranAction`** — pola identik, bungkus SELURUH isi `execute()` ke `DB::transaction()`, `$jamPelajaranBaru = JamPelajaran::where('id', $data->jamPelajaranId)->lockForUpdate()->first();` di awal closure. WAJIB pertahankan `->where('id', '!=', $jadwal->id)` (2 pengecekan yang sudah punya klausa ini) dan `ignoreJadwalId: $jadwal->id` (pengecekan #1) tetap utuh, dan `$jadwal->update($data->toArray()); return $jadwal->fresh();` di akhir closure.
 
-- [ ] **Step 5: Jalankan test lagi + regresi**
+- [x] **Step 5: Jalankan test lagi + regresi**
 
 Run: `php artisan test --filter=JadwalPelajaran`
 Expected: semua PASS, termasuk seluruh test bentrok existing di `JadwalPelajaranBentrokWaktuTest.php`.
 
-- [ ] **Step 6: Pint dan commit**
+- [x] **Step 6: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -775,17 +775,17 @@ git commit -m "fix(akademik): cegah race condition bentrok jadwal via lockForUpd
 
 **Files:** Tidak ada file diubah — verifikasi akhir.
 
-- [ ] **Step 1: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 1: Pastikan tidak ada proses test lain berjalan**
 
 Run: `ps aux | grep artisan | grep -v grep`
 Expected: kosong.
 
-- [ ] **Step 2: Jalankan full suite sendirian**
+- [x] **Step 2: Jalankan full suite sendirian**
 
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures (kecuali test SPMB flaky yang sudah diketahui — Faker nama lembaga mengandung apostrof; kalau muncul, jalankan ulang sendirian untuk konfirmasi flaky, bukan regresi paket ini).
 
-- [ ] **Step 3: Pint final**
+- [x] **Step 3: Pint final**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
