@@ -29,7 +29,7 @@
 **Interfaces:**
 - Produksi: `resolveAnakList(User $actor): Collection<int, Siswa>`, `resolveAnakTerpilih(Collection $anakList, ?int $siswaIdDiminta): ?Siswa` — dipakai Task 2, 3, 4.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Unit/Support/ResolveLembagaScopeTraitTest.php` untuk pola helper anonymous-class yang sudah dipakai di sesi ini (`use TraitName; public function panggil(...) { return $this->method(...); }`). Buat file baru:
 
@@ -117,12 +117,12 @@ it('resolveAnakTerpilih: mengembalikan null kalau anakList kosong', function () 
 
 **Catatan penting soal factory**: `OrangTua` TIDAK punya kolom `user_id` sungguhan (link sebenarnya lewat `person_id` → `Person.user_id`, dan `User::orangTua()` adalah `hasOneThrough(OrangTua::class, Person::class, ...)`). `OrangTuaFactory::definition()` (`database/factories/OrangTuaFactory.php:38-62`) sudah menangani ini — `'user_id'` yang dikirim ke `OrangTua::factory()->create(['user_id' => $existingUserId])` dibaca sebagai OVERRIDE di `definition()` untuk menentukan `Person` mana yang dibuat/dipakai, BUKAN kolom asli. Karena itu WAJIB pakai pola `$orangTua = OrangTua::factory()->create(['user_id' => $user->id]);` (user dibuat DULU, id-nya dioper SAAT create), JANGAN `OrangTua::factory()->create()` lalu `->update(['user_id' => ...])` setelahnya (`update()` akan diam-diam no-op karena `user_id` tidak ada di `$fillable` model — `$user->orangTua` akan selalu `null` kalau pola ini dipakai, bikin SEMUA test di Task 1-4 gagal karena setup rusak, bukan karena fitur salah).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=ResolveAnakOrangTuaTraitTest`
 Expected: FAIL — class trait belum ada.
 
-- [ ] **Step 3: Buat trait**
+- [x] **Step 3: Buat trait**
 
 ```php
 <?php
@@ -172,12 +172,12 @@ trait ResolveAnakOrangTuaTrait
 }
 ```
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=ResolveAnakOrangTuaTraitTest`
 Expected: PASS.
 
-- [ ] **Step 5: Pint dan commit**
+- [x] **Step 5: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -197,7 +197,7 @@ git commit -m "feat(akademik): trait ResolveAnakOrangTuaTrait untuk resolve anak
 **Interfaces:**
 - Konsumsi: `ResolveAnakOrangTuaTrait::resolveAnakList()`/`resolveAnakTerpilih()` (Task 1).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Baca `tests/Feature/Akademik/RppWorkflowTest.php` baris 1-59 untuk pola `beforeEach` + factory setup lengkap (Yayasan/Lembaga/TahunAjaran/Semester/Kelas) yang sudah established di sesi ini. Baca juga `app/Domains/Akademik/Models/PengajuanRapor.php` untuk field wajib exact (`kelas_id`, `semester_id`, `status`) dan `App\Domains\Akademik\Enums\StatusPengajuanRapor` untuk nilai enum yang valid. Buat file baru:
 
@@ -310,12 +310,12 @@ it('menolak unduh rapor kalau PengajuanRapor belum Disetujui', function () {
 
 **Catatan penting soal struktur `Asesmen`/`KomponenPenilaian`**: keduanya entitas TERPISAH dan SEJAJAR (masing-masing punya `subjek_type`/`subjek_id` sendiri, BUKAN `Asesmen belongsTo KomponenPenilaian` — tidak ada kolom `komponen_penilaian_id` di tabel `asesmen`). `NilaiSiswa` punya `asesmen_id` DAN `komponen_penilaian_id` sebagai 2 foreign key independen (lihat `database/factories/NilaiSiswaFactory.php`) — keduanya WAJIB dibuat terpisah seperti kode di atas, JANGAN dinested. `JenisAsesmen` cuma py 6 case valid: `DiagnostikKognitif`, `DiagnostikNonKognitif`, `Formatif`, `SumatifLingkupMateri`, `SumatifAkhirSemester`, `SumatifAkhirJenjang` (BUKAN `Sumatif` — tidak ada case dengan nama itu) — `masukRapor()` cuma mengembalikan 3 case `Sumatif*`.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=NilaiAnakControllerTest`
 Expected: FAIL — route/controller belum ada.
 
-- [ ] **Step 3: Buat `NilaiAnakController`**
+- [x] **Step 3: Buat `NilaiAnakController`**
 
 ```php
 <?php
@@ -415,7 +415,7 @@ class NilaiAnakController extends BaseController
 }
 ```
 
-- [ ] **Step 4: Tambah route (sementara, langsung di file baru — didaftarkan penuh di Task 5)**
+- [x] **Step 4: Tambah route (sementara, langsung di file baru — didaftarkan penuh di Task 5)**
 
 Buat file `routes/admin/orang-tua-akademik.php`:
 ```php
@@ -429,7 +429,7 @@ Route::get('nilai-anak/{siswa}/unduh-rapor', [NilaiAnakController::class, 'unduh
 ```
 Tambahkan `require base_path('routes/admin/orang-tua-akademik.php');` ke `routes/admin.php` setelah baris `require base_path('routes/admin/kasus-admin.php');`.
 
-- [ ] **Step 5: Buat view `nilai-anak.blade.php`**
+- [x] **Step 5: Buat view `nilai-anak.blade.php`**
 
 Baca `resources/views/admin/dashboard/orang-tua.blade.php` (sudah dibaca sebelumnya — pola `<x-app-layout>`, `<x-panel>`, token `text-ink`/`text-slate`/`font-display`) untuk acuan visual PERSIS. Buat:
 
@@ -520,12 +520,12 @@ Baca `resources/views/admin/dashboard/orang-tua.blade.php` (sudah dibaca sebelum
 </x-app-layout>
 ```
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=NilaiAnakControllerTest`
 Expected: PASS.
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -545,7 +545,7 @@ git commit -m "feat(akademik): halaman Nilai & Rapor Anak untuk Ruang Orang Tua"
 
 **Interfaces:** Konsumsi: `ResolveAnakOrangTuaTrait` (Task 1).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -610,12 +610,12 @@ it('menolak kebocoran jadwal anak orang tua lain lewat siswa_id (IDOR)', functio
 
 Cek dulu `JamPelajaran` factory/model untuk field `hari` (kemungkinan enum `Hari`, sesuaikan value `'senin'` dengan yang valid — baca `App\Enums\Hari` dulu).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=JadwalAnakControllerTest`
 Expected: FAIL.
 
-- [ ] **Step 3: Buat `JadwalAnakController`**
+- [x] **Step 3: Buat `JadwalAnakController`**
 
 ```php
 <?php
@@ -663,7 +663,7 @@ class JadwalAnakController extends BaseController
 }
 ```
 
-- [ ] **Step 4: Tambah route**
+- [x] **Step 4: Tambah route**
 
 Tambahkan ke `routes/admin/orang-tua-akademik.php`:
 ```php
@@ -674,7 +674,7 @@ use App\Http\Controllers\Admin\JadwalAnakController;
 Route::get('jadwal-anak', [JadwalAnakController::class, 'index'])->name('jadwal-anak.index');
 ```
 
-- [ ] **Step 5: Buat view `jadwal-anak.blade.php`**
+- [x] **Step 5: Buat view `jadwal-anak.blade.php`**
 
 ```blade
 <x-app-layout>
@@ -734,12 +734,12 @@ Route::get('jadwal-anak', [JadwalAnakController::class, 'index'])->name('jadwal-
 </x-app-layout>
 ```
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=JadwalAnakControllerTest`
 Expected: PASS.
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -759,7 +759,7 @@ git commit -m "feat(akademik): halaman Jadwal Anak untuk Ruang Orang Tua"
 
 **Interfaces:** Konsumsi: `ResolveAnakOrangTuaTrait` (Task 1).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -829,12 +829,12 @@ it('menolak kebocoran riwayat anak orang tua lain lewat siswa_id (IDOR)', functi
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter=RiwayatIzinSakitAnakControllerTest`
 Expected: FAIL.
 
-- [ ] **Step 3: Buat `RiwayatIzinSakitAnakController`**
+- [x] **Step 3: Buat `RiwayatIzinSakitAnakController`**
 
 ```php
 <?php
@@ -886,7 +886,7 @@ class RiwayatIzinSakitAnakController extends BaseController
 }
 ```
 
-- [ ] **Step 4: Tambah route**
+- [x] **Step 4: Tambah route**
 
 Tambahkan ke `routes/admin/orang-tua-akademik.php`:
 ```php
@@ -897,7 +897,7 @@ dan:
 Route::get('riwayat-izin-sakit-anak', [RiwayatIzinSakitAnakController::class, 'index'])->name('riwayat-izin-sakit-anak.index');
 ```
 
-- [ ] **Step 5: Buat view `riwayat-izin-sakit-anak.blade.php`**
+- [x] **Step 5: Buat view `riwayat-izin-sakit-anak.blade.php`**
 
 ```blade
 <x-app-layout>
@@ -965,12 +965,12 @@ Route::get('riwayat-izin-sakit-anak', [RiwayatIzinSakitAnakController::class, 'i
 
 Catatan: `siswa_id` dikirim dobel (dropdown + hidden input) supaya tetap terkirim saat form disubmit lewat perubahan tanggal — cek dulu apakah ada pola existing yang lebih rapi untuk ini (mis. hidden input tunggal yang di-update via Alpine `x-model` sebelum submit) dan ikuti itu kalau ada, alih-alih duplikasi field seperti di atas.
 
-- [ ] **Step 6: Jalankan test lagi, pastikan lolos**
+- [x] **Step 6: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter=RiwayatIzinSakitAnakControllerTest`
 Expected: PASS.
 
-- [ ] **Step 7: Pint dan commit**
+- [x] **Step 7: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -988,7 +988,7 @@ git commit -m "feat(akademik): halaman Riwayat Izin/Sakit Anak untuk Ruang Orang
 
 **Interfaces:** Tidak ada — task penutup.
 
-- [ ] **Step 1: Tulis test yang gagal — sidebar**
+- [x] **Step 1: Tulis test yang gagal — sidebar**
 
 Cari test existing untuk sidebar (`grep -rn "sidebar" tests/ -il` dulu untuk menemukan file yang tepat — kemungkinan `tests/Feature/**/*Sidebar*Test.php`). Kalau ada, tambahkan test baru mengikuti pola file itu:
 ```php
@@ -1003,12 +1003,12 @@ it('tidak menampilkan menu Ruang Orang Tua untuk actor bukan orang tua', functio
 ```
 Kalau TIDAK ada file test sidebar existing, buat `tests/Feature/SidebarOrangTuaAkademikTest.php` baru dengan struktur test di atas, ikuti pola `actingAs`+assert HTML dari test feature lain di sesi ini (mis. render halaman apa saja yang memuat sidebar, lalu assert isi HTML-nya).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menampilkan menu Nilai & Rapor Anak"`
 Expected: FAIL — menu masih dikomentari/mengarah ke `dalam-pengembangan`.
 
-- [ ] **Step 3: Buka kembali komentar di sidebar**
+- [x] **Step 3: Buka kembali komentar di sidebar**
 
 Baca `resources/views/layouts/sidebar.blade.php` baris 41-50 (grup Ruang Orang Tua). Ganti baris 43-49 (yang dikomentari):
 ```php
@@ -1018,28 +1018,28 @@ Auth::user()->orangTua !== null ? ['route' => 'admin.riwayat-izin-sakit-anak.ind
 ```
 (Nama ikon `award`/`calendar-clock`/`clipboard-check` adalah nama Lucide — TETAP DIPAKAI PERSIS seperti versi lama yang dikomentari, JANGAN diubah ke nama `<x-icon>` Material-Symbols — sidebar pakai `x-lucide-*` via `<x-dynamic-component>`, sistem ikon BERBEDA dari yang dipakai di dalam konten halaman.)
 
-- [ ] **Step 4: Jalankan test lagi, pastikan lolos**
+- [x] **Step 4: Jalankan test lagi, pastikan lolos**
 
 Run: `php artisan test --filter="menampilkan menu Nilai & Rapor Anak"`
 Run: `php artisan test --filter="tidak menampilkan menu Ruang Orang Tua"`
 Expected: PASS.
 
-- [ ] **Step 5: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 5: Pastikan tidak ada proses test lain berjalan**
 
 Run: `ps aux | grep artisan | grep -v grep`
 Expected: kosong.
 
-- [ ] **Step 6: Jalankan full suite sendirian**
+- [x] **Step 6: Jalankan full suite sendirian**
 
 Run: `php artisan test --compact`
 Expected: SEMUA test PASS, 0 failures (kecuali test SPMB flaky yang sudah diketahui, jalankan ulang sendirian untuk konfirmasi kalau muncul).
 
-- [ ] **Step 7: Pint final**
+- [x] **Step 7: Pint final**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 8: Pint dan commit**
+- [x] **Step 8: Pint dan commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
