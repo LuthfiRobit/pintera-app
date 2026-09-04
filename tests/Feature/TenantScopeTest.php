@@ -161,12 +161,33 @@ it('respects a yayasan-scoped user\'s active_lembaga_id session filter', functio
     TenantScopeTestModel::withoutGlobalScopes()->create(['lembaga_id' => $lembagaA->id, 'label' => 'A']);
     TenantScopeTestModel::withoutGlobalScopes()->create(['lembaga_id' => $lembagaB->id, 'label' => 'B']);
 
-    $user = User::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $user->assignRole('yayasan_super_admin');
     $this->actingAs($user);
     session(['active_lembaga_id' => $lembagaA->id]);
 
     expect(TenantScopeTestModel::pluck('label')->all())->toBe(['A']);
+});
+
+it('falls back to own-yayasan pool when active_lembaga_id session points to a lembaga outside the actor\'s current yayasan', function () {
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasanSaya->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+
+    TenantScopeTestModel::withoutGlobalScopes()->create(['lembaga_id' => $lembagaSaya->id, 'label' => 'Milik Saya']);
+    TenantScopeTestModel::withoutGlobalScopes()->create(['lembaga_id' => $lembagaLain->id, 'label' => 'Milik Lain']);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasanSaya->id]);
+    $user->assignRole('yayasan_super_admin');
+    $this->actingAs($user);
+    // Session basi -- menunjuk ke lembaga yang BUKAN milik yayasan actor saat ini.
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    // Harus fallback ke pool "semua lembaga milik yayasan sendiri", BUKAN bocor ke lembagaLain,
+    // BUKAN JUGA kosong total.
+    expect(TenantScopeTestModel::pluck('label')->all())->toBe(['Milik Saya']);
 });
 
 it('auto-fills lembaga_id from the authenticated lembaga-scoped user on create', function () {

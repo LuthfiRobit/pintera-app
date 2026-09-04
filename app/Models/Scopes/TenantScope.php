@@ -12,6 +12,8 @@ class TenantScope implements Scope
 {
     private static bool $resolvingActingUser = false;
 
+    private static array $lembagaOwnershipCache = [];
+
     public function apply(Builder $builder, Model $model): void
     {
         // Re-entrancy guard: Laravel's SessionGuard::id() calls $this->user() internally
@@ -51,6 +53,9 @@ class TenantScope implements Scope
 
         if ($actingUser->widestScopeLevel() === 'yayasan') {
             $activeLembagaId = session('active_lembaga_id');
+            if ($activeLembagaId !== null && ! $this->lembagaMasihMilikYayasan((int) $activeLembagaId, $actingUser->yayasan_id)) {
+                $activeLembagaId = null;
+            }
 
             if ($activeLembagaId) {
                 $builder->where($model->getTable().'.lembaga_id', $activeLembagaId);
@@ -86,5 +91,14 @@ class TenantScope implements Scope
         }
 
         $builder->where($model->getTable().'.lembaga_id', $actingUser->lembaga_id);
+    }
+
+    private function lembagaMasihMilikYayasan(int $lembagaId, ?int $yayasanId): bool
+    {
+        $cacheKey = $lembagaId.':'.($yayasanId ?? 'null');
+
+        return self::$lembagaOwnershipCache[$cacheKey] ??= Lembaga::where('id', $lembagaId)
+            ->where('yayasan_id', $yayasanId)
+            ->exists();
     }
 }
