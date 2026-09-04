@@ -108,6 +108,12 @@ class RppController extends BaseController
         }
         $mataPelajaranList = $mapelQuery->orderBy('nama')->get();
 
+        $guruQuery = Guru::query();
+        if ($targetLembagaId) {
+            $guruQuery->where('lembaga_id', $targetLembagaId);
+        }
+        $guruList = $guruQuery->orderByNama()->get();
+
         $semesterQuery = Semester::query();
         if ($tahunAjaranId) {
             $semesterQuery->where('tahun_ajaran_id', $tahunAjaranId);
@@ -122,6 +128,7 @@ class RppController extends BaseController
             'stats' => $stats,
             'kelasList' => $kelasList,
             'mataPelajaranList' => $mataPelajaranList,
+            'guruList' => $guruList,
             'semesterList' => $semesterList,
             'tahunAjaranList' => $tahunAjaranList,
             'tahunAjaranAktif' => $tahunAjaranAktif,
@@ -144,11 +151,7 @@ class RppController extends BaseController
         $kelas = Kelas::findOrFail($request->input('kelas_id'));
         $semester = Semester::findOrFail($request->input('semester_id'));
 
-        $guruId = $guru ? $guru->id : ($request->input('guru_id') ?: Guru::where('lembaga_id', $kelas->lembaga_id)->value('id'));
-
-        if (! $guruId) {
-            abort(422, 'Profil guru pengampu tidak ditemukan.');
-        }
+        $guruId = $guru ? $guru->id : (int) $request->input('guru_id');
 
         if ($guru !== null) {
             if ($request->filled('mata_pelajaran_id')) {

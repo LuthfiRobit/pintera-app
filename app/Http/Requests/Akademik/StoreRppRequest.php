@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\RppData;
+use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Semester;
 use Illuminate\Foundation\Http\FormRequest;
@@ -23,6 +24,7 @@ final class StoreRppRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'guru_id' => ['nullable', 'integer', 'exists:guru,id'],
             'kelas_id' => ['required', 'integer', 'exists:kelas,id'],
             'semester_id' => ['required', 'integer', 'exists:semester,id'],
             'mata_pelajaran_id' => ['nullable', 'integer', 'exists:mata_pelajaran,id'],
@@ -46,6 +48,20 @@ final class StoreRppRequest extends FormRequest
             $semester = Semester::find($semesterId);
             if ($kelas && $semester && $kelas->tahun_ajaran_id !== $semester->tahun_ajaran_id) {
                 $validator->errors()->add('kelas_id', 'Kelas yang dipilih bukan berasal dari tahun ajaran yang sama dengan semester ini.');
+            }
+
+            if ($this->user()->guru === null) {
+                $guruId = $this->input('guru_id');
+                if (! $guruId) {
+                    $validator->errors()->add('guru_id', 'Guru pengampu wajib dipilih.');
+
+                    return;
+                }
+
+                $guru = Guru::withoutGlobalScopes()->find($guruId);
+                if (! $guru || ($kelas && $guru->lembaga_id !== $kelas->lembaga_id)) {
+                    $validator->errors()->add('guru_id', 'Guru yang dipilih bukan dari lembaga yang sama dengan kelas ini.');
+                }
             }
         });
     }

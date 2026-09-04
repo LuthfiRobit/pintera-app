@@ -334,3 +334,61 @@ it('mencegah user lembaga lain mengakses RPP milik lembaga lain via rute single-
     expect($rpp->fresh())->not->toBeNull()
         ->and($rpp->fresh()->judul_topik)->toBe('RPP Rahasia Lembaga 1');
 });
+
+it('menolak actor tanpa profil Guru membuat RPP tanpa guru_id', function () {
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
+        'judul_topik' => 'Uji Topik',
+        'alokasi_waktu' => '2 x 35 Menit',
+        'file' => UploadedFile::fake()->create('rpp.pdf', 100),
+    ]);
+
+    $response->assertSessionHasErrors('guru_id');
+    expect(Rpp::where('judul_topik', 'Uji Topik')->exists())->toBeFalse();
+});
+
+it('mengizinkan actor tanpa profil Guru membuat RPP dengan guru_id valid', function () {
+    $guruTarget = Guru::factory()->create(['lembaga_id' => $this->lembaga->id]);
+
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
+        'guru_id' => $guruTarget->id,
+        'judul_topik' => 'Uji Topik',
+        'alokasi_waktu' => '2 x 35 Menit',
+        'file' => UploadedFile::fake()->create('rpp.pdf', 100),
+    ]);
+
+    $response->assertSessionDoesntHaveErrors();
+    expect(Rpp::where('guru_id', $guruTarget->id)->exists())->toBeTrue();
+});
+
+it('menolak guru_id milik lembaga lain', function () {
+    $lembagaLain = Lembaga::factory()->create();
+    $guruLembagaLain = Guru::factory()->create(['lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($this->userKurikulum)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
+        'guru_id' => $guruLembagaLain->id,
+        'judul_topik' => 'Uji Topik',
+        'alokasi_waktu' => '2 x 35 Menit',
+        'file' => UploadedFile::fake()->create('rpp.pdf', 100),
+    ]);
+
+    $response->assertSessionHasErrors('guru_id');
+});
+
+it('actor dengan profil Guru sendiri tetap bisa membuat RPP tanpa guru_id (regresi)', function () {
+    $response = $this->actingAs($this->userGuru)->post(route('admin.rpp.store'), [
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
+        'mata_pelajaran_id' => $this->mapel->id,
+        'judul_topik' => 'Uji Topik',
+        'alokasi_waktu' => '2 x 35 Menit',
+        'file' => UploadedFile::fake()->create('rpp.pdf', 100),
+    ]);
+
+    $response->assertSessionDoesntHaveErrors();
+});

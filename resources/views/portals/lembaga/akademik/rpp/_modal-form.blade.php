@@ -59,6 +59,18 @@
                 </div>
             </div>
 
+            @if (! auth()->user()->guru)
+                <div>
+                    <x-input-label value="Guru Pengampu" />
+                    <select name="guru_id" required x-model="formModal.guru_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">— Pilih Guru Pengampu —</option>
+                        @foreach ($guruList ?? [] as $guruOpsi)
+                            <option value="{{ $guruOpsi->id }}">{{ $guruOpsi->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
+
             {{-- Mata Pelajaran --}}
             <div>
                 <x-input-label value="Mata Pelajaran" />
