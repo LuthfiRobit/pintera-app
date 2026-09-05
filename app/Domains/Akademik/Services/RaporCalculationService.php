@@ -152,6 +152,58 @@ final class RaporCalculationService
         return $hasil;
     }
 
+    /**
+     * Persentase ringkas kelengkapan nilai satu kelas+semester -- dipakai widget dashboard
+     * (Guru & Lembaga). Sumber perhitungan SAMA dengan kelengkapanNilaiKelas() (tiap slot
+     * asesmen x komponen x siswa dicek sesuai assessment_type-nya, bukan cuma numeric),
+     * supaya angka di dashboard tidak pernah berbeda dari rincian di halaman
+     * pengajuan/verifikasi rapor.
+     *
+     * @return array{persen: float, terisi: int, total: int}
+     */
+    public function persentaseKelengkapanKelas(Kelas $kelas, Semester $semester): array
+    {
+        $totalSiswa = Siswa::where('kelas_id', $kelas->id)->count();
+
+        $asesmenList = Asesmen::where('kelas_id', $kelas->id)
+            ->where('semester_id', $semester->id)
+            ->whereIn('jenis', JenisAsesmen::masukRapor())
+            ->with('komponenPenilaian')
+            ->get();
+
+        $slotList = $asesmenList->flatMap(
+            fn ($asesmen) => $asesmen->komponenPenilaian->map(fn ($komponen) => ['asesmen_id' => $asesmen->id, 'komponen' => $komponen])
+        );
+
+        $totalSlot = $totalSiswa * $slotList->count();
+
+        if ($totalSlot === 0) {
+            return ['persen' => 0.0, 'terisi' => 0, 'total' => 0];
+        }
+
+        $siswaIds = Siswa::where('kelas_id', $kelas->id)->pluck('id');
+        $allNilai = NilaiSiswa::whereIn('asesmen_id', $asesmenList->pluck('id'))
+            ->whereIn('siswa_id', $siswaIds)
+            ->get()
+            ->keyBy(fn ($n) => "{$n->asesmen_id}-{$n->komponen_penilaian_id}-{$n->siswa_id}");
+
+        $terisi = 0;
+        foreach ($siswaIds as $siswaId) {
+            foreach ($slotList as $slot) {
+                $nilai = $allNilai->get("{$slot['asesmen_id']}-{$slot['komponen']->id}-{$siswaId}");
+                if ($this->isTerisi($nilai, $slot['komponen']->assessment_type)) {
+                    $terisi++;
+                }
+            }
+        }
+
+        return [
+            'persen' => round($terisi / $totalSlot * 100, 1),
+            'terisi' => $terisi,
+            'total' => $totalSlot,
+        ];
+    }
+
     private function isTerisi(?NilaiSiswa $nilai, AssessmentType $tipe): bool
     {
         if ($nilai === null) {

@@ -38,8 +38,20 @@ Alasan **informative-only** dipilih (bukan hard-block): tanggung jawab isi nilai
 
 ## 5. Di Luar Cakupan
 
-- `DashboardStatsService::statistikProgressRaporKelas()` (widget dashboard lama, cuma hitung numeric) **tidak diperbaiki/diganti** — dibiarkan sebagai widget ringkas terpisah, tidak dipakai lagi sebagai sumber untuk Lapis 1/2 yang baru (yang baru pakai `kelengkapanNilaiKelas()` sendiri). Technical debt kecil: sekarang ada 2 cara menghitung "kelengkapan nilai" di codebase dengan cakupan berbeda (satu cuma numeric buat dashboard ringkas, satu lengkap 3 tipe buat rapor) — belum dikonsolidasi, dicatat sebagai catatan follow-up kalau nanti mau disatukan.
+- ~~`DashboardStatsService::statistikProgressRaporKelas()` ... belum dikonsolidasi~~ — **SUDAH DIPERBAIKI, lihat §7 di bawah (susulan, sama hari).**
 
 ## 6. Status Git
 
-Committed setelah log ini ditulis — lihat commit message untuk daftar file.
+Committed — lihat commit message untuk daftar file.
+
+---
+
+## 7. Susulan (sama hari): Konsolidasi `DashboardStatsService::statistikProgressRaporKelas()`
+
+User menanyakan widget ini dipakai di halaman siapa (`admin.dashboard.guru` untuk wali kelas dan `admin.dashboard.lembaga` untuk siapa pun berpermission `komponen-penilaian.kelola` — biasanya Kepsek/Waka/Operator Akademik), lalu minta diperbaiki sekalian.
+
+**Perbaikan**: `statistikProgressRaporKelas()` sekarang delegasi penuh ke `RaporCalculationService::persentaseKelengkapanKelas(Kelas, Semester)` (method baru) — satu sumber perhitungan yang sama dengan `kelengkapanNilaiKelas()` di §3, sehingga dashboard tidak akan pernah menampilkan angka yang beda dari rincian di halaman pengajuan/verifikasi rapor. Method lama query `KomponenPenilaian` langsung dengan `whereHasMorph`+filter `assessment_type=numeric` (mengabaikan predicate/narrative, DAN mengabaikan apakah komponen itu benar-benar terpasang ke suatu Asesmen lewat pivot `asesmen_komponen_penilaian`); method baru membangun slot dari `Asesmen->komponenPenilaian` (pivot) seperti method §3, mengecek tiap slot sesuai `assessment_type`-nya.
+
+**Perubahan behavior yang perlu diketahui**: komponen yang dibuat tapi TIDAK PERNAH dipasang ke Asesmen manapun sekarang tidak lagi dihitung sebagai bagian dari total slot (sebelumnya method lama menghitungnya berdasarkan `subjek_id`+`semester_id` cocok, terlepas dari pivot Asesmen) — perubahan ini disengaja, karena komponen yang tidak pernah dipasang ke Asesmen memang tidak bisa punya `NilaiSiswa` sama sekali (struktural, `CreateAsesmenAction` selalu attach lewat pivot saat membuat Asesmen), jadi menghitungnya sebagai "harus diisi" cuma bikin persentase macet permanen. 2 test lama (`DashboardStatsServiceAssessmentTypeTest.php`) yang sebelumnya membuat komponen tanpa attach ke Asesmen (tidak realistis dibanding alur produksi) diperbaiki dengan menambahkan `$asesmen->komponenPenilaian()->attach(...)` eksplisit.
+
+**Test**: 1 test regresi baru membuktikan bug lama tertutup (komponen `predicate` kosong sekarang benar dihitung sebagai belum lengkap, bukan diabaikan total sehingga `total=0`). 2 test unit baru untuk `persentaseKelengkapanKelas()` langsung (multi-tipe, dan default kosong saat tidak ada asesmen). Full re-run `tests/Feature/Guru` + `Akademik` + `Rapor` + `tests/Unit/Services` + `DashboardStatsServiceAssessmentTypeTest` + `DashboardStatsServiceTest` + `DashboardTest`: **470 passed (1138 assertions)**, Pint bersih.

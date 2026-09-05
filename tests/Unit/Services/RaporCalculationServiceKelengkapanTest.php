@@ -104,6 +104,33 @@ it('detects incompleteness for a narrative assessment type when catatan is blank
     expect($hasil->get('mata_pelajaran:'.$mapel->id)->siswaBelumLengkap->pluck('id')->all())->toBe([$siswaNaratifKosong->id]);
 });
 
+it('computes persentaseKelengkapanKelas across numeric, predicate, and narrative slots together', function () {
+    ['kelas' => $kelas, 'semester' => $semester, 'mapel' => $mapel] = siapkanKelasUntukKelengkapan();
+    $siswa = Siswa::factory()->create(['kelas_id' => $kelas->id]);
+
+    $komponenNumeric = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'assessment_type' => AssessmentType::Numeric]);
+    $komponenPredikat = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'assessment_type' => AssessmentType::Predicate]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach([$komponenNumeric->id, $komponenPredikat->id]);
+    NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenNumeric->id, 'nilai_angka' => 80]);
+    NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenPredikat->id, 'predikat' => null]);
+
+    $hasil = (new RaporCalculationService)->persentaseKelengkapanKelas($kelas, $semester);
+
+    expect($hasil['total'])->toBe(2);
+    expect($hasil['terisi'])->toBe(1);
+    expect($hasil['persen'])->toBe(50.0);
+});
+
+it('returns zero-value defaults from persentaseKelengkapanKelas when the kelas has no asesmen at all', function () {
+    ['kelas' => $kelas, 'semester' => $semester] = siapkanKelasUntukKelengkapan();
+    Siswa::factory()->create(['kelas_id' => $kelas->id]);
+
+    $hasil = (new RaporCalculationService)->persentaseKelengkapanKelas($kelas, $semester);
+
+    expect($hasil)->toBe(['persen' => 0.0, 'terisi' => 0, 'total' => 0]);
+});
+
 it('does not silently mark a siswa complete just because one of several komponen for the same subjek is filled', function () {
     ['kelas' => $kelas, 'semester' => $semester, 'mapel' => $mapel] = siapkanKelasUntukKelengkapan();
     $siswa = Siswa::factory()->create(['kelas_id' => $kelas->id]);

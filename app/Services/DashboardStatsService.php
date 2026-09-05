@@ -4,10 +4,7 @@
 
 namespace App\Services;
 
-use App\Domains\Akademik\Enums\JenisAsesmen;
-use App\Domains\Akademik\Models\KomponenPenilaian;
-use App\Domains\Akademik\Models\MataPelajaran;
-use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Services\RaporCalculationService;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\Tagihan;
 use App\Domains\Sdm\Models\AttendanceRecord;
@@ -17,7 +14,6 @@ use App\Models\Karyawan;
 use App\Models\Kelas;
 use App\Models\Pendaftaran;
 use App\Models\Semester;
-use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\Yayasan;
 
@@ -135,25 +131,11 @@ class DashboardStatsService
             return ['persen' => 0.0, 'terisi' => 0, 'total' => 0];
         }
 
-        $totalSiswa = Siswa::where('kelas_id', $kelas->id)->count();
-        $totalKomponen = KomponenPenilaian::where('semester_id', $semester->id)
-            ->where('assessment_type', 'numeric')
-            ->whereHasMorph('subjek', [MataPelajaran::class], fn ($q) => $q->where('lembaga_id', $kelas->lembaga_id))
-            ->count();
-
-        $totalTerisi = NilaiSiswa::whereHas('siswa', fn ($q) => $q->where('kelas_id', $kelas->id))
-            ->whereHas('komponenPenilaian', fn ($q) => $q->where('semester_id', $semester->id))
-            ->whereHas('asesmen', fn ($q) => $q->whereIn('jenis', JenisAsesmen::masukRapor()))
-            ->whereNotNull('nilai_angka')
-            ->count();
-
-        $totalSlot = $totalSiswa * $totalKomponen;
-
-        return [
-            'persen' => $totalSlot > 0 ? round($totalTerisi / $totalSlot * 100, 1) : 0.0,
-            'terisi' => $totalTerisi,
-            'total' => $totalSlot,
-        ];
+        // Delegasi ke RaporCalculationService supaya sumber perhitungan sama persis dengan
+        // rincian di halaman pengajuan/verifikasi rapor -- sebelumnya method ini cuma
+        // menghitung komponen assessment_type=numeric, sehingga sekolah PAUD (predicate)
+        // atau kelas dengan komponen narrative selalu tampak "0%" atau salah hitung.
+        return app(RaporCalculationService::class)->persentaseKelengkapanKelas($kelas, $semester);
     }
 
     public function statistikSisaKuotaCuti(Karyawan $karyawan): ?array

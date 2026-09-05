@@ -286,7 +286,7 @@ Audit investigatif menyusuri satu alur bisnis penuh dari skema database sampai f
 
 **Sisa alur yang sudah diaudit dan TIDAK ditemukan masalah baru** (input nilai, kalkulasi rekap, catatan wali kelas, verifikasi & persetujuan): sudah cukup tertutup oleh audit-audit sesi sebelumnya.
 
-**Catatan technical debt kecil**: `DashboardStatsService::statistikProgressRaporKelas()` (widget dashboard lama) masih cuma hitung `assessment_type=numeric`, TIDAK diganti/dikonsolidasikan dengan `kelengkapanNilaiKelas()` baru — sekarang ada 2 cara hitung "kelengkapan nilai" dengan cakupan berbeda di codebase, belum disatukan.
+**5. Konsolidasi Widget Dashboard `statistikProgressRaporKelas()` (susulan, sama hari)**: widget lama (dipakai di dashboard Guru untuk wali kelas & dashboard Lembaga untuk Kepsek/Waka/Operator Akademik) cuma hitung `assessment_type=numeric` dan mengabaikan apakah komponen benar-benar terpasang ke suatu Asesmen — sekarang delegasi penuh ke `RaporCalculationService::persentaseKelengkapanKelas()` baru, satu sumber perhitungan yang sama dengan Lapis 1/2 di atas. 3 test baru + 2 test lama diperbaiki (setup tidak realistis dibanding alur produksi). 470 passed (1138 assertions).
 
 ---
 
