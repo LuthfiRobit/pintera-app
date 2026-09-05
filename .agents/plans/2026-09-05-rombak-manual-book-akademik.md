@@ -49,7 +49,7 @@
 - Consumes: `App\Models\Lembaga`, `App\Models\Yayasan`, `App\Models\TahunAjaran`, `App\Models\Semester`, `App\Models\Guru`, `App\Models\User`, `App\Models\Kelas`, `App\Models\Siswa`, `App\Domains\Akademik\Models\PolaJam`, `App\Domains\Akademik\Models\JamPelajaran`, `App\Domains\Akademik\Models\ElemenCp` (data global, sudah ada via `ElemenCpSeeder`, JANGAN buat baru), `App\Domains\Akademik\Models\KomponenPenilaian`, `App\Domains\Akademik\Models\Asesmen`, `App\Domains\Akademik\Models\NilaiSiswa`, `App\Domains\Akademik\Enums\JenisAsesmen`, `App\Enums\Hari`.
 - Produces: 1 Lembaga TK (npsn `20223399`, kode_lembaga `TKPINTERA`) dengan 1 Kelas (`Kelompok A`), 1 Guru wali kelas dengan akun login (email `guru.tk@demo.test`, password `password`), 3 Siswa, 1 Asesmen ber-nilai (2 siswa lengkap, 1 siswa sengaja kosong) — dipakai Task 8 (Bab 4 sub-bagian PAUD) dan sebagai bukti fix elemen_cp/PAUD sesi sebelumnya benar-benar berfungsi.
 
-- [ ] **Step 1: Tulis seeder**
+- [x] **Step 1: Tulis seeder**
 
 ```php
 <?php
@@ -222,7 +222,7 @@ class LembagaPaudDemoSeeder extends Seeder
 
 `Siswa.nis` unik per `(lembaga_id, nis)` (bukan global) — pola `'nis' => 'TK-'.Str::slug($nama)` di atas aman karena scoped ke 1 lembaga baru dengan 3 nama berbeda, tidak akan tabrakan.
 
-- [ ] **Step 2: Daftarkan di `DatabaseSeeder.php`**
+- [x] **Step 2: Daftarkan di `DatabaseSeeder.php`**
 
 Buka `database/seeders/DatabaseSeeder.php`, cari baris `PengajuanRaporSeeder::class,` (sekitar baris 86), tambahkan tepat setelahnya:
 
@@ -232,12 +232,12 @@ Buka `database/seeders/DatabaseSeeder.php`, cari baris `PengajuanRaporSeeder::cl
             SarprasPengadaanDemoSeeder::class,
 ```
 
-- [ ] **Step 3: Jalankan fresh migrate+seed**
+- [x] **Step 3: Jalankan fresh migrate+seed**
 
 Run: `php artisan migrate:fresh --seed`
 Expected: seluruh seeder jalan tanpa error, termasuk `LembagaPaudDemoSeeder`.
 
-- [ ] **Step 4: Verifikasi relasi lewat tinker — kelas & wali kelas**
+- [x] **Step 4: Verifikasi relasi lewat tinker — kelas & wali kelas**
 
 Run:
 ```
@@ -249,7 +249,7 @@ echo "Jumlah siswa: " . App\Models\Siswa::where("kelas_id", $kelas->id)->count()
 ```
 Expected: `Kelas: Kelompok A, Lembaga: TK Pintera Ceria, Wali Kelas: Bu Siti Wali Kelas TK, PolaJam: <angka bukan null>`, `Jumlah siswa: 3`.
 
-- [ ] **Step 5: Verifikasi kelengkapan nilai terdeteksi tepat 1 siswa**
+- [x] **Step 5: Verifikasi kelengkapan nilai terdeteksi tepat 1 siswa**
 
 Run:
 ```
@@ -265,12 +265,12 @@ foreach ($hasil as $sel) {
 ```
 Expected: `Subjek belum lengkap: 1`, baris kedua menunjukkan `1 dari 3 siswa belum lengkap`.
 
-- [ ] **Step 6: Verifikasi end-to-end lewat browser — dropdown kelas PAUD terisi**
+- [x] **Step 6: Verifikasi end-to-end lewat browser — dropdown kelas PAUD terisi**
 
 Jalankan dev server (`php artisan serve` atau `composer run dev`), login sebagai `guru.tk@demo.test` / `password`, buka `/admin/asesmen/create` (route `guru.asesmen.create`).
 Expected: dropdown "Pilih Kelas" menampilkan "Kelompok A", dropdown "Elemen CP (PAUD)" (bukan Mata Pelajaran) muncul otomatis tanpa toggle manual, checklist Tujuan Pembelajaran menampilkan komponen yang dibuat di Step 1. Ini pembuktian nyata bahwa fix elemen_cp/PAUD sesi sebelumnya benar-benar berfungsi dengan data seeder baru, bukan cuma lolos test otomatis.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add database/seeders/LembagaPaudDemoSeeder.php database/seeders/DatabaseSeeder.php
@@ -289,21 +289,21 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: satu paragraf ringkasan gaya bahasa (nada, tingkat detail, panjang kalimat rata-rata) dicatat di laporan task ini — dipakai Task 3-12 sebagai referensi tanpa perlu baca file yang sudah dihapus.
 
-- [ ] **Step 1: Baca ke-8 file, catat pola gaya bahasa**
+- [x] **Step 1: Baca ke-8 file, catat pola gaya bahasa**
 
 Baca tiap file, perhatikan: bagaimana instruksi ditulis (formal tapi hangat? langsung ke aksi?), bagaimana istilah teknis dijelaskan ke pengguna awam, bagaimana "Untuk siapa" membedakan wewenang antar role, bagaimana "Kesalahan umum" dirumuskan. Tulis 1 paragraf ringkasan di laporan task.
 
-- [ ] **Step 2: Putuskan nasib folder `images/`**
+- [x] **Step 2: Putuskan nasib folder `images/`**
 
 Buka `docs/manual-book/akademik/images/`, list isinya. Untuk tiap gambar: kalau berasal dari bab yang FITURNYA TIDAK BERUBAH sejak Juli (kandidat: Bab 0 Setup Lembaga, Bab 1 Data Master, Bab 2 Penjadwalan, Bab 6 Kenaikan Kelas — TAPI verifikasi dulu dengan membuka halaman aslinya di browser, jangan asumsikan dari nama file), boleh dipertahankan untuk dipakai ulang. Gambar dari Bab 3, 4, 5 (yang pasti berubah — field Keterangan baru, jalur PAUD, kelengkapan nilai, fix nama Wali Kelas) HARUS dihapus karena pasti sudah tidak representasi kondisi aktual.
 
-- [ ] **Step 3: Hapus 8 file `.md` lama**
+- [x] **Step 3: Hapus 8 file `.md` lama**
 
 ```bash
 rm docs/manual-book/akademik/00-setup-lembaga.md docs/manual-book/akademik/01-data-master.md docs/manual-book/akademik/02-penjadwalan.md docs/manual-book/akademik/03-presensi-jurnal.md docs/manual-book/akademik/04-asesmen-nilai.md docs/manual-book/akademik/05-rekap-rapor.md docs/manual-book/akademik/06-kenaikan-kelas.md docs/manual-book/akademik/lampiran-lintas-lembaga.md
 ```
 
-- [ ] **Step 4: Verifikasi**
+- [x] **Step 4: Verifikasi**
 
 Run: `ls docs/manual-book/akademik/`
 Expected: cuma folder `images/` (isinya sesuai keputusan Step 2) — tidak ada file `.md` tersisa.
@@ -321,24 +321,24 @@ Tidak ada commit di task ini — `docs/**` gitignored, perubahan tidak akan munc
 - Consumes: ringkasan gaya bahasa dari Task 2. Login admin lembaga/yayasan existing (cek `database/seeders/EssentialUserSeeder.php` atau `UserSeeder.php` untuk kredensial demo admin yang benar — JANGAN menebak email/password, baca file seeder-nya).
 - Produces: `00-setup-lembaga.md` mengikuti format 5-bagian, jadi prasyarat untuk Task 4-12 (semua bab lain link balik ke sini untuk hal "lembaga harus sudah ada").
 
-- [ ] **Step 1: Cari kredensial demo admin**
+- [x] **Step 1: Cari kredensial demo admin**
 
 Baca `database/seeders/EssentialUserSeeder.php` dan `database/seeders/UserSeeder.php`, catat email+password akun admin lembaga (untuk SDIT PINTERA) yang valid untuk login.
 
-- [ ] **Step 2: Coba fitur di browser**
+- [x] **Step 2: Coba fitur di browser**
 
 Dev server jalan, login sebagai admin lembaga, buka halaman edit Lembaga (route `admin.lembaga.edit`). Perhatikan KHUSUS field `nama_kepala_sekolah` (dipakai fix rapor PDF sesi ini — pastikan field ini ada di form dan berfungsi). Coba juga halaman index/filter Lembaga (route `admin.lembaga.index`) untuk dropdown `bentuk_pendidikan` (baru saja diretrofit ke `BentukPendidikan::cases()` sesi ini — pastikan menampilkan 9 pilihan lengkap termasuk KB/TPA/SPS/TK).
 
-- [ ] **Step 3: Screenshot**
+- [x] **Step 3: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=00`
 (Kalau script belum punya definisi bab `00` untuk skenario baru di atas, tambahkan config screenshot yang sesuai di dalam script sebelum run — lihat pola skenario existing lain di file yang sama sebagai referensi.)
 
-- [ ] **Step 4: Tulis prosa**
+- [x] **Step 4: Tulis prosa**
 
 Tulis `00-setup-lembaga.md` mengikuti format 5-bagian, berdasarkan apa yang BENAR-BENAR terjadi di Step 2 (bukan diasumsikan). "Untuk siapa": Admin Lembaga/Yayasan. "Prasyarat": tidak ada (ini bab pertama).
 
-- [ ] **Step 5: Self-check Definition of Done**
+- [x] **Step 5: Self-check Definition of Done**
 
 Setiap langkah di "Langkah-langkah" sudah dicoba sendiri (Step 2) dan screenshot diambil dari hasil percobaan itu (Step 3) — bukan retroactive. Kalau ada penyimpangan dari dugaan awal, tulis apa adanya.
 
@@ -353,19 +353,19 @@ Setiap langkah di "Langkah-langkah" sudah dicoba sendiri (Step 2) dan screenshot
 - Consumes: `00-setup-lembaga.md` (prasyarat: Lembaga sudah ada).
 - Produces: `01-data-master.md`, jadi prasyarat Task 5-12 (Tahun Ajaran/Semester/Mata Pelajaran/Kurikulum Assignment dipakai di semua bab operasional).
 
-- [ ] **Step 1: Coba fitur di browser**
+- [x] **Step 1: Coba fitur di browser**
 
 Login admin lembaga/akademik, coba berurutan: Tahun Ajaran (`admin.tahun-ajaran.index/create`, termasuk aksi "Aktifkan"), Semester (`admin.semester.store/activate`), Mata Pelajaran (`admin.mata-pelajaran.index/create/edit`), Kurikulum Assignment (`admin.kurikulum-assignment.index/create`).
 
-- [ ] **Step 2: Screenshot**
+- [x] **Step 2: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=01`
 
-- [ ] **Step 3: Tulis prosa**
+- [x] **Step 3: Tulis prosa**
 
 "Untuk siapa": Admin Lembaga/Operator Akademik. "Prasyarat": link ke Bab 0 (Lembaga harus ada). Bagi jadi sub-bagian per fitur (Tahun Ajaran & Semester, Mata Pelajaran, Kurikulum Assignment) mengikuti pola existing.
 
-- [ ] **Step 4: Self-check Definition of Done** (sama seperti Task 3 Step 5)
+- [x] **Step 4: Self-check Definition of Done** (sama seperti Task 3 Step 5)
 
 ---
 
@@ -378,19 +378,19 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=01`
 - Consumes: `01-data-master.md` (prasyarat: Tahun Ajaran/Semester/Mata Pelajaran sudah ada).
 - Produces: `02-penjadwalan.md`, prasyarat Task 6 (Presensi/Jurnal butuh Jadwal Pelajaran sudah ada) dan Task 7 (Asesmen butuh guru sudah punya Jadwal Pelajaran).
 
-- [ ] **Step 1: Coba fitur di browser**
+- [x] **Step 1: Coba fitur di browser**
 
 Coba berurutan: Kelas (`admin.kelas.index/create`, termasuk assign wali kelas & pola jam), Pola Jam + Jam Pelajaran (`admin.pola-jam.*`, `admin.jam-pelajaran.*`), Jadwal Pelajaran (`admin.jadwal-pelajaran.index/create`, termasuk cek bentrok guru/ruangan), Kalender Akademik.
 
-- [ ] **Step 2: Screenshot**
+- [x] **Step 2: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=02`
 
-- [ ] **Step 3: Tulis prosa**
+- [x] **Step 3: Tulis prosa**
 
 "Untuk siapa": Admin Lembaga/Operator Akademik. "Prasyarat": link ke Bab 1.
 
-- [ ] **Step 4: Self-check Definition of Done**
+- [x] **Step 4: Self-check Definition of Done**
 
 ---
 
@@ -403,19 +403,19 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=02`
 - Consumes: `02-penjadwalan.md` (prasyarat: guru sudah punya Jadwal Pelajaran).
 - Produces: `03-presensi-jurnal.md`.
 
-- [ ] **Step 1: Coba fitur di browser, TERMASUK field baru**
+- [x] **Step 1: Coba fitur di browser, TERMASUK field baru**
 
 Login guru (kredensial dari `EssentialUserSeeder`/`UserSeeder` untuk guru SD), buka Jurnal KBM (`guru.jurnal-kbm.index/show/update`). Set status siswa ke Izin atau Sakit, PASTIKAN field **Keterangan** (baru ditambahkan sesi ini) muncul untuk status itu dan tersimpan dengan benar — cek juga bahwa field ini TIDAK muncul untuk status Hadir/Alpa/Terlambat.
 
-- [ ] **Step 2: Screenshot**
+- [x] **Step 2: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=03`
 
-- [ ] **Step 3: Tulis prosa**
+- [x] **Step 3: Tulis prosa**
 
 "Untuk siapa": Guru. "Prasyarat": link ke Bab 2. Tambahkan penjelasan field Keterangan sebagai bagian dari langkah isi presensi (bukan sub-bagian terpisah, karena memang bagian dari 1 alur yang sama).
 
-- [ ] **Step 4: Self-check Definition of Done**
+- [x] **Step 4: Self-check Definition of Done**
 
 ---
 
@@ -428,24 +428,24 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=03`
 - Consumes: `02-penjadwalan.md` (prasyarat: Jadwal Pelajaran), seeder dari Task 1 (akun `guru.tk@demo.test`).
 - Produces: `04-asesmen-nilai.md`, prasyarat Task 9 (Rekap Rapor butuh Asesmen & Nilai sudah ada).
 
-- [ ] **Step 1: Coba fitur mata pelajaran (guru SD)**
+- [x] **Step 1: Coba fitur mata pelajaran (guru SD)**
 
 Login guru SD, coba Komponen Penilaian (`guru.komponen-penilaian.index/create`) dan Asesmen (`guru.asesmen.index/create/show/update-nilai`) untuk mata pelajaran yang diajar.
 
-- [ ] **Step 2: Coba fitur PAUD (guru TK dari seeder Task 1)**
+- [x] **Step 2: Coba fitur PAUD (guru TK dari seeder Task 1)**
 
 Login `guru.tk@demo.test`, buka `guru.asesmen.create` — konfirmasi dropdown Kelas ("Kelompok A") dan Elemen CP muncul otomatis (BUKAN toggle manual — fix sesi ini), buat Asesmen, buka halaman nilai, konfirmasi 1 siswa memang kosong (dari data seeder Task 1) dan 2 lainnya terisi.
 
-- [ ] **Step 3: Screenshot (kecuali sub-bagian PAUD)**
+- [x] **Step 3: Screenshot (kecuali sub-bagian PAUD)**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=04`
 Sub-bagian "Sisi Guru PAUD" TIDAK butuh screenshot baru (pengecualian resmi, lihat Global Constraints) — cukup dicoba di Step 2, ditulis berdasarkan hasil percobaan itu, dengan referensi visual ke screenshot "Sisi Guru" (mata pelajaran) yang sudah diambil di Step 1 plus penjelasan eksplisit bagian yang beda (dropdown Elemen CP menggantikan Mata Pelajaran, nilai berupa teks naratif bukan angka).
 
-- [ ] **Step 4: Tulis prosa**
+- [x] **Step 4: Tulis prosa**
 
 "Untuk siapa": Admin Akademik & Guru. "Prasyarat": Bab 2. Struktur: Komponen Penilaian (Admin/Guru mata pelajaran) → Asesmen & Nilai mata pelajaran (Guru) → **sub-bagian baru "Sisi Guru PAUD"** (jelaskan bedanya dari mata pelajaran, sesuai Step 2-3).
 
-- [ ] **Step 5: Self-check Definition of Done** (PAUD dikecualikan cuma soal screenshot, tetap wajib dicoba — sudah di Step 2)
+- [x] **Step 5: Self-check Definition of Done** (PAUD dikecualikan cuma soal screenshot, tetap wajib dicoba — sudah di Step 2)
 
 ---
 
@@ -458,27 +458,27 @@ Sub-bagian "Sisi Guru PAUD" TIDAK butuh screenshot baru (pengecualian resmi, lih
 - Consumes: `04-asesmen-nilai.md` (prasyarat: nilai sudah diisi).
 - Produces: `05-rekap-rapor.md`, prasyarat Task 11 (Kenaikan Kelas biasanya di akhir semester setelah rapor selesai).
 
-- [ ] **Step 1: Coba alur Catatan Wali Kelas & Ajukan Rapor, PASTIKAN peringatan kelengkapan nilai muncul**
+- [x] **Step 1: Coba alur Catatan Wali Kelas & Ajukan Rapor, PASTIKAN peringatan kelengkapan nilai muncul**
 
 Login guru wali kelas SD (yang kelasnya punya nilai lengkap) DAN `guru.tk@demo.test` (kelasnya PUNYA 1 siswa nilai kosong dari seeder Task 1). Buka `guru.rapor.catatan.index` untuk kedua kelas — konfirmasi banner peringatan kelengkapan nilai MUNCUL untuk kelas TK (1 siswa kosong) dan TIDAK MUNCUL untuk kelas SD (kalau memang lengkap). Isi Catatan Wali Kelas, coba Ajukan Rapor (perhatikan `confirm()` dialog muncul untuk kelas yang belum lengkap).
 
-- [ ] **Step 2: Coba alur Verifikasi & Persetujuan, PASTIKAN tabel kelengkapan di halaman Waka**
+- [x] **Step 2: Coba alur Verifikasi & Persetujuan, PASTIKAN tabel kelengkapan di halaman Waka**
 
 Login Waka Kurikulum, buka `admin.rapor.persetujuan.show` untuk pengajuan kelas TK — konfirmasi tabel rincian kelengkapan nilai muncul, tombol Setujui/Tolak tetap aktif (bukan hard block). Login Kepala Sekolah untuk persetujuan akhir.
 
-- [ ] **Step 3: Cetak PDF, PASTIKAN nama Wali Kelas & Kepala Sekolah benar**
+- [x] **Step 3: Cetak PDF, PASTIKAN nama Wali Kelas & Kepala Sekolah benar**
 
 Cetak rapor PDF (`admin.rapor.cetak` atau `admin.rapor.persetujuan.cetak`) untuk seorang siswa — konfirmasi kolom tanda tangan "Wali Kelas" menampilkan nama wali kelas ASLI (`Kelas.wali_kelas_guru_id`), BUKAN nama Waka Kurikulum yang verifikasi (bug lama, sudah diperbaiki sesi ini) — dan "Kepala Sekolah" menampilkan `Lembaga.nama_kepala_sekolah`.
 
-- [ ] **Step 4: Screenshot**
+- [x] **Step 4: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=05`
 
-- [ ] **Step 5: Tulis prosa**
+- [x] **Step 5: Tulis prosa**
 
 "Untuk siapa": Wali Kelas, Waka Kurikulum, Kepala Sekolah — jelaskan pembagian tahap (Ajukan → Verifikasi → Setujui). "Prasyarat": Bab 4. Tambahkan bagian baru untuk peringatan kelengkapan nilai (jelaskan sifatnya informative-only, bukan blocker) di kedua titik (wali kelas & Waka).
 
-- [ ] **Step 6: Self-check Definition of Done**
+- [x] **Step 6: Self-check Definition of Done**
 
 ---
 
@@ -491,19 +491,19 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=05`
 - Consumes: `05-rekap-rapor.md` (prasyarat: rapor semester genap sudah disetujui, secara konseptual).
 - Produces: `06-kenaikan-kelas.md`.
 
-- [ ] **Step 1: Coba fitur di browser — HATI-HATI, aksi ini mengubah data siswa secara permanen**
+- [x] **Step 1: Coba fitur di browser — HATI-HATI, aksi ini mengubah data siswa secara permanen**
 
 Login admin akademik, buka `admin.kenaikan-kelas.index`. **HANYA lakukan GET/lihat halaman dan opsi yang tersedia — JANGAN submit form kenaikan kelas sungguhan** kecuali di database seed yang memang boleh dikorbankan (disarankan: coba di seed data SD yang sudah ada, bukan seeder PAUD baru dari Task 1, supaya kelas PAUD tetap utuh untuk dipakai ulang kalau perlu re-screenshot bab lain nanti). Kalau perlu screenshot hasil submit, jalankan `migrate:fresh --seed` lagi setelahnya untuk mengembalikan data.
 
-- [ ] **Step 2: Screenshot**
+- [x] **Step 2: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=06`
 
-- [ ] **Step 3: Tulis prosa**
+- [x] **Step 3: Tulis prosa**
 
 "Untuk siapa": Admin Akademik. "Prasyarat": Bab 5. Tambahkan catatan tegas di "Kesalahan umum" bahwa aksi ini irreversible.
 
-- [ ] **Step 4: Self-check Definition of Done**
+- [x] **Step 4: Self-check Definition of Done**
 
 ---
 
@@ -516,19 +516,19 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=06`
 - Consumes: konteks dari bab-bab sebelumnya (khususnya Kalender Akademik di Bab 2).
 - Produces: `lampiran-lintas-lembaga.md`.
 
-- [ ] **Step 1: Coba fitur di browser**
+- [x] **Step 1: Coba fitur di browser**
 
 Login aktor scope yayasan, coba fitur lintas-lembaga yang relevan (kalender akademik nasional, atau fitur lain yang didokumentasikan versi lama — cek isi Task 2 Step 1 untuk tahu topik persis lampiran lama sebelum dihapus).
 
-- [ ] **Step 2: Screenshot**
+- [x] **Step 2: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=lampiran`
 
-- [ ] **Step 3: Tulis prosa**
+- [x] **Step 3: Tulis prosa**
 
 "Untuk siapa": aktor scope yayasan. "Prasyarat": Bab 2.
 
-- [ ] **Step 4: Self-check Definition of Done**
+- [x] **Step 4: Self-check Definition of Done**
 
 ---
 
@@ -541,24 +541,24 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=lampiran`
 - Consumes: akun demo Orang Tua existing (5 pasang sudah terverifikasi bisa login — cari kredensial pastinya di `database/seeders/OrangTuaKaryawanSeeder.php`, JANGAN menebak).
 - Produces: `07-ruang-orang-tua.md`.
 
-- [ ] **Step 1: Cari kredensial demo Orang Tua**
+- [x] **Step 1: Cari kredensial demo Orang Tua**
 
 Baca `database/seeders/OrangTuaKaryawanSeeder.php`, catat email+password salah satu akun Orang Tua yang linked ke siswa dengan data nilai/presensi.
 
-- [ ] **Step 2: Coba fitur di browser**
+- [x] **Step 2: Coba fitur di browser**
 
 Login sebagai Orang Tua, coba: Nilai Anak (`admin.nilai-anak.index`, termasuk unduh Rapor PDF kalau statusnya Disetujui), Jadwal Anak (`admin.jadwal-anak.index`), Riwayat Izin/Sakit Anak (`admin.riwayat-izin-sakit-anak.index`, dengan filter rentang tanggal).
 
-- [ ] **Step 3: Screenshot**
+- [x] **Step 3: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=07`
 (Kalau script belum punya config untuk bab ini, tambahkan skenario baru mengikuti pola existing di file yang sama — perlu login sebagai akun Orang Tua, bukan Admin/Guru.)
 
-- [ ] **Step 4: Tulis prosa**
+- [x] **Step 4: Tulis prosa**
 
 "Untuk siapa": Orang Tua (self-service, baca-saja — TIDAK ada "Prasyarat" dalam arti urutan pengerjaan, tapi tetap jelaskan bahwa data yang tampil berasal dari apa yang guru/wali kelas isi di bab-bab sebelumnya). Format tetap 5-bagian, "Kesalahan umum" fokus ke kebingungan realistis (mis. "kenapa nilai anak saya belum muncul" → karena guru belum submit/rapor belum disetujui).
 
-- [ ] **Step 5: Self-check Definition of Done**
+- [x] **Step 5: Self-check Definition of Done**
 
 ---
 
@@ -571,19 +571,19 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=07`
 - Consumes: akun demo Siswa existing (`siswa.sd@demo.test`, dikonfirmasi bisa login hari ini — cek password aslinya di `database/seeders/OrangTuaKaryawanSeeder.php` atau seeder terkait, JANGAN menebak).
 - Produces: `08-ruang-siswa.md`.
 
-- [ ] **Step 1: Coba fitur di browser**
+- [x] **Step 1: Coba fitur di browser**
 
 Login sebagai Siswa, coba: Nilai & Rapor (`admin.nilai-rapor-saya.index`, termasuk unduh PDF), Jadwal Pelajaran (`admin.jadwal-pelajaran-saya.index`, termasuk toggle tampilan matriks/daftar), Presensi Saya (`admin.presensi-saya.index`, termasuk kartu ringkasan status kehadiran & filter tanggal).
 
-- [ ] **Step 2: Screenshot**
+- [x] **Step 2: Screenshot**
 
 Run: `node scripts/manual-book-screenshots.mjs --bab=08`
 
-- [ ] **Step 3: Tulis prosa**
+- [x] **Step 3: Tulis prosa**
 
 "Untuk siapa": Siswa (self-service, baca-saja). Format tetap 5-bagian.
 
-- [ ] **Step 4: Self-check Definition of Done**
+- [x] **Step 4: Self-check Definition of Done**
 
 ---
 
@@ -596,7 +596,7 @@ Run: `node scripts/manual-book-screenshots.mjs --bab=08`
 - Consumes: SEMUA bab dari Task 3-12 harus sudah ada (link `bab.md#bagian` harus valid).
 - Produces: `README.md`, titik masuk utama manual book.
 
-- [ ] **Step 1: Verifikasi urutan checklist per role ke kode/UI aktual**
+- [x] **Step 1: Verifikasi urutan checklist per role ke kode/UI aktual**
 
 Draft urutan dari spec (§4) HARUS diverifikasi ulang, bukan disalin mentah:
 - Admin Lembaga/Operator Akademik: Tahun Ajaran & Semester → Kurikulum Assignment → Kelas & Pola Jam → Jadwal Pelajaran → Kalender Akademik
@@ -607,7 +607,7 @@ Draft urutan dari spec (§4) HARUS diverifikasi ulang, bukan disalin mentah:
 
 Kalau ternyata ada urutan yang salah/kurang lengkap dari hasil menulis Task 3-9, perbaiki dan catat di laporan task kenapa berbeda dari draft ini.
 
-- [ ] **Step 2: Tulis `README.md`**
+- [x] **Step 2: Tulis `README.md`**
 
 Format (BUKAN 5-bagian, format tersendiri sesuai spec §4):
 1. `# Manual Book Akademik — Peta Alur Kerja per Role`
@@ -615,7 +615,7 @@ Format (BUKAN 5-bagian, format tersendiri sesuai spec §4):
 3. Kelompok "Role yang Mengisi Data" — checklist bernomor per role, tiap nomor `[Nama fitur](bab.md#bagian)`
 4. Kelompok "Role Self-Service (Lihat Saja)" — daftar "cek di mana" untuk Orang Tua (link ke `07-ruang-orang-tua.md`) dan Siswa (link ke `08-ruang-siswa.md`)
 
-- [ ] **Step 3: Verifikasi tiap link tidak mati**
+- [x] **Step 3: Verifikasi tiap link tidak mati**
 
 Untuk tiap `[teks](file.md#anchor)` di `README.md`, buka file targetnya, pastikan section dengan judul yang cocok anchor-nya benar-benar ada (anchor Markdown = judul di-lowercase, spasi jadi dash).
 
@@ -631,25 +631,25 @@ Untuk tiap `[teks](file.md#anchor)` di `README.md`, buka file targetnya, pastika
 **Interfaces:**
 - Consumes: seluruh output Task 1-13.
 
-- [ ] **Step 1: Build Artifact**
+- [x] **Step 1: Build Artifact**
 
 Run: `node scripts/manual-book-artifact/build.mjs`
 Expected: `scripts/manual-book-artifact/dist/manual-book-akademik.html` ter-generate tanpa error, ukuran wajar (embed semua screenshot base64).
 
-- [ ] **Step 2: Republish ke URL yang SAMA**
+- [x] **Step 2: Republish ke URL yang SAMA**
 
 Publish `scripts/manual-book-artifact/dist/manual-book-akademik.html` lewat Artifact tool dengan parameter `url` = `https://claude.ai/code/artifact/92e6b639-d846-48ad-9e42-2a270abc5e03` — JANGAN publish tanpa parameter `url` (itu akan bikin link baru, dilarang di Global Constraints).
 
-- [ ] **Step 3: Verifikasi tidak ada perubahan kode yang belum ter-commit**
+- [x] **Step 3: Verifikasi tidak ada perubahan kode yang belum ter-commit**
 
 Run: `git status --short`
 Expected: bersih kecuali `?? storage/debugbar/` (kalau ada) — seeder + `DatabaseSeeder.php` sudah di-commit di Task 1 Step 7, sisanya (`docs/**`) memang tidak akan muncul karena gitignored.
 
-- [ ] **Step 4: Tulis handoff log**
+- [x] **Step 4: Tulis handoff log**
 
 Tulis `.agents/logs/2026-09-05-rombak-manual-book-akademik.md` — ringkas apa yang ditulis ulang, bug/temuan apa (kalau ada) yang muncul selama proses "coba fitur langsung" (Definition of Done §3.4 spec), keputusan yang berbeda dari spec/plan (kalau ada) beserta alasannya.
 
-- [ ] **Step 5: Update `PETA_PENGEMBANGAN.md`**
+- [x] **Step 5: Update `PETA_PENGEMBANGAN.md`**
 
 Tambahkan entri baru merangkum rombak manual book ini, link ke handoff log, dan URL Artifact yang di-republish.
 

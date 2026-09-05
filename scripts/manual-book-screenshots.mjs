@@ -9,16 +9,17 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.join(__dirname, '..', 'docs', 'manual-book', 'akademik', 'images');
-const BASE_URL = process.env.MANUAL_BOOK_BASE_URL || 'http://localhost';
+const BASE_URL = process.env.MANUAL_BOOK_BASE_URL || 'http://localhost:8000';
 
 const ACCOUNTS = {
-  yayasan: { email: 'superadmin@sistem.test', password: 'password' },
-  akademik: { email: 'akademik@sistem.test', password: 'password' },
-  // NOTE: guru@sistem.test ("Guru (Contoh)") has no linked Guru profile row (Guru.user_id
-  // never points to it) in the seeded data, so /guru/sesi is permanently empty for it
-  // regardless of day. Using the real seeded teacher (Budi Santoso, wali kelas VII-A,
-  // Guru id 1) instead so this chapter's screenshots show real presensi/jurnal data.
-  guru: { email: 'budi.santoso@permata.sch.id', password: 'password' },
+  yayasan: { email: 'superadmin@demo.test', password: 'password' },
+  akademik: { email: 'kurikulum.sd@demo.test', password: 'password' },
+  guru: { email: 'hendra.gunawan@demo.test', password: 'password' },
+  guru_sd: { email: 'guru.sd1@demo.test', password: 'password' },
+  guru_tk: { email: 'guru.tk@demo.test', password: 'password' },
+  kepsek: { email: 'kepsek.sd@demo.test', password: 'password' },
+  ortu: { email: 'ortu.sd@demo.test', password: 'password' },
+  siswa: { email: 'siswa.sd@demo.test', password: 'password' },
 };
 
 /** @type {Record<string, Array<{account: keyof typeof ACCOUNTS, path: string, file: string, before?: (page: import('playwright').Page) => Promise<void>, fullPage?: boolean}>>} */
@@ -48,30 +49,19 @@ const TARGETS = {
     { account: 'akademik', path: '/admin/pola-jam', file: '02-01-daftar-pola-jam.png' },
     { account: 'akademik', path: '/admin/pola-jam/create', file: '02-02-form-pola-jam.png' },
     { account: 'akademik', path: '/admin/jadwal-pelajaran', file: '02-03-daftar-jadwal.png' },
-    // kelas_id=1 -> VII-A, semester_id=3 -> Ganjil 2026/2027, both lembaga_id=1 (SMP Permata),
-    // matching the akademik@sistem.test account used throughout this chapter.
-    { account: 'akademik', path: '/admin/jadwal-pelajaran/create?kelas_id=1&semester_id=3', file: '02-04-form-jadwal.png' },
+    { account: 'akademik', path: '/admin/jadwal-pelajaran/create?kelas_id=13&semester_id=3', file: '02-04-form-jadwal.png' },
   ],
   '03': [
-    { account: 'guru', path: '/guru/sesi', file: '03-01-daftar-sesi.png' },
-    {
-      account: 'guru',
-      path: '/guru/sesi',
-      file: '03-02-detail-sesi.png',
-      before: async (page) => {
-        const firstRow = page.locator('a[href*="/guru/sesi/"]').first();
-        await firstRow.click();
-        await page.waitForLoadState('networkidle');
-      },
-    },
+    { account: 'guru', path: '/guru/jurnal-kbm', file: '03-01-daftar-sesi.png' },
+    { account: 'guru', path: '/guru/jurnal-kbm/1', file: '03-02-detail-sesi.png' },
   ],
   '04': [
     { account: 'akademik', path: '/admin/komponen-penilaian', file: '04-01-daftar-komponen.png' },
     { account: 'akademik', path: '/admin/komponen-penilaian/create', file: '04-02-form-komponen.png' },
-    { account: 'guru', path: '/guru/komponen-penilaian', file: '04-03-guru-daftar-komponen.png' },
-    { account: 'guru', path: '/guru/komponen-penilaian/create', file: '04-04-guru-form-komponen.png' },
-    { account: 'guru', path: '/guru/asesmen', file: '04-05-daftar-asesmen.png' },
-    { account: 'guru', path: '/guru/asesmen/create', file: '04-06-form-asesmen.png' },
+    { account: 'guru_sd', path: '/guru/komponen-penilaian', file: '04-03-guru-daftar-komponen.png' },
+    { account: 'guru_sd', path: '/guru/komponen-penilaian/create', file: '04-04-guru-form-komponen.png' },
+    { account: 'guru_sd', path: '/guru/asesmen', file: '04-05-daftar-asesmen.png' },
+    { account: 'guru_sd', path: '/guru/asesmen/create', file: '04-06-form-asesmen.png' },
   ],
   '05': [
     { account: 'akademik', path: '/admin/rapor', file: '05-01-filter-rekap-rapor.png' },
@@ -87,23 +77,25 @@ const TARGETS = {
     // would land on, with real non-empty data, without depending on Tom Select internals.
     {
       account: 'akademik',
-      path: '/admin/rapor?tahun_ajaran_id=2&kelas_id=1&semester_id=3',
+      path: '/admin/rapor?tahun_ajaran_id=2&kelas_id=13&semester_id=3',
       file: '05-02-hasil-rekap-rapor.png',
     },
   ],
   '06': [
     { account: 'akademik', path: '/admin/kenaikan-kelas', file: '06-01-kenaikan-kelas-pilih-tahun.png' },
-    // tahun_ajaran_id=2 -> 2026/2027 (source, lembaga_id=1), tahun_ajaran_tujuan_id=5 -> 2027/2028
-    // (target, seeded by AcademicDummySeeder alongside Kelas VIII-A/VIII-B for exactly this screenshot).
-    { account: 'akademik', path: '/admin/kenaikan-kelas?tahun_ajaran_id=2&tahun_ajaran_tujuan_id=5', file: '06-02-kenaikan-kelas-pemetaan.png' },
+    { account: 'akademik', path: '/admin/kenaikan-kelas?tahun_ajaran_id=1&tahun_ajaran_tujuan_id=2', file: '06-02-kenaikan-kelas-pemetaan.png' },
+  ],
+  '07': [
+    { account: 'ortu', path: '/admin/nilai-anak', file: '07-01-nilai-anak.png' },
+    { account: 'ortu', path: '/admin/jadwal-anak', file: '07-02-jadwal-anak.png' },
+    { account: 'ortu', path: '/admin/riwayat-izin-sakit-anak', file: '07-03-riwayat-izin-sakit.png' },
+  ],
+  '08': [
+    { account: 'siswa', path: '/admin/nilai-rapor-saya', file: '08-01-nilai-rapor-saya.png' },
+    { account: 'siswa', path: '/admin/jadwal-pelajaran-saya', file: '08-02-jadwal-pelajaran-saya.png' },
+    { account: 'siswa', path: '/admin/presensi-saya', file: '08-03-presensi-saya.png' },
   ],
   lampiran: [
-    // As a yayasan-scoped account, /admin/pengaturan/akademik requires an active Lembaga
-    // selected in session first, or ResolveTenant redirects to the dashboard. Passing
-    // switch_lembaga=1 (SMP Permata, lembaga_id=1, the same lembaga used throughout every
-    // other chapter) as a query param sets session('active_lembaga_id') via the global
-    // ResolveTenant middleware before the page renders, so no separate switcher-UI
-    // click-through is needed.
     { account: 'yayasan', path: '/admin/pengaturan/akademik?switch_lembaga=1', file: 'lampiran-01-pengaturan-akademik-nasional.png' },
   ],
 };

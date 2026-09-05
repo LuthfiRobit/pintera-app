@@ -14,13 +14,16 @@ const OUT_DIR = path.join(__dirname, 'dist');
 const OUT = path.join(OUT_DIR, 'manual-book-akademik.html');
 
 const CHAPTERS = [
+  { id: 'peta-role', file: 'README.md', num: '★', label: 'Peta Alur Kerja per Role', role: 'Semua Role' },
   { id: 'bab-0', file: '00-setup-lembaga.md', num: '0', label: 'Setup Lembaga', role: 'Admin Yayasan' },
   { id: 'bab-1', file: '01-data-master.md', num: '1', label: 'Data Master Akademik', role: 'Admin Akademik' },
   { id: 'bab-2', file: '02-penjadwalan.md', num: '2', label: 'Penjadwalan', role: 'Admin Akademik' },
   { id: 'bab-3', file: '03-presensi-jurnal.md', num: '3', label: 'Presensi & Jurnal', role: 'Guru' },
   { id: 'bab-4', file: '04-asesmen-nilai.md', num: '4', label: 'Asesmen & Nilai', role: 'Admin Akademik + Guru' },
-  { id: 'bab-5', file: '05-rekap-rapor.md', num: '5', label: 'Rekap Rapor', role: 'Admin Akademik' },
+  { id: 'bab-5', file: '05-rekap-rapor.md', num: '5', label: 'Rekap Rapor', role: 'Wali Kelas, Waka & Kepsek' },
   { id: 'bab-6', file: '06-kenaikan-kelas.md', num: '6', label: 'Kenaikan Kelas', role: 'Admin Akademik' },
+  { id: 'bab-7', file: '07-ruang-orang-tua.md', num: '7', label: 'Ruang Orang Tua', role: 'Orang Tua' },
+  { id: 'bab-8', file: '08-ruang-siswa.md', num: '8', label: 'Ruang Siswa', role: 'Siswa' },
   { id: 'lampiran', file: 'lampiran-lintas-lembaga.md', num: 'L', label: 'Kalender Nasional & Lintas Lembaga', role: 'Admin Yayasan' },
 ];
 
@@ -57,12 +60,19 @@ function mdToHtml(md) {
       const file = src.replace(/^images\//, '');
       return `<figure class="shot"><img src="${imgDataUri(file)}" alt="${alt}" loading="lazy"><figcaption>${alt}</figcaption></figure>`;
     });
-    text = text.replace(/\[([^\]]+)\]\(([^)]+\.md)\)/g, (m, label, href) => {
+    text = text.replace(/\[([^\]]+)\]\(([^)#\s]+)\.md(?:#[^)]*)?\)/g, (m, label, href) => {
+      if (href.startsWith('README')) {
+        return `<a href="#peta-role" class="xref">${label}</a>`;
+      }
+      if (href.startsWith('lampiran')) {
+        return `<a href="#lampiran" class="xref">${label}</a>`;
+      }
       const num = href.match(/^0*(\d+)/);
-      const anchor = href.startsWith('lampiran') ? 'lampiran' : `bab-${num ? num[1] : ''}`;
+      const anchor = num ? `bab-${parseInt(num[1], 10)}` : '';
       return `<a href="#${anchor}" class="xref">${label}</a>`;
     });
     text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
     text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
     return text;
   }
@@ -138,6 +148,9 @@ function mdToHtml(md) {
       } else {
         closeLists();
       }
+    } else if (line.trim() === '---') {
+      closeLists();
+      html += '<hr style="margin: 28px 0; border: none; border-top: 1px solid var(--line);">\n';
     } else if (/^!\[[^\]]*\]\([^)]+\)\s*$/.test(line.trim())) {
       // Standalone image line: emit the figure directly, not wrapped in <p>
       // (a block-level <figure> inside <p> is invalid HTML).
@@ -153,6 +166,7 @@ function mdToHtml(md) {
       while (
         j < lines.length &&
         lines[j].trim() !== '' &&
+        lines[j].trim() !== '---' &&
         !/^#{1,3} /.test(lines[j]) &&
         !/^- /.test(lines[j]) &&
         !/^\d+\. /.test(lines[j]) &&
@@ -181,12 +195,13 @@ const chapterHtmlParts = CHAPTERS.map((ch) => {
   let html = mdToHtml(body);
   html = wrapSection(html, 'Prasyarat', 'callout callout-info');
   html = wrapSection(html, 'Kesalahan umum', 'callout callout-warn');
+  const eyebrow = ch.num === 'L' ? 'Lampiran' : (ch.num === '★' ? 'Navigasi Utama' : `Bab ${ch.num}`);
   return `
   <section class="chapter" id="${ch.id}">
     <div class="chapter-head">
       <span class="chapter-num">${ch.num}</span>
       <div>
-        <p class="chapter-eyebrow">${ch.num === 'L' ? 'Lampiran' : `Bab ${ch.num}`}</p>
+        <p class="chapter-eyebrow">${eyebrow}</p>
         <h1>${ch.label}</h1>
         <p class="chapter-role">${ch.role}</p>
       </div>

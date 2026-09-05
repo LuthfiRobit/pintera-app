@@ -2,13 +2,39 @@
 
 > **Cermin dari Artifact**: https://claude.ai/code/artifact/ee114dde-1058-4bff-a43a-be904f90d667
 > Baca file ini dulu sebelum fetch artifact via network — hanya fetch ulang kalau ada perubahan besar yang belum tercermin di sini (dan update file ini + artifact bersamaan setelahnya).
-> Terakhir disinkronkan: 2026-09-05 (Modul Akademik: audit mendalam alur nilai s.d. rapor -- fix jalur penilaian PAUD/elemen_cp yang sebelumnya tidak bisa diakses sama sekali, bug nama Wali Kelas/Kepala Sekolah salah di rapor PDF, peringatan kelengkapan nilai dua lapis sebelum pengajuan/verifikasi rapor, TD-AKADEMIK-003 tuntas 100% — lihat bagian baru di bawah). **Artifact belum ikut diupdate untuk sinkron ini** — file lokal ini sudah lebih baru dari artifact publik untuk bagian Akademik sampai artifact di-publish ulang.
+> Terakhir disinkronkan: 2026-09-06 (Modul Akademik: Rombak total manual book user-facing docs/manual-book/akademik/ — 10 bab + Peta Role README.md, seeder demo PAUD LembagaPaudDemoSeeder, 36 screenshot Playwright asli, 2 portal baru: Ruang Orang Tua & Ruang Siswa, format 5-bagian standar, single-page HTML artifact 5.49 MB — lihat handoff log .agents/logs/2026-09-05-rombak-manual-book-akademik.md dan Artifact https://claude.ai/code/artifact/92e6b639-d846-48ad-9e42-2a270abc5e03).
 
 Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/direfaktor, dan yang belum ada sama sekali. Disusun dari pembacaan kode & spec/plan langsung, bukan asumsi.
 
 **Ringkasan angka**: 31 fitur baru belum ada · 4 ada-perlu-perbaikan · 3 ada-perlu-refactor · 7 sudah lengkap.
 
 **Legenda status**: `Ada` / `Parsial` / `Belum Ada`. **Jenis pekerjaan**: Fitur Baru / Perbaikan / Refactor Arsitektur / Refactor UI. **Prioritas**: Tinggi / Sedang / Rendah.
+
+---
+
+## 🟢 Rombak Total Manual Book Akademik — SELESAI (6 September 2026)
+
+**Pembaruan Dokumentasi User-Facing (Modul Akademik)** — ✅ **SELESAI TOTAL 6 September 2026** (branch `akademik-v2`).
+- **Latar belakang & Hasil**: Manual book akademik sebelumnya (30-31 Juli 2026) usang dan tidak mencerminkan perubahan besar: RBAC v2, portal Ruang Orang Tua & Ruang Siswa, perbaikan jalur penilaian PAUD (`ElemenCp`), penambahan field Keterangan izin/sakit pada Jurnal KBM, banner & tabel peringatan kelengkapan nilai sebelum pengajuan rapor, serta fix nama Wali Kelas dan Kepala Sekolah di PDF rapor. Seluruh 8 bab lama dihapus dan ditulis ulang dari nol dengan struktur 5-bagian standar + penambahan 2 bab portal baru dan 1 halaman indeks alur kerja per-role.
+- **Daftar Dokumen (`docs/manual-book/akademik/`)**:
+  1. `README.md` — Peta Alur Kerja per Role (Admin Yayasan, Operator Akademik, Guru Mapel, Guru PAUD/TK, Wali Kelas, Wakasek Kurikulum, Kepala Sekolah, Orang Tua, Siswa).
+  2. `00-setup-lembaga.md` — Setup Lembaga, Unit Sekolah, Profil Lembaga, dan Akun Pegawai.
+  3. `01-data-master.md` — Tahun Ajaran, Semester, Mata Pelajaran, Rombel/Kelas, Siswa, Kalender Lembaga.
+  4. `02-penjadwalan.md` — Pola Jam, Jam Pelajaran, Penautan ke Kelas, Roster Mingguan.
+  5. `03-presensi-jurnal.md` — Presensi Sesi KBM Harian, Jurnal Mengajar Guru, Catatan Alasan Izin/Sakit.
+  6. `04-asesmen-nilai.md` — Komponen Penilaian (TP), Asesmen Sumatif Mapel, Sub-bagian Khusus Sisi Guru PAUD (Elemen CP & Nilai Naratif).
+  7. `05-rekap-rapor.md` — Rekap Nilai Kelas, Banner Peringatan Kelengkapan Nilai Wali Kelas, Catatan Wali Kelas & Ekstrakurikuler, Verifikasi Waka Kurikulum, Persetujuan Kepsek, Cetak Rapor PDF.
+  8. `06-kenaikan-kelas.md` — Pemetaan Status Siswa (Naik/Tinggal/Lulus) & Pembagian Rombel Baru (Tindakan Permanen).
+  9. `07-ruang-orang-tua.md` — Portal Mandiri Orang Tua: Nilai Anak & Unduh Rapor PDF, Jadwal Anak, Riwayat Izin/Sakit.
+  10. `08-ruang-siswa.md` — Portal Mandiri Siswa: Nilai & Rapor Saya, Jadwal Pelajaran Saya (Matriks/Daftar), Presensi Saya.
+  11. `lampiran-lintas-lembaga.md` — Kalender Akademik Nasional & Libur Terpusat Yayasan.
+- **Komponen Pendukung**:
+  - Seeder PAUD demo: `database/seeders/LembagaPaudDemoSeeder.php` (TK Permata, `guru.tk@demo.test`, komponen Elemen CP, skenario nilai 1 siswa sengaja kosong untuk verifikasi kelengkapan nilai).
+  - Skrip tangkapan layar Playwright: `scripts/manual-book-screenshots.mjs` (36 screenshot asli otomatis).
+  - Single-page HTML Artifact builder: `scripts/manual-book-artifact/build.mjs` (output `scripts/manual-book-artifact/dist/manual-book-akademik.html`, ukuran ~5.5 MB, semua aset gambar ter-embed base64).
+  - Target URL Artifact: `https://claude.ai/code/artifact/92e6b639-d846-48ad-9e42-2a270abc5e03`.
+  - Spec & Plan: `.agents/specs/2026-09-05-rombak-manual-book-akademik.md`, `.agents/plans/2026-09-05-rombak-manual-book-akademik.md`.
+  - Handoff Log: `.agents/logs/2026-09-05-rombak-manual-book-akademik.md`.
 
 ---
 
