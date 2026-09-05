@@ -98,12 +98,18 @@ class PersetujuanController extends BaseController
             ->get()
             ->keyBy('siswa_id');
 
+        // Lapis 2 (informative-only): rincian kelengkapan nilai per mapel/siswa jadi
+        // panduan Waka Kurikulum sebelum memutuskan Setujui/Tolak -- bukan hard block,
+        // Waka tetap bisa menyetujui walau ada nilai kosong (mis. siswa pindahan).
+        $kelengkapanNilai = $this->raporCalculationService->kelengkapanNilaiKelas($pengajuanRapor->kelas, $pengajuanRapor->semester);
+
         return view('portals.lembaga.rapor.persetujuan.show', array_merge([
             'pengajuanRapor' => $pengajuanRapor,
             'catatanList' => $catatanList,
             'isReadOnly' => $isReadOnly,
             'tanggalKeputusan' => $tanggalKeputusan,
             'namaPengambilKeputusan' => $namaPengambilKeputusan,
+            'kelengkapanNilai' => $kelengkapanNilai,
         ], $rekap));
     }
 

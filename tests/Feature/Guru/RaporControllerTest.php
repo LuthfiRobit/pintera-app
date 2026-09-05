@@ -66,6 +66,38 @@ it('lists siswa in the kelas the guru is wali kelas of, with a completeness badg
     });
 });
 
+it('shows a non-blocking warning banner when a siswa has an incomplete nilai for the kelas+semester', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+    NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => null]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('masih ada 1 nilai yang kosong', false);
+    $response->assertSee($mapel->nama);
+    $response->assertSee('Ahmad Fauzi');
+    $response->assertViewHas('kelengkapanNilai', fn ($list) => $list->isNotEmpty());
+});
+
+it('shows no warning banner when every nilai is complete for the kelas+semester', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+    NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 80]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertDontSee('nilai yang kosong');
+    $response->assertViewHas('kelengkapanNilai', fn ($list) => $list->isEmpty());
+});
+
 it('marks a siswa complete once a CatatanWaliKelas row exists for that semester', function () {
     ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
     CatatanWaliKelas::factory()->create(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]);

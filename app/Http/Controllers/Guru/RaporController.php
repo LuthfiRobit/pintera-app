@@ -10,6 +10,7 @@ use App\Domains\Akademik\Actions\Rapor\SubmitPengajuanRaporAction;
 use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
 use App\Domains\Akademik\Models\CatatanWaliKelas;
 use App\Domains\Akademik\Models\PengajuanRapor;
+use App\Domains\Akademik\Services\RaporCalculationService;
 use App\Domains\Akademik\Services\RaporPdfDataBuilder;
 use App\Http\Requests\Akademik\StoreCatatanWaliKelasRequest;
 use App\Http\Requests\Akademik\SubmitPengajuanRaporRequest;
@@ -39,6 +40,7 @@ class RaporController extends BaseController
         private readonly SubmitPengajuanRaporAction $submitPengajuanRaporAction,
         private readonly GenerateNarasiPerkembanganAction $generateNarasiPerkembanganAction,
         private readonly RaporPdfDataBuilder $raporPdfDataBuilder,
+        private readonly RaporCalculationService $raporCalculationService,
     ) {}
 
     public function index(Request $request): View
@@ -90,6 +92,7 @@ class RaporController extends BaseController
 
         $siswaList = collect();
         $pengajuanRapor = null;
+        $kelengkapanNilai = collect();
         if ($kelas && $semester) {
             $siswaList = Siswa::where('kelas_id', $kelas->id)->with('person')->orderByNama()->get();
             $siswaIdsWithCatatan = CatatanWaliKelas::where('semester_id', $semester->id)
@@ -102,6 +105,11 @@ class RaporController extends BaseController
             });
 
             $pengajuanRapor = PengajuanRapor::where('kelas_id', $kelas->id)->where('semester_id', $semester->id)->first();
+
+            // Lapis 1 (peringatan lembut, tidak blokir): wali kelas tetap boleh
+            // mengajukan rapor meski ada nilai kosong -- keputusan ada di tangan Waka
+            // Kurikulum saat verifikasi (lihat Lembaga\Rapor\PersetujuanController).
+            $kelengkapanNilai = $this->raporCalculationService->kelengkapanNilaiKelas($kelas, $semester);
         }
 
         return view('portals.guru.rapor.catatan.index', [
@@ -115,6 +123,7 @@ class RaporController extends BaseController
             'semester' => $semester,
             'siswaList' => $siswaList,
             'pengajuanRapor' => $pengajuanRapor,
+            'kelengkapanNilai' => $kelengkapanNilai,
         ]);
     }
 

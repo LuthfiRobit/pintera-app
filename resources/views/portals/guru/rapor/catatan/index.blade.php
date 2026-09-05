@@ -72,6 +72,28 @@
                 </div>
             @endif
 
+            @if ($kelengkapanNilai->isNotEmpty())
+                @php
+                    $totalSiswaBelumLengkap = $kelengkapanNilai->sum(fn ($sel) => $sel->siswaBelumLengkap->count());
+                @endphp
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+                    <p class="flex items-center gap-2 font-semibold">
+                        <x-icon name="warning" class="h-4 w-4 shrink-0" />
+                        Perhatian: masih ada {{ $totalSiswaBelumLengkap }} nilai yang kosong di kelas ini.
+                    </p>
+                    <p class="mt-1 text-xs text-amber-700">Anda tetap dapat mengajukan rapor, tapi pastikan ini sudah dikoordinasikan dengan guru mata pelajaran terkait.</p>
+                    <ul class="mt-2 space-y-1 text-xs">
+                        @foreach ($kelengkapanNilai as $sel)
+                            <li>
+                                <span class="font-semibold">{{ $sel->subjek->nama }}</span> —
+                                {{ $sel->siswaBelumLengkap->count() }} dari {{ $sel->totalSiswa }} siswa belum lengkap
+                                ({{ $sel->siswaBelumLengkap->pluck('nama_lengkap')->join(', ') }})
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm text-gray-700">
@@ -112,7 +134,13 @@
 
                 @if ($siswaList->isNotEmpty())
                     <div class="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4">
-                        <form method="POST" action="{{ route('guru.rapor.pengajuan.submit') }}">
+                        <form
+                            method="POST"
+                            action="{{ route('guru.rapor.pengajuan.submit') }}"
+                            @if ($kelengkapanNilai->isNotEmpty())
+                                onsubmit="return confirm('Masih ada nilai yang kosong di kelas ini. Anda tetap dapat mengajukan rapor, namun pastikan hal ini sudah dikoordinasikan. Lanjutkan mengajukan?')"
+                            @endif
+                        >
                             @csrf
                             <input type="hidden" name="kelas_id" value="{{ $kelas->id }}">
                             <input type="hidden" name="semester_id" value="{{ $semester->id }}">

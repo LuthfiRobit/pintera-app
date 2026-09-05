@@ -95,6 +95,27 @@ it('shows Kepsek the show page once the pengajuan is Diverifikasi, with rekap ni
     $response->assertViewHas('catatanList', fn ($list) => $list->has($siswa->id));
 });
 
+it('shows Waka a kelengkapan nilai warning on the show page when a siswa has an incomplete nilai, without blocking the decision buttons', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan, 'siswa' => $siswa, 'kelas' => $kelas, 'semester' => $semester, 'lembaga' => $lembaga] = siapkanAktorPersetujuan();
+
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen = Asesmen::factory()->create(['kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+    NilaiSiswa::factory()->create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => null]);
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.show', $pengajuan->fresh()));
+
+    $response->assertOk();
+    $response->assertSee('Kelengkapan nilai belum 100%');
+    $response->assertSee($mapel->nama);
+    $response->assertViewHas('kelengkapanNilai', fn ($list) => $list->isNotEmpty());
+    // Informative-only -- tombol Setujui/Tolak tetap ada, tidak dinonaktifkan.
+    $response->assertSee('Setujui');
+    $response->assertSee('Tolak, Minta Revisi Wali Kelas');
+});
+
 it('lets Kepsek open the read-only show page for a pengajuan already Disetujui, without the decision form', function () {
     $this->seed(WorkflowDefinitionSeeder::class);
     ['userWaka' => $userWaka, 'userKepsek' => $userKepsek, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();

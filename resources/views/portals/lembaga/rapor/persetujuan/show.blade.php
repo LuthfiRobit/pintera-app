@@ -19,6 +19,26 @@
             </div>
         @endif
 
+        {{-- Lapis 2 (informative-only): panduan kelengkapan nilai sebelum memutuskan.
+             Sengaja TIDAK menahan tombol Setujui/Tolak -- keputusan tetap wewenang penuh Waka. --}}
+        @if ($kelengkapanNilai->isNotEmpty())
+            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
+                <p class="flex items-center gap-2 font-semibold">
+                    <x-icon name="warning" class="h-4 w-4 shrink-0" />
+                    Kelengkapan nilai belum 100% — pertimbangkan sebelum memutuskan.
+                </p>
+                <ul class="mt-2 space-y-1 text-xs">
+                    @foreach ($kelengkapanNilai as $sel)
+                        <li>
+                            <span class="font-semibold">{{ $sel->subjek->nama }}</span> —
+                            {{ $sel->siswaBelumLengkap->count() }} dari {{ $sel->totalSiswa }} siswa belum lengkap:
+                            {{ $sel->siswaBelumLengkap->pluck('nama_lengkap')->join(', ') }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="rounded-2xl border border-gray-200 bg-white shadow-card overflow-hidden">
             <div class="border-b border-gray-100 px-6 py-4">
                 <h2 class="font-display text-sm font-bold text-gray-900">Rekap Nilai Per Mapel</h2>

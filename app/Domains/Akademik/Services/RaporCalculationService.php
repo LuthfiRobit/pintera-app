@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Akademik\Services;
 
+use App\Domains\Akademik\DataTransferObjects\KelengkapanSubjekSel;
 use App\Domains\Akademik\DataTransferObjects\RekapNilaiSel;
 use App\Domains\Akademik\Enums\AssessmentType;
 use App\Domains\Akademik\Enums\JenisAsesmen;
@@ -86,6 +87,82 @@ final class RaporCalculationService
             'classAvg' => $allNumeric->count() > 0 ? round($allNumeric->avg(), 1) : null,
             'highestScore' => $allNumeric->count() > 0 ? $allNumeric->max() : null,
         ];
+    }
+
+    /**
+     * Rincian kelengkapan nilai per mata pelajaran/elemen CP untuk satu kelas+semester --
+     * BEDA dari hitungRekapKelas(): itu menghitung rata-rata dari nilai yang ADA (siswa
+     * dengan 1 dari 3 komponen numeric terisi tetap dianggap "ada nilai"), method ini
+     * mendeteksi slot (asesmen x komponen x siswa) yang MASIH KOSONG secara eksplisit --
+     * dipakai sebagai panduan kelengkapan sebelum/saat pengajuan rapor, bukan buat cetak.
+     *
+     * @return Collection<string, KelengkapanSubjekSel> keyed by SubjekPenilaianKey, hanya
+     *                                                  berisi subjek yang MASIH ADA siswa belum lengkap (subjek yang sudah 100%
+     *                                                  lengkap tidak muncul di hasil).
+     */
+    public function kelengkapanNilaiKelas(Kelas $kelas, Semester $semester): Collection
+    {
+        $siswaList = Siswa::where('kelas_id', $kelas->id)->with('person')->orderByNama()->get();
+
+        $asesmenList = Asesmen::where('kelas_id', $kelas->id)
+            ->where('semester_id', $semester->id)
+            ->whereIn('jenis', JenisAsesmen::masukRapor())
+            ->with(['subjek', 'komponenPenilaian'])
+            ->get();
+
+        $subjekList = $asesmenList->pluck('subjek')
+            ->filter()
+            ->unique(fn ($s) => SubjekPenilaianKey::dari($s))
+            ->sortBy('nama')
+            ->keyBy(fn ($s) => SubjekPenilaianKey::dari($s));
+
+        $asesmenByKey = $asesmenList->groupBy(fn ($a) => $a->subjek ? SubjekPenilaianKey::dari($a->subjek) : '');
+
+        $allNilai = NilaiSiswa::whereIn('asesmen_id', $asesmenList->pluck('id'))
+            ->with('komponenPenilaian')
+            ->get()
+            ->keyBy(fn ($n) => "{$n->asesmen_id}-{$n->komponen_penilaian_id}-{$n->siswa_id}");
+
+        $hasil = collect();
+
+        foreach ($subjekList as $key => $subjek) {
+            $subjekAsesmen = $asesmenByKey->get($key) ?? collect();
+
+            $slotList = $subjekAsesmen->flatMap(
+                fn ($asesmen) => $asesmen->komponenPenilaian->map(fn ($komponen) => ['asesmen_id' => $asesmen->id, 'komponen' => $komponen])
+            );
+
+            if ($slotList->isEmpty()) {
+                continue;
+            }
+
+            $siswaBelumLengkap = $siswaList->filter(function (Siswa $siswa) use ($slotList, $allNilai) {
+                return $slotList->contains(function ($slot) use ($siswa, $allNilai) {
+                    $nilai = $allNilai->get("{$slot['asesmen_id']}-{$slot['komponen']->id}-{$siswa->id}");
+
+                    return ! $this->isTerisi($nilai, $slot['komponen']->assessment_type);
+                });
+            })->values();
+
+            if ($siswaBelumLengkap->isNotEmpty()) {
+                $hasil->put($key, new KelengkapanSubjekSel($subjek, $siswaList->count(), $siswaBelumLengkap));
+            }
+        }
+
+        return $hasil;
+    }
+
+    private function isTerisi(?NilaiSiswa $nilai, AssessmentType $tipe): bool
+    {
+        if ($nilai === null) {
+            return false;
+        }
+
+        return match ($tipe) {
+            AssessmentType::Numeric => $nilai->nilai_angka !== null,
+            AssessmentType::Predicate => $nilai->predikat !== null,
+            AssessmentType::Narrative => trim($nilai->catatan ?? '') !== '',
+        };
     }
 
     private function resolveNumeric(Collection $nilaiSubjek): ?RekapNilaiSel
