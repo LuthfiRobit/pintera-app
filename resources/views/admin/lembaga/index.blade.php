@@ -94,8 +94,8 @@
                         <label class="mb-1.5 block text-xs font-semibold text-gray-500">Bentuk Pendidikan</label>
                         <select x-ref="bentukSelect" x-init="initFilterSelect($refs.bentukSelect, 'bentuk', false)" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
                             <option value="">Semua Bentuk</option>
-                            @foreach (['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB'] as $bentuk)
-                                <option value="{{ $bentuk }}" @selected(request('bentuk') === $bentuk)>{{ $bentuk }}</option>
+                            @foreach (\App\Domains\Akademik\Enums\BentukPendidikan::cases() as $bentuk)
+                                <option value="{{ $bentuk->value }}" @selected(request('bentuk') === $bentuk->value)>{{ $bentuk->value }}</option>
                             @endforeach
                         </select>
                     </div>

@@ -58,8 +58,8 @@
                 <x-input-label value="Bentuk Pendidikan" />
                 <select name="bentuk_pendidikan" class="mt-1.5 {{ $selectClass }}">
                     <option value="" disabled selected>Pilih bentuk pendidikan</option>
-                    @foreach (['KB', 'TPA', 'SPS', 'TK', 'SD', 'SMP', 'SMA', 'SMK', 'SLB'] as $bentuk)
-                        <option value="{{ $bentuk }}" @selected($val('bentuk_pendidikan') === $bentuk)>{{ $bentuk }}</option>
+                    @foreach (\App\Domains\Akademik\Enums\BentukPendidikan::cases() as $bentuk)
+                        <option value="{{ $bentuk->value }}" @selected($val('bentuk_pendidikan') === $bentuk->value)>{{ $bentuk->value }}</option>
                     @endforeach
                 </select>
             </div>
