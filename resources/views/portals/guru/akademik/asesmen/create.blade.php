@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4" x-data="{ subjekType: '{{ old('subjek_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'elemen_cp' : 'mata_pelajaran') }}', selectedSubjekId: '{{ old('subjek_id', '') }}' }">
+    <div class="mx-auto max-w-6xl space-y-4" x-data="{ subjekType: '{{ $subjekType }}', selectedSubjekId: '{{ old('subjek_id', '') }}' }">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
             <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700" x-data>{{ session('status') }}</div>
@@ -31,20 +31,8 @@
             <form method="POST" action="{{ route('guru.asesmen.store') }}" class="p-6 space-y-6">
                 @csrf
 
-                <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
-                    <x-input-label value="Jenis Subjek Penilaian *" />
-                    <div class="flex items-center gap-6">
-                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
-                            <input type="radio" name="subjek_type" value="mata_pelajaran" x-model="subjekType" @change="selectedSubjekId = ''" class="text-brand-600 focus:ring-brand-500">
-                            Mata Pelajaran
-                        </label>
-                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
-                            <input type="radio" name="subjek_type" value="elemen_cp" x-model="subjekType" @change="selectedSubjekId = ''" class="text-brand-600 focus:ring-brand-500">
-                            Elemen CP (PAUD)
-                        </label>
-                    </div>
-                    <x-input-error :messages="$errors->get('subjek_type')" class="mt-1" />
-                </div>
+                <input type="hidden" name="subjek_type" value="{{ $subjekType }}">
+                <x-input-error :messages="$errors->get('subjek_type')" class="mt-1" />
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
@@ -62,39 +50,39 @@
                         <x-input-error :messages="$errors->get('kelas_id')" class="mt-1" />
                     </div>
 
-                    <div x-show="subjekType === 'mata_pelajaran'">
-                        <x-input-label value="Mata Pelajaran *" />
-                        <select 
-                            name="subjek_id" 
-                            x-model="selectedSubjekId"
-                            :disabled="subjekType !== 'mata_pelajaran'"
-                            required
-                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
-                        >
-                            <option value="">— Pilih Mata Pelajaran —</option>
-                            @foreach ($mataPelajaranList as $mapel)
-                                <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
-                            @endforeach
-                        </select>
-                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
-                    </div>
-
-                    <div x-show="subjekType === 'elemen_cp'">
-                        <x-input-label value="Elemen CP (PAUD) *" />
-                        <select 
-                            name="subjek_id" 
-                            x-model="selectedSubjekId"
-                            :disabled="subjekType !== 'elemen_cp'"
-                            required
-                            class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
-                        >
-                            <option value="">— Pilih Elemen CP —</option>
-                            @foreach ($elemenCpList as $elemen)
-                                <option value="{{ $elemen->id }}">{{ $elemen->nama }}</option>
-                            @endforeach
-                        </select>
-                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
-                    </div>
+                    @if ($subjekType === 'mata_pelajaran')
+                        <div>
+                            <x-input-label value="Mata Pelajaran *" />
+                            <select
+                                name="subjek_id"
+                                x-model="selectedSubjekId"
+                                required
+                                class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                            >
+                                <option value="">— Pilih Mata Pelajaran —</option>
+                                @foreach ($mataPelajaranList as $mapel)
+                                    <option value="{{ $mapel->id }}">{{ $mapel->nama }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
+                        </div>
+                    @else
+                        <div>
+                            <x-input-label value="Elemen CP (PAUD) *" />
+                            <select
+                                name="subjek_id"
+                                x-model="selectedSubjekId"
+                                required
+                                class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                            >
+                                <option value="">— Pilih Elemen CP —</option>
+                                @foreach ($elemenCpList as $elemen)
+                                    <option value="{{ $elemen->id }}">{{ $elemen->nama }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
+                        </div>
+                    @endif
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

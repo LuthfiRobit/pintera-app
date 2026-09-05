@@ -53,7 +53,7 @@ it('denies access without komponen-penilaian.kelola-sendiri permission', functio
 
 it('only lists komponen penilaian for mata pelajaran the guru actually teaches', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -74,7 +74,7 @@ it('only lists komponen penilaian for mata pelajaran the guru actually teaches',
 
 it('allows guru to create a komponen penilaian for a mata pelajaran and semester they teach', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -97,7 +97,7 @@ it('allows guru to create a komponen penilaian for a mata pelajaran and semester
 
 it('rejects creating a komponen penilaian for a mata pelajaran the guru does not teach', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $mapelTidakDiajar = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -117,7 +117,7 @@ it('rejects creating a komponen penilaian for a mata pelajaran the guru does not
 
 it('allows guru to edit a komponen penilaian for a mata pelajaran they teach, even one created by someone else', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -139,7 +139,7 @@ it('allows guru to edit a komponen penilaian for a mata pelajaran they teach, ev
 
 it('rejects editing or deleting a komponen penilaian for a mata pelajaran the guru does not teach', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $mapelTidakDiajar = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -157,7 +157,7 @@ it('rejects editing or deleting a komponen penilaian for a mata pelajaran the gu
 
 it('blocks deleting a komponen penilaian already used by nilai siswa, same guard as the admin side', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -177,7 +177,7 @@ it('blocks deleting a komponen penilaian already used by nilai siswa, same guard
 
 it('rejects storing a new assessment component when total bobot exceeds 100 percent in Guru portal', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -209,7 +209,7 @@ it('rejects storing a new assessment component when total bobot exceeds 100 perc
     expect(KomponenPenilaian::where('kode', 'G-2')->exists())->toBeFalse();
 });
 
-it('shows the subjek_type radio options on the guru create form', function () {
+it('derives subjek_type from bentuk_pendidikan on the guru create form, without a manual toggle', function () {
     $yayasan = Yayasan::factory()->create();
 
     $lembagaPaud = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
@@ -218,6 +218,17 @@ it('shows the subjek_type radio options on the guru create form', function () {
 
     $responsePaud = $this->actingAs($userPaud)->get(route('guru.komponen-penilaian.create'));
     $responsePaud->assertOk();
-    $responsePaud->assertSee('name="subjek_type"', false);
+    $responsePaud->assertViewHas('subjekType', 'elemen_cp');
+    $responsePaud->assertSee('name="subjek_type" value="elemen_cp"', false);
+    $responsePaud->assertDontSee('type="radio"', false);
     $responsePaud->assertSee('name="kktp_minimal"', false);
+
+    $lembagaSd = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $guruSd = Guru::factory()->create(['lembaga_id' => $lembagaSd->id]);
+    $userSd = actingAsGuruKomponenPenilaian($guruSd);
+
+    $responseSd = $this->actingAs($userSd)->get(route('guru.komponen-penilaian.create'));
+    $responseSd->assertOk();
+    $responseSd->assertViewHas('subjekType', 'mata_pelajaran');
+    $responseSd->assertSee('name="subjek_type" value="mata_pelajaran"', false);
 });

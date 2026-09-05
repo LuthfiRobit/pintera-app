@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guru;
 
 use App\Domains\Akademik\Actions\Penilaian\CreateAsesmenAction;
 use App\Domains\Akademik\Actions\Penilaian\SimpanNilaiSiswaAction;
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\ElemenCp;
@@ -56,18 +57,37 @@ class AsesmenController extends BaseController
             ->with(['kelas', 'mataPelajaran', 'semester'])
             ->get();
 
-        $kelasIds = $jadwalList->pluck('kelas_id')->unique();
+        // Kelas Tematik (PAUD -- KB/TPA/SPS/TK) tidak pernah punya baris JadwalPelajaran
+        // sama sekali (lihat SesiTematikGenerator); penugasan gurunya lewat
+        // Kelas.wali_kelas_guru_id. Tanpa union ini, dropdown kelas & semester akan
+        // SELALU KOSONG untuk wali kelas PAUD -- fitur asesmen elemen_cp jadi tidak
+        // bisa diakses sama sekali lewat UI.
+        $kelasWali = Kelas::where('wali_kelas_guru_id', $guru->id)->get();
+
+        $kelasIds = $jadwalList->pluck('kelas_id')->merge($kelasWali->pluck('id'))->unique();
         $mapelIds = $jadwalList->pluck('mata_pelajaran_id')->filter()->unique();
-        $semesterIds = $jadwalList->pluck('semester_id')->unique();
+        $semesterIds = $jadwalList->pluck('semester_id')
+            ->merge(Semester::whereIn('tahun_ajaran_id', $kelasWali->pluck('tahun_ajaran_id')->unique())->pluck('id'))
+            ->unique();
+
+        $bentukPendidikan = $request->user()->lembaga?->bentuk_pendidikan;
+        $subjekType = BentukPendidikan::tryFrom($bentukPendidikan ?? '')?->isPaud() ? 'elemen_cp' : 'mata_pelajaran';
+
+        // Sebelumnya cuma pernah query subjek_type=mata_pelajaran di sini -- untuk
+        // guru PAUD (elemen_cp), komponenList akan selalu kosong dan checklist TP
+        // di form tidak pernah menampilkan apa pun.
+        $komponenList = $subjekType === 'elemen_cp'
+            ? KomponenPenilaian::where('subjek_type', 'elemen_cp')->get()
+            : KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->whereIn('subjek_id', $mapelIds)->get();
 
         return view('portals.guru.akademik.asesmen.create', [
             'kelasList' => Kelas::whereIn('id', $kelasIds)->orderBy('nama')->get(),
             'mataPelajaranList' => MataPelajaran::whereIn('id', $mapelIds)->orderBy('nama')->get(),
             'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->orderByDesc('id')->get(),
-            'komponenList' => KomponenPenilaian::where('subjek_type', 'mata_pelajaran')->whereIn('subjek_id', $mapelIds)->get(),
+            'komponenList' => $komponenList,
             'jenisAsesmenList' => JenisAsesmen::cases(),
-            'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
+            'subjekType' => $subjekType,
         ]);
     }
 
@@ -85,6 +105,12 @@ class AsesmenController extends BaseController
                 ->exists();
 
             abort_unless($mengajarKombinasiIni, 403, 'Anda tidak mengajar kombinasi kelas dan mata pelajaran ini.');
+        } else {
+            $waliKelasIni = Kelas::where('id', $data['kelas_id'])
+                ->where('wali_kelas_guru_id', $guru->id)
+                ->exists();
+
+            abort_unless($waliKelasIni, 403, 'Anda bukan wali kelas dari kelas ini.');
         }
 
         $asesmen = $this->createAsesmenAction->execute($guru, $request->toDTO());

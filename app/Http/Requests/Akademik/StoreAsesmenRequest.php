@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\AsesmenData;
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\MataPelajaran;
@@ -16,6 +17,20 @@ final class StoreAsesmenRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()->can('asesmen.kelola');
+    }
+
+    /**
+     * subjek_type WAJIB derivasi dari bentuk_pendidikan lembaga aktor, bukan input
+     * pengguna -- PAUD (KB/TPA/SPS/TK) selalu elemen_cp, jenjang lain selalu
+     * mata_pelajaran. Nilai apa pun yang dikirim klien di field ini diabaikan.
+     */
+    protected function prepareForValidation(): void
+    {
+        $bentuk = BentukPendidikan::tryFrom($this->user()->lembaga?->bentuk_pendidikan ?? '');
+
+        $this->merge([
+            'subjek_type' => $bentuk?->isPaud() ? 'elemen_cp' : 'mata_pelajaran',
+        ]);
     }
 
     /**

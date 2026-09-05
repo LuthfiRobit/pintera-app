@@ -25,26 +25,14 @@
                     <x-icon name="checklist" class="h-4 w-4 text-brand-500" />
                     Formulir Tujuan Pembelajaran &amp; KKTP
                 </p>
-                <p class="mt-0.5 text-xs text-gray-500">Pilih jenis subjek (Mata Pelajaran / Elemen CP PAUD), semester, dan deskripsi TP.</p>
+                <p class="mt-0.5 text-xs text-gray-500">Pilih subjek penilaian, semester, dan deskripsi TP.</p>
             </div>
 
-            <form method="POST" action="{{ route('guru.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="{ subjekType: '{{ old('subjek_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'elemen_cp' : 'mata_pelajaran') }}', assessmentType: '{{ old('assessment_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'narrative' : 'numeric') }}' }">
+            <form method="POST" action="{{ route('guru.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="{ assessmentType: '{{ old('assessment_type', $subjekType === 'elemen_cp' ? 'narrative' : 'numeric') }}' }">
                 @csrf
 
-                <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">
-                    <x-input-label value="Jenis Subjek Penilaian *" />
-                    <div class="flex items-center gap-6">
-                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
-                            <input type="radio" name="subjek_type" value="mata_pelajaran" x-model="subjekType" @change="assessmentType = 'numeric'" class="text-brand-600 focus:ring-brand-500">
-                            Mata Pelajaran
-                        </label>
-                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-gray-800 cursor-pointer">
-                            <input type="radio" name="subjek_type" value="elemen_cp" x-model="subjekType" @change="assessmentType = 'narrative'" class="text-brand-600 focus:ring-brand-500">
-                            Elemen CP (PAUD)
-                        </label>
-                    </div>
-                    <x-input-error :messages="$errors->get('subjek_type')" class="mt-1" />
-                </div>
+                <input type="hidden" name="subjek_type" value="{{ $subjekType }}">
+                <x-input-error :messages="$errors->get('subjek_type')" class="mt-1" />
 
                 <div>
                     <x-input-label value="Tipe Penilaian *" />
@@ -57,27 +45,29 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div x-show="subjekType === 'mata_pelajaran'">
-                        <x-input-label value="Mata Pelajaran *" />
-                        <select name="subjek_id" :disabled="subjekType !== 'mata_pelajaran'" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">— Pilih Mata Pelajaran —</option>
-                            @foreach ($mataPelajaranList as $mapel)
-                                <option value="{{ $mapel->id }}" @selected(old('subjek_type') === 'mata_pelajaran' && old('subjek_id') == $mapel->id)>{{ $mapel->nama }}</option>
-                            @endforeach
-                        </select>
-                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
-                    </div>
-
-                    <div x-show="subjekType === 'elemen_cp'">
-                        <x-input-label value="Elemen CP (PAUD) *" />
-                        <select name="subjek_id" :disabled="subjekType !== 'elemen_cp'" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">— Pilih Elemen CP —</option>
-                            @foreach ($elemenCpList as $elemen)
-                                <option value="{{ $elemen->id }}" @selected(old('subjek_type') === 'elemen_cp' && old('subjek_id') == $elemen->id)>{{ $elemen->nama }}</option>
-                            @endforeach
-                        </select>
-                        <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
-                    </div>
+                    @if ($subjekType === 'mata_pelajaran')
+                        <div>
+                            <x-input-label value="Mata Pelajaran *" />
+                            <select name="subjek_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
+                                <option value="">— Pilih Mata Pelajaran —</option>
+                                @foreach ($mataPelajaranList as $mapel)
+                                    <option value="{{ $mapel->id }}" @selected(old('subjek_id') == $mapel->id)>{{ $mapel->nama }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
+                        </div>
+                    @else
+                        <div>
+                            <x-input-label value="Elemen CP (PAUD) *" />
+                            <select name="subjek_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
+                                <option value="">— Pilih Elemen CP —</option>
+                                @foreach ($elemenCpList as $elemen)
+                                    <option value="{{ $elemen->id }}" @selected(old('subjek_id') == $elemen->id)>{{ $elemen->nama }}</option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('subjek_id')" class="mt-1" />
+                        </div>
+                    @endif
 
                     <div>
                         <x-input-label value="Semester *" />

@@ -17,6 +17,19 @@ enum BentukPendidikan: string
     case Slb = 'SLB';
 
     /**
+     * PAUD (KB/TPA/SPS/TK) memakai jalur penilaian Elemen CP, bukan Mata Pelajaran --
+     * dipakai untuk menentukan subjek penilaian secara otomatis dari jenjang lembaga,
+     * bukan pilihan bebas pengguna.
+     */
+    public function isPaud(): bool
+    {
+        return match ($this) {
+            self::Kb, self::Tpa, self::Sps, self::Tk => true,
+            default => false,
+        };
+    }
+
+    /**
      * @return array<int, string> Tingkat valid untuk bentuk pendidikan ini.
      */
     public function validTingkatValues(): array

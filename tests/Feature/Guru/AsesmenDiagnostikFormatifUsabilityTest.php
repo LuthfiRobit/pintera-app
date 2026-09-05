@@ -25,7 +25,7 @@ it('lets a guru create, fill, and read back a Formatif asesmen through the exist
     $role->givePermissionTo(['asesmen.kelola']);
 
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);

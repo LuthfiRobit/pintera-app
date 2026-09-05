@@ -2,15 +2,17 @@
 
 namespace App\Http\Controllers\Guru;
 
-use App\Models\JadwalPelajaran;
 use App\Domains\Akademik\Actions\Penilaian\CreateKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\DeleteKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Http\Requests\Akademik\StoreKomponenPenilaianSendiriRequest;
 use App\Http\Requests\Akademik\UpdateKomponenPenilaianSendiriRequest;
-use App\Domains\Akademik\Models\MataPelajaran;
+use App\Models\JadwalPelajaran;
+use App\Models\Kelas;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -29,8 +31,7 @@ class KomponenPenilaianController extends BaseController
         private readonly CreateKomponenPenilaianAction $createKomponenPenilaianAction,
         private readonly UpdateKomponenPenilaianAction $updateKomponenPenilaianAction,
         private readonly DeleteKomponenPenilaianAction $deleteKomponenPenilaianAction,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View|string
     {
@@ -79,13 +80,22 @@ class KomponenPenilaianController extends BaseController
 
         $jadwalList = JadwalPelajaran::where('guru_id', $guru->id)->get();
         $mapelIds = $jadwalList->pluck('mata_pelajaran_id')->filter()->unique();
-        $semesterIds = $jadwalList->pluck('semester_id')->unique();
+
+        // Kelas Tematik (PAUD) tidak pernah punya JadwalPelajaran (lihat catatan yang
+        // sama di Guru\AsesmenController::create()) -- tanpa union ini, semesterList
+        // selalu kosong untuk wali kelas PAUD dan form TP tidak bisa disubmit.
+        $tahunAjaranWaliIds = Kelas::where('wali_kelas_guru_id', $guru->id)->pluck('tahun_ajaran_id')->unique();
+        $semesterIds = $jadwalList->pluck('semester_id')
+            ->merge(Semester::whereIn('tahun_ajaran_id', $tahunAjaranWaliIds)->pluck('id'))
+            ->unique();
+
+        $bentukPendidikan = $request->user()->lembaga?->bentuk_pendidikan;
 
         return view('portals.guru.akademik.komponen-penilaian.create', [
             'mataPelajaranList' => MataPelajaran::whereIn('id', $mapelIds)->orderBy('nama')->get(),
             'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
             'semesterList' => Semester::whereIn('id', $semesterIds)->with('tahunAjaran')->orderByDesc('id')->get(),
-            'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
+            'subjekType' => BentukPendidikan::tryFrom($bentukPendidikan ?? '')?->isPaud() ? 'elemen_cp' : 'mata_pelajaran',
         ]);
     }
 
@@ -111,6 +121,7 @@ class KomponenPenilaianController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
+
             return back()->withInput()->withErrors($e->errors());
         }
 
@@ -147,6 +158,7 @@ class KomponenPenilaianController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
+
             return back()->withInput()->withErrors($e->errors());
         }
 
@@ -169,6 +181,7 @@ class KomponenPenilaianController extends BaseController
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
+
             return back()->withErrors($e->errors());
         }
 

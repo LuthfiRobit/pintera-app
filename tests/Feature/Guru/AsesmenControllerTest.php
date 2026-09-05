@@ -2,6 +2,7 @@
 
 use App\Domains\Akademik\Enums\JenisAsesmen;
 use App\Domains\Akademik\Models\Asesmen;
+use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
@@ -40,7 +41,7 @@ function actingAsGuruAsesmen(Guru $guru): User
 
 it('allows guru to view their asesmen list and create form', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -52,7 +53,7 @@ it('allows guru to view their asesmen list and create form', function () {
 
 it('allows guru to create an asesmen and grade students per komponen', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -107,7 +108,7 @@ it('allows guru to create an asesmen and grade students per komponen', function 
 
 it('ignores a nilai submitted for a komponen not attached to the asesmen', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $user = actingAsGuruAsesmen($guru);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -126,7 +127,7 @@ it('ignores a nilai submitted for a komponen not attached to the asesmen', funct
 
 it('ignores a nilai submitted for a siswa not enrolled in the asesmen kelas', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $user = actingAsGuruAsesmen($guru);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -148,7 +149,7 @@ it('ignores a nilai submitted for a siswa not enrolled in the asesmen kelas', fu
 
 it('prevents guru from accessing asesmen belonging to another guru', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
     $guruOwner = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
     $guruOther = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -161,8 +162,8 @@ it('prevents guru from accessing asesmen belonging to another guru', function ()
 
 it('rejects creating an asesmen for a kelas/mapel/semester combination the guru does not teach', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
 
     $tahunAjaranSaya = TahunAjaran::factory()->create(['lembaga_id' => $lembagaSaya->id]);
     $semesterSaya = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranSaya->id]);
@@ -192,7 +193,7 @@ it('rejects creating an asesmen for a kelas/mapel/semester combination the guru 
 
 it('rejects creating an asesmen with no komponen_id selected', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -225,7 +226,7 @@ it('rejects creating an asesmen with no komponen_id selected', function () {
 
 it('allows creating an asesmen with jenis Diagnostik Kognitif', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -257,7 +258,7 @@ it('allows creating an asesmen with jenis Diagnostik Kognitif', function () {
 
 it('allows creating an asesmen with jenis Diagnostik Non-Kognitif', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -289,7 +290,7 @@ it('allows creating an asesmen with jenis Diagnostik Non-Kognitif', function () 
 
 it('allows creating an asesmen with jenis Formatif', function () {
     $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
     $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
     $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
     $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
@@ -317,4 +318,85 @@ it('allows creating an asesmen with jenis Formatif', function () {
     ])->assertRedirect();
 
     expect(Asesmen::where('judul', 'Latihan Formatif Bab 1')->where('jenis', JenisAsesmen::Formatif)->exists())->toBeTrue();
+});
+
+it('shows wali kelas classes on the create page for a PAUD guru with no JadwalPelajaran at all', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'wali_kelas_guru_id' => $guru->id]);
+    $user = actingAsGuruAsesmen($guru);
+
+    $response = $this->actingAs($user)->get(route('guru.asesmen.create'));
+
+    $response->assertOk();
+    $response->assertSee($kelas->nama);
+    $response->assertViewHas('subjekType', 'elemen_cp');
+});
+
+it('allows a PAUD wali kelas guru to create an elemen_cp asesmen and grade students', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'wali_kelas_guru_id' => $guru->id]);
+    $elemen = ElemenCp::factory()->create();
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'elemen_cp', 'subjek_id' => $elemen->id, 'semester_id' => $semester->id, 'lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+    $user = actingAsGuruAsesmen($guru);
+
+    // subjek_type dikirim sengaja "mata_pelajaran" -- server WAJIB mengabaikannya dan
+    // memakai elemen_cp karena lembaga ini TK, bukan yang dikirim klien.
+    $response = $this->actingAs($user)->post(route('guru.asesmen.store'), [
+        'kelas_id' => $kelas->id,
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $elemen->id,
+        'semester_id' => $semester->id,
+        'jenis' => JenisAsesmen::Formatif->value,
+        'judul' => 'Observasi Perkembangan Anak',
+        'tanggal' => now()->toDateString(),
+        'komponen_id' => [$komponen->id],
+    ]);
+
+    $asesmen = Asesmen::where('judul', 'Observasi Perkembangan Anak')->first();
+    expect($asesmen)->not->toBeNull();
+    expect($asesmen->subjek_type)->toBe('elemen_cp');
+    $response->assertRedirect(route('guru.asesmen.show', $asesmen));
+
+    $this->actingAs($user)->put(route('guru.asesmen.update-nilai', $asesmen), [
+        'nilai' => [
+            $siswa->id => [$komponen->id => ['catatan' => 'Sudah mampu mengenal warna dasar']],
+        ],
+    ])->assertRedirect(route('guru.asesmen.show', $asesmen));
+
+    expect(NilaiSiswa::where('asesmen_id', $asesmen->id)->where('siswa_id', $siswa->id)->value('catatan'))
+        ->toBe('Sudah mampu mengenal warna dasar');
+});
+
+it('rejects a PAUD guru creating an elemen_cp asesmen for a kelas they are not wali kelas of', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasOrangLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $elemen = ElemenCp::factory()->create();
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'elemen_cp', 'subjek_id' => $elemen->id, 'semester_id' => $semester->id]);
+    $user = actingAsGuruAsesmen($guru);
+
+    $this->actingAs($user)->post(route('guru.asesmen.store'), [
+        'kelas_id' => $kelasOrangLain->id,
+        'subjek_type' => 'elemen_cp',
+        'subjek_id' => $elemen->id,
+        'semester_id' => $semester->id,
+        'jenis' => JenisAsesmen::Formatif->value,
+        'judul' => 'Coba Asesmen Kelas Bukan Wali Saya',
+        'tanggal' => now()->toDateString(),
+        'komponen_id' => [$komponen->id],
+    ])->assertForbidden();
+
+    expect(Asesmen::where('judul', 'Coba Asesmen Kelas Bukan Wali Saya')->exists())->toBeFalse();
 });
