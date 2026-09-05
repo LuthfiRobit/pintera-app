@@ -14,7 +14,6 @@ use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\Siswa;
-use App\Models\User;
 use Illuminate\Support\Collection;
 use LogicException;
 
@@ -65,12 +64,12 @@ final class RaporPdfDataBuilder
         $pengajuanRapor = PengajuanRapor::where('kelas_id', $kelas->id)->where('semester_id', $semester->id)->first();
         $isDraft = $pengajuanRapor?->status !== StatusPengajuanRapor::Disetujui;
 
-        $namaWaliKelas = $pengajuanRapor?->diverifikasi_oleh
-            ? User::find($pengajuanRapor->diverifikasi_oleh)?->guru?->nama
-            : null;
-        $namaKepalaSekolah = $pengajuanRapor?->disetujui_oleh
-            ? User::find($pengajuanRapor->disetujui_oleh)?->guru?->nama
-            : null;
+        // Wali Kelas dan Kepala Sekolah adalah fakta struktural (siapa yang menjabat),
+        // BUKAN derivasi dari siapa yang klik verifikasi/persetujuan di alur workflow --
+        // approver step 1/2 workflow RAPOR_SEMESTER (Waka Kurikulum, Kepala Sekolah)
+        // adalah peran approval, tidak selalu sama dengan wali kelas kelas ini.
+        $namaWaliKelas = $kelas->waliKelas?->nama;
+        $namaKepalaSekolah = $lembaga->nama_kepala_sekolah;
         $namaOrangTua = $siswa->orangTua()->wherePivot('is_kontak_utama', true)->first()?->nama_lengkap;
 
         $isGenap = $semester->urutan === 2;

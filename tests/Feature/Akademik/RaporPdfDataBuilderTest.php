@@ -27,20 +27,23 @@ it('throws InvalidArgumentException for an unknown bentuk_pendidikan instead of 
         ->toThrow(InvalidArgumentException::class);
 });
 
+use App\Domains\Akademik\Actions\Rapor\ApprovePengajuanRaporAction;
 use App\Domains\Akademik\Actions\Rapor\SimpanCatatanWaliKelasAction;
 use App\Domains\Akademik\Actions\Rapor\SubmitPengajuanRaporAction;
 use App\Domains\Akademik\Actions\Rapor\VerifyPengajuanRaporAction;
-use App\Domains\Akademik\Actions\Rapor\ApprovePengajuanRaporAction;
 use App\Domains\Akademik\DataTransferObjects\CatatanWaliKelasData;
 use App\Domains\Akademik\Models\Asesmen;
 use App\Domains\Akademik\Models\KomponenPenilaian;
+use App\Domains\Akademik\Models\MataPelajaran;
 use App\Domains\Akademik\Models\NilaiSiswa;
+use App\Domains\Akademik\Models\Presensi;
+use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Workflow\Actions\InitializeApprovalRequestAction;
 use App\Domains\Workflow\Actions\ProcessApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalAction;
+use App\Models\Guru;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Semester;
@@ -72,7 +75,11 @@ function siapkanSiswaLengkapUntukPdf(): array
 
 it('builds a complete data array for a siswa with nilai, catatan, and approval', function () {
     $this->seed([RoleSeeder::class, WorkflowDefinitionSeeder::class]);
-    ['kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
+    ['kelas' => $kelas, 'lembaga' => $lembaga, 'siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
+
+    $guruWaliKelas = Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'nama' => 'Bu Wali']);
+    $kelas->update(['wali_kelas_guru_id' => $guruWaliKelas->id]);
+    $lembaga->update(['nama_kepala_sekolah' => 'Pak Kepsek']);
 
     $roleWaka = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web']);
     $userWaka = User::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
@@ -80,28 +87,44 @@ it('builds a complete data array for a siswa with nilai, catatan, and approval',
     $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
     $userKepsek = User::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
     $userKepsek->assignRole($roleKepsek);
-    \App\Models\Guru::factory()->create(['user_id' => $userWaka->id, 'lembaga_id' => $kelas->lembaga_id, 'nama' => 'Bu Waka']);
-    \App\Models\Guru::factory()->create(['user_id' => $userKepsek->id, 'lembaga_id' => $kelas->lembaga_id, 'nama' => 'Pak Kepsek']);
 
-    (new SimpanCatatanWaliKelasAction())->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswa->id, 'semester_id' => $semester->id, 'catatan_sikap' => 'Baik']));
+    (new SimpanCatatanWaliKelasAction)->execute(CatatanWaliKelasData::fromArray(['siswa_id' => $siswa->id, 'semester_id' => $semester->id, 'catatan_sikap' => 'Baik']));
     $pengajuan = (new SubmitPengajuanRaporAction(app(InitializeApprovalRequestAction::class)))->execute($kelas, $semester, $userWaka);
     (new VerifyPengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan, $userWaka, ApprovalAction::Approve);
     (new ApprovePengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan->fresh(), $userKepsek, ApprovalAction::Approve);
 
-    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa->fresh(), $semester);
+    $data = app(RaporPdfDataBuilder::class)->build($siswa->fresh(), $semester);
 
     expect($data['siswa']->id)->toBe($siswa->id);
     expect($data['catatan']->catatan_sikap)->toBe('Baik');
     expect($data['isDraft'])->toBeFalse();
-    expect($data['namaWaliKelas'])->toBe('Bu Waka');
+    // Wali Kelas & Kepala Sekolah adalah fakta struktural (Kelas.wali_kelas_guru_id,
+    // Lembaga.nama_kepala_sekolah) -- BUKAN derivasi dari siapa yang verifikasi/approve
+    // pengajuan (Waka Kurikulum & Kepala Sekolah cuma peran approver workflow, bisa
+    // orang berbeda dari wali kelas kelas ini).
+    expect($data['namaWaliKelas'])->toBe('Bu Wali');
     expect($data['namaKepalaSekolah'])->toBe('Pak Kepsek');
     expect($data['namaOrangTua'])->toBe('Budi Orang Tua');
 });
 
-it('marks isDraft true and leaves signature names null when nothing has been submitted yet', function () {
+it('shows namaWaliKelas and namaKepalaSekolah even for a draft rapor, since they are structural facts not workflow output', function () {
+    ['kelas' => $kelas, 'lembaga' => $lembaga, 'siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
+
+    $guruWaliKelas = Guru::factory()->create(['lembaga_id' => $kelas->lembaga_id, 'nama' => 'Bu Wali']);
+    $kelas->update(['wali_kelas_guru_id' => $guruWaliKelas->id]);
+    $lembaga->update(['nama_kepala_sekolah' => 'Pak Kepsek']);
+
+    $data = app(RaporPdfDataBuilder::class)->build($siswa, $semester);
+
+    expect($data['isDraft'])->toBeTrue();
+    expect($data['namaWaliKelas'])->toBe('Bu Wali');
+    expect($data['namaKepalaSekolah'])->toBe('Pak Kepsek');
+});
+
+it('leaves signature names null when the kelas has no wali kelas and lembaga profile is incomplete', function () {
     ['siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
 
-    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semester);
+    $data = app(RaporPdfDataBuilder::class)->build($siswa, $semester);
 
     expect($data['isDraft'])->toBeTrue();
     expect($data['namaWaliKelas'])->toBeNull();
@@ -112,7 +135,7 @@ it('marks isDraft true and leaves signature names null when nothing has been sub
 it('marks isGenap false and leaves tahunan fields null for a Ganjil semester', function () {
     ['siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
 
-    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semester);
+    $data = app(RaporPdfDataBuilder::class)->build($siswa, $semester);
 
     expect($data['isGenap'])->toBeFalse();
     expect($data['absensiTahunan'])->toBeNull();
@@ -136,12 +159,12 @@ it('sums absensi and averages nilai across Ganjil+Genap when the pair exists', f
     $komponenGenap = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterGenap->id]);
     NilaiSiswa::factory()->create(['asesmen_id' => $asesmenGenap->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenGenap->id, 'nilai_angka' => 80]);
 
-    $sesiGanjil = \App\Domains\Akademik\Models\SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()->subMonths(3)]);
-    \App\Domains\Akademik\Models\Presensi::create(['sesi_pembelajaran_id' => $sesiGanjil->id, 'siswa_id' => $siswa->id, 'status' => 'hadir']);
-    $sesiGenap = \App\Domains\Akademik\Models\SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()]);
-    \App\Domains\Akademik\Models\Presensi::create(['sesi_pembelajaran_id' => $sesiGenap->id, 'siswa_id' => $siswa->id, 'status' => 'izin']);
+    $sesiGanjil = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()->subMonths(3)]);
+    Presensi::create(['sesi_pembelajaran_id' => $sesiGanjil->id, 'siswa_id' => $siswa->id, 'status' => 'hadir']);
+    $sesiGenap = SesiPembelajaran::factory()->create(['kelas_id' => $kelas->id, 'tanggal' => now()]);
+    Presensi::create(['sesi_pembelajaran_id' => $sesiGenap->id, 'siswa_id' => $siswa->id, 'status' => 'izin']);
 
-    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semesterGenap);
+    $data = app(RaporPdfDataBuilder::class)->build($siswa, $semesterGenap);
 
     expect($data['isGenap'])->toBeTrue();
     expect($data['nilaiRataRataTahunan']['mata_pelajaran:'.$mapel->id])->toBe(85.0);
@@ -154,7 +177,7 @@ it('keeps tahunan fields null in Genap when the Ganjil pair does not exist', fun
     ['lembaga' => $lembaga, 'tahunAjaran' => $tahunAjaran, 'kelas' => $kelas, 'siswa' => $siswa] = siapkanSiswaLengkapUntukPdf();
     $semesterGenapTanpaPasangan = Semester::factory()->create(['tahun_ajaran_id' => TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]), 'urutan' => 2, 'nama' => 'Genap']);
 
-    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semesterGenapTanpaPasangan);
+    $data = app(RaporPdfDataBuilder::class)->build($siswa, $semesterGenapTanpaPasangan);
 
     expect($data['isGenap'])->toBeTrue();
     expect($data['absensiTahunan'])->toBeNull();
@@ -168,14 +191,14 @@ it('labels kelulusan for a Genap semester at the final tingkat of SD, not for a 
     $siswaAkhir = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasAkhir->id, 'status' => 'aktif']);
     $semesterGenap = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'urutan' => 2, 'nama' => 'Genap']);
 
-    $dataAkhir = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswaAkhir, $semesterGenap);
+    $dataAkhir = app(RaporPdfDataBuilder::class)->build($siswaAkhir, $semesterGenap);
     expect($dataAkhir['isTingkatAkhir'])->toBeTrue();
     expect($dataAkhir['labelKenaikan'])->toBe('Keterangan Kelulusan');
 
     $kelasBukanAkhir = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'tingkat' => '3']);
     $siswaBukanAkhir = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasBukanAkhir->id, 'status' => 'aktif']);
 
-    $dataBukanAkhir = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswaBukanAkhir, $semesterGenap);
+    $dataBukanAkhir = app(RaporPdfDataBuilder::class)->build($siswaBukanAkhir, $semesterGenap);
     expect($dataBukanAkhir['isTingkatAkhir'])->toBeFalse();
     expect($dataBukanAkhir['labelKenaikan'])->toBe('Keterangan Kenaikan Kelas');
 });
@@ -183,7 +206,7 @@ it('labels kelulusan for a Genap semester at the final tingkat of SD, not for a 
 it('builds a judulDokumen mentioning the semester name and tahun ajaran', function () {
     ['siswa' => $siswa, 'semester' => $semester, 'tahunAjaran' => $tahunAjaran] = siapkanSiswaLengkapUntukPdf();
 
-    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semester);
+    $data = app(RaporPdfDataBuilder::class)->build($siswa, $semester);
 
     expect($data['judulDokumen'])->toContain($semester->nama);
     expect($data['judulDokumen'])->toContain($tahunAjaran->nama);
@@ -191,7 +214,7 @@ it('builds a judulDokumen mentioning the semester name and tahun ajaran', functi
 
 it('renders paud and sd blade templates successfully', function () {
     ['siswa' => $siswa, 'semester' => $semester] = siapkanSiswaLengkapUntukPdf();
-    $data = app(\App\Domains\Akademik\Services\RaporPdfDataBuilder::class)->build($siswa, $semester);
+    $data = app(RaporPdfDataBuilder::class)->build($siswa, $semester);
 
     $renderedPaud = view('pdf.rapor.paud', $data)->render();
     expect($renderedPaud)->toContain('Capaian Pembelajaran');
