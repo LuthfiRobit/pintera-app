@@ -229,3 +229,33 @@ it('hides Jurnal Presensi, Rekap Kehadiran, Komponen Penilaian, Asesmen, dan Rap
     $response->assertDontSee('Asesmen & Nilai');
     $response->assertDontSee('Rapor Wali Kelas');
 });
+
+it('hides Scan QR from sidebar when a yayasan-scope user has not picked an active lembaga', function () {
+    Permission::firstOrCreate(['name' => 'kehadiran-sdm.catat', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_scan_sidebar_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['kehadiran-sdm.catat']);
+    $yayasan = Yayasan::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertDontSee('Scan QR');
+});
+
+it('shows Scan QR in sidebar once a yayasan-scope user picks an active lembaga', function () {
+    Permission::firstOrCreate(['name' => 'kehadiran-sdm.catat', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_scan_sidebar_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['kehadiran-sdm.catat']);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    session(['active_lembaga_id' => $lembaga->id]);
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertSee('Scan QR');
+});

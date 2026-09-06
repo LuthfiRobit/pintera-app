@@ -85,7 +85,7 @@
             'group_icon' => 'calendar-check',
             'items' => array_filter([
                 Auth::user()->can('kehadiran-sdm.view') ? ['route' => 'admin.kehadiran-sdm.index', 'pattern' => 'admin.kehadiran-sdm.index', 'label' => 'Daftar Kehadiran', 'icon' => 'clipboard-list'] : null,
-                Auth::user()->can('kehadiran-sdm.catat') ? ['route' => 'admin.kehadiran-sdm.scan.index', 'pattern' => 'admin.kehadiran-sdm.scan.*', 'label' => 'Scan QR', 'icon' => 'qr-code'] : null,
+                Auth::user()->can('kehadiran-sdm.catat') && (Auth::user()->widestScopeLevel() !== 'yayasan' || session('active_lembaga_id') !== null) ? ['route' => 'admin.kehadiran-sdm.scan.index', 'pattern' => 'admin.kehadiran-sdm.scan.*', 'label' => 'Scan QR', 'icon' => 'qr-code'] : null,
                 Auth::user()->can('kehadiran-sdm.izin.approve') ? ['route' => 'admin.kehadiran-sdm.izin-cuti.index', 'pattern' => 'admin.kehadiran-sdm.izin-cuti.*', 'label' => 'Persetujuan Izin/Cuti', 'icon' => 'check-square'] : null,
                 Auth::user()->can('kehadiran-sdm.view') ? ['route' => 'admin.kehadiran-sdm.konfigurasi.index', 'pattern' => 'admin.kehadiran-sdm.konfigurasi.*', 'label' => 'Konfigurasi', 'icon' => 'settings'] : null,
             ]),
