@@ -399,7 +399,7 @@ Audit investigatif menyusuri satu alur bisnis penuh dari skema database sampai f
 - **Portal siswa: dashboard nilai/presensi/jadwal** — ✅ **Ada** (25 Agustus 2026). Kelas & profil, tagihan belum lunas, rekap presensi bulan berjalan, 5 nilai terbaru, jadwal hari ini — semua read-only dari data existing.
 - **Pengajuan tugas & submit file** — Belum Ada, Portal Siswa sudah jadi rumahnya. Prioritas Sedang.
 - **Pengajuan izin siswa mandiri** — Belum Ada, bisa reuse `App\Domains\Workflow` (pola sama izin/cuti SDM). Prioritas Sedang.
-- **Kartu pelajar digital (QR)** — Belum Ada, pola QR sudah terbukti di `GenerateEmployeeQrTokenAction`. Prioritas Rendah.
+- **Kartu pelajar digital (QR) & Presensi Scan** — ✅ **Ada (Parsial / Fondasi Digital Selesai)** (6 September 2026). Kode QR identitas permanen per siswa (`KartuSiswa`, resolusi generik multi-domain) + halaman mandiri "Kartu Digital Saya" di Ruang Siswa + tab Kartu Digital admin untuk generate ulang/nonaktifkan + modal scan kamera & input manual di Jurnal KBM Guru (Opsi A3). Catatan cakupan: RFID, lookup VA di loket Keuangan, dan cetak kartu fisik massal TETAP Belum Ada (di luar cakupan, menunggu Opsi B / kebutuhan fisik nyata). Lihat handoff log `.agents/logs/2026-09-06-kartu-digital-siswa-presensi-scan.md`.
 - **E-learning** — Belum Ada, nice-to-have jangka panjang. Prioritas Rendah–Sedang.
 
 ## Fitur Pembeda SaaS
@@ -425,7 +425,7 @@ Audit investigatif menyusuri satu alur bisnis penuh dari skema database sampai f
 
 **Fase 3 — Fitur besar independen**: **Payroll/Penggajian** (satu-satunya tersisa — Portal Siswa sudah selesai & dikeluarkan dari fase ini).
 
-**Fase 4 — Turunan Portal Siswa**: Pengajuan izin siswa mandiri, Pengajuan tugas & submit file, Kartu pelajar digital (bisa diskip), E-learning (bisa diskip).
+**Fase 4 — Turunan Portal Siswa**: Pengajuan izin siswa mandiri, Pengajuan tugas & submit file, Kartu pelajar digital (QR & scan presensi SELESAI 6 September 2026, kartu fisik tetap terpisah), E-learning (bisa diskip).
 
 **Fase 5 — Quick wins** (effort kecil, dampak langsung): **Backup terjadwal** (tidak disarankan diskip), ~~Notifikasi presensi & penjemputan~~ (Notifikasi Presensi Akademik/Jurnal SELESAI 6 September 2026, Presensi Fisik/Check-in-Check-out Kartu QR tetap tersisa sebagai proyek terpisah), Broadcast WA massal, Audit-log viewer (bisa diskip).
 
