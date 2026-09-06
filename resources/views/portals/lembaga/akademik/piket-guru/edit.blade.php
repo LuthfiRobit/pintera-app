@@ -25,6 +25,20 @@
                 </select>
                 <x-input-error :messages="$errors->get('hari')" class="mt-1" />
             </div>
+            <div>
+                <x-input-label value="Tahun Ajaran & Semester" />
+                <select name="semester_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
+                    @foreach ($semesterList->groupBy(fn ($semester) => $semester->tahunAjaran->nama) as $namaTahunAjaran => $semesterGrup)
+                        <optgroup label="{{ $namaTahunAjaran }}">
+                            @foreach ($semesterGrup as $semester)
+                                <option value="{{ $semester->id }}" @selected(old('semester_id', $jadwal->semester_id) == $semester->id)>{{ $semester->nama }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-500">Mengganti semester akan memindahkan jadwal piket harian yang sudah ter-generate ke semester baru (baris override manual/lampau/sudah dipakai tetap aman).</p>
+                <x-input-error :messages="$errors->get('semester_id')" class="mt-1" />
+            </div>
             <div class="flex justify-end pt-2">
                 <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
             </div>

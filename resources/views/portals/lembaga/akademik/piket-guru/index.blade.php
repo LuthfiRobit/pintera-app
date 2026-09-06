@@ -28,7 +28,7 @@
                         <tr>
                             <td class="px-5 py-3 font-medium text-gray-900">{{ $jadwal->guru?->nama ?? '-' }}</td>
                             <td class="px-5 py-3 text-gray-700">{{ $namaHari[$jadwal->hari] ?? $jadwal->hari }}</td>
-                            <td class="px-5 py-3 text-gray-600">{{ $jadwal->semester?->nama ?? '-' }}</td>
+                            <td class="px-5 py-3 text-gray-600">{{ $jadwal->semester ? $jadwal->semester->tahunAjaran->nama . ' - ' . $jadwal->semester->nama : '-' }}</td>
                             <td class="px-5 py-3 text-right space-x-3">
                                 <a href="{{ route('admin.piket-guru.edit', $jadwal) }}" class="text-brand-600 hover:underline">Edit</a>
                                 <form method="POST" action="{{ route('admin.piket-guru.destroy', $jadwal) }}" class="inline" onsubmit="return confirm('Hapus jadwal piket ini?')">

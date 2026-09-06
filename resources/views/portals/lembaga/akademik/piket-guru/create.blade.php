@@ -25,12 +25,24 @@
                 </select>
                 <x-input-error :messages="$errors->get('hari')" class="mt-1" />
             </div>
-            <input type="hidden" name="semester_id" value="{{ $semesterAktif?->id }}">
-            @if (! $semesterAktif)
-                <p class="text-sm text-error-600">Tidak ada semester aktif untuk lembaga ini. Aktifkan semester terlebih dahulu.</p>
+            <div>
+                <x-input-label value="Tahun Ajaran & Semester" />
+                <select name="semester_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
+                    @foreach ($semesterList->groupBy(fn ($semester) => $semester->tahunAjaran->nama) as $namaTahunAjaran => $semesterGrup)
+                        <optgroup label="{{ $namaTahunAjaran }}">
+                            @foreach ($semesterGrup as $semester)
+                                <option value="{{ $semester->id }}" @selected(old('semester_id', $semesterAktif?->id) == $semester->id)>{{ $semester->nama }}</option>
+                            @endforeach
+                        </optgroup>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('semester_id')" class="mt-1" />
+            </div>
+            @if ($semesterList->isEmpty())
+                <p class="text-sm text-error-600">Belum ada tahun ajaran/semester untuk lembaga ini. Buat terlebih dahulu di halaman Tahun Ajaran.</p>
             @endif
             <div class="flex justify-end pt-2">
-                <x-primary-button type="submit" :disabled="! $semesterAktif">Simpan</x-primary-button>
+                <x-primary-button type="submit" :disabled="$semesterList->isEmpty()">Simpan</x-primary-button>
             </div>
         </form>
     </div>
