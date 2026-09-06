@@ -52,9 +52,9 @@ class AttendanceConfigurationController extends BaseController
 
         $konfigurasi = AttendanceMethodConfiguration::withoutGlobalScope(TenantScope::class)
             ->where('yayasan_id', $yayasanId)
-            ->where(function ($query) use ($lembagaId) {
-                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
-            })
+            ->when($lembagaId !== null, fn ($query) => $query->where(function ($q) use ($lembagaId) {
+                $q->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            }))
             ->get();
 
         $titikAbsen = $lembagaId ? AttendancePoint::where('lembaga_id', $lembagaId)->orderBy('nama')->get() : collect();
@@ -63,33 +63,33 @@ class AttendanceConfigurationController extends BaseController
 
         $kalenderEntriList = $yayasanId ? KalenderKerjaSdm::withoutGlobalScope(TenantScope::class)
             ->where('yayasan_id', $yayasanId)
-            ->where(function ($query) use ($lembagaId) {
-                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
-            })
+            ->when($lembagaId !== null, fn ($query) => $query->where(function ($q) use ($lembagaId) {
+                $q->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            }))
             ->orderBy('tanggal')
             ->get() : collect();
 
         $policyList = $yayasanId ? AttendancePolicy::withoutGlobalScope(TenantScope::class)
             ->where('yayasan_id', $yayasanId)
-            ->where(function ($query) use ($lembagaId) {
-                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
-            })
+            ->when($lembagaId !== null, fn ($query) => $query->where(function ($q) use ($lembagaId) {
+                $q->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            }))
             ->with('jenisKaryawan')
             ->get() : collect();
 
         $jenisShiftList = $yayasanId ? JenisShift::withoutGlobalScope(TenantScope::class)
             ->where('yayasan_id', $yayasanId)
-            ->where(function ($query) use ($lembagaId) {
-                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
-            })
+            ->when($lembagaId !== null, fn ($query) => $query->where(function ($q) use ($lembagaId) {
+                $q->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            }))
             ->orderBy('nama')
             ->get() : collect();
 
         $kuotaCutiList = $yayasanId ? KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
             ->where('yayasan_id', $yayasanId)
-            ->where(function ($query) use ($lembagaId) {
-                $query->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
-            })
+            ->when($lembagaId !== null, fn ($query) => $query->where(function ($q) use ($lembagaId) {
+                $q->where('lembaga_id', $lembagaId)->orWhereNull('lembaga_id');
+            }))
             ->orderByRaw('lembaga_id IS NULL')
             ->get() : collect();
 
