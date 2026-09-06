@@ -385,12 +385,13 @@ Audit investigatif menyusuri satu alur bisnis penuh dari skema database sampai f
   - Test: 5 passed di `tests/Feature/BottomNavTest.php`, full test suite 2442 passed (0 failed).
 
 ## 4. Level Orang Tua / Wali
-*Dasar (dashboard anak, tagihan online, notifikasi transaksional) berjalan. Belum: komunikasi dua arah & transparansi presensi harian.*
+*Dasar (dashboard anak, tagihan online, notifikasi transaksional) berjalan. Notifikasi presensi Jurnal KBM SUDAH ADA (6 September 2026). Belum: komunikasi dua arah & presensi fisik check-in/check-out kartu QR.*
 
 - **Dashboard anak (tagihan & ringkasan)** — ✅ Ada.
 - **Rapor digital dengan tanda tangan digital** — Belum Ada (PDF masih kolom kosong utk ttd manual). Prioritas Rendah–Sedang.
 - **Chat dua arah dgn wali kelas/guru BK** — Belum Ada, butuh infra real-time baru. Pertimbangkan MVP (komentar per-kasus) dulu. Prioritas Rendah–Sedang.
-- **Notifikasi presensi & penjemputan (tap-in/tap-out)** — Belum Ada, tapi data presensi siswa SUDAH ADA — cuma perlu hook notifikasi baru. **Fitur transparansi paling dicari ortu, effort relatif kecil.** Prioritas Sedang–Tinggi.
+- **Notifikasi Presensi Akademik (Jurnal)** — ✅ **Ada** (6 September 2026). Saat guru mencatat presensi siswa sebagai Izin/Sakit/Alpa/Terlambat di Jurnal KBM, sistem otomatis mendeteksi perubahan status dan mengirim notifikasi (database + WhatsApp, mail kondisional) ke kontak utama orang tua. Lihat handoff log `.agents/logs/2026-09-06-notifikasi-presensi-akademik.md`.
+- **Presensi Fisik/Check-in-Check-out (Kartu Pelajar QR)** — Belum Ada — proyek terpisah dari notifikasi presensi Jurnal di atas; butuh infra tap-in/tap-out fisik (kartu QR, titik absen) yang belum dibangun. Prioritas Sedang–Tinggi kalau ada permintaan pasar konkret.
 
 ## 5. Level Siswa
 *Gap paling mendesak di seluruh audit SUDAH TERTUTUP 25 Agustus 2026.*
@@ -426,7 +427,7 @@ Audit investigatif menyusuri satu alur bisnis penuh dari skema database sampai f
 
 **Fase 4 — Turunan Portal Siswa**: Pengajuan izin siswa mandiri, Pengajuan tugas & submit file, Kartu pelajar digital (bisa diskip), E-learning (bisa diskip).
 
-**Fase 5 — Quick wins** (effort kecil, dampak langsung): **Backup terjadwal** (tidak disarankan diskip), Notifikasi presensi & penjemputan, Broadcast WA massal, Audit-log viewer (bisa diskip).
+**Fase 5 — Quick wins** (effort kecil, dampak langsung): **Backup terjadwal** (tidak disarankan diskip), ~~Notifikasi presensi & penjemputan~~ (Notifikasi Presensi Akademik/Jurnal SELESAI 6 September 2026, Presensi Fisik/Check-in-Check-out Kartu QR tetap tersisa sebagai proyek terpisah), Broadcast WA massal, Audit-log viewer (bisa diskip).
 
 **Fase 6 — Kesiswaan & Fasilitas Lembaga** (independen semua): Pelanggaran siswa, Ekstrakurikuler, e-Ijazah/SKL, Buku Kas & BOS (bisa diskip kalau non-BOS), Payment gateway tambahan (bisa diskip), Perpustakaan (bisa diskip), Prestasi siswa (bisa diskip), Data Alumni (bisa diskip).
 
