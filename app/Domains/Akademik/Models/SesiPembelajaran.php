@@ -8,7 +8,6 @@ use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\MataPelajaran;
 use Database\Factories\SesiPembelajaranFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,13 +16,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SesiPembelajaran extends Model
 {
-    use HasFactory, BelongsToTenant;
+    use BelongsToTenant, HasFactory;
 
     protected $table = 'sesi_pembelajaran';
 
     protected $fillable = [
         'jadwal_pelajaran_id', 'kelas_id', 'guru_id', 'mata_pelajaran_id', 'lembaga_id',
-        'tanggal', 'jam_mulai', 'jam_selesai', 'materi', 'status',
+        'tanggal', 'jam_mulai', 'jam_selesai', 'materi', 'status', 'diisi_oleh_guru_id',
     ];
 
     protected function casts(): array
@@ -70,6 +69,11 @@ class SesiPembelajaran extends Model
         return $this->belongsTo(Guru::class);
     }
 
+    public function diisiOlehGuru(): BelongsTo
+    {
+        return $this->belongsTo(Guru::class, 'diisi_oleh_guru_id');
+    }
+
     public function mataPelajaran(): BelongsTo
     {
         return $this->belongsTo(MataPelajaran::class);
@@ -85,4 +89,3 @@ class SesiPembelajaran extends Model
         return $this->jadwal_pelajaran_id === null;
     }
 }
-
