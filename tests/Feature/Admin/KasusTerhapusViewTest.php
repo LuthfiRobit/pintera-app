@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Admin/KasusTerhapusViewTest.php
 
 use App\Domains\Kasus\Enums\StatusKasus;
