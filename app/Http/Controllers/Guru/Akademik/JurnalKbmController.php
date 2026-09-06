@@ -157,7 +157,9 @@ class JurnalKbmController extends BaseController
                 ->with('error', "Sesi ini sudah melewati batas waktu edit ({$batasHari} hari). Hubungi Wali Kelas kelas ini untuk koreksi.");
         }
 
-        $this->recordJurnalDanPresensiAction->execute($sesi, $request->toDTO());
+        $diisiOlehGuruId = $guru->id !== $sesi->guru_id ? $guru->id : null;
+
+        $this->recordJurnalDanPresensiAction->execute($sesi, $request->toDTO(), $diisiOlehGuruId);
 
         return redirect()->route('guru.jurnal-kbm.index')->with('status', 'Jurnal dan presensi berhasil disimpan.');
     }

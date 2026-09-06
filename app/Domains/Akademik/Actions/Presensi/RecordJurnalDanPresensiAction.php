@@ -13,12 +13,15 @@ final class RecordJurnalDanPresensiAction
         private readonly PresensiNotificationService $presensiNotificationService,
     ) {}
 
-    public function execute(SesiPembelajaran $sesi, JurnalPresensiData $data): SesiPembelajaran
+    public function execute(SesiPembelajaran $sesi, JurnalPresensiData $data, ?int $diisiOlehGuruId = null): SesiPembelajaran
     {
         $perluDicek = [];
 
-        $sesiTerbaru = DB::transaction(function () use ($sesi, $data, &$perluDicek) {
-            $sesi->update(['materi' => $data->materi]);
+        $sesiTerbaru = DB::transaction(function () use ($sesi, $data, $diisiOlehGuruId, &$perluDicek) {
+            $sesi->update([
+                'materi' => $data->materi,
+                'diisi_oleh_guru_id' => $diisiOlehGuruId,
+            ]);
 
             $statusLamaPerSiswa = $sesi->presensi()->get()->keyBy('siswa_id')
                 ->map(fn ($p) => $p->status->value);
