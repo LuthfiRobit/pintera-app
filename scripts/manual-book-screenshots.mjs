@@ -44,6 +44,15 @@ const TARGETS = {
     { account: 'akademik', path: '/admin/kelas/create', file: '01-05-form-kelas.png' },
     { account: 'akademik', path: '/admin/siswa', file: '01-06-daftar-siswa.png' },
     { account: 'akademik', path: '/admin/pengaturan/akademik', file: '01-07-pengaturan-akademik.png' },
+    {
+      account: 'akademik',
+      path: '/admin/siswa/1/edit',
+      file: '01-08-tab-kartu-digital.png',
+      before: async (page) => {
+        await page.click('button:has-text("Kartu Digital")');
+        await page.waitForTimeout(300);
+      },
+    },
   ],
   '02': [
     { account: 'akademik', path: '/admin/pola-jam', file: '02-01-daftar-pola-jam.png' },
@@ -54,6 +63,15 @@ const TARGETS = {
   '03': [
     { account: 'guru', path: '/guru/jurnal-kbm', file: '03-01-daftar-sesi.png' },
     { account: 'guru', path: '/guru/jurnal-kbm/1', file: '03-02-detail-sesi.png' },
+    {
+      account: 'guru',
+      path: '/guru/jurnal-kbm/1',
+      file: '03-03-modal-scan-presensi.png',
+      before: async (page) => {
+        await page.click('button:has-text("Scan Presensi")');
+        await page.waitForTimeout(500);
+      },
+    },
   ],
   '04': [
     { account: 'akademik', path: '/admin/komponen-penilaian', file: '04-01-daftar-komponen.png' },
@@ -94,6 +112,7 @@ const TARGETS = {
     { account: 'siswa', path: '/admin/nilai-rapor-saya', file: '08-01-nilai-rapor-saya.png' },
     { account: 'siswa', path: '/admin/jadwal-pelajaran-saya', file: '08-02-jadwal-pelajaran-saya.png' },
     { account: 'siswa', path: '/admin/presensi-saya', file: '08-03-presensi-saya.png' },
+    { account: 'siswa', path: '/admin/kartu-saya', file: '08-04-kartu-digital-saya.png' },
   ],
   lampiran: [
     { account: 'yayasan', path: '/admin/pengaturan/akademik?switch_lembaga=1', file: 'lampiran-01-pengaturan-akademik-nasional.png' },
@@ -133,7 +152,9 @@ async function run() {
   }
   const babsToRun = requestedBab ? [requestedBab] : Object.keys(TARGETS);
 
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+  });
 
   let context = null;
   let page = null;
@@ -147,7 +168,7 @@ async function run() {
         if (context) {
           await context.close();
         }
-        context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+        context = await browser.newContext({ viewport: { width: 1440, height: 900 }, permissions: ['camera'] });
         page = await context.newPage();
         await login(page, target.account);
         currentAccount = target.account;
