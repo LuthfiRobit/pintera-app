@@ -33,7 +33,7 @@
                         <x-input-label value="Tahun Ajaran" />
                         <select x-ref="tahunAjaranSelect" x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-bold text-gray-900 transition focus:border-brand-500 focus:ring-brand-500">
                             @foreach ($tahunAjaranList as $tahunAjaran)
-                                <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
+                                <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}@if (Auth::user()->widestScopeLevel() === 'yayasan' && ! session('active_lembaga_id')) — {{ $tahunAjaran->lembaga->nama }}@endif</option>
                             @endforeach
                         </select>
                     </div>

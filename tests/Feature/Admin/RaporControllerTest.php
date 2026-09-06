@@ -373,6 +373,41 @@ it('calculates rapor grade using weighted component averages instead of unweight
     $response->assertSee('90');
 });
 
+it('labels tahun ajaran options with lembaga name when yayasan scope has no active lembaga selected', function () {
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_rapor_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaX = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SDIT Lembaga X']);
+    $lembagaY = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SDIT Lembaga Y']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembagaX->id, 'nama' => '2026/2027']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembagaY->id, 'nama' => '2026/2027']);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('admin.rapor.index'));
+
+    $response->assertOk();
+    $response->assertSee('2026/2027 — SDIT Lembaga X');
+    $response->assertSee('2026/2027 — SDIT Lembaga Y');
+});
+
+it('does not add a lembaga label to tahun ajaran options for a lembaga-scoped viewer', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SDIT Solo Lembaga']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027']);
+
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('2026/2027 — SDIT Solo Lembaga');
+    $response->assertSee('2026/2027');
+});
+
 it('renders the score inside the per-mapel matrix cell, not only in the class summary column (key-mismatch regression)', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

@@ -67,7 +67,7 @@ class RaporController extends BaseController
         }
 
         return view('portals.lembaga.akademik.rapor.index', array_merge([
-            'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
+            'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'kelasList' => $kelasList,
             'semesterList' => $semesterList,
