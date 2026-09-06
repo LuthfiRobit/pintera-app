@@ -22,7 +22,10 @@ class AttendanceQrScanController extends BaseController
         $this->authorize('kehadiran-sdm.catat');
 
         $lembagaId = $this->resolveLembagaId($request);
-        $titikAbsen = $lembagaId ? AttendancePoint::where('lembaga_id', $lembagaId)->where('is_active', true)->orderBy('nama')->get() : collect();
+
+        abort_if($lembagaId === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga sebelum scan QR.');
+
+        $titikAbsen = AttendancePoint::where('lembaga_id', $lembagaId)->where('is_active', true)->orderBy('nama')->get();
 
         return view('admin.kehadiran-sdm.scan', ['titikAbsen' => $titikAbsen]);
     }
