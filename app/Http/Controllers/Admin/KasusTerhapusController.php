@@ -5,6 +5,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -21,11 +22,16 @@ class KasusTerhapusController extends BaseController
         $user = auth()->user();
         $search = request('search');
         $perPage = in_array((int) request('per_page'), [10, 20, 25, 50]) ? (int) request('per_page') : 20;
+        $lembagaIdsYayasan = Lembaga::where('yayasan_id', $user->yayasan_id)->pluck('id');
+        $activeLembagaId = session('active_lembaga_id');
 
         // Query Dasar
         $baseQuery = Kasus::onlyTrashed()
             ->withoutGlobalScope(TenantScope::class)
-            ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where('lembaga_id', $user->lembaga_id));
+            ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where('lembaga_id', $user->lembaga_id))
+            ->when($user->widestScopeLevel() === 'yayasan', fn ($q) => $activeLembagaId
+                ? $q->where('lembaga_id', $activeLembagaId)
+                : $q->whereIn('lembaga_id', $lembagaIdsYayasan));
 
         // Statistik
         $totalTerhapus = (clone $baseQuery)->count();
