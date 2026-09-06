@@ -53,8 +53,18 @@ class KategoriAsetController extends Controller
             ]);
         }
 
-        $totalKategori = KategoriAset::where('lembaga_id', $lembagaId)->count();
-        $totalAset = \App\Domains\Sarpras\Models\AsetBarang::where('lembaga_id', $lembagaId)->count();
+        $statsFilter = function ($query) use ($lembagaId, $yayasanId) {
+            $query->where(function ($q) use ($lembagaId, $yayasanId) {
+                if ($lembagaId) {
+                    $q->where('lembaga_id', $lembagaId);
+                } elseif ($yayasanId) {
+                    $q->where('yayasan_id', $yayasanId);
+                }
+            });
+        };
+
+        $totalKategori = KategoriAset::where($statsFilter)->count();
+        $totalAset = \App\Domains\Sarpras\Models\AsetBarang::where($statsFilter)->count();
 
         return view('portals.lembaga.sarpras.kategori.index', [
             'kategoriList' => $kategoriList,
