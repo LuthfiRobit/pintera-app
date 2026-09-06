@@ -78,7 +78,7 @@ it('lets yayasan_super_admin see akses_klinis log rows across all lembaga', func
     Permission::firstOrCreate(['name' => 'kasus.lihat-log-akses', 'guard_name' => 'web']);
     $superAdminRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $superAdminRole->givePermissionTo('kasus.lihat-log-akses');
-    $superAdmin = User::factory()->create();
+    $superAdmin = User::factory()->create(['yayasan_id' => $yayasan->id]);
     $superAdmin->assignRole($superAdminRole);
 
     $response = $this->actingAs($superAdmin)->get(route('admin.kasus.log-akses'));
