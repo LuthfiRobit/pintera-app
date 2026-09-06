@@ -239,6 +239,62 @@ it('lets yayasan_super_admin see an orang tua regardless of which lembaga their 
     $response->assertOk()->assertSee('Wali Terlihat Super Admin');
 });
 
+it('does not leak an orang tua from a DIFFERENT yayasan to a yayasan_super_admin on the index page', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $orangTuaA = app(AkunOrangTuaGenerator::class)->buat('Wali Yayasan A Index', '3201234567897777', '081234567810');
+    $siswaA = Siswa::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $siswaA->orangTua()->attach($orangTuaA->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $orangTuaB = app(AkunOrangTuaGenerator::class)->buat('Wali Yayasan B Index', '3201234567898888', '081234567811');
+    $siswaB = Siswa::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $siswaB->orangTua()->attach($orangTuaB->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    Permission::firstOrCreate(['name' => 'orang-tua.view', 'guard_name' => 'web']);
+    $superAdminRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $superAdminRole->givePermissionTo('orang-tua.view');
+    $superAdminYayasanA = User::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $superAdminYayasanA->assignRole($superAdminRole);
+
+    $response = $this->actingAs($superAdminYayasanA)->get(route('admin.orang-tua.index'));
+
+    $response->assertOk();
+    $response->assertSee('Wali Yayasan A Index');
+    $response->assertDontSee('Wali Yayasan B Index');
+});
+
+it('narrows yayasan_super_admin orang tua index to the switcher-selected lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaX = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaY = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    Role::firstOrCreate(['name' => 'orang_tua', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $orangTuaX = app(AkunOrangTuaGenerator::class)->buat('Wali Lembaga X Index', '3201234567899999', '081234567812');
+    $siswaX = Siswa::factory()->create(['lembaga_id' => $lembagaX->id]);
+    $siswaX->orangTua()->attach($orangTuaX->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $orangTuaY = app(AkunOrangTuaGenerator::class)->buat('Wali Lembaga Y Index', '3201234567900000', '081234567813');
+    $siswaY = Siswa::factory()->create(['lembaga_id' => $lembagaY->id]);
+    $siswaY->orangTua()->attach($orangTuaY->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    Permission::firstOrCreate(['name' => 'orang-tua.view', 'guard_name' => 'web']);
+    $superAdminRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $superAdminRole->givePermissionTo('orang-tua.view');
+    $superAdmin = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $superAdmin->assignRole($superAdminRole);
+
+    session(['active_lembaga_id' => $lembagaX->id]);
+    $response = $this->actingAs($superAdmin)->get(route('admin.orang-tua.index'));
+
+    $response->assertOk();
+    $response->assertSee('Wali Lembaga X Index');
+    $response->assertDontSee('Wali Lembaga Y Index');
+});
+
 it('404s an operator_akademik trying to edit an orang tua linked only to siswa in a different lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSendiri = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

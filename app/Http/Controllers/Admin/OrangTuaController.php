@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Domains\Identity\Actions\UpdatePersonAction;
 use App\Domains\Identity\Models\Person;
+use App\Models\Lembaga;
 use App\Models\OrangTua;
 use App\Models\Scopes\TenantScope;
 use App\Models\User;
@@ -26,6 +27,8 @@ class OrangTuaController extends BaseController
 
         $user = auth()->user();
         $search = $request->query('search');
+        $lembagaIdsYayasan = Lembaga::where('yayasan_id', $user->yayasan_id)->pluck('id');
+        $activeLembagaId = session('active_lembaga_id');
 
         // OrangTua accounts always have lembaga_id = null by design, so eager-loading `user`
         // must bypass TenantScope or a lembaga-scoped viewer's own scope silently filters it
@@ -37,6 +40,15 @@ class OrangTuaController extends BaseController
             ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where(fn ($q2) => $q2
                 ->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
                 ->orWhereHas('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class)->where('siswa.lembaga_id', $user->lembaga_id))))
+            ->when($user->widestScopeLevel() === 'yayasan', fn ($q) => $q->where(function ($q2) use ($lembagaIdsYayasan, $activeLembagaId) {
+                $q2->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
+                    ->orWhereHas('siswa', function ($q3) use ($lembagaIdsYayasan, $activeLembagaId) {
+                        $q3->withoutGlobalScope(TenantScope::class);
+                        $activeLembagaId
+                            ? $q3->where('siswa.lembaga_id', $activeLembagaId)
+                            : $q3->whereIn('siswa.lembaga_id', $lembagaIdsYayasan);
+                    });
+            }))
             ->when($search, fn ($q) => $q->search($search))
             ->orderByNama()
             ->get();
