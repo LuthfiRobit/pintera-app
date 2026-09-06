@@ -217,6 +217,8 @@ Lanjutan audit menyeluruh berbantuan Laravel Boost terhadap area Akademik yang b
 
 > **Status Akhir Audit Sistematis Akademik Tahap 2**: ✅ **100% SELESAI (Kelompok A, B, C, Fix Kritis IDOR RPP, Fix Kurikulum Assignment, Fix Komponen Penilaian, Fix Ruangan Jadwal Pelajaran, Fix Rapor & Kenaikan Kelas, Fix PolaJam & Catatan Wali Kelas, Fix Privilege Escalation Approval Workflow)**. Full test suite: **2373 passed, 4 skipped, 0 failed (6498 assertions)**.
 
+> **Item dengan keputusan DITUNDA sengaja (bukan bug lolos, sudah dipertimbangkan & sengaja tidak dikerjakan)**: `Guru\JurnalKbmController::update()` tidak punya batas waktu (*cutoff*) untuk mengedit presensi/jurnal pada `SesiPembelajaran` lama — guru bisa mengubah data kehadiran dari sesi berbulan-bulan lalu tanpa batasan apa pun. Severity **Low** (risiko integritas data historis, BUKAN celah keamanan/IDOR — validasi kepemilikan lewat `authorizeMilikGuru()` sudah benar). Ditemukan saat Audit Tahap 2 (27-28 Agustus 2026), user memutuskan "catat saja" tanpa perbaikan langsung. Backlog terbuka, belum dijadwalkan — kandidat perbaikan: kunci edit setelah N hari, atau wajibkan alasan/approval kalau melewati cutoff.
+
 
 - **Poin #10 (Notifikasi Akademik)** — 📋 Backlog fitur terpisah.
 
