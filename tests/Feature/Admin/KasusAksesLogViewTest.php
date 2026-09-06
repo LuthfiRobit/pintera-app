@@ -183,6 +183,62 @@ it('reports totalAkses and aksesHariIni scoped to the viewing admin lembaga', fu
     $response->assertViewHas('aksesHariIni', 1);
 });
 
+it('does not leak akses_klinis log rows from a DIFFERENT yayasan to a yayasan_super_admin', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $yayasanB = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
+    $siswaA = Siswa::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $siswaB = Siswa::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $kasusA = Kasus::factory()->create(['siswa_id' => $siswaA->id, 'lembaga_id' => $lembagaA->id, 'status' => StatusKasus::Berjalan]);
+    $kasusB = Kasus::factory()->create(['siswa_id' => $siswaB->id, 'lembaga_id' => $lembagaB->id, 'status' => StatusKasus::Berjalan]);
+    bukaHalamanKasusSebagaiKonselor($kasusA, $lembagaA);
+    bukaHalamanKasusSebagaiKonselor($kasusB, $lembagaB);
+
+    Permission::firstOrCreate(['name' => 'kasus.lihat-log-akses', 'guard_name' => 'web']);
+    $superAdminRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $superAdminRole->givePermissionTo('kasus.lihat-log-akses');
+    $superAdminYayasanA = User::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $superAdminYayasanA->assignRole($superAdminRole);
+
+    $response = $this->actingAs($superAdminYayasanA)->get(route('admin.kasus.log-akses'));
+
+    $response->assertOk();
+    // totalAkses reflects the raw size of the (correctly or incorrectly) scoped Activity
+    // query directly — unlike assertSee/assertDontSee on $siswaB->nama_lengkap below, it is
+    // NOT masked by Person's own YayasanScope (which independently blanks a cross-yayasan
+    // siswa's displayed name to "—" regardless of whether this controller's own query leaks),
+    // so it is the assertion that actually proves the fix.
+    $response->assertViewHas('totalAkses', 1);
+    $response->assertSee($siswaA->nama_lengkap);
+    $response->assertDontSee($siswaB->nama_lengkap);
+});
+
+it('narrows yayasan_super_admin akses_klinis log to the switcher-selected lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaX = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaY = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswaX = Siswa::factory()->create(['lembaga_id' => $lembagaX->id]);
+    $siswaY = Siswa::factory()->create(['lembaga_id' => $lembagaY->id]);
+    $kasusX = Kasus::factory()->create(['siswa_id' => $siswaX->id, 'lembaga_id' => $lembagaX->id, 'status' => StatusKasus::Berjalan]);
+    $kasusY = Kasus::factory()->create(['siswa_id' => $siswaY->id, 'lembaga_id' => $lembagaY->id, 'status' => StatusKasus::Berjalan]);
+    bukaHalamanKasusSebagaiKonselor($kasusX, $lembagaX);
+    bukaHalamanKasusSebagaiKonselor($kasusY, $lembagaY);
+
+    Permission::firstOrCreate(['name' => 'kasus.lihat-log-akses', 'guard_name' => 'web']);
+    $superAdminRole = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $superAdminRole->givePermissionTo('kasus.lihat-log-akses');
+    $superAdmin = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $superAdmin->assignRole($superAdminRole);
+
+    session(['active_lembaga_id' => $lembagaX->id]);
+    $response = $this->actingAs($superAdmin)->get(route('admin.kasus.log-akses'));
+
+    $response->assertOk();
+    $response->assertSee($siswaX->nama_lengkap);
+    $response->assertDontSee($siswaY->nama_lengkap);
+});
+
 it('403s a user without kasus.lihat-log-akses permission', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);

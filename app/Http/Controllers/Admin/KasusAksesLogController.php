@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Kasus\Models\Kasus;
+use App\Models\Lembaga;
 use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Routing\Controller as BaseController;
@@ -20,6 +21,8 @@ class KasusAksesLogController extends BaseController
         $user = auth()->user();
         $search = request('search');
         $perPage = in_array((int) request('per_page'), [10, 20, 25, 50]) ? (int) request('per_page') : 20;
+        $lembagaIdsYayasan = Lembaga::where('yayasan_id', $user->yayasan_id)->pluck('id');
+        $activeLembagaId = session('active_lembaga_id');
 
         // Query dasar
         $baseQuery = Activity::query()
@@ -28,6 +31,16 @@ class KasusAksesLogController extends BaseController
                 'subject',
                 [Kasus::class],
                 fn ($subQuery) => $subQuery->withoutGlobalScopes()->withTrashed()->where('lembaga_id', $user->lembaga_id)
+            ))
+            ->when($user->widestScopeLevel() === 'yayasan', fn ($q) => $q->whereHasMorph(
+                'subject',
+                [Kasus::class],
+                function ($subQuery) use ($lembagaIdsYayasan, $activeLembagaId) {
+                    $subQuery->withoutGlobalScopes()->withTrashed();
+                    $activeLembagaId
+                        ? $subQuery->where('lembaga_id', $activeLembagaId)
+                        : $subQuery->whereIn('lembaga_id', $lembagaIdsYayasan);
+                }
             ));
 
         // Statistik
