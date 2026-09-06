@@ -22,11 +22,12 @@ Dibahas juga (dan sengaja DIPISAH ke luar cakupan spec ini, jadi Proyek B & C te
 ## 3. Arsitektur & Komponen
 
 ### 3.1 Migrasi & Model
-- Migrasi baru: tambah kolom `batas_edit_absen_hari` (integer, default `3`, `->after('hari_libur_mingguan')` atau kolom relevan lain) ke tabel `lembaga`.
-- `App\Models\Lembaga`: tambah `batas_edit_absen_hari` ke `$fillable` (kalau model ini pakai fillable — PERIKSA LANGSUNG konvensi model ini saat implementasi).
+- Migrasi baru: tambah kolom `batas_edit_absen_hari` (integer, default `3`, `->after('hari_libur_mingguan')`) ke tabel `lembaga`.
+- `App\Models\Lembaga` sudah memakai `$fillable` (dikonfirmasi langsung ke kode) — tambah `batas_edit_absen_hari` ke array itu.
 
 ### 3.2 Pengaturan Admin
-- **Action baru** `App\Domains\Akademik\Actions\Kalender\UpdateBatasEditAbsenLembagaAction` (namespace sama dengan `UpdateHariAktifLembagaAction` yang sudah ada — folder `Kalender` dipertahankan karena ini pengaturan lembaga yang sama, walau secara literal bukan soal kalender; PERIKSA LANGSUNG apakah folder ini nama yang tepat atau perlu folder baru saat implementasi) — `execute(Lembaga $lembaga, int $batasHari): Lembaga`.
+- **DTO baru** `App\Domains\Akademik\DataTransferObjects\BatasEditAbsenLembagaData` — `final readonly class` dengan 1 properti `public int $batasHari`, persis pola `HariAktifLembagaData` (sibling DTO yang sudah ada, dikonfirmasi langsung ke kode).
+- **Action baru** `App\Domains\Akademik\Actions\Kalender\UpdateBatasEditAbsenLembagaAction` — namespace `Kalender` dikonfirmasi adalah lokasi asli `UpdateHariAktifLembagaAction` (bukan tebakan). Signature: `execute(Lembaga $lembaga, BatasEditAbsenLembagaData $data): Lembaga` — menerima DTO, BUKAN scalar `int` langsung, supaya konsisten dengan pola Action sejenis di domain ini.
 - **Modifikasi** `PengaturanAkademikController`: tambah method baru `updateBatasEditAbsen()` (pola sama persis `updateHariAktif()`), validasi `batas_edit_absen_hari` integer 1-365, permission `pengaturan-akademik.kelola` (reuse, bukan permission baru).
 - **Modifikasi view** `portals.lembaga.akademik.pengaturan.akademik` — tambah 1 field baru (input angka) untuk `batas_edit_absen_hari`, di bagian yang sama dengan pengaturan hari aktif.
 - **Route baru** di file route Pengaturan Akademik yang sudah ada.
