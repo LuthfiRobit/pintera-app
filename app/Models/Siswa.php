@@ -4,6 +4,7 @@
 
 namespace App\Models;
 
+use App\Domains\Akademik\Models\KartuSiswa;
 use App\Domains\Identity\Models\Person;
 use App\Domains\Keuangan\Models\SiswaKeringanan;
 use App\Domains\Keuangan\Models\Tagihan;
@@ -86,6 +87,11 @@ class Siswa extends Model
     public function kelas(): BelongsTo
     {
         return $this->belongsTo(Kelas::class);
+    }
+
+    public function kartuSiswa(): HasMany
+    {
+        return $this->hasMany(KartuSiswa::class);
     }
 
     public function kelasTerakhir(): BelongsTo

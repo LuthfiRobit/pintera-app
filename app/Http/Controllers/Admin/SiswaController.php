@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Domains\Akademik\Actions\KartuSiswa\GenerateUlangKartuQrSiswaAction;
+use App\Domains\Akademik\Actions\KartuSiswa\NonaktifkanKartuQrSiswaAction;
 use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Domains\Identity\Actions\UpdatePersonAction;
@@ -328,5 +330,23 @@ class SiswaController extends BaseController
         }
 
         return $data;
+    }
+
+    public function generateUlangKartu(Siswa $siswa, GenerateUlangKartuQrSiswaAction $action): RedirectResponse
+    {
+        $this->authorize('siswa.edit');
+
+        $action->execute($siswa);
+
+        return redirect()->route('admin.siswa.edit', $siswa)->with('status', 'Kode QR siswa berhasil dibuat ulang.');
+    }
+
+    public function nonaktifkanKartu(Siswa $siswa, NonaktifkanKartuQrSiswaAction $action): RedirectResponse
+    {
+        $this->authorize('siswa.edit');
+
+        $action->execute($siswa);
+
+        return redirect()->route('admin.siswa.edit', $siswa)->with('status', 'Kartu digital siswa berhasil dinonaktifkan.');
     }
 }

@@ -27,3 +27,5 @@ Route::get('siswa-import', [SiswaImportController::class, 'index'])->name('siswa
 Route::get('siswa-import/template', [SiswaImportController::class, 'template'])->name('siswa.import.template');
 Route::post('siswa-import/preview', [SiswaImportController::class, 'preview'])->name('siswa.import.preview');
 Route::post('siswa-import/confirm', [SiswaImportController::class, 'confirm'])->name('siswa.import.confirm');
+Route::post('siswa/{siswa}/kartu-digital/generate-ulang', [SiswaController::class, 'generateUlangKartu'])->name('siswa.kartu-digital.generate-ulang');
+Route::post('siswa/{siswa}/kartu-digital/nonaktifkan', [SiswaController::class, 'nonaktifkanKartu'])->name('siswa.kartu-digital.nonaktifkan');
