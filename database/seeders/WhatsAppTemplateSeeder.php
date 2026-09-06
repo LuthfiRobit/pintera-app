@@ -59,5 +59,10 @@ class WhatsAppTemplateSeeder extends Seeder
             'isi_template' => 'Tagihan {jenis_tagihan} akan jatuh tempo pada {jatuh_tempo}. Segera lakukan pembayaran.',
             'deskripsi' => 'Dikirim H-3 dan H-1 sebelum tanggal jatuh tempo tagihan.',
         ]);
+
+        WhatsAppTemplate::firstOrCreate(['kode' => 'presensi_pengecualian'], [
+            'isi_template' => 'Yth. Orang Tua {nama_siswa}, presensi tercatat {status} pada {tanggal}. Keterangan: {keterangan}.',
+            'deskripsi' => 'Dikirim ke kontak utama orang tua saat presensi siswa dicatat guru sebagai Izin/Sakit/Alpa/Terlambat. Placeholder tersedia: {nama_siswa}, {status}, {tanggal}, {keterangan}.',
+        ]);
     }
 }
