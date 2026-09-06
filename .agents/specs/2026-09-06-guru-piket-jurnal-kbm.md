@@ -41,7 +41,7 @@ Rangkaian ketiga dari diskusi presensi/jurnal KBM sesi ini (setelah Proyek A —
 
 ### 3.2 Actions
 
-**`GenerateJadwalPiketHarianAction`** — dipanggil saat `JadwalPiketMingguan` pertama dibuat untuk 1 semester. Untuk tiap tanggal dalam rentang `semester.tanggal_mulai` s.d. `semester.tanggal_selesai` yang cocok `hari`-nya, DAN bukan hari libur (`KalenderAkademik`), buat 1 baris `PiketHarian` (`sumber = 'dari_jadwal_mingguan'`, `jadwal_piket_mingguan_id` = baris asal).
+**`GenerateJadwalPiketHarianAction`** — dipanggil saat lembaga BELUM punya `PiketHarian` sama sekali untuk semester itu (lihat kriteria pemanggilan eksplisit di §3.4). Untuk tiap tanggal dalam rentang `semester.tanggal_mulai` s.d. `semester.tanggal_selesai` yang cocok `hari`-nya, DAN bukan hari libur (`KalenderAkademik`), buat 1 baris `PiketHarian` (`sumber = 'dari_jadwal_mingguan'`, `jadwal_piket_mingguan_id` = baris asal). **WAJIB idempotent**: pakai `firstOrCreate(['lembaga_id' => ..., 'guru_id' => ..., 'tanggal' => ...], [...])` (dilindungi unique constraint `(lembaga_id, guru_id, tanggal)`), BUKAN asumsi insert bersih — jaring pengaman kedua kalau kriteria pemanggilan di §3.4 suatu saat salah diterapkan di titik panggil lain, atau ada race condition kecil.
 
 **`RegenerateJadwalPiketHarianAction`** — dipanggil SETIAP KALI `JadwalPiketMingguan` untuk 1 semester diedit (tambah/ubah/hapus baris pola mingguan). 3 langkah bernomor, WAJIB urutan ini, di dalam **1 `DB::transaction()`**:
 1. **Ambil kandidat**: query `PiketHarian::where('lembaga_id', $lembagaId)->where('tanggal', '>=', now()->toDateString())->where('sumber', 'dari_jadwal_mingguan')->get()`.
@@ -110,7 +110,8 @@ final class PiketAccessChecker
 
 ### 3.4 Admin — Setup Jadwal Piket
 
-- Halaman admin baru (rute `admin/piket-guru`, permission `piket.kelola`): kelola `JadwalPiketMingguan` (pilih guru + hari + semester) — submit memicu `GenerateJadwalPiketHarianAction` (create) atau `RegenerateJadwalPiketHarianAction` (update), **DIPANGGIL SINKRON di controller yang sama, dalam request/response cycle yang sama** — BUKAN `dispatch()`, BUKAN job/queue, BUKAN `ShouldQueue`. Controller memanggil Action itu langsung sebelum `return redirect()`, sama seperti pola Action lain di seluruh project ini (`UpdateHariAktifLembagaAction`, dst — tidak ada satu pun Action akademik di project ini yang di-queue).
+- Halaman admin baru (rute `admin/piket-guru`, permission `piket.kelola`): kelola `JadwalPiketMingguan` (pilih guru + hari + semester) — submit memicu `GenerateJadwalPiketHarianAction` atau `RegenerateJadwalPiketHarianAction`, **DIPANGGIL SINKRON di controller yang sama, dalam request/response cycle yang sama** — BUKAN `dispatch()`, BUKAN job/queue, BUKAN `ShouldQueue`. Controller memanggil Action itu langsung sebelum `return redirect()`, sama seperti pola Action lain di seluruh project ini (`UpdateHariAktifLembagaAction`, dst — tidak ada satu pun Action akademik di project ini yang di-queue).
+- **Kriteria PASTI pemilihan Action** (berbasis kondisi data, BUKAN jenis form action "tambah baris" vs "pertama dibuat" — itu ambigu): sebelum memanggil, controller cek `PiketHarian::where('lembaga_id', $lembagaId)->where('tanggal', '>=', $semester->tanggal_mulai)->exists()`. Kalau `false` (lembaga ini belum PERNAH punya `PiketHarian` untuk semester itu sama sekali) → panggil `GenerateJadwalPiketHarianAction`. Kalau `true` (sudah ada, apa pun jumlahnya) → SELALU panggil `RegenerateJadwalPiketHarianAction`, TIDAK PEDULI jenis perubahan yang terjadi di form `JadwalPiketMingguan` (tambah baris baru, ubah baris existing, atau hapus baris) — semuanya lewat jalur Regenerate begitu sudah pernah ada data, supaya baris "beku" (§2.5) selalu terlindungi konsisten.
 - Halaman terpisah/tab untuk override manual `PiketHarian` per-tanggal (edit/hapus baris individual).
 
 ## 4. Skenario Test
@@ -123,9 +124,11 @@ final class PiketAccessChecker
 6. `index()` — guru YANG PIKET hari ini → seksi "Sesi Piket Hari Ini" muncul di HTML (assert `assertSee`), berisi sesi guru lain yang relevan.
 7. `index()` — guru YANG BUKAN piket hari ini → seksi "Sesi Piket Hari Ini" **TIDAK TERENDER SAMA SEKALI** di level HTML (**test eksplisit wajib**: `assertDontSee('Sesi Piket Hari Ini')`, bukan cuma cek variabel controller kosong).
 8. `JadwalPiketMingguanController` (admin) — submit create/update memicu Generate/Regenerate Action secara SINKRON dalam request yang sama (test: assert response balik SETELAH baris `PiketHarian` sudah benar-benar ada di DB, tanpa perlu `Bus::fake()`/queue assertion — kalau ada `Bus::fake()` dipakai dan test masih lolos, itu tanda salah, karena action ini TIDAK di-dispatch sebagai job).
-9. Regresi — `RecordJurnalDanPresensiAction` dipanggil TANPA parameter `diisiOlehGuruId` (pemanggilan lama, guru pemilik asli) tetap berjalan identik seperti sebelumnya, notifikasi WA (A2) tidak terpengaruh.
-10. Regresi — fitur Scan Presensi Kartu Digital Siswa (A3, `resolveKartu()`) tetap berfungsi untuk guru pemilik MAUPUN guru piket yang sedang mengisi sesi pengganti (karena `authorizeMilikGuru()` dipakai `resolveKartu()` juga, otomatis ikut mendukung piket).
-11. Permission `piket.kelola` — user tanpa permission ini ditolak akses halaman admin `admin/piket-guru`.
+9. Kriteria pemilihan Action (§3.4) — lembaga BELUM punya `PiketHarian` sama sekali utk semester itu → `GenerateJadwalPiketHarianAction` yang terpanggil. Lembaga SUDAH punya `PiketHarian` (walau cuma 1 baris) utk semester itu, lalu admin TAMBAH baris baru (bukan edit baris lama) → tetap `RegenerateJadwalPiketHarianAction` yang terpanggil, BUKAN Generate (test eksplisit skenario "tambah baris di semester yang sudah berjalan" ini, pastikan baris lama yang sudah dipakai/`override_manual` tetap tidak tersentuh).
+10. `GenerateJadwalPiketHarianAction` dipanggil 2x berturut-turut dengan input identik (simulasi race condition/kesalahan titik panggil) → panggilan kedua TIDAK membuat baris duplikat (idempotent via `firstOrCreate`), jumlah baris `PiketHarian` di DB tetap sama setelah kedua panggilan.
+11. Regresi — `RecordJurnalDanPresensiAction` dipanggil TANPA parameter `diisiOlehGuruId` (pemanggilan lama, guru pemilik asli) tetap berjalan identik seperti sebelumnya, notifikasi WA (A2) tidak terpengaruh.
+12. Regresi — fitur Scan Presensi Kartu Digital Siswa (A3, `resolveKartu()`) tetap berfungsi untuk guru pemilik MAUPUN guru piket yang sedang mengisi sesi pengganti (karena `authorizeMilikGuru()` dipakai `resolveKartu()` juga, otomatis ikut mendukung piket).
+13. Permission `piket.kelola` — user tanpa permission ini ditolak akses halaman admin `admin/piket-guru`.
 
 ## 5. Di Luar Cakupan (Fase 2 — Backlog Terpisah, TIDAK Dikerjakan Sekarang)
 
