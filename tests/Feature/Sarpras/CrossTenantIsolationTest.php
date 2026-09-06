@@ -149,4 +149,68 @@ class CrossTenantIsolationTest extends TestCase
 
         $this->assertDatabaseHas('kategori_aset', ['id' => $this->kategori->id, 'kode_kategori' => 'KAT-RAHASIA']);
     }
+
+    public function test_kartu_ringkasan_gedung_menghitung_agregat_semua_lembaga_saat_yayasan_mode_semua_lembaga(): void
+    {
+        $yayasan = Yayasan::create(['nama' => 'Yayasan Kartu Ringkasan']);
+        $lembagaX = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga X', 'jenjang' => 'SD', 'npsn' => '9001', 'status_aktif' => true]);
+        $lembagaY = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga Y', 'jenjang' => 'SD', 'npsn' => '9002', 'status_aktif' => true]);
+
+        Gedung::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaX->id, 'kode_gedung' => 'GD-X', 'nama_gedung' => 'Gedung X', 'jumlah_lantai' => 2, 'is_aktif' => true]);
+        Gedung::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaY->id, 'kode_gedung' => 'GD-Y', 'nama_gedung' => 'Gedung Y', 'jumlah_lantai' => 3, 'is_aktif' => true]);
+
+        $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_gedung_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+        $role->givePermissionTo(['sarpras.gedung.view']);
+        $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+        $user->assignRole($role);
+
+        $response = $this->actingAs($user)->get(route('admin.sarpras.gedung.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('totalGedung', 2);
+        $response->assertViewHas('totalLantai', 5);
+    }
+
+    public function test_kartu_ringkasan_ruangan_menghitung_agregat_semua_lembaga_saat_yayasan_mode_semua_lembaga(): void
+    {
+        $yayasan = Yayasan::create(['nama' => 'Yayasan Kartu Ringkasan Ruangan']);
+        $lembagaX = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga X Ruangan', 'jenjang' => 'SD', 'npsn' => '9101', 'status_aktif' => true]);
+        $lembagaY = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga Y Ruangan', 'jenjang' => 'SD', 'npsn' => '9102', 'status_aktif' => true]);
+
+        $gedungX = Gedung::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaX->id, 'kode_gedung' => 'GD-RX', 'nama_gedung' => 'Gedung RX', 'jumlah_lantai' => 1, 'is_aktif' => true]);
+        $gedungY = Gedung::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaY->id, 'kode_gedung' => 'GD-RY', 'nama_gedung' => 'Gedung RY', 'jumlah_lantai' => 1, 'is_aktif' => true]);
+
+        Ruangan::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaX->id, 'gedung_id' => $gedungX->id, 'kode_ruangan' => 'R-X1', 'nama_ruangan' => 'Ruang X1', 'lantai' => 1, 'jenis_ruangan' => JenisRuangan::KelasTeori, 'is_shared' => false, 'is_aktif' => true]);
+        Ruangan::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaY->id, 'gedung_id' => $gedungY->id, 'kode_ruangan' => 'R-Y1', 'nama_ruangan' => 'Ruang Y1', 'lantai' => 1, 'jenis_ruangan' => JenisRuangan::KelasTeori, 'is_shared' => false, 'is_aktif' => true]);
+
+        $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_ruangan_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+        $role->givePermissionTo(['sarpras.ruangan.view']);
+        $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+        $user->assignRole($role);
+
+        $response = $this->actingAs($user)->get(route('admin.sarpras.ruangan.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('totalRuangan', 2);
+    }
+
+    public function test_kartu_ringkasan_kategori_aset_menghitung_agregat_semua_lembaga_saat_yayasan_mode_semua_lembaga(): void
+    {
+        $yayasan = Yayasan::create(['nama' => 'Yayasan Kartu Ringkasan Kategori']);
+        $lembagaX = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga X Kategori', 'jenjang' => 'SD', 'npsn' => '9201', 'status_aktif' => true]);
+        $lembagaY = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'Lembaga Y Kategori', 'jenjang' => 'SD', 'npsn' => '9202', 'status_aktif' => true]);
+
+        KategoriAset::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaX->id, 'kode_kategori' => 'KAT-X', 'nama_kategori' => 'Kategori X']);
+        KategoriAset::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembagaY->id, 'kode_kategori' => 'KAT-Y', 'nama_kategori' => 'Kategori Y']);
+
+        $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_kategori_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+        $role->givePermissionTo(['sarpras.kategori.view']);
+        $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+        $user->assignRole($role);
+
+        $response = $this->actingAs($user)->get(route('admin.sarpras.kategori.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('totalKategori', 2);
+    }
 }
