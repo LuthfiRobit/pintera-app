@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\FaseDefaultMappingController;
 use App\Http\Controllers\Admin\JadwalPelajaranController;
+use App\Http\Controllers\Admin\JadwalPiketMingguanController;
 use App\Http\Controllers\Admin\JamPelajaranController;
 use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
@@ -71,3 +72,10 @@ Route::get('jadwal-pelajaran/{jadwalPelajaran}/edit', [JadwalPelajaranController
 Route::put('jadwal-pelajaran/{jadwalPelajaran}', [JadwalPelajaranController::class, 'update'])->name('jadwal-pelajaran.update');
 Route::delete('jadwal-pelajaran/{jadwalPelajaran}', [JadwalPelajaranController::class, 'destroy'])->name('jadwal-pelajaran.destroy');
 Route::post('jadwal-pelajaran/duplicate', [JadwalPelajaranController::class, 'duplicate'])->name('jadwal-pelajaran.duplicate');
+
+Route::get('piket-guru', [JadwalPiketMingguanController::class, 'index'])->name('piket-guru.index');
+Route::get('piket-guru/create', [JadwalPiketMingguanController::class, 'create'])->name('piket-guru.create');
+Route::post('piket-guru', [JadwalPiketMingguanController::class, 'store'])->name('piket-guru.store');
+Route::get('piket-guru/{jadwalPiketMingguan}/edit', [JadwalPiketMingguanController::class, 'edit'])->name('piket-guru.edit');
+Route::put('piket-guru/{jadwalPiketMingguan}', [JadwalPiketMingguanController::class, 'update'])->name('piket-guru.update');
+Route::delete('piket-guru/{jadwalPiketMingguan}', [JadwalPiketMingguanController::class, 'destroy'])->name('piket-guru.destroy');

@@ -59,7 +59,7 @@
 **Interfaces:**
 - Produces: model `JadwalPiketMingguan` (`$fillable`: `lembaga_id`, `guru_id`, `hari`, `semester_id`, `dibuat_oleh_user_id`), model `PiketHarian` (`$fillable`: `lembaga_id`, `guru_id`, `tanggal`, `sumber`, `jadwal_piket_mingguan_id`) — dipakai semua task berikutnya. `SesiPembelajaran.diisi_oleh_guru_id` (nullable int) — dipakai Task 3, 6.
 
-- [ ] **Step 1: Buat migrasi `jadwal_piket_mingguan`**
+- [x] **Step 1: Buat migrasi `jadwal_piket_mingguan`**
 
 ```bash
 php artisan make:migration create_jadwal_piket_mingguan_table --no-interaction
@@ -98,7 +98,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 2: Buat migrasi `piket_harian`**
+- [x] **Step 2: Buat migrasi `piket_harian`**
 
 ```bash
 php artisan make:migration create_piket_harian_table --no-interaction
@@ -137,7 +137,7 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 3: Buat migrasi kolom `diisi_oleh_guru_id`**
+- [x] **Step 3: Buat migrasi kolom `diisi_oleh_guru_id`**
 
 ```bash
 php artisan make:migration add_diisi_oleh_guru_id_to_sesi_pembelajaran_table --no-interaction
@@ -170,12 +170,12 @@ return new class extends Migration
 };
 ```
 
-- [ ] **Step 4: Jalankan migrasi**
+- [x] **Step 4: Jalankan migrasi**
 
 Run: `php artisan migrate`
 Expected: ketiga migrasi baru `Migrated:` tanpa error.
 
-- [ ] **Step 4b: Tambah `diisi_oleh_guru_id` ke `$fillable` model `SesiPembelajaran`**
+- [x] **Step 4b: Tambah `diisi_oleh_guru_id` ke `$fillable` model `SesiPembelajaran`**
 
 Baca `app/Domains/Akademik/Models/SesiPembelajaran.php` (isi `$fillable` saat ini: `['jadwal_pelajaran_id', 'kelas_id', 'guru_id', 'mata_pelajaran_id', 'lembaga_id', 'tanggal', 'jam_mulai', 'jam_selesai', 'materi', 'status']`), tambahkan `'diisi_oleh_guru_id'` ke array itu:
 
@@ -188,7 +188,7 @@ Baca `app/Domains/Akademik/Models/SesiPembelajaran.php` (isi `$fillable` saat in
 
 **WAJIB dikerjakan sekarang (Task 1), bukan ditunda ke Task 6** — Task 3 (Regenerate Action) sudah butuh mass-assign field ini lewat factory di testnya.
 
-- [ ] **Step 5: Tulis test yang gagal**
+- [x] **Step 5: Tulis test yang gagal**
 
 ```php
 <?php
@@ -258,12 +258,12 @@ it('menolak PiketHarian duplikat (guru+tanggal+lembaga sama)', function () {
 });
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan gagal**
+- [x] **Step 6: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/PiketModelsTest.php --compact`
 Expected: FAIL — `Class "App\Domains\Akademik\Models\JadwalPiketMingguan" not found`.
 
-- [ ] **Step 7: Tulis model `JadwalPiketMingguan`**
+- [x] **Step 7: Tulis model `JadwalPiketMingguan`**
 
 ```php
 <?php
@@ -307,7 +307,7 @@ class JadwalPiketMingguan extends Model
 }
 ```
 
-- [ ] **Step 8: Tulis model `PiketHarian`**
+- [x] **Step 8: Tulis model `PiketHarian`**
 
 ```php
 <?php
@@ -351,12 +351,12 @@ class PiketHarian extends Model
 }
 ```
 
-- [ ] **Step 9: Jalankan test, pastikan lulus**
+- [x] **Step 9: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/PiketModelsTest.php --compact`
 Expected: **4 passed**.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add database/migrations/2026_09_06_000003_create_jadwal_piket_mingguan_table.php database/migrations/2026_09_06_000004_create_piket_harian_table.php database/migrations/2026_09_06_000005_add_diisi_oleh_guru_id_to_sesi_pembelajaran_table.php app/Domains/Akademik/Models/JadwalPiketMingguan.php app/Domains/Akademik/Models/PiketHarian.php app/Domains/Akademik/Models/SesiPembelajaran.php tests/Unit/Domains/Akademik/PiketModelsTest.php
@@ -377,7 +377,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Consumes: `KalenderAkademikResolver::resolve(Lembaga $lembaga, CarbonInterface $tanggal): array{libur: bool, alasan: string}` (Service SUDAH ADA, `app/Domains/Akademik/Services/KalenderAkademikResolver.php` — PERIKSA LANGSUNG file itu sebelum menulis kode, sudah dipakai `SesiPembelajaranGenerator` untuk kebutuhan sama).
 - Produces: `GenerateJadwalPiketHarianAction::execute(JadwalPiketMingguan $jadwal): void` — dipakai Task 9 (controller admin) dan Task 3 (dipanggil ulang oleh Regenerate).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -482,12 +482,12 @@ it('idempotent -- dipanggil 2x tidak membuat baris duplikat', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/GenerateJadwalPiketHarianActionTest.php --compact`
 Expected: FAIL — `Class "App\Domains\Akademik\Actions\Piket\GenerateJadwalPiketHarianAction" not found`.
 
-- [ ] **Step 3: Tulis implementasi**
+- [x] **Step 3: Tulis implementasi**
 
 ```php
 <?php
@@ -553,12 +553,12 @@ final class GenerateJadwalPiketHarianAction
 
 **PENTING**: kode di atas ditulis berdasarkan pembacaan `KalenderAkademikResolver::resolve()` saat spec/plan ditulis (signature `resolve(Lembaga $lembaga, CarbonInterface $tanggal): array{libur: bool, alasan: string}`, tanpa dependency constructor lain). Implementer WAJIB baca ulang file `app/Domains/Akademik/Services/KalenderAkademikResolver.php` sebelum implementasi — kalau ternyata berubah, sesuaikan.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/GenerateJadwalPiketHarianActionTest.php --compact`
 Expected: **3 passed**.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/Piket/GenerateJadwalPiketHarianAction.php tests/Unit/Domains/Akademik/GenerateJadwalPiketHarianActionTest.php
@@ -579,7 +579,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Consumes: `GenerateJadwalPiketHarianAction` (Task 2, dipakai ulang untuk langkah generate-ulang), `PiketHarian`, `SesiPembelajaran` (kolom `diisi_oleh_guru_id`, Task 1).
 - Produces: `RegenerateJadwalPiketHarianAction::execute(int $lembagaId, int $semesterId): void` — dipakai Task 9 (controller admin).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -672,12 +672,12 @@ it('baris yang SUDAH DIPAKAI (ada SesiPembelajaran.diisi_oleh_guru_id cocok) TID
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/RegenerateJadwalPiketHarianActionTest.php --compact`
 Expected: FAIL — `Class "App\Domains\Akademik\Actions\Piket\RegenerateJadwalPiketHarianAction" not found`.
 
-- [ ] **Step 3: Tulis implementasi — PERSIS 3 langkah bernomor di spec §3.2**
+- [x] **Step 3: Tulis implementasi — PERSIS 3 langkah bernomor di spec §3.2**
 
 ```php
 <?php
@@ -731,12 +731,12 @@ final class RegenerateJadwalPiketHarianAction
 
 **Catatan urutan (WAJIB, jangan diubah)**: langkah 1 (query kandidat) dan langkah 2 (filter) HARUS selesai SEBELUM baris `delete()` di langkah 3 dijalankan — kode di atas sudah urut begitu (variabel `$bolehDihapus` dihitung penuh dulu, baru dipakai untuk delete). `GenerateJadwalPiketHarianAction::execute()` (Task 2) sendiri idempotent (`firstOrCreate`), jadi generate ulang di langkah 3 otomatis SKIP tanggal yang masih ada barisnya (baik karena `override_manual`, tanggal lampau, atau sudah dipakai — semuanya tidak ikut terhapus, jadi `firstOrCreate` di generate ulang menemukan baris itu sudah ada dan tidak menimpanya).
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/RegenerateJadwalPiketHarianActionTest.php --compact`
 Expected: **4 passed**.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/Piket/RegenerateJadwalPiketHarianAction.php tests/Unit/Domains/Akademik/RegenerateJadwalPiketHarianActionTest.php
@@ -757,7 +757,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Consumes: `PiketHarian` (Task 1), `SesiPembelajaran`, `Guru`.
 - Produces: `PiketAccessChecker::bisaAkses(SesiPembelajaran $sesi, Guru $guru): bool` — dipakai Task 5.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -827,12 +827,12 @@ it('guru bukan pemilik & bukan piket TIDAK bisa akses', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/PiketAccessCheckerTest.php --compact`
 Expected: FAIL — `Class "App\Domains\Akademik\Services\PiketAccessChecker" not found`.
 
-- [ ] **Step 3: Tulis implementasi**
+- [x] **Step 3: Tulis implementasi**
 
 ```php
 <?php
@@ -863,12 +863,12 @@ final class PiketAccessChecker
 
 **PENTING**: baris `->where('lembaga_id', $sesi->lembaga_id)` WAJIB ada persis seperti ini — scoping ke lembaga milik SESI, BUKAN lembaga milik guru yang login. Ini nama class TIDAK mengikuti konvensi suffix Resolver/Generator/Aggregator/Engine di `.ai/rules/services.md` — SENGAJA, nama ini sudah ditentukan eksplisit di spec yang disetujui user, JANGAN diganti nama unilateral.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Unit/Domains/Akademik/PiketAccessCheckerTest.php --compact`
 Expected: **4 passed**.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Domains/Akademik/Services/PiketAccessChecker.php tests/Unit/Domains/Akademik/PiketAccessCheckerTest.php
@@ -892,7 +892,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 **PENTING**: baca dulu isi KEDUA file ini SEKARANG (sudah berubah beberapa kali sesi-sesi sebelumnya untuk fitur Kartu Digital Siswa & Batas Edit Presensi) — JANGAN asumsi dari plan-plan sebelumnya, verifikasi state terkini.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -969,12 +969,12 @@ it('guru piket lembaga LAIN TIDAK BISA akses sesi', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmPiketAksesTest.php --compact`
 Expected: FAIL — semua test gagal (guru piket ditolak 403 karena guard lama cuma cek `guru_id === $guru->id`).
 
-- [ ] **Step 3: Modifikasi `authorizeMilikGuru()`**
+- [x] **Step 3: Modifikasi `authorizeMilikGuru()`**
 
 Ganti method `authorizeMilikGuru()` di `app/Http/Controllers/Guru/Akademik/JurnalKbmController.php`:
 
@@ -989,7 +989,7 @@ Ganti method `authorizeMilikGuru()` di `app/Http/Controllers/Guru/Akademik/Jurna
 
 Tambahkan `use App\Domains\Akademik\Services\PiketAccessChecker;` ke bagian atas file, lalu sederhanakan referensi FQCN di atas jadi `PiketAccessChecker::class` (ikuti gaya file ini yang sudah pakai `use` untuk class lain).
 
-- [ ] **Step 4: Modifikasi `UpdateJurnalPresensiRequest::authorize()`**
+- [x] **Step 4: Modifikasi `UpdateJurnalPresensiRequest::authorize()`**
 
 Baca dulu isi file `app/Http/Requests/Akademik/UpdateJurnalPresensiRequest.php` (isi saat ini: `authorize()` cuma cek `$guru !== null && $sesi instanceof SesiPembelajaran && $sesi->guru_id === $guru->id`). Ganti jadi:
 
@@ -1038,17 +1038,17 @@ final class UpdateJurnalPresensiRequest extends FormRequest
 }
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmPiketAksesTest.php --compact`
 Expected: **3 passed**.
 
-- [ ] **Step 6: Jalankan ulang SEMUA test existing yang bergantung ke `authorizeMilikGuru()`/`UpdateJurnalPresensiRequest`, pastikan tidak regresi**
+- [x] **Step 6: Jalankan ulang SEMUA test existing yang bergantung ke `authorizeMilikGuru()`/`UpdateJurnalPresensiRequest`, pastikan tidak regresi**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmControllerTest.php tests/Feature/Guru/JurnalKbmResolveKartuTest.php tests/Feature/Guru/JurnalKbmBatasEditTest.php tests/Feature/Akademik/JurnalKbmTanggalSusulanTest.php --compact`
 Expected: semua test lama tetap **passed** — kasus non-piket (guru biasa akses sesinya sendiri, guru lain ditolak) harus berperilaku identik seperti sebelumnya.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Guru/Akademik/JurnalKbmController.php app/Http/Requests/Akademik/UpdateJurnalPresensiRequest.php tests/Feature/Guru/JurnalKbmPiketAksesTest.php
@@ -1072,7 +1072,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 **PENTING**: baca dulu isi `app/Domains/Akademik/Actions/Presensi/RecordJurnalDanPresensiAction.php` SEKARANG — file ini sudah dimodifikasi berkali-kali sesi-sesi sebelumnya untuk fitur notifikasi WA (Opsi A2). Alur notifikasi (`PresensiNotificationService::kirimJikaPerluAtasPerubahan()`, dipanggil SETELAH `DB::transaction()` selesai) TIDAK BOLEH berubah sama sekali — perubahan Task ini HANYA menambah 1 field ke `$sesi->update([...])` yang sudah ada, tidak menyentuh apa pun soal notifikasi.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -1140,12 +1140,12 @@ it('guru pemilik asli submit jurnal untuk sesinya sendiri -- diisi_oleh_guru_id 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmDiisiOlehGuruTest.php --compact`
 Expected: FAIL — `diisi_oleh_guru_id` tetap `null` untuk kedua kasus (belum ada logic mengisinya).
 
-- [ ] **Step 3: Modifikasi `RecordJurnalDanPresensiAction`**
+- [x] **Step 3: Modifikasi `RecordJurnalDanPresensiAction`**
 
 Tambahkan parameter opsional ke-3, dan sisipkan `diisi_oleh_guru_id` ke `$sesi->update()` yang SUDAH ADA di dalam `DB::transaction()` — JANGAN ubah baris lain:
 
@@ -1163,7 +1163,7 @@ Tambahkan parameter opsional ke-3, dan sisipkan `diisi_oleh_guru_id` ke `$sesi->
 
 (Baris lain di dalam `execute()` — loop `$data->presensi`, `return $sesi->fresh();`, dan seluruh blok pengiriman notifikasi setelah `DB::transaction()` — TETAP PERSIS SAMA, tidak diubah sama sekali.)
 
-- [ ] **Step 4: Modifikasi `JurnalKbmController::update()`**
+- [x] **Step 4: Modifikasi `JurnalKbmController::update()`**
 
 Tambahkan penghitungan `$diisiOlehGuruId` sebelum memanggil Action:
 
@@ -1191,17 +1191,17 @@ Tambahkan penghitungan `$diisiOlehGuruId` sebelum memanggil Action:
     }
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmDiisiOlehGuruTest.php --compact`
 Expected: **2 passed**.
 
-- [ ] **Step 6: Jalankan ulang test A2 (notifikasi WA) yang sudah ada, WAJIB pastikan tidak regresi**
+- [x] **Step 6: Jalankan ulang test A2 (notifikasi WA) yang sudah ada, WAJIB pastikan tidak regresi**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmControllerTest.php --compact`
 Expected: semua test lama tetap **passed**, termasuk 2 test notifikasi WA ("mengirim notifikasi presensi ke kontak utama..." dan "tidak mengirim notifikasi presensi kalau siswa disimpan tetap hadir") — pemanggilan `execute()` tanpa parameter ke-3 (default `null`) di jalur lama TIDAK mengubah perilaku notifikasi sama sekali.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/Presensi/RecordJurnalDanPresensiAction.php app/Http/Controllers/Guru/Akademik/JurnalKbmController.php tests/Feature/Guru/JurnalKbmDiisiOlehGuruTest.php
@@ -1225,7 +1225,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 **PENTING**: baca dulu isi KEDUA file ini SEKARANG sebelum edit (sudah dibaca sebelumnya saat plan ditulis, tapi implementer WAJIB verifikasi ulang state terkini sendiri).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 ```php
 <?php
@@ -1289,12 +1289,12 @@ it('guru YANG BUKAN piket hari ini TIDAK melihat seksi Sesi Piket Hari Ini sama 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmSesiPiketTest.php --compact`
 Expected: FAIL — teks "Sesi Piket Hari Ini" belum ada di mana pun.
 
-- [ ] **Step 3: Modifikasi `index()`**
+- [x] **Step 3: Modifikasi `index()`**
 
 Tambahkan `use App\Domains\Akademik\Models\PiketHarian;` di bagian atas file, lalu sisipkan logic ini SEBELUM `return view(...)` di method `index()` (setelah baris `$sesiList = $guru ? ... : collect();` yang sudah ada):
 
@@ -1325,7 +1325,7 @@ Tambahkan `use App\Domains\Akademik\Models\PiketHarian;` di bagian atas file, la
 
 (Ganti `return view(...)` yang sudah ada persis dengan versi di atas — cuma tambah 1 key baru `'sesiPiket' => $sesiPiket` ke array yang sudah ada, tidak mengubah key lain.)
 
-- [ ] **Step 4: Modifikasi view — tambah seksi baru**
+- [x] **Step 4: Modifikasi view — tambah seksi baru**
 
 Di `resources/views/portals/guru/akademik/jurnal-kbm/index.blade.php`, tambahkan blok baru SETELAH blok `{{-- Sesi List Section --}}` yang sudah ada (sebelum `</div>` penutup terakhir sebelum `</x-app-layout>`):
 
@@ -1365,12 +1365,12 @@ Di `resources/views/portals/guru/akademik/jurnal-kbm/index.blade.php`, tambahkan
         @endif
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test tests/Feature/Guru/JurnalKbmSesiPiketTest.php --compact`
 Expected: **2 passed**.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Guru/Akademik/JurnalKbmController.php resources/views/portals/guru/akademik/jurnal-kbm/index.blade.php tests/Feature/Guru/JurnalKbmSesiPiketTest.php
@@ -1390,7 +1390,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: permission `piket.kelola` → dimiliki role `wakasek_kesiswaan` dan `operator_akademik` — dipakai Task 9 (`$this->authorize('piket.kelola')`).
 
-- [ ] **Step 1: Tambah permission ke `PermissionSeeder.php`**
+- [x] **Step 1: Tambah permission ke `PermissionSeeder.php`**
 
 Baca `database/seeders/PermissionSeeder.php`, cari baris `'pengaturan-akademik.kelola',` (sekitar baris 68), tambahkan `'piket.kelola',` persis setelahnya:
 
@@ -1399,7 +1399,7 @@ Baca `database/seeders/PermissionSeeder.php`, cari baris `'pengaturan-akademik.k
             'piket.kelola',
 ```
 
-- [ ] **Step 2: Berikan permission ke `wakasek_kesiswaan` di `RoleSeeder.php`**
+- [x] **Step 2: Berikan permission ke `wakasek_kesiswaan` di `RoleSeeder.php`**
 
 Baca `database/seeders/RoleSeeder.php`, cari blok:
 
@@ -1422,11 +1422,11 @@ Ganti jadi:
             }
 ```
 
-- [ ] **Step 3: Berikan permission ke `operator_akademik` di `RoleSeeder.php`**
+- [x] **Step 3: Berikan permission ke `operator_akademik` di `RoleSeeder.php`**
 
 Di blok `if ($name === 'operator_akademik')` yang sudah ada (array `givePermissionTo` panjang), tambahkan `'piket.kelola',` setelah baris `'pengaturan-akademik.kelola',` yang sudah ada di array itu — JANGAN buat blok `if` baru, cuma tambah 1 baris ke array yang sudah ada.
 
-- [ ] **Step 4: Jalankan seeder, verifikasi**
+- [x] **Step 4: Jalankan seeder, verifikasi**
 
 Run: `php artisan db:seed --class=PermissionSeeder`
 Run: `php artisan db:seed --class=RoleSeeder`
@@ -1443,7 +1443,7 @@ echo PHP_EOL . ($r2 ? ($r2->hasPermissionTo("piket.kelola") ? "operator_akademik
 ```
 Expected: `wakasek_kesiswaan: OK` dan `operator_akademik: OK`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add database/seeders/PermissionSeeder.php database/seeders/RoleSeeder.php
@@ -1549,287 +1549,13 @@ it('user tanpa permission piket.kelola ditolak akses', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
-
-Run: `php artisan test tests/Feature/Admin/JadwalPiketMingguanControllerTest.php --compact`
-Expected: FAIL — route `admin.piket-guru.store`/`admin.piket-guru.index` tidak ditemukan.
-
-- [ ] **Step 3: Tambah route**
-
-Tambahkan ke `routes/admin/akademik-master.php` (setelah blok `jadwal-pelajaran` yang sudah ada), plus tambahkan `use App\Http\Controllers\Admin\JadwalPiketMingguanController;` ke bagian atas file:
-
-```php
-Route::get('piket-guru', [JadwalPiketMingguanController::class, 'index'])->name('piket-guru.index');
-Route::get('piket-guru/create', [JadwalPiketMingguanController::class, 'create'])->name('piket-guru.create');
-Route::post('piket-guru', [JadwalPiketMingguanController::class, 'store'])->name('piket-guru.store');
-Route::get('piket-guru/{jadwalPiketMingguan}/edit', [JadwalPiketMingguanController::class, 'edit'])->name('piket-guru.edit');
-Route::put('piket-guru/{jadwalPiketMingguan}', [JadwalPiketMingguanController::class, 'update'])->name('piket-guru.update');
-Route::delete('piket-guru/{jadwalPiketMingguan}', [JadwalPiketMingguanController::class, 'destroy'])->name('piket-guru.destroy');
-```
-
-- [ ] **Step 4: Tulis controller**
-
-```php
-<?php
-
-namespace App\Http\Controllers\Admin;
-
-use App\Domains\Akademik\Actions\Piket\GenerateJadwalPiketHarianAction;
-use App\Domains\Akademik\Actions\Piket\RegenerateJadwalPiketHarianAction;
-use App\Domains\Akademik\Models\JadwalPiketMingguan;
-use App\Domains\Akademik\Models\PiketHarian;
-use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
-use App\Models\Guru;
-use App\Models\Semester;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
-use Illuminate\View\View;
-
-class JadwalPiketMingguanController extends BaseController
-{
-    use AuthorizesRequests;
-    use ResolveLembagaScopeTrait;
-
-    public function index(Request $request): View
-    {
-        $this->authorize('piket.kelola');
-
-        $lembagaId = $this->resolveLembagaIdAktif($request);
-
-        return view('portals.lembaga.akademik.piket-guru.index', [
-            'jadwalList' => JadwalPiketMingguan::where('lembaga_id', $lembagaId)->with(['guru', 'semester'])->orderBy('hari')->get(),
-        ]);
-    }
-
-    public function create(Request $request): View
-    {
-        $this->authorize('piket.kelola');
-
-        $lembagaId = $this->resolveLembagaIdAktif($request);
-
-        return view('portals.lembaga.akademik.piket-guru.create', [
-            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderBy('nama_lengkap')->get(),
-            'semesterAktif' => Semester::where('lembaga_id', $lembagaId)->where('status_aktif', true)->first(),
-        ]);
-    }
-
-    public function store(Request $request, GenerateJadwalPiketHarianAction $generateAction, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse
-    {
-        $this->authorize('piket.kelola');
-
-        $lembagaId = $this->resolveLembagaIdAktif($request);
-
-        $data = $request->validate([
-            'guru_id' => ['required', 'integer', 'exists:guru,id'],
-            'hari' => ['required', 'integer', 'between:0,6'],
-            'semester_id' => ['required', 'integer', 'exists:semester,id'],
-        ]);
-
-        $jadwal = JadwalPiketMingguan::create([
-            'lembaga_id' => $lembagaId,
-            'guru_id' => $data['guru_id'],
-            'hari' => $data['hari'],
-            'semester_id' => $data['semester_id'],
-            'dibuat_oleh_user_id' => $request->user()->id,
-        ]);
-
-        $semester = Semester::findOrFail($data['semester_id']);
-        $sudahAdaPiketHarian = PiketHarian::where('lembaga_id', $lembagaId)
-            ->where('tanggal', '>=', $semester->tanggal_mulai)
-            ->exists();
-
-        if ($sudahAdaPiketHarian) {
-            $regenerateAction->execute($lembagaId, $data['semester_id']);
-        } else {
-            $generateAction->execute($jadwal);
-        }
-
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil disimpan.');
-    }
-
-    public function edit(JadwalPiketMingguan $jadwalPiketMingguan, Request $request): View
-    {
-        $this->authorize('piket.kelola');
-
-        $lembagaId = $this->resolveLembagaIdAktif($request);
-
-        return view('portals.lembaga.akademik.piket-guru.edit', [
-            'jadwal' => $jadwalPiketMingguan,
-            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderBy('nama_lengkap')->get(),
-        ]);
-    }
-
-    public function update(Request $request, JadwalPiketMingguan $jadwalPiketMingguan, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse
-    {
-        $this->authorize('piket.kelola');
-
-        $data = $request->validate([
-            'guru_id' => ['required', 'integer', 'exists:guru,id'],
-            'hari' => ['required', 'integer', 'between:0,6'],
-        ]);
-
-        $jadwalPiketMingguan->update($data);
-
-        // Baris ini SUDAH ADA sebelumnya (sedang diedit) -> lembaga PASTI sudah punya PiketHarian
-        // untuk semester ini -> SELALU Regenerate, tidak pernah Generate ulang dari nol.
-        $regenerateAction->execute($jadwalPiketMingguan->lembaga_id, $jadwalPiketMingguan->semester_id);
-
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil diperbarui.');
-    }
-
-    public function destroy(JadwalPiketMingguan $jadwalPiketMingguan, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse
-    {
-        $this->authorize('piket.kelola');
-
-        $lembagaId = $jadwalPiketMingguan->lembaga_id;
-        $semesterId = $jadwalPiketMingguan->semester_id;
-        $jadwalPiketMingguan->delete();
-
-        $regenerateAction->execute($lembagaId, $semesterId);
-
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil dihapus.');
-    }
-
-    private function resolveLembagaIdAktif(Request $request): int
-    {
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
-            ? $this->resolveActiveLembagaId($request->user())
-            : $request->user()->lembaga_id;
-
-        abort_if($lembagaId === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.');
-
-        return $lembagaId;
-    }
-}
-```
-
-**PENTING**: kriteria pemilihan Generate vs Regenerate di `store()` di atas WAJIB persis seperti itu — cek `PiketHarian::exists()` untuk lembaga+`tanggal >= semester.tanggal_mulai`, BUKAN cek jenis form action. `update()` dan `destroy()` SELALU Regenerate (baris yang diedit/dihapus pasti sudah ada sebelumnya, jadi lembaga itu pasti sudah punya data). Kedua Action dipanggil LANGSUNG di method controller ini (method-injected oleh Laravel), BUKAN `dispatch()` — cek kode di atas tidak ada satu pun pemanggilan job/queue.
-
-- [ ] **Step 5: Tulis view minimal (index, create, edit)**
-
-`resources/views/portals/lembaga/akademik/piket-guru/index.blade.php`:
-
-```blade
-<x-app-layout>
-    <div class="mx-auto max-w-4xl space-y-4">
-        @if (session('status'))
-            <div class="rounded-lg bg-success-50 p-4 text-sm text-success-700">{{ session('status') }}</div>
-        @endif
-
-        <div class="flex items-center justify-between">
-            <h1 class="font-display text-lg font-bold text-gray-900">Jadwal Piket Mingguan</h1>
-            <x-link-button href="{{ route('admin.piket-guru.create') }}">Tambah Jadwal</x-link-button>
-        </div>
-
-        <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-card">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wider text-gray-500 border-b border-gray-200">
-                        <th class="px-5 py-3">Guru</th>
-                        <th class="px-5 py-3">Hari</th>
-                        <th class="px-5 py-3">Semester</th>
-                        <th class="px-5 py-3">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-150 bg-white">
-                    @php $namaHari = [0 => 'Minggu', 1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu']; @endphp
-                    @forelse ($jadwalList as $jadwal)
-                        <tr>
-                            <td class="px-5 py-3">{{ $jadwal->guru->nama_lengkap }}</td>
-                            <td class="px-5 py-3">{{ $namaHari[$jadwal->hari] }}</td>
-                            <td class="px-5 py-3">{{ $jadwal->semester->nama }}</td>
-                            <td class="px-5 py-3">
-                                <a href="{{ route('admin.piket-guru.edit', $jadwal) }}" class="text-brand-600 hover:underline">Edit</a>
-                                <form method="POST" action="{{ route('admin.piket-guru.destroy', $jadwal) }}" class="inline" onsubmit="return confirm('Hapus jadwal piket ini?')">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-error-600 hover:underline ml-3">Hapus</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="4" class="px-5 py-6 text-center text-gray-500">Belum ada jadwal piket mingguan.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-</x-app-layout>
-```
-
-`resources/views/portals/lembaga/akademik/piket-guru/create.blade.php`:
-
-```blade
-<x-app-layout>
-    <div class="mx-auto max-w-lg space-y-4">
-        <h1 class="font-display text-lg font-bold text-gray-900">Tambah Jadwal Piket Mingguan</h1>
-
-        <form method="POST" action="{{ route('admin.piket-guru.store') }}" class="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
-            @csrf
-            <div>
-                <x-input-label value="Guru" />
-                <select name="guru_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
-                    @foreach ($guruList as $guru)
-                        <option value="{{ $guru->id }}">{{ $guru->nama_lengkap }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <x-input-label value="Hari" />
-                <select name="hari" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
-                    @foreach ([1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 0 => 'Minggu'] as $nilai => $label)
-                        <option value="{{ $nilai }}">{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <input type="hidden" name="semester_id" value="{{ $semesterAktif?->id }}">
-            @if (! $semesterAktif)
-                <p class="text-sm text-error-600">Tidak ada semester aktif untuk lembaga ini. Aktifkan semester terlebih dahulu.</p>
-            @endif
-            <x-primary-button type="submit" @disabled(! $semesterAktif)>Simpan</x-primary-button>
-        </form>
-    </div>
-</x-app-layout>
-```
-
-`resources/views/portals/lembaga/akademik/piket-guru/edit.blade.php`:
-
-```blade
-<x-app-layout>
-    <div class="mx-auto max-w-lg space-y-4">
-        <h1 class="font-display text-lg font-bold text-gray-900">Edit Jadwal Piket Mingguan</h1>
-
-        <form method="POST" action="{{ route('admin.piket-guru.update', $jadwal) }}" class="space-y-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
-            @csrf @method('PUT')
-            <div>
-                <x-input-label value="Guru" />
-                <select name="guru_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
-                    @foreach ($guruList as $guru)
-                        <option value="{{ $guru->id }}" @selected($guru->id === $jadwal->guru_id)>{{ $guru->nama_lengkap }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <x-input-label value="Hari" />
-                <select name="hari" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
-                    @foreach ([1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 0 => 'Minggu'] as $nilai => $label)
-                        <option value="{{ $nilai }}" @selected($nilai === $jadwal->hari)>{{ $label }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
-        </form>
-    </div>
-</x-app-layout>
-```
-
-- [ ] **Step 6: Jalankan test, pastikan lulus**
-
-Run: `php artisan test tests/Feature/Admin/JadwalPiketMingguanControllerTest.php --compact`
-Expected: **3 passed**.
-
-- [ ] **Step 7: Commit**
+- [x] **Step 1: Tulis test**
+- [x] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 3: Tambah route**
+- [x] **Step 4: Tulis controller**
+- [x] **Step 5: Tulis view minimal (index, create, edit)**
+- [x] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/JadwalPiketMingguanController.php resources/views/portals/lembaga/akademik/piket-guru/ routes/admin/akademik-master.php tests/Feature/Admin/JadwalPiketMingguanControllerTest.php
