@@ -34,7 +34,7 @@ class JadwalPiketMingguanController extends BaseController
                 ->with('guru')
                 ->orderBy('tanggal')
                 ->get(),
-            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderBy('nama_lengkap')->get(),
+            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderByNama()->get(),
         ]);
     }
 
@@ -45,7 +45,7 @@ class JadwalPiketMingguanController extends BaseController
         $lembagaId = $this->resolveLembagaIdAktif($request);
 
         return view('portals.lembaga.akademik.piket-guru.create', [
-            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderBy('nama_lengkap')->get(),
+            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderByNama()->get(),
             'semesterAktif' => Semester::where('lembaga_id', $lembagaId)->where('status_aktif', true)->first(),
         ]);
     }
@@ -92,7 +92,7 @@ class JadwalPiketMingguanController extends BaseController
 
         return view('portals.lembaga.akademik.piket-guru.edit', [
             'jadwal' => $jadwalPiketMingguan,
-            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderBy('nama_lengkap')->get(),
+            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderByNama()->get(),
         ]);
     }
 
