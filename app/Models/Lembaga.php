@@ -26,7 +26,7 @@ class Lembaga extends Model
         'telepon', 'fax', 'email', 'website',
         'nama_bank', 'cabang_kcp_unit', 'rekening_atas_nama', 'nomor_rekening',
         'mbs', 'nama_wajib_pajak', 'npwp',
-        'status_aktif', 'hari_libur_mingguan', 'hari_libur_mingguan_sdm',
+        'status_aktif', 'hari_libur_mingguan', 'hari_libur_mingguan_sdm', 'batas_edit_absen_hari',
     ];
 
     protected function casts(): array
