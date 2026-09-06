@@ -191,8 +191,8 @@ const navHtml = CHAPTERS.map((ch) => `<a href="#${ch.id}" class="nav-link"><span
 
 const template = fs.readFileSync(path.join(__dirname, 'template.html'), 'utf8');
 const finalHtml = template
-  .replace('<title>Manual Book — Modul Akademik · Yayasan Permata</title>', '<title>Manual Book — Modul Keuangan · Pintera</title>')
-  .replace('<h1>Modul Akademik — Yayasan Permata</h1>', '<h1>Modul Keuangan — Pintera</h1>')
+  .replace('<title>Manual Book — Modul Akademik · Yayasan Pintera</title>', '<title>Manual Book — Modul Keuangan · Pintera</title>')
+  .replace('<h1>Modul Akademik — Yayasan Pintera</h1>', '<h1>Modul Keuangan — Pintera</h1>')
   .replace('Panduan penggunaan modul akademik Pintera', 'Panduan penggunaan modul Keuangan Pintera')
   .replace('8 bab', '9 bab &amp; 1 lampiran')
   .replace('<!--NAV-->', navHtml)
