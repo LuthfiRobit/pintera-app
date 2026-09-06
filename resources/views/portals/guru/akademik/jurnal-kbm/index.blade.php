@@ -181,5 +181,39 @@
                 </div>
             @endforelse
         </div>
+
+        {{-- Sesi Piket Hari Ini — HANYA render kalau variabel ini benar2 ada & tidak kosong --}}
+        @if (($sesiPiket ?? null) && $sesiPiket->isNotEmpty())
+            <div class="space-y-4 mt-6">
+                <h2 class="font-display text-sm font-bold text-gray-700 flex items-center gap-2">
+                    <x-icon name="shield" class="h-4 w-4 text-amber-500" />
+                    Sesi Piket Hari Ini
+                </h2>
+                <p class="text-xs text-gray-500 -mt-2">Anda sedang piket hari ini. Sesi di bawah ini milik guru lain yang bisa Anda bantu isi kalau gurunya berhalangan hadir.</p>
+
+                @foreach ($sesiPiket as $sesi)
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-5 shadow-card flex flex-col md:flex-row md:items-center justify-between gap-5">
+                        <div class="space-y-2 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <x-badge tone="brass" class="gap-1">
+                                    <x-icon name="school" class="h-3 w-3" />
+                                    Kelas {{ $sesi->kelas->nama }}
+                                </x-badge>
+                                <x-badge tone="amber" class="gap-1">
+                                    <x-icon name="person" class="h-3 w-3" />
+                                    Guru: {{ $sesi->guru->nama_lengkap ?? '-' }}
+                                </x-badge>
+                            </div>
+                        </div>
+                        <div class="shrink-0 w-full md:w-auto">
+                            <x-link-button href="{{ route('guru.jurnal-kbm.show', $sesi) }}" class="w-full md:w-auto justify-center shadow-sm">
+                                <x-icon name="edit" class="h-4 w-4" />
+                                Isi Sebagai Piket
+                            </x-link-button>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @endif
     </div>
 </x-app-layout>

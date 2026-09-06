@@ -6,6 +6,7 @@ use App\Domains\Akademik\Actions\KartuSiswa\ResolveKartuUntukPresensiAction;
 use App\Domains\Akademik\Actions\Presensi\GenerateSesiHarianAction;
 use App\Domains\Akademik\Actions\Presensi\RecordJurnalDanPresensiAction;
 use App\Domains\Akademik\Exceptions\KartuValidasiException;
+use App\Domains\Akademik\Models\PiketHarian;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Domains\Akademik\Services\PiketAccessChecker;
 use App\Enums\Hari;
@@ -72,10 +73,27 @@ class JurnalKbmController extends BaseController
             ? SesiPembelajaran::where('guru_id', $guru->id)->whereDate('tanggal', $hariIni)->with('kelas.tahunAjaran', 'mataPelajaran')->get()
             : collect();
 
+        $sesiPiket = null;
+        if ($guru) {
+            $piketHariIni = PiketHarian::where('lembaga_id', $guru->lembaga_id)
+                ->where('guru_id', $guru->id)
+                ->where('tanggal', now()->toDateString())
+                ->exists();
+
+            if ($piketHariIni) {
+                $sesiPiket = SesiPembelajaran::where('lembaga_id', $guru->lembaga_id)
+                    ->where('guru_id', '!=', $guru->id)
+                    ->whereDate('tanggal', $hariIni)
+                    ->with('kelas.tahunAjaran', 'mataPelajaran', 'guru')
+                    ->get();
+            }
+        }
+
         return view('portals.guru.akademik.jurnal-kbm.index', [
             'sesiList' => $sesiList,
             'mapelTerjadwal' => $this->mapelTerjadwalUntukSesiTematik($sesiList, $hariIni),
             'tanggalDipilih' => $hariIni->toDateString(),
+            'sesiPiket' => $sesiPiket,
         ]);
     }
 
