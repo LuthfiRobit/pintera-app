@@ -2,11 +2,11 @@
 
 use App\Domains\Keuangan\Models\BriInboundPaymentLog;
 use App\Domains\Keuangan\Models\BriVirtualAccount;
+use App\Domains\Keuangan\Models\Wallet;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\Siswa;
 use App\Models\User;
-use App\Domains\Keuangan\Models\Wallet;
 use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
@@ -43,7 +43,7 @@ function buatSiswaDenganVa(Lembaga $lembaga, string $nama, ?Kelas $kelas = null)
     $va = BriVirtualAccount::create([
         'wallet_id' => $wallet->id,
         'va_type' => 'WALLET_PERMANENT',
-        'va_number' => '8808' . str_pad((string) $siswa->id, 16, '0', STR_PAD_LEFT),
+        'va_number' => '8808'.str_pad((string) $siswa->id, 16, '0', STR_PAD_LEFT),
         'status' => 'PERMANENT',
     ]);
 
@@ -280,3 +280,24 @@ it('returns 404 when riwayat targets a siswa belonging to a different lembaga', 
     $response->assertNotFound();
 });
 
+it('aggregates VA count and list across all lembaga when yayasan scope has no active lembaga selected', function () {
+    Permission::firstOrCreate(['name' => 'pembayaran.virtual-account', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'bendahara_yayasan_va_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo('pembayaran.virtual-account');
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaX = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaY = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    [$siswaX] = buatSiswaDenganVa($lembagaX, 'Siswa VA Lembaga X');
+    [$siswaY] = buatSiswaDenganVa($lembagaY, 'Siswa VA Lembaga Y');
+
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('admin.virtual-account.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('totalVa', 2);
+    $response->assertSee('Siswa VA Lembaga X');
+    $response->assertSee('Siswa VA Lembaga Y');
+});

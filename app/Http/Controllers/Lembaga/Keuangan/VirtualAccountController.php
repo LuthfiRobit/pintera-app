@@ -32,7 +32,7 @@ class VirtualAccountController extends Controller
 
         $query = BriVirtualAccount::where('va_type', 'WALLET_PERMANENT')
             ->whereHas('wallet.siswa', function ($q) use ($lembagaId, $search, $kelasId) {
-                $q->where('lembaga_id', $lembagaId);
+                $q->when($lembagaId !== null, fn ($q2) => $q2->where('lembaga_id', $lembagaId));
 
                 if ($search) {
                     $q->search($search);
@@ -56,20 +56,20 @@ class VirtualAccountController extends Controller
         }
 
         $totalVa = BriVirtualAccount::where('va_type', 'WALLET_PERMANENT')
-            ->whereHas('wallet.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+            ->whereHas('wallet.siswa', fn ($q) => $q->when($lembagaId !== null, fn ($q2) => $q2->where('lembaga_id', $lembagaId)))
             ->count();
 
         $totalSaldo = (float) BriVirtualAccount::where('va_type', 'WALLET_PERMANENT')
-            ->whereHas('wallet.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+            ->whereHas('wallet.siswa', fn ($q) => $q->when($lembagaId !== null, fn ($q2) => $q2->where('lembaga_id', $lembagaId)))
             ->join('wallets', 'bri_virtual_accounts.wallet_id', '=', 'wallets.id')
             ->sum('wallets.balance');
 
-        $totalBelumVa = Siswa::where('lembaga_id', $lembagaId)
+        $totalBelumVa = Siswa::when($lembagaId !== null, fn ($q) => $q->where('lembaga_id', $lembagaId))
             ->where('status', StatusSiswa::Aktif->value)
             ->whereDoesntHave('wallet.briVirtualAccounts', fn ($q) => $q->where('va_type', 'WALLET_PERMANENT'))
             ->count();
 
-        $kelasList = Kelas::where('lembaga_id', $lembagaId)
+        $kelasList = Kelas::when($lembagaId !== null, fn ($q) => $q->where('lembaga_id', $lembagaId))
             ->with('tahunAjaran')
             ->orderBy('nama')
             ->get();
