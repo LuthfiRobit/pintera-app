@@ -129,6 +129,7 @@ class RoleSeeder extends Seeder
             if ($name === 'wakasek_kesiswaan') {
                 $role->givePermissionTo([
                     'kasus.view', 'kasus.triase', 'kasus.lihat-log-akses',
+                    'piket.kelola',
                 ]);
             }
 
@@ -151,6 +152,7 @@ class RoleSeeder extends Seeder
                     'jadwal-pelajaran.kelola',
                     'kalender-akademik.view', 'kalender-akademik.kelola',
                     'pengaturan-akademik.kelola',
+                    'piket.kelola',
                     'komponen-penilaian.kelola',
                     'rapor.view', 'rapor.verify',
                     'kenaikan-kelas.kelola',

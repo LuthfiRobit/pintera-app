@@ -66,6 +66,7 @@ class PermissionSeeder extends Seeder
             'jadwal-pelajaran.kelola',
             'kalender-akademik.view', 'kalender-akademik.kelola', 'kalender-akademik.kelola-nasional',
             'pengaturan-akademik.kelola',
+            'piket.kelola',
             // Sarpras (dipindah dari SarprasPermissionSeeder.php, dihapus — lihat Task 1 §3 spec)
             'sarpras.gedung.view', 'sarpras.gedung.manage',
             'sarpras.ruangan.view', 'sarpras.ruangan.manage',
