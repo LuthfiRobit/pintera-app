@@ -30,7 +30,7 @@
                 <p class="text-sm text-error-600">Tidak ada semester aktif untuk lembaga ini. Aktifkan semester terlebih dahulu.</p>
             @endif
             <div class="flex justify-end pt-2">
-                <x-primary-button type="submit" @disabled(! $semesterAktif)>Simpan</x-primary-button>
+                <x-primary-button type="submit" :disabled="! $semesterAktif">Simpan</x-primary-button>
             </div>
         </form>
     </div>

@@ -147,3 +147,19 @@ it('admin lembaga A TIDAK BISA edit/update/destroy JadwalPiketMingguan milik lem
 
     expect(JadwalPiketMingguan::withoutGlobalScopes()->find($jadwalMilikB->id))->not->toBeNull();
 });
+
+it('halaman index, create, dan edit berhasil dirender (200)', function () {
+    ['lembaga' => $lembaga, 'semester' => $semester, 'guru' => $guru, 'admin' => $admin] = siapkanAdminPiketKelola();
+
+    $jadwal = JadwalPiketMingguan::create([
+        'lembaga_id' => $lembaga->id,
+        'guru_id' => $guru->id,
+        'hari' => now()->dayOfWeek,
+        'semester_id' => $semester->id,
+        'dibuat_oleh_user_id' => $admin->id,
+    ]);
+
+    $this->actingAs($admin)->get(route('admin.piket-guru.index'))->assertOk();
+    $this->actingAs($admin)->get(route('admin.piket-guru.create'))->assertOk();
+    $this->actingAs($admin)->get(route('admin.piket-guru.edit', $jadwal))->assertOk();
+});
