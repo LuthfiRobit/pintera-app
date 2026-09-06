@@ -223,3 +223,27 @@ it('halaman detail sesi jurnal kbm menampilkan tombol Scan Presensi', function (
     $response->assertSee('Scan Presensi');
     $response->assertSee('presensi-qr-reader', false);
 });
+
+it('menampilkan banner terkunci utk sesi yang sudah lewat batas waktu edit', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
+    $sesi = \App\Domains\Akademik\Models\SesiPembelajaran::firstOrFail();
+    $sesi->update(['tanggal' => now()->subDays(10)->toDateString()]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.show', $sesi));
+
+    $response->assertOk();
+    $response->assertSee('sudah melewati batas waktu edit');
+});
+
+it('tidak menampilkan banner terkunci utk sesi yang masih dalam batas waktu edit', function () {
+    ['guruUser' => $guruUser] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
+    $sesi = \App\Domains\Akademik\Models\SesiPembelajaran::firstOrFail();
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.show', $sesi));
+
+    $response->assertOk();
+    $response->assertDontSee('sudah melewati batas waktu edit');
+});
+

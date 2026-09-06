@@ -8,6 +8,13 @@
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
         @endif
 
+        @if ($terkunci)
+            <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <p class="font-semibold">Sesi ini sudah melewati batas waktu edit ({{ $batasEditHari }} hari).</p>
+                <p class="mt-1 text-xs">Form di bawah ditampilkan hanya untuk dilihat. Hubungi Wali Kelas kelas ini kalau perlu koreksi.</p>
+            </div>
+        @endif
+
         {{-- Header & Breadcrumb --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -44,11 +51,13 @@
                             name="materi"
                             rows="3"
                             placeholder="Contoh: Pembahasan Aljabar, Latihan Soal Halaman 20, dll."
-                            class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                            class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 disabled:cursor-not-allowed disabled:bg-gray-50"
+                            @disabled($terkunci)
                         >{{ old('materi', $sesi->materi) }}</textarea>
                         <x-input-error :messages="$errors->get('materi')" class="mt-1.5" />
                     </div>
 
+                    @unless ($terkunci)
                     {{-- Scan Presensi via Kartu Digital --}}
                     <div
                         x-data="{
@@ -122,6 +131,7 @@
                             </div>
                         </div>
                     </div>
+                    @endunless
 
                     {{-- Section 2: Presensi --}}
                     <div class="space-y-3">
@@ -187,6 +197,7 @@
                                                                 name="presensi[{{ $presensi->siswa_id }}]" 
                                                                 value="{{ $status->value }}" 
                                                                 x-model="status" 
+                                                                :disabled="{{ $terkunci ? 'true' : 'false' }}"
                                                                 class="sr-only"
                                                             >
                                                             {{ $status->label() }}
@@ -201,7 +212,8 @@
                                                         name="keterangan[{{ $presensi->siswa_id }}]"
                                                         value="{{ old('keterangan.'.$presensi->siswa_id, $presensi->keterangan) }}"
                                                         placeholder="Contoh: Demam, surat dari orang tua, dll."
-                                                        class="w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                                                        class="w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 disabled:cursor-not-allowed disabled:bg-gray-50"
+                                                        @disabled($terkunci)
                                                     >
                                                 </template>
                                                 <template x-if="status !== 'izin' && status !== 'sakit'">
@@ -222,7 +234,7 @@
                     <a href="{{ route('guru.jurnal-kbm.index') }}" class="inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-gray-600 transition-colors duration-200 hover:bg-gray-200/50 hover:text-gray-900">
                         Batal
                     </a>
-                    <x-primary-button type="submit" class="shadow-sm transition-all duration-200 active:scale-[0.98]">
+                    <x-primary-button type="submit" class="shadow-sm transition-all duration-200 active:scale-[0.98]" :disabled="$terkunci">
                         Simpan Jurnal &amp; Presensi
                     </x-primary-button>
                 </div>
