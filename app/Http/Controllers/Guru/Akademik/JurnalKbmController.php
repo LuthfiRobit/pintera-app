@@ -9,6 +9,7 @@ use App\Domains\Akademik\Exceptions\KartuValidasiException;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Http\Requests\Akademik\UpdateJurnalPresensiRequest;
+use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -128,10 +129,15 @@ class JurnalKbmController extends BaseController
         $sesi->loadMissing('kelas.tahunAjaran');
         $mapelTerjadwal = $this->mapelTerjadwalUntukSesiTematik(collect([$sesi]), $sesi->tanggal);
 
+        $guru = auth()->user()->guru;
+        $terkunci = $this->sesiTerkunci($sesi, $guru);
+
         return view('portals.guru.akademik.jurnal-kbm.show', [
             'sesi' => $sesi,
             'presensiList' => $sesi->presensi()->with('siswa')->get(),
             'mapelTerjadwal' => $mapelTerjadwal[$sesi->kelas_id] ?? null,
+            'terkunci' => $terkunci,
+            'batasEditHari' => $guru->lembaga->batas_edit_absen_hari ?? 3,
         ]);
     }
 
@@ -141,9 +147,31 @@ class JurnalKbmController extends BaseController
         // Ownership check is already enforced by UpdateJurnalPresensiRequest::authorize(),
         // which runs before this method body — no need to call authorizeMilikGuru() again here.
 
+        $guru = $request->user()->guru;
+
+        if ($this->sesiTerkunci($sesi, $guru)) {
+            $batasHari = $guru->lembaga->batas_edit_absen_hari ?? 3;
+
+            return redirect()->route('guru.jurnal-kbm.index')
+                ->with('error', "Sesi ini sudah melewati batas waktu edit ({$batasHari} hari). Hubungi Wali Kelas kelas ini untuk koreksi.");
+        }
+
         $this->recordJurnalDanPresensiAction->execute($sesi, $request->toDTO());
 
         return redirect()->route('guru.jurnal-kbm.index')->with('status', 'Jurnal dan presensi berhasil disimpan.');
+    }
+
+    private function sesiTerkunci(SesiPembelajaran $sesi, Guru $guru): bool
+    {
+        $sesi->loadMissing('kelas');
+
+        if ($sesi->kelas->wali_kelas_guru_id === $guru->id) {
+            return false;
+        }
+
+        $batasHari = $guru->lembaga->batas_edit_absen_hari ?? 3;
+
+        return $sesi->tanggal->lt(now()->subDays($batasHari)->startOfDay());
     }
 
     public function resolveKartu(Request $request, SesiPembelajaran $sesi, ResolveKartuUntukPresensiAction $action): JsonResponse
