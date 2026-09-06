@@ -1,18 +1,26 @@
 <?php
+
 // tests/Feature/Admin/ManualPaymentControllerTest.php
 
 use App\Domains\Keuangan\Models\JenisTagihan;
-use App\Models\Lembaga;
 use App\Domains\Keuangan\Models\ManualPaymentRequest;
 use App\Domains\Keuangan\Models\Pembayaran;
 use App\Domains\Keuangan\Models\PembayaranTagihan;
-use App\Models\Siswa;
 use App\Domains\Keuangan\Models\Tagihan;
-use App\Models\User;
 use App\Domains\Keuangan\Models\Wallet;
+use App\Domains\Keuangan\Services\AutoAllocationEngine;
+use App\Domains\Keuangan\Services\PaymentAllocationService;
+use App\Domains\Keuangan\Services\PaymentService;
+use App\Models\Lembaga;
+use App\Models\Siswa;
+use App\Models\SystemSetting;
+use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 uses(RefreshDatabase::class);
 
@@ -80,7 +88,7 @@ it('approves a TOPUP manual request: calls Wallet::topup() outside the transacti
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
     $walletSaldoAwal = (float) $siswa->wallet->balance;
 
-    $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createManualTopupPayment($siswa, [
+    $pembayaran = app(PaymentService::class)->createManualTopupPayment($siswa, [
         'amount' => 200000, 'requested_by' => $user->id, 'transfer_proof_path' => 'x.jpg', 'transfer_date' => now()->toDateString(),
     ]);
     $manualRequest = ManualPaymentRequest::where('pembayaran_id', $pembayaran->id)->first();
@@ -100,16 +108,16 @@ it('approves a TOPUP manual request: calls Wallet::topup() outside the transacti
 it('marks a TOPUP manual request completed (not failed) when AutoAllocationEngine::run() throws after the wallet was already credited, and does not double-credit on a defense-in-depth retry (round-3 double-credit regression)', function () {
     [$user, $lembaga] = buatAdminKeuanganUntukManualPayment();
     $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
-    \App\Models\SystemSetting::create(['lembaga_id' => $lembaga->id, 'key' => 'auto_debit_enabled', 'value' => 'true']);
+    SystemSetting::create(['lembaga_id' => $lembaga->id, 'key' => 'auto_debit_enabled', 'value' => 'true']);
     $walletSaldoAwal = (float) $siswa->wallet->balance;
 
-    $mockEngine = \Mockery::mock(\App\Domains\Keuangan\Services\AutoAllocationEngine::class);
-    $mockEngine->shouldReceive('run')->andThrow(new \RuntimeException('Simulated AutoAllocationEngine failure'));
-    app()->instance(\App\Domains\Keuangan\Services\AutoAllocationEngine::class, $mockEngine);
+    $mockEngine = Mockery::mock(AutoAllocationEngine::class);
+    $mockEngine->shouldReceive('run')->andThrow(new RuntimeException('Simulated AutoAllocationEngine failure'));
+    app()->instance(AutoAllocationEngine::class, $mockEngine);
 
-    \Illuminate\Support\Facades\Log::shouldReceive('error')->atLeast()->once();
+    Log::shouldReceive('error')->atLeast()->once();
 
-    $pembayaran = app(\App\Domains\Keuangan\Services\PaymentService::class)->createManualTopupPayment($siswa, [
+    $pembayaran = app(PaymentService::class)->createManualTopupPayment($siswa, [
         'amount' => 200000, 'requested_by' => $user->id, 'transfer_proof_path' => 'x.jpg', 'transfer_date' => now()->toDateString(),
     ]);
     $manualRequest = ManualPaymentRequest::where('pembayaran_id', $pembayaran->id)->first();
@@ -129,7 +137,7 @@ it('marks a TOPUP manual request completed (not failed) when AutoAllocationEngin
     // Defense-in-depth: even if topupSisaJikaAda() were called again directly on
     // this Pembayaran (what retryFailedTopups() would do if it wrongly selected
     // it), it must be a safe no-op given topup_status is already 'completed'.
-    app(\App\Domains\Keuangan\Services\PaymentAllocationService::class)->topupSisaJikaAda($pembayaran->fresh());
+    app(PaymentAllocationService::class)->topupSisaJikaAda($pembayaran->fresh());
 
     expect((float) $siswa->wallet->fresh()->balance)->toBe($balanceAfterApprove);
 });
@@ -244,4 +252,38 @@ it('rejects a manual payment request: sets status ditolak, requires rejection_re
     $pembayaran->refresh();
     expect($pembayaran->status)->toBe('ditolak');
     expect((float) $siswa->wallet->fresh()->balance)->toBe($walletSaldoAwal);
+});
+
+it('aggregates pending manual payment requests across all lembaga when yayasan scope has no active lembaga selected', function () {
+    Permission::firstOrCreate(['name' => 'pembayaran.verifikasi', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'bendahara_yayasan_mp_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo('pembayaran.verifikasi');
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaX = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaY = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $siswaX = Siswa::factory()->create(['lembaga_id' => $lembagaX->id, 'nama_lengkap' => 'Siswa MP Lembaga X']);
+    $pembayaranX = Pembayaran::factory()->create(['siswa_id' => $siswaX->id, 'status' => 'menunggu_verifikasi']);
+    ManualPaymentRequest::create([
+        'pembayaran_id' => $pembayaranX->id, 'requested_by' => $user->id, 'amount' => 100000,
+        'transfer_proof_path' => 'x.jpg', 'transfer_date' => now()->toDateString(), 'status' => 'PENDING',
+    ]);
+
+    $siswaY = Siswa::factory()->create(['lembaga_id' => $lembagaY->id, 'nama_lengkap' => 'Siswa MP Lembaga Y']);
+    $pembayaranY = Pembayaran::factory()->create(['siswa_id' => $siswaY->id, 'status' => 'menunggu_verifikasi']);
+    ManualPaymentRequest::create([
+        'pembayaran_id' => $pembayaranY->id, 'requested_by' => $user->id, 'amount' => 150000,
+        'transfer_proof_path' => 'y.jpg', 'transfer_date' => now()->toDateString(), 'status' => 'PENDING',
+    ]);
+
+    $response = $this->actingAs($user)->get(route('admin.manual-payment.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('totalMenunggu', 2);
+    $response->assertSee('Siswa MP Lembaga X');
+    $response->assertSee('Siswa MP Lembaga Y');
 });

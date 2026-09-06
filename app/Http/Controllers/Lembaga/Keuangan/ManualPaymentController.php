@@ -25,7 +25,7 @@ class ManualPaymentController extends Controller
 
         $query = ManualPaymentRequest::where('status', 'PENDING')
             ->whereHas('pembayaran', function ($q) use ($lembagaId) {
-                $q->whereHas('siswa', fn ($q2) => $q2->where('lembaga_id', $lembagaId));
+                $q->whereHas('siswa', fn ($q2) => $q2->when($lembagaId !== null, fn ($q3) => $q3->where('lembaga_id', $lembagaId)));
             })
             ->with(['pembayaran.siswa', 'pembayaran.pembayaranTagihan', 'requestedBy'])
             ->latest('transfer_date');
@@ -56,10 +56,10 @@ class ManualPaymentController extends Controller
             'requestList' => $paginated,
             'perPage' => $perPage,
             'totalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
-                ->whereHas('pembayaran.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+                ->whereHas('pembayaran.siswa', fn ($q) => $q->when($lembagaId !== null, fn ($q2) => $q2->where('lembaga_id', $lembagaId)))
                 ->count(),
             'totalNominalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
-                ->whereHas('pembayaran.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+                ->whereHas('pembayaran.siswa', fn ($q) => $q->when($lembagaId !== null, fn ($q2) => $q2->where('lembaga_id', $lembagaId)))
                 ->sum('amount'),
         ]);
     }
