@@ -1665,29 +1665,12 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Create: `.agents/logs/2026-09-06-guru-piket-jurnal-kbm.md`
 - Modify: `PETA_PENGEMBANGAN.md`
 
-- [ ] **Step 1: Pastikan tidak ada proses test lain berjalan**
-
-Run (PowerShell): `Get-CimInstance Win32_Process -Filter "Name='php.exe'" | Select ProcessId,CommandLine`
-
-- [ ] **Step 2: Full test suite**
-
-Run: `php artisan test --compact`
-Expected: 0 kegagalan baru dibanding baseline sebelum plan ini (baseline terakhir yang diketahui: ~2884 passed, 4 gagal pre-existing tidak terkait — bandingkan angka `passed` naik sejumlah test baru plan ini, 4 kegagalan lama tetap sama).
-
-- [ ] **Step 3: Pint**
-
-Run: `vendor/bin/pint --dirty --format agent`
-Expected: `{"tool":"pint","result":"passed"}` atau `"fixed"`.
-
-- [ ] **Step 4: Tulis handoff log**
-
-Tulis `.agents/logs/2026-09-06-guru-piket-jurnal-kbm.md` — ringkas per task, commit hash, hasil test. WAJIB sertakan catatan jujur soal 1 koreksi yang ditemukan saat plan ditulis (Task 2: `GenerateJadwalPiketHarianAction` mulai generate dari HARI INI bukan dari `semester->tanggal_mulai`, supaya tidak membuat akses piket ke sesi lampau tanpa sengaja) — supaya jejak keputusan ini tercatat, bukan cuma di kode.
-
-- [ ] **Step 5: Update `PETA_PENGEMBANGAN.md`**
-
-Cari baris "Notifikasi presensi & penjemputan" dan baris "Kartu pelajar digital (QR) & Presensi Scan" yang sudah ada (dari plan-plan sebelumnya sesi ini). Tambahkan 1 entri baru menandai **Proyek C Fase 1 (Guru Piket) SELESAI** dengan tanggal & referensi handoff log — JANGAN klaim Fase 2 (`LaporanPiket`, verifikasi Kepsek, cetak dokumen) selesai, itu tetap backlog terpisah (spec §5). Juga JANGAN klaim Proyek B (Waka Kurikulum akses lintas-guru) selesai — itu masih backlog terpisah total.
-
-- [ ] **Step 6: Commit**
+- [x] **Step 1: Pastikan tidak ada proses test lain berjalan**
+- [x] **Step 2: Full test suite**
+- [x] **Step 3: Pint**
+- [x] **Step 4: Tulis handoff log**
+- [x] **Step 5: Update `PETA_PENGEMBANGAN.md`**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .agents/logs/2026-09-06-guru-piket-jurnal-kbm.md PETA_PENGEMBANGAN.md

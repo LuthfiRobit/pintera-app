@@ -43,6 +43,7 @@ it('seeds the initial permissions', function () {
         'jadwal-pelajaran.kelola',
         'kalender-akademik.view', 'kalender-akademik.kelola', 'kalender-akademik.kelola-nasional',
         'pengaturan-akademik.kelola',
+        'piket.kelola',
         'rpp.view', 'rpp.kelola', 'rpp.verify',
         'kehadiran-sdm.izin.ajukan', 'kehadiran-sdm.izin.approve', 'kehadiran-sdm.izin.lihat-sendiri',
     ];
@@ -51,7 +52,7 @@ it('seeds the initial permissions', function () {
         expect(Permission::where('name', $name)->exists())->toBeTrue();
     }
 
-    expect(Permission::count())->toBe(151);
+    expect(Permission::count())->toBe(152);
 });
 
 it('seeds the initial roles with correct scope and protection', function () {
@@ -60,7 +61,7 @@ it('seeds the initial roles with correct scope and protection', function () {
     $superAdmin = Role::where('name', 'yayasan_super_admin')->first();
     expect($superAdmin->scope_level)->toBe('yayasan');
     expect($superAdmin->is_protected)->toBeTrue();
-    expect($superAdmin->permissions()->count())->toBe(151);
+    expect($superAdmin->permissions()->count())->toBe(152);
 
     expect(Role::where('name', 'kepala_sekolah')->first()->scope_level)->toBe('lembaga');
     expect(Role::where('name', 'admin_administrasi')->first()->scope_level)->toBe('lembaga');
@@ -137,7 +138,7 @@ it('is idempotent when run twice', function () {
     (new RolePermissionSeeder)->run();
 
     expect(Role::count())->toBe(18);
-    expect(Permission::count())->toBe(151);
+    expect(Permission::count())->toBe(152);
 });
 
 it('removes orphaned old flat permission rows on re-seed', function () {
