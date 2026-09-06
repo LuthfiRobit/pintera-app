@@ -40,6 +40,11 @@ it('shows RPP, QR Kehadiran, Izin/Cuti, and Kasus Pendampingan under Ruang Guru 
     $response->assertSeeInOrder(['Ruang Guru', 'Perangkat Ajar (RPP)']);
     $response->assertSee('QR Kehadiran Saya');
     $response->assertSee('Izin/Cuti Saya');
+    $response->assertSee('Jurnal & Presensi');
+    $response->assertSee('Rekap Kehadiran');
+    $response->assertSee('Komponen Penilaian (TP)');
+    $response->assertSee('Asesmen & Nilai');
+    $response->assertSee('Rapor Wali Kelas');
 });
 
 it('shows Ruang Siswa group with real routes, dalam-pengembangan stub links hidden', function () {
@@ -202,4 +207,25 @@ it('does not treat guru_bk as guru identity for sidebar grouping purposes', func
 
     $response->assertOk();
     $response->assertDontSee('Ruang Guru');
+});
+
+it('hides Jurnal Presensi, Rekap Kehadiran, Komponen Penilaian, Asesmen, dan Rapor Wali Kelas dari user yang bukan guru walau punya semua permission terkait', function () {
+    foreach (['presensi.isi', 'komponen-penilaian.kelola-sendiri', 'asesmen.kelola', 'rapor.input-wali'] as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_sidebar_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['presensi.isi', 'komponen-penilaian.kelola-sendiri', 'asesmen.kelola', 'rapor.input-wali']);
+
+    $yayasan = Yayasan::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('dashboard'));
+
+    $response->assertOk();
+    $response->assertDontSee('Jurnal & Presensi');
+    $response->assertDontSee('Rekap Kehadiran');
+    $response->assertDontSee('Komponen Penilaian (TP)');
+    $response->assertDontSee('Asesmen & Nilai');
+    $response->assertDontSee('Rapor Wali Kelas');
 });
