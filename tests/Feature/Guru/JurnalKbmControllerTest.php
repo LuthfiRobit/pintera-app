@@ -211,3 +211,15 @@ it('forbids a guru from viewing a sesi that does not belong to them', function (
 
     $this->actingAs($guruLainUser)->get(route('guru.jurnal-kbm.show', $sesi))->assertForbidden();
 });
+
+it('halaman detail sesi jurnal kbm menampilkan tombol Scan Presensi', function () {
+    ['guruUser' => $guruUser] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
+    $sesi = SesiPembelajaran::firstOrFail();
+
+    $response = $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.show', $sesi));
+
+    $response->assertOk();
+    $response->assertSee('Scan Presensi');
+    $response->assertSee('presensi-qr-reader', false);
+});
