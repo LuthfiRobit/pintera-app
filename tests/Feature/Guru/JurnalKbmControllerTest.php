@@ -9,13 +9,16 @@ use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
+use App\Models\OrangTua;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\Siswa;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use App\Notifications\Akademik\PresensiPengecualianNotification;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
 function siapkanGuruDenganJadwalHariIni(): array
@@ -109,6 +112,38 @@ it('saves keterangan per siswa alongside status izin/sakit', function () {
     $presensi = $sesi->fresh()->presensi()->where('siswa_id', $siswa->id)->first();
     expect($presensi->status->value)->toBe('sakit');
     expect($presensi->keterangan)->toBe('Demam tinggi, ada surat dari orang tua');
+});
+
+it('mengirim notifikasi presensi ke kontak utama saat status berubah jadi izin', function () {
+    Notification::fake();
+    ['guruUser' => $guruUser, 'siswa' => $siswa] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
+    $sesi = SesiPembelajaran::firstOrFail();
+    $kontakUtama = OrangTua::factory()->create();
+    $siswa->orangTua()->attach($kontakUtama->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $this->actingAs($guruUser)->put(route('guru.jurnal-kbm.update', $sesi), [
+        'materi' => 'Perkalian dan pembagian',
+        'presensi' => [$siswa->id => 'izin'],
+    ]);
+
+    Notification::assertSentTo($kontakUtama, PresensiPengecualianNotification::class);
+});
+
+it('tidak mengirim notifikasi presensi kalau siswa disimpan tetap hadir', function () {
+    Notification::fake();
+    ['guruUser' => $guruUser, 'siswa' => $siswa] = siapkanGuruDenganJadwalHariIni();
+    $this->actingAs($guruUser)->get(route('guru.jurnal-kbm.index'));
+    $sesi = SesiPembelajaran::firstOrFail();
+    $kontakUtama = OrangTua::factory()->create();
+    $siswa->orangTua()->attach($kontakUtama->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $this->actingAs($guruUser)->put(route('guru.jurnal-kbm.update', $sesi), [
+        'materi' => 'Perkalian dan pembagian',
+        'presensi' => [$siswa->id => 'hadir'],
+    ]);
+
+    Notification::assertNothingSent();
 });
 
 it('forbids a guru from updating a sesi that does not belong to them', function () {
