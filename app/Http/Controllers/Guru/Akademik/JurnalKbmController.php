@@ -7,6 +7,7 @@ use App\Domains\Akademik\Actions\Presensi\GenerateSesiHarianAction;
 use App\Domains\Akademik\Actions\Presensi\RecordJurnalDanPresensiAction;
 use App\Domains\Akademik\Exceptions\KartuValidasiException;
 use App\Domains\Akademik\Models\SesiPembelajaran;
+use App\Domains\Akademik\Services\PiketAccessChecker;
 use App\Enums\Hari;
 use App\Http\Requests\Akademik\UpdateJurnalPresensiRequest;
 use App\Models\Guru;
@@ -197,6 +198,6 @@ class JurnalKbmController extends BaseController
     {
         $guru = auth()->user()->guru;
 
-        abort_if($guru === null || $sesi->guru_id !== $guru->id, 403);
+        abort_if($guru === null || ! app(PiketAccessChecker::class)->bisaAkses($sesi, $guru), 403);
     }
 }
