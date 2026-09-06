@@ -201,7 +201,7 @@
                                 </x-badge>
                                 <x-badge tone="amber" class="gap-1">
                                     <x-icon name="person" class="h-3 w-3" />
-                                    Guru: {{ $sesi->guru->nama_lengkap ?? '-' }}
+                                    Guru: {{ $sesi->guru->nama ?? '-' }}
                                 </x-badge>
                             </div>
                         </div>

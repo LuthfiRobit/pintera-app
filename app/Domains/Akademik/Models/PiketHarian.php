@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Akademik\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Guru;
 use App\Models\Lembaga;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PiketHarian extends Model
 {
+    use BelongsToTenant;
+
     protected $table = 'piket_harian';
 
     protected $fillable = ['lembaga_id', 'guru_id', 'tanggal', 'sumber', 'jadwal_piket_mingguan_id'];

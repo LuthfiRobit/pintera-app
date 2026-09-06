@@ -26,7 +26,7 @@
                     @php $namaHari = [0 => 'Minggu', 1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu']; @endphp
                     @forelse ($jadwalList as $jadwal)
                         <tr>
-                            <td class="px-5 py-3 font-medium text-gray-900">{{ $jadwal->guru?->nama_lengkap ?? '-' }}</td>
+                            <td class="px-5 py-3 font-medium text-gray-900">{{ $jadwal->guru?->nama ?? '-' }}</td>
                             <td class="px-5 py-3 text-gray-700">{{ $namaHari[$jadwal->hari] ?? $jadwal->hari }}</td>
                             <td class="px-5 py-3 text-gray-600">{{ $jadwal->semester?->nama ?? '-' }}</td>
                             <td class="px-5 py-3 text-right space-x-3">
@@ -58,7 +58,7 @@
                     <select name="guru_id" required class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
                         <option value="">-- Pilih Guru --</option>
                         @foreach ($guruList ?? [] as $guru)
-                            <option value="{{ $guru->id }}">{{ $guru->nama_lengkap }}</option>
+                            <option value="{{ $guru->id }}">{{ $guru->nama }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -85,7 +85,7 @@
                             @foreach ($overrides as $override)
                                 <tr>
                                     <td class="px-4 py-2.5 font-medium text-gray-900">{{ \Carbon\Carbon::parse($override->tanggal)->isoFormat('dddd, D MMMM Y') }}</td>
-                                    <td class="px-4 py-2.5 text-gray-700">{{ $override->guru?->nama_lengkap ?? '-' }}</td>
+                                    <td class="px-4 py-2.5 text-gray-700">{{ $override->guru?->nama ?? '-' }}</td>
                                     <td class="px-4 py-2.5 text-right">
                                         <form method="POST" action="{{ route('admin.piket-harian.destroy', $override) }}" class="inline" onsubmit="return confirm('Hapus override manual ini?')">
                                             @csrf @method('DELETE')

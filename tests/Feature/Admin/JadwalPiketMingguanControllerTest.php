@@ -126,3 +126,24 @@ it('destroy() menghapus jadwal mingguan dan meregenerate piket harian', function
     // After destroy and regenerate, PiketHarian with sumber 'otomatis_mingguan' for that teacher will be deleted
     expect(PiketHarian::where('lembaga_id', $lembaga->id)->where('guru_id', $guru->id)->exists())->toBeFalse();
 });
+
+it('admin lembaga A TIDAK BISA edit/update/destroy JadwalPiketMingguan milik lembaga B', function () {
+    ['lembaga' => $lembagaA, 'admin' => $adminA] = siapkanAdminPiketKelola();
+    ['lembaga' => $lembagaB, 'semester' => $semesterB, 'guru' => $guruB] = siapkanAdminPiketKelola();
+
+    $jadwalMilikB = JadwalPiketMingguan::create([
+        'lembaga_id' => $lembagaB->id,
+        'guru_id' => $guruB->id,
+        'hari' => now()->dayOfWeek,
+        'semester_id' => $semesterB->id,
+        'dibuat_oleh_user_id' => $adminA->id,
+    ]);
+
+    $this->actingAs($adminA)->get(route('admin.piket-guru.edit', $jadwalMilikB))->assertNotFound();
+    $this->actingAs($adminA)->put(route('admin.piket-guru.update', $jadwalMilikB), [
+        'guru_id' => $guruB->id, 'hari' => 2,
+    ])->assertNotFound();
+    $this->actingAs($adminA)->delete(route('admin.piket-guru.destroy', $jadwalMilikB))->assertNotFound();
+
+    expect(JadwalPiketMingguan::withoutGlobalScopes()->find($jadwalMilikB->id))->not->toBeNull();
+});

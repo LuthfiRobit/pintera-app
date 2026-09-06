@@ -11,7 +11,7 @@
                 <x-input-label value="Guru" />
                 <select name="guru_id" class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
                     @foreach ($guruList as $guru)
-                        <option value="{{ $guru->id }}">{{ $guru->nama_lengkap }}</option>
+                        <option value="{{ $guru->id }}">{{ $guru->nama }}</option>
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('guru_id')" class="mt-1" />
