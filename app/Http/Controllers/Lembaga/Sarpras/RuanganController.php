@@ -33,19 +33,21 @@ class RuanganController extends Controller
         $yayasanId = $this->tenantContext->activeYayasanId();
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
+        $scopeFilter = function ($query) use ($lembagaId, $yayasanId) {
+            if ($lembagaId) {
+                $query->where('lembaga_id', $lembagaId)
+                    ->orWhere(function ($q) use ($yayasanId) {
+                        $q->where('yayasan_id', $yayasanId)->where('is_shared', true);
+                    });
+            } elseif ($yayasanId) {
+                $query->where('yayasan_id', $yayasanId);
+            }
+        };
+
         $query = Ruangan::withoutGlobalScope(TenantScope::class)
             ->with(['gedung', 'penanggungJawab'])
             ->withCount('aset')
-            ->where(function ($query) use ($lembagaId, $yayasanId) {
-                if ($lembagaId) {
-                    $query->where('lembaga_id', $lembagaId)
-                        ->orWhere(function ($q) use ($yayasanId) {
-                            $q->where('yayasan_id', $yayasanId)->where('is_shared', true);
-                        });
-                } elseif ($yayasanId) {
-                    $query->where('yayasan_id', $yayasanId);
-                }
-            })
+            ->where($scopeFilter)
             ->when($request->gedung_id, fn ($q, $gId) => $q->where('gedung_id', $gId))
             ->when($request->jenis_ruangan, fn ($q, $jenis) => $q->where('jenis_ruangan', $jenis))
             ->when($request->search, function ($query, $search) {
@@ -66,10 +68,10 @@ class RuanganController extends Controller
         }
 
         $gedungOptions = Gedung::where('lembaga_id', $lembagaId)->orWhere('yayasan_id', $yayasanId)->get();
-        $totalRuangan = Ruangan::where('lembaga_id', $lembagaId)->count();
-        $totalKelas = Ruangan::where('lembaga_id', $lembagaId)->where('jenis_ruangan', JenisRuangan::KelasTeori)->count();
-        $totalLab = Ruangan::where('lembaga_id', $lembagaId)->where('jenis_ruangan', JenisRuangan::Laboratorium)->count();
-        $totalShared = Ruangan::where('lembaga_id', $lembagaId)->where('is_shared', true)->count();
+        $totalRuangan = Ruangan::withoutGlobalScope(TenantScope::class)->where($scopeFilter)->count();
+        $totalKelas = Ruangan::withoutGlobalScope(TenantScope::class)->where($scopeFilter)->where('jenis_ruangan', JenisRuangan::KelasTeori)->count();
+        $totalLab = Ruangan::withoutGlobalScope(TenantScope::class)->where($scopeFilter)->where('jenis_ruangan', JenisRuangan::Laboratorium)->count();
+        $totalShared = Ruangan::withoutGlobalScope(TenantScope::class)->where($scopeFilter)->where('is_shared', true)->count();
 
         return view('portals.lembaga.sarpras.ruangan.index', [
             'ruanganList' => $ruanganList,
