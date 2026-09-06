@@ -39,6 +39,7 @@ Route::put('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::
 Route::delete('kalender-akademik/{kalenderAkademik}', [KalenderAkademikController::class, 'destroy'])->name('kalender-akademik.destroy');
 Route::get('pengaturan/akademik', [PengaturanAkademikController::class, 'index'])->name('pengaturan.akademik.index');
 Route::put('pengaturan/akademik/hari-aktif', [PengaturanAkademikController::class, 'updateHariAktif'])->name('pengaturan.akademik.hari-aktif');
+Route::put('pengaturan/akademik/batas-edit-absen', [PengaturanAkademikController::class, 'updateBatasEditAbsen'])->name('pengaturan.akademik.batas-edit-absen');
 
 Route::get('tahun-ajaran', [TahunAjaranController::class, 'index'])->name('tahun-ajaran.index');
 Route::get('tahun-ajaran/create', [TahunAjaranController::class, 'create'])->name('tahun-ajaran.create');
