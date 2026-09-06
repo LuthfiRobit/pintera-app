@@ -390,14 +390,14 @@ menjadi:
             ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where(fn ($q2) => $q2
                 ->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
                 ->orWhereHas('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class)->where('siswa.lembaga_id', $user->lembaga_id))))
-            ->when($user->widestScopeLevel() === 'yayasan', fn ($q) => $q->where(fn ($q2) use ($lembagaIdsYayasan, $activeLembagaId) {
-                $q2->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class));
-                $q2->orWhereHas('siswa', function ($q3) use ($lembagaIdsYayasan, $activeLembagaId) {
-                    $q3->withoutGlobalScope(TenantScope::class);
-                    $activeLembagaId
-                        ? $q3->where('siswa.lembaga_id', $activeLembagaId)
-                        : $q3->whereIn('siswa.lembaga_id', $lembagaIdsYayasan);
-                });
+            ->when($user->widestScopeLevel() === 'yayasan', fn ($q) => $q->where(function ($q2) use ($lembagaIdsYayasan, $activeLembagaId) {
+                $q2->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
+                    ->orWhereHas('siswa', function ($q3) use ($lembagaIdsYayasan, $activeLembagaId) {
+                        $q3->withoutGlobalScope(TenantScope::class);
+                        $activeLembagaId
+                            ? $q3->where('siswa.lembaga_id', $activeLembagaId)
+                            : $q3->whereIn('siswa.lembaga_id', $lembagaIdsYayasan);
+                    });
             }))
             ->when($search, fn ($q) => $q->search($search))
             ->orderByNama()
@@ -882,7 +882,53 @@ Expected: FAIL — `totalMenunggu` bernilai 0.
 
 - [ ] **Step 8: Perbaiki `ManualPaymentController::index()`**
 
-Buka `app/Http/Controllers/Lembaga/Keuangan/ManualPaymentController.php`. Ganti baris 24-60 (lihat isi lengkap method `index()` di file untuk memastikan konteks pas — bagian yang berubah adalah SEMUA closure `where('lembaga_id', $lembagaId)`):
+Buka `app/Http/Controllers/Lembaga/Keuangan/ManualPaymentController.php`. Method `index()` (baris 20-65) berisi **3 tempat** dengan bug `where('lembaga_id', $lembagaId)` (baris 28, 58-59, dan 61-62 — yang terakhir ini, `totalNominalMenunggu`, gampang terlewat karena identik dengan `totalMenunggu` di atasnya). Ganti PERSIS baris 24-64:
+
+```php
+        $lembagaId = $this->lembagaId($request);
+
+        $query = ManualPaymentRequest::where('status', 'PENDING')
+            ->whereHas('pembayaran', function ($q) use ($lembagaId) {
+                $q->whereHas('siswa', fn ($q2) => $q2->where('lembaga_id', $lembagaId));
+            })
+            ->with(['pembayaran.siswa', 'pembayaran.pembayaranTagihan', 'requestedBy'])
+            ->latest('transfer_date');
+
+        if ($search = $request->input('search')) {
+            $query->whereHas('pembayaran.siswa', fn ($q) => $q->search($search));
+        }
+
+        if ($dari = $request->input('dari')) {
+            $query->where('transfer_date', '>=', $dari);
+        }
+
+        if ($sampai = $request->input('sampai')) {
+            $query->where('transfer_date', '<=', $sampai);
+        }
+
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
+        $paginated = $query->paginate($perPage)->withQueryString();
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.lembaga.keuangan.manual-payment._daftar', [
+                'requestList' => $paginated,
+                'perPage' => $perPage,
+            ]);
+        }
+
+        return view('portals.lembaga.keuangan.manual-payment.index', [
+            'requestList' => $paginated,
+            'perPage' => $perPage,
+            'totalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
+                ->whereHas('pembayaran.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+                ->count(),
+            'totalNominalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
+                ->whereHas('pembayaran.siswa', fn ($q) => $q->where('lembaga_id', $lembagaId))
+                ->sum('amount'),
+        ]);
+```
+
+menjadi (SEMUA 3 closure `where('lembaga_id', $lembagaId)` dibungkus `when($lembagaId !== null, ...)`, TIDAK ADA baris lain yang berubah):
 
 ```php
         $lembagaId = $this->lembagaId($request);
@@ -922,9 +968,11 @@ Buka `app/Http/Controllers/Lembaga/Keuangan/ManualPaymentController.php`. Ganti 
             'totalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
                 ->whereHas('pembayaran.siswa', fn ($q) => $q->when($lembagaId !== null, fn ($q2) => $q2->where('lembaga_id', $lembagaId)))
                 ->count(),
+            'totalNominalMenunggu' => ManualPaymentRequest::where('status', 'PENDING')
+                ->whereHas('pembayaran.siswa', fn ($q) => $q->when($lembagaId !== null, fn ($q2) => $q2->where('lembaga_id', $lembagaId)))
+                ->sum('amount'),
+        ]);
 ```
-
-(Baris setelah `'totalMenunggu' => ...` yang tidak disebut di sini TETAP seperti aslinya — hanya baris `where('lembaga_id', $lembagaId)` yang diubah jadi `when(...)`, baca file aslinya dulu untuk melihat baris penutup persis sebelum menyimpan.)
 
 - [ ] **Step 9: Jalankan test, pastikan PASS**
 

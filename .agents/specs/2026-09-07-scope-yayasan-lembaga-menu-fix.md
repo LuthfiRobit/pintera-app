@@ -118,14 +118,14 @@ $orangTuaList = OrangTua::with(['user' => fn ($q) => $q->withoutGlobalScope(Tena
     ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where(fn ($q2) => $q2
         ->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
         ->orWhereHas('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class)->where('siswa.lembaga_id', $user->lembaga_id))))
-    ->when($user->widestScopeLevel() === 'yayasan', fn ($q) => $q->where(fn ($q2) use ($lembagaIdsYayasan, $activeLembagaId) {
-        $q2->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class));
-        $q2->orWhereHas('siswa', function ($q3) use ($lembagaIdsYayasan, $activeLembagaId) {
-            $q3->withoutGlobalScope(TenantScope::class);
-            $activeLembagaId
-                ? $q3->where('siswa.lembaga_id', $activeLembagaId)
-                : $q3->whereIn('siswa.lembaga_id', $lembagaIdsYayasan);
-        });
+    ->when($user->widestScopeLevel() === 'yayasan', fn ($q) => $q->where(function ($q2) use ($lembagaIdsYayasan, $activeLembagaId) {
+        $q2->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
+            ->orWhereHas('siswa', function ($q3) use ($lembagaIdsYayasan, $activeLembagaId) {
+                $q3->withoutGlobalScope(TenantScope::class);
+                $activeLembagaId
+                    ? $q3->where('siswa.lembaga_id', $activeLembagaId)
+                    : $q3->whereIn('siswa.lembaga_id', $lembagaIdsYayasan);
+            });
     }))
     ->when($search, fn ($q) => $q->search($search))
     ->orderByNama()
@@ -258,7 +258,7 @@ $kelasList = Kelas::when($lembagaId !== null, fn ($q) => $q->where('lembaga_id',
 
 ### D.2 — `Lembaga\Keuangan\ManualPaymentController::index()` (`app/Http/Controllers/Lembaga/Keuangan/ManualPaymentController.php`)
 
-Bug identik D.1 (baris 24, 27-29, 58-59) — filter manual lewat relasi `pembayaran.siswa`. Fix sama: bungkus tiap `where('lembaga_id', $lembagaId)` dalam closure `siswa` dengan `when($lembagaId !== null, ...)`.
+Bug identik D.1, di **3 tempat** (bukan 2 — `totalNominalMenunggu` di baris 61-63 gampang terlewat karena identik dengan `totalMenunggu` di atasnya): baris 28 (`whereHas('pembayaran', ...)` → `whereHas('siswa', ...)`), baris 58-59 (`totalMenunggu`), dan baris 61-63 (`totalNominalMenunggu`) — semuanya filter manual lewat relasi `pembayaran.siswa`. Fix sama: bungkus SEMUA `where('lembaga_id', $lembagaId)` dengan `when($lembagaId !== null, ...)`.
 
 **Acceptance criteria**: sama pola D.1, disesuaikan ke `ManualPaymentRequest`.
 
