@@ -105,6 +105,56 @@
                         <x-primary-button type="button" x-bind:disabled="submitting" @click="simpan()">Simpan Hari Aktif</x-primary-button>
                     </div>
                 @endcan
+
+                <div class="mt-6 border-t border-gray-100 pt-5" x-data="{
+                    batasHari: {{ (int) $lembaga->batas_edit_absen_hari }},
+                    submittingBatas: false,
+                    async simpanBatas() {
+                        this.submittingBatas = true;
+                        try {
+                            const response = await fetch(@js(route('admin.pengaturan.akademik.batas-edit-absen')), {
+                                method: 'PUT',
+                                headers: {
+                                    Accept: 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                },
+                                body: JSON.stringify({ batas_edit_absen_hari: this.batasHari }),
+                            });
+                            const json = await response.json();
+                            if (!response.ok) {
+                                Alpine.store('toast').push('error', json.message ?? 'Gagal menyimpan batas waktu edit.');
+                                return;
+                            }
+                            Alpine.store('toast').push('success', 'Batas waktu edit presensi berhasil disimpan.');
+                        } catch (error) {
+                            Alpine.store('toast').push('error', 'Gagal menyimpan batas waktu edit.');
+                        } finally {
+                            this.submittingBatas = false;
+                        }
+                    },
+                }">
+                    <p class="font-display text-sm font-bold text-gray-900">Batas Waktu Edit Presensi</p>
+                    <p class="mt-1 text-sm text-gray-500">Guru mapel biasa tidak bisa lagi mengedit presensi/jurnal sesi yang lebih tua dari jumlah hari ini. Wali Kelas tetap bisa mengedit sesi kelasnya sendiri kapan pun, tanpa batas.</p>
+
+                    <div class="mt-3 flex items-center gap-3">
+                        <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            x-model.number="batasHari"
+                            :disabled="!{{ $bolehKelolaHariAktif ? 'true' : 'false' }}"
+                            class="w-28 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500 disabled:cursor-not-allowed disabled:bg-gray-50"
+                        >
+                        <span class="text-sm text-gray-500">hari</span>
+                    </div>
+
+                    @can('pengaturan-akademik.kelola')
+                        <div class="mt-3">
+                            <x-primary-button type="button" x-bind:disabled="submittingBatas" @click="simpanBatas()">Simpan Batas Waktu Edit</x-primary-button>
+                        </div>
+                    @endcan
+                </div>
             </div>
 
             {{-- Hari Libur Akademik --}}
