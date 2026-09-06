@@ -1642,98 +1642,13 @@ it('admin bisa hapus baris PiketHarian', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
-
-Run: `php artisan test tests/Feature/Admin/PiketHarianControllerTest.php --compact`
-Expected: FAIL — route `admin.piket-harian.store`/`admin.piket-harian.destroy` tidak ditemukan.
-
-- [ ] **Step 3: Tambah route**
-
-Tambahkan ke `routes/admin/akademik-master.php`, plus `use App\Http\Controllers\Admin\PiketHarianController;`:
-
-```php
-Route::post('piket-harian', [PiketHarianController::class, 'store'])->name('piket-harian.store');
-Route::delete('piket-harian/{piketHarian}', [PiketHarianController::class, 'destroy'])->name('piket-harian.destroy');
-```
-
-- [ ] **Step 4: Tulis controller**
-
-```php
-<?php
-
-namespace App\Http\Controllers\Admin;
-
-use App\Domains\Akademik\Models\PiketHarian;
-use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
-use App\Models\Guru;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Routing\Controller as BaseController;
-use Illuminate\Validation\ValidationException;
-
-class PiketHarianController extends BaseController
-{
-    use AuthorizesRequests;
-    use ResolveLembagaScopeTrait;
-
-    public function store(Request $request): RedirectResponse
-    {
-        $this->authorize('piket.kelola');
-
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
-            ? $this->resolveActiveLembagaId($request->user())
-            : $request->user()->lembaga_id;
-
-        abort_if($lembagaId === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.');
-
-        $data = $request->validate([
-            'guru_id' => ['required', 'integer'],
-            'tanggal' => ['required', 'date'],
-        ]);
-
-        $guruValid = Guru::where('id', $data['guru_id'])->where('lembaga_id', $lembagaId)->exists();
-        if (! $guruValid) {
-            throw ValidationException::withMessages(['guru_id' => 'Guru ini bukan bagian dari lembaga Anda.']);
-        }
-
-        PiketHarian::updateOrCreate(
-            ['lembaga_id' => $lembagaId, 'guru_id' => $data['guru_id'], 'tanggal' => $data['tanggal']],
-            ['sumber' => 'override_manual', 'jadwal_piket_mingguan_id' => null]
-        );
-
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Override piket harian berhasil disimpan.');
-    }
-
-    public function destroy(PiketHarian $piketHarian, Request $request): RedirectResponse
-    {
-        $this->authorize('piket.kelola');
-
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
-            ? $this->resolveActiveLembagaId($request->user())
-            : $request->user()->lembaga_id;
-
-        abort_if($piketHarian->lembaga_id !== $lembagaId, 403);
-
-        $piketHarian->delete();
-
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Baris piket harian berhasil dihapus.');
-    }
-}
-```
-
-**Catatan tenant-safety**: `store()` WAJIB validasi `$guruValid` (guru harus bagian lembaga admin yang login) SEBELUM membuat baris — `destroy()` WAJIB `abort_if($piketHarian->lembaga_id !== $lembagaId, 403)` SEBELUM hapus. Ini yang membuat skenario test #2 ("admin lembaga A tidak bisa buat override utk lembaga B") lolos.
-
-- [ ] **Step 5: Tambah link ke halaman override manual di view `piket-guru/index.blade.php`**
-
-Tambahkan 1 baris link sederhana di bagian atas halaman index yang sudah dibuat Task 9 (tidak perlu halaman terpisah lengkap untuk MVP — form inline sudah cukup untuk skenario test di atas; kalau implementer merasa perlu view `harian.blade.php` terpisah yang lebih lengkap untuk UX, boleh ditambahkan, TAPI WAJIB tetap pakai endpoint `admin.piket-harian.store`/`destroy` yang sama persis).
-
-- [ ] **Step 6: Jalankan test, pastikan lulus**
-
-Run: `php artisan test tests/Feature/Admin/PiketHarianControllerTest.php --compact`
-Expected: **3 passed**.
-
-- [ ] **Step 7: Commit**
+- [x] **Step 1: Tulis test yang gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 3: Tambah route**
+- [x] **Step 4: Tulis controller**
+- [x] **Step 5: Tambah link ke halaman override manual di view `piket-guru/index.blade.php`**
+- [x] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/PiketHarianController.php routes/admin/akademik-master.php tests/Feature/Admin/PiketHarianControllerTest.php

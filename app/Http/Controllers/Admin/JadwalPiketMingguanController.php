@@ -28,6 +28,13 @@ class JadwalPiketMingguanController extends BaseController
 
         return view('portals.lembaga.akademik.piket-guru.index', [
             'jadwalList' => JadwalPiketMingguan::where('lembaga_id', $lembagaId)->with(['guru', 'semester'])->orderBy('hari')->get(),
+            'overrides' => PiketHarian::where('lembaga_id', $lembagaId)
+                ->where('sumber', 'override_manual')
+                ->where('tanggal', '>=', now()->toDateString())
+                ->with('guru')
+                ->orderBy('tanggal')
+                ->get(),
+            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderBy('nama_lengkap')->get(),
         ]);
     }
 

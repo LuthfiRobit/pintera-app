@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\KalenderAkademikController;
 use App\Http\Controllers\Admin\KelasController;
 use App\Http\Controllers\Admin\KurikulumAssignmentController;
 use App\Http\Controllers\Admin\PengaturanAkademikController;
+use App\Http\Controllers\Admin\PiketHarianController;
 use App\Http\Controllers\Admin\PolaJamController;
 use App\Http\Controllers\Admin\ResyncKurikulumFaseController;
 use App\Http\Controllers\Admin\SemesterController;
@@ -79,3 +80,6 @@ Route::post('piket-guru', [JadwalPiketMingguanController::class, 'store'])->name
 Route::get('piket-guru/{jadwalPiketMingguan}/edit', [JadwalPiketMingguanController::class, 'edit'])->name('piket-guru.edit');
 Route::put('piket-guru/{jadwalPiketMingguan}', [JadwalPiketMingguanController::class, 'update'])->name('piket-guru.update');
 Route::delete('piket-guru/{jadwalPiketMingguan}', [JadwalPiketMingguanController::class, 'destroy'])->name('piket-guru.destroy');
+
+Route::post('piket-harian', [PiketHarianController::class, 'store'])->name('piket-harian.store');
+Route::delete('piket-harian/{piketHarian}', [PiketHarianController::class, 'destroy'])->name('piket-harian.destroy');
