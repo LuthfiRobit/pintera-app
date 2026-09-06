@@ -68,6 +68,7 @@
                 Auth::user()->can('rapor.view') ? ['route' => 'admin.rapor.index', 'pattern' => 'admin.rapor.*', 'label' => 'Rekap Rapor', 'icon' => 'book-text'] : null,
                 Auth::user()->canAny(['rapor.verify', 'rapor.approve']) ? ['route' => 'admin.rapor.persetujuan.index', 'pattern' => 'admin.rapor.persetujuan.*', 'label' => 'Persetujuan Rapor', 'icon' => 'check-square'] : null,
                 Auth::user()->can('kenaikan-kelas.kelola') ? ['route' => 'admin.kenaikan-kelas.index', 'pattern' => 'admin.kenaikan-kelas.*', 'label' => 'Kenaikan Kelas', 'icon' => 'trending-up'] : null,
+                Auth::user()->can('piket.kelola') ? ['route' => 'admin.piket-guru.index', 'pattern' => 'admin.piket-guru.*', 'label' => 'Jadwal Piket Guru', 'icon' => 'shield'] : null,
             ]),
         ],
         [
