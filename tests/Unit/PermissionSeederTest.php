@@ -12,7 +12,7 @@ uses(TestCase::class, RefreshDatabase::class);
 it('seeds exactly 151 permissions', function () {
     (new PermissionSeeder)->run();
 
-    expect(Permission::count())->toBe(151);
+    expect(Permission::count())->toBe(152);
     expect(Permission::where('name', 'roles.view')->exists())->toBeTrue();
     expect(Permission::where('name', 'fase-mapping.view')->exists())->toBeTrue();
     expect(Permission::where('name', 'kurikulum-assignment.view')->exists())->toBeTrue();
@@ -47,7 +47,7 @@ it('is idempotent when run twice', function () {
     (new PermissionSeeder)->run();
     (new PermissionSeeder)->run();
 
-    expect(Permission::count())->toBe(151);
+    expect(Permission::count())->toBe(152);
 });
 
 it('removes orphaned legacy flat-name permissions on re-seed', function () {

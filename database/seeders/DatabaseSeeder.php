@@ -75,6 +75,7 @@ class DatabaseSeeder extends Seeder
             RppSeeder::class,
             SesiPembelajaranSeeder::class,
             PresensiSeeder::class,
+            PiketGuruSeeder::class,
             KomponenPenilaianSeeder::class,
             AsesmenSeeder::class,
             NilaiSiswaSeeder::class,
