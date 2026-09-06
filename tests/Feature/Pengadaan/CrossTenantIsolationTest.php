@@ -171,4 +171,30 @@ class CrossTenantIsolationTest extends TestCase
             'status_lpj' => 'submitted',
         ]);
     }
+
+    public function test_kartu_ringkasan_stats_pengajuan_pengadaan_menghitung_agregat_semua_lembaga_saat_yayasan_mode_semua_lembaga(): void
+    {
+        PengajuanPengadaan::create([
+            'yayasan_id' => $this->yayasanA->id,
+            'lembaga_id' => $this->lembagaA1->id,
+            'nomor_pengajuan' => 'PGD-A1-STATS',
+            'judul_pengajuan' => 'Pengajuan Stats Lembaga A1',
+            'tingkat_urgensi' => 'biasa',
+            'total_estimasi' => 500000,
+            'status' => StatusPengajuan::Draft,
+        ]);
+
+        $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_stats_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+        $role->givePermissionTo(['pengadaan.proposal.view']);
+        $user = User::factory()->create(['yayasan_id' => $this->yayasanA->id]);
+        $user->assignRole($role);
+
+        $response = $this->actingAs($user)->get(route('admin.pengadaan.proposal.index'));
+
+        $response->assertOk();
+        $response->assertViewHas('stats', function ($stats) {
+            // proposalA2 (dari setUp, status Submitted) + PGD-A1-STATS (Draft) = total 2
+            return $stats['total'] === 2 && $stats['draft'] === 1;
+        });
+    }
 }

@@ -57,12 +57,22 @@ class PengajuanPengadaanController extends Controller
 
         $proposals = $query->paginate($perPage)->withQueryString();
 
+        $statsFilter = function ($query) use ($lembagaId, $yayasanId) {
+            $query->where(function ($q) use ($lembagaId, $yayasanId) {
+                if ($lembagaId) {
+                    $q->where('lembaga_id', $lembagaId);
+                } elseif ($yayasanId) {
+                    $q->where('yayasan_id', $yayasanId);
+                }
+            });
+        };
+
         $stats = [
-            'total' => PengajuanPengadaan::where('lembaga_id', $lembagaId)->count(),
-            'draft' => PengajuanPengadaan::where('lembaga_id', $lembagaId)->where('status', StatusPengajuan::Draft)->count(),
-            'in_review' => PengajuanPengadaan::where('lembaga_id', $lembagaId)->whereIn('status', [StatusPengajuan::Submitted, StatusPengajuan::InReview])->count(),
-            'disbursed' => PengajuanPengadaan::where('lembaga_id', $lembagaId)->where('status', StatusPengajuan::Disbursed)->count(),
-            'completed' => PengajuanPengadaan::where('lembaga_id', $lembagaId)->where('status', StatusPengajuan::Completed)->count(),
+            'total' => PengajuanPengadaan::where($statsFilter)->count(),
+            'draft' => PengajuanPengadaan::where($statsFilter)->where('status', StatusPengajuan::Draft)->count(),
+            'in_review' => PengajuanPengadaan::where($statsFilter)->whereIn('status', [StatusPengajuan::Submitted, StatusPengajuan::InReview])->count(),
+            'disbursed' => PengajuanPengadaan::where($statsFilter)->where('status', StatusPengajuan::Disbursed)->count(),
+            'completed' => PengajuanPengadaan::where($statsFilter)->where('status', StatusPengajuan::Completed)->count(),
         ];
 
         if ($request->ajax()) {
