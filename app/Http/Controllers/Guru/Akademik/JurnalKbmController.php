@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Guru\Akademik;
 
+use App\Domains\Akademik\Actions\KartuSiswa\ResolveKartuUntukPresensiAction;
 use App\Domains\Akademik\Actions\Presensi\GenerateSesiHarianAction;
 use App\Domains\Akademik\Actions\Presensi\RecordJurnalDanPresensiAction;
+use App\Domains\Akademik\Exceptions\KartuValidasiException;
 use App\Domains\Akademik\Models\SesiPembelajaran;
 use App\Enums\Hari;
 use App\Http\Requests\Akademik\UpdateJurnalPresensiRequest;
@@ -13,6 +15,7 @@ use App\Models\TahunAjaran;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -141,6 +144,25 @@ class JurnalKbmController extends BaseController
         $this->recordJurnalDanPresensiAction->execute($sesi, $request->toDTO());
 
         return redirect()->route('guru.jurnal-kbm.index')->with('status', 'Jurnal dan presensi berhasil disimpan.');
+    }
+
+    public function resolveKartu(Request $request, SesiPembelajaran $sesi, ResolveKartuUntukPresensiAction $action): JsonResponse
+    {
+        $this->authorize('presensi.isi');
+        $this->authorizeMilikGuru($sesi);
+
+        $request->validate(['kode' => ['required', 'string']]);
+
+        $guru = $request->user()->guru;
+        abort_unless($guru !== null, 403);
+
+        try {
+            $siswa = $action->execute($request->string('kode')->toString(), $sesi, (int) $guru->lembaga_id);
+        } catch (KartuValidasiException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['siswa_id' => $siswa->id, 'nama_lengkap' => $siswa->nama_lengkap]);
     }
 
     private function authorizeMilikGuru(SesiPembelajaran $sesi): void

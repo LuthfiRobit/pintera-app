@@ -21,33 +21,35 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 
-function siapkanGuruDenganJadwalHariIni(): array
-{
-    Carbon::setTestNow(Carbon::parse('2026-08-19')); // a Wednesday
+if (! function_exists('siapkanGuruDenganJadwalHariIni')) {
+    function siapkanGuruDenganJadwalHariIni(): array
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-19')); // a Wednesday
 
-    $yayasan = Yayasan::factory()->create();
-    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SMP', 'hari_libur_mingguan' => [0]]);
-    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
-    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
-    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
-    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
-    $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'is_pelajaran' => true]);
-    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+        $yayasan = Yayasan::factory()->create();
+        $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SMP', 'hari_libur_mingguan' => [0]]);
+        $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+        $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+        $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+        $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+        $jam = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Rabu->value, 'is_pelajaran' => true]);
+        $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
 
-    Permission::firstOrCreate(['name' => 'presensi.isi', 'guard_name' => 'web']);
-    $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
-    $role->givePermissionTo(['presensi.isi']);
-    $guruUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
-    $guruUser->assignRole($role);
-    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $guruUser->id]);
+        Permission::firstOrCreate(['name' => 'presensi.isi', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+        $role->givePermissionTo(['presensi.isi']);
+        $guruUser = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $guruUser->assignRole($role);
+        $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'user_id' => $guruUser->id]);
 
-    $jadwal = JadwalPelajaran::create([
-        'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'mata_pelajaran_id' => $mapel->id,
-        'guru_id' => $guru->id, 'semester_id' => $semester->id,
-    ]);
-    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+        $jadwal = JadwalPelajaran::create([
+            'kelas_id' => $kelas->id, 'jam_pelajaran_id' => $jam->id, 'mata_pelajaran_id' => $mapel->id,
+            'guru_id' => $guru->id, 'semester_id' => $semester->id,
+        ]);
+        $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
 
-    return compact('guruUser', 'guru', 'kelas', 'jadwal', 'semester', 'siswa');
+        return compact('guruUser', 'guru', 'kelas', 'jadwal', 'semester', 'siswa');
+    }
 }
 
 it('denies access without presensi.isi permission', function () {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Akademik\Models;
 
+use App\Models\Scopes\TenantScope;
 use App\Models\Siswa;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ class KartuSiswa extends Model
 
     public function siswa(): BelongsTo
     {
-        return $this->belongsTo(Siswa::class);
+        return $this->belongsTo(Siswa::class)->withoutGlobalScope(TenantScope::class);
     }
 
     public function scopeAktif(Builder $query): Builder
