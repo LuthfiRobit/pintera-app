@@ -152,3 +152,16 @@ it('does not block deleting a jenis karyawan that is only in use by a karyawan i
     expect(JenisKaryawanMaster::withoutGlobalScopes()->find($jenisA->id))->toBeNull();
     expect(JenisKaryawanMaster::withoutGlobalScopes()->find($jenisB->id))->not->toBeNull();
 });
+
+it('404s when a manager tries to update or delete a jenis karyawan owned by a different yayasan', function () {
+    $managerA = actingAsJenisKaryawanManager();
+    $jenisB = JenisKaryawanMaster::factory()->create();
+
+    $this->actingAs($managerA)->putJson(route('admin.jenis-karyawan-master.update', $jenisB), ['nama' => 'Diubah Paksa'])
+        ->assertNotFound();
+
+    $this->actingAs($managerA)->deleteJson(route('admin.jenis-karyawan-master.destroy', $jenisB))
+        ->assertNotFound();
+
+    expect(JenisKaryawanMaster::withoutGlobalScopes()->find($jenisB->id)->nama)->not->toBe('Diubah Paksa');
+});

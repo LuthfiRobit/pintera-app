@@ -153,3 +153,18 @@ it('does not block deleting a jabatan tambahan that is only assigned to a guru i
 
     expect(JabatanTambahanMaster::withoutGlobalScopes()->find($jabatanA->id))->toBeNull();
 });
+
+it('404s when a manager tries to update or delete a jabatan tambahan owned by a different yayasan', function () {
+    $managerA = actingAsJabatanTambahanManager();
+    $jabatanB = JabatanTambahanMaster::factory()->create();
+
+    $this->actingAs($managerA)->putJson(route('admin.jabatan-tambahan-master.update', $jabatanB), [
+        'nama' => 'Diubah Paksa',
+        'kelompok' => 'struktural',
+    ])->assertNotFound();
+
+    $this->actingAs($managerA)->deleteJson(route('admin.jabatan-tambahan-master.destroy', $jabatanB))
+        ->assertNotFound();
+
+    expect(JabatanTambahanMaster::withoutGlobalScopes()->find($jabatanB->id)->nama)->not->toBe('Diubah Paksa');
+});
