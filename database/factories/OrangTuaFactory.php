@@ -17,6 +17,7 @@ class OrangTuaFactory extends Factory
         return $this->afterMaking(function (OrangTua $orangTua) {
             unset(
                 $orangTua->user_id,
+                $orangTua->yayasan_id,
                 $orangTua->nama,
                 $orangTua->nama_lengkap,
                 $orangTua->nik,

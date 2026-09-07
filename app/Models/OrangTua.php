@@ -103,9 +103,14 @@ class OrangTua extends Model
 
     public function scopeOrderByNama($query, string $direction = 'asc')
     {
-        return $query->leftJoin('persons', 'orang_tua.person_id', '=', 'persons.id')
-            ->orderBy('persons.nama_lengkap', $direction)
-            ->select('orang_tua.*');
+        $query->leftJoin('persons', 'orang_tua.person_id', '=', 'persons.id')
+            ->orderBy('persons.nama_lengkap', $direction);
+
+        if (empty($query->getQuery()->columns)) {
+            $query->select('orang_tua.*');
+        }
+
+        return $query;
     }
 
     public function resolveRouteBinding($value, $field = null)

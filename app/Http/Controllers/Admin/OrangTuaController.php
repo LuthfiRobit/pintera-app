@@ -36,7 +36,16 @@ class OrangTuaController extends BaseController
         // to only pass when the viewer ALSO has a null lembaga_id — masking this for any
         // fixture/manager that never set one).
         $orangTuaList = OrangTua::with(['user' => fn ($q) => $q->withoutGlobalScope(TenantScope::class), 'person'])
-            ->withCount('siswa')
+            ->withCount(['siswa' => function ($q) use ($user, $lembagaIdsYayasan, $activeLembagaId) {
+                $q->withoutGlobalScope(TenantScope::class);
+                if ($user->widestScopeLevel() !== 'yayasan') {
+                    $q->where('siswa.lembaga_id', $user->lembaga_id);
+                } elseif ($activeLembagaId) {
+                    $q->where('siswa.lembaga_id', $activeLembagaId);
+                } else {
+                    $q->whereIn('siswa.lembaga_id', $lembagaIdsYayasan);
+                }
+            }])
             ->when($user->widestScopeLevel() !== 'yayasan', fn ($q) => $q->where(fn ($q2) => $q2
                 ->whereDoesntHave('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class))
                 ->orWhereHas('siswa', fn ($q3) => $q3->withoutGlobalScope(TenantScope::class)->where('siswa.lembaga_id', $user->lembaga_id))))
