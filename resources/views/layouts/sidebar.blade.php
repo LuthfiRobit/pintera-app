@@ -220,14 +220,33 @@
     >
         @foreach ($navGroups as $group)
             @if (count($group['items']))
-                <div class="mb-7">
-                    <p class="mb-2 px-2 flex items-center gap-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
-                        @if (isset($group['group_icon']))
-                            <x-dynamic-component :component="'lucide-' . $group['group_icon']" class="h-[14px] w-[14px] opacity-70" />
-                        @endif
-                        {{ $group['label'] }}
-                    </p>
-                    <ul class="space-y-0.5">
+                @php
+                    $groupHasActiveItem = collect($group['items'])->contains(fn ($item) => request()->routeIs($item['pattern']));
+                @endphp
+                <div class="mb-3" x-data="{ open: {{ $groupHasActiveItem ? 'true' : 'false' }} }">
+                    <button
+                        type="button"
+                        @click="open = !open"
+                        class="mb-2 flex w-full items-center justify-between gap-1.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-gray-50"
+                    >
+                        <span class="flex items-center gap-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                            @if (isset($group['group_icon']))
+                                <x-dynamic-component :component="'lucide-' . $group['group_icon']" class="h-[14px] w-[14px] opacity-70" />
+                            @endif
+                            {{ $group['label'] }}
+                        </span>
+                        <x-dynamic-component :component="'lucide-chevron-down'" class="h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200" ::class="{ '-rotate-90': !open }" />
+                    </button>
+                    <ul
+                        class="space-y-0.5"
+                        x-show="open"
+                        x-transition:enter="transition ease-out duration-150"
+                        x-transition:enter-start="opacity-0 -translate-y-1"
+                        x-transition:enter-end="opacity-100 translate-y-0"
+                        x-transition:leave="transition ease-in duration-100"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                    >
                         @foreach ($group['items'] as $item)
                             @php $active = request()->routeIs($item['pattern']); @endphp
                             <li>
