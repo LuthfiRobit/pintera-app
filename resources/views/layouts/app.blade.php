@@ -9,7 +9,12 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=satoshi:400,500,600,700|outfit:400,500,600,700|ibm-plex-mono:500&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700|ibm-plex-mono:500&display=swap" rel="stylesheet" />
+        <!-- Satoshi: sidebar only (resources/views/layouts/sidebar.blade.php) -- Bunny Fonts does not
+             carry Satoshi (Fontshare-exclusive, ITF Free Font License forbids self-hosting without
+             consent), so it must be loaded from Fontshare's own API, not Bunny. -->
+        <link rel="preconnect" href="https://api.fontshare.com">
+        <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])

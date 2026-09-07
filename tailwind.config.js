@@ -70,8 +70,12 @@ export default {
                 },
             },
             fontFamily: {
-                sans: ['Satoshi', 'Outfit', ...defaultTheme.fontFamily.sans],
-                display: ['Satoshi', 'Outfit', ...defaultTheme.fontFamily.sans],
+                sans: ['Outfit', ...defaultTheme.fontFamily.sans],
+                display: ['Outfit', ...defaultTheme.fontFamily.sans],
+                // Sidebar-only (resources/views/layouts/sidebar.blade.php) -- NOT part of the
+                // app-wide sans/display stack. See app.blade.php for why Satoshi is loaded from
+                // Fontshare's own API instead of Bunny Fonts.
+                satoshi: ['Satoshi', ...defaultTheme.fontFamily.sans],
                 mono: ['"IBM Plex Mono"', ...defaultTheme.fontFamily.mono],
             },
             boxShadow: {

@@ -203,16 +203,16 @@
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 -translate-x-full flex-col overflow-hidden border-r border-gray-800 bg-gray-900 shadow-2xl transition-all duration-300 ease-out lg:sticky lg:top-0 lg:z-40 lg:h-screen lg:max-w-none lg:translate-x-0 lg:shadow-none"
+    class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 -translate-x-full flex-col overflow-hidden border-r border-gray-800 bg-gray-900 font-satoshi shadow-2xl transition-all duration-300 ease-out lg:sticky lg:top-0 lg:z-40 lg:h-screen lg:max-w-none lg:translate-x-0 lg:shadow-none"
     :class="{ 'translate-x-0': sidebarOpen, 'lg:w-0 lg:border-r-0': sidebarCollapsed, 'lg:w-72': !sidebarCollapsed }"
 >
     <div class="flex h-20 shrink-0 items-center justify-between border-b border-gray-800/80 px-6">
         <div class="flex items-center gap-3">
-            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 font-display text-lg font-bold text-white shadow-lg shadow-brand-500/30 ring-1 ring-white/10">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 font-satoshi text-lg font-bold text-white shadow-lg shadow-brand-500/30 ring-1 ring-white/10">
                 {{ Str::of(config('app.name', 'P'))->substr(0, 1) }}
             </span>
             <div class="leading-tight">
-                <p class="font-display text-base font-bold tracking-wide text-white">{{ config('app.name', 'Pintera') }}</p>
+                <p class="font-satoshi text-base font-bold tracking-wide text-white">{{ config('app.name', 'Pintera') }}</p>
                 <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400">Sistem Administrasi</p>
             </div>
         </div>
@@ -261,7 +261,7 @@
                             class="group/header mb-1 flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors duration-150 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
                         >
                             <span
-                                class="flex items-center gap-2 font-display text-[11px] uppercase tracking-[0.16em] transition-colors duration-150"
+                                class="flex items-center gap-2 font-satoshi text-[11px] uppercase tracking-[0.16em] transition-colors duration-150"
                                 :class="open ? 'font-bold text-white' : 'font-semibold text-gray-400 group-hover/header:text-gray-200'"
                             >
                                 @if (isset($group['group_icon']))
@@ -309,7 +309,7 @@
                 @else
                     <div class="mb-2.5">
                         @if (!empty($group['show_label'] ?? true))
-                            <div class="mb-1 flex items-center gap-2 px-2.5 py-1 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                            <div class="mb-1 flex items-center gap-2 px-2.5 py-1 font-satoshi text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
                                 @if (isset($group['group_icon']))
                                     <x-dynamic-component :component="'lucide-' . $group['group_icon']" class="h-[14px] w-[14px] opacity-70 text-gray-400" />
                                 @endif
