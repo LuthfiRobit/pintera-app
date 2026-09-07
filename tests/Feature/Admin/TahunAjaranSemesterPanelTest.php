@@ -7,6 +7,7 @@ use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
 use Spatie\Permission\Models\Permission;
+use Symfony\Component\Routing\Exception\RouteNotFoundException;
 
 function actingAsTahunAjaranManager(Lembaga $lembaga): User
 {
@@ -381,4 +382,9 @@ it('renders the calendar_month icon instead of the unknown-icon placeholder in t
     $response = $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))->assertOk();
 
     $response->assertSee('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-brand-500"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>', false);
+});
+
+it('no longer registers the dead admin.tahun-ajaran.create route', function () {
+    expect(fn () => route('admin.tahun-ajaran.create'))
+        ->toThrow(RouteNotFoundException::class);
 });

@@ -44,13 +44,6 @@ class TahunAjaranController extends BaseController
         ];
     }
 
-    public function create(): View
-    {
-        $this->authorize('tahun-ajaran.create');
-
-        return view('admin.tahun-ajaran.create');
-    }
-
     public function store(Request $request): RedirectResponse
     {
         $this->authorize('tahun-ajaran.create');
