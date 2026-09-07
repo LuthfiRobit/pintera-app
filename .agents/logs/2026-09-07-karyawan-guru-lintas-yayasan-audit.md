@@ -5,7 +5,7 @@
 > **Spec**: `.agents/specs/2026-09-07-karyawan-guru-lintas-yayasan-audit.md`  
 > **Plan**: `.agents/plans/2026-09-07-karyawan-guru-lintas-yayasan-audit.md`  
 > **Base commit sebelum kickoff**: `662a8321`  
-> **Commit range**: `50eedb01..5db68559` (6 commit)  
+> **Commit range**: `50eedb01..5db68559` (6 commit, perbaikan lintas-yayasan/IDOR) + `3e62cb79` (susulan 8 September 2026, perbaikan wording & aturan bisnis UI — lihat bagian 4)  
 > **Status**: Selesai & Terverifikasi (Full Suite: 2.973 test lulus, 0 regresi baru)
 
 ---
@@ -98,3 +98,37 @@ Menyelesaikan audit menyeluruh pada modul Karyawan & Guru yang menemukan 6 bug (
 3. **Status Git**:
    - Branch aktif: `rbac-v2`.
    - **TIDAK di-merge ke `main`** dan **TIDAK di-push** sesuai instruksi eksplisit kickoff.
+
+---
+
+## 4. Susulan (8 September 2026) — Perbaikan Wording & Kelengkapan Aturan Bisnis UI
+
+Setelah bug lintas-yayasan di atas selesai, user meminta review ulang: *"apakah keduanya sudah sempurna termasuk wording dan ketentuannya?"* — bukan soal keamanan/scope lagi (sudah beres), tapi soal kejelasan teks & apakah aturan bisnis backend benar-benar dikomunikasikan ke user di UI. Audit lewat 2 subagent paralel (1 Karyawan, 1 Guru) menemukan ~24 temuan. Diperbaiki LANGSUNG (bukan lewat spec/plan, atas instruksi eksplisit user), commit `3e62cb79`:
+
+**Karyawan** (`resources/views/admin/karyawan/{index,_form}.blade.php`, `tabs/profil.blade.php`, `app/Http/Controllers/Admin/KaryawanController.php`):
+- Subtitle index sekarang menjelaskan konsep "Karyawan Pool" (sebelumnya dipakai tanpa definisi sama sekali).
+- Istilah diseragamkan jadi **"Karyawan Pool"** di semua tempat (stat card, filter tab, fallback PHP) — sebelumnya "Pool Yayasan"/"Karyawan Pool"/"Lintas Lembaga" tercampur untuk 1 konsep yang sama.
+- Kolom "Kapasitas Kasus" diberi tooltip (khusus Konselor BK/Psikolog, kenapa mayoritas baris tampil "-").
+- Dialog konfirmasi ubah "Status Akun" sekarang eksplisit bilang itu juga menonaktifkan/aktifkan LOGIN karyawan — sebelumnya efek samping ini tidak diberitahu.
+- **Form edit — field "Penempatan" (Pool/lembaga) yang SEBELUMNYA HILANG TOTAL di edit mode** (bukan cuma disabled, betul-betul tidak dirender) sekarang ditampilkan disabled+berisi value, mengikuti pola yang sudah benar di modul Lembaga sendiri. Ini temuan paling signifikan dari audit ini.
+- Checkbox "Karyawan Pool" + select Yayasan diberi hint bahwa pilihan itu permanen setelah data disimpan.
+- 2 pesan error NIK duplikat yang sebelumnya nyaris identik ("...untuk karyawan lain" vs "...untuk akun lain") diperjelas jadi benar-benar beda maknanya (duplikat Person dalam 1 yayasan vs duplikat username lintas sistem).
+
+**Guru** (`resources/views/admin/guru/{_form,_daftar,edit}.blade.php`, `tabs/{profil,jabatan-tambahan,riwayat-pendidikan,sertifikasi}.blade.php`, `app/Http/Controllers/Admin/GuruController.php`, `app/Http/Controllers/Admin/Guru/JabatanTambahanController.php`):
+- Empty-state daftar guru sekarang membedakan "belum ada data" vs "tidak ada hasil filter" (`request()->anyFilled(['search', 'jenis_ptk', 'status_aktif'])`) — sebelumnya SELALU bilang "tambahkan guru pertama" walau cuma filter yang kosong.
+- Placeholder ditambah ke NIK/NIP/Email/No. HP/Golongan Pangkat — form ini sebelumnya 0 placeholder sama sekali di ~25 input, berbeda dari konvensi modul Lembaga yang konsisten pakai "Contoh: ...".
+- Hint NIP: **tidak wajib unik** (kontras eksplisit dengan NIK yang wajib unik, sebelumnya kedua field tampil identik gaya tapi beda aturan tanpa penjelasan).
+- Hint email: wajib unik **SELURUH SISTEM** (lintas lembaga/yayasan), bukan cuma di 1 lembaga.
+- Hint "PTK = Pendidik dan Tenaga Kependidikan" ditambahkan (sebelumnya singkatan tidak pernah dijelaskan).
+- Opsi status kepegawaian di `STATUS_KEPEGAWAIAN_OPTIONS` diberi kepanjangan: `GTY (Guru Tetap Yayasan)`, `PTY (Pegawai Tetap Yayasan)`, dst. — sebelumnya kode mentah tanpa penjelasan (VALUE tidak berubah, cuma LABEL dropdown).
+- **3 tab relasional (Jabatan Tambahan, Riwayat Pendidikan, Sertifikasi) yang sebelumnya 0% menampilkan `<x-input-error>` ATAU `old()` value** sekarang punya keduanya — submit gagal sebelumnya kehilangan semua input yang sudah diisi tanpa ada pesan error yang terlihat sama sekali.
+- `edit.blade.php`: `activeTab` sekarang dihitung server-side dari `$errors->hasAny([...])` per tab, otomatis kembali ke tab yang BENAR-BENAR gagal validasi — sebelumnya selalu redirect ke tab "Profil" (default hardcoded) walau yang gagal adalah form di tab lain, membuat error terlihat "hilang".
+- Pesan Indonesia custom ditambahkan untuk `akhir_periode.after_or_equal` dan `email.unique` — sebelumnya pesan default Laravel (BAHASA INGGRIS, karena `APP_LOCALE=en` di `.env`) muncul di tengah UI berbahasa Indonesia.
+- Dialog konfirmasi hapus jabatan tambahan diperbaiki jadi **"Hapus penugasan jabatan ini secara PERMANEN?"** — sebelumnya "...menghapus atau menonaktifkan..." padahal aksinya SELALU hard-delete (`detach()`), wording lama menyesatkan seolah bisa dipulihkan.
+- Breadcrumb edit "Manajemen SDM (Guru)" diseragamkan jadi "Guru" (konsisten dengan index/create).
+
+**Typo bersama kedua modul**: judul "Mode Pengemasan & Perubahan Profil" (harfiah "Packaging Mode") — jelas typo/salah terjemahan, muncul identik di `tabs/profil.blade.php` KEDUA modul (kemungkinan 1 sumber yang di-copy 2x) — diperbaiki jadi "Mode Edit & Perubahan Profil".
+
+**Verifikasi**: 36 test terkait (`KaryawanCrudTest`, `KaryawanControllerTest`, `GuruCrudTest`, `GuruRelationalProfileTest`, `GuruControllerTest`, `GuruBkFieldsTest`) tetap hijau, Pint bersih. Full suite TIDAK dijalankan ulang untuk susulan ini (murni perubahan wording/view/pesan error, tidak menyentuh scope/query — cakupan test yang disentuh sudah representatif).
+
+**Di luar scope susulan ini** (dicatat, belum dikerjakan): 2 field lain di modul Karyawan (Yayasan select hint sudah ditambahkan, tapi belum ada styling/urutan ulang form secara menyeluruh); breadcrumb create/edit Karyawan yang sedikit beda gaya ("Detail & Profil Karyawan" vs "Tambah Data Karyawan") belum diseragamkan lebih lanjut — dampaknya kecil, tidak membingungkan end-user, sengaja tidak disentuh supaya susulan ini tetap fokus ke temuan yang benar-benar signifikan.
