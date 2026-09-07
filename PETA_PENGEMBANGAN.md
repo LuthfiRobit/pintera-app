@@ -25,6 +25,7 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 - Spec: `.agents/specs/2026-09-07-scope-yayasan-lembaga-menu-fix.md`
 - Plan: `.agents/plans/2026-09-07-scope-yayasan-lembaga-menu-fix.md`
 - Handoff Log: `.agents/logs/2026-09-07-scope-yayasan-lembaga-menu-fix.md`
+- **Update 7 September 2026 (Scan ulang pasca-plan)**: audit menyeluruh SEMUA menu sidebar + nav button (topbar, dashboard), bukan cuma yang sempat ditemukan sebelumnya — checklist lengkap per-menu ("Semua Lembaga" & "Switch Lembaga") ada di `.agents/logs/2026-09-07-audit-scope-yayasan-lembaga-sidebar.md`. **4 hal nyata masih belum diperbaiki** (di luar 3 item 🟡 yang sudah dicatat di atas): `VirtualAccountController::calonGenerate()`, `::generate()`, `App\Exports\VirtualAccountExport` (semua 3 pola bug identik `index()` tapi belum disentuh krn sengaja di luar scope Task 4), dan bel notifikasi topbar "Tagihan Perlu Ditinjau" (`resources/views/layouts/topbar.blade.php:14-23`, dipaksa 0 bukan diagregat saat mode "Semua Lembaga" — baru ditemukan, di luar sidebar sama sekali). Belum dikerjakan — menunggu perintah per-menu berikutnya.
 
 ---
 
