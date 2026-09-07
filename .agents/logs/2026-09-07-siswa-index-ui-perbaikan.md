@@ -15,12 +15,12 @@ Menuntaskan 4 perbaikan antarmuka (UI/UX) pada halaman Data Induk Siswa (`admin.
 
 ### Ringkasan Pekerjaan & Commit Log:
 
-1. **Header Scope Yayasan Dinamis** (`4073e09e`)
-   - **Kebutuhan**: Jika scope yayasan tidak memilih lembaga di topbar switcher, header menampilkan `SISWA SEMUA LEMBAGA`. Jika yayasan memilih lembaga (mis. "SMA IT Pintera"), header menampilkan `SISWA SMA IT PINTERA`. Jika pengguna adalah role scope lembaga (bukan yayasan), header menampilkan default `Siswa`.
+1. **Header Scope Yayasan Dinamis & Penyesuaian H1** (`4073e09e`, disempurnakan)
+   - **Kebutuhan**: Header halaman menampilkan `Siswa`, dan informasi lembaga/scope ditampilkan via badge penanda kontekstual di samping H1 (`Semua Lembaga` atau nama lembaga seperti `SDIT PINTERA`). Penataan ini mencegah redundansi teks antara H1 dan badge.
    - **Implementasi**:
      - `app/Http/Controllers/Admin/SiswaController.php`: Menghitung `$isYayasan` dan `$activeLembaga` (menggunakan `Lembaga::withoutGlobalScopes()->find(...)`), lalu mengirimkannya ke view `admin.siswa.index`.
-     - `resources/views/admin/siswa/index.blade.php`: `<h1>` menampilkan teks dinamis huruf kapital sesuai kondisi, dilengkapi badge visual penanda nama lembaga / "Semua Lembaga" di samping header.
-   - **Test**: Ditambahkan 3 test TDD di `tests/Feature/Admin/SiswaCrudTest.php` untuk memverifikasi skenario yayasan mode semua lembaga, yayasan mode lembaga terpilih, dan aktor lembaga.
+     - `resources/views/admin/siswa/index.blade.php`: `<h1>` ringkas menampilkan `Siswa`, didampingi badge visual penanda nama lembaga / "Semua Lembaga" yang informatif dan bersih.
+   - **Test**: 3 test di `tests/Feature/Admin/SiswaCrudTest.php` memverifikasi skenario H1 `Siswa` dengan badge `Semua Lembaga`, badge nama lembaga aktif, dan tampilan polos untuk aktor lembaga.
 
 2. **Penggabungan Kolom NIS & Nama Siswa serta Penambahan Kolom Lembaga** (`43e74bc9`)
    - **Kebutuhan**: Menggabungkan kolom NIS dan Nama siswa menjadi satu kolom dengan nama siswa di atas dan NIS di bawah. Menambahkan kolom Lembaga pada tabel siswa.

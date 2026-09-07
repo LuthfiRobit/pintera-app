@@ -374,7 +374,7 @@ it('mempertahankan kelas siswa saat ini di kelasList meski dari TA tidak aktif, 
     expect($siswa->fresh()->kelas_id)->toBe($kelasLamaSiswa->id);
 });
 
-it('shows SISWA SEMUA LEMBAGA header when yayasan user does not select a lembaga', function () {
+it('shows Siswa header with Semua Lembaga badge when yayasan user does not select a lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     Permission::firstOrCreate(['name' => 'siswa.view', 'guard_name' => 'web']);
@@ -387,10 +387,11 @@ it('shows SISWA SEMUA LEMBAGA header when yayasan user does not select a lembaga
     $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
 
     $response->assertOk();
-    $response->assertSee('SISWA SEMUA LEMBAGA');
+    $response->assertSee('<h1 class="font-display text-lg font-bold text-gray-900">Siswa</h1>', false);
+    $response->assertSee('Semua Lembaga');
 });
 
-it('shows SISWA NAMA LEMBAGA header when yayasan user selects a lembaga', function () {
+it('shows Siswa header with active lembaga badge when yayasan user selects a lembaga', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA IT PINTERA']);
     Permission::firstOrCreate(['name' => 'siswa.view', 'guard_name' => 'web']);
@@ -405,10 +406,11 @@ it('shows SISWA NAMA LEMBAGA header when yayasan user selects a lembaga', functi
         ->get(route('admin.siswa.index'));
 
     $response->assertOk();
-    $response->assertSee('SISWA SMA IT PINTERA');
+    $response->assertSee('<h1 class="font-display text-lg font-bold text-gray-900">Siswa</h1>', false);
+    $response->assertSee('SMA IT PINTERA');
 });
 
-it('shows default Siswa header for lembaga scoped user', function () {
+it('shows default Siswa header without yayasan badge for lembaga scoped user', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA IT PINTERA']);
     $manager = actingAsSiswaManager($lembaga);
@@ -416,9 +418,8 @@ it('shows default Siswa header for lembaga scoped user', function () {
     $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
 
     $response->assertOk();
-    $response->assertDontSee('SISWA SEMUA LEMBAGA');
-    $response->assertDontSee('SISWA SMA IT PINTERA');
-    $response->assertSee('Siswa');
+    $response->assertSee('<h1 class="font-display text-lg font-bold text-gray-900">Siswa</h1>', false);
+    $response->assertDontSee('Semua Lembaga');
 });
 
 it('merges NIS and nama into one column and displays lembaga column on siswa index table', function () {
@@ -462,6 +463,3 @@ it('renders responsive pagination with mobile and desktop navigation on siswa in
     $response->assertSee('Berikutnya');
     $response->assertSeeText('Hal 1 / 3');
 });
-
-
-
