@@ -229,6 +229,7 @@
             return [
                 'id' => $k->id,
                 'nama' => $k->nama,
+                'nik' => $k->person?->nik,
                 'jenis_nama' => $k->jenisKaryawan?->nama ?? '-',
                 'lembaga_nama' => $k->lembaga?->nama ?? 'Pool Yayasan',
                 'is_pool' => $k->lembaga_id === null,
@@ -282,7 +283,7 @@
                 }
                 if (this.searchQuery.trim() !== '') {
                     const q = this.searchQuery.toLowerCase();
-                    res = res.filter(i => i.nama.toLowerCase().includes(q) || i.jenis_nama.toLowerCase().includes(q) || i.lembaga_nama.toLowerCase().includes(q));
+                    res = res.filter(i => i.nama.toLowerCase().includes(q) || (i.nik && i.nik.toLowerCase().includes(q)) || i.jenis_nama.toLowerCase().includes(q) || i.lembaga_nama.toLowerCase().includes(q));
                 }
                 return res;
             },

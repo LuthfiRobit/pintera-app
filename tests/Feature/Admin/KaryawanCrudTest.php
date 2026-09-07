@@ -277,3 +277,20 @@ it('rejects a jenis_karyawan_id belonging to a different yayasan on update', fun
     $response->assertSessionHasErrors('jenis_karyawan_id');
     expect($karyawan->fresh()->jenis_karyawan_id)->not->toBe($jenisYayasanLain->id);
 });
+
+it('includes nik in the index page payload for client-side search', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKaryawanManager($lembaga);
+    $person = Person::factory()->create(['yayasan_id' => $yayasan->id, 'nik' => '3201234567895555']);
+    $karyawan = Karyawan::create([
+        'person_id' => $person->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id,
+        'jenis_karyawan_id' => JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id])->id,
+        'status_aktif' => 'aktif',
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.karyawan.index'));
+
+    $response->assertOk();
+    $response->assertSee('3201234567895555');
+});
