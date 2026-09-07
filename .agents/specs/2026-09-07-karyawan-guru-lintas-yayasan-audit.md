@@ -92,7 +92,7 @@ public function storePolicy(Request $request): RedirectResponse
     ]);
     // ...sisa method (baris $isNasional dst.) TIDAK berubah, tetap dihitung ulang dari $data seperti sebelumnya
 ```
-**Catatan verifikasi WAJIB saat implementasi**: pastikan `resolveYayasanId($request, $lembagaIdMentah)` dipanggil dengan cara PERSIS sama dengan bagaimana ia dipanggil lagi nanti di baris asli (setelah validate) — baca isi `resolveYayasanId()` dulu untuk konfirmasi method ini tidak punya efek samping yang berbahaya dipanggil 2x (kemungkinan besar aman, murni resolusi read-only, tapi VERIFIKASI, jangan asumsikan).
+(Dikonfirmasi lewat pembacaan langsung `resolveYayasanId()`/`resolveLembagaId()` di file yang sama, baris 643-655: keduanya murni read-only — `resolveLembagaId()` cuma baca `session()`/`$request->user()`, `resolveYayasanId()` cuma baca `$request->user()->yayasan_id` atau `Lembaga::find()`. Aman dipanggil 2x tanpa efek samping.)
 
 ### A.4 — `Guru\JabatanTambahanController::store()` (`app/Http/Controllers/Admin/Guru/JabatanTambahanController.php`, baris 21)
 
@@ -344,7 +344,7 @@ private function tandaiPegawaiTanpaRecordPool(Collection $pegawaiList, Yayasan $
     return $jumlah;
 }
 ```
-**Verifikasi WAJIB saat implementasi**: cek `attendanceEvents()` relation & tabel `attendance_events` apakah kolom `lembaga_id` memang nullable (kemungkinan besar ya, karena `AttendancePolicy`/`KalenderKerjaSdm` sudah punya pola nullable serupa) — kalau ternyata NOT NULL, ini butuh keputusan tambahan (migrasi kolom jadi nullable, ATAU pool karyawan tetap tidak bisa dicatat di tabel ini sama sekali — STOP dan laporkan ke user kalau ternyata begini, jangan asumsikan).
+(Kolom `lembaga_id` di `attendance_events` sudah dipastikan nullable lewat migrasi prasyarat di atas — `'lembaga_id' => null` di sini AMAN, tidak akan menabrak constraint NOT NULL.)
 
 **Dependensi WAJIB**: C.1 HANYA aman dijalankan SETELAH B.1 (`AttendancePolicyResolver`) diperbaiki — `resolveLibur()` (dipanggil baris `resolver->resolveLibur($pegawai, $tanggal)`) untuk pegawai pool tanpa fix B.1 akan memanggil `$this->kalenderResolver->resolve($pegawai->lembaga, $tanggal)` dengan `$pegawai->lembaga` bernilai `null` — `KalenderKerjaSdmResolver::resolve()` mensyaratkan parameter `Lembaga $lembaga` NON-NULLABLE (`app/Domains/Sdm/Services/KalenderKerjaSdmResolver.php:16`), jadi akan `TypeError` fatal untuk SETIAP karyawan pool yang policy-nya tidak match/tidak set `hari_kerja`. Fix B.1 SENDIRI TIDAK menyelesaikan ini — `resolveLibur()` (bukan `resolvePolicy()`) juga perlu penyesuaian:
 
@@ -401,13 +401,17 @@ Tambah import `App\Domains\Sdm\Models\KalenderKerjaSdm` dan `App\Domains\Sdm\Enu
 
 ### C.2 — Karyawan pool tidak muncul di dropdown pemilih karyawan (`AttendanceConfigurationController.php:107`, `AttendanceController.php:52`)
 
-Kode saat ini (kedua file, pola sama):
+**PERINGATAN — kedua titik ini BUKAN cuma tambal query, ada `.map()`/`.values()` transformasi setelah `.get()` yang HARUS dipertahankan verbatim** (dropped secara tidak sengaja di draf pertama spec ini — dikoreksi di sini setelah re-review langsung ke kode). Kedua file JUGA TIDAK identik: `AttendanceConfigurationController::index()` SUDAH punya `$yayasanId` terhitung di baris 51 (`$this->resolveYayasanId($request, $lembagaId)`) sebelum baris `$karyawanList`; `AttendanceController::create()` **TIDAK PUNYA `$yayasanId` sama sekali** (cuma `resolveLembagaId()`, tidak ada helper yayasan) — harus dihitung baru di titik ini.
+
+**Kode saat ini, KEDUANYA PERSIS SAMA** (`AttendanceConfigurationController.php:106-109`, `AttendanceController.php:48-51`):
 ```php
 $karyawanList = $lembagaId
-    ? Karyawan::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(...)
+    ? Karyawan::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
+        ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
     : collect();
 ```
-**Fix** — samakan dengan pola pool-aware yang SUDAH BENAR di bagian LAIN controller yang sama (`$kalenderEntriList`/`$policyList`/`$jenisShiftList`/`$kuotaCutiList`):
+
+**Fix — `AttendanceConfigurationController.php`** (`$yayasanId` reuse yang sudah ada di baris 51, TIDAK dihitung ulang):
 ```php
 $karyawanList = $lembagaId
     ? Karyawan::withoutGlobalScope(TenantScope::class)
@@ -415,10 +419,36 @@ $karyawanList = $lembagaId
             $q->where('lembaga_id', $lembagaId)
                 ->orWhere(fn ($q2) => $q2->whereNull('lembaga_id')->where('yayasan_id', $yayasanId));
         })
-        ->with('person')->orderByNama()->get(...)
+        ->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
+        ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
     : collect();
 ```
-(`$yayasanId` HARUS sudah tersedia di scope method yang sama — kedua file ini SUDAH menghitung `$yayasanId` untuk query lain di method yang sama, VERIFIKASI variabel yang tepat dipakai saat implementasi, jangan hitung ulang kalau sudah ada.)
+
+**Fix — `AttendanceController.php`** (`$yayasanId` BELUM ada, tambahkan SEBELUM baris `$karyawanList`, pola sama seperti `KaryawanController::index()`'s `Lembaga::find($lembagaId)?->yayasan_id`):
+```php
+public function create(Request $request): View
+{
+    $this->authorize('kehadiran-sdm.catat');
+
+    $lembagaId = $this->resolveLembagaId($request);
+    $yayasanId = $lembagaId ? Lembaga::find($lembagaId)?->yayasan_id : null;
+
+    $guruList = $lembagaId
+        ? Guru::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(['guru.id', 'guru.nama', 'guru.nip', 'guru.nuptk', 'guru.person_id'])
+            ->map(fn ($g) => ['id' => (string) $g->id, 'nama' => $g->nama, 'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : '')])->values()
+        : collect();
+    $karyawanList = $lembagaId
+        ? Karyawan::withoutGlobalScope(TenantScope::class)
+            ->where(function ($q) use ($lembagaId, $yayasanId) {
+                $q->where('lembaga_id', $lembagaId)
+                    ->orWhere(fn ($q2) => $q2->whereNull('lembaga_id')->where('yayasan_id', $yayasanId));
+            })
+            ->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
+            ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
+        : collect();
+    // ...sisa method (titikAbsen, return view) TIDAK berubah
+```
+Tambah `use App\Models\Lembaga;` dan `use App\Models\Scopes\TenantScope;` ke import `AttendanceController.php` (dikonfirmasi KEDUANYA belum ada lewat pembacaan import file saat ini).
 
 ---
 
@@ -452,17 +482,30 @@ public function store(Request $request): RedirectResponse
     return redirect()->route('admin.guru.index')->with('status', 'Data guru & akun berhasil dibuat.');
 }
 ```
-Tambah `use App\Domains\Identity\Exceptions\PersonAlreadyExistsException;` ke import (verifikasi namespace persis saat implementasi — cek isi file exception-nya langsung).
+Tambah `use App\Domains\Identity\Exceptions\PersonAlreadyExistsException;` ke import (namespace dikonfirmasi persis lewat lokasi file `app/Domains/Identity/Exceptions/PersonAlreadyExistsException.php`).
 
 ---
 
 ## Kelompok E — Index Karyawan: Snapshot Client-Side & Tanpa Pencarian NIK
 
-**Prioritas PALING RENDAH di spec ini** (tidak ada kebocoran data, murni UX) — pola identik bug lama OrangTua (`.agents/specs/2026-09-07-orang-tua-siswa-person-tautan.md` Bug #1). `resources/views/admin/karyawan/index.blade.php` mengirim SELURUH `$karyawanList` sekali via `@json($spaItems)`, filter/search/pagination murni Alpine di atas snapshot statis, TANPA mekanisme refresh. Field `nik` bahkan TIDAK disertakan di payload JSON (baris 228-244) — NIK tidak bisa dicari sama sekali dari list ini, padahal itu identifier utama yang dipakai di form create/edit.
+**Prioritas PALING RENDAH di spec ini** (tidak ada kebocoran data, murni UX) — pola identik bug lama OrangTua (`.agents/specs/2026-09-07-orang-tua-siswa-person-tautan.md` Bug #1). `resources/views/admin/karyawan/index.blade.php` mengirim SELURUH `$karyawanList` sekali via `@json($spaItems)`, filter/search/pagination murni Alpine di atas snapshot statis, TANPA mekanisme refresh. Field `nik` bahkan TIDAK disertakan di payload JSON (baris 228-244, dikonfirmasi lewat pembacaan langsung) — NIK tidak bisa dicari sama sekali dari list ini, padahal itu identifier utama yang dipakai di form create/edit.
 
-**Fix minimal (di luar full rombak jadi server-side seperti OrangTua, supaya scope spec ini tidak melebar)**:
-1. Tambahkan field `'nik' => $k->person?->nik,'` ke `$spaItems` mapping di controller/view (cek dulu apakah `nik` accessor tersedia lewat relasi `person`, konsisten dgn pola OrangTua).
-2. Tambahkan `nik` ke kondisi pencarian client-side (`filteredItems` getter Alpine, baris ~285 sebelumnya) — `i.nik && i.nik.includes(q)` ditambahkan ke kondisi filter yang sudah ada.
+**Fix minimal (di luar full rombak jadi server-side seperti OrangTua, supaya scope spec ini tidak melebar)** — `resources/views/admin/karyawan/index.blade.php`:
+
+1. Tambah field `nik` ke `$spaItems` mapping (baris 228-244), sisipkan setelah `'nama' => $k->nama,` (baris 231):
+```php
+'nama' => $k->nama,
+'nik' => $k->person?->nik,
+```
+2. Tambah `nik` ke kondisi pencarian client-side (`filteredItems` getter, baris 285) — kondisi saat ini:
+```js
+res = res.filter(i => i.nama.toLowerCase().includes(q) || i.jenis_nama.toLowerCase().includes(q) || i.lembaga_nama.toLowerCase().includes(q));
+```
+Sesudah:
+```js
+res = res.filter(i => i.nama.toLowerCase().includes(q) || (i.nik && i.nik.toLowerCase().includes(q)) || i.jenis_nama.toLowerCase().includes(q) || i.lembaga_nama.toLowerCase().includes(q));
+```
+(`i.nik &&` guard diperlukan karena `nik` bisa `null` kalau `person` relasinya kosong — beda dari `nama`/`jenis_nama`/`lembaga_nama` yang punya fallback `??` di PHP saat mapping, sedangkan `nik` sengaja TIDAK diberi fallback string supaya nilai `null` asli tidak salah dikira NIK literal "null"/"-" saat dicari.)
 
 TIDAK mengubah arsitektur SPA jadi server-side (beda keputusan dari OrangTua) — karena tidak ada bukti bug fungsional NYATA di sini (tidak ada alur "tautkan dari halaman lain" yang bikin data basi seperti kasus OrangTua-Siswa), murni penambahan field pencarian yang hilang.
 
@@ -481,11 +524,11 @@ TIDAK mengubah arsitektur SPA jadi server-side (beda keputusan dari OrangTua) �
 | Kelompok | Test |
 |---|---|
 | A.1-A.4 | Feature test per controller — submit `jenis_karyawan_id`/`jabatan_tambahan_master_id` milik yayasan LAIN, assert 422 (validasi gagal), bukan lolos |
-| B.1 | Unit/Feature test `AttendancePolicyResolver` — skenario PERSIS tinker verifikasi (karyawan pool yayasan A, AttendancePolicy pool yayasan B kategori sama), assert hasil BUKAN milik yayasan B |
-| B.2 | Sama pola B.1 untuk `KuotaCutiResolver` |
+| B.1 | Tambahkan ke `tests/Feature/Sdm/AttendancePolicyTenantIsolationTest.php` (SUDAH ADA — dicek isinya, cuma menguji 1 aspek berbeda: bypass TenantScope aktor yang login, BUKAN kebocoran lintas-yayasan pool. Judul filenya "TenantIsolation" tapi belum benar-benar menguji isolasi lintas-yayasan untuk pool — tambahkan test baru di file ini, jangan bikin file terpisah) — skenario PERSIS tinker verifikasi (karyawan pool yayasan A, AttendancePolicy pool yayasan B kategori sama), assert hasil BUKAN milik yayasan B |
+| B.2 | Tambahkan ke `tests/Feature/Sdm/KuotaCutiResolverTest.php` (SUDAH ADA — baca dulu isinya saat plan ditulis untuk pola konsisten) — sama skenario B.1 |
 | C.1 | Feature test `TandaiAlpaOtomatisSdm` — karyawan pool tanpa AttendanceRecord kemarin, assert ditandai Alpa setelah command jalan; test terpisah untuk hari yang seharusnya "hari kerja default" (tanpa entri kalender apapun) |
 | C.2 | Feature test kedua controller — karyawan pool muncul di `$karyawanList` saat lembaga aktif dipilih |
 | D | Feature test `GuruController@store` — simulasikan `PersonAlreadyExistsException` (mis. lewat 2 person dgn nik_hash sama dibuat manual sebelum submit), assert redirect+error, BUKAN 500 |
 | E | Feature/Dusk-level assertion — cari karyawan by NIK di index, assert hasil ketemu |
 
-Regresi wajib: `KaryawanCrudTest.php`, `GuruCrudTest.php`, `GuruRelationalProfileTest.php`, test existing `AttendancePolicyResolver`/`KuotaCutiResolver` (kalau ada — cek dulu saat plan ditulis), `AttendanceConfigurationControllerTest`/`AttendanceControllerTest` (kalau ada).
+Regresi wajib (SEMUA file berikut SUDAH ADA di codebase, dikonfirmasi lewat pencarian saat spec ditulis): `KaryawanCrudTest.php`, `GuruCrudTest.php`, `GuruRelationalProfileTest.php`, `AttendancePolicyResolverTest.php` (`tests/Unit/Services/`), `AttendancePolicyTenantIsolationTest.php`, `AttendancePolicyControllerTest.php`, `AttendancePolicyViewTest.php`, `AttendancePolicyModelTest.php` (`tests/Feature/Sdm/`), `KuotaCutiResolverTest.php`, `KuotaCutiConfigTest.php` (`tests/Feature/Sdm/`), `KuotaCutiConfigControllerTest.php` (`tests/Feature/Admin/`), `TandaiAlpaOtomatisSdmTest.php` (`tests/Feature/Sdm/`), `AttendanceConfigurationControllerTest.php`, `AttendanceConfigurationKalenderControllerTest.php`, `AttendanceControllerTest.php` (`tests/Feature/Admin/`).
