@@ -14,12 +14,12 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ## 🟢 Perbaikan Antarmuka Halaman Index Siswa — SELESAI (7 September 2026)
 
-**Latar belakang** — Client request: informasi scope yayasan pada header halaman ("SISWA SEMUA LEMBAGA" / "SISWA NAMA LEMBAGA"), penggabungan kolom NIS dan Nama siswa menjadi satu kolom, penambahan kolom Lembaga, serta perbaikan responsivitas pagination mobile/desktop.
-- **Header Scope Yayasan**: Mode "Semua Lembaga" menampilkan `SISWA SEMUA LEMBAGA`, saat memilih lembaga menampilkan `SISWA [NAMA LEMBAGA]` (uppercase) dengan badge penanda nama lembaga. User lembaga tetap menampilkan default `Siswa`.
+**Latar belakang** — Client request: informasi scope yayasan pada header halaman, penggabungan kolom NIS dan Nama siswa menjadi satu kolom, penambahan kolom Lembaga, serta perbaikan responsivitas pagination mobile/desktop.
+- **Header Scope Yayasan**: Draf spec awal minta teks `<h1>` berubah jadi `SISWA SEMUA LEMBAGA`/`SISWA [NAMA LEMBAGA]`, TAPI diputuskan ulang saat implementasi (`d109e2f1`) untuk menghindari redundansi teks — `<h1>` tetap ringkas `Siswa`, info scope dipindah ke badge terpisah di sampingnya (`Semua Lembaga` warna ungu, atau nama lembaga aktif warna brand). User lembaga-scope tidak menampilkan badge sama sekali. Perilaku final ini SUDAH BENAR secara UX (dikonfirmasi review), spec/plan belum diperbarui untuk mencerminkan perubahan ini — treat dokumen ini sebagai sumber kebenaran yang akurat, bukan spec/plan.
 - **Penggabungan Kolom NIS & Nama**: Kolom terpisah NIS dan Nama disatukan menjadi kolom `Siswa` (nama di atas, NIS monospace di bawah).
 - **Kolom Lembaga**: Ditambahkan kolom `Lembaga` dengan eager-load `'lembaga'` di `SiswaController::index()` untuk mencegah N+1 query.
-- **Pagination Responsif**: Template `resources/views/pagination/tailadmin.blade.php` diperbaiki menggunakan dual-breakpoint (mobile touch bar + desktop pills).
-- **Commit range**: `4073e09e..0e1b364c` (branch `rbac-v2`).
+- **Pagination Responsif**: Template `resources/views/pagination/tailadmin.blade.php` diperbaiki menggunakan dual-breakpoint (mobile touch bar + desktop pills) — berdampak ke SEMUA halaman admin/portal yang memakai template ini (bukan cuma Siswa), diverifikasi aman lewat review (tidak ada halaman lain yang bergantung pada markup lama).
+- **Commit range**: `4073e09e..d109e2f1` (branch `rbac-v2`).
 - **Spec**: `.agents/specs/2026-09-07-siswa-index-ui-perbaikan.md`
 - **Plan**: `.agents/plans/2026-09-07-siswa-index-ui-perbaikan.md`
 - **Handoff Log**: `.agents/logs/2026-09-07-siswa-index-ui-perbaikan.md`
