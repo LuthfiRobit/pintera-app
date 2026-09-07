@@ -421,3 +421,29 @@ it('shows default Siswa header for lembaga scoped user', function () {
     $response->assertSee('Siswa');
 });
 
+it('merges NIS and nama into one column and displays lembaga column on siswa index table', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA IT PINTERA']);
+    $manager = actingAsSiswaManager($lembaga);
+    $siswa = Siswa::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'nis' => '20260907',
+        'nama_lengkap' => 'Ahmad Fajar',
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
+
+    $response->assertOk();
+    // Headers
+    $response->assertSee('<th class="px-5 py-3">Siswa</th>', false);
+    $response->assertSee('<th class="px-5 py-3">Lembaga</th>', false);
+    $response->assertDontSee('<th class="px-5 py-3">NIS</th>', false);
+    $response->assertDontSee('<th class="px-5 py-3">Nama</th>', false);
+    // Student Nama & NIS
+    $response->assertSee('Ahmad Fajar');
+    $response->assertSee('20260907');
+    // Lembaga
+    $response->assertSee('SMA IT PINTERA');
+});
+
+

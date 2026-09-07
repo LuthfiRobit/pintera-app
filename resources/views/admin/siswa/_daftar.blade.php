@@ -20,8 +20,8 @@
         <thead>
             <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                 <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
-                <th class="px-5 py-3">NIS</th>
-                <th class="px-5 py-3">Nama</th>
+                <th class="px-5 py-3">Siswa</th>
+                <th class="px-5 py-3">Lembaga</th>
                 <th class="px-5 py-3">Kelas</th>
                 <th class="px-5 py-3">Asal Data</th>
                 <th class="px-5 py-3">Status</th>
@@ -86,8 +86,13 @@
                             @endif
                         </x-table-actions>
                     </td>
-                    <td class="px-5 py-3.5 font-mono text-gray-500">{{ $siswa->nis }}</td>
-                    <td class="px-5 py-3.5 font-semibold text-gray-900">{{ $siswa->nama_lengkap }}</td>
+                    <td class="px-5 py-3.5">
+                        <div class="font-semibold text-gray-900">{{ $siswa->nama_lengkap }}</div>
+                        <div class="font-mono text-xs text-gray-500">{{ $siswa->nis }}</div>
+                    </td>
+                    <td class="px-5 py-3.5 text-gray-600">
+                        <div class="font-medium text-gray-800">{{ $siswa->lembaga?->nama ?? '—' }}</div>
+                    </td>
                     <td class="px-5 py-3.5 text-gray-600">
                         @if ($siswa->kelas_efektif)
                             {{ $siswa->kelas_efektif->nama }}
