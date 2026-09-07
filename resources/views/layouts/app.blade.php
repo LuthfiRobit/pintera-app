@@ -9,7 +9,7 @@
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700|ibm-plex-mono:500&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=satoshi:400,500,600,700|outfit:400,500,600,700|ibm-plex-mono:500&display=swap" rel="stylesheet" />
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])

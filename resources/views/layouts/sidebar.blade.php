@@ -2,6 +2,8 @@
     $navGroups = [
         [
             'label' => 'Ringkasan',
+            'show_label' => false,
+            'divider_after' => true,
             'group_icon' => 'layout-dashboard',
             'items' => [
                 ['route' => 'dashboard', 'pattern' => 'dashboard', 'label' => 'Dashboard', 'icon' => 'layout-dashboard'],
@@ -189,30 +191,47 @@
 <!-- Mobile scrim -->
 <div
     x-show="sidebarOpen"
-    x-transition.opacity
+    x-transition:enter="transition-opacity ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition-opacity ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
     @click="sidebarOpen = false"
-    class="fixed inset-0 z-30 bg-gray-900/40 lg:hidden"
+    class="fixed inset-0 z-40 bg-gray-950/70 backdrop-blur-sm lg:hidden"
     style="display: none;"
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 -translate-x-full flex-col overflow-hidden border-r border-gray-300 bg-white transition-all duration-200 ease-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+    class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 -translate-x-full flex-col overflow-hidden border-r border-gray-800 bg-gray-900 shadow-2xl transition-all duration-300 ease-out lg:sticky lg:top-0 lg:z-40 lg:h-screen lg:max-w-none lg:translate-x-0 lg:shadow-none"
     :class="{ 'translate-x-0': sidebarOpen, 'lg:w-0 lg:border-r-0': sidebarCollapsed, 'lg:w-72': !sidebarCollapsed }"
 >
-    <div class="flex h-20 shrink-0 items-center gap-3 px-6">
-        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 font-display text-lg font-bold text-white">
-            {{ Str::of(config('app.name', 'P'))->substr(0, 1) }}
-        </span>
-        <div class="leading-tight">
-            <p class="font-display text-base font-bold text-gray-900">{{ config('app.name', 'Pintera') }}</p>
-            <p class="text-[11px] uppercase tracking-[0.14em] text-gray-400">Sistem Administrasi</p>
+    <div class="flex h-20 shrink-0 items-center justify-between border-b border-gray-800/80 px-6">
+        <div class="flex items-center gap-3">
+            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 font-display text-lg font-bold text-white shadow-lg shadow-brand-500/30 ring-1 ring-white/10">
+                {{ Str::of(config('app.name', 'P'))->substr(0, 1) }}
+            </span>
+            <div class="leading-tight">
+                <p class="font-display text-base font-bold tracking-wide text-white">{{ config('app.name', 'Pintera') }}</p>
+                <p class="text-[11px] font-medium uppercase tracking-[0.14em] text-gray-400">Sistem Administrasi</p>
+            </div>
         </div>
+
+        <!-- Mobile drawer close button -->
+        <button
+            type="button"
+            @click="sidebarOpen = false"
+            class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-white/10 hover:text-white lg:hidden"
+            aria-label="Tutup sidebar"
+        >
+            <x-dynamic-component :component="'lucide-x'" class="h-5 w-5" />
+        </button>
     </div>
 
     <nav 
-        class="scrollbar-none flex-1 overflow-y-auto px-4 py-6"
+        class="scrollbar-none flex-1 overflow-y-auto px-4 py-4"
         x-init="$nextTick(() => { 
-            const activeItem = $el.querySelector('.bg-brand-50');
+            const activeItem = $el.querySelector('[aria-current]');
             if (activeItem) {
                 activeItem.scrollIntoView({ block: 'center' });
             }
@@ -222,52 +241,128 @@
             @if (count($group['items']))
                 @php
                     $groupHasActiveItem = collect($group['items'])->contains(fn ($item) => request()->routeIs($item['pattern']));
+                    $isCollapsible = ($group['collapsible'] ?? true) && count($group['items']) > 1;
+                    $groupSlug = Str::slug($group['label']);
                 @endphp
-                <div class="mb-3" x-data="{ open: {{ $groupHasActiveItem ? 'true' : 'false' }} }">
-                    <button
-                        type="button"
-                        @click="open = !open"
-                        class="mb-2 flex w-full items-center justify-between gap-1.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-gray-50"
+
+                @if ($isCollapsible)
+                    <div
+                        class="mb-2.5"
+                        x-data="{
+                            open: {{ $groupHasActiveItem ? 'true' : "localStorage.getItem('sidebar_group_{$groupSlug}') === 'true'" }}
+                        }"
+                        x-init="$watch('open', value => localStorage.setItem('sidebar_group_{{ $groupSlug }}', value))"
                     >
-                        <span class="flex items-center gap-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
-                            @if (isset($group['group_icon']))
-                                <x-dynamic-component :component="'lucide-' . $group['group_icon']" class="h-[14px] w-[14px] opacity-70" />
-                            @endif
-                            {{ $group['label'] }}
-                        </span>
-                        <x-dynamic-component :component="'lucide-chevron-down'" class="h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200" ::class="{ '-rotate-90': !open }" />
-                    </button>
-                    <ul
-                        class="space-y-0.5"
-                        x-show="open"
-                        x-transition:enter="transition ease-out duration-150"
-                        x-transition:enter-start="opacity-0 -translate-y-1"
-                        x-transition:enter-end="opacity-100 translate-y-0"
-                        x-transition:leave="transition ease-in duration-100"
-                        x-transition:leave-start="opacity-100"
-                        x-transition:leave-end="opacity-0"
-                    >
-                        @foreach ($group['items'] as $item)
-                            @php $active = request()->routeIs($item['pattern']); @endphp
-                            <li>
-                                <a
-                                    href="{{ route($item['route'], $item['params'] ?? []) }}"
-                                    class="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition
-                                        {{ $active ? 'bg-brand-50 font-semibold text-brand-600' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900' }}"
-                                >
-                                    <x-dynamic-component :component="'lucide-' . $item['icon']" class="h-[18px] w-[18px] shrink-0 {{ $active ? 'text-brand-500' : 'text-gray-400 group-hover:text-gray-500' }}" />
-                                    {{ $item['label'] }}
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
+                        <button
+                            type="button"
+                            @click="open = !open"
+                            :aria-expanded="open.toString()"
+                            aria-controls="nav-group-{{ $groupSlug }}"
+                            class="group/header mb-1 flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors duration-150 hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                        >
+                            <span
+                                class="flex items-center gap-2 font-display text-[11px] uppercase tracking-[0.16em] transition-colors duration-150"
+                                :class="open ? 'font-bold text-white' : 'font-semibold text-gray-400 group-hover/header:text-gray-200'"
+                            >
+                                @if (isset($group['group_icon']))
+                                    <x-dynamic-component
+                                        :component="'lucide-' . $group['group_icon']"
+                                        class="h-[14px] w-[14px] transition-all duration-150"
+                                        ::class="open ? 'text-brand-400 opacity-100' : 'text-gray-400 opacity-70 group-hover/header:text-gray-300 group-hover/header:opacity-100'"
+                                    />
+                                @endif
+                                {{ $group['label'] }}
+                            </span>
+                            <x-dynamic-component
+                                :component="'lucide-chevron-down'"
+                                class="h-3.5 w-3.5 shrink-0 transition-transform duration-300 ease-in-out"
+                                ::class="{ '-rotate-90 text-gray-500': !open, 'text-gray-300': open }"
+                            />
+                        </button>
+                        <div
+                            id="nav-group-{{ $groupSlug }}"
+                            class="grid transition-all duration-300 ease-in-out"
+                            :class="open ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'"
+                            :aria-hidden="(!open).toString()"
+                        >
+                            <div class="overflow-hidden">
+                                <!-- Indented child container (1 spacing offset + subtle dark tree guide line) -->
+                                <ul class="ml-3.5 space-y-0.5 border-l-2 border-gray-800 pl-2.5 pb-1 pt-0.5">
+                                    @foreach ($group['items'] as $item)
+                                        @php $active = request()->routeIs($item['pattern']); @endphp
+                                        <li>
+                                            <a
+                                                href="{{ route($item['route'], $item['params'] ?? []) }}"
+                                                @if ($active) aria-current="page" @endif
+                                                class="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-150
+                                                    {{ $active ? 'bg-brand-500 font-semibold text-white shadow-md shadow-brand-500/25' : 'text-gray-300 hover:bg-white/[0.07] hover:text-white' }}"
+                                            >
+                                                <x-dynamic-component :component="'lucide-' . $item['icon']" class="h-[17px] w-[17px] shrink-0 transition-colors duration-150 {{ $active ? 'text-white' : 'text-gray-400 group-hover:text-gray-200' }}" />
+                                                <span class="truncate">{{ $item['label'] }}</span>
+                                            </a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @else
+                    <div class="mb-2.5">
+                        @if (!empty($group['show_label'] ?? true))
+                            <div class="mb-1 flex items-center gap-2 px-2.5 py-1 font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                @if (isset($group['group_icon']))
+                                    <x-dynamic-component :component="'lucide-' . $group['group_icon']" class="h-[14px] w-[14px] opacity-70 text-gray-400" />
+                                @endif
+                                {{ $group['label'] }}
+                            </div>
+                            <!-- Indented child container for single items -->
+                            <ul class="ml-3.5 space-y-0.5 border-l-2 border-gray-800 pl-2.5 pb-1 pt-0.5">
+                                @foreach ($group['items'] as $item)
+                                    @php $active = request()->routeIs($item['pattern']); @endphp
+                                    <li>
+                                        <a
+                                            href="{{ route($item['route'], $item['params'] ?? []) }}"
+                                            @if ($active) aria-current="page" @endif
+                                            class="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-all duration-150
+                                                {{ $active ? 'bg-brand-500 font-semibold text-white shadow-md shadow-brand-500/25' : 'text-gray-300 hover:bg-white/[0.07] hover:text-white' }}"
+                                        >
+                                            <x-dynamic-component :component="'lucide-' . $item['icon']" class="h-[17px] w-[17px] shrink-0 transition-colors duration-150 {{ $active ? 'text-white' : 'text-gray-400 group-hover:text-gray-200' }}" />
+                                            <span class="truncate">{{ $item['label'] }}</span>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @else
+                            <!-- Standalone item (e.g. Dashboard) flush without indent -->
+                            <ul class="space-y-0.5">
+                                @foreach ($group['items'] as $item)
+                                    @php $active = request()->routeIs($item['pattern']); @endphp
+                                    <li>
+                                        <a
+                                            href="{{ route($item['route'], $item['params'] ?? []) }}"
+                                            @if ($active) aria-current="page" @endif
+                                            class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-150
+                                                {{ $active ? 'bg-brand-500 font-semibold text-white shadow-md shadow-brand-500/25' : 'text-gray-300 hover:bg-white/[0.07] hover:text-white' }}"
+                                        >
+                                            <x-dynamic-component :component="'lucide-' . $item['icon']" class="h-[18px] w-[18px] shrink-0 transition-colors duration-150 {{ $active ? 'text-white' : 'text-brand-400 group-hover:text-white' }}" />
+                                            <span class="truncate">{{ $item['label'] }}</span>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                @endif
+
+                @if (!empty($group['divider_after']))
+                    <hr class="my-2.5 border-t border-gray-800" />
+                @endif
             @endif
         @endforeach
     </nav>
 
-    <div class="border-t border-gray-200 px-6 py-4">
-        <p class="text-[11px] leading-relaxed text-gray-400">
+    <div class="border-t border-gray-800/80 px-6 py-4">
+        <p class="text-[11px] leading-relaxed text-gray-500">
             &copy; {{ now()->year }} {{ config('app.name') }}. Sistem administrasi internal.
         </p>
     </div>

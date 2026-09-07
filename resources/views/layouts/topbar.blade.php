@@ -31,7 +31,7 @@
     $hasBottomNav = Auth::check() && Auth::user()->hasBottomNav();
 @endphp
 
-<header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-300 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">
+<header class="sticky top-0 z-20 flex h-20 shrink-0 items-center gap-4 border-b border-gray-200 bg-white/70 px-4 backdrop-blur-md sm:px-6 lg:px-10">
     @if ($hasBottomNav)
         <div class="flex items-center gap-2.5 lg:hidden">
             <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 font-display text-base font-bold text-white shadow-sm">

@@ -70,8 +70,8 @@ export default {
                 },
             },
             fontFamily: {
-                sans: ['Outfit', ...defaultTheme.fontFamily.sans],
-                display: ['Outfit', ...defaultTheme.fontFamily.sans],
+                sans: ['Satoshi', 'Outfit', ...defaultTheme.fontFamily.sans],
+                display: ['Satoshi', 'Outfit', ...defaultTheme.fontFamily.sans],
                 mono: ['"IBM Plex Mono"', ...defaultTheme.fontFamily.mono],
             },
             boxShadow: {
