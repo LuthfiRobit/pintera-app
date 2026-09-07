@@ -12,6 +12,22 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ---
 
+## 🟢 Perbaikan Lintas-Yayasan Modul Karyawan & Guru — SELESAI (7 September 2026)
+
+**Latar belakang** — Audit menyeluruh modul Karyawan & Guru menemukan 6 bug, 2 di antaranya kebocoran data lintas yayasan nyata, 4 titik IDOR validasi exists, penanganan karyawan pool presensi/alpa otomatis, error 500 race condition Guru, dan pencarian NIK di index Karyawan.
+- **Kelompok A (4 Titik Validasi `Rule::exists` Scoped Yayasan)**: Mengamankan `KaryawanController::store` (aktor login), `KaryawanController::update` (pemilik row), `AttendancePolicyController::validatePayload` (raw input lembaga/aktor), dan `GuruRelationalProfileController::updateJabatanTambahan` (pemilik row) agar memvalidasi `jenis_karyawan_id` dan `jabatan_tambahan_master_id` milik yayasan yang sesuai.
+- **Kelompok B (2 Resolver SDM Tutup Kebocoran Karyawan Pool)**: `AttendancePolicyResolver` dan `KuotaCutiResolver` diperbaiki agar memfilter konfigurasi presensi dan kuota cuti strictly per-yayasan (`where('yayasan_id', $yayasanId)`), mencegah karyawan pool mengadopsi konfigurasi yayasan lain. Menambahkan helper `resolveLiburPool()` dengan fallback default hari kerja.
+- **Kelompok C (Karyawan Pool di Alpa Otomatis & Dropdown)**: Migrasi `2026_09_07_132218_make_lembaga_id_nullable_on_attendance_events_table.php` membuat `lembaga_id` nullable pada `attendance_events` dan `attendance_records`. Command `sdm:tandai-alpa-otomatis` kini memiliki pass kedua per-yayasan untuk memproses karyawan pool. Dropdown pemilih karyawan di `AttendanceConfigurationController` dan `AttendanceController` diperbarui menjadi pool-aware dengan kualifikasi kolom eksplisit (`karyawan.yayasan_id`).
+- **Kelompok D (Penanganan Exception Guru Store)**: Menangkap `PersonAlreadyExistsException` di `GuruController::store()` untuk mencegah HTTP 500 mentah saat terjadi race condition konkuren submit NIK.
+- **Kelompok E (Pencarian NIK Index Karyawan)**: Menambahkan `nik` ke payload JSON `$spaItems` dan getter Alpine `filteredItems` di `resources/views/admin/karyawan/index.blade.php`. Terverifikasi otomatis dan visual di browser.
+- **Commit range**: `50eedb01..5db68559` (6 commit, base sebelum kickoff `662a8321`).
+- **Full test suite akhir**: **2973 passed, 4 failed (8077 assertions)** — 4 kegagalan pre-existing pada seeder demo/day-of-week, 0 regresi baru.
+- **Spec**: `.agents/specs/2026-09-07-karyawan-guru-lintas-yayasan-audit.md`
+- **Plan**: `.agents/plans/2026-09-07-karyawan-guru-lintas-yayasan-audit.md`
+- **Handoff Log**: `.agents/logs/2026-09-07-karyawan-guru-lintas-yayasan-audit.md`
+
+---
+
 ## 🟢 Jenis Karyawan & Jabatan Tambahan Master Per-Yayasan — SELESAI (7 September 2026)
 
 **Latar belakang** — Item backlog 🟡 dari audit sidebar (`.agents/logs/2026-09-07-audit-scope-yayasan-lembaga-sidebar.md`): `jenis_karyawan_master` dan `jabatan_tambahan_master` sebelumnya sama sekali tidak memiliki kolom tenant (datanya dibagi lintas seluruh yayasan di sistem).
