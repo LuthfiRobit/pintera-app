@@ -12,6 +12,22 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ---
 
+## 🟢 Jenis Karyawan & Jabatan Tambahan Master Per-Yayasan — SELESAI (7 September 2026)
+
+**Latar belakang** — Item backlog 🟡 dari audit sidebar (`.agents/logs/2026-09-07-audit-scope-yayasan-lembaga-sidebar.md`): `jenis_karyawan_master` dan `jabatan_tambahan_master` sebelumnya sama sekali tidak memiliki kolom tenant (datanya dibagi lintas seluruh yayasan di sistem).
+- **Keputusan Bisnis**: Per-yayasan penuh dengan `yayasan_id` NOT NULL (tidak ada baris nasional/global bersama). Setiap yayasan mengelola daftarnya sendiri sepenuhnya.
+- **Migrasi & Backfill Defensif**: Menambah kolom `yayasan_id` NOT NULL dengan `ON DELETE CASCADE` ke tabel `yayasan` dan composite unique `UNIQUE(yayasan_id, nama)`. Logika backfill di migrasi menangani 0 pemakai (assign ke yayasan 1), 1 pemakai (assign ke yayasan tersebut), dan >1 pemakai (assign ke yayasan pertama, clone + repoint FK karyawan/guru untuk yayasan lainnya).
+- **Model Scope**: Menambahkan `YayasanScope` (`App\Models\Scopes\YayasanScope`) pada model `JenisKaryawanMaster` dan `JabatanTambahanMaster` via `booted()` method (pola identik model `Person`), fail-closed saat konteks yayasan tidak teresolusi.
+- **Actions & Controllers**: `CreateJenisKaryawanAction` dan `CreateJabatanTambahanAction` menerima parameter `$yayasanId` yang dihitung otomatis dari aktor login di Controller (bukan input form / DTO). Guard delete dihitung ulang per-yayasan pemilik baris.
+- **Fixture Test & Seeder**: Rewrite total fixture `JabatanTambahanMasterCrudTest.php` dengan helper `actingAsJabatanTambahanManager()` dan penambahan factory `JabatanTambahanMasterFactory`. Pembaruan `JenisKaryawanMasterSeeder` dan `JabatanTambahanMasterSeeder` untuk menyertakan `yayasan_id`.
+- **Commit range**: `e9c79d8b..f98bbca7` (3 commit, base sebelum plan `554f0b02`).
+- **Full test suite akhir**: **2958 passed, 4 failed (8023 assertions)** — 4 kegagalan pre-existing pada seeder demo/day-of-week, 0 regresi.
+- **Spec**: `.agents/specs/2026-09-07-jenis-karyawan-jabatan-tambahan-per-yayasan.md`
+- **Plan**: `.agents/plans/2026-09-07-jenis-karyawan-jabatan-tambahan-per-yayasan.md`
+- **Handoff Log**: `.agents/logs/2026-09-07-jenis-karyawan-jabatan-tambahan-per-yayasan.md`
+
+---
+
 ## 🟢 Perbaikan Antarmuka Halaman Index Siswa — SELESAI (7 September 2026)
 
 **Latar belakang** — Client request: informasi scope yayasan pada header halaman, penggabungan kolom NIS dan Nama siswa menjadi satu kolom, penambahan kolom Lembaga, serta perbaikan responsivitas pagination mobile/desktop.
