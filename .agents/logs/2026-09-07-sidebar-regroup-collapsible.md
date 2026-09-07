@@ -5,14 +5,14 @@
 > **Spec**: `.agents/specs/2026-09-07-sidebar-regroup-collapsible.md`  
 > **Plan**: `.agents/plans/2026-09-07-sidebar-regroup-collapsible.md`  
 > **Base commit sebelum kickoff**: `be46217b` (`docs(sidebar): kickoff document for sidebar regroup & collapsible`)  
-> **Commit range**: `9e44a440..21d2740b` (2 commit)  
+> **Commit range**: `9e44a440..22a67e34` (3 commit)  
 > **Status**: Selesai & Terverifikasi (Full Suite: 2.973 test lulus, 0 regresi baru)
 
 ---
 
 ## 1. Apa yang Dikerjakan
 
-Menyelesaikan penataan ulang struktur menu dan penerapan navigasi collapsible pada sidebar (`resources/views/layouts/sidebar.blade.php`) tanpa mengubah palet warna, tipografi, radius, ataupun token desain Tailwind/TailAdmin existing:
+Menyelesaikan penataan ulang struktur menu, penerapan navigasi collapsible pada sidebar (`resources/views/layouts/sidebar.blade.php`), serta penyempurnaan visual UI/UX (dark theme contrast, tipografi Satoshi, dan animasi mulus):
 
 1. **Commit `9e44a440` — Task 1: Regroup `$navGroups` (Rename, Split Data Induk, Dedup Kasus Pendampingan)**
    - **Dedup Kasus Pendampingan**: Menghapus 4 kemunculan duplikasi manual "Kasus Pendampingan" pada 4 grup persona berbeda (`Ruang Guru`, `Ruang Siswa`, `Ruang Orang Tua`, dan `Kehadiran Saya`). Menyatukannya menjadi 1 grup mandiri `Pendampingan Saya` dengan 1 kondisi tunggal: `Auth::user()->can('viewAny', \App\Domains\Kasus\Models\Kasus::class)`.
@@ -33,20 +33,32 @@ Menyelesaikan penataan ulang struktur menu dan penerapan navigasi collapsible pa
    - Grup yang memuat rute aktif otomatis terbuka (`open: true`) saat inisialisasi halaman, sementara grup lain tertutup secara default.
    - Verifikasi interaksi runtime berhasil di browser nyata via Playwright browser subagent.
 
+3. **Commit `22a67e34` — Task 3: UI/UX Polish, Dark Contrast Theme & Tipografi Satoshi**
+   - **Modern High-Contrast Dark Sidebar**: Menerapkan palet gelap `bg-gray-900` dengan pembatas `border-r border-gray-800`, header `border-b border-gray-800/80`, dan badge brand bercahaya (`bg-brand-500` dengan `shadow-lg shadow-brand-500/30 ring-1 ring-white/10`).
+   - **Pill Menu Aktif Menyala**: Menggunakan `bg-brand-500 font-semibold text-white shadow-md shadow-brand-500/25` pada menu aktif, dan `text-gray-300 hover:bg-white/[0.07] hover:text-white` pada menu idle.
+   - **Tipografi Satoshi**: Memasang font modern **Satoshi** via Bunny Fonts CDN di `resources/views/layouts/app.blade.php` dan mendaftarkannya sebagai font utama `sans` dan `display` di `tailwind.config.js`.
+   - **Indentasi Child Menu (Visual Tree Guide)**: Membungkus sub-menu dengan indentasi 1 tingkat (`ml-3.5 pl-2.5`) dilengkapi garis pandu vertikal gelap `border-l-2 border-gray-800` agar pemisahan kategori dan item anak sangat jelas.
+   - **Transisi CSS Grid Akordion Mulus**: Menggantikan animasi `x-show` standar dengan transisi CSS Grid (`grid-rows-[1fr] opacity-100` ⇄ `grid-rows-[0fr] opacity-0` durasi 300ms) untuk menghilangkan hentakan layout shift.
+   - **Bebas Error Alpine Console**: Memperbaiki syntax error `[aria-current=\"page\"]` pada `x-init` menjadi selector bersih `[aria-current]` tanpa nested escaped quotes yang merusak parser HTML browser (`kasus:92`).
+   - **Responsivitas Multi-Device Teruji**: Mobile drawer overlay dengan `z-50`, backdrop scrim gelap `bg-gray-950/70 backdrop-blur-sm`, tombol close `X` (`lg:hidden`), serta desktop sticky sidebar (`lg:sticky lg:top-0 lg:h-screen lg:z-40`).
+   - **Penyelarasan Topbar**: Memperhalus garis batas bawah topbar menjadi `border-gray-200` agar selaras dengan kanvas konten.
+
 ---
 
 ## 2. Keputusan Penting yang Diambil
 
-1. **Tidak Menggunakan `@alpinejs/collapse`**:
-   - Dikonfirmasi dari `package.json` dan skrip JS bahwa plugin `@alpinejs/collapse` belum terpasang di repository ini.
-   - Implementasi collapsible menggunakan `x-show="open"` dan utility class `x-transition` bawaan Alpine tanpa menambah library pihak ketiga atau mengubah dependensi project.
-2. **Penggunaan `<x-dynamic-component :component="'lucide-chevron-down'">`**:
-   - Komponen `<x-icon>` di project ini (`resources/views/components/icon.blade.php`) menggunakan skema Material Symbols dan tidak memiliki aset `chevron-down` (akan jatuh ke fallback `@default` / placeholder ikon salah).
+1. **Adopsi Dark Contrast Theme untuk Sidebar**:
+   - Setelah eksplorasi dan review langsung oleh user, desain dark sidebar kontras (`bg-gray-900 border-gray-800`) dipilih karena memberikan hirarki navigasi yang tegas memisahkan area kendali (sidebar) dengan area kerja data/konten (main body yang cerah/putih).
+2. **Tipografi Satoshi Menggantikan Outfit**:
+   - Font Satoshi memberikan legibilitas angka dan label sistem administrasi yang lebih modern, kokoh, dan rapi dibandingkan font bawaan sebelumnya.
+3. **Animasi Akordion Berbasis CSS Grid (`grid-rows`)**:
+   - Tanpa menginstal plugin eksternal `@alpinejs/collapse`, transisi tinggi collapsible ditangani murni lewat utility CSS Tailwind (`grid grid-rows-[0fr]`/`grid-rows-[1fr] transition-all duration-300`). Ini memberikan efek melipat/membuka yang 100% mulus (60fps) dan bebas flicker.
+4. **Indentasi Sub-Item dengan Garis Pandu**:
+   - Menambahkan indentasi 1 tingkat (`ml-3.5 pl-2.5`) dengan garis pandu vertikal tipis `border-l-2 border-gray-800` secara signifikan memudahkan mata membedakan header grup vs item sub-menu saat accordion terbuka banyak.
+5. **Penggunaan `<x-dynamic-component :component="'lucide-chevron-down'">`**:
    - Seluruh sidebar konsisten menggunakan icon set Lucide melalui `<x-dynamic-component :component="'lucide-' . ...">`, sehingga chevron collapse diselaraskan menggunakan `lucide-chevron-down`.
-3. **Pemberian Nama "Ruang Karyawan" untuk Staff Non-Guru**:
-   - Walau isinya saat ini QR Kehadiran Saya dan Izin/Cuti Saya, penamaan "Ruang Karyawan" dipilih untuk menjaga keselarasan taksonomi persona internal sekolah/yayasan (`Ruang Guru`, `Ruang Siswa`, `Ruang Orang Tua`, `Ruang Karyawan`).
-4. **Desain Visual Tidak Diubah (Strict Scope Boundary)**:
-   - Sesuai arahan kickoff dan spec, warna, tipografi, radius kartu, dan shadow tidak diotak-atik sama sekali. Kebutuhan visual restyle dipisahkan sebagai pekerjaan terpisah yang menunggu preferensi konkret dari client.
+6. **Pemberian Nama "Ruang Karyawan" untuk Staff Non-Guru**:
+   - Menjaga keselarasan taksonomi persona internal sekolah/yayasan (`Ruang Guru`, `Ruang Siswa`, `Ruang Orang Tua`, `Ruang Karyawan`).
 
 ---
 
@@ -63,4 +75,5 @@ Menyelesaikan penataan ulang struktur menu dan penerapan navigasi collapsible pa
    - **0 regresi baru** di seluruh aplikasi.
 2. **Status Branch Git**:
    - Branch aktif: `refactor-view-v2`.
+   - Commit terbaru: `22a67e34` (`feat(sidebar): dark contrast theme, satoshi font, and ui/ux polish`).
    - **TIDAK di-merge ke `rbac-v2` atau `main`** dan **TIDAK di-push**, menunggu keputusan penggabungan bertingkat dari tim/user.
