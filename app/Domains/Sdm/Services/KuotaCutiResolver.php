@@ -23,25 +23,26 @@ class KuotaCutiResolver
     {
         $kolomKategori = $pegawai instanceof Guru ? 'jenis_ptk' : 'jenis_karyawan_id';
         $nilaiKategori = $pegawai instanceof Guru ? $pegawai->jenis_ptk : $pegawai->jenis_karyawan_id;
+        $yayasanId = $pegawai->lembaga_id !== null ? $pegawai->lembaga->yayasan_id : $pegawai->yayasan_id;
 
-        $spesifikLembaga = KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
-            ->where('lembaga_id', $pegawai->lembaga_id)
-            ->where($kolomKategori, $nilaiKategori)
-            ->first();
-        if ($spesifikLembaga) {
-            return $spesifikLembaga;
+        if ($pegawai->lembaga_id !== null) {
+            $spesifikLembaga = KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
+                ->where('lembaga_id', $pegawai->lembaga_id)
+                ->where($kolomKategori, $nilaiKategori)
+                ->first();
+            if ($spesifikLembaga) {
+                return $spesifikLembaga;
+            }
+
+            $flatLembaga = KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
+                ->where('lembaga_id', $pegawai->lembaga_id)
+                ->whereNull('jenis_ptk')
+                ->whereNull('jenis_karyawan_id')
+                ->first();
+            if ($flatLembaga) {
+                return $flatLembaga;
+            }
         }
-
-        $flatLembaga = KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
-            ->where('lembaga_id', $pegawai->lembaga_id)
-            ->whereNull('jenis_ptk')
-            ->whereNull('jenis_karyawan_id')
-            ->first();
-        if ($flatLembaga) {
-            return $flatLembaga;
-        }
-
-        $yayasanId = $pegawai->lembaga->yayasan_id;
 
         $spesifikNasional = KuotaCutiConfig::withoutGlobalScope(TenantScope::class)
             ->whereNull('lembaga_id')

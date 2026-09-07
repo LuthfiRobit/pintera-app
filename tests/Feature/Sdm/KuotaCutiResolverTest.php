@@ -1,13 +1,17 @@
 <?php
+
 // tests/Feature/Sdm/KuotaCutiResolverTest.php
 
+use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Actions\AjukanIzinCutiAction;
 use App\Domains\Sdm\Enums\KategoriPengajuanIzin;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Domains\Sdm\Models\KuotaCutiConfig;
 use App\Domains\Sdm\Services\KuotaCutiResolver;
 use App\Domains\Workflow\Actions\ProcessApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Models\Guru;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
@@ -80,4 +84,23 @@ it('only counts Cuti pengajuan with Pending/InReview/Approved status in the give
     $sisa = app(KuotaCutiResolver::class)->sisaKuota($guru, 2026);
 
     expect($sisa)->toBe(9); // 12 - 3 (hanya pengajuan Pending yang dihitung)
+});
+
+it('does not leak another yayasan pool KuotaCutiConfig to a pool karyawan with the same jenis_karyawan_id number', function () {
+    $yayasanA = Yayasan::factory()->create();
+    $yayasanB = Yayasan::factory()->create();
+
+    $jenisA = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $personA = Person::factory()->create(['yayasan_id' => $yayasanA->id]);
+    $karyawanPoolA = Karyawan::create([
+        'person_id' => $personA->id, 'yayasan_id' => $yayasanA->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => $jenisA->id, 'status_aktif' => 'aktif',
+    ]);
+
+    KuotaCutiConfig::create([
+        'yayasan_id' => $yayasanB->id, 'lembaga_id' => null, 'jenis_karyawan_id' => $jenisA->id,
+        'jatah_hari_per_tahun' => 999,
+    ]);
+
+    expect(app(KuotaCutiResolver::class)->jatahTahunan($karyawanPoolA))->toBeNull();
 });
