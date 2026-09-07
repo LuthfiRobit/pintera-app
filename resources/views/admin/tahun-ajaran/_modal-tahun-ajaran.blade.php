@@ -12,10 +12,21 @@
          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
         
         <div class="flex items-center justify-between pb-3.5 border-b border-gray-200">
-            <h3 class="font-display text-base font-bold text-gray-900 flex items-center gap-2">
-                <x-icon name="date_range" class="h-5 w-5 text-brand-500" />
-                <span x-text="modalTahunAjaranMode === 'create' ? 'Tambah Tahun Ajaran' : 'Edit Tahun Ajaran'"></span>
-            </h3>
+            <div>
+                <h3 class="font-display text-base font-bold text-gray-900 flex items-center gap-2">
+                    <x-icon name="calendar_month" class="h-5 w-5 text-brand-500" />
+                    <span x-text="modalTahunAjaranMode === 'create' ? 'Tambah Tahun Ajaran' : 'Edit Tahun Ajaran'"></span>
+                </h3>
+                @if ($isYayasan ?? false)
+                    <p class="mt-1 pl-7 text-xs {{ ($activeLembaga ?? null) ? 'text-gray-500' : 'text-error-600 font-semibold' }}">
+                        @if ($activeLembaga ?? null)
+                            Untuk lembaga: {{ $activeLembaga->nama }}
+                        @else
+                            Pilih lembaga aktif dulu melalui pengalih lembaga di atas — tidak bisa menambah Tahun Ajaran saat mode "Semua Lembaga".
+                        @endif
+                    </p>
+                @endif
+            </div>
             <button @click="showModalTahunAjaran = false" type="button" class="text-gray-400 hover:text-gray-600 transition">
                 <x-icon name="cancel" class="h-5 w-5" />
             </button>

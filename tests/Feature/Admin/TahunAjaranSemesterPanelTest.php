@@ -328,3 +328,57 @@ it('mentions the owning lembaga name in the activation confirm dialog wording', 
     $this->get(route('admin.tahun-ajaran.index'))
         ->assertSee('Tahun Ajaran lain di lembaga SMA Bina Insan akan dinonaktifkan', false);
 });
+
+it('shows the target lembaga name inside the create/edit modal when a lembaga is switched into', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA Teladan Mandiri']);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertSee('Untuk lembaga: SMA Teladan Mandiri');
+});
+
+it('shows a warning inside the modal when a yayasan-scoped actor has not switched into a lembaga yet', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertSee('Pilih lembaga aktif dulu melalui pengalih lembaga di atas — tidak bisa menambah Tahun Ajaran saat mode "Semua Lembaga".', false);
+});
+
+it('does not show any lembaga context text inside the modal for a lembaga-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsTahunAjaranManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertDontSee('Untuk lembaga:')
+        ->assertDontSee('Pilih lembaga aktif dulu melalui pengalih lembaga di atas');
+});
+
+it('renders the calendar_month icon instead of the unknown-icon placeholder in the modal header', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsTahunAjaranManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))->assertOk();
+
+    $response->assertSee('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-brand-500"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>', false);
+});
