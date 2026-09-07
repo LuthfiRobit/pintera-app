@@ -12,6 +12,22 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ---
 
+## 🟢 Perbaikan Tautan Orang Tua-Siswa & Konsistensi Identitas Person — SELESAI (7 September 2026)
+
+**Latar belakang** — Laporan user: "Data Induk Orang Tua, filter 0 tapi saat dicek detail ada yang tertaut anaknya." Investigasi mendalam menemukan 4 bug fungsional berbeda pada relasi Siswa-OrangTua-Person:
+- **Keputusan Bisnis**: Urutan pendaftaran resmi adalah **Siswa didaftarkan lebih dulu, Orang Tua ditautkan kemudian dari halaman Siswa** (ini alur pendaftaran keluarga utama, bukan sekunder). Halaman Data Induk Orang Tua berfungsi sebagai alat kelola profil sekunder.
+- **Bug #3 (Prioritas Tertinggi — Pencarian NIK Gagal Total)**: `SiswaOrangTuaController::cari()` dan `store()` gagal total menemukan akun User Orang Tua karena tidak menggunakan `withoutGlobalScopes()`, diperparah oleh `AkunOrangTuaGenerator::buat()` yang tidak pernah mengisi `yayasan_id` pada `User` yang dibuat. Diperbaiki dengan `User::withoutGlobalScopes()` dan pengisian `yayasan_id` di generator akun. Dua fixture test lama yang false-negative diperbaiki dengan TDD ketat.
+- **Bug #2 (Over-Count `siswa_count` Lintas Lembaga di Index)**: Relasi `OrangTua::siswa()` menggunakan `withoutGlobalScopes()` di level definisi, menyebabkan `withCount('siswa')` di `OrangTuaController::index()` menghitung anak di semua lembaga/yayasan. Diperbaiki dengan `withCount(['siswa' => ...])` yang ter-scope ke lembaga/yayasan aktor. Halaman `edit()` sengaja tetap lintas lembaga by design (`Person::YayasanScope`). Juga memperbaiki `OrangTua::scopeOrderByNama()` dan `OrangTuaFactory`.
+- **Bug #1 (Filter "Ada Anak"/"Belum Ada Anak" Basi di Index)**: Filter diubah dari snapshot array JavaScript Alpine.js murni menjadi query parameter server-side `?anak=ada|belum` dengan navigasi link dan perhitungan badge akurat (`totalAda`, `totalBelum`).
+- **Commit range**: `abbf4aa5..f7375241` (3 commit, base sebelum plan `53e8b570`).
+- **Di luar scope**: UI admin untuk `MergePersonsAction` sengaja tidak dibangun (fokus pada pencegahan duplikat di titik pembuatan baru).
+- **Full test suite akhir**: **2946 passed, 4 failed (7984 assertions)** — 4 kegagalan pre-existing pada seeder demo/day-of-week, 0 regresi.
+- **Spec**: `.agents/specs/2026-09-07-orang-tua-siswa-person-tautan.md`
+- **Plan**: `.agents/plans/2026-09-07-orang-tua-siswa-person-tautan.md`
+- **Handoff Log**: `.agents/logs/2026-09-07-orang-tua-siswa-person-tautan.md`
+
+---
+
 ## 🟢 Perbaikan Visibilitas Menu & Keamanan Scope Yayasan/Lembaga — SELESAI (7 September 2026)
 
 **Client request** — "fitur yang hanya bisa diakses lembaga tidak usah tampil di yayasan, kalau ada cenderung diklik. Contoh rekap kehadiran yang cuma aktif di lembaga jangan muncul di yayasan, atau di yayasan tampil rekapan semua lembaga." — ✅ **SELESAI TOTAL 7 September 2026** (branch `rbac-v2`, 7 task). Diaudit lewat 3 subagent riset paralel yang membaca kode semua controller di sidebar, lalu dikerjakan sebagai 1 plan berisi 4 kategori independen:
