@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
+use App\Models\Lembaga;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -15,13 +16,32 @@ class TahunAjaranController extends BaseController
     use AuthorizesRequests;
     use ResolveLembagaScopeTrait;
 
-    public function index(): View
+    public function index(Request $request): View
     {
         $this->authorize('tahun-ajaran.view');
 
         return view('admin.tahun-ajaran.index', [
-            'tahunAjaranList' => TahunAjaran::with('semester')->get(),
+            'tahunAjaranList' => TahunAjaran::with(['semester', 'lembaga'])->get(),
+            ...$this->scopeHeaderData($request),
         ]);
+    }
+
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+     * halaman (pola sama seperti admin/siswa/index.blade.php) -- HANYA relevan untuk aktor
+     * berscope yayasan (punya switcher lembaga).
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
     }
 
     public function create(): View

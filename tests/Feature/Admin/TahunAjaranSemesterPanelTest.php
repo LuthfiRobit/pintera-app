@@ -177,3 +177,50 @@ it('shows a friendly error instead of a 500 when a yayasan-scoped user creates a
 
     expect(TahunAjaran::withoutGlobalScopes()->where('nama', '2027/2028')->exists())->toBeFalse();
 });
+
+it('passes isYayasan=true and activeLembaga=null to the index view in "Semua Lembaga" mode', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertOk()
+        ->assertViewHas('isYayasan', true)
+        ->assertViewHas('activeLembaga', null);
+});
+
+it('passes isYayasan=true and activeLembaga=<lembaga aktif> when a lembaga is switched into', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))->assertOk();
+    $response->assertViewHas('isYayasan', true);
+    $response->assertViewHas('activeLembaga', fn ($activeLembaga) => $activeLembaga->id === $lembaga->id);
+});
+
+it('passes isYayasan=false to the index view for a lembaga-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsTahunAjaranManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertOk()
+        ->assertViewHas('isYayasan', false);
+});
