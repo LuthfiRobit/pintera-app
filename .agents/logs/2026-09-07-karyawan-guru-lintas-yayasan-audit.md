@@ -5,7 +5,7 @@
 > **Spec**: `.agents/specs/2026-09-07-karyawan-guru-lintas-yayasan-audit.md`  
 > **Plan**: `.agents/plans/2026-09-07-karyawan-guru-lintas-yayasan-audit.md`  
 > **Base commit sebelum kickoff**: `662a8321`  
-> **Commit range**: `50eedb01..5db68559` (6 commit, perbaikan lintas-yayasan/IDOR) + `3e62cb79` (susulan 8 September 2026, perbaikan wording & aturan bisnis UI — lihat bagian 4)  
+> **Commit range**: `50eedb01..5db68559` (6 commit, perbaikan lintas-yayasan/IDOR) + `3e62cb79` (susulan 8 September 2026, perbaikan wording & aturan bisnis UI — lihat bagian 4) + susulan ke-2 (8 September 2026, badge scope yayasan/lembaga & tooltip label — lihat bagian 5)  
 > **Status**: Selesai & Terverifikasi (Full Suite: 2.973 test lulus, 0 regresi baru)
 
 ---
@@ -132,3 +132,21 @@ Setelah bug lintas-yayasan di atas selesai, user meminta review ulang: *"apakah 
 **Verifikasi**: 36 test terkait (`KaryawanCrudTest`, `KaryawanControllerTest`, `GuruCrudTest`, `GuruRelationalProfileTest`, `GuruControllerTest`, `GuruBkFieldsTest`) tetap hijau, Pint bersih. Full suite TIDAK dijalankan ulang untuk susulan ini (murni perubahan wording/view/pesan error, tidak menyentuh scope/query — cakupan test yang disentuh sudah representatif).
 
 **Di luar scope susulan ini** (dicatat, belum dikerjakan): 2 field lain di modul Karyawan (Yayasan select hint sudah ditambahkan, tapi belum ada styling/urutan ulang form secara menyeluruh); breadcrumb create/edit Karyawan yang sedikit beda gaya ("Detail & Profil Karyawan" vs "Tambah Data Karyawan") belum diseragamkan lebih lanjut — dampaknya kecil, tidak membingungkan end-user, sengaja tidak disentuh supaya susulan ini tetap fokus ke temuan yang benar-benar signifikan.
+
+---
+
+## 5. Susulan ke-2 (8 September 2026) — Badge Scope Yayasan/Lembaga & Tooltip Label
+
+Permintaan langsung user: *"ada beberapa tambahan untuk halaman index, create, edit guru dan karyawan: 1. tambahkan informasi sedang di yayasan atau lembaga apa seperti header di index siswa. 2. informasi input yang terlalu panjang ... bisa diberikan tooltip info saja di labelnya. perbaiki sekarang!"* — dikerjakan langsung tanpa spec/plan (instruksi eksplisit "perbaiki sekarang!"), sama seperti pola bagian 4.
+
+**1. Badge scope yayasan/lembaga di header** — mereplikasi pola yang sudah ada di `admin/siswa/index.blade.php` (badge nama lembaga aktif berwarna brand, atau "Semua Lembaga" berwarna ungu, HANYA muncul untuk aktor berscope yayasan yang punya switcher lembaga):
+- `app/Http/Controllers/Admin/KaryawanController.php`: helper privat baru `scopeHeaderData(Request $request, ?int $lembagaId): array` menghitung `isYayasan` (`widestScopeLevel() === 'yayasan'`) dan `activeLembaga` (`Lembaga::withoutGlobalScopes()->find($lembagaId)` bila yayasan-scope dan ada lembaga aktif). Dipanggil dari `index()`, `create(Request $request)`, dan `edit(Request $request, Karyawan $karyawan)` — signature `edit()` diubah untuk menerima `Request $request` (parameter route-model-binding tetap valid diletakkan setelah `Request`).
+- `app/Http/Controllers/Admin/GuruController.php`: helper privat serupa `scopeHeaderData(Request $request): array`, memakai `resolveActiveLembagaId($request->user())` dari `ResolveLembagaScopeTrait` yang sudah ada di controller ini (dipilih di atas `resolveLembagaId()` trait yang sama karena varian itu `abort()` saat yayasan-scope belum pilih lembaga aktif — tidak cocok untuk badge header yang harus tetap tampil sebagai "Semua Lembaga", bukan error). Dipanggil dari `index()`, `create(Request $request)` (parameter ditambahkan, sebelumnya tanpa `Request`), dan `edit(Request $request, Guru $guru)` (parameter `Request` ditambahkan di depan `Guru $guru`).
+- Markup Blade badge ditambahkan ke 6 view: `admin/karyawan/{index,create,edit}.blade.php` dan `admin/guru/{index,create,edit}.blade.php`. Index memakai badge di sebelah `<h1>` (identik pola Siswa); create memakai badge di sebelah judul form (`<h2>`/`<h1>` tergantung halaman); edit memakai badge di sebelah badge status aktif pada hero card profil (pola sudah ada di `admin/guru/edit.blade.php` untuk status, diperluas untuk scope).
+
+**2. Tooltip info menggantikan hint panjang** — hint deskriptif yang sebelumnya berupa paragraf `<x-input-hint>`/`<p>` penuh di bawah field (ditambahkan di susulan bagian 4) dikonversi jadi ikon info (`<x-icon name="info">`) di sebelah label, dibungkus `<x-tooltip>` (komponen sudah ada, dipakai sebelumnya untuk 1 kolom tabel). Hint PENDEK (1 kalimat singkat seperti "(Opsional) Gunakan format awalan 08", "Khusus Guru BK, kosongkan kalau tidak dibatasi") sengaja TIDAK dikonversi — tetap teks biasa sesuai instruksi user ("input yang **terlalu panjang**"):
+- `admin/karyawan/_form.blade.php`: hint NIK (unik & jadi username/password), hint checkbox "Karyawan Pool" (permanen), hint select Yayasan, hint field disabled "Penempatan Saat Ini" di edit mode — 4 tooltip.
+- `admin/guru/_form.blade.php`: hint NIK (unik per yayasan), hint NIP (beda pesan create vs edit — jadi password awal vs tidak mengubah password), hint Email (unik SELURUH sistem — string persis yang dikutip user di permintaannya), hint Jenis PTK (kepanjangan singkatan) — 4 tooltip (NIP menghitung sebagai 1 slot label dengan isi tooltip bercabang `@if`).
+- Hint "Akhir Periode" di `admin/guru/tabs/jabatan-tambahan.blade.php` DIBIARKAN sebagai teks biasa (1 kalimat pendek, bukan kandidat "terlalu panjang").
+
+**Verifikasi**: 36 test yang sama dengan susulan bagian 4 (`KaryawanCrudTest`, `KaryawanControllerTest`, `GuruCrudTest`, `GuruRelationalProfileTest`, `GuruControllerTest`, `GuruBkFieldsTest`) tetap hijau, Pint bersih. Full suite tidak dijalankan ulang (perubahan murni tampilan/wiring data view, tidak menyentuh query/scope data).

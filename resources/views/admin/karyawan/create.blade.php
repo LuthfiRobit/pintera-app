@@ -20,7 +20,15 @@
 
         <div class="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-card md:p-8">
             <div class="mb-6 border-b border-gray-200 pb-4">
-                <h2 class="font-display text-2xl font-bold tracking-tight text-gray-900">Tambah Karyawan Baru</h2>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <h2 class="font-display text-2xl font-bold tracking-tight text-gray-900">Tambah Karyawan Baru</h2>
+                    @if ($isYayasan ?? false)
+                        <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ ($activeLembaga ?? null) ? 'border border-brand-200 bg-brand-50 text-brand-700' : 'border border-purple-200 bg-purple-50 text-purple-700' }}">
+                            <x-icon name="apartment" class="h-3.5 w-3.5" />
+                            {{ ($activeLembaga ?? null) ? $activeLembaga->nama : 'Semua Lembaga' }}
+                        </span>
+                    @endif
+                </div>
                 <p class="mt-1 text-sm text-gray-500">Lengkapi formulir di bawah untuk menambahkan data karyawan atau staf ke dalam sistem.</p>
             </div>
 

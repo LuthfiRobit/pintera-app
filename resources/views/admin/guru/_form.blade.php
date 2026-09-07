@@ -32,27 +32,41 @@
             </div>
 
             <div>
-                <x-input-label value="NIK *" />
+                <div class="flex items-center gap-1.5">
+                    <x-input-label value="NIK *" />
+                    <x-tooltip text="16 digit. Wajib unik — tidak boleh sama dengan NIK guru/karyawan/orang tua lain di yayasan ini.">
+                        <x-icon name="info" class="h-3.5 w-3.5 cursor-help text-gray-400" />
+                    </x-tooltip>
+                </div>
                 <input type="text" name="nik" value="{{ $val('nik') }}" class="{{ $inputClass }} font-mono" maxlength="16" placeholder="Contoh: 3573xxxxxxxxxxxx">
-                <p class="mt-1 text-xs text-gray-400">16 digit. Wajib unik — tidak boleh sama dengan NIK guru/karyawan/orang tua lain di yayasan ini.</p>
                 <x-input-error :messages="$errors->get('nik')" class="mt-1.5" />
             </div>
 
             <div>
-                <x-input-label value="NIP *" />
+                <div class="flex items-center gap-1.5">
+                    <x-input-label value="NIP *" />
+                    @if ($guru === null)
+                        <x-tooltip text="NIP ini otomatis menjadi password login guru. Boleh sama antar guru (tidak wajib unik) — cuma jadi password AWAL, guru akan diminta ganti password saat login pertama.">
+                            <x-icon name="info" class="h-3.5 w-3.5 cursor-help text-gray-400" />
+                        </x-tooltip>
+                    @else
+                        <x-tooltip text="Mengubah NIP di sini tidak mengubah ulang password akun yang sudah ada.">
+                            <x-icon name="info" class="h-3.5 w-3.5 cursor-help text-gray-400" />
+                        </x-tooltip>
+                    @endif
+                </div>
                 <input type="text" name="nip" value="{{ $val('nip') }}" class="{{ $inputClass }} font-mono" placeholder="Contoh: 198001012020121001">
-                @if ($guru === null)
-                    <p class="mt-1 text-xs text-gray-400">NIP ini otomatis menjadi password login guru. Boleh sama antar guru (tidak wajib unik) — cuma jadi password AWAL, guru akan diminta ganti password saat login pertama.</p>
-                @else
-                    <p class="mt-1 text-xs text-gray-400">Mengubah NIP di sini tidak mengubah ulang password akun yang sudah ada.</p>
-                @endif
                 <x-input-error :messages="$errors->get('nip')" class="mt-1.5" />
             </div>
 
             <div>
-                <x-input-label value="Email *" />
+                <div class="flex items-center gap-1.5">
+                    <x-input-label value="Email *" />
+                    <x-tooltip text="Email ini menjadi username login guru. Wajib unik di SELURUH sistem (lintas lembaga/yayasan) — tidak boleh sama dengan email guru/karyawan/orang tua manapun.">
+                        <x-icon name="info" class="h-3.5 w-3.5 cursor-help text-gray-400" />
+                    </x-tooltip>
+                </div>
                 <input type="email" name="email" value="{{ $val('email') }}" class="{{ $inputClass }}" placeholder="nama.guru@sekolah.sch.id">
-                <p class="mt-1 text-xs text-gray-400">Email ini menjadi username login guru. Wajib unik di SELURUH sistem (lintas lembaga/yayasan) — tidak boleh sama dengan email guru/karyawan/orang tua manapun.</p>
                 <x-input-error :messages="$errors->get('email')" class="mt-1.5" />
             </div>
 
@@ -67,13 +81,17 @@
             </div>
 
             <div>
-                <x-input-label value="Jenis PTK *" />
+                <div class="flex items-center gap-1.5">
+                    <x-input-label value="Jenis PTK *" />
+                    <x-tooltip text="PTK = Pendidik dan Tenaga Kependidikan. Menentukan menu & hak akses yang muncul untuk guru ini (mis. Ruang Guru hanya untuk PTK bertipe guru).">
+                        <x-icon name="info" class="h-3.5 w-3.5 cursor-help text-gray-400" />
+                    </x-tooltip>
+                </div>
                 <select name="jenis_ptk" class="{{ $selectClass }}">
                     @foreach ($jenisPtkOptions as $value => $label)
                         <option value="{{ $value }}" @selected($val('jenis_ptk') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
-                <p class="mt-1 text-xs text-gray-400">PTK = Pendidik dan Tenaga Kependidikan. Menentukan menu & hak akses yang muncul untuk guru ini (mis. Ruang Guru hanya untuk PTK bertipe guru).</p>
                 <x-input-error :messages="$errors->get('jenis_ptk')" class="mt-1.5" />
             </div>
 

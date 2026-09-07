@@ -84,14 +84,37 @@ class GuruController extends BaseController
             'totalGuru' => Guru::count(),
             'totalAktif' => Guru::where('status_aktif', 'aktif')->count(),
             'totalPNS' => Guru::whereIn('status_kepegawaian', ['PNS', 'PPPK'])->count(),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $this->authorize('guru.create');
 
-        return view('admin.guru.create', $this->formOptions());
+        return view('admin.guru.create', [
+            ...$this->formOptions(),
+            ...$this->scopeHeaderData($request),
+        ]);
+    }
+
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+     * halaman (pola sama seperti admin/siswa/index.blade.php) -- HANYA relevan untuk aktor
+     * berscope yayasan (punya switcher lembaga); aktor lembaga-scope selalu di 1 lembaga
+     * tetap jadi tidak butuh badge ini.
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
     }
 
     public function store(Request $request): RedirectResponse
@@ -166,7 +189,7 @@ class GuruController extends BaseController
         return redirect()->route('admin.guru.index')->with('status', 'Data guru & akun berhasil dibuat.');
     }
 
-    public function edit(Guru $guru): View
+    public function edit(Request $request, Guru $guru): View
     {
         $this->authorize('guru.edit');
 
@@ -182,6 +205,7 @@ class GuruController extends BaseController
             'guru' => $guru,
             'jabatanTambahanMasterList' => JabatanTambahanMaster::orderBy('nama')->get(),
             ...$this->formOptions(),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 

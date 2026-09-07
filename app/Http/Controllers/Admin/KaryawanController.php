@@ -75,6 +75,7 @@ class KaryawanController extends BaseController
             'totalKaryawan' => $totalKaryawan,
             'totalAktif' => $totalAktif,
             'totalPool' => $totalPool,
+            ...$this->scopeHeaderData($request, $lembagaId),
         ]);
     }
 
@@ -86,7 +87,26 @@ class KaryawanController extends BaseController
             'jenisKaryawanList' => JenisKaryawanMaster::orderBy('nama')->get(),
             'yayasanList' => $request->user()->hasRole('yayasan_super_admin') ? Yayasan::orderBy('nama')->get() : collect(),
             'canCreatePool' => $request->user()->hasRole('yayasan_super_admin'),
+            ...$this->scopeHeaderData($request, $this->resolveLembagaId($request)),
         ]);
+    }
+
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+     * halaman (pola sama seperti admin/siswa/index.blade.php) -- HANYA relevan untuk aktor
+     * berscope yayasan (punya switcher lembaga); aktor lembaga-scope tidak butuh badge ini
+     * karena mereka selalu berada di 1 lembaga tetap.
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request, ?int $lembagaId): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
     }
 
     public function store(Request $request, AkunKaryawanGenerator $generator): RedirectResponse
@@ -135,7 +155,7 @@ class KaryawanController extends BaseController
         return redirect()->route('admin.karyawan.index')->with('status', 'Data karyawan & akun berhasil dibuat.');
     }
 
-    public function edit(Karyawan $karyawan): View
+    public function edit(Request $request, Karyawan $karyawan): View
     {
         $this->authorize('karyawan.edit');
 
@@ -150,6 +170,7 @@ class KaryawanController extends BaseController
         return view('admin.karyawan.edit', [
             'karyawan' => $karyawan,
             'jenisKaryawanList' => JenisKaryawanMaster::orderBy('nama')->get(),
+            ...$this->scopeHeaderData($request, $this->resolveLembagaId($request)),
         ]);
     }
 

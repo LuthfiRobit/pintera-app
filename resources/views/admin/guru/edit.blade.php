@@ -60,6 +60,12 @@
                         <span class="rounded-full border px-3 py-0.5 text-xs font-semibold {{ $statusBadge }}">
                             {{ ucwords(str_replace('_', ' ', $guru->status_aktif)) }}
                         </span>
+                        @if ($isYayasan ?? false)
+                            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ ($activeLembaga ?? null) ? 'border border-brand-200 bg-brand-50 text-brand-700' : 'border border-purple-200 bg-purple-50 text-purple-700' }}">
+                                <x-icon name="apartment" class="h-3.5 w-3.5" />
+                                {{ ($activeLembaga ?? null) ? $activeLembaga->nama : 'Semua Lembaga' }}
+                            </span>
+                        @endif
                     </div>
                     <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600">
                         <span class="flex items-center gap-1.5 font-mono">
