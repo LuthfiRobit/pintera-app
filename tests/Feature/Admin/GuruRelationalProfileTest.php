@@ -2,10 +2,9 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Guru;
 use App\Domains\Sdm\Models\JabatanTambahanMaster;
+use App\Models\Guru;
 use App\Models\Lembaga;
-use App\Models\RiwayatPendidikanGuru;
 use App\Models\Role;
 use App\Models\SertifikasiGuru;
 use App\Models\User;
@@ -19,7 +18,9 @@ class GuruRelationalProfileTest extends TestCase
     use RefreshDatabase;
 
     private User $admin;
+
     private Lembaga $lembaga;
+
     private Guru $guru;
 
     protected function setUp(): void
@@ -27,14 +28,14 @@ class GuruRelationalProfileTest extends TestCase
         parent::setUp();
         $yayasan = Yayasan::factory()->create();
         $this->lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-        
+
         Permission::firstOrCreate(['name' => 'guru.edit', 'guard_name' => 'web']);
         $role = Role::firstOrCreate(['name' => 'admin_sekolah', 'guard_name' => 'web', 'scope_level' => 'lembaga']);
         $role->givePermissionTo('guru.edit');
-        
+
         $this->admin = User::factory()->create(['lembaga_id' => $this->lembaga->id]);
         $this->admin->assignRole($role);
-        
+
         $this->guru = Guru::factory()->create(['lembaga_id' => $this->lembaga->id]);
     }
 
@@ -75,6 +76,7 @@ class GuruRelationalProfileTest extends TestCase
     public function test_can_add_and_remove_jabatan_tambahan(): void
     {
         $master = JabatanTambahanMaster::create([
+            'yayasan_id' => $this->lembaga->yayasan_id,
             'nama' => 'Wakil Kepala Sekolah Bidang Kurikulum',
             'kelompok' => 'struktural',
         ]);

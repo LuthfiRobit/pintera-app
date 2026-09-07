@@ -3,12 +3,19 @@
 namespace Database\Seeders;
 
 use App\Domains\Sdm\Models\JabatanTambahanMaster;
+use App\Models\Yayasan;
 use Illuminate\Database\Seeder;
 
 class JabatanTambahanMasterSeeder extends Seeder
 {
     public function run(): void
     {
+        $yayasanId = Yayasan::value('id');
+        if (! $yayasanId) {
+            (new YayasanSeeder)->run();
+            $yayasanId = Yayasan::value('id') ?? 1;
+        }
+
         $struktural = [
             'Wakil Kepala Sekolah Kurikulum',
             'Wakil Kepala Sekolah Kesiswaan',
@@ -32,11 +39,17 @@ class JabatanTambahanMasterSeeder extends Seeder
         ];
 
         foreach ($struktural as $nama) {
-            JabatanTambahanMaster::firstOrCreate(['nama' => $nama], ['kelompok' => 'struktural']);
+            JabatanTambahanMaster::firstOrCreate(
+                ['yayasan_id' => $yayasanId, 'nama' => $nama],
+                ['kelompok' => 'struktural']
+            );
         }
 
         foreach ($fungsional as $nama) {
-            JabatanTambahanMaster::firstOrCreate(['nama' => $nama], ['kelompok' => 'fungsional']);
+            JabatanTambahanMaster::firstOrCreate(
+                ['yayasan_id' => $yayasanId, 'nama' => $nama],
+                ['kelompok' => 'fungsional']
+            );
         }
     }
 }
