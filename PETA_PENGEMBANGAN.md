@@ -12,6 +12,22 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ---
 
+## 🟢 Perbaikan Visibilitas Menu & Keamanan Scope Yayasan/Lembaga — SELESAI (7 September 2026)
+
+**Client request** — "fitur yang hanya bisa diakses lembaga tidak usah tampil di yayasan, kalau ada cenderung diklik. Contoh rekap kehadiran yang cuma aktif di lembaga jangan muncul di yayasan, atau di yayasan tampil rekapan semua lembaga." — ✅ **SELESAI TOTAL 7 September 2026** (branch `rbac-v2`, 7 task). Diaudit lewat 3 subagent riset paralel yang membaca kode semua controller di sidebar, lalu dikerjakan sebagai 1 plan berisi 4 kategori independen:
+- **Kategori A (Bug Keamanan Kritis)**: 3 controller (`KasusAksesLogController`, `KasusTerhapusController`, `OrangTuaController`) untuk aktor scope **yayasan** sama sekali tidak membatasi query ke yayasan milik aktor — menampilkan data milik yayasan LAIN. Ditutup dengan pola `when($user->widestScopeLevel() === 'yayasan', ...)`.
+- **Kategori B (Gerbang Identitas Menu)**: 5 menu sidebar Ruang Guru sekarang wajib `hasRole('guru')`, bukan hanya permission mentah — mencegah user non-guru (mis. super admin) mengakses menu guru-specific.
+- **Kategori C (Guard Menu Kontekstual)**: menu & endpoint "Scan QR" disembunyikan + di-guard 422 saat aktor yayasan berada di mode "Semua Lembaga" (belum memilih lembaga aktif via switcher topbar).
+- **Kategori D (Agregat Salah saat Mode "Semua Lembaga")**: 8 controller (`VirtualAccountController`, `ManualPaymentController`, `AttendanceConfigurationController`, `GedungController`, `RuanganController`, `KategoriAsetController`, `PengajuanPengadaanController`, `RaporController`) memakai `where('lembaga_id', $lembagaId)` wajib yang secara tidak sengaja jadi `WHERE lembaga_id IS NULL` saat `$lembagaId` null (mode "Semua Lembaga") — diperbaiki jadi `when($lembagaId !== null, ...)` supaya kartu ringkasan statistik & dropdown menampilkan agregat/label yang benar lintas semua lembaga milik yayasan.
+- **Commit range**: `85c7ea3d..68915faf` (15 commit, base sebelum plan `8b949349`).
+- **Di luar scope (belum diputuskan/dikerjakan)**: 3 controller master data global lintas-SEMUA-yayasan (`JenisKaryawanMasterController`, `JabatanTambahanMasterController`, `WhatsAppTemplateController`) yang butuh keputusan produk terpisah; dropdown guru/mapel `JadwalPelajaranController` (minor, tervalidasi ulang saat submit); method non-`index()` di `VirtualAccountController`/`ManualPaymentController`; modul SPMB/PPDB (sengaja dibekukan).
+- Full test suite akhir: **2942 passed, 4 failed (7964 assertions)** — 4 kegagalan terbukti pre-existing (seeder demo `M3DemoDataSeederTest`, `PresensiSeederTest`, `SesiPembelajaranSeederTest`, day-of-week/idempotency-dependent), tidak ada file-nya yang disentuh plan ini.
+- Spec: `.agents/specs/2026-09-07-scope-yayasan-lembaga-menu-fix.md`
+- Plan: `.agents/plans/2026-09-07-scope-yayasan-lembaga-menu-fix.md`
+- Handoff Log: `.agents/logs/2026-09-07-scope-yayasan-lembaga-menu-fix.md`
+
+---
+
 ## 🟢 Rombak Total Manual Book Akademik — SELESAI (6 September 2026)
 
 **Pembaruan Dokumentasi User-Facing (Modul Akademik)** — ✅ **SELESAI TOTAL 6 September 2026** (branch `akademik-v2`).
