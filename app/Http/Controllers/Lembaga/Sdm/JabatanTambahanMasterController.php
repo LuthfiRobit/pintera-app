@@ -39,12 +39,15 @@ class JabatanTambahanMasterController extends BaseController
     {
         $this->authorize('jabatan-tambahan-master.create');
 
+        $yayasanId = auth()->user()->yayasan_id ?? auth()->user()->lembaga?->yayasan_id;
+        abort_if($yayasanId === null, 422, 'Konteks yayasan tidak dapat ditentukan.');
+
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255', 'unique:jabatan_tambahan_master,nama'],
+            'nama' => ['required', 'string', 'max:255', Rule::unique('jabatan_tambahan_master', 'nama')->where('yayasan_id', $yayasanId)],
             'kelompok' => ['required', Rule::in(['struktural', 'fungsional'])],
         ]);
 
-        $item = $action->execute(JabatanTambahanMasterData::fromArray($data));
+        $item = $action->execute(JabatanTambahanMasterData::fromArray($data), $yayasanId);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -61,7 +64,12 @@ class JabatanTambahanMasterController extends BaseController
         $this->authorize('jabatan-tambahan-master.edit');
 
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255', Rule::unique('jabatan_tambahan_master', 'nama')->ignore($jabatanTambahanMaster->id)],
+            'nama' => [
+                'required', 'string', 'max:255',
+                Rule::unique('jabatan_tambahan_master', 'nama')
+                    ->where('yayasan_id', $jabatanTambahanMaster->yayasan_id)
+                    ->ignore($jabatanTambahanMaster->id),
+            ],
             'kelompok' => ['required', Rule::in(['struktural', 'fungsional'])],
         ]);
 
