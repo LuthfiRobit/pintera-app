@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Models\Yayasan;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class JenisKaryawanMasterFactory extends Factory
@@ -12,6 +13,7 @@ class JenisKaryawanMasterFactory extends Factory
     public function definition(): array
     {
         return [
+            'yayasan_id' => Yayasan::factory(),
             'nama' => $this->faker->unique()->randomElement(['Psikolog', 'Konselor BK', 'Terapis', 'Pekerja Sosial']),
             'is_konselor' => false,
         ];

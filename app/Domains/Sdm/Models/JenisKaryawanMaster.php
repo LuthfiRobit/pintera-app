@@ -3,6 +3,7 @@
 namespace App\Domains\Sdm\Models;
 
 use App\Models\Karyawan;
+use App\Models\Scopes\YayasanScope;
 use Database\Factories\JenisKaryawanMasterFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,9 +18,14 @@ class JenisKaryawanMaster extends Model
         return JenisKaryawanMasterFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::addGlobalScope(new YayasanScope);
+    }
+
     protected $table = 'jenis_karyawan_master';
 
-    protected $fillable = ['nama', 'is_konselor'];
+    protected $fillable = ['yayasan_id', 'nama', 'is_konselor'];
 
     protected function casts(): array
     {

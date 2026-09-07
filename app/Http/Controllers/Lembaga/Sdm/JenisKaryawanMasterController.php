@@ -39,11 +39,14 @@ class JenisKaryawanMasterController extends BaseController
     {
         $this->authorize('jenis-karyawan-master.create');
 
+        $yayasanId = auth()->user()->yayasan_id ?? auth()->user()->lembaga?->yayasan_id;
+        abort_if($yayasanId === null, 422, 'Konteks yayasan tidak dapat ditentukan.');
+
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255', 'unique:jenis_karyawan_master,nama'],
+            'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_karyawan_master', 'nama')->where('yayasan_id', $yayasanId)],
         ]);
 
-        $item = $action->execute(JenisKaryawanMasterData::fromArray($data));
+        $item = $action->execute(JenisKaryawanMasterData::fromArray($data), $yayasanId);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -60,7 +63,12 @@ class JenisKaryawanMasterController extends BaseController
         $this->authorize('jenis-karyawan-master.edit');
 
         $data = $request->validate([
-            'nama' => ['required', 'string', 'max:255', Rule::unique('jenis_karyawan_master', 'nama')->ignore($jenisKaryawanMaster->id)],
+            'nama' => [
+                'required', 'string', 'max:255',
+                Rule::unique('jenis_karyawan_master', 'nama')
+                    ->where('yayasan_id', $jenisKaryawanMaster->yayasan_id)
+                    ->ignore($jenisKaryawanMaster->id),
+            ],
         ]);
 
         $item = $action->execute($jenisKaryawanMaster, JenisKaryawanMasterData::fromArray($data));
