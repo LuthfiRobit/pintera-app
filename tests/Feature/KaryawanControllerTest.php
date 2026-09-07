@@ -29,7 +29,7 @@ it('updates Karyawan identity through PersonService', function () {
         'no_hp' => '081233334444',
         'email' => 'lama@example.test',
     ]);
-    $jenisKaryawan = JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
     $karyawan = Karyawan::factory()->create([
         'lembaga_id' => $lembaga->id,
         'yayasan_id' => $yayasan->id,
