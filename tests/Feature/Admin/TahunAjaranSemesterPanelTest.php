@@ -224,3 +224,107 @@ it('passes isYayasan=false to the index view for a lembaga-scoped actor', functi
         ->assertOk()
         ->assertViewHas('isYayasan', false);
 });
+
+it('shows the "Semua Lembaga" badge in the index header for a yayasan-scoped actor in aggregate mode', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertSee('Semua Lembaga')
+        ->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
+});
+
+it('shows the active lembaga name badge instead of "Semua Lembaga" when a lembaga is switched into', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Teladan Satu']);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertSee('SD Teladan Satu')
+        ->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
+
+it('does not show any scope badge in the index header for a lembaga-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsTahunAjaranManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))
+        ->assertDontSee('border-purple-200', false)
+        ->assertDontSee('border-brand-200', false);
+});
+
+it('shows each lembaga name label on cards in aggregate mode when 2 lembaga share the same tahun ajaran name', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Cendekia Utama']);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Cendekia Utama']);
+    TahunAjaran::create(['lembaga_id' => $lembagaA->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30']);
+    TahunAjaran::create(['lembaga_id' => $lembagaB->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $response = $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))->assertOk();
+    $response->assertSee('text-[11px] font-medium text-gray-400', false);
+    $response->assertSee('SD Cendekia Utama');
+    $response->assertSee('SMP Cendekia Utama');
+});
+
+it('hides the lembaga name label on cards once a lembaga is switched into', function () {
+    $permissions = ['tahun-ajaran.view', 'tahun-ajaran.create', 'tahun-ajaran.activate', 'semester.create', 'semester.activate'];
+    foreach ($permissions as $permission) {
+        Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+    }
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo($permissions);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Cendekia Dua']);
+    TahunAjaran::create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))->assertOk();
+    $response->assertDontSee('text-[11px] font-medium text-gray-400', false);
+});
+
+it('mentions the owning lembaga name in the activation confirm dialog wording', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA Bina Insan']);
+    $manager = actingAsTahunAjaranManager($lembaga);
+    $this->actingAs($manager);
+
+    TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => false,
+    ]);
+
+    $this->get(route('admin.tahun-ajaran.index'))
+        ->assertSee('Tahun Ajaran lain di lembaga SMA Bina Insan akan dinonaktifkan', false);
+});

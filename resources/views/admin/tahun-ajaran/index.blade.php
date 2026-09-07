@@ -88,7 +88,15 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <p class="font-display text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">Data Induk</p>
-                <h1 class="mt-0.5 font-display text-xl font-bold tracking-tight text-gray-900">Tahun Ajaran &amp; Semester</h1>
+                <div class="mt-0.5 flex flex-wrap items-center gap-2.5">
+                    <h1 class="font-display text-xl font-bold tracking-tight text-gray-900">Tahun Ajaran &amp; Semester</h1>
+                    @if ($isYayasan ?? (auth()->user()?->widestScopeLevel() === 'yayasan'))
+                        <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ ($activeLembaga ?? null) ? 'border border-brand-200 bg-brand-50 text-brand-700' : 'border border-purple-200 bg-purple-50 text-purple-700' }}">
+                            <x-icon name="apartment" class="h-3.5 w-3.5" />
+                            {{ ($activeLembaga ?? null) ? $activeLembaga->nama : 'Semua Lembaga' }}
+                        </span>
+                    @endif
+                </div>
             </div>
             @can('tahun-ajaran.create')
                 <x-primary-button type="button" @click="openCreateTa()" class="flex items-center gap-2">
@@ -128,6 +136,12 @@
                                     <x-icon name="event" class="h-3.5 w-3.5 text-gray-400" />
                                     <span>{{ \Carbon\Carbon::parse($ta->tanggal_mulai)->translatedFormat('d M Y') }} - {{ \Carbon\Carbon::parse($ta->tanggal_selesai)->translatedFormat('d M Y') }}</span>
                                 </p>
+                                @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                                    <p class="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-gray-400">
+                                        <x-icon name="apartment" class="h-3 w-3" />
+                                        <span>{{ $ta->lembaga->nama ?? '-' }}</span>
+                                    </p>
+                                @endif
                             </div>
                             
                             {{-- Actions for TA --}}
@@ -138,7 +152,7 @@
                                     </button>
                                     @if (!$isTaActive)
                                         @can('tahun-ajaran.activate')
-                                            <form action="{{ route('admin.tahun-ajaran.activate', $ta) }}" method="POST" class="inline" onsubmit="return confirm('Aktifkan Tahun Ajaran ini? Tahun Ajaran lain akan dinonaktifkan.')">
+                                            <form action="{{ route('admin.tahun-ajaran.activate', $ta) }}" method="POST" class="inline" onsubmit="return confirm('Aktifkan {{ $ta->nama }}? Tahun Ajaran lain di lembaga {{ $ta->lembaga->nama ?? 'ini' }} akan dinonaktifkan (tidak memengaruhi lembaga lain).')">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" class="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Jadikan Tahun Ajaran Aktif">
