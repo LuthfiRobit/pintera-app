@@ -446,4 +446,22 @@ it('merges NIS and nama into one column and displays lembaga column on siswa ind
     $response->assertSee('SMA IT PINTERA');
 });
 
+it('renders responsive pagination with mobile and desktop navigation on siswa index', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsSiswaManager($lembaga);
+
+    Siswa::factory()->count(25)->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.index', ['per_page' => 10]));
+
+    $response->assertOk();
+    $response->assertSee('sm:hidden');
+    $response->assertSee('hidden sm:flex');
+    $response->assertSee('Sebelumnya');
+    $response->assertSee('Berikutnya');
+    $response->assertSeeText('Hal 1 / 3');
+});
+
+
 
