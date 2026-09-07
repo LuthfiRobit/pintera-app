@@ -12,14 +12,14 @@ Audit menyeluruh platform SaaS Pintera — apa yang sudah ada, perlu diperbaiki/
 
 ---
 
-## 🟢 Sidebar: Regroup Menu & Grup Collapsible — SELESAI (7 September 2026)
+## 🟢 Sidebar: Regroup Menu, Grup Collapsible & Dark Contrast UI/UX Polish — SELESAI (8 September 2026)
 
-**Latar belakang** — Permintaan client perbaikan gaya sidebar ditindaklanjuti dengan pembenahan STRUKTUR navigasi internal: dedup item "Kasus Pendampingan" yang sebelumnya ditempel 4x di 4 grup persona berbeda, pemecahan "Data Induk" (12 item campur aduk) menjadi 3 grup bertema, rename "Kehadiran Saya" → "Ruang Karyawan", pemindahan Kelas/Mapel ke Akademik, dan penambahan fitur collapsible accordion per-grup dengan auto-open halaman aktif.
+**Latar belakang** — Permintaan perbaikan gaya sidebar ditindaklanjuti dengan pembenahan STRUKTUR navigasi internal: dedup item "Kasus Pendampingan" yang sebelumnya ditempel 4x di 4 grup persona berbeda, pemecahan "Data Induk" (12 item campur aduk) menjadi 3 grup bertema, rename "Kehadiran Saya" → "Ruang Karyawan", pemindahan Kelas/Mapel ke Akademik, penambahan fitur collapsible accordion per-grup dengan auto-open halaman aktif, serta penyempurnaan UI/UX modern (dark theme contrast, tipografi Satoshi, dan animasi CSS Grid mulus).
 - **Dedup Kasus Pendampingan**: Menyatukan 4 duplikasi manual pada Ruang Guru, Ruang Siswa, Ruang Orang Tua, dan Kehadiran Saya menjadi 1 grup mandiri `Pendampingan Saya` dengan 1 syarat tunggal `can('viewAny', Kasus::class)`.
 - **Rename & Split Grup**: "Kehadiran Saya" direname menjadi `Ruang Karyawan` (konsisten dengan taksonomi Ruang Guru/Siswa/Orang Tua). "Data Induk" dipecah menjadi `Yayasan & Lembaga` (struktur organisasi), `Data Guru & Karyawan` (SDM), dan `Data Siswa & Orang Tua`. Kelas dan Mapel dipindahkan ke awal grup `Akademik`. Template WhatsApp dipindahkan ke `Pengaturan Sistem` (rename dari `Akses & Peran`).
-- **Grup Collapsible (Accordion)**: Tiap grup dibungkus Alpine.js `x-data` lokal dengan transisi bawaan `x-show` + `x-transition` (tanpa dependensi `@alpinejs/collapse`). Menggunakan chevron `lucide-chevron-down` yang berputar saat dibuka/tutup. Grup yang memuat menu aktif otomatis terbuka (`open: true`), grup lain default tertutup.
-- **Scope Visual Boundary**: Palet warna, tipografi, radius, dan token TailAdmin tetap utuh tanpa perubahan (restyle visual menunggu detail spesifik dari client).
-- **Commit range**: `9e44a440..21d2740b` (2 commit, base sebelum kickoff `be46217b`, branch `refactor-view-v2`).
+- **Grup Collapsible (Accordion)**: Tiap grup dibungkus Alpine.js `x-data` lokal dengan transisi mulus CSS Grid (`grid-rows-[1fr]` ⇄ `grid-rows-[0fr]`). Menggunakan chevron `lucide-chevron-down` yang berputar saat dibuka/tutup. Grup yang memuat menu aktif otomatis terbuka (`open: true`), grup lain default tertutup.
+- **UI/UX Dark Contrast Theme & Satoshi Typography**: Menerapkan dark contrast sidebar (`bg-gray-900 border-gray-800`), active item pill menyala (`bg-brand-500 font-semibold text-white shadow-md shadow-brand-500/25`), font **Satoshi** via CDN Bunny Fonts, indentasi child 1 spasi dengan garis pandu vertikal (`border-l-2 border-gray-800`), perbaikan selector `[aria-current]` di Alpine `x-init`, dan full responsive drawer overlay pada mobile.
+- **Commit range**: `9e44a440..22a67e34` (3 commit fitur + 1 commit docs, base sebelum kickoff `be46217b`, branch `refactor-view-v2`).
 - **Full test suite akhir**: **2973 passed, 4 failed (8058 assertions)** — 4 kegagalan pre-existing pada seeder demo/day-of-week, 0 regresi baru.
 - **Spec**: `.agents/specs/2026-09-07-sidebar-regroup-collapsible.md`
 - **Plan**: `.agents/plans/2026-09-07-sidebar-regroup-collapsible.md`
