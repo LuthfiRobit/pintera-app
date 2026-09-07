@@ -4,7 +4,7 @@
 > **Tanggal**: 8 September 2026
 > **Latar belakang**: Audit menu "Tahun Ajaran" atas permintaan user, mengikuti urutan yang disepakati (backend dulu, lalu frontend/wording dicocokkan ke backend). Backend (`TenantScope`, `TahunAjaranController`, `TahunAjaran::activate()`) TERKONFIRMASI BENAR untuk "Semua Lembaga" maupun "Switch Lembaga" — spec ini TIDAK mengubah satu baris backend query/scope pun. Temuan murni di lapisan frontend: informasi yang ditampilkan ke user tidak konkret/tidak selalu jujur terhadap apa yang backend-nya benar-benar lakukan, dan halaman ini belum mengikuti pola badge scope yayasan/lembaga yang sudah dipasang di Siswa/Karyawan/Guru pada sesi-sesi sebelumnya.
 
-## Ringkasan Temuan (5 item)
+## Ringkasan Temuan (6 item)
 
 | # | Severity | Ringkasan |
 |---|---|---|
@@ -13,6 +13,7 @@
 | 3 | 🟡 Sedang | Wording dialog konfirmasi "Aktifkan" tidak menyebut lingkup "di lembaga yang sama" — berpotensi menyesatkan padahal backend-nya sudah benar |
 | 4 | 🔴 Tinggi | Modal Tambah/Edit tidak menunjukkan konteks lembaga tujuan sebelum submit |
 | 5 | 🟡 Sedang | Halaman `admin.tahun-ajaran.create` (route+controller+view) adalah dead code, tidak pernah diakses dari UI manapun, dan pakai design system lama |
+| 6 | 🟠 Sedang-Tinggi | Ikon `date_range` di header modal Tambah/Edit tidak terdaftar di `<x-icon>`, jatuh ke placeholder default (lingkaran tanda tanya) — ikon tanggal/kalender tampil sebagai ikon "tidak dikenal" di produksi |
 
 ## Keputusan yang Diambil
 
@@ -190,7 +191,7 @@ Fix — tambahkan baris info lembaga tujuan di bawah judul modal, 3 kondisi berb
 <div class="flex items-center justify-between pb-3.5 border-b border-gray-200">
     <div>
         <h3 class="font-display text-base font-bold text-gray-900 flex items-center gap-2">
-            <x-icon name="date_range" class="h-5 w-5 text-brand-500" />
+            <x-icon name="calendar_month" class="h-5 w-5 text-brand-500" />
             <span x-text="modalTahunAjaranMode === 'create' ? 'Tambah Tahun Ajaran' : 'Edit Tahun Ajaran'"></span>
         </h3>
         @if ($isYayasan ?? false)
@@ -210,6 +211,8 @@ Fix — tambahkan baris info lembaga tujuan di bawah judul modal, 3 kondisi berb
 ```
 
 Catatan: pesan peringatan ini HANYA tampil untuk mode `create` maupun `edit` (keduanya pakai modal yang sama) — untuk `edit`, "Untuk lembaga: X" tetap relevan sebagai konfirmasi konteks (TA yang diedit memang milik lembaga aktif, karena kalau bukan, `TahunAjaranController::update()` sudah menolak lewat `TenantScope` sebelum modal ini bisa terbuka — tombol edit hanya muncul untuk kartu yang memang sudah lolos filter tenant). Tombol "Simpan" TIDAK di-disable di spec ini (di luar scope — server-side sudah menolak dengan pesan error yang jelas lewat banner di atas halaman; menambah disable-state client-side murni penambahan UX, bukan perbaikan kejujuran informasi, boleh jadi backlog terpisah kalau user memintanya).
+
+**Catatan tambahan (lihat Item 6)**: ikon `date_range` pada baris 180 (`Kode saat ini`) DIGANTI jadi `calendar_month` di kode fix di atas (baris 194) — ini BUKAN bagian dari perbaikan konteks lembaga, tapi perbaikan Item 6 yang kebetulan berada di baris yang sama persis. Kedua perbaikan digabung jadi satu edit di file yang sama supaya tidak menyentuh blok `<h3>` dua kali secara terpisah.
 
 ---
 
@@ -239,6 +242,27 @@ public function create(): View
 
 ---
 
+## Item 6 — Ikon `date_range` Tidak Terdaftar, Jatuh ke Placeholder "?"
+
+**Ditemukan user saat review spec ini** — bukan dari audit awal, tambahan atas permintaan eksplisit untuk membahas ikon yang tidak tampil.
+
+**Akar masalah**: `resources/views/components/icon.blade.php` adalah komponen ikon SVG inline dengan `@switch($name)` — setiap nama ikon harus punya `@case` sendiri. Nama `date_range` (dipakai di `_modal-tahun-ajaran.blade.php` baris 16, header modal Tambah/Edit Tahun Ajaran) **TIDAK ADA** di daftar `@case` manapun di file itu (dikonfirmasi lewat pembacaan penuh file, 40+ `@case` terdaftar, tidak ada `date_range`). Akibatnya render jatuh ke `@default` (baris 345-347):
+```blade
+@default
+    {{-- Nama ikon tidak dikenal — tampilkan placeholder yang terlihat, bukan diam-diam kosong. --}}
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.6-1.4c.5.7.4 1.7-.3 2.3l-1.3 1.1c-.3.3-.5.5-.5 1"/><path d="M12 16.5h.01"/></svg>
+@endswitch
+```
+Ini lingkaran + tanda tanya — placeholder yang SENGAJA dibuat terlihat (bukan kosong diam-diam, sesuai komentar di kode aslinya), tapi tetap salah tampil di produksi karena bukan ikon kalender/tanggal yang dimaksud pembuat kode aslinya.
+
+**Cakupan bug**: dikonfirmasi lewat grep `name="date_range"` ke seluruh `resources/views` — HANYA 1 titik pemakaian, yaitu file ini. Bukan pola berulang di modul lain.
+
+**Fix**: ganti `date_range` jadi `calendar_month` (nama valid, sudah terdaftar di `@case` baris 25-27, ikon kalender kotak dengan garis atas — secara makna paling pas untuk konteks "Tahun Ajaran" dibanding ikon lain yang tersedia seperti `event`, `schedule`, atau `history`). Kode fix sudah digabungkan ke dalam blok kode Item 4 di atas (baris `<x-icon name="calendar_month" class="h-5 w-5 text-brand-500" />`) karena berada di elemen `<h3>` yang sama persis dan diedit dalam 1 langkah yang sama.
+
+**Kenapa tidak ditambahkan `@case('date_range')` baru saja** (alternatif yang dipertimbangkan): mengganti ke `calendar_month` yang SUDAH ADA lebih sederhana (0 baris baru di komponen bersama, tidak menambah cakupan spec ini ke file `icon.blade.php` yang dipakai puluhan halaman lain), dan `calendar_month` secara visual/makna sudah cukup mewakili konteks "tanggal/periode tahun ajaran". Kalau nanti ada kebutuhan ikon "date_range" yang benar-benar beda secara visual (mis. ikon rentang tanggal dengan 2 tanda kalender), itu backlog terpisah yang harus mempertimbangkan SEMUA pemakaian potensial di masa depan, bukan cuma 1 titik ini.
+
+---
+
 ## Di Luar Scope / Backlog Terpisah
 
 1. **`Semester::activate()` scoping cuma `lembaga_id`, tidak ikut `tahun_ajaran_id`** — dicatat saat audit, TAPI bukan bug aktif (aman karena invariant "1 TA aktif per lembaga" dijaga `TahunAjaran::activate()`, dan UI hanya mengizinkan aktivasi semester dari TA yang sedang aktif). Backlog kalau invariant itu nanti berubah.
@@ -256,5 +280,6 @@ public function create(): View
 | 3 | Assertion sederhana (bukan test JS) — assert string `onsubmit` mengandung nama lembaga saat lembaga ter-eager-load; test existing yang cek redirect/status `activate()` tetap hijau tanpa perubahan |
 | 4 | Feature test — assert modal (fragment HTML) mengandung teks lembaga aktif atau pesan peringatan sesuai mode |
 | 5 | Assert `route('admin.tahun-ajaran.create')` melempar `RouteNotFoundException` (route benar-benar terhapus); regresi: seluruh test `TahunAjaranController`/`SemesterController` existing (`TahunAjaranControllerTest.php`/nama file yang sesuai — cek dulu nama pastinya saat plan ditulis) tetap hijau |
+| 6 | Assert response index/modal TIDAK mengandung `name="date_range"` dan MENGANDUNG `name="calendar_month"` di konteks modal Tahun Ajaran (regex/string assertion pada HTML fragment cukup, tidak perlu Dusk) |
 
 Regresi wajib dijalankan: seluruh test yang menyentuh `TahunAjaranController`, `SemesterController`, dan `admin/tahun-ajaran/*.blade.php` (nama file test dikonfirmasi ulang saat penulisan plan, belum diverifikasi persis di audit ini).
