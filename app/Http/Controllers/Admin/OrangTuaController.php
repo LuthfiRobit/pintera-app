@@ -27,6 +27,7 @@ class OrangTuaController extends BaseController
 
         $user = auth()->user();
         $search = $request->query('search');
+        $anakFilter = $request->query('anak');
         $lembagaIdsYayasan = Lembaga::where('yayasan_id', $user->yayasan_id)->pluck('id');
         $activeLembagaId = session('active_lembaga_id');
 
@@ -62,11 +63,23 @@ class OrangTuaController extends BaseController
             ->orderByNama()
             ->get();
 
+        $totalAda = $orangTuaList->filter(fn ($o) => $o->siswa_count > 0)->count();
+        $totalBelum = $orangTuaList->filter(fn ($o) => $o->siswa_count === 0)->count();
+
+        if ($anakFilter === 'ada') {
+            $orangTuaList = $orangTuaList->filter(fn ($o) => $o->siswa_count > 0)->values();
+        } elseif ($anakFilter === 'belum') {
+            $orangTuaList = $orangTuaList->filter(fn ($o) => $o->siswa_count === 0)->values();
+        }
+
         return view('admin.orang-tua.index', [
             'orangTuaList' => $orangTuaList,
             'search' => $search,
+            'anakFilter' => $anakFilter,
             'totalOrangTua' => $orangTuaList->count(),
             'totalAktif' => $orangTuaList->filter(fn ($o) => $o->user && $o->user->is_active)->count(),
+            'totalAda' => $totalAda,
+            'totalBelum' => $totalBelum,
         ]);
     }
 

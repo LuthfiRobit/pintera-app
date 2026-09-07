@@ -29,3 +29,46 @@ it('scopes siswa_count on the index to the acting lembaga, not the orang tua tot
     $itemYayasan = collect($responseYayasan->viewData('orangTuaList'))->firstWhere('id', $orangTua->id);
     expect($itemYayasan->siswa_count)->toBe(2);
 });
+
+it('filters the orang tua index by anak query param without relying on a stale client snapshot', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $orangTuaDenganAnak = OrangTua::factory()->create(['yayasan_id' => $yayasan->id]);
+    $orangTuaDenganAnak->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+    $orangTuaTanpaAnak = OrangTua::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembaga->id]);
+
+    $responseAda = $this->actingAs($manager)->get(route('admin.orang-tua.index', ['anak' => 'ada']));
+    $responseAda->assertOk();
+    $idsAda = collect($responseAda->viewData('orangTuaList'))->pluck('id');
+    expect($idsAda)->toContain($orangTuaDenganAnak->id)->not->toContain($orangTuaTanpaAnak->id);
+
+    $responseBelum = $this->actingAs($manager)->get(route('admin.orang-tua.index', ['anak' => 'belum']));
+    $responseBelum->assertOk();
+    $idsBelum = collect($responseBelum->viewData('orangTuaList'))->pluck('id');
+    expect($idsBelum)->toContain($orangTuaTanpaAnak->id)->not->toContain($orangTuaDenganAnak->id);
+});
+
+it('renders server-side filter links and badge counts on the orang tua index view', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id]);
+    $orangTuaDenganAnak = OrangTua::factory()->create(['yayasan_id' => $yayasan->id]);
+    $orangTuaDenganAnak->siswa()->attach($siswa->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+    $orangTuaTanpaAnak = OrangTua::factory()->create(['yayasan_id' => $yayasan->id]);
+
+    $manager = actingAsOrangTuaManager();
+    $manager->update(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.orang-tua.index', ['anak' => 'ada']));
+    $response->assertOk();
+    $response->assertViewHas('totalAda', 1);
+    $response->assertViewHas('totalBelum', 1);
+    $response->assertViewHas('anakFilter', 'ada');
+    $response->assertSee("activeFilter: 'tertaut'", false);
+    $response->assertSee(route('admin.orang-tua.index', ['anak' => 'ada']));
+    $response->assertSee(route('admin.orang-tua.index', ['anak' => 'belum']));
+});

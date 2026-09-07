@@ -94,18 +94,18 @@
                 <div class="lg:col-span-8">
                     <label class="mb-1.5 block text-xs font-semibold text-gray-500">Filter Tautan & Status</label>
                     <div class="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
-                        <button @click="activeFilter = 'semua'; currentPage = 1" type="button" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
+                        <a href="{{ route('admin.orang-tua.index', array_merge(request()->except(['anak', 'page']), [])) }}" @click="activeFilter = 'semua'; currentPage = 1" :class="activeFilter === 'semua' ? 'bg-brand-50 font-semibold text-brand-600 border-brand-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
                             <span>Semua</span>
-                            <span :class="activeFilter === 'semua' ? 'bg-brand-100/80 text-brand-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="items.length"></span>
-                        </button>
-                        <button @click="activeFilter = 'tertaut'; currentPage = 1" type="button" :class="activeFilter === 'tertaut' ? 'bg-blue-50 font-semibold text-blue-700 border-blue-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
+                            <span :class="activeFilter === 'semua' ? 'bg-brand-100/80 text-brand-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold">{{ $totalAda + $totalBelum }}</span>
+                        </a>
+                        <a href="{{ route('admin.orang-tua.index', array_merge(request()->except(['anak', 'page']), ['anak' => 'ada'])) }}" :class="activeFilter === 'tertaut' ? 'bg-blue-50 font-semibold text-blue-700 border-blue-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
                             <span>Ada Anak</span>
-                            <span :class="activeFilter === 'tertaut' ? 'bg-blue-100/80 text-blue-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countTertaut"></span>
-                        </button>
-                        <button @click="activeFilter = 'belum_tertaut'; currentPage = 1" type="button" :class="activeFilter === 'belum_tertaut' ? 'bg-slate-100 font-semibold text-slate-700 border-slate-300 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
+                            <span :class="activeFilter === 'tertaut' ? 'bg-blue-100/80 text-blue-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold">{{ $totalAda }}</span>
+                        </a>
+                        <a href="{{ route('admin.orang-tua.index', array_merge(request()->except(['anak', 'page']), ['anak' => 'belum'])) }}" :class="activeFilter === 'belum_tertaut' ? 'bg-slate-100 font-semibold text-slate-700 border-slate-300 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
                             <span>Belum Ada Anak</span>
-                            <span :class="activeFilter === 'belum_tertaut' ? 'bg-slate-200 text-slate-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countBelumTertaut"></span>
-                        </button>
+                            <span :class="activeFilter === 'belum_tertaut' ? 'bg-slate-200 text-slate-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold">{{ $totalBelum }}</span>
+                        </a>
                         <button @click="activeFilter = 'aktif'; currentPage = 1" type="button" :class="activeFilter === 'aktif' ? 'bg-green-50 font-semibold text-green-700 border-green-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
                             <span>Aktif</span>
                             <span :class="activeFilter === 'aktif' ? 'bg-green-100/80 text-green-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countAktif"></span>
@@ -244,7 +244,7 @@
     function orangTuaIndexSPA() {
         return {
             items: @json($spaItems),
-            activeFilter: 'semua',
+            activeFilter: '{{ $anakFilter === 'ada' ? 'tertaut' : ($anakFilter === 'belum' ? 'belum_tertaut' : 'semua') }}',
             searchQuery: '',
             perPage: 10,
             currentPage: 1,
