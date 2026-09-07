@@ -294,3 +294,24 @@ it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasa
     $response->assertSessionHasErrors('lembaga_id');
     expect(findGuruByNama('Guru Uji Stale'))->toBeNull();
 });
+
+it('shows a friendly validation error instead of a 500 when CreatePersonAction throws during a race condition', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsGuruManager($lembaga);
+    Role::firstOrCreate(['name' => 'guru', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+
+    $existingPerson = Person::factory()->create([
+        'yayasan_id' => $yayasan->id,
+        'nik' => '3201234567891111',
+    ]);
+
+    $response = $this->actingAs($manager)->post(route('admin.guru.store'), [
+        'nik' => '3201234567891111', 'nip' => '198001012020121001', 'nama' => 'Guru Baru',
+        'email' => 'guru.baru@example.test', 'jenis_kelamin' => 'L', 'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ]);
+
+    $response->assertSessionHasErrors('nik');
+    $response->assertStatus(302); // redirect, BUKAN 500
+});

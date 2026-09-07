@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Domains\Identity\Actions\CreatePersonAction;
 use App\Domains\Identity\Actions\UpdatePersonAction;
+use App\Domains\Identity\Exceptions\PersonAlreadyExistsException;
 use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Models\JabatanTambahanMaster;
 use App\Models\Guru;
@@ -100,57 +101,63 @@ class GuruController extends BaseController
             return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah data guru.'])->withInput();
         }
 
-        DB::transaction(function () use ($data, $lembagaId) {
-            $person = app(CreatePersonAction::class)->execute(
-                identityData: [
-                    'nama_lengkap' => $data['nama'],
-                    'nik' => $data['nik'] ?? null,
-                    'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
-                    'tempat_lahir' => $data['tempat_lahir'] ?? null,
-                    'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
-                    'agama' => $data['agama'] ?? null,
-                    'kewarganegaraan' => $data['kewarganegaraan'] ?? 'WNI',
-                    'no_hp' => $data['no_hp'] ?? null,
+        try {
+            DB::transaction(function () use ($data, $lembagaId) {
+                $person = app(CreatePersonAction::class)->execute(
+                    identityData: [
+                        'nama_lengkap' => $data['nama'],
+                        'nik' => $data['nik'] ?? null,
+                        'jenis_kelamin' => $data['jenis_kelamin'] ?? null,
+                        'tempat_lahir' => $data['tempat_lahir'] ?? null,
+                        'tanggal_lahir' => $data['tanggal_lahir'] ?? null,
+                        'agama' => $data['agama'] ?? null,
+                        'kewarganegaraan' => $data['kewarganegaraan'] ?? 'WNI',
+                        'no_hp' => $data['no_hp'] ?? null,
+                        'email' => $data['email'],
+                        'alamat_jalan' => $data['alamat_jalan'] ?? null,
+                        'rt' => $data['rt'] ?? null,
+                        'rw' => $data['rw'] ?? null,
+                        'desa_kelurahan' => $data['desa_kelurahan'] ?? null,
+                        'kecamatan' => $data['kecamatan'] ?? null,
+                        'kabupaten_kota' => $data['kabupaten_kota'] ?? null,
+                        'provinsi' => $data['provinsi'] ?? null,
+                        'kode_pos' => $data['kode_pos'] ?? null,
+                    ],
+                    lembagaId: $lembagaId,
+                    actingYayasanId: null,
+                );
+
+                $user = User::create([
+                    'name' => $data['nama'],
                     'email' => $data['email'],
-                    'alamat_jalan' => $data['alamat_jalan'] ?? null,
-                    'rt' => $data['rt'] ?? null,
-                    'rw' => $data['rw'] ?? null,
-                    'desa_kelurahan' => $data['desa_kelurahan'] ?? null,
-                    'kecamatan' => $data['kecamatan'] ?? null,
-                    'kabupaten_kota' => $data['kabupaten_kota'] ?? null,
-                    'provinsi' => $data['provinsi'] ?? null,
-                    'kode_pos' => $data['kode_pos'] ?? null,
-                ],
-                lembagaId: $lembagaId,
-                actingYayasanId: null,
-            );
+                    'password' => Hash::make($data['nip']),
+                    'lembaga_id' => $lembagaId,
+                    'email_verified_at' => now(),
+                    'is_active' => true,
+                    'must_change_password' => true,
+                ]);
+                $user->assignRole('guru');
+                $person->update(['user_id' => $user->id]);
 
-            $user = User::create([
-                'name' => $data['nama'],
-                'email' => $data['email'],
-                'password' => Hash::make($data['nip']),
-                'lembaga_id' => $lembagaId,
-                'email_verified_at' => now(),
-                'is_active' => true,
-                'must_change_password' => true,
-            ]);
-            $user->assignRole('guru');
-            $person->update(['user_id' => $user->id]);
-
-            Guru::create([
-                'person_id' => $person->id,
-                'lembaga_id' => $lembagaId,
-                'nuptk' => $data['nuptk'] ?? null,
-                'nip' => $data['nip'],
-                'jenis_ptk' => $data['jenis_ptk'],
-                'status_kepegawaian' => $data['status_kepegawaian'],
-                'golongan_pangkat' => $data['golongan_pangkat'] ?? null,
-                'tmt_tugas' => $data['tmt_tugas'] ?? null,
-                'tmt_pns' => $data['tmt_pns'] ?? null,
-                'status_aktif' => 'aktif',
-                'kapasitas_kasus_aktif' => $data['kapasitas_kasus_aktif'] ?? null,
-            ]);
-        });
+                Guru::create([
+                    'person_id' => $person->id,
+                    'lembaga_id' => $lembagaId,
+                    'nuptk' => $data['nuptk'] ?? null,
+                    'nip' => $data['nip'],
+                    'jenis_ptk' => $data['jenis_ptk'],
+                    'status_kepegawaian' => $data['status_kepegawaian'],
+                    'golongan_pangkat' => $data['golongan_pangkat'] ?? null,
+                    'tmt_tugas' => $data['tmt_tugas'] ?? null,
+                    'tmt_pns' => $data['tmt_pns'] ?? null,
+                    'status_aktif' => 'aktif',
+                    'kapasitas_kasus_aktif' => $data['kapasitas_kasus_aktif'] ?? null,
+                ]);
+            });
+        } catch (PersonAlreadyExistsException $exception) {
+            return back()
+                ->withErrors(['nik' => 'NIK ini sudah terdaftar untuk profil lain di yayasan ini.'])
+                ->withInput();
+        }
 
         return redirect()->route('admin.guru.index')->with('status', 'Data guru & akun berhasil dibuat.');
     }
