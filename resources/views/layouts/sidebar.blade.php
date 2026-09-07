@@ -79,7 +79,7 @@
             ]),
         ],
         [
-            'label' => 'Pendampingan',
+            'label' => 'Manajemen Kasus',
             'group_icon' => 'brain',
             'items' => array_filter([
                 Auth::user()->can('kasus.triase') ? ['route' => 'admin.kasus.index', 'pattern' => ['admin.kasus.index', 'admin.kasus.triase', 'admin.kasus.assign-konselor'], 'label' => 'Triase Kasus', 'icon' => 'heart-pulse'] : null,
