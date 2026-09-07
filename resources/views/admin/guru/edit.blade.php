@@ -1,7 +1,20 @@
+@php
+    // Setelah gagal validasi, kembalikan pengguna ke tab yang benar-benar bermasalah --
+    // bukan selalu 'profil' -- supaya banner error tidak menunjuk ke tab kosong yang tidak
+    // ada hubungannya sementara input yang gagal (dengan old() value-nya) ada di tab lain.
+    $initialActiveTab = 'profil';
+    if ($errors->hasAny(['jabatan_tambahan_master_id', 'no_sk', 'mulai_periode', 'akhir_periode'])) {
+        $initialActiveTab = 'jabatan';
+    } elseif ($errors->hasAny(['jenjang_pendidikan', 'sekolah_formal', 'gelar_akademik', 'fakultas', 'bidang_studi', 'tahun_lulus'])) {
+        $initialActiveTab = 'pendidikan';
+    } elseif ($errors->hasAny(['jenis_sertifikasi', 'nomor_sertifikat', 'tahun_sertifikasi', 'bidang_studi_sertifikasi', 'nrg', 'kode_lembaga_sertifikasi'])) {
+        $initialActiveTab = 'sertifikasi';
+    }
+@endphp
 <x-app-layout>
     <div class="mx-auto max-w-6xl space-y-6" x-data="{
-        activeTab: 'profil',
-        editMode: {{ $errors->any() ? 'true' : 'false' }}
+        activeTab: '{{ $initialActiveTab }}',
+        editMode: {{ $errors->any() && $initialActiveTab === 'profil' ? 'true' : 'false' }}
     }">
         {{-- Flash Messages & Toast Integrations --}}
         @if (session('status'))
@@ -16,7 +29,7 @@
             <div>
                 <p class="text-sm text-gray-500">
                     Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
-                    <a href="{{ route('admin.guru.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Manajemen SDM (Guru)</a>
+                    <a href="{{ route('admin.guru.index') }}" class="font-semibold text-gray-700 hover:text-brand-600">Guru</a>
                     <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-900">Detail & Profil Guru</b>
                 </p>
             </div>

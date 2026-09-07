@@ -25,6 +25,9 @@ class JabatanTambahanController extends BaseController
             'mulai_periode' => ['required', 'date'],
             'akhir_periode' => ['nullable', 'date', 'after_or_equal:mulai_periode'],
             'no_sk' => ['nullable', 'string', 'max:100'],
+        ], [
+            'akhir_periode.after_or_equal' => 'Akhir Periode harus sama dengan atau setelah Mulai Periode.',
+            'jabatan_tambahan_master_id.exists' => 'Jabatan yang dipilih tidak valid untuk yayasan ini.',
         ]);
 
         $guru->jabatanTambahan()->attach($data['jabatan_tambahan_master_id'], [

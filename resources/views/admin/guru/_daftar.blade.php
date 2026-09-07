@@ -87,8 +87,13 @@
                             <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                                 <x-icon name="school" class="h-7 w-7" />
                             </div>
-                            <p class="mt-3 text-sm font-semibold text-gray-700">Belum Ada Data Guru</p>
-                            <p class="mx-auto mt-0.5 max-w-sm text-xs text-gray-400">Tambahkan data guru pertama untuk lembaga ini.</p>
+                            @if (request()->anyFilled(['search', 'jenis_ptk', 'status_aktif']))
+                                <p class="mt-3 text-sm font-semibold text-gray-700">Tidak Ada Guru yang Cocok</p>
+                                <p class="mx-auto mt-0.5 max-w-sm text-xs text-gray-400">Tidak ada data guru yang cocok dengan filter atau pencarian Anda.</p>
+                            @else
+                                <p class="mt-3 text-sm font-semibold text-gray-700">Belum Ada Data Guru</p>
+                                <p class="mx-auto mt-0.5 max-w-sm text-xs text-gray-400">Tambahkan data guru pertama untuk lembaga ini.</p>
+                            @endif
                         </td>
                     </tr>
                 @endif

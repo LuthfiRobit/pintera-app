@@ -1,4 +1,4 @@
-<div x-show="activeTab === 'sertifikasi'" x-data="{ openAdd: false }" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+<div x-show="activeTab === 'sertifikasi'" x-data="{ openAdd: {{ $errors->hasAny(['jenis_sertifikasi', 'nomor_sertifikat', 'tahun_sertifikasi', 'bidang_studi_sertifikasi', 'nrg', 'kode_lembaga_sertifikasi']) ? 'true' : 'false' }} }" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
     <div class="space-y-6">
         {{-- Header & Tombol Tambah --}}
         <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gradient-to-r from-white to-gray-50/80 p-6 shadow-card backdrop-blur">
@@ -22,27 +22,33 @@
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <div>
                         <x-input-label value="Jenis Sertifikasi *" />
-                        <input type="text" name="jenis_sertifikasi" required placeholder="Contoh: Sertifikasi Pendidik / PPG" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="jenis_sertifikasi" value="{{ old('jenis_sertifikasi') }}" required placeholder="Contoh: Sertifikasi Pendidik / PPG" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('jenis_sertifikasi')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Nomor Sertifikat *" />
-                        <input type="text" name="nomor_sertifikat" required placeholder="Nomor registrasi pada sertifikat" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="nomor_sertifikat" value="{{ old('nomor_sertifikat') }}" required placeholder="Nomor registrasi pada sertifikat" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('nomor_sertifikat')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Tahun Sertifikasi *" />
-                        <input type="number" name="tahun_sertifikasi" required min="1970" max="{{ date('Y') }}" value="{{ date('Y') }}" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="number" name="tahun_sertifikasi" required min="1970" max="{{ date('Y') }}" value="{{ old('tahun_sertifikasi', date('Y')) }}" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('tahun_sertifikasi')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Bidang Studi" />
-                        <input type="text" name="bidang_studi_sertifikasi" placeholder="Contoh: Matematika" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="bidang_studi_sertifikasi" value="{{ old('bidang_studi_sertifikasi') }}" placeholder="Contoh: Matematika" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('bidang_studi_sertifikasi')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="NRG (Nomor Registrasi Guru)" />
-                        <input type="text" name="nrg" placeholder="Nomor Registrasi Guru (opsional)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="nrg" value="{{ old('nrg') }}" placeholder="Nomor Registrasi Guru (opsional)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('nrg')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Kode/Penyelenggara" />
-                        <input type="text" name="kode_lembaga_sertifikasi" placeholder="LPTK atau Institusi Penyelenggara" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="kode_lembaga_sertifikasi" value="{{ old('kode_lembaga_sertifikasi') }}" placeholder="LPTK atau Institusi Penyelenggara" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('kode_lembaga_sertifikasi')" class="mt-1.5" />
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-3 pt-2">

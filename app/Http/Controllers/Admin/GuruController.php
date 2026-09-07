@@ -35,7 +35,11 @@ class GuruController extends BaseController
     ];
 
     private const STATUS_KEPEGAWAIAN_OPTIONS = [
-        'PNS' => 'PNS', 'PPPK' => 'PPPK', 'GTY' => 'GTY', 'PTY' => 'PTY', 'Honorer' => 'Honorer',
+        'PNS' => 'PNS (Pegawai Negeri Sipil)',
+        'PPPK' => 'PPPK (Pegawai Pemerintah dengan Perjanjian Kerja)',
+        'GTY' => 'GTY (Guru Tetap Yayasan)',
+        'PTY' => 'PTY (Pegawai Tetap Yayasan)',
+        'Honorer' => 'Honorer',
     ];
 
     private const STATUS_AKTIF_OPTIONS = [
@@ -320,6 +324,8 @@ class GuruController extends BaseController
             'golongan_pangkat' => ['nullable', 'string', 'max:50'],
             'tmt_tugas' => ['nullable', 'date'],
             'tmt_pns' => ['nullable', 'date'],
+        ], [
+            'email.unique' => 'Email ini sudah dipakai akun lain (guru/karyawan/orang tua) di sistem — gunakan email yang berbeda.',
         ]);
 
         $data['kewarganegaraan'] = ($data['kewarganegaraan'] ?? null) ?: 'WNI';

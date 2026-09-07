@@ -21,7 +21,7 @@
                 <x-input-label value="NIK" required />
                 @if ($karyawan === null)
                     <x-text-input type="text" name="nik" value="{{ $val('nik') }}" required placeholder="16 Digit NIK" class="mt-1.5 block w-full font-mono sm:w-3/4" maxlength="16" minlength="16" pattern="[0-9]+" :error="$errors->has('nik')" />
-                    <x-input-hint>NIK otomatis menjadi username &amp; password awal login karyawan.</x-input-hint>
+                    <x-input-hint>NIK otomatis menjadi username &amp; password awal login karyawan. Wajib unik — tidak boleh sama dengan NIK karyawan/guru/orang tua lain yang sudah terdaftar.</x-input-hint>
                 @else
                     <x-text-input type="text" value="{{ $karyawan->nik ?: '-' }}" class="mt-1.5 block w-full font-mono sm:w-3/4" disabled />
                 @endif
@@ -45,7 +45,7 @@
             <div>
                 <x-input-label value="Jenis Karyawan" required />
                 <x-select name="jenis_karyawan_id" required x-ref="jenisSelect" x-init="initSelect($refs.jenisSelect)" class="mt-1.5 block w-full" :error="$errors->has('jenis_karyawan_id')">
-                    <option value="">-- Pilih Jenis Jabatan --</option>
+                    <option value="">-- Pilih Jenis Karyawan --</option>
                     @foreach ($jenisKaryawanList as $jenis)
                         <option value="{{ $jenis->id }}" @selected((string) $val('jenis_karyawan_id') === (string) $jenis->id)>{{ $jenis->nama }}</option>
                     @endforeach
@@ -66,6 +66,7 @@
                 <input type="checkbox" name="is_pool" value="1" x-model="isPool" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
                 Karyawan Pool (melayani semua lembaga di bawah satu yayasan)
             </label>
+            <x-input-hint class="ml-6">Pilihan ini permanen — setelah data disimpan, karyawan TIDAK BISA dipindahkan antara Pool dan 1 lembaga tertentu (atau sebaliknya).</x-input-hint>
 
             <div class="mt-4" x-show="isPool">
                 <x-input-label value="Yayasan" required />
@@ -75,8 +76,24 @@
                         <option value="{{ $yayasan->id }}">{{ $yayasan->nama }}</option>
                     @endforeach
                 </x-select>
+                <x-input-hint>Yayasan yang lembaga-lembaganya akan sama-sama dilayani karyawan pool ini. Menentukan juga pilihan "Jenis Karyawan" yang tersedia di atas.</x-input-hint>
                 <x-input-error :messages="$errors->get('yayasan_id')" class="mt-1.5" />
             </div>
+        </div>
+    @elseif ($karyawan !== null)
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card">
+            <p class="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <x-icon name="apartment" class="h-[15px] w-[15px] text-gray-400" />
+                Penempatan
+            </p>
+            <x-input-label value="Penempatan Saat Ini" />
+            <x-text-input
+                type="text"
+                value="{{ $karyawan->lembaga_id === null ? 'Karyawan Pool — ' . ($karyawan->yayasan->nama ?? '-') : $karyawan->lembaga->nama }}"
+                class="mt-1.5 block w-full sm:w-3/4"
+                disabled
+            />
+            <x-input-hint>Penempatan (Karyawan Pool atau 1 lembaga tertentu) tidak dapat diubah setelah data dibuat. Hubungi Yayasan Super Admin bila karyawan ini perlu dipindahkan.</x-input-hint>
         </div>
     @endif
 </div>

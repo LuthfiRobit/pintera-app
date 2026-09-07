@@ -15,7 +15,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Karyawan & Tenaga Ahli</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Kelola data penempatan dan akun login karyawan (mis. Konselor BK dan Psikolog Pool Yayasan).</p>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola data penempatan dan akun login karyawan. "Karyawan Pool" berarti karyawan itu melayani semua lembaga di bawah yayasan (mis. Konselor BK/Psikolog), berbeda dari karyawan biasa yang terikat 1 lembaga tertentu.</p>
             </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Karyawan</b>
@@ -56,7 +56,7 @@
                         <x-icon name="work_outline" class="h-5 w-5" />
                     </span>
                     <div>
-                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Pool Yayasan</p>
+                        <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-indigo-600">Karyawan Pool</p>
                         <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="countPool"></p>
                     </div>
                 </div>
@@ -103,7 +103,7 @@
                             <span :class="activeFilter === 'dedicated' ? 'bg-blue-100/80 text-blue-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countDedicated"></span>
                         </button>
                         <button @click="activeFilter = 'pool'; currentPage = 1" type="button" :class="activeFilter === 'pool' ? 'bg-indigo-50 font-semibold text-indigo-700 border-indigo-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
-                            <span>Pool Yayasan</span>
+                            <span>Karyawan Pool</span>
                             <span :class="activeFilter === 'pool' ? 'bg-indigo-100/80 text-indigo-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="countPool"></span>
                         </button>
                         <button @click="activeFilter = 'aktif'; currentPage = 1" type="button" :class="activeFilter === 'aktif' ? 'bg-green-50 font-semibold text-green-700 border-green-200 shadow-2xs' : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900 border-gray-200'" class="flex-1 sm:flex-none justify-center px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap flex items-center gap-1.5">
@@ -148,7 +148,11 @@
                             <th class="px-5 py-3">Nama Karyawan</th>
                             <th class="px-5 py-3">Jenis / Peran</th>
                             <th class="px-5 py-3">Penempatan</th>
-                            <th class="px-5 py-3">Kapasitas Kasus</th>
+                            <th class="px-5 py-3">
+                                <x-tooltip text="Batas jumlah kasus pendampingan yang bisa ditangani sekaligus — hanya berlaku untuk Konselor BK/Psikolog. Karyawan non-konselor akan tampil '-'.">
+                                    <span class="cursor-help underline decoration-dotted">Kapasitas Kasus</span>
+                                </x-tooltip>
+                            </th>
                             <th class="px-5 py-3">Status Akun</th>
                         </tr>
                     </thead>
@@ -231,7 +235,7 @@
                 'nama' => $k->nama,
                 'nik' => $k->person?->nik,
                 'jenis_nama' => $k->jenisKaryawan?->nama ?? '-',
-                'lembaga_nama' => $k->lembaga?->nama ?? 'Pool Yayasan',
+                'lembaga_nama' => $k->lembaga?->nama ?? 'Karyawan Pool',
                 'is_pool' => $k->lembaga_id === null,
                 'has_kapasitas' => !empty($k->kapasitas_kasus_aktif),
                 'kapasitas_label' => $k->kapasitas_kasus_aktif ? $k->kapasitas_kasus_aktif . ' Kasus Maks' : '-',
@@ -310,10 +314,13 @@
             },
 
             async toggleStatus(item) {
-                const confirmed = await (typeof confirmDialog === 'function' ? 
-                    confirmDialog('Ubah Status Akun?', `Ubah status akun "${item.nama}" menjadi "${item.next_status_label}"?`, { confirmLabel: 'Ya, Ubah' }) : 
-                    Promise.resolve(confirm(`Ubah status akun "${item.nama}" menjadi "${item.next_status_label}"?`)));
-                    
+                const pesan = item.next_status === 'non_aktif'
+                    ? `Ubah status "${item.nama}" menjadi Non-aktif? Akun login karyawan ini juga akan ikut DINONAKTIFKAN (tidak bisa login) sampai diaktifkan kembali.`
+                    : `Ubah status "${item.nama}" menjadi Aktif? Akun login karyawan ini juga akan ikut diaktifkan kembali.`;
+                const confirmed = await (typeof confirmDialog === 'function' ?
+                    confirmDialog('Ubah Status Akun?', pesan, { confirmLabel: 'Ya, Ubah' }) :
+                    Promise.resolve(confirm(pesan)));
+
                 if (!confirmed) return;
 
                 const form = document.createElement('form');

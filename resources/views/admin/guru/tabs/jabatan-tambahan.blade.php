@@ -1,4 +1,4 @@
-<div x-show="activeTab === 'jabatan'" x-data="{ openAdd: false }" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+<div x-show="activeTab === 'jabatan'" x-data="{ openAdd: {{ $errors->hasAny(['jabatan_tambahan_master_id', 'no_sk', 'mulai_periode', 'akhir_periode']) ? 'true' : 'false' }} }" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
     <div class="space-y-6">
         {{-- Header & Tombol Tambah --}}
         <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gradient-to-r from-white to-gray-50/80 p-6 shadow-card backdrop-blur">
@@ -25,21 +25,26 @@
                         <select name="jabatan_tambahan_master_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                             <option value="">-- Pilih Jabatan Tambahan --</option>
                             @foreach ($jabatanTambahanMasterList as $master)
-                                <option value="{{ $master->id }}">{{ $master->nama }} ({{ ucwords($master->kelompok) }})</option>
+                                <option value="{{ $master->id }}" @selected(old('jabatan_tambahan_master_id') == $master->id)>{{ $master->nama }} ({{ ucwords($master->kelompok) }})</option>
                             @endforeach
                         </select>
+                        <x-input-error :messages="$errors->get('jabatan_tambahan_master_id')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Nomor SK Penugasan" />
-                        <input type="text" name="no_sk" placeholder="Contoh: 421/05/SK/2025" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="no_sk" value="{{ old('no_sk') }}" placeholder="Contoh: 421/05/SK/2025" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('no_sk')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Mulai Periode *" />
-                        <input type="date" name="mulai_periode" required value="{{ date('Y-m-d') }}" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="date" name="mulai_periode" required value="{{ old('mulai_periode', date('Y-m-d')) }}" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('mulai_periode')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Akhir Periode (Opsional)" />
-                        <input type="date" name="akhir_periode" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="date" name="akhir_periode" value="{{ old('akhir_periode') }}" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <p class="mt-1 text-xs text-gray-400">Kosongkan kalau masih berjalan. Kalau diisi, tanggalnya harus sama atau setelah Mulai Periode.</p>
+                        <x-input-error :messages="$errors->get('akhir_periode')" class="mt-1.5" />
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-3 pt-2">
@@ -87,7 +92,7 @@
                                     </td>
                                     @can('guru.edit')
                                         <td class="px-6 py-4 text-right">
-                                            <form method="POST" action="{{ route('admin.guru.jabatan-tambahan.destroy', [$guru, $item->id]) }}" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus atau menonaktifkan penugasan ini?');">
+                                            <form method="POST" action="{{ route('admin.guru.jabatan-tambahan.destroy', [$guru, $item->id]) }}" class="inline" onsubmit="return confirm('Hapus penugasan jabatan ini secara PERMANEN? Riwayatnya tidak bisa dipulihkan.');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="rounded-lg p-1.5 text-gray-400 transition hover:bg-error-50 hover:text-error-600 active:scale-95" title="Hapus Penugasan">

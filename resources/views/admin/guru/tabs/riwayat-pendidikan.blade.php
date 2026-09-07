@@ -1,4 +1,4 @@
-<div x-show="activeTab === 'pendidikan'" x-data="{ openAdd: false }" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
+<div x-show="activeTab === 'pendidikan'" x-data="{ openAdd: {{ $errors->hasAny(['jenjang_pendidikan', 'sekolah_formal', 'gelar_akademik', 'fakultas', 'bidang_studi', 'tahun_lulus']) ? 'true' : 'false' }} }" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" style="display: none;">
     <div class="space-y-6">
         {{-- Header & Tombol Tambah --}}
         <div class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-100 bg-gradient-to-r from-white to-gray-50/80 p-6 shadow-card backdrop-blur">
@@ -25,29 +25,35 @@
                         <select name="jenjang_pendidikan" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                             <option value="">-- Pilih Jenjang --</option>
                             @foreach(['SMA/Sederajat', 'D1', 'D2', 'D3', 'D4', 'S1', 'S2', 'S3'] as $j)
-                                <option value="{{ $j }}">{{ $j }}</option>
+                                <option value="{{ $j }}" @selected(old('jenjang_pendidikan') === $j)>{{ $j }}</option>
                             @endforeach
                         </select>
+                        <x-input-error :messages="$errors->get('jenjang_pendidikan')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Nama Sekolah / Kampus *" />
-                        <input type="text" name="sekolah_formal" required placeholder="Contoh: Universitas Negeri Malang" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="sekolah_formal" value="{{ old('sekolah_formal') }}" required placeholder="Contoh: Universitas Negeri Malang" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('sekolah_formal')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Gelar Akademik" />
-                        <input type="text" name="gelar_akademik" placeholder="Contoh: S.Pd." class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="gelar_akademik" value="{{ old('gelar_akademik') }}" placeholder="Contoh: S.Pd." class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('gelar_akademik')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Fakultas" />
-                        <input type="text" name="fakultas" placeholder="Contoh: Fakultas Ilmu Pendidikan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="fakultas" value="{{ old('fakultas') }}" placeholder="Contoh: Fakultas Ilmu Pendidikan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('fakultas')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Jurusan / Bidang Studi" />
-                        <input type="text" name="bidang_studi" placeholder="Contoh: Pendidikan Matematika" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="text" name="bidang_studi" value="{{ old('bidang_studi') }}" placeholder="Contoh: Pendidikan Matematika" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('bidang_studi')" class="mt-1.5" />
                     </div>
                     <div>
                         <x-input-label value="Tahun Lulus *" />
-                        <input type="number" name="tahun_lulus" required min="1950" max="{{ date('Y') + 5 }}" value="{{ date('Y') }}" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <input type="number" name="tahun_lulus" required min="1950" max="{{ date('Y') + 5 }}" value="{{ old('tahun_lulus', date('Y')) }}" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-mono text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-input-error :messages="$errors->get('tahun_lulus')" class="mt-1.5" />
                     </div>
                 </div>
                 <div class="flex items-center justify-end gap-3 pt-2">

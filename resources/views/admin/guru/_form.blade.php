@@ -33,15 +33,16 @@
 
             <div>
                 <x-input-label value="NIK *" />
-                <input type="text" name="nik" value="{{ $val('nik') }}" class="{{ $inputClass }} font-mono" maxlength="16">
+                <input type="text" name="nik" value="{{ $val('nik') }}" class="{{ $inputClass }} font-mono" maxlength="16" placeholder="Contoh: 3573xxxxxxxxxxxx">
+                <p class="mt-1 text-xs text-gray-400">16 digit. Wajib unik — tidak boleh sama dengan NIK guru/karyawan/orang tua lain di yayasan ini.</p>
                 <x-input-error :messages="$errors->get('nik')" class="mt-1.5" />
             </div>
 
             <div>
                 <x-input-label value="NIP *" />
-                <input type="text" name="nip" value="{{ $val('nip') }}" class="{{ $inputClass }} font-mono">
+                <input type="text" name="nip" value="{{ $val('nip') }}" class="{{ $inputClass }} font-mono" placeholder="Contoh: 198001012020121001">
                 @if ($guru === null)
-                    <p class="mt-1 text-xs text-gray-400">NIP ini otomatis menjadi password login guru.</p>
+                    <p class="mt-1 text-xs text-gray-400">NIP ini otomatis menjadi password login guru. Boleh sama antar guru (tidak wajib unik) — cuma jadi password AWAL, guru akan diminta ganti password saat login pertama.</p>
                 @else
                     <p class="mt-1 text-xs text-gray-400">Mengubah NIP di sini tidak mengubah ulang password akun yang sudah ada.</p>
                 @endif
@@ -50,8 +51,8 @@
 
             <div>
                 <x-input-label value="Email *" />
-                <input type="email" name="email" value="{{ $val('email') }}" class="{{ $inputClass }}">
-                <p class="mt-1 text-xs text-gray-400">Email ini menjadi username login guru.</p>
+                <input type="email" name="email" value="{{ $val('email') }}" class="{{ $inputClass }}" placeholder="nama.guru@sekolah.sch.id">
+                <p class="mt-1 text-xs text-gray-400">Email ini menjadi username login guru. Wajib unik di SELURUH sistem (lintas lembaga/yayasan) — tidak boleh sama dengan email guru/karyawan/orang tua manapun.</p>
                 <x-input-error :messages="$errors->get('email')" class="mt-1.5" />
             </div>
 
@@ -72,6 +73,7 @@
                         <option value="{{ $value }}" @selected($val('jenis_ptk') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
+                <p class="mt-1 text-xs text-gray-400">PTK = Pendidik dan Tenaga Kependidikan. Menentukan menu & hak akses yang muncul untuk guru ini (mis. Ruang Guru hanya untuk PTK bertipe guru).</p>
                 <x-input-error :messages="$errors->get('jenis_ptk')" class="mt-1.5" />
             </div>
 
@@ -125,7 +127,7 @@
             </div>
             <div>
                 <x-input-label value="No. HP" />
-                <input type="text" name="no_hp" value="{{ $val('no_hp') }}" class="{{ $inputClass }}">
+                <input type="text" name="no_hp" value="{{ $val('no_hp') }}" class="{{ $inputClass }}" placeholder="08xxxxxxxxxx">
             </div>
         </div>
     </div>
@@ -183,7 +185,7 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
                 <x-input-label value="Golongan/Pangkat" />
-                <input type="text" name="golongan_pangkat" value="{{ $val('golongan_pangkat') }}" class="{{ $inputClass }}">
+                <input type="text" name="golongan_pangkat" value="{{ $val('golongan_pangkat') }}" class="{{ $inputClass }}" placeholder="Contoh: III/a">
             </div>
             <div>
                 <x-input-label value="TMT Tugas" />

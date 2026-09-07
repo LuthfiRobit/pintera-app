@@ -101,7 +101,7 @@
                     <x-icon name="edit" class="h-5 w-5" />
                 </div>
                 <div>
-                    <h3 class="font-bold text-gray-900">Mode Pengemasan & Perubahan Profil</h3>
+                    <h3 class="font-bold text-gray-900">Mode Edit & Perubahan Profil</h3>
                     <p class="text-xs text-gray-500">Ubah data profil sesuai dengan identitas resmi.</p>
                 </div>
             </div>

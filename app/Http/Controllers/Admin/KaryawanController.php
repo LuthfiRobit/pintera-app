@@ -106,7 +106,7 @@ class KaryawanController extends BaseController
         // in a different lembaga) this check exists to catch.
         if (User::withoutGlobalScopes()->where('username', $data['nik'])->exists()) {
             return back()
-                ->withErrors(['nik' => 'NIK ini sudah terdaftar untuk akun lain.'])
+                ->withErrors(['nik' => 'NIK ini sudah dipakai sebagai username akun lain (guru/karyawan/orang tua) di sistem, kemungkinan di yayasan lain — gunakan NIK yang berbeda.'])
                 ->withInput();
         }
 
@@ -233,7 +233,7 @@ class KaryawanController extends BaseController
                     $query->where('id', '!=', $karyawan->person_id);
                 }
                 if ($query->exists()) {
-                    $fail('NIK sudah terdaftar untuk karyawan lain.');
+                    $fail('NIK ini sudah terdaftar sebagai data karyawan lain di yayasan ini.');
                 }
             }],
             'nama' => ['required', 'string', 'max:255'],
