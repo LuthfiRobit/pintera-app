@@ -144,7 +144,7 @@ it('does not duplicate RPP into Akademik for a guru account, but still shows it 
     $responseKepsek->assertSee('Perangkat Ajar (RPP)');
 });
 
-it('shows Kasus Pendampingan under Kehadiran Saya (not Pendampingan) for a pool konselor karyawan without kasus.view', function () {
+it('shows Kasus Pendampingan under Pendampingan Saya (not the admin Pendampingan group) for a pool konselor karyawan without kasus.view', function () {
     (new RoleSeeder)->run();
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -167,7 +167,7 @@ it('shows Kasus Pendampingan under Kehadiran Saya (not Pendampingan) for a pool 
     $response = $this->actingAs($user)->get(route('dashboard'));
 
     $response->assertOk();
-    $response->assertSeeInOrder(['Kehadiran Saya', 'Kasus Pendampingan']);
+    $response->assertSeeInOrder(['Pendampingan Saya', 'Kasus Pendampingan']);
 });
 
 it('does not show QR Kehadiran or Izin/Cuti twice for a guru account', function () {
