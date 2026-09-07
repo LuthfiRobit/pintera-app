@@ -1,12 +1,17 @@
 <?php
+
 // tests/Feature/Admin/AttendanceControllerTest.php
 
+use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
 use App\Models\Guru;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Support\Carbon;
 use Spatie\Permission\Models\Permission;
 
 if (! function_exists('actingAsAdminSdmCatat')) {
@@ -26,7 +31,7 @@ if (! function_exists('actingAsAdminSdmCatat')) {
 }
 
 it('lets an admin_sdm record manual attendance for a guru in their own lembaga', function () {
-    \Illuminate\Support\Carbon::setTestNow('2026-08-25 08:00:00'); // Tuesday (working day)
+    Carbon::setTestNow('2026-08-25 08:00:00'); // Tuesday (working day)
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
@@ -41,7 +46,7 @@ it('lets an admin_sdm record manual attendance for a guru in their own lembaga',
     ])->assertRedirect(route('admin.kehadiran-sdm.index'));
 
     expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeTrue();
-    \Illuminate\Support\Carbon::setTestNow();
+    Carbon::setTestNow();
 });
 
 it('404s when recording attendance for a guru from a different lembaga', function () {
@@ -71,4 +76,23 @@ it('rejects an admin without kehadiran-sdm.catat permission', function () {
     $this->actingAs($noPermissionUser)->post(route('admin.kehadiran-sdm.store'), [
         'pegawai_tipe' => 'guru', 'pegawai_id' => $guru->id, 'arah' => 'masuk', 'status' => 'hadir', 'waktu' => now()->format('Y-m-d H:i:s'),
     ])->assertForbidden();
+});
+
+it('includes pool karyawan in the karyawanList picker when a lembaga is active', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $admin = actingAsAdminSdmCatat($lembaga);
+
+    $person = Person::factory()->create(['yayasan_id' => $yayasan->id]);
+    $karyawanPool = Karyawan::create([
+        'person_id' => $person->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id])->id,
+        'status_aktif' => 'aktif',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('admin.kehadiran-sdm.create'));
+
+    $response->assertOk();
+    $ids = collect($response->viewData('karyawanList'))->pluck('id');
+    expect($ids)->toContain((string) $karyawanPool->id);
 });

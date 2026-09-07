@@ -10,6 +10,8 @@ use App\Domains\Sdm\Models\AttendancePoint;
 use App\Domains\Sdm\Models\AttendanceRecord;
 use App\Models\Guru;
 use App\Models\Karyawan;
+use App\Models\Lembaga;
+use App\Models\Scopes\TenantScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -43,13 +45,19 @@ class AttendanceController extends BaseController
         $this->authorize('kehadiran-sdm.catat');
 
         $lembagaId = $this->resolveLembagaId($request);
+        $yayasanId = $lembagaId ? Lembaga::find($lembagaId)?->yayasan_id : null;
 
         $guruList = $lembagaId
             ? Guru::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(['guru.id', 'guru.nama', 'guru.nip', 'guru.nuptk', 'guru.person_id'])
                 ->map(fn ($g) => ['id' => (string) $g->id, 'nama' => $g->nama, 'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : '')])->values()
             : collect();
         $karyawanList = $lembagaId
-            ? Karyawan::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
+            ? Karyawan::withoutGlobalScope(TenantScope::class)
+                ->where(function ($q) use ($lembagaId, $yayasanId) {
+                    $q->where('karyawan.lembaga_id', $lembagaId)
+                        ->orWhere(fn ($q2) => $q2->whereNull('karyawan.lembaga_id')->where('karyawan.yayasan_id', $yayasanId));
+                })
+                ->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
                 ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
             : collect();
         $titikAbsen = $lembagaId ? AttendancePoint::where('lembaga_id', $lembagaId)->where('is_active', true)->orderBy('nama')->get() : collect();

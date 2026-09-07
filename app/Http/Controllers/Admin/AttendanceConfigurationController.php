@@ -105,7 +105,12 @@ class AttendanceConfigurationController extends BaseController
                 ->map(fn ($g) => ['id' => (string) $g->id, 'nama' => $g->nama, 'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : '')])->values()
             : collect();
         $karyawanList = $lembagaId
-            ? Karyawan::where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
+            ? Karyawan::withoutGlobalScope(TenantScope::class)
+                ->where(function ($q) use ($lembagaId, $yayasanId) {
+                    $q->where('karyawan.lembaga_id', $lembagaId)
+                        ->orWhere(fn ($q2) => $q2->whereNull('karyawan.lembaga_id')->where('karyawan.yayasan_id', $yayasanId));
+                })
+                ->with('person')->orderByNama()->get(['karyawan.id', 'karyawan.nama', 'karyawan.email', 'karyawan.person_id'])
                 ->map(fn ($k) => ['id' => (string) $k->id, 'nama' => $k->nama, 'subtext' => $k->email ?? ''])->values()
             : collect();
 

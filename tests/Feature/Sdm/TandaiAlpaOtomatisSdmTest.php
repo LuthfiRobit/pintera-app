@@ -1,13 +1,31 @@
 <?php
+
 // tests/Feature/Sdm/TandaiAlpaOtomatisSdmTest.php
 
+use App\Domains\Identity\Models\Person;
+use App\Domains\Sdm\Actions\AjukanIzinCutiAction;
+use App\Domains\Sdm\Actions\AssignShiftAction;
+use App\Domains\Sdm\Actions\ProsesApprovalIzinCutiAction;
+use App\Domains\Sdm\Actions\RecordManualAttendanceAction;
+use App\Domains\Sdm\DataTransferObjects\RecordManualAttendanceData;
+use App\Domains\Sdm\DataTransferObjects\ShiftAssignmentData;
 use App\Domains\Sdm\Enums\AttendanceStatus;
+use App\Domains\Sdm\Enums\KategoriPengajuanIzin;
+use App\Domains\Sdm\Enums\TipeKalenderKerjaSdm;
+use App\Domains\Sdm\Models\AttendancePolicy;
 use App\Domains\Sdm\Models\AttendanceRecord;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Domains\Sdm\Models\JenisShift;
+use App\Domains\Sdm\Models\KalenderKerjaSdm;
+use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
+use App\Models\Role;
+use App\Models\User;
 use App\Models\Yayasan;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Artisan;
 
 it('marks an active guru with no attendance record as Alpa for a work-day yesterday', function () {
@@ -71,11 +89,11 @@ it('skips a guru who already has a manual attendance record for that day', funct
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => 'aktif']);
-    $admin = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $admin = User::factory()->create(['lembaga_id' => $lembaga->id]);
 
-    app(\App\Domains\Sdm\Actions\RecordManualAttendanceAction::class)->execute($guru, new \App\Domains\Sdm\DataTransferObjects\RecordManualAttendanceData(
+    app(RecordManualAttendanceAction::class)->execute($guru, new RecordManualAttendanceData(
         lembagaId: $lembaga->id, arah: 'masuk', status: AttendanceStatus::Hadir,
-        waktu: \Carbon\CarbonImmutable::parse('2026-08-24 07:00:00'), dicatatOlehUserId: $admin->id,
+        waktu: CarbonImmutable::parse('2026-08-24 07:00:00'), dicatatOlehUserId: $admin->id,
     ));
 
     $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
@@ -90,9 +108,9 @@ it('marks a karyawan with a policy hari_kerja override as Alpa even on a lembaga
     Carbon::setTestNow(Carbon::parse('2026-08-24 01:00:00')); // Monday, so H-1 = Sunday (lembaga libur)
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
-    $jenisKaryawan = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = JenisKaryawanMaster::factory()->create();
     $karyawan = Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id, 'status_aktif' => 'aktif']);
-    \App\Domains\Sdm\Models\AttendancePolicy::create([
+    AttendancePolicy::create([
         'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenisKaryawan->id,
         'jam_masuk' => '18:00', 'toleransi_menit' => 10, 'hari_kerja' => [0, 1, 2, 3, 4, 5, 6],
     ]);
@@ -111,9 +129,9 @@ it('still skips a guru with no policy override on a lembaga-libur day, alongside
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'jenis_ptk' => 'guru_kelas', 'status_aktif' => 'aktif']);
-    $jenisKaryawan = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = JenisKaryawanMaster::factory()->create();
     $karyawan = Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id, 'status_aktif' => 'aktif']);
-    \App\Domains\Sdm\Models\AttendancePolicy::create([
+    AttendancePolicy::create([
         'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenisKaryawan->id,
         'jam_masuk' => '18:00', 'toleransi_menit' => 10, 'hari_kerja' => [0, 1, 2, 3, 4, 5, 6],
     ]);
@@ -134,9 +152,9 @@ it('does NOT mark a karyawan as Alpa on a lembaga work day when the policy hari_
     Carbon::setTestNow(Carbon::parse('2026-08-21 01:00:00')); // Friday, so H-1 = Thursday (lembaga work day)
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]); // Mon-Sat is lembaga work days
-    $jenisKaryawan = \App\Domains\Sdm\Models\JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = JenisKaryawanMaster::factory()->create();
     $karyawan = Karyawan::factory()->create(['lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id, 'jenis_karyawan_id' => $jenisKaryawan->id, 'status_aktif' => 'aktif']);
-    \App\Domains\Sdm\Models\AttendancePolicy::create([
+    AttendancePolicy::create([
         'yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'jenis_karyawan_id' => $jenisKaryawan->id,
         'jam_masuk' => '08:00', 'toleransi_menit' => 10, 'hari_kerja' => [1, 2, 3], // Only Mon-Wed for this category
     ]);
@@ -153,8 +171,8 @@ it('marks a pegawai with an active shift assignment as Alpa on a lembaga-libur d
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan_sdm' => [0]]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => 'aktif']);
-    $jenisShift = \App\Domains\Sdm\Models\JenisShift::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'nama' => 'Shift Malam', 'jam_masuk' => '22:00', 'jam_pulang' => '06:00']);
-    app(\App\Domains\Sdm\Actions\AssignShiftAction::class)->execute($guru, new \App\Domains\Sdm\DataTransferObjects\ShiftAssignmentData(
+    $jenisShift = JenisShift::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'nama' => 'Shift Malam', 'jam_masuk' => '22:00', 'jam_pulang' => '06:00']);
+    app(AssignShiftAction::class)->execute($guru, new ShiftAssignmentData(
         lembagaId: $lembaga->id, jenisShiftId: $jenisShift->id, tanggalMulai: '2026-08-17', tanggalSelesai: '2026-08-30',
     ));
 
@@ -175,7 +193,7 @@ it('skips a pegawai whose pending pengajuan covers H-1', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => 'aktif']);
-    app(\App\Domains\Sdm\Actions\AjukanIzinCutiAction::class)->execute($guru, \App\Domains\Sdm\Enums\KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit.');
+    app(AjukanIzinCutiAction::class)->execute($guru, KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit.');
 
     $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
 
@@ -192,11 +210,11 @@ it('marks Alpa normally once the pengajuan for that day has been rejected', func
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => 'aktif']);
-    $kepsekRole = \App\Models\Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $kepsek = \App\Models\User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kepsekRole = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $kepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $kepsek->assignRole($kepsekRole);
-    $pengajuan = app(\App\Domains\Sdm\Actions\AjukanIzinCutiAction::class)->execute($guru, \App\Domains\Sdm\Enums\KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit.');
-    app(\App\Domains\Sdm\Actions\ProsesApprovalIzinCutiAction::class)->execute($pengajuan, $kepsek, \App\Domains\Workflow\Enums\ApprovalAction::Reject);
+    $pengajuan = app(AjukanIzinCutiAction::class)->execute($guru, KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit.');
+    app(ProsesApprovalIzinCutiAction::class)->execute($pengajuan, $kepsek, ApprovalAction::Reject);
 
     $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
 
@@ -207,5 +225,43 @@ it('marks Alpa normally once the pengajuan for that day has been rejected', func
     Carbon::setTestNow();
 });
 
+it('marks an active pool karyawan with no attendance record as Alpa for yesterday, using AttendanceRecord not lembaga-specific', function () {
+    Carbon::setTestNow(Carbon::parse('2026-08-25 01:00:00')); // Tuesday
+    $yayasan = Yayasan::factory()->create();
+    $person = Person::factory()->create(['yayasan_id' => $yayasan->id]);
+    $karyawanPool = Karyawan::create([
+        'person_id' => $person->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id])->id,
+        'status_aktif' => 'aktif',
+    ]);
 
+    $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
 
+    $record = AttendanceRecord::where('pegawai_type', Karyawan::class)->where('pegawai_id', $karyawanPool->id)->first();
+    expect($record)->not->toBeNull();
+    expect($record->status)->toBe(AttendanceStatus::Alpa);
+
+    Carbon::setTestNow();
+});
+
+it('does not mark a pool karyawan Alpa when an explicit KalenderKerjaSdm nasional entry marks the day libur', function () {
+    Carbon::setTestNow(Carbon::parse('2026-08-25 01:00:00')); // Tuesday
+    $yayasan = Yayasan::factory()->create();
+    $person = Person::factory()->create(['yayasan_id' => $yayasan->id]);
+    $karyawanPool = Karyawan::create([
+        'person_id' => $person->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id])->id,
+        'status_aktif' => 'aktif',
+    ]);
+    KalenderKerjaSdm::create([
+        'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'nama' => 'Libur Nasional Test', 'tanggal' => '2026-08-24', 'tanggal_selesai' => null,
+        'tipe' => TipeKalenderKerjaSdm::Libur,
+    ]);
+
+    $this->artisan('sdm:tandai-alpa-otomatis')->assertSuccessful();
+
+    expect(AttendanceRecord::where('pegawai_type', Karyawan::class)->where('pegawai_id', $karyawanPool->id)->exists())->toBeFalse();
+
+    Carbon::setTestNow();
+});

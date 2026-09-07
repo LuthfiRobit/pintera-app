@@ -12,6 +12,8 @@ use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Models\Guru;
 use App\Models\Karyawan;
 use App\Models\Lembaga;
+use App\Models\Yayasan;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 
@@ -48,12 +50,25 @@ class TandaiAlpaOtomatisSdm extends Command
             $jumlahDitandai += $this->tandaiPegawaiTanpaRecord($pegawaiList, $lembaga, $tanggal);
         }
 
+        // Pass kedua: karyawan pool (lembaga_id null), diproses per-yayasan. Guru TIDAK punya
+        // konsep pool (selalu lembaga_id terisi), tidak perlu pass tambahan untuk Guru.
+        foreach (Yayasan::all() as $yayasan) {
+            $karyawanPoolList = Karyawan::whereNull('lembaga_id')
+                ->where('yayasan_id', $yayasan->id)
+                ->where('status_aktif', 'aktif')
+                ->get()
+                ->filter(fn ($pegawai) => ! $this->resolver->resolveLibur($pegawai, $tanggal)['libur'])
+                ->filter(fn ($pegawai) => ! $this->punyaPengajuanPending($pegawai, $tanggal));
+
+            $jumlahDitandai += $this->tandaiPegawaiTanpaRecordPool($karyawanPoolList, $yayasan, $tanggal);
+        }
+
         $this->info("{$jumlahDitandai} pegawai ditandai Alpa otomatis untuk tanggal {$tanggal->toDateString()}.");
 
         return self::SUCCESS;
     }
 
-    private function punyaPengajuanPending($pegawai, \Carbon\CarbonImmutable $tanggal): bool
+    private function punyaPengajuanPending($pegawai, CarbonImmutable $tanggal): bool
     {
         return PengajuanIzinCuti::where('pegawai_type', $pegawai::class)
             ->where('pegawai_id', $pegawai->id)
@@ -63,7 +78,7 @@ class TandaiAlpaOtomatisSdm extends Command
             ->exists();
     }
 
-    private function tandaiPegawaiTanpaRecord(Collection $pegawaiList, Lembaga $lembaga, \Carbon\CarbonImmutable $tanggal): int
+    private function tandaiPegawaiTanpaRecord(Collection $pegawaiList, Lembaga $lembaga, CarbonImmutable $tanggal): int
     {
         $jumlah = 0;
 
@@ -85,6 +100,37 @@ class TandaiAlpaOtomatisSdm extends Command
                 'waktu' => $tanggal->setTime(23, 59),
                 'dicatat_oleh_user_id' => null,
                 'catatan' => 'Ditandai otomatis oleh sistem — tidak ada aktivitas kehadiran pada hari kerja ini.',
+            ]);
+
+            $this->aggregator->sync($pegawai, $tanggal);
+            $jumlah++;
+        }
+
+        return $jumlah;
+    }
+
+    private function tandaiPegawaiTanpaRecordPool(Collection $pegawaiList, Yayasan $yayasan, CarbonImmutable $tanggal): int
+    {
+        $jumlah = 0;
+
+        foreach ($pegawaiList as $pegawai) {
+            $sudahAda = AttendanceRecord::where('pegawai_type', $pegawai::class)
+                ->where('pegawai_id', $pegawai->id)
+                ->whereDate('tanggal', $tanggal->toDateString())
+                ->exists();
+
+            if ($sudahAda) {
+                continue;
+            }
+
+            $pegawai->attendanceEvents()->create([
+                'lembaga_id' => null,
+                'method' => AttendanceMethod::System,
+                'arah' => 'masuk',
+                'status' => AttendanceStatus::Alpa,
+                'waktu' => $tanggal->setTime(23, 59),
+                'dicatat_oleh_user_id' => null,
+                'catatan' => 'Ditandai otomatis oleh sistem — tidak ada aktivitas kehadiran pada hari kerja ini (karyawan pool yayasan).',
             ]);
 
             $this->aggregator->sync($pegawai, $tanggal);

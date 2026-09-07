@@ -2,9 +2,12 @@
 
 // tests/Feature/Admin/AttendanceConfigurationControllerTest.php
 
+use App\Domains\Identity\Models\Person;
 use App\Domains\Sdm\Models\AttendanceMethodConfiguration;
 use App\Domains\Sdm\Models\AttendancePoint;
 use App\Domains\Sdm\Models\AttendancePolicy;
+use App\Domains\Sdm\Models\JenisKaryawanMaster;
+use App\Models\Karyawan;
 use App\Models\Lembaga;
 use App\Models\Role;
 use App\Models\User;
@@ -118,4 +121,23 @@ it('shows AttendancePolicy from ALL lembaga plus the national one when yayasan s
     $response->assertViewHas('policyList', function ($policyList) {
         return $policyList->count() === 3;
     });
+});
+
+it('includes pool karyawan in the karyawanList picker when a lembaga is active', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $admin = actingAsAdminSdm($lembaga);
+
+    $person = Person::factory()->create(['yayasan_id' => $yayasan->id]);
+    $karyawanPool = Karyawan::create([
+        'person_id' => $person->id, 'yayasan_id' => $yayasan->id, 'lembaga_id' => null,
+        'jenis_karyawan_id' => JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id])->id,
+        'status_aktif' => 'aktif',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('admin.kehadiran-sdm.konfigurasi.index'));
+
+    $response->assertOk();
+    $ids = collect($response->viewData('karyawanList'))->pluck('id');
+    expect($ids)->toContain((string) $karyawanPool->id);
 });
