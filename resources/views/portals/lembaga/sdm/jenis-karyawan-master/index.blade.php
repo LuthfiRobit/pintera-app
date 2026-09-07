@@ -15,7 +15,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Master Jenis Karyawan</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Kelola referensi jenis peran dan spesialisasi karyawan (mis. Psikolog, Konselor BK, Staf Administrasi) di seluruh lingkungan sekolah dan yayasan.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola referensi jenis karyawan milik yayasan Anda — berlaku otomatis di semua lembaga di bawah yayasan ini, bukan per lembaga.</p>
             </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
@@ -152,7 +152,7 @@
                                         <x-icon name="badge" class="h-7 w-7" />
                                     </div>
                                     <p class="mt-3 text-sm font-semibold text-gray-700">Belum Ada Data Jenis Karyawan</p>
-                                    <p class="mx-auto mt-0.5 max-w-sm text-xs text-gray-400" x-text="searchQuery || activeFilter !== 'semua' ? 'Tidak ada data yang cocok dengan filter atau pencarian Anda.' : 'Tambahkan data referensi jenis karyawan pertama untuk lembaga ini.'"></p>
+                                    <p class="mx-auto mt-0.5 max-w-sm text-xs text-gray-400" x-text="searchQuery || activeFilter !== 'semua' ? 'Tidak ada data yang cocok dengan filter atau pencarian Anda.' : 'Tambahkan data referensi jenis karyawan pertama untuk yayasan Anda.'"></p>
                                 </td>
                             </tr>
                         </template>

@@ -12,7 +12,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Master Jabatan Tambahan</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Kelola referensi jabatan struktural dan fungsional yang dapat diemban oleh Guru di seluruh lembaga.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola referensi jabatan tambahan milik yayasan Anda — berlaku otomatis di semua lembaga di bawah yayasan ini, bukan per lembaga.</p>
             </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Jabatan Tambahan</b>
@@ -147,7 +147,7 @@
                                         <x-icon name="badge" class="h-7 w-7" />
                                     </div>
                                     <p class="mt-3 text-sm font-semibold text-gray-700">Belum Ada Data Jabatan</p>
-                                    <p class="mx-auto mt-0.5 max-w-sm text-xs text-gray-400" x-text="searchQuery || activeFilter !== 'semua' ? 'Tidak ada data yang cocok dengan filter atau pencarian Anda.' : 'Tambahkan data referensi jabatan pertama untuk lembaga ini.'"></p>
+                                    <p class="mx-auto mt-0.5 max-w-sm text-xs text-gray-400" x-text="searchQuery || activeFilter !== 'semua' ? 'Tidak ada data yang cocok dengan filter atau pencarian Anda.' : 'Tambahkan data referensi jabatan pertama untuk yayasan Anda.'"></p>
                                 </td>
                             </tr>
                         </template>
