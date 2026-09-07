@@ -373,3 +373,51 @@ it('mempertahankan kelas siswa saat ini di kelasList meski dari TA tidak aktif, 
 
     expect($siswa->fresh()->kelas_id)->toBe($kelasLamaSiswa->id);
 });
+
+it('shows SISWA SEMUA LEMBAGA header when yayasan user does not select a lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    Permission::firstOrCreate(['name' => 'siswa.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_admin_header_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['siswa.view']);
+
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
+
+    $response->assertOk();
+    $response->assertSee('SISWA SEMUA LEMBAGA');
+});
+
+it('shows SISWA NAMA LEMBAGA header when yayasan user selects a lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA IT PINTERA']);
+    Permission::firstOrCreate(['name' => 'siswa.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_admin_header_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['siswa.view']);
+
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $response = $this->actingAs($manager)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->get(route('admin.siswa.index'));
+
+    $response->assertOk();
+    $response->assertSee('SISWA SMA IT PINTERA');
+});
+
+it('shows default Siswa header for lembaga scoped user', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA IT PINTERA']);
+    $manager = actingAsSiswaManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.siswa.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('SISWA SEMUA LEMBAGA');
+    $response->assertDontSee('SISWA SMA IT PINTERA');
+    $response->assertSee('Siswa');
+});
+

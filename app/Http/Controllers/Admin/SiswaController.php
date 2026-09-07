@@ -34,16 +34,23 @@ class SiswaController extends BaseController
 
         $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = Siswa::with(['kelas', 'kelasTerakhir', 'person'])
+        $query = Siswa::with(['lembaga', 'kelas', 'kelasTerakhir', 'person'])
             ->when($request->input('search'), fn ($q, $search) => $q->search($search))
             ->when($request->input('kelas_id'), fn ($q, $kelasId) => $q->where('siswa.kelas_id', $kelasId))
             ->when($request->input('status'), fn ($q, $status) => $q->where('siswa.status', $status))
             ->orderByNama();
 
+        $user = $request->user();
+        $isYayasan = $user->widestScopeLevel() === 'yayasan';
+        $activeLembagaId = $isYayasan ? session('active_lembaga_id') : $user->lembaga_id;
+        $activeLembaga = ($isYayasan && $activeLembagaId)
+            ? Lembaga::withoutGlobalScopes()->find($activeLembagaId)
+            : null;
+
         // Build kelas list from the acting lembaga's active tahun ajaran only.
         // Left empty for a yayasan-scoped user with no active lembaga selected —
         // there is no single "the" active tahun ajaran to pick in that state.
-        $lembagaId = $request->user()->lembaga_id ?? session('active_lembaga_id');
+        $lembagaId = $user->lembaga_id ?? session('active_lembaga_id');
         $tahunAjaranAktif = $lembagaId ? TahunAjaran::where('status_aktif', true)->first() : null;
         $kelasList = $tahunAjaranAktif
             ? Kelas::where('tahun_ajaran_id', $tahunAjaranAktif->id)->orderBy('nama')->get()
@@ -72,6 +79,8 @@ class SiswaController extends BaseController
             'totalSiswa' => $totalSiswa,
             'totalAktif' => $totalAktif,
             'siswaTanpaAkunCount' => $siswaTanpaAkunCount,
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => $activeLembaga,
         ]);
     }
 
