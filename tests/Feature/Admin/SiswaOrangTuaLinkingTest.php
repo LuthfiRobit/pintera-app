@@ -234,15 +234,24 @@ it('requires siswa.edit in addition to orang-tua permissions on nested siswa/ora
         ->assertForbidden();
 });
 
-it('finds an existing orang tua by nik even when the acting yayasan manager has not selected an active lembaga', function () {
-    $manager = actingAsSiswaOrangTuaManager();
-    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
-    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
-    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
-    // Registered earlier through the real Siswa-first flow: AkunOrangTuaGenerator::buat()
-    // populates yayasan_id (this task's fix 3b) but never lembaga_id.
-    $orangTuaUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $manager->yayasan_id]);
+it('finds an existing orang tua by nik registered under a different lembaga even for a lembaga-scoped manager', function () {
+    // Deliberately a lembaga-scoped (not yayasan-scoped) manager: TenantScope's yayasan-level
+    // pool fallback (orWhere('yayasan_id', ...)) only ever applies to a yayasan-scope actor, so
+    // this is the one scenario where fix 3b's User.yayasan_id alone cannot rescue the query --
+    // only cari()'s withoutGlobalScopes() (fix 3a) can find this row. A yayasan-scope fixture
+    // here would pass via the pool fallback even without 3a, making the assertion vacuous.
+    $manager = actingAsOrangTuaManager();
+    $yayasan = Yayasan::factory()->create();
+    $lembagaManager = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->update(['lembaga_id' => $lembagaManager->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembagaManager->id]);
+
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    // Registered earlier through the real Siswa-first flow under a different lembaga:
+    // AkunOrangTuaGenerator::buat() populates yayasan_id (fix 3b) but never lembaga_id.
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
     $orangTua = OrangTua::factory()->create(['nik' => '3201234567898888', 'user_id' => $orangTuaUser->id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
     $orangTua->siswa()->attach($siswaLain->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
 
     $response = $this->actingAs($manager)->getJson(route('admin.siswa.orang-tua.cari', $siswa).'?nik=3201234567898888');
