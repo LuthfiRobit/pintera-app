@@ -18,6 +18,7 @@ it('creates a User with username=nik, password hashed from nik, and lembaga_id n
     $user = $orangTua->user;
     expect($user->username)->toBe('3201234567892222');
     expect($user->lembaga_id)->toBeNull();
+    expect($user->yayasan_id)->toBe($yayasan->id);
     expect($user->email)->toBeNull();
     expect($user->must_change_password)->toBeTrue();
     expect(Hash::check('3201234567892222', $user->password))->toBeTrue();

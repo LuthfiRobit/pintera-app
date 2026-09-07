@@ -25,7 +25,7 @@ class SiswaOrangTuaController extends BaseController
 
         $data = $request->validate(['nik' => ['required', 'digits:16']]);
 
-        $user = User::where('username', $data['nik'])->first();
+        $user = User::withoutGlobalScopes()->where('username', $data['nik'])->first();
         $orangTua = $user ? $user->orangTua : null;
 
         if (! $orangTua) {
@@ -63,7 +63,7 @@ class SiswaOrangTuaController extends BaseController
         if (! empty($data['orang_tua_id'])) {
             $orangTua = OrangTua::findOrFail($data['orang_tua_id']);
         } else {
-            $existingUser = User::where('username', $data['nik'])->first();
+            $existingUser = User::withoutGlobalScopes()->where('username', $data['nik'])->first();
 
             if ($existingUser) {
                 $existingOrangTua = $existingUser->orangTua;

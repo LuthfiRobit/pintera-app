@@ -44,6 +44,7 @@ class AkunOrangTuaGenerator
                 'username' => $nik,
                 'password' => Hash::make($nik),
                 'lembaga_id' => null,
+                'yayasan_id' => $yayasanId,
                 'email_verified_at' => null,
                 'is_active' => true,
                 'must_change_password' => true,

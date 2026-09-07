@@ -24,12 +24,12 @@ function buatSiswaUntukTautan(?int $yayasanId = null): Siswa
 it('finds an existing orang tua by nik via the cari endpoint', function () {
     $manager = actingAsSiswaOrangTuaManager();
     $siswa = buatSiswaUntukTautan($manager->yayasan_id);
-    $lembagaSama = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
-    // The cari() endpoint's lookup goes through User::where('username', $nik) first (username
-    // stores the NIK) - User is tenant-scoped, so the underlying account must belong to a
-    // Lembaga under the acting manager's own yayasan to be visible, even though OrangTua
-    // itself is intentionally cross-tenant.
-    $orangTua = OrangTua::factory()->create(['nik' => '3201234567895555', 'user_id' => User::factory()->create(['lembaga_id' => $lembagaSama->id])->id]);
+    // Mirrors AkunOrangTuaGenerator::buat()'s real output before this task's fix: the
+    // underlying User account carries neither lembaga_id nor yayasan_id, so TenantScope's
+    // default filtering (and even its "Semua Lembaga" whereIn/pool fallback) can never match
+    // it — cari() MUST bypass scoping entirely to find it, the same way
+    // OrangTuaController::store() already does.
+    $orangTua = OrangTua::factory()->create(['nik' => '3201234567895555', 'user_id' => User::factory()->create(['lembaga_id' => null, 'yayasan_id' => null])->id]);
 
     $response = $this->actingAs($manager)->getJson(route('admin.siswa.orang-tua.cari', $siswa).'?nik=3201234567895555');
 
@@ -234,11 +234,26 @@ it('requires siswa.edit in addition to orang-tua permissions on nested siswa/ora
         ->assertForbidden();
 });
 
+it('finds an existing orang tua by nik even when the acting yayasan manager has not selected an active lembaga', function () {
+    $manager = actingAsSiswaOrangTuaManager();
+    $siswa = buatSiswaUntukTautan($manager->yayasan_id);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
+    $siswaLain = Siswa::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    // Registered earlier through the real Siswa-first flow: AkunOrangTuaGenerator::buat()
+    // populates yayasan_id (this task's fix 3b) but never lembaga_id.
+    $orangTuaUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $manager->yayasan_id]);
+    $orangTua = OrangTua::factory()->create(['nik' => '3201234567898888', 'user_id' => $orangTuaUser->id]);
+    $orangTua->siswa()->attach($siswaLain->id, ['hubungan' => 'ayah', 'is_kontak_utama' => true]);
+
+    $response = $this->actingAs($manager)->getJson(route('admin.siswa.orang-tua.cari', $siswa).'?nik=3201234567898888');
+
+    $response->assertOk()->assertJson(['found' => true, 'orang_tua' => ['id' => $orangTua->id]]);
+});
+
 it('returns a distinct message when linking a nik that belongs to a non-parent user', function () {
     $manager = actingAsSiswaOrangTuaManager();
     $siswa = buatSiswaUntukTautan($manager->yayasan_id);
-    $lembagaSama = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id]);
-    User::factory()->create(['username' => '3201234567899999', 'lembaga_id' => $lembagaSama->id]);
+    User::factory()->create(['username' => '3201234567899999', 'lembaga_id' => null, 'yayasan_id' => null]);
 
     $response = $this->actingAs($manager)->post(route('admin.siswa.orang-tua.store', $siswa), [
         'hubungan' => 'ayah',
