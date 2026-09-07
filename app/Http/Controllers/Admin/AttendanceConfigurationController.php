@@ -29,6 +29,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AttendanceConfigurationController extends BaseController
@@ -329,10 +330,19 @@ class AttendanceConfigurationController extends BaseController
     {
         $this->authorize('kehadiran-sdm.kelola-konfigurasi');
 
+        $isNasionalMentah = $request->boolean('is_nasional');
+        $lembagaIdMentah = $isNasionalMentah ? null : $this->resolveLembagaId($request);
+        $yayasanIdUntukValidasi = $this->resolveYayasanId($request, $lembagaIdMentah);
+
         $data = $request->validate([
             'kategori_tipe' => ['required', 'in:guru,karyawan'],
             'jenis_ptk' => ['required_if:kategori_tipe,guru', 'nullable', 'in:guru_kelas,guru_mapel,kepala_sekolah,tenaga_administrasi,guru_bk'],
-            'jenis_karyawan_id' => ['required_if:kategori_tipe,karyawan', 'nullable', 'integer', 'exists:jenis_karyawan_master,id'],
+            'jenis_karyawan_id' => [
+                'required_if:kategori_tipe,karyawan',
+                'nullable',
+                'integer',
+                Rule::exists('jenis_karyawan_master', 'id')->where('yayasan_id', $yayasanIdUntukValidasi),
+            ],
             'jam_masuk' => ['required', 'date_format:H:i'],
             'jam_pulang' => ['nullable', 'date_format:H:i'],
             'toleransi_menit' => ['required', 'integer', 'min:0'],

@@ -16,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class KaryawanController extends BaseController
@@ -160,7 +161,7 @@ class KaryawanController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'no_hp' => ['nullable', 'string', 'max:20'],
-            'jenis_karyawan_id' => ['required', 'exists:jenis_karyawan_master,id'],
+            'jenis_karyawan_id' => ['required', Rule::exists('jenis_karyawan_master', 'id')->where('yayasan_id', $karyawan->yayasan_id)],
         ]);
 
         DB::transaction(function () use ($data, $karyawan) {
@@ -238,7 +239,7 @@ class KaryawanController extends BaseController
             'nama' => ['required', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'no_hp' => ['nullable', 'string', 'max:20'],
-            'jenis_karyawan_id' => ['required', 'exists:jenis_karyawan_master,id'],
+            'jenis_karyawan_id' => ['required', Rule::exists('jenis_karyawan_master', 'id')->where('yayasan_id', $yayasanId)],
         ]);
     }
 }

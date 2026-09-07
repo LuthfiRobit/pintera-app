@@ -61,7 +61,7 @@ it('lets a lembaga admin create a dedicated karyawan scoped to their own lembaga
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKaryawanManager($lembaga);
-    $jenis = JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $this->actingAs($manager)->post(route('admin.karyawan.store'), [
         'nik' => '3201234567891234',
@@ -83,7 +83,7 @@ it('rejects a lembaga admin trying to create a pool karyawan', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKaryawanManager($lembaga);
-    $jenis = JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $this->actingAs($manager)->post(route('admin.karyawan.store'), [
         'nik' => '3201234567895555',
@@ -101,7 +101,7 @@ it('lets yayasan_super_admin create a pool karyawan', function () {
     $admin = actingAsYayasanSuperAdmin();
     $yayasan = Yayasan::factory()->create();
     $admin->update(['yayasan_id' => $yayasan->id]);
-    $jenis = JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $this->actingAs($admin)->post(route('admin.karyawan.store'), [
         'nik' => '3201234567896666',
@@ -123,8 +123,8 @@ it('updates a karyawan profile without touching nik or lembaga_id', function () 
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKaryawanManager($lembaga);
-    $jenisA = JenisKaryawanMaster::factory()->create();
-    $jenisB = JenisKaryawanMaster::factory()->create();
+    $jenisA = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
+    $jenisB = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $this->actingAs($manager)->post(route('admin.karyawan.store'), [
         'nik' => '3201234567897777', 'nama' => 'Nama Lama', 'email' => 'lama@permata.sch.id', 'jenis_karyawan_id' => $jenisA->id,
@@ -146,7 +146,7 @@ it('rejects creating a karyawan whose NIK is already registered to a non-karyawa
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKaryawanManager($lembaga);
-    $jenis = JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $existingUser = User::factory()->create(['username' => '3201234567899999']);
     $usersBefore = User::withoutGlobalScopes()->count();
@@ -165,7 +165,7 @@ it('toggles a karyawan status_aktif and the linked user is_active together', fun
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsKaryawanManager($lembaga);
-    $jenis = JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
 
     $this->actingAs($manager)->post(route('admin.karyawan.store'), [
         'nik' => '3201234567898888', 'nama' => 'Toggle Status', 'jenis_karyawan_id' => $jenis->id,
@@ -188,7 +188,7 @@ it('shows a lembaga-scoped admin their own dedicated karyawan plus their yayasan
     $lembagaAOther = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
     $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasanB->id]);
     $manager = actingAsKaryawanManager($lembagaA);
-    $jenis = JenisKaryawanMaster::factory()->create();
+    $jenis = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasanA->id]);
 
     $dedicatedOwn = Karyawan::factory()->create([
         'user_id' => User::factory()->create(['lembaga_id' => $lembagaA->id])->id,
@@ -237,4 +237,43 @@ it('shows a lembaga-scoped admin their own dedicated karyawan plus their yayasan
     $response->assertSee('Karyawan Pool Yayasan Sendiri');
     $response->assertDontSee('Karyawan Lembaga Lain');
     $response->assertDontSee('Karyawan Pool Yayasan Lain');
+});
+
+it('rejects a jenis_karyawan_id belonging to a different yayasan on create', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKaryawanManager($lembaga);
+    $yayasanLain = Yayasan::factory()->create();
+    $jenisYayasanLain = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasanLain->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.karyawan.store'), [
+        'nama' => 'Karyawan Baru',
+        'nik' => '3201234567891234',
+        'jenis_karyawan_id' => $jenisYayasanLain->id,
+    ]);
+
+    $response->assertSessionHasErrors('jenis_karyawan_id');
+    expect(findKaryawanByNama('Karyawan Baru'))->toBeNull();
+});
+
+it('rejects a jenis_karyawan_id belonging to a different yayasan on update', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKaryawanManager($lembaga);
+    $jenis = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
+    $karyawan = Karyawan::factory()->create([
+        'yayasan_id' => $yayasan->id,
+        'lembaga_id' => $lembaga->id,
+        'jenis_karyawan_id' => $jenis->id,
+    ]);
+    $yayasanLain = Yayasan::factory()->create();
+    $jenisYayasanLain = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasanLain->id]);
+
+    $response = $this->actingAs($manager)->put(route('admin.karyawan.update', $karyawan), [
+        'nama' => 'Nama Baru',
+        'jenis_karyawan_id' => $jenisYayasanLain->id,
+    ]);
+
+    $response->assertSessionHasErrors('jenis_karyawan_id');
+    expect($karyawan->fresh()->jenis_karyawan_id)->not->toBe($jenisYayasanLain->id);
 });

@@ -115,4 +115,21 @@ class GuruRelationalProfileTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    public function test_rejects_attaching_a_jabatan_tambahan_master_belonging_to_a_different_yayasan(): void
+    {
+        $yayasanLain = Yayasan::factory()->create();
+        $jabatanYayasanLain = JabatanTambahanMaster::factory()->create(['yayasan_id' => $yayasanLain->id]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.guru.jabatan-tambahan.store', $this->guru), [
+            'jabatan_tambahan_master_id' => $jabatanYayasanLain->id,
+            'mulai_periode' => '2026-01-01',
+        ]);
+
+        $response->assertSessionHasErrors('jabatan_tambahan_master_id');
+        $this->assertDatabaseMissing('guru_jabatan_tambahan', [
+            'guru_id' => $this->guru->id,
+            'jabatan_tambahan_master_id' => $jabatanYayasanLain->id,
+        ]);
+    }
 }

@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Admin/AttendancePolicyControllerTest.php
 
 use App\Domains\Sdm\Models\AttendancePolicy;
@@ -40,7 +41,7 @@ it('lets an admin_sdm create a lembaga-scoped policy for a jenis_ptk category', 
 it('lets an admin_sdm create a lembaga-scoped policy for a jenis_karyawan_id category with hari_kerja override', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
-    $jenisKaryawan = JenisKaryawanMaster::factory()->create();
+    $jenisKaryawan = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasan->id]);
     $admin = actingAsAdminSdmPolicy($lembaga);
 
     $this->actingAs($admin)->post(route('admin.kehadiran-sdm.policy.store'), [
@@ -102,4 +103,22 @@ it('rejects an admin without kehadiran-sdm.kelola-konfigurasi permission', funct
     $this->actingAs($noPermissionUser)->post(route('admin.kehadiran-sdm.policy.store'), [
         'kategori_tipe' => 'guru', 'jenis_ptk' => 'guru_kelas', 'jam_masuk' => '07:00', 'toleransi_menit' => 0,
     ])->assertForbidden();
+});
+
+it('rejects a jenis_karyawan_id belonging to a different yayasan when creating an attendance policy', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $admin = actingAsAdminSdmPolicy($lembaga);
+    $yayasanLain = Yayasan::factory()->create();
+    $jenisYayasanLain = JenisKaryawanMaster::factory()->create(['yayasan_id' => $yayasanLain->id]);
+
+    $response = $this->actingAs($admin)->post(route('admin.kehadiran-sdm.policy.store'), [
+        'kategori_tipe' => 'karyawan',
+        'jenis_karyawan_id' => $jenisYayasanLain->id,
+        'jam_masuk' => '07:00',
+        'toleransi_menit' => 5,
+    ]);
+
+    $response->assertSessionHasErrors('jenis_karyawan_id');
+    expect(AttendancePolicy::where('jenis_karyawan_id', $jenisYayasanLain->id)->exists())->toBeFalse();
 });

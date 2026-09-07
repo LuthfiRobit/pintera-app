@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Validation\Rule;
 
 class JabatanTambahanController extends BaseController
 {
@@ -17,8 +18,10 @@ class JabatanTambahanController extends BaseController
         $this->authorize('guru.edit');
         $this->ensureTenantScope($request, $guru);
 
+        $yayasanId = $guru->lembaga?->yayasan_id;
+
         $data = $request->validate([
-            'jabatan_tambahan_master_id' => ['required', 'integer', 'exists:jabatan_tambahan_master,id'],
+            'jabatan_tambahan_master_id' => ['required', 'integer', Rule::exists('jabatan_tambahan_master', 'id')->where('yayasan_id', $yayasanId)],
             'mulai_periode' => ['required', 'date'],
             'akhir_periode' => ['nullable', 'date', 'after_or_equal:mulai_periode'],
             'no_sk' => ['nullable', 'string', 'max:100'],
