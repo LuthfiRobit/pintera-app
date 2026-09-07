@@ -20,18 +20,18 @@ Menyelesaikan audit menyeluruh pada modul Karyawan & Guru yang menemukan 6 bug (
    - `app/Http/Controllers/Admin/KaryawanController.php`:
      - `store()`: `Rule::exists('jenis_karyawan_master', 'id')->where('yayasan_id', $yayasanId)` (menggunakan yayasan aktor login).
      - `update()`: `Rule::exists('jenis_karyawan_master', 'id')->where('yayasan_id', $karyawan->yayasan_id)` (menggunakan yayasan pemilik row karyawan).
-   - `app/Http/Controllers/Admin/AttendancePolicyController.php`:
-     - `validatePayload()`: Menghitung `$yayasanId` dari raw input request (`lembaga_id` atau fallback aktor login) sebelum validasi dijalankan, lalu menerapkan `Rule::exists('jenis_karyawan_master', 'id')->where('yayasan_id', $yayasanId)`.
-   - `app/Http/Controllers/Admin/GuruRelationalProfileController.php`:
-     - `updateJabatanTambahan()`: Mengambil yayasan guru pemilik row via `$guru->lembaga->yayasan_id`, lalu menerapkan `Rule::exists('jabatan_tambahan_master', 'id')->where('yayasan_id', $yayasanId)`.
+   - `app/Http/Controllers/Admin/AttendanceConfigurationController.php`:
+     - `storePolicy()`: Menghitung `$yayasanIdUntukValidasi` dari raw input request (`lembaga_id` atau fallback aktor login) sebelum validasi dijalankan, lalu menerapkan `Rule::exists('jenis_karyawan_master', 'id')->where('yayasan_id', $yayasanIdUntukValidasi)`.
+   - `app/Http/Controllers/Admin/Guru/JabatanTambahanController.php`:
+     - `store()`: Mengambil yayasan guru pemilik row via `$guru->lembaga->yayasan_id`, lalu menerapkan `Rule::exists('jabatan_tambahan_master', 'id')->where('yayasan_id', $yayasanId)`.
    - Pengujian: Menambahkan 5 test isolasi tenant IDOR di `KaryawanCrudTest.php`, `AttendancePolicyControllerTest.php`, dan `GuruRelationalProfileTest.php`.
 
 2. **Commit `eec40563` — Task 2: Kelompok B — Tutup Kebocoran Lintas-Yayasan pada 2 Resolver SDM**
    - `app/Domains/Sdm/Services/AttendancePolicyResolver.php`:
-     - `resolvePolicy()`: Menambahkan filter per-yayasan eksplisit pada Tier 2 (Lembaga Default: `where('yayasan_id', $yayasanId)`) dan Tier 3 (Yayasan Default: `where('yayasan_id', $yayasanId)`).
-     - `resolveLiburPool()`: Menambahkan helper khusus untuk karyawan pool yang mengecek libur nasional/eksplisit via `KalenderKerjaSdm` scoped ke yayasan pool, dengan fallback hari kerja (default hari kerja, tanpa kolom mingguan yayasan).
+     - `resolvePolicy()`: Tier "per-lembaga spesifik" (yang sebelumnya diam-diam collapse jadi `whereNull('lembaga_id')` TANPA filter yayasan untuk karyawan pool) dibungkus `if ($pegawai->lembaga_id !== null) { ... }` sehingga TIDAK PERNAH dieksekusi sama sekali untuk pool — pool langsung jatuh ke tier nasional/yayasan yang sudah benar difilter `where('yayasan_id', $yayasanId)`.
+     - `resolveLiburPool()`: Helper baru khusus karyawan pool yang mengecek libur nasional/eksplisit via `KalenderKerjaSdm` scoped ke yayasan pool, dengan fallback hari kerja (default hari kerja, tanpa kolom mingguan yayasan).
    - `app/Domains/Sdm/Services/KuotaCutiResolver.php`:
-     - `resolveConfig()`: Menambahkan filter `where('yayasan_id', $yayasanId)` pada Tier 1 (Lembaga + Jenis Karyawan), Tier 2 (Lembaga Default), dan Tier 3 (Yayasan Default).
+     - `resolveConfig()`: Pola identik `AttendancePolicyResolver` — tier "per-lembaga" (spesifik & flat) dibungkus `if ($pegawai->lembaga_id !== null) { ... }`, dilewati total untuk pool, langsung ke tier nasional/yayasan.
    - Pengujian: Menambahkan 2 test di `AttendancePolicyTenantIsolationTest.php` dan 1 test di `KuotaCutiResolverTest.php`. Verifikasi grep memastikan tidak ada resolver SDM lain yang memiliki pola un-scoped serupa.
 
 3. **Commit `2599a731` — Task 3: Kelompok C — Sertakan Karyawan Pool di Alpa Otomatis & Dropdown Pemilih Karyawan**
