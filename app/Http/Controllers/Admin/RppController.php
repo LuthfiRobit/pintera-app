@@ -21,6 +21,7 @@ use App\Http\Requests\Akademik\VerifyRppRequest;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -46,6 +47,17 @@ class RppController extends BaseController
         private readonly DeleteRppAction $deleteRppAction,
         private readonly ListRppAction $listRppAction,
     ) {}
+
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
+    }
 
     public function index(Request $request): View
     {
@@ -95,9 +107,9 @@ class RppController extends BaseController
         );
 
         if ($request->ajax()) {
-            return view('portals.lembaga.akademik.rpp._daftar', compact(
+            return view('portals.lembaga.akademik.rpp._daftar', array_merge(compact(
                 'rppList', 'tab', 'perPage', 'search', 'tahunAjaranId', 'semesterId', 'kelasId', 'mapelId', 'status', 'kurikulum', 'tahunAjaranAktif'
-            ));
+            ), $this->scopeHeaderData($request)));
         }
 
         // Pilihan dropdown berdasar tenant & filter
@@ -148,6 +160,7 @@ class RppController extends BaseController
             'status' => $status,
             'search' => $search,
             'perPage' => $perPage,
+            ...$this->scopeHeaderData($request),
         ]);
     }
 

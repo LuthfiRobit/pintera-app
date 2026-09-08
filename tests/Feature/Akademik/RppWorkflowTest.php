@@ -512,5 +512,31 @@ it('tetap menampilkan pesan default Inbox kosong ketika benar-benar tidak ada fi
     $response->assertOk()->assertSee('Semua pengajuan RPP telah selesai ditinjau.');
 });
 
+it('menampilkan badge nama lembaga aktif utk aktor yayasan-scope yang sudah switch lembaga', function () {
+    $roleYayasanVerify = Role::firstOrCreate(['name' => 'yayasan_rpp_badge_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $roleYayasanVerify->givePermissionTo(['rpp.view', 'rpp.verify']);
+    $lembagaBernama = Lembaga::factory()->create(['yayasan_id' => $this->yayasan->id, 'nama' => 'SD Cempaka Raya']);
+    $verifier = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $this->yayasan->id]);
+    $verifier->assignRole($roleYayasanVerify);
+    session(['active_lembaga_id' => $lembagaBernama->id]);
 
+    $this->actingAs($verifier)->get(route('admin.rpp.index'))
+        ->assertSee('SD Cempaka Raya')
+        ->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
 
+it('menampilkan badge "Semua Lembaga" dalam mode agregat utk aktor yayasan-scope', function () {
+    $roleYayasanVerify = Role::firstOrCreate(['name' => 'yayasan_rpp_badge_agregat_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $roleYayasanVerify->givePermissionTo(['rpp.view', 'rpp.verify']);
+    $verifier = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $this->yayasan->id]);
+    $verifier->assignRole($roleYayasanVerify);
+
+    $this->actingAs($verifier)->get(route('admin.rpp.index'))
+        ->assertSee('Semua Lembaga')
+        ->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
+});
+
+it('tidak menampilkan badge scope utk aktor lembaga-scope', function () {
+    $this->actingAs($this->userGuru)->get(route('admin.rpp.index'))
+        ->assertDontSee('Semua Lembaga');
+});
