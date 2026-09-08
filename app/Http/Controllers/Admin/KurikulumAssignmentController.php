@@ -103,6 +103,11 @@ class KurikulumAssignmentController extends BaseController
         $validated = $request->validated();
         $tingkat = ($validated['tingkat'] ?? '') !== '' ? $validated['tingkat'] : null;
         $lembagaIdDiminta = $request->user()->widestScopeLevel() === 'platform' ? ($validated['lembaga_id'] ?? null) : null;
+
+        if ($request->user()->widestScopeLevel() === 'yayasan' && $this->resolveActiveLembagaId($request->user()) === null) {
+            return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah assignment kurikulum.'])->withInput();
+        }
+
         $lembagaId = $this->resolveLembagaId($request->user(), $lembagaIdDiminta);
 
         if ($lembagaId !== null) {

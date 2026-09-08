@@ -203,7 +203,9 @@ it('yayasan tanpa active_lembaga_id di sesi ditolak dengan pesan jelas saat memb
         'bentuk_pendidikan' => 'SD',
         'tingkat' => '1',
         'kurikulum' => 'merdeka',
-    ])->assertStatus(422);
+    ])->assertRedirect()->assertSessionHasErrors('lembaga_id');
+
+    expect(KurikulumAssignment::where('tahun_ajaran_id', $ta->id)->exists())->toBeFalse();
 });
 
 it('platform BISA membuat assignment global (lembaga_id null)', function () {
