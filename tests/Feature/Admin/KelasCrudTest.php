@@ -315,4 +315,24 @@ it('only offers tahun ajaran and guru belonging to the kelas lembaga in the edit
     $response->assertViewHas('guruList', fn ($list) => $list->count() === 1 && $list->first()->id === $guruA->id);
 });
 
+it('passes isYayasan and activeLembaga to both the full index page and the ajax partial', function () {
+    Permission::firstOrCreate(['name' => 'kelas.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    $this->actingAs($manager);
+
+    $this->get(route('admin.kelas.index'))->assertOk()
+        ->assertViewHas('isYayasan', true)
+        ->assertViewHas('activeLembaga', null);
+
+    $this->get(route('admin.kelas.index'), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()
+        ->assertViewHas('isYayasan', true)
+        ->assertViewHas('activeLembaga', null);
+});
+
+
 

@@ -54,7 +54,7 @@ class KelasController extends BaseController
 
         $perPage = in_array((int) $request->input('per_page'), [10, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = Kelas::with(['tahunAjaran', 'waliKelas'])->orderBy('nama');
+        $query = Kelas::with(['tahunAjaran', 'waliKelas', 'lembaga'])->orderBy('nama');
 
         if ($search = $request->input('search')) {
             $query->where('nama', 'like', '%'.$search.'%');
@@ -70,15 +70,17 @@ class KelasController extends BaseController
             return view('admin.kelas._daftar', [
                 'kelasList' => $kelasList,
                 'perPage' => $perPage,
+                ...$this->scopeHeaderData($request),
             ]);
         }
 
         return view('admin.kelas.index', [
             'kelasList' => $kelasList,
-            'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
+            'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('tanggal_mulai')->get(),
             'perPage' => $perPage,
             'totalKelas' => Kelas::count(),
             'totalTaAktif' => Kelas::whereHas('tahunAjaran', fn ($q) => $q->where('status_aktif', true))->count(),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
