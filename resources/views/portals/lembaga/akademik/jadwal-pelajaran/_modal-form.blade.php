@@ -133,7 +133,7 @@
                     <x-secondary-button type="button" @click="showModalForm = false" x-bind:disabled="formModal.loading">Batal</x-secondary-button>
                     <x-primary-button type="submit" x-bind:disabled="formModal.loading" class="gap-1.5">
                         <span x-show="!formModal.loading" x-text="formModal.mode === 'create' ? 'Simpan Jadwal' : 'Perbarui Jadwal'"></span>
-                        <span x-show="formModal.loading">Menyeduh...</span>
+                        <span x-show="formModal.loading">Menyimpan...</span>
                     </x-primary-button>
                 </div>
             </form>
