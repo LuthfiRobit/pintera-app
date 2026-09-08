@@ -203,7 +203,7 @@
 ></div>
 
 <aside
-    class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 -translate-x-full flex-col overflow-hidden border-r border-gray-800 bg-gray-900 font-satoshi shadow-2xl transition-all duration-300 ease-out lg:sticky lg:top-0 lg:z-40 lg:h-screen lg:max-w-none lg:translate-x-0 lg:shadow-none"
+    class="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] shrink-0 -translate-x-full flex-col overflow-hidden border-r border-gray-800 bg-gray-900 font-satoshi shadow-2xl transition-all duration-300 ease-out lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:h-screen lg:max-w-none lg:translate-x-0 lg:shadow-none"
     :class="{ 'translate-x-0': sidebarOpen, 'lg:w-0 lg:border-r-0': sidebarCollapsed, 'lg:w-72': !sidebarCollapsed }"
 >
     <div class="flex h-20 shrink-0 items-center justify-between border-b border-gray-800/80 px-6">
@@ -233,7 +233,7 @@
         x-init="$nextTick(() => { 
             const activeItem = $el.querySelector('[aria-current]');
             if (activeItem) {
-                activeItem.scrollIntoView({ block: 'center' });
+                $el.scrollTop = Math.max(0, activeItem.offsetTop - ($el.clientHeight / 2));
             }
         })"
     >
@@ -367,3 +367,10 @@
         </p>
     </div>
 </aside>
+
+<!-- Desktop sidebar width spacer to reserve layout space in lg:flex -->
+<div
+    class="hidden shrink-0 transition-all duration-300 ease-out lg:block"
+    :class="{ 'w-0': sidebarCollapsed, 'w-72': !sidebarCollapsed }"
+    aria-hidden="true"
+></div>
