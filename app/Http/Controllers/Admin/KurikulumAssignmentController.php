@@ -228,7 +228,7 @@ class KurikulumAssignmentController extends BaseController
         $scope = $request->user()->widestScopeLevel();
 
         if ($scope === 'platform') {
-            return TahunAjaran::orderByDesc('tanggal_mulai')->get();
+            return TahunAjaran::withoutGlobalScope(TenantScope::class)->orderByDesc('tanggal_mulai')->get();
         }
 
         if ($scope === 'yayasan') {

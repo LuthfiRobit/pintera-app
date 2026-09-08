@@ -402,3 +402,12 @@ it('shows the correct tahun ajaran name on the edit page for an assignment belon
     $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.edit', $assignment))->assertSee('2031/2032');
 });
 
+it('shows tahun ajaran options in the create dropdown for a platform-scoped actor', function () {
+    $manager = actingAsPlatformScopeKurikulumManager();
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2032/2033']);
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))->assertSee('2032/2033');
+});
+
+
