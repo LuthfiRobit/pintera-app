@@ -106,7 +106,7 @@
                                     </x-dropdown-link>
 
                                     {{-- Aksi Edit/Hapus/Ajukan: HANYA jika status Draft atau Perlu Revisi --}}
-                                    @if ($rpp->canBeEditedByGuru())
+                                    @if ($rpp->canBeEditedByGuru() && auth()->user()->guru?->id === $rpp->guru_id)
                                         @can('rpp.kelola')
                                             {{-- Ajukan ke Kurikulum --}}
                                             <form

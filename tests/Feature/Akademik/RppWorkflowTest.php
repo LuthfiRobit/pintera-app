@@ -448,3 +448,26 @@ it('menolak mata_pelajaran_id milik lembaga lain pada jalur admin (guru null)', 
 
     $response->assertNotFound();
 });
+
+it('tidak menampilkan RPP guru lain di tab saya untuk aktor tanpa profil Guru', function () {
+    $roleOperator = Role::firstOrCreate(['name' => 'operator_akademik_test_saya_tab', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $roleOperator->givePermissionTo(['rpp.view', 'rpp.kelola']);
+    $operator = User::factory()->create(['lembaga_id' => $this->lembaga->id]);
+    $operator->assignRole($roleOperator);
+    expect($operator->guru)->toBeNull();
+
+    $file = UploadedFile::fake()->create('rpp_orang_lain.pdf', 200, 'application/pdf');
+    $path = $file->store("rpp/{$this->lembaga->id}", 'public');
+    Rpp::create([
+        'yayasan_id' => $this->yayasan->id, 'lembaga_id' => $this->lembaga->id, 'guru_id' => $this->guru->id,
+        'tahun_ajaran_id' => $this->tahunAjaran->id, 'semester_id' => $this->semester->id, 'kelas_id' => $this->kelas->id,
+        'mata_pelajaran_id' => $this->mapel->id, 'judul_topik' => 'Topik Milik Guru Lain', 'alokasi_waktu' => '2 JP',
+        'file_path' => $path, 'file_name' => 'rpp_orang_lain.pdf', 'file_size_bytes' => 2048,
+        'mime_type' => 'application/pdf', 'status' => StatusRpp::Draft,
+    ]);
+
+    $response = $this->actingAs($operator)->get(route('admin.rpp.index', ['tab' => 'saya']));
+
+    $response->assertOk()->assertDontSee('Topik Milik Guru Lain');
+});
+

@@ -42,6 +42,10 @@ final class ListRppAction
             $guru = $user->guru;
             if ($guru) {
                 $baseQuery->where('guru_id', $guru->id);
+            } else {
+                // Aktor tanpa profil Guru (operator/kepsek/wakasek) tidak punya RPP
+                // pribadi -- tab "Saya" WAJIB kosong, bukan menampilkan RPP orang lain.
+                $baseQuery->whereRaw('1 = 0');
             }
         } elseif ($tab === 'verifikasi' && $status === null) {
             $status = StatusRpp::Diajukan->value;
