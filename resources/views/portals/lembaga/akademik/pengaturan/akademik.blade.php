@@ -8,12 +8,29 @@
         @endif
 
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="font-display text-lg font-bold text-gray-900">Pengaturan Akademik</h1>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <h1 class="font-display text-lg font-bold text-gray-900">Pengaturan Akademik</h1>
+                @if (! ($lembagaBelumDipilih ?? false))
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
+                        <x-icon name="apartment" class="h-3.5 w-3.5" />
+                        {{ $lembaga->nama }}
+                    </span>
+                @endif
+            </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Pengaturan Akademik</b>
             </p>
         </div>
 
+        @if ($lembagaBelumDipilih ?? false)
+            <div class="rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
+                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                    <x-icon name="apartment" class="h-6 w-6" />
+                </div>
+                <h3 class="mt-4 font-display text-sm font-semibold text-gray-900">Pilih Lembaga Aktif Dulu</h3>
+                <p class="mx-auto mt-1 max-w-md text-sm text-gray-500">Hari Aktif Sekolah, Batas Waktu Edit Presensi, dan Kalender Akademik diatur per lembaga. Pilih 1 lembaga lewat pengalih lembaga di pojok kanan atas untuk mulai mengatur.</p>
+            </div>
+        @else
         <div x-data="{ tab: 'hari-aktif' }">
             <div class="flex items-center gap-1 border-b border-gray-200">
             <button
@@ -286,5 +303,6 @@
             </div>
         </div>
         </div>
+        @endif
     </div>
 </x-app-layout>

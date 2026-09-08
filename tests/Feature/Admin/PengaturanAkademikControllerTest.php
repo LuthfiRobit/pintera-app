@@ -224,3 +224,14 @@ it('shows the same in-page prompt when active_lembaga_id session is stale (belon
     $response->assertViewHas('lembagaBelumDipilih', true);
     $response->assertSee('Pilih Lembaga Aktif Dulu');
 });
+
+it('shows the lembaga name badge in the header when an active lembaga is set', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMK Cakra Buana']);
+    $manager = actingAsPengaturanAkademikManager($lembaga, ['kalender-akademik.view']);
+
+    $this->actingAs($manager)
+        ->get(route('admin.pengaturan.akademik.index'))
+        ->assertOk()
+        ->assertSee('SMK Cakra Buana');
+});
