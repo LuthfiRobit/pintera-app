@@ -36,7 +36,7 @@
             @else
                 <div class="sm:col-span-6">
                     <x-input-label value="Berlaku Untuk" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga yang sedang aktif di sesi Anda.</p>
+                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga aktif Anda saat ini: <strong class="font-semibold text-gray-900">{{ $activeLembaga->nama }}</strong>.</p>
                 </div>
             @endif
 

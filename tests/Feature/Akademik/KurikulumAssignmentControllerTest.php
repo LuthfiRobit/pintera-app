@@ -348,3 +348,19 @@ it('does not render an Edit link for a global assignment row to a yayasan-scoped
 
     $response->assertDontSee(route('admin.kurikulum-assignment.edit', $assignmentGlobal), false);
 });
+
+it('redirects back to index when a yayasan-scoped actor opens create without an active lembaga', function () {
+    $manager = actingAsYayasanKurikulumManager();
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))
+        ->assertRedirect(route('admin.kurikulum-assignment.index'))
+        ->assertSessionHasErrors('lembaga_id');
+});
+
+it('shows the active lembaga name on the create page for a yayasan-scoped actor', function () {
+    $manager = actingAsYayasanKurikulumManager();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id, 'nama' => 'SMA Bintang Persada']);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))->assertSee('SMA Bintang Persada');
+});

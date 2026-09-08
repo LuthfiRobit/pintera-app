@@ -81,11 +81,18 @@ class KurikulumAssignmentController extends BaseController
         return $existingLembagaId === $actor->lembaga_id;
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('kurikulum-assignment.create');
 
         $isPlatform = $request->user()->widestScopeLevel() === 'platform';
+
+        if (! $isPlatform && $this->resolveActiveLembagaId($request->user()) === null) {
+            return redirect()->route('admin.kurikulum-assignment.index')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah assignment kurikulum.']);
+        }
+
+        $activeLembagaId = $isPlatform ? null : $this->resolveActiveLembagaId($request->user());
 
         return view('admin.kurikulum-assignment.create', [
             'kurikulumList' => KurikulumFramework::cases(),
@@ -93,6 +100,7 @@ class KurikulumAssignmentController extends BaseController
             'tahunAjaranList' => $this->tahunAjaranListForScope($request),
             'lembagaList' => $isPlatform ? Lembaga::orderBy('nama')->get() : collect(),
             'isPlatform' => $isPlatform,
+            'activeLembaga' => $activeLembagaId ? Lembaga::find($activeLembagaId) : null,
         ]);
     }
 
