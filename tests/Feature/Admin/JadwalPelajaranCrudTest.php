@@ -1423,7 +1423,7 @@ it('exposes formModal.errors state and per-field error rendering for guru_id in 
         'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
     ]));
 
-    $response->assertSee('formModal.errors.guru_id', false);
+    $response->assertSee('formModal.errors?.guru_id', false);
 });
 
 it('shows a "Tahun Ajaran Sumber" dropdown in the duplicate modal, populated with all tahun ajaran including ones different from the currently filtered one', function () {
