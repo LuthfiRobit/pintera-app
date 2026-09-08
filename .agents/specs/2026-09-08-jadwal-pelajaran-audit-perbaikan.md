@@ -62,9 +62,17 @@ private function scopeHeaderData(Request $request): array
 }
 ```
 
-Dipanggil di return `view('portals.lembaga.akademik.jadwal-pelajaran.index', [...])` (BUKAN di cabang `$request->ajax()`, karena dropdown Tahun Ajaran hanya dirender di halaman penuh, bukan di partial `_daftar`):
+**KOREKSI setelah Item H ditambahkan**: awalnya `scopeHeaderData()` direncanakan HANYA dipanggil di cabang halaman penuh (dropdown Tahun Ajaran utama memang cuma di situ). TAPI Item H menambahkan dropdown "Tahun Ajaran Sumber" BARU di dalam `_modal-duplicate.blade.php` — yang notabene bagian dari `_daftar.blade.php`, DIRENDER ULANG di cabang `$request->ajax()`. Dropdown baru itu butuh suffix lembaga yang SAMA persis alasannya dengan Item A (2+ lembaga bisa punya Tahun Ajaran senama) — kalau tidak, user aktor yayasan-scope agregat bisa pilih Tahun Ajaran Sumber milik LEMBAGA YANG SALAH tanpa sadar (namanya identik), lalu pilih Kelas Sumber dari situ, dan BARU gagal saat submit dengan `abort_if(...)` 404 mentah di `duplicate()` — bukan pesan validasi yang ramah. Karena itu, `scopeHeaderData()` WAJIB dipanggil DI KEDUA cabang, bukan cuma satu:
 
 ```php
+if ($request->ajax()) {
+    return view('portals.lembaga.akademik.jadwal-pelajaran._daftar', [
+        // ...existing keys tetap sama (jadwalList, hariAktif, kelasId, dst)...
+        'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('id')->get(), // baru -- lihat Item H
+        ...$this->scopeHeaderData($request), // baru
+    ])->render();
+}
+
 return view('portals.lembaga.akademik.jadwal-pelajaran.index', [
     'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('id')->get(),
     // ...existing keys tetap sama...
@@ -196,40 +204,47 @@ Tambahkan baris info read-only setelah header modal (`_modal-duplicate.blade.php
 
 ---
 
-## Item E — Context Banner di Luar Modal (Sebelum Tombol Diklik)
+## Item E — Perjelas Judul Header Daftar Jadwal (Nama Kelas & Semester Eksplisit)
 
 ### Masalah
 
 Konfirmasi konteks (Item C, D) baru muncul SETELAH modal terbuka. Sebelum itu — tepat di titik user melihat tombol "Salin dari Kelas Lain"/"+ Tambah Slot Jadwal" dan memutuskan untuk klik — tidak ada penegasan apa pun.
 
+**KOREKSI PENTING dari draf pertama spec ini**: rencana awal menambahkan badge di dalam `index.blade.php` (di sebelah tombol aksi, area "Card Filter"). Setelah dicek ulang, ini SALAH — area itu HANYA dirender SEKALI saat page load pertama, dan TIDAK PERNAH di-refresh lagi setelahnya. Setiap kali user ganti filter (Tahun Ajaran/Semester/Kelas), yang direfresh HANYA `<div x-ref="daftarJadwal">` (isi `_daftar.blade.php`, lewat `muatUlangDaftar()` yang meng-`innerHTML` elemen itu SAJA — dikonfirmasi di `resources/js/jadwal-pelajaran-filter.js:326`). Badge di area tombol akan MACET menampilkan kelas/semester dari load pertama, walau user sudah ganti filter — jadi BUKANNYA menghilangkan ambiguitas, malah AKTIF MEMBERI INFORMASI SALAH. Diperbaiki dengan pindah ke lokasi yang terbukti benar selalu ter-refresh.
+
 ### Perbaikan
 
-Di `index.blade.php`, tambahkan strip kecil di sebelah tombol aksi (baris ±41-55, di dalam `<template x-if="kelasId && semesterId">`):
+`_daftar.blade.php` SUDAH punya header sendiri yang BENAR selalu ter-refresh (karena jadi bagian dari partial yang sama yang dikirim ulang oleh `muatUlangDaftar()` di setiap perubahan filter) — tapi judulnya generik ("Jadwal Pelajaran Kelas", tanpa nama kelas sebenarnya). `$kelas`, `$semesterList`, `$semesterId` semuanya SUDAH tersedia di context ini (dikirim identik di kedua cabang `index()` — baik render halaman penuh maupun `$request->ajax()`).
+
+`_daftar.blade.php` baris ±4-11, ganti:
 
 ```blade
-<template x-if="kelasId && semesterId">
-    <div class="flex flex-wrap items-center gap-3 shrink-0">
-        <span class="hidden sm:inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-600">
-            {{ $kelas->nama ?? '' }} · {{ $semesterList->firstWhere('id', $semesterId)?->nama ?? '' }}
+<div>
+    <div class="flex items-center gap-2">
+        <h2 class="font-display text-base font-bold text-gray-900">Jadwal Pelajaran Kelas</h2>
+        <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-700 border border-brand-200/60">
+            Total {{ $jadwalList->count() }} Sesi
         </span>
-        <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <button
-                type="button"
-                @click="openDuplicateModal()"
-                class="inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
-            >
-                <x-icon name="content_copy" class="h-4 w-4 text-gray-500" />
-                <span>Salin dari Kelas Lain</span>
-            </button>
-            <x-link-button href="#" x-bind:href="tambahSlotUrl()" @click.prevent="openCreateModal()" class="shrink-0 justify-center">
-                <span class="text-base leading-none mr-1.5">+</span> Tambah Slot Jadwal
-            </x-link-button>
-        </div>
     </div>
-</template>
+    <p class="text-xs text-gray-500 mt-0.5">Jadwal kegiatan belajar mengajar mingguan untuk kelas dan semester yang terpilih.</p>
+</div>
 ```
 
-(Hanya menambah 1 `<span>` badge sebelum `<div>` tombol yang sudah ada — bukan restrukturisasi.)
+menjadi:
+
+```blade
+<div>
+    <div class="flex items-center gap-2">
+        <h2 class="font-display text-base font-bold text-gray-900">Jadwal Pelajaran Kelas {{ $kelas->nama ?? '' }}</h2>
+        <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-700 border border-brand-200/60">
+            Total {{ $jadwalList->count() }} Sesi
+        </span>
+    </div>
+    <p class="text-xs text-gray-500 mt-0.5">Semester {{ $semesterList->firstWhere('id', $semesterId)?->nama ?? '—' }} · Jadwal kegiatan belajar mengajar mingguan untuk kelas dan semester yang terpilih.</p>
+</div>
+```
+
+Ini muncul TEPAT DI ATAS tombol "Salin dari Kelas Lain"/"+ Tambah Slot Jadwal" secara visual (tombol ada di card FILTER, section daftar ini persis di bawahnya) — jadi user tetap melihat konteks sebelum sempat scroll jauh, TANPA risiko basi.
 
 ---
 
@@ -284,7 +299,7 @@ menjadi:
 <div>
     <x-input-label value="Ruangan Sarpras" />
     <select name="ruangan_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-        <option value="">— Default Ruang Kelas ({{ ($kelas->ruangan ?? null)?->nama_ruangan ?? 'Belum Diatur' }}) —</option>
+        <option value="">— Default Ruang Kelas ({{ $kelas?->ruangan?->nama_ruangan ?? 'Belum Diatur' }}) —</option>
         @foreach ($ruanganList ?? [] as $ruangan)
             <option value="{{ $ruangan->id }}">{{ $ruangan->nama_ruangan }} (Kapasitas: {{ $ruangan->kapasitas ?? '—' }})</option>
         @endforeach
@@ -405,7 +420,37 @@ Field `jam_pelajaran_id` juga dapat baris error yang sama (di bawah blok `<templ
 
 ### Perbaikan
 
-**View** (`_modal-duplicate.blade.php`) — tambah dropdown "Tahun Ajaran Sumber" SEBELUM "Semester Sumber", ganti render server-side Kelas/Semester Sumber jadi container kosong yang dipopulate JS:
+**View** (`_modal-duplicate.blade.php`) — tambah dropdown "Tahun Ajaran Sumber" SEBELUM "Semester Sumber", ganti render server-side Kelas/Semester Sumber jadi container kosong yang dipopulate JS.
+
+Kode SAAT INI (baris ±46-68):
+
+```blade
+<div class="space-y-4">
+    <div>
+        <x-input-label value="Semester Sumber" />
+        <select name="source_semester_id" x-model="duplicateForm.source_semester_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+            <option value="">— Pilih Semester Sumber —</option>
+            @foreach ($semesterList as $sem)
+                <option value="{{ $sem->id }}">{{ $sem->nama }}</option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-[11px] text-gray-400">Pilih semester asal data yang akan di-copy.</p>
+    </div>
+
+    <div>
+        <x-input-label value="Kelas Sumber" />
+        <select name="source_kelas_id" x-model="duplicateForm.source_kelas_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+            <option value="">— Pilih Kelas Sumber —</option>
+            @foreach ($kelasList as $kel)
+                <option value="{{ $kel->id }}" x-show="String({{ $kel->id }}) !== String(duplicateForm.target_kelas_id)">{{ $kel->nama }}</option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-[11px] text-gray-400">Pilih kelas yang memiliki konfigurasi jadwal yang ingin diterapkan.</p>
+    </div>
+</div>
+```
+
+Menjadi (ganti SELURUH blok di atas):
 
 ```blade
 <div class="space-y-4">
@@ -414,7 +459,7 @@ Field `jam_pelajaran_id` juga dapat baris error yang sama (di bawah blok `<templ
         <select x-ref="duplicateTahunAjaranSelect" x-init="initDuplicateTahunAjaranSelect($refs.duplicateTahunAjaranSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
             <option value="">— Pilih Tahun Ajaran Sumber —</option>
             @foreach ($tahunAjaranList as $ta)
-                <option value="{{ $ta->id }}">{{ $ta->nama }}{{ $ta->status_aktif ? ' (Aktif)' : '' }}</option>
+                <option value="{{ $ta->id }}">{{ $ta->nama }}{{ $ta->status_aktif ? ' (Aktif)' : '' }}{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? ' — '.($ta->lembaga->nama ?? '-') : '' }}</option>
             @endforeach
         </select>
         <p class="mt-1 text-[11px] text-gray-400">Boleh dari Tahun Ajaran yang berbeda dari yang sedang dilihat.</p>
@@ -437,7 +482,9 @@ Field `jam_pelajaran_id` juga dapat baris error yang sama (di bawah blok `<templ
 </div>
 ```
 
-`index.blade.php` — teruskan `$tahunAjaranList` ke `_daftar.blade.php` (sudah tersedia di controller `index()`, TAPI saat ini hanya dikirim ke view utama, BUKAN ke cabang `$request->ajax()`) — tambahkan `'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('id')->get(),` ke payload cabang `if ($request->ajax())` di controller (baris ±94-108).
+`$tahunAjaranList` (dan `isYayasan`/`activeLembaga` utk suffix lembaga) SUDAH ditambahkan ke cabang `$request->ajax()` sebagai bagian dari koreksi Item A di atas — tidak perlu perubahan controller terpisah lagi di sini.
+
+**Catatan**: kode LAMA punya `x-show="String($kel->id) !== String(duplicateForm.target_kelas_id)"` di tiap opsi Kelas Sumber — mencegah user memilih kelas TUJUAN sebagai kelas SUMBER (self-copy). Perilaku ini DIPERTAHANKAN di implementasi JS baru (lihat `if (String(kelas.id) === String(this.duplicateForm.target_kelas_id)) return;` di bawah) — BUKAN dihilangkan begitu saja.
 
 **JS** (`jadwal-pelajaran-filter.js`) — tambah handler baru `initDuplicateTahunAjaranSelect()`, memakai ulang `opsiUrl` yang sudah ada:
 
@@ -474,6 +521,7 @@ initDuplicateTahunAjaranSelect(el) {
                 });
 
                 json.kelasList.forEach((kelas) => {
+                    if (String(kelas.id) === String(this.duplicateForm.target_kelas_id)) return;
                     const option = document.createElement('option');
                     option.value = kelas.id;
                     option.textContent = kelas.nama;
@@ -533,7 +581,7 @@ openDuplicateModal() {
 | B | Dropdown Semester (server-render awal DAN hasil AJAX `gantiTahunAjaran`) menampilkan "(Aktif)" |
 | C | Modal Tambah/Edit menampilkan nama kelas & semester read-only |
 | D | Modal Duplikat menampilkan "Menyalin KE: ..." dengan nama kelas & semester TUJUAN |
-| E | Banner konteks (nama kelas · semester) tampil di sebelah tombol aksi setelah filter lengkap |
+| E | Header `_daftar.blade.php` menampilkan nama kelas & semester eksplisit, TETAP BENAR (bukan basi) setelah ganti filter via AJAX tanpa reload halaman |
 | F | Response TIDAK mengandung teks "Menyeduh", modal berisi "Menyimpan..." |
 | G | Dropdown Ruangan modal menampilkan nama+kapasitas; response error mengandung pesan spesifik per field (bukan cuma 1 pesan umum) |
-| H | Modal Duplikat bisa memuat Kelas Sumber dari Tahun Ajaran BERBEDA dari yang sedang difilter; `duplicate()` backend tetap menolak kalau lintas LEMBAGA (regresi test existing "rejects...") |
+| H | Modal Duplikat bisa memuat Kelas Sumber dari Tahun Ajaran BERBEDA dari yang sedang difilter; dropdown Tahun Ajaran Sumber juga dapat suffix lembaga saat agregat (konsisten Item A); kelas TUJUAN tidak muncul sebagai opsi Kelas Sumber; `duplicate()` backend tetap menolak kalau lintas LEMBAGA (regresi test existing "rejects...") |
