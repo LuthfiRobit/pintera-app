@@ -316,7 +316,9 @@ Deteksi apakah ADA filter aktif (selain default status=Diajukan untuk tab verifi
         <td colspan="8" class="px-5 py-12 text-center text-gray-500">
             <x-icon name="description" class="mx-auto h-10 w-10 text-gray-300 mb-2" />
             @php
-                $adaFilterAktif = $search || $semesterId || $kelasId || $mapelId || $kurikulum || ($tahunAjaranId && $tahunAjaranId != ($tahunAjaranAktif->id ?? null));
+                $adaFilterAktif = $search || $semesterId || $kelasId || $mapelId || $kurikulum
+                    || ($tahunAjaranId && $tahunAjaranId != ($tahunAjaranAktif->id ?? null))
+                    || ($tab === 'verifikasi' && $status !== \App\Domains\Akademik\Enums\StatusRpp::Diajukan->value);
             @endphp
             <p class="font-semibold text-gray-700">
                 @if ($tab === 'saya' && ! auth()->user()->guru)
@@ -342,6 +344,8 @@ Deteksi apakah ADA filter aktif (selain default status=Diajukan untuk tab verifi
 ```
 
 (Blok `@if ($tab === 'saya' && ! auth()->user()->guru)` di sini SAMA dengan Item A poin 2 — kalau Item A dan D dikerjakan bersamaan, gabungkan jadi satu edit, JANGAN dobel.)
+
+**Catatan penting soal `$adaFilterAktif`**: kondisi terakhir (`$tab === 'verifikasi' && $status !== StatusRpp::Diajukan->value`) WAJIB ada. `$status` yang diterima view SUDAH HASIL AKHIR dari `ListRppAction` (kalau awalnya `null`, sudah di-default jadi `'diajukan'` oleh Action sebelum sampai ke view) — TIDAK ADA cara membedakan "auto-default" vs "user pilih Diajukan sendiri" dari view, dan memang TIDAK PERLU dibedakan (keduanya sama-sama wajar dianggap "masih default Inbox"). Yang WAJIB dideteksi adalah kalau `$status` **BUKAN** `'diajukan'` (user pilih status lain atau "Semua Status" secara eksplisit) — itu artinya user SUDAH keluar dari default Inbox, jadi hasil kosong bukan berarti "semua sudah ditinjau".
 
 **PENTING — gap nyata yang WAJIB diperbaiki lebih dulu**: `_daftar.blade.php` dirender di KEDUA cabang `index()` (ajax dan halaman penuh), tapi cabang ajax SAAT INI cuma mengirim 3 variabel:
 
@@ -422,17 +426,19 @@ menjadi:
 
 ### Masalah
 
-`index.blade.php` baris ±38-91, 4 kartu KPI ("Total Dokumen", "Menunggu Review", "Telah Disetujui", "Perlu Perbaikan") dihitung dari `$stats` (`ListRppAction`) yang HANYA di-scope oleh lembaga — TIDAK oleh tab aktif atau filter tabel di bawahnya. Posisinya tepat di atas kontrol filter, berisiko user kira angka itu merefleksikan hasil filter yang sedang aktif.
+**KOREKSI dari draf pertama spec ini**: awalnya saya klaim `$stats` "tidak ikut tab aktif sama sekali" — SALAH setelah dicek ulang. `ListRppAction` (baris 34-56) menghitung `$stats` dari `$baseQuery`, dan `$baseQuery` SUDAH kena filter `where('guru_id', ...)` untuk tab `saya` SEBELUM `$stats` dihitung — jadi 4 kartu KPI MEMANG berbeda antara tab "Saya" (scoped ke RPP sendiri) dan tab "Verifikasi" (lembaga penuh, tanpa filter status apa pun termasuk default Diajukan — 4 kartu justru breakdown PER status, jadi wajar tidak ikut filter status).
+
+Yang BENAR jadi masalah: `$stats` TIDAK ikut filter KONTROL (search, Tahun Ajaran, Semester, Kelas, Mata Pelajaran, Kurikulum) yang ada di form filter tepat di bawahnya — filter-filter itu HANYA diterapkan ke `$query` (dipakai tabel), bukan ke `$baseQuery` (dipakai stats). `index.blade.php` baris ±38-91, 4 kartu KPI diposisikan tepat di atas kontrol filter tsb, berisiko user kira angka itu ikut berubah saat filter kontrol diisi.
 
 ### Perbaikan
 
 Tambahkan keterangan kecil di bawah judul section KPI menjelaskan cakupannya. `index.blade.php`, sebelum baris ±39 (`<div class="grid grid-cols-1 gap-3 sm:grid-cols-4">`):
 
 ```blade
-<p class="text-[11px] text-gray-400 -mb-1">Ringkasan seluruh dokumen di lembaga ini (tidak berubah mengikuti filter tabel di bawah).</p>
+<p class="text-[11px] text-gray-400 -mb-1">Ringkasan {{ $tab === 'saya' ? 'dokumen Anda' : 'seluruh dokumen di lembaga ini' }} (tidak berubah mengikuti filter pencarian/Tahun Ajaran/Semester/Kelas/Mapel/Kurikulum di bawah).</p>
 ```
 
-(Perbaikan minimal murni tambahan teks, tidak mengubah query/struktur — mengubah `$stats` agar ikut filter tabel adalah perubahan produk yang lebih besar dan tidak diminta di sini.)
+(Perbaikan minimal murni tambahan teks, tidak mengubah query/struktur — mengubah `$stats` agar ikut filter kontrol adalah perubahan produk yang lebih besar dan tidak diminta di sini. Teks dibuat kondisional per tab supaya akurat — bukan klaim generik "seluruh dokumen lembaga" yang salah untuk tab Saya.)
 
 ---
 
@@ -462,6 +468,18 @@ private function scopeHeaderData(Request $request): array
 ```
 
 Dipanggil di KEDUA return `view(...)` di `index()` (baik cabang ajax `_daftar` maupun halaman penuh `index`) — sama seperti pola yang sudah diterapkan di Jadwal Pelajaran (Item A spec itu).
+
+**Urutan pengerjaan penting**: kalau Item D (yang menambah variabel ke `compact()` cabang ajax) dan Item G (yang menambah `scopeHeaderData()` ke cabang yang SAMA) dikerjakan sebagai task terpisah, pastikan hasil AKHIR cabang ajax menggabungkan KEDUANYA, bukan salah satu menimpa yang lain:
+
+```php
+if ($request->ajax()) {
+    return view('portals.lembaga.akademik.rpp._daftar', array_merge(compact(
+        'rppList', 'tab', 'perPage', 'search', 'tahunAjaranId', 'semesterId', 'kelasId', 'mapelId', 'kurikulum', 'tahunAjaranAktif'
+    ), $this->scopeHeaderData($request)));
+}
+```
+
+(Dipakai `array_merge(compact(...), $this->scopeHeaderData($request))` di sini KARENA `compact()` cuma bisa menerima nama variabel sederhana, sedangkan `scopeHeaderData()` mengembalikan array asosiatif dari method call — tidak bisa digabung langsung dalam satu `compact()`.)
 
 `index.blade.php` baris ±28-36, header:
 
