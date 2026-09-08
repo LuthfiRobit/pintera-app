@@ -667,6 +667,3 @@ it('uses confirmDialog() for the Duplikat button instead of submitting instantly
     $response->assertSee('confirmDialog(', false);
     $response->assertSee('Tautan kelas TIDAK ikut disalin', false);
 });
-
-
-

@@ -1,11 +1,11 @@
 <?php
 
+use App\Domains\Akademik\Models\JamPelajaran;
+use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
-use App\Domains\Akademik\Models\JamPelajaran;
 use App\Models\Kelas;
 use App\Models\Lembaga;
-use App\Domains\Akademik\Models\PolaJam;
 use App\Models\Role;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -115,4 +115,3 @@ it('rejects deleting another lembaga\'s jam pelajaran with 404', function () {
 
     expect(JamPelajaran::find($jamLain->id))->not->toBeNull();
 });
-

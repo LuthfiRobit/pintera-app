@@ -54,7 +54,6 @@ class PolaJamController extends BaseController
         ]);
     }
 
-
     public function store(Request $request, CreatePolaJamAction $action): RedirectResponse
     {
         $this->authorize('pola-jam.create');
@@ -75,7 +74,6 @@ class PolaJamController extends BaseController
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dibuat.');
     }
-
 
     public function update(Request $request, PolaJam $polaJam, UpdatePolaJamAction $action): RedirectResponse
     {
