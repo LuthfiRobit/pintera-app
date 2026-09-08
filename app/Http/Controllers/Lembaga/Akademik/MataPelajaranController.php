@@ -7,9 +7,11 @@ use App\Domains\Akademik\Actions\MataPelajaran\UpdateMataPelajaranAction;
 use App\Domains\Akademik\DataTransferObjects\MataPelajaranData;
 use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Enums\KelompokMataPelajaran;
 use App\Enums\StatusMataPelajaran;
 use App\Enums\TipeMataPelajaran;
+use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +22,7 @@ use Illuminate\View\View;
 class MataPelajaranController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function index(Request $request): View
     {
@@ -78,22 +81,47 @@ class MataPelajaranController extends BaseController
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('mata-pelajaran.create');
+
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+        if ($lembagaId === null) {
+            return redirect()->route('admin.mata-pelajaran.index')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah mata pelajaran.']);
+        }
 
         return view('portals.lembaga.akademik.mata-pelajaran.create', [
             'tipeList' => TipeMataPelajaran::cases(),
             'kelompokList' => KelompokMataPelajaran::cases(),
             'statusList' => StatusMataPelajaran::cases(),
+            ...$this->scopeHeaderData($request),
         ]);
+    }
+
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+     * halaman (pola sama seperti admin/siswa/index.blade.php) -- HANYA relevan untuk aktor
+     * berscope yayasan (punya switcher lembaga).
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
     }
 
     public function store(Request $request, CreateMataPelajaranAction $action): RedirectResponse
     {
         $this->authorize('mata-pelajaran.create');
 
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan' ? session('active_lembaga_id') : $request->user()->lembaga_id;
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
         if ($lembagaId === null) {
             return back()->withErrors(['lembaga_id' => 'Pilih lembaga aktif terlebih dahulu.'])->withInput();
         }

@@ -178,3 +178,55 @@ it('does not show the PAUD note banner for a non-PAUD bentuk_pendidikan', functi
     $response->assertOk();
     $response->assertDontSee('Catatan untuk PAUD');
 });
+
+it('rejects storing a mata pelajaran when the yayasan-scoped actor\'s active_lembaga_id session is stale (belongs to a different yayasan)', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_mapel_stale_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['mata-pelajaran.create']);
+
+    $yayasanSaya = Yayasan::factory()->create();
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasanSaya->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.mata-pelajaran.store'), [
+        'kode' => 'STALE-01',
+        'nama' => 'Mapel Uji Stale',
+        'no_urut' => 1,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
+
+    $response->assertSessionHasErrors('lembaga_id');
+    expect(MataPelajaran::withoutGlobalScopes()->where('kode', 'STALE-01')->exists())->toBeFalse();
+});
+
+it('redirects back with an error when a yayasan-scoped actor opens create without an active lembaga', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.create'))
+        ->assertRedirect(route('admin.mata-pelajaran.index'))
+        ->assertSessionHasErrors('lembaga_id');
+});
+
+it('shows the create form when a yayasan-scoped actor has switched into a lembaga', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.create'))->assertOk();
+});
