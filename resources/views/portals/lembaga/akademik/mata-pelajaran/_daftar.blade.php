@@ -25,6 +25,9 @@
                     <th class="px-4 py-3 text-center w-20">No. Rapor</th>
                     <th class="px-4 py-3 w-32">Kode</th>
                     <th class="px-4 py-3">Nama Mata Pelajaran</th>
+                    @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                        <th class="px-4 py-3">Lembaga</th>
+                    @endif
                     <th class="px-4 py-3">Tipe</th>
                     <th class="px-4 py-3">Kelompok</th>
                     <th class="px-5 py-3 text-center w-28">Status</th>
@@ -52,6 +55,9 @@
                         <td class="px-4 py-3.5 font-medium text-gray-900">
                             {{ $mapel->nama }}
                         </td>
+                        @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                            <td class="px-4 py-3.5 text-xs text-gray-500">{{ $mapel->lembaga->nama ?? '-' }}</td>
+                        @endif
                         <td class="px-4 py-3.5 text-xs text-gray-600">
                             {{ $mapel->tipe->label() }}
                         </td>
@@ -68,7 +74,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colSpan="7" class="px-5 py-12 text-center text-gray-500">
+                        <td colSpan="{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? 8 : 7 }}" class="px-5 py-12 text-center text-gray-500">
                             <p class="text-sm">Belum ada mata pelajaran yang didaftarkan.</p>
                         </td>
                     </tr>
