@@ -1250,3 +1250,29 @@ it('rejects updating ruangan_id to a ruangan from another lembaga', function () 
 
     expect($jadwal->fresh()->ruangan_id)->toBeNull();
 });
+
+it('shows "(Aktif)" and the lembaga name suffix on the tahun ajaran dropdown in aggregate mode for a yayasan-scoped actor', function () {
+    Permission::firstOrCreate(['name' => 'jadwal-pelajaran.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_jadwal_ta_badge_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['jadwal-pelajaran.kelola']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Cempaka Raya']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026', 'status_aktif' => true]);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index'))
+        ->assertSee('2025/2026 (Aktif) — SD Cempaka Raya', false);
+});
+
+it('does not show the lembaga suffix on the tahun ajaran dropdown for a lembaga-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026', 'status_aktif' => true]);
+
+    $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index'))
+        ->assertSee('2025/2026 (Aktif)', false)
+        ->assertDontSee('2025/2026 (Aktif) —', false);
+});

@@ -19,6 +19,7 @@ use App\Http\Requests\Akademik\UpdateJadwalPelajaranRequest;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Scopes\TenantScope;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
@@ -41,6 +42,24 @@ class JadwalPelajaranController extends BaseController
         private readonly UpdateJadwalPelajaranAction $updateJadwalPelajaranAction,
         private readonly DuplicateJadwalAction $duplicateJadwalAction
     ) {}
+
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, dipakai utk suffix nama lembaga
+     * di dropdown Tahun Ajaran saat mode agregat -- HANYA relevan utk aktor
+     * berscope yayasan (punya switcher lembaga).
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
+    }
 
     public function index(Request $request): View|string
     {
@@ -104,11 +123,13 @@ class JadwalPelajaranController extends BaseController
                 'guruList' => $guruList,
                 'ruanganList' => $ruanganList,
                 'kelas' => $kelas,
+                'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('id')->get(),
+                ...$this->scopeHeaderData($request),
             ])->render();
         }
 
         return view('portals.lembaga.akademik.jadwal-pelajaran.index', [
-            'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
+            'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'kelasList' => $kelasList,
             'semesterList' => $semesterList,
@@ -121,6 +142,7 @@ class JadwalPelajaranController extends BaseController
             'guruList' => $guruList,
             'ruanganList' => $ruanganList,
             'kelas' => $kelas,
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
