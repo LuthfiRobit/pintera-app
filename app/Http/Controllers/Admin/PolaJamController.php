@@ -54,12 +54,6 @@ class PolaJamController extends BaseController
         ]);
     }
 
-    public function create(): View
-    {
-        $this->authorize('pola-jam.create');
-
-        return view('portals.lembaga.akademik.pola-jam.create');
-    }
 
     public function store(Request $request, CreatePolaJamAction $action): RedirectResponse
     {
@@ -82,12 +76,6 @@ class PolaJamController extends BaseController
         return redirect()->route('admin.pola-jam.index')->with('status', 'Pola jam berhasil dibuat.');
     }
 
-    public function edit(PolaJam $polaJam): View
-    {
-        $this->authorize('pola-jam.edit');
-
-        return view('portals.lembaga.akademik.pola-jam.edit', ['polaJam' => $polaJam]);
-    }
 
     public function update(Request $request, PolaJam $polaJam, UpdatePolaJamAction $action): RedirectResponse
     {

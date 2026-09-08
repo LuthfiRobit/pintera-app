@@ -52,9 +52,7 @@ Route::post('semester', [SemesterController::class, 'store'])->name('semester.st
 Route::patch('semester/{semester}/activate', [SemesterController::class, 'activate'])->name('semester.activate');
 
 Route::get('pola-jam', [PolaJamController::class, 'index'])->name('pola-jam.index');
-Route::get('pola-jam/create', [PolaJamController::class, 'create'])->name('pola-jam.create');
 Route::post('pola-jam', [PolaJamController::class, 'store'])->name('pola-jam.store');
-Route::get('pola-jam/{polaJam}/edit', [PolaJamController::class, 'edit'])->name('pola-jam.edit');
 Route::put('pola-jam/{polaJam}', [PolaJamController::class, 'update'])->name('pola-jam.update');
 Route::delete('pola-jam/{polaJam}', [PolaJamController::class, 'destroy'])->name('pola-jam.destroy');
 Route::put('pola-jam/{polaJam}/assign-kelas', [PolaJamController::class, 'assignKelas'])->name('pola-jam.assign-kelas');
