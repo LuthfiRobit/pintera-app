@@ -145,16 +145,17 @@ class KelasController extends BaseController
         return redirect()->route('admin.kelas.index')->with('status', 'Kelas berhasil disimpan.');
     }
 
-    public function edit(Kelas $kelas): View
+    public function edit(Request $request, Kelas $kelas): View
     {
         $this->authorize('kelas.edit');
 
         return view('admin.kelas.edit', [
             'kelas' => $kelas,
-            'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
-            'guruList' => Guru::with('person')->orderByNama()->get(),
-            'polaJamList' => PolaJam::orderBy('nama')->get(),
+            'tahunAjaranList' => TahunAjaran::withoutGlobalScope(TenantScope::class)->where('lembaga_id', $kelas->lembaga_id)->orderByDesc('tanggal_mulai')->get(),
+            'guruList' => Guru::withoutGlobalScope(TenantScope::class)->where('lembaga_id', $kelas->lembaga_id)->with('person')->orderByNama()->get(),
+            'polaJamList' => PolaJam::withoutGlobalScope(TenantScope::class)->where('lembaga_id', $kelas->lembaga_id)->orderBy('nama')->get(),
             'faseList' => Fase::orderBy('urutan')->get(),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 

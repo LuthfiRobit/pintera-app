@@ -284,3 +284,35 @@ it('only offers tahun ajaran belonging to the active lembaga in the create dropd
     });
 });
 
+it('only offers tahun ajaran and guru belonging to the kelas lembaga in the edit dropdown, even in "Semua Lembaga" mode', function () {
+    Permission::firstOrCreate(['name' => 'kelas.edit', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.edit']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $taA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id, 'nama' => '2026/2027 A']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id, 'nama' => '2026/2027 B']);
+    $guruA = Guru::factory()->create(['lembaga_id' => $lembagaA->id]);
+    Guru::factory()->create([
+        'user_id' => User::factory()->create(['lembaga_id' => $lembagaB->id])->id,
+        'lembaga_id' => $lembagaB->id,
+        'nik' => '3201234567894444',
+        'nama' => 'Guru Lembaga B Edit',
+        'jenis_kelamin' => 'L',
+        'jenis_ptk' => 'guru_kelas',
+        'status_kepegawaian' => 'GTY',
+    ]);
+    $kelas = Kelas::create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $taA->id, 'nama' => '6A']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    // TIDAK switch ke lembaga manapun -- mode "Semua Lembaga" aktif.
+
+    $response = $this->actingAs($manager)->get(route('admin.kelas.edit', $kelas))->assertOk();
+    $response->assertViewHas('tahunAjaranList', fn ($list) => $list->count() === 1 && $list->first()->id === $taA->id);
+    $response->assertViewHas('guruList', fn ($list) => $list->count() === 1 && $list->first()->id === $guruA->id);
+});
+
+
