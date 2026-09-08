@@ -380,13 +380,11 @@ it('does not show the aggregate note for a lembaga-scoped actor', function () {
         ->assertDontSee('tidak menyempit walau Anda mengganti lembaga aktif', false);
 });
 
-it('shows the correct tahun ajaran name in the index for an assignment belonging to a different lembaga than the one currently active', function () {
+it('shows the correct tahun ajaran name in the index for an assignment in aggregate mode', function () {
     $managerA = actingAsYayasanKurikulumManager();
-    $lembagaAktif = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'TK']);
-    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'SD']);
-    $taLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id, 'nama' => '2030/2031']);
-    KurikulumAssignment::create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $taLain->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
-    session(['active_lembaga_id' => $lembagaAktif->id]);
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2030/2031']);
+    KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
 
     $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))->assertSee('2030/2031');
 });
@@ -472,6 +470,40 @@ it('renders the restyled Aksi dropdown with explicit action labels for a managea
         ->assertSee('Edit Assignment')
         ->assertSee('Hapus Assignment');
 });
+
+it('narrows the index to the active lembaga plus global assignments when a yayasan-scoped actor has switched into a lembaga', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $lembagaAktif = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'SD']);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'TK']);
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembagaAktif->id]);
+    $taLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $assignmentAktif = KurikulumAssignment::create(['lembaga_id' => $lembagaAktif->id, 'tahun_ajaran_id' => $taAktif->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+    $assignmentLain = KurikulumAssignment::create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $taLain->id, 'bentuk_pendidikan' => 'TK', 'tingkat' => null, 'kurikulum' => 'merdeka']);
+    session(['active_lembaga_id' => $lembagaAktif->id]);
+
+    $response = $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))->assertOk();
+
+    $response->assertViewHas('assignmentList', function ($list) use ($assignmentAktif, $assignmentLain) {
+        return $list->contains('id', $assignmentAktif->id) && ! $list->contains('id', $assignmentLain->id);
+    });
+});
+
+it('still shows all own-yayasan assignments in aggregate mode (no active lembaga)', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id]);
+    $taA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $taB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $assignmentA = KurikulumAssignment::create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $taA->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+    $assignmentB = KurikulumAssignment::create(['lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $taB->id, 'bentuk_pendidikan' => 'TK', 'tingkat' => null, 'kurikulum' => 'merdeka']);
+
+    $response = $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))->assertOk();
+
+    $response->assertViewHas('assignmentList', function ($list) use ($assignmentA, $assignmentB) {
+        return $list->contains('id', $assignmentA->id) && $list->contains('id', $assignmentB->id);
+    });
+});
+
 
 
 

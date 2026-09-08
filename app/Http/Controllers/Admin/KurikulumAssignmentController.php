@@ -35,13 +35,20 @@ class KurikulumAssignmentController extends BaseController
 
         $actor = $request->user();
         $scope = $actor->widestScopeLevel();
+        $activeLembagaId = $scope === 'yayasan' ? $this->resolveActiveLembagaId($actor) : null;
         $query = KurikulumAssignment::with(['lembaga', 'tahunAjaran' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)]);
 
         if ($scope === 'yayasan') {
-            $lembagaIds = Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id');
-            $query->where(function ($q) use ($lembagaIds) {
-                $q->whereNull('lembaga_id')->orWhereIn('lembaga_id', $lembagaIds);
-            });
+            if ($activeLembagaId !== null) {
+                $query->where(function ($q) use ($activeLembagaId) {
+                    $q->whereNull('lembaga_id')->orWhere('lembaga_id', $activeLembagaId);
+                });
+            } else {
+                $lembagaIds = Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id');
+                $query->where(function ($q) use ($lembagaIds) {
+                    $q->whereNull('lembaga_id')->orWhereIn('lembaga_id', $lembagaIds);
+                });
+            }
         } elseif ($scope !== 'platform') {
             $query->where(function ($q) use ($actor) {
                 $q->whereNull('lembaga_id')->orWhere('lembaga_id', $actor->lembaga_id);
@@ -56,6 +63,7 @@ class KurikulumAssignmentController extends BaseController
         return view('admin.kurikulum-assignment.index', [
             'assignmentList' => $assignmentList,
             'isYayasan' => $scope === 'yayasan',
+            'activeLembaga' => $activeLembagaId ? Lembaga::find($activeLembagaId) : null,
         ]);
     }
 
