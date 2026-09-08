@@ -57,15 +57,26 @@
                 </div>
             @endif
 
-            <div class="sm:col-span-6">
-                <x-input-label value="Bentuk Pendidikan" />
-                <select name="bentuk_pendidikan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                    @foreach ($bentukPendidikanList as $bp)
-                        <option value="{{ $bp->value }}" @selected($val('bentuk_pendidikan') === $bp->value)>{{ $bp->value }}</option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('bentuk_pendidikan')" class="mt-1.5" />
-            </div>
+            @if ($isPlatform ?? false)
+                <div class="sm:col-span-6">
+                    <x-input-label value="Bentuk Pendidikan" />
+                    <select name="bentuk_pendidikan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        @foreach ($bentukPendidikanList as $bp)
+                            <option value="{{ $bp->value }}" @selected($val('bentuk_pendidikan') === $bp->value)>{{ $bp->value }}</option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('bentuk_pendidikan')" class="mt-1.5" />
+                </div>
+            @else
+                @php
+                    $lembagaBentukPendidikan = $assignment ? $assignment->lembaga?->bentuk_pendidikan : ($activeLembaga->bentuk_pendidikan ?? null);
+                @endphp
+                <div class="sm:col-span-6">
+                    <x-input-label value="Bentuk Pendidikan" />
+                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $lembagaBentukPendidikan }} <span class="text-gray-400">(mengikuti bentuk pendidikan lembaga, tidak bisa diubah)</span></p>
+                    <input type="hidden" name="bentuk_pendidikan" value="{{ $lembagaBentukPendidikan }}">
+                </div>
+            @endif
 
             <div class="sm:col-span-6">
                 <x-input-label value="Tingkat (kosongkan = berlaku semua tingkat)" />

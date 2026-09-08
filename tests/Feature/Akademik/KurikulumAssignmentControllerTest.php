@@ -410,4 +410,25 @@ it('shows tahun ajaran options in the create dropdown for a platform-scoped acto
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))->assertSee('2032/2033');
 });
 
+it('shows a locked (read-only) bentuk pendidikan on the create page for a non-platform actor, not a free dropdown', function () {
+    $manager = actingAsYayasanKurikulumManager();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $manager->yayasan_id, 'bentuk_pendidikan' => 'SD']);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))->assertOk();
+    $response->assertSee('SD');
+    $response->assertDontSee('<select name="bentuk_pendidikan"', false);
+});
+
+it('shows a locked (read-only) bentuk pendidikan on the edit page for a non-platform actor, not a free dropdown', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'TK']);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $assignment = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'TK', 'tingkat' => null, 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment))->assertOk();
+    $response->assertDontSee('<select name="bentuk_pendidikan"', false);
+});
+
+
 
