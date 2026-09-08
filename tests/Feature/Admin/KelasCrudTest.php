@@ -379,6 +379,61 @@ it('shows the owning lembaga name badge on the edit page even in "Semua Lembaga"
     $this->actingAs($manager)->get(route('admin.kelas.edit', $kelas))->assertSee('SMP Cakrawala Ilmu');
 });
 
+it('shows a Lembaga column with each lembaga name in the kelas table during aggregate mode', function () {
+    Permission::firstOrCreate(['name' => 'kelas.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Melati Satu']);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Melati Dua']);
+    $taA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $taB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    Kelas::create(['lembaga_id' => $lembagaA->id, 'tahun_ajaran_id' => $taA->id, 'nama' => '1A']);
+    Kelas::create(['lembaga_id' => $lembagaB->id, 'tahun_ajaran_id' => $taB->id, 'nama' => '1A']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $response = $this->actingAs($manager)->get(route('admin.kelas.index'))->assertOk();
+    $response->assertSee('SD Melati Satu');
+    $response->assertSee('SD Melati Dua');
+});
+
+it('hides the Lembaga column once a lembaga is switched into', function () {
+    Permission::firstOrCreate(['name' => 'kelas.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    Kelas::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '1A']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.kelas.index'))->assertDontSee('>Lembaga<', false);
+});
+
+it('shows the lembaga name suffix in the Tahun Ajaran filter dropdown during aggregate mode', function () {
+    Permission::firstOrCreate(['name' => 'kelas.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA Pelita Bangsa']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id, 'nama' => '2026/2027']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.kelas.index'))
+        ->assertSee('2026/2027 — SMA Pelita Bangsa', false);
+});
+
+
 
 
 

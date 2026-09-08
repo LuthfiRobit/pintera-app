@@ -26,6 +26,9 @@
                 <tr class="text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                     <th class="sticky left-0 z-10 bg-white px-5 py-3">Aksi</th>
                     <th class="px-5 py-3">Nama Kelas</th>
+                    @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                        <th class="px-5 py-3">Lembaga</th>
+                    @endif
                     <th class="px-5 py-3">Tahun Ajaran</th>
                     <th class="px-5 py-3">Wali Kelas</th>
                 </tr>
@@ -49,6 +52,9 @@
                                 <span class="ml-1 text-xs font-normal text-gray-400">(Tingkat {{ $kelas->tingkat }})</span>
                             @endif
                         </td>
+                        @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                            <td class="px-5 py-3.5 text-gray-500">{{ $kelas->lembaga->nama ?? '-' }}</td>
+                        @endif
                         <td class="px-5 py-3.5 text-gray-600">
                             {{ $kelas->tahunAjaran->nama }}
                             @if ($kelas->tahunAjaran->status_aktif)
@@ -67,7 +73,7 @@
 
                 @if ($kelasList->isEmpty())
                     <tr>
-                        <td colspan="4" class="px-5 py-10 text-center text-gray-500">
+                        <td colspan="{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? 5 : 4 }}" class="px-5 py-10 text-center text-gray-500">
                             @if (request()->anyFilled(['search', 'tahun_ajaran_id']))
                                 Tidak ada kelas yang cocok dengan filter ini.
                             @else

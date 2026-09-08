@@ -99,7 +99,7 @@
                             <option value="">Semua Tahun Ajaran</option>
                             @foreach ($tahunAjaranList as $ta)
                                 <option value="{{ $ta->id }}" @selected(request('tahun_ajaran_id') == $ta->id)>
-                                    {{ $ta->nama }}{{ $ta->status_aktif ? ' (Aktif)' : '' }}
+                                    {{ $ta->nama }}{{ $ta->status_aktif ? ' (Aktif)' : '' }}{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? ' — '.($ta->lembaga->nama ?? '-') : '' }}
                                 </option>
                             @endforeach
                         </select>
