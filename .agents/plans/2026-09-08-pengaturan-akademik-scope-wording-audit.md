@@ -36,7 +36,7 @@
 **Interfaces:**
 - Produces: view `portals.lembaga.akademik.pengaturan.akademik` SELALU menerima variabel `lembagaBelumDipilih` (bool). Saat `true`: `lembaga` adalah `null`, `entriList` adalah `collect()` kosong, `bolehNasional`/`bolehKelolaHariAktif` adalah `false`. Saat `false`: perilaku identik dengan sebelumnya.
 
-- [ ] **Step 1: Ubah 2 test existing supaya gagal terhadap kode lama**
+- [x] **Step 1: Ubah 2 test existing supaya gagal terhadap kode lama**
 
 Di `tests/Feature/Admin/PengaturanAkademikControllerTest.php`, cari test (baris ±194):
 
@@ -119,12 +119,12 @@ it('shows the same in-page prompt when active_lembaga_id session is stale (belon
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="in-page prompt" --compact`
 Expected: FAIL — kode `index()` saat ini masih redirect ke `route('dashboard')`, `assertOk()` gagal (response 302).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/PengaturanAkademikController.php`, hapus import (baris 14):
 
@@ -193,17 +193,17 @@ public function index(Request $request): View
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="in-page prompt" --compact`
 Expected: FAIL LAGI di titik ini — TAPI dengan error BEDA (bukan lagi soal redirect, melainkan `assertSee('Pilih Lembaga Aktif Dulu')` gagal karena teks itu belum ada di Blade). Ini NORMAL dan DIHARAPKAN — Task 1 baru menyelesaikan sisi controller, teks empty-state-nya baru ditambahkan di Task 2. JANGAN anggap ini kegagalan Task 1; lanjut ke Task 2 sebelum menjalankan ulang test ini.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh (abaikan 2 test yang masih gagal di titik ini)**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh (abaikan 2 test yang masih gagal di titik ini)**
 
 Run: `php artisan test tests/Feature/Admin/PengaturanAkademikControllerTest.php --compact`
 Expected: SEMUA test LAIN (di luar 2 test "in-page prompt" yang baru diubah) tetap PASS — termasuk "shows the acting lembaga-scoped user's own hari_libur_mingguan..." dan "renders the pengaturan akademik page for an authorized user" (kasus normal, lembaga SUDAH aktif, TIDAK terpengaruh perubahan ini). 2 test "in-page prompt" boleh MASIH gagal di titik ini (lihat Step 4) — akan hijau setelah Task 2.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/PengaturanAkademikController.php tests/Feature/Admin/PengaturanAkademikControllerTest.php
@@ -220,12 +220,12 @@ git commit -m "fix(pengaturan-akademik): index() tidak lagi redirect ke dashboar
 **Interfaces:**
 - Consumes: `$lembagaBelumDipilih` (bool), `$lembaga` (`?Lembaga`) dari Task 1.
 
-- [ ] **Step 1: Jalankan test dari Task 1, konfirmasi masih gagal (baseline)**
+- [x] **Step 1: Jalankan test dari Task 1, konfirmasi masih gagal (baseline)**
 
 Run: `php artisan test --filter="in-page prompt" --compact`
 Expected: FAIL — `assertSee('Pilih Lembaga Aktif Dulu')` belum ketemu (teks belum ada di Blade). Ini konfirmasi baseline sebelum Step 2 di bawah, BUKAN test baru.
 
-- [ ] **Step 2: Implementasi — badge header**
+- [x] **Step 2: Implementasi — badge header**
 
 Di `resources/views/portals/lembaga/akademik/pengaturan/akademik.blade.php`, ganti (baris 10-15):
 
@@ -257,7 +257,7 @@ menjadi:
         </div>
 ```
 
-- [ ] **Step 3: Implementasi — bungkus blok tab dengan empty-state**
+- [x] **Step 3: Implementasi — bungkus blok tab dengan empty-state**
 
 Di file yang sama, cari baris pembuka blok tab:
 
@@ -301,12 +301,12 @@ Ganti jadi (tambahkan `@endif` SETELAH penutup `x-data="{ tab: ... }"` yang kedu
 
 **Verifikasi struktur WAJIB sebelum commit**: hitung ulang jumlah `<div>` pembuka vs `</div>` penutup di seluruh file — HARUS SAMA seperti sebelum edit (2 `</div>` yang sudah ada di baris 287-288 TETAP ada apa adanya, cuma ditambah 1 baris `@endif` baru setelahnya). Kalau editor/IDE punya fitur "match bracket"/"fold", pakai itu untuk memastikan tidak ada tag yang tertinggal terbuka.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="in-page prompt" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Tulis test yang gagal — badge Item 1**
+- [x] **Step 5: Tulis test yang gagal — badge Item 1**
 
 Tambahkan ke `tests/Feature/Admin/PengaturanAkademikControllerTest.php` (di akhir file):
 
@@ -323,17 +323,17 @@ it('shows the lembaga name badge in the header when an active lembaga is set', f
 });
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan gagal lalu lulus**
+- [x] **Step 6: Jalankan test, pastikan gagal lalu lulus**
 
 Run: `php artisan test --filter="lembaga name badge in the header" --compact`
 Expected: test ini kemungkinan SUDAH PASS begitu Step 2 selesai (badge sudah diimplementasikan lebih dulu di step itu). Kalau sudah PASS, itu NORMAL — Step 5 di sini murni menambahkan cakupan test permanen untuk regresi ke depan, bukan TDD murni step-demi-step untuk fitur ini (fiturnya sudah selesai di Step 2-3, test ini menyusul sebagai dokumentasi/regresi).
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/PengaturanAkademikControllerTest.php --compact`
 Expected: PASS SEMUA test di file ini.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/pengaturan/akademik.blade.php tests/Feature/Admin/PengaturanAkademikControllerTest.php
@@ -347,21 +347,21 @@ git commit -m "feat(pengaturan-akademik): badge nama lembaga + kartu empty-state
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test yang menyentuh Pengaturan Akademik & Kalender Akademik**
+- [x] **Step 1: Jalankan seluruh test yang menyentuh Pengaturan Akademik & Kalender Akademik**
 
 Run: `php artisan test --compact --filter="PengaturanAkademikControllerTest|KalenderAkademikCrudTest|CreateKalenderAkademikActionTest|KalenderAkademikTest|KalenderAkademikResolverTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan Pint pada file yang diubah**
+- [x] **Step 2: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 3: Verifikasi manual cepat via browser (opsional tapi disarankan)**
+- [x] **Step 3: Verifikasi manual cepat via browser (opsional tapi disarankan)**
 
 Login sebagai yayasan-scope TANPA switch lembaga: buka `/admin/pengaturan/akademik` — HARUS tetap di halaman ini (bukan ter-lempar ke dashboard), lihat kartu "Pilih Lembaga Aktif Dulu". Switch ke 1 lembaga lewat topbar: halaman yang sama sekarang menampilkan badge nama lembaga di header dan konten tab Hari Aktif/Kalender normal seperti sebelumnya.
 
-- [ ] **Step 4: Laporkan hasil**
+- [x] **Step 4: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — sama seperti plan-plan sebelumnya di rangkaian audit ini, kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
