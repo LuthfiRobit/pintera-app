@@ -105,7 +105,12 @@
 
                         <div class="flex items-center gap-3">
                             @can('pola-jam.create')
-                                <form action="{{ route('admin.pola-jam.duplicate', $pola) }}" method="POST" class="inline">
+                                <form action="{{ route('admin.pola-jam.duplicate', $pola) }}" method="POST" class="inline" x-data
+                                      @submit.prevent="confirmDialog(
+                                          'Duplikasi Pola Jam?',
+                                          @js('Akan membuat pola jam baru \''.$pola->nama.' (Salinan)\' berisi salinan semua '.$pola->jamPelajaran->count().' slot jam dari pola ini. Tautan kelas TIDAK ikut disalin — kelas perlu ditautkan ulang secara manual ke pola baru lewat \'Kelola Tautan\'.'),
+                                          { confirmLabel: 'Ya, Duplikasi' }
+                                      ).then(confirmed => { if (confirmed) $el.submit() })">
                                     @csrf
                                     <button type="submit"
                                             class="rounded-lg border border-brand-200 bg-brand-50/50 px-2.5 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100/70 hover:text-brand-800 transition flex items-center gap-1 shadow-2xs"

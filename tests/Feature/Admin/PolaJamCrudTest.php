@@ -654,5 +654,19 @@ it('enables the "+ Tambah Pola Jam" button for a lembaga-scoped actor', function
         ->assertDontSee('Pilih lembaga aktif lewat pengalih lembaga terlebih dahulu', false);
 });
 
+it('uses confirmDialog() for the Duplikat button instead of submitting instantly with no confirmation', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Duplikat Test']);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'senin', 'urutan' => 1]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'senin', 'urutan' => 2]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertSee('confirmDialog(', false);
+    $response->assertSee('Tautan kelas TIDAK ikut disalin', false);
+});
+
 
 
