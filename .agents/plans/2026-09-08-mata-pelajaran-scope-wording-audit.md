@@ -1,6 +1,6 @@
 # Validasi Scope Backend & Kejujuran Wording — Menu Mata Pelajaran Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Tutup celah IDOR nyata di `store()` (baca `session('active_lembaga_id')` mentah tanpa validasi ulang kepemilikan yayasan), tambah guard `create()`, perbaiki sumber `$isPaud`, dan tambah badge scope + kolom Lembaga di tabel — menu "Mata Pelajaran" belum pernah pakai `ResolveLembagaScopeTrait` sama sekali sebelum plan ini.
 
@@ -40,7 +40,7 @@
 - Produces: `MataPelajaranController::scopeHeaderData(Request $request): array` → `['isYayasan' => bool, 'activeLembaga' => ?Lembaga]`, dipakai Task 2 dan Task 3.
 - Produces: `create()` signature berubah jadi `create(Request $request): View|RedirectResponse`.
 
-- [ ] **Step 1: Tulis test yang gagal — celah A.1 (session stale)**
+- [x] **Step 1: Tulis test yang gagal — celah A.1 (session stale)**
 
 Tambahkan ke `tests/Feature/Admin/MataPelajaranCrudTest.php` (di akhir file):
 
@@ -70,12 +70,12 @@ it('rejects storing a mata pelajaran when the yayasan-scoped actor\'s active_lem
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="active_lembaga_id session is stale" --compact`
 Expected: FAIL — `store()` saat ini menerima `$lembagaLain->id` mentah dari session tanpa validasi, mata pelajaran BERHASIL tersimpan di lembaga milik yayasan LAIN (assertion `toBeFalse()` gagal karena row itu ADA).
 
-- [ ] **Step 3: Tulis test yang gagal — guard A.2 create()**
+- [x] **Step 3: Tulis test yang gagal — guard A.2 create()**
 
 Tambahkan:
 
@@ -109,12 +109,12 @@ it('shows the create form when a yayasan-scoped actor has switched into a lembag
 });
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan gagal**
+- [x] **Step 4: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="opens create without an active lembaga|switched into a lembaga" --compact`
 Expected: FAIL — test pertama gagal (`create()` saat ini SELALU `assertOk()`, tidak pernah redirect); test kedua kemungkinan sudah PASS kebetulan (normal, fokus ke test pertama).
 
-- [ ] **Step 5: Implementasi minimal**
+- [x] **Step 5: Implementasi minimal**
 
 Di `app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php`, tambah import (urutan alfabetis):
 
@@ -208,17 +208,17 @@ $lembagaId = $this->resolveActiveLembagaId($request->user());
 
 (baris `if ($lembagaId === null) { return back()->withErrors(...)->withInput(); }` yang SUDAH ADA setelahnya TIDAK berubah — tetap sama, cukup sumber `$lembagaId`-nya yang diganti).
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="active_lembaga_id session is stale|opens create without an active lembaga|switched into a lembaga" --compact`
 Expected: PASS semua 3 test.
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/MataPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk test lama "creates a mata pelajaran with full standardized educational fields" (lembaga-scope, `resolveActiveLembagaId()` mengembalikan `$actor->lembaga_id` langsung untuknya, perilaku tidak berubah).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php tests/Feature/Admin/MataPelajaranCrudTest.php
@@ -236,7 +236,7 @@ git commit -m "fix(mata-pelajaran): tutup celah IDOR store() + guard create() ta
 **Interfaces:**
 - Consumes: `scopeHeaderData()` dari Task 1.
 
-- [ ] **Step 1: Tulis test yang gagal — A.3 (isPaud untuk yayasan-scope)**
+- [x] **Step 1: Tulis test yang gagal — A.3 (isPaud untuk yayasan-scope)**
 
 Tambahkan:
 
@@ -270,12 +270,12 @@ it('does not show the PAUD note banner for a yayasan-scoped actor in "Semua Lemb
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="switched into a PAUD lembaga|Semua Lembaga.*mode" --compact`
 Expected: test pertama FAIL (`$isPaud` saat ini selalu `false` untuk yayasan-scope karena `auth()->user()->lembaga` selalu `null`); test kedua kemungkinan sudah PASS kebetulan (karena `isPaud` juga `false` di kondisi ini, walau alasannya salah) — normal, fokus ke test pertama.
 
-- [ ] **Step 3: Tulis test yang gagal — B.1 badge index()**
+- [x] **Step 3: Tulis test yang gagal — B.1 badge index()**
 
 Tambahkan:
 
@@ -300,12 +300,12 @@ it('passes isYayasan and activeLembaga to both the full index page and the ajax 
 });
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan gagal**
+- [x] **Step 4: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="both the full index page and the ajax partial" --compact`
 Expected: FAIL — kedua cabang `index()` belum mengirim `isYayasan`/`activeLembaga`.
 
-- [ ] **Step 5: Implementasi minimal**
+- [x] **Step 5: Implementasi minimal**
 
 Ganti method `index()`:
 
@@ -433,17 +433,17 @@ public function index(Request $request): View
 }
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="switched into a PAUD lembaga|Semua Lembaga.*mode|both the full index page and the ajax partial" --compact`
 Expected: PASS semua 3 test.
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/MataPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk 2 test PAUD lama (lembaga-scope) di baris 158-180 yang TETAP harus hijau (`$lembagaAktifId` untuk lembaga-scope aktor sekarang dihitung via `resolveActiveLembagaId()` yang mengembalikan `$actor->lembaga_id` langsung — hasil akhirnya SAMA seperti sebelumnya untuk kasus ini).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php tests/Feature/Admin/MataPelajaranCrudTest.php
@@ -461,7 +461,7 @@ git commit -m "fix(mata-pelajaran): isPaud dari lembaga aktif + wiring scopeHead
 **Interfaces:**
 - Consumes: `scopeHeaderData()` dari Task 1.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -492,12 +492,12 @@ it('passes isYayasan and activeLembaga to the edit view', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="passes isYayasan and activeLembaga to the edit view" --compact`
 Expected: FAIL — `edit()` belum mengirim `isYayasan`.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Ganti method `edit()`:
 
@@ -534,17 +534,17 @@ public function edit(Request $request, MataPelajaran $mataPelajaran): View
 
 (`Request $request` ditambahkan SEBELUM route-model-binding `MataPelajaran $mataPelajaran` — konsisten pola `KelasController::edit()`.)
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="passes isYayasan and activeLembaga to the edit view" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/MataPelajaranCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Lembaga/Akademik/MataPelajaranController.php tests/Feature/Admin/MataPelajaranCrudTest.php
@@ -564,7 +564,7 @@ git commit -m "feat(mata-pelajaran): wiring scopeHeaderData() ke edit()"
 **Interfaces:**
 - Consumes: `$isYayasan`, `$activeLembaga` dari Task 1/2/3.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -622,12 +622,12 @@ it('shows the owning lembaga name badge on the edit page even in "Semua Lembaga"
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="Semua Lembaga.*badge|switched lembaga name badge|owning lembaga name badge" --compact`
 Expected: FAIL — 3 test gagal, badge belum ada di ketiga halaman.
 
-- [ ] **Step 3: Implementasi minimal — index**
+- [x] **Step 3: Implementasi minimal — index**
 
 Di `resources/views/portals/lembaga/akademik/mata-pelajaran/index.blade.php`, ganti (baris ±12-19):
 
@@ -667,7 +667,7 @@ menjadi:
         </div>
 ```
 
-- [ ] **Step 4: Implementasi minimal — create**
+- [x] **Step 4: Implementasi minimal — create**
 
 Di `resources/views/portals/lembaga/akademik/mata-pelajaran/create.blade.php`, ganti (baris ±12-13):
 
@@ -691,7 +691,7 @@ menjadi:
             </div>
 ```
 
-- [ ] **Step 5: Implementasi minimal — edit**
+- [x] **Step 5: Implementasi minimal — edit**
 
 Di `resources/views/portals/lembaga/akademik/mata-pelajaran/edit.blade.php`, ganti (baris ±12-13):
 
@@ -715,17 +715,17 @@ menjadi:
             </div>
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="Semua Lembaga.*badge|switched lembaga name badge|owning lembaga name badge" --compact`
 Expected: PASS semua 3 test.
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/MataPelajaranCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/mata-pelajaran/index.blade.php resources/views/portals/lembaga/akademik/mata-pelajaran/create.blade.php resources/views/portals/lembaga/akademik/mata-pelajaran/edit.blade.php tests/Feature/Admin/MataPelajaranCrudTest.php
@@ -743,7 +743,7 @@ git commit -m "feat(mata-pelajaran): badge scope yayasan/lembaga di index, creat
 **Interfaces:**
 - Consumes: `$isYayasan`, `$activeLembaga` (Task 2), `$mapel->lembaga` (eager-loaded Task 2).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -793,12 +793,12 @@ it('hides the Lembaga column once a lembaga is switched into', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="Lembaga column" --compact`
 Expected: FAIL — test pertama gagal (kolom belum ada), test kedua kemungkinan sudah PASS kebetulan (kolom memang belum ada sama sekali) — normal, fokus ke test pertama.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/portals/lembaga/akademik/mata-pelajaran/_daftar.blade.php`, ganti header tabel (baris 22-31):
 
@@ -936,17 +936,17 @@ menjadi:
 </tbody>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="Lembaga column" --compact`
 Expected: PASS semua 2 test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/MataPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk test lama "only lists mata pelajaran belonging to the acting manager's own lembaga in index view" yang assert `assertDontSee('Mapel Lembaga B')` (row lembaga lain TETAP tidak boleh muncul untuk aktor lembaga-scope — TIDAK terpengaruh perubahan kolom Lembaga karena kolom itu HANYA muncul di mode "Semua Lembaga" untuk yayasan-scope).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/mata-pelajaran/_daftar.blade.php tests/Feature/Admin/MataPelajaranCrudTest.php
@@ -960,21 +960,21 @@ git commit -m "feat(mata-pelajaran): kolom Lembaga di tabel saat mode Semua Lemb
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test yang menyentuh Mata Pelajaran**
+- [x] **Step 1: Jalankan seluruh test yang menyentuh Mata Pelajaran**
 
 Run: `php artisan test --compact --filter="MataPelajaranCrudTest|MataPelajaranSeederTest|MataPelajaranTest|RemoveAspekPerkembanganFromMataPelajaranTipeTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan Pint pada file yang diubah**
+- [x] **Step 2: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 3: Verifikasi manual cepat via browser (opsional tapi disarankan)**
+- [x] **Step 3: Verifikasi manual cepat via browser (opsional tapi disarankan)**
 
 Login sebagai yayasan-scope dalam mode "Semua Lembaga": buka `/admin/mata-pelajaran`, cek badge "Semua Lembaga", cek kolom "Lembaga" di tabel kalau ada ≥2 mapel kode sama. Klik "Tambah Mata Pelajaran" TANPA switch lembaga dulu → redirect balik ke index dengan pesan error. Switch ke lembaga PAUD (bentuk_pendidikan KB/TPA/SPS/TK) → cek banner "Catatan untuk PAUD" MUNCUL (sebelumnya tidak pernah muncul untuk yayasan-scope). Switch ke 1 lembaga non-PAUD, klik "Tambah Mata Pelajaran" → form terbuka normal, badge selalu warna brand dengan nama lembaga.
 
-- [ ] **Step 4: Laporkan hasil**
+- [x] **Step 4: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — sama seperti plan Kelas/Tahun Ajaran, kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
