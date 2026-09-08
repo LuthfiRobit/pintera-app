@@ -41,7 +41,7 @@
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php` (di akhir file):
 
@@ -69,12 +69,12 @@ it('shows the correct tahun ajaran name on the edit page for an assignment belon
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="different lembaga than the one currently active" --compact`
 Expected: FAIL — kedua test gagal, `assertSee` tidak ketemu teks nama Tahun Ajaran (relasi `tahunAjaran` ke-scope ke `$lembagaAktif`, bukan `$lembagaLain` pemilik data sebenarnya).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, ganti (method `index()`, baris ±38):
 
@@ -103,17 +103,17 @@ menjadi:
 ]),
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="different lembaga than the one currently active" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -131,7 +131,7 @@ git commit -m "fix(kurikulum-assignment): bypass TenantScope pada relasi tahunAj
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -145,12 +145,12 @@ it('shows tahun ajaran options in the create dropdown for a platform-scoped acto
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="tahun ajaran options in the create dropdown for a platform" --compact`
 Expected: FAIL — `tahunAjaranListForScope()`'s cabang platform mengembalikan collection kosong (ter-scope ke `WHERE lembaga_id IS NULL`, TA yang dibuat test tidak match).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, ganti (method `tahunAjaranListForScope()`):
 
@@ -170,17 +170,17 @@ if ($scope === 'platform') {
 
 (Cabang `yayasan` dan cabang terakhir/lembaga-scope TIDAK berubah — SUDAH benar, lihat spec sumber untuk penjelasan kenapa.)
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="tahun ajaran options in the create dropdown for a platform" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -198,7 +198,7 @@ git commit -m "fix(kurikulum-assignment): bypass TenantScope pada dropdown Tahun
 **Interfaces:**
 - Consumes: `$activeLembaga` (mode create, SUDAH dikirim `create()`), `$assignment->lembaga` (mode edit, SUDAH ter-load).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -224,12 +224,12 @@ it('shows a locked (read-only) bentuk pendidikan on the edit page for a non-plat
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="locked \(read-only\) bentuk pendidikan" --compact`
 Expected: FAIL — kedua test gagal, dropdown `<select name="bentuk_pendidikan"` MASIH ada untuk non-platform saat ini.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/admin/kurikulum-assignment/_form.blade.php`, ganti (baris ±60-68):
 
@@ -270,17 +270,17 @@ menjadi:
 @endif
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="locked \(read-only\) bentuk pendidikan" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk test platform create/edit (TIDAK terpengaruh, cabang `@if ($isPlatform ?? false)` TIDAK berubah).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/_form.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -298,7 +298,7 @@ git commit -m "feat(kurikulum-assignment): kunci field Bentuk Pendidikan ke lemb
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -336,12 +336,12 @@ it('ignores a tampered bentuk_pendidikan value on update() for a non-platform ac
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="ignores a tampered bentuk_pendidikan" --compact`
 Expected: FAIL — kedua test gagal, `bentuk_pendidikan` yang tersimpan SAAT INI ikut nilai yang dikirim ('TK'), bukan dipaksa 'SD'.
 
-- [ ] **Step 3: Implementasi minimal — `store()`**
+- [x] **Step 3: Implementasi minimal — `store()`**
 
 Di `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, ganti (method `store()`):
 
@@ -398,7 +398,7 @@ if (KurikulumAssignment::where('lembaga_id', $lembagaId)->where('tahun_ajaran_id
 $action->executeCreate($request->user(), $bentukPendidikan, $tingkat, $validated['kurikulum'], $lembagaIdDiminta, (int) $validated['tahun_ajaran_id']);
 ```
 
-- [ ] **Step 4: Implementasi minimal — `update()`**
+- [x] **Step 4: Implementasi minimal — `update()`**
 
 Ganti (method `update()`):
 
@@ -446,17 +446,17 @@ $action->execute($kurikulumAssignment, new KurikulumAssignmentData(
 ));
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="ignores a tampered bentuk_pendidikan" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 6: Jalankan regresi test file ini secara penuh**
+- [x] **Step 6: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk test platform "platform BISA membuat assignment global"/"platform BISA membuat assignment untuk lembaga manapun lintas yayasan" (TIDAK terpengaruh, cabang override HANYA untuk non-platform).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -474,7 +474,7 @@ git commit -m "fix(kurikulum-assignment): hitung ulang bentuk_pendidikan server-
 **Interfaces:**
 - Tidak ada interface baru — murni markup, variabel yang dipakai (`$assignmentList`, `$a->canManage`, `$a->lembaga_id`, dst.) TIDAK berubah.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -491,12 +491,12 @@ it('renders the restyled Aksi dropdown with explicit action labels for a managea
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="restyled Aksi dropdown" --compact`
 Expected: FAIL — teks label saat ini masih "Edit"/"Hapus" polos, bukan "Edit Assignment"/"Hapus Assignment".
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/admin/kurikulum-assignment/index.blade.php`, ganti SELURUH blok tabel (baris ±31-86):
 
@@ -632,17 +632,17 @@ menjadi:
 
 **Verifikasi penting**: `<x-table-actions>` dan `<x-dropdown-link>` SELF-CONTAINED (masing-masing punya `x-data` sendiri) — TIDAK butuh `x-data` tambahan di parent element manapun, dikonfirmasi lewat pembacaan `resources/views/components/table-actions.blade.php` dan `dropdown-link.blade.php` saat spec ditulis.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="restyled Aksi dropdown" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk SEMUA test dari Task 1-4 di atas dan spec-spec sebelumnya (test yang mengecek `assertSee`/`assertDontSee` konten data, `assertViewHas`, URL route — TIDAK ADA yang berubah karena isinya, cuma pembungkus visual).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/index.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -656,26 +656,26 @@ git commit -m "style(kurikulum-assignment): restyle tabel index sesuai konvensi 
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test domain Kurikulum Assignment**
+- [x] **Step 1: Jalankan seluruh test domain Kurikulum Assignment**
 
 Run: `php artisan test --compact --filter="KurikulumAssignmentControllerTest|KurikulumAssignmentDestroyGuardTest|KurikulumAssignmentTest|KurikulumAssignmentResolverTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan regresi modul Kelas (konsumen `KurikulumAssignmentResolver`)**
+- [x] **Step 2: Jalankan regresi modul Kelas (konsumen `KurikulumAssignmentResolver`)**
 
 Run: `php artisan test --compact --filter="KelasCrudTest|CreateKelasActionTest"`
 Expected: PASS semua, 0 gagal — bukti perubahan di 3 spec susulan ini TIDAK berdampak ke pembuatan Kelas (Task 1/2 menyentuh cara `tahunAjaran` di-eager-load, TIDAK menyentuh `KurikulumAssignmentResolver`/`CreateKelasAction` itu sendiri).
 
-- [ ] **Step 3: Jalankan Pint pada file yang diubah**
+- [x] **Step 3: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 4: Verifikasi manual via browser (WAJIB)**
+- [x] **Step 4: Verifikasi manual via browser (WAJIB)**
 
 Login sebagai YAYASAN-scope, switch ke Lembaga A: buka index Kurikulum Assignment — baris milik Lembaga B (lembaga lain di yayasan yang sama) HARUS menampilkan nama Tahun Ajaran-nya dengan benar (bukan "-"). Klik Edit pada baris milik Lembaga B — field Tahun Ajaran di form HARUS terisi benar, field "Bentuk Pendidikan" HARUS tampil sebagai teks terkunci (bukan dropdown), sesuai `bentuk_pendidikan` Lembaga B. Klik "Tambah Assignment" — field "Bentuk Pendidikan" terkunci ke `bentuk_pendidikan` Lembaga A (lembaga aktif). Tabel index terlihat modern (kolom Aksi di kiri dengan dropdown, header uppercase).
 
-- [ ] **Step 5: Laporkan hasil**
+- [x] **Step 5: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
