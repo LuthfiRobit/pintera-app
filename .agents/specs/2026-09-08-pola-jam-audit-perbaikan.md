@@ -96,21 +96,31 @@ it('rejects deleting another lembaga\'s jam pelajaran with 404', function () {
 
 ### Perbaikan
 
-Tambah helper `scopeHeaderData()` di `PolaJamController` — pola PERSIS sama seperti `KurikulumAssignmentController`/`KaryawanController`/`GuruController`:
+**PENTING**: `PolaJamController.php` SAAT INI belum meng-`use App\Models\Lembaga;`. Tambahkan import ini di bagian atas file — tanpanya, `Lembaga::withoutGlobalScopes()->find()` di `scopeHeaderData()` di bawah akan fatal error (`Class "App\Http\Controllers\Admin\Lembaga" not found`, karena PHP mencari di namespace controller, bukan `App\Models`).
+
+Tambah helper `scopeHeaderData()` di `PolaJamController` — pola PERSIS sama seperti yang sudah dipakai `MataPelajaranController`/`KelasController`/`GuruController`/`TahunAjaranController` (dicek ulang langsung dari kode ketiganya, BUKAN `KurikulumAssignmentController` yang menghitungnya inline tanpa helper terpisah):
 
 ```php
+/**
+ * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+ * halaman (pola sama seperti admin/siswa/index.blade.php) -- HANYA relevan untuk aktor
+ * berscope yayasan (punya switcher lembaga).
+ *
+ * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+ */
 private function scopeHeaderData(Request $request): array
 {
-    $actor = $request->user();
-    $isYayasan = $actor->widestScopeLevel() === 'yayasan';
-    $activeLembagaId = $isYayasan ? $this->resolveActiveLembagaId($actor) : null;
+    $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+    $lembagaId = $this->resolveActiveLembagaId($request->user());
 
     return [
         'isYayasan' => $isYayasan,
-        'activeLembaga' => $activeLembagaId ? Lembaga::find($activeLembagaId) : null,
+        'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
     ];
 }
 ```
+
+Catatan: `resolveActiveLembagaId()` dipanggil TANPA GATE `$isYayasan` di depan (beda dari draf pertama saya) — untuk aktor lembaga-scope, method ini cuma balikin `lembaga_id` milik sendiri (harmless), lalu di-diskarding oleh kondisi `$isYayasan &&` di baris return. `withoutGlobalScopes()` pada `Lembaga::find()` juga sengaja diikutkan meski `Lembaga` model TIDAK punya global scope apapun saat ini (dicek `app/Models/Lembaga.php`) — murni ikut konvensi yang sudah dipakai seragam di 4 controller lain, bukan kebutuhan fungsional saat ini.
 
 `index()` memanggilnya dan menyebarkan hasilnya ke view (perlu `Request $request` di signature, saat ini `index(): View` tanpa parameter):
 
