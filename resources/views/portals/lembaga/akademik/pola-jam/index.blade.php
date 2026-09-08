@@ -71,9 +71,15 @@
             </div>
             <div class="flex items-center gap-4">
                 @can('pola-jam.create')
-                    <x-primary-button type="button" @click="openCreatePola()" class="shrink-0 justify-center">
-                        <span class="text-base leading-none mr-1.5">+</span> Tambah Pola Jam
-                    </x-primary-button>
+                    @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                        <x-primary-button type="button" disabled title="Pilih lembaga aktif lewat pengalih lembaga terlebih dahulu" class="shrink-0 justify-center opacity-50 cursor-not-allowed">
+                            <span class="text-base leading-none mr-1.5">+</span> Tambah Pola Jam
+                        </x-primary-button>
+                    @else
+                        <x-primary-button type="button" @click="openCreatePola()" class="shrink-0 justify-center">
+                            <span class="text-base leading-none mr-1.5">+</span> Tambah Pola Jam
+                        </x-primary-button>
+                    @endif
                 @endcan
                 <p class="hidden sm:block text-sm text-gray-500">
                     Akademik <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Pola Jam</b>

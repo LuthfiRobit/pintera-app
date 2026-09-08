@@ -630,4 +630,29 @@ it('hides the per-card lembaga pill (keeping only the single header badge mentio
     $response->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
 });
 
+it('disables the "+ Tambah Pola Jam" button when a yayasan-scoped actor has not switched into a lembaga', function () {
+    Permission::firstOrCreate(['name' => 'pola-jam.view', 'guard_name' => 'web']);
+    Permission::firstOrCreate(['name' => 'pola-jam.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_disabled_btn_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.view', 'pola-jam.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.pola-jam.index'))
+        ->assertSee('Pilih lembaga aktif lewat pengalih lembaga terlebih dahulu', false);
+});
+
+it('enables the "+ Tambah Pola Jam" button for a lembaga-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.pola-jam.index'))
+        ->assertSee('openCreatePola()', false)
+        ->assertDontSee('Pilih lembaga aktif lewat pengalih lembaga terlebih dahulu', false);
+});
+
+
 
