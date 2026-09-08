@@ -1301,3 +1301,19 @@ it('includes status_aktif in the opsi() endpoint semester payload', function () 
 
     $response->assertOk()->assertJsonFragment(['status_aktif' => true]);
 });
+
+it('shows a read-only kelas and semester context banner inside the add/edit slot modal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '4A']);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertSee('Kelas <strong class="font-semibold text-gray-800">4A</strong>', false)
+        ->assertSee('Semester <strong class="font-semibold text-gray-800">Ganjil</strong>', false);
+});

@@ -24,6 +24,19 @@
             </button>
         </div>
 
+        @if (isset($kelas) && $kelas)
+            <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3.5 py-2.5 text-xs text-gray-600 border border-gray-200">
+                <span class="flex items-center gap-1.5">
+                    <x-icon name="class" class="h-3.5 w-3.5 text-gray-400" />
+                    Kelas <strong class="font-semibold text-gray-800">{{ $kelas->nama }}</strong>
+                </span>
+                <span class="flex items-center gap-1.5">
+                    <x-icon name="event" class="h-3.5 w-3.5 text-gray-400" />
+                    Semester <strong class="font-semibold text-gray-800">{{ $semesterList->firstWhere('id', $semesterId)?->nama ?? '—' }}</strong>
+                </span>
+            </div>
+        @endif
+
         @if (isset($jamPelajaranPerHari) && $jamPelajaranPerHari->isEmpty())
             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-warning-200 bg-warning-50 p-5 text-sm text-warning-700">
                 <x-icon name="warning" class="mt-0.5 h-5 w-5 shrink-0 text-warning-500" />
