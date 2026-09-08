@@ -118,6 +118,15 @@ class KurikulumAssignmentController extends BaseController
 
         $lembagaId = $this->resolveLembagaId($request->user(), $lembagaIdDiminta);
 
+        // Non-platform: bentuk_pendidikan SELALU mengikuti bentuk_pendidikan milik lembaga tujuan --
+        // nilai dari hidden input form TIDAK dipercaya begitu saja, dihitung ulang di server supaya
+        // tidak bisa dimanipulasi lewat devtools untuk membuat kombinasi yang mustahil terpakai
+        // CreateKelasAction (yang selalu memakai $lembaga->bentuk_pendidikan, bukan pilihan bebas).
+        $bentukPendidikan = $validated['bentuk_pendidikan'];
+        if ($request->user()->widestScopeLevel() !== 'platform') {
+            $bentukPendidikan = Lembaga::find($lembagaId)?->bentuk_pendidikan ?? $bentukPendidikan;
+        }
+
         if ($lembagaId !== null) {
             $tahunAjaranValid = TahunAjaran::withoutGlobalScope(TenantScope::class)
                 ->whereKey($validated['tahun_ajaran_id'])
@@ -129,11 +138,11 @@ class KurikulumAssignmentController extends BaseController
             }
         }
 
-        if (KurikulumAssignment::where('lembaga_id', $lembagaId)->where('tahun_ajaran_id', $validated['tahun_ajaran_id'])->where('bentuk_pendidikan', $validated['bentuk_pendidikan'])->where('tingkat', $tingkat)->exists()) {
+        if (KurikulumAssignment::where('lembaga_id', $lembagaId)->where('tahun_ajaran_id', $validated['tahun_ajaran_id'])->where('bentuk_pendidikan', $bentukPendidikan)->where('tingkat', $tingkat)->exists()) {
             return back()->withErrors(['bentuk_pendidikan' => 'Sudah ada assignment kurikulum untuk kombinasi tahun ajaran, jenjang, dan tingkat ini. Edit baris yang ada, jangan buat duplikat.'])->withInput();
         }
 
-        $action->executeCreate($request->user(), $validated['bentuk_pendidikan'], $tingkat, $validated['kurikulum'], $lembagaIdDiminta, (int) $validated['tahun_ajaran_id']);
+        $action->executeCreate($request->user(), $bentukPendidikan, $tingkat, $validated['kurikulum'], $lembagaIdDiminta, (int) $validated['tahun_ajaran_id']);
 
         return redirect()->route('admin.kurikulum-assignment.index')->with('status', 'Assignment kurikulum berhasil disimpan.');
     }
@@ -164,12 +173,20 @@ class KurikulumAssignmentController extends BaseController
         $validated = $request->validated();
         $tingkat = ($validated['tingkat'] ?? '') !== '' ? $validated['tingkat'] : null;
 
-        if (KurikulumAssignment::where('id', '!=', $kurikulumAssignment->id)->where('lembaga_id', $kurikulumAssignment->lembaga_id)->where('tahun_ajaran_id', $kurikulumAssignment->tahun_ajaran_id)->where('bentuk_pendidikan', $validated['bentuk_pendidikan'])->where('tingkat', $tingkat)->exists()) {
+        // Sama seperti store() -- non-platform TIDAK BISA mengubah bentuk_pendidikan menjauh dari
+        // bentuk_pendidikan lembaga pemilik assignment ini (lembaga_id sendiri immutable, dijamin
+        // authorizeExistingAssignmentScope() di atas method ini).
+        $bentukPendidikan = $validated['bentuk_pendidikan'];
+        if ($request->user()->widestScopeLevel() !== 'platform') {
+            $bentukPendidikan = Lembaga::find($kurikulumAssignment->lembaga_id)?->bentuk_pendidikan ?? $bentukPendidikan;
+        }
+
+        if (KurikulumAssignment::where('id', '!=', $kurikulumAssignment->id)->where('lembaga_id', $kurikulumAssignment->lembaga_id)->where('tahun_ajaran_id', $kurikulumAssignment->tahun_ajaran_id)->where('bentuk_pendidikan', $bentukPendidikan)->where('tingkat', $tingkat)->exists()) {
             return back()->withErrors(['bentuk_pendidikan' => 'Sudah ada assignment kurikulum untuk kombinasi tahun ajaran, jenjang, dan tingkat ini. Edit baris yang ada, jangan buat duplikat.'])->withInput();
         }
 
         $action->execute($kurikulumAssignment, new KurikulumAssignmentData(
-            bentukPendidikan: $validated['bentuk_pendidikan'],
+            bentukPendidikan: $bentukPendidikan,
             tingkat: $tingkat,
             kurikulum: $validated['kurikulum'],
             lembagaId: $kurikulumAssignment->lembaga_id,

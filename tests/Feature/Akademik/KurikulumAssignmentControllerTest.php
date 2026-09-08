@@ -430,5 +430,38 @@ it('shows a locked (read-only) bentuk pendidikan on the edit page for a non-plat
     $response->assertDontSee('<select name="bentuk_pendidikan"', false);
 });
 
+it('ignores a tampered bentuk_pendidikan value on store() for a non-platform actor, forcing the lembaga\'s own value', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($managerA)->post(route('admin.kurikulum-assignment.store'), [
+        'tahun_ajaran_id' => $ta->id,
+        'bentuk_pendidikan' => 'TK',
+        'tingkat' => null,
+        'kurikulum' => 'merdeka',
+    ])->assertRedirect(route('admin.kurikulum-assignment.index'));
+
+    $assignment = KurikulumAssignment::where('tahun_ajaran_id', $ta->id)->first();
+    expect($assignment->bentuk_pendidikan)->toBe('SD');
+});
+
+it('ignores a tampered bentuk_pendidikan value on update() for a non-platform actor, forcing the lembaga\'s own value', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $assignment = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
+
+    $this->actingAs($manager)->put(route('admin.kurikulum-assignment.update', $assignment), [
+        'bentuk_pendidikan' => 'TK',
+        'tingkat' => null,
+        'kurikulum' => 'merdeka',
+    ])->assertRedirect(route('admin.kurikulum-assignment.index'));
+
+    expect($assignment->fresh()->bentuk_pendidikan)->toBe('SD');
+});
+
+
 
 
