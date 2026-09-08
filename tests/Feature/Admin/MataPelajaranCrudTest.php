@@ -230,3 +230,50 @@ it('shows the create form when a yayasan-scoped actor has switched into a lembag
 
     $this->actingAs($manager)->get(route('admin.mata-pelajaran.create'))->assertOk();
 });
+
+it('shows the PAUD note banner for a yayasan-scoped actor switched into a PAUD lembaga', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'))
+        ->assertSee('Catatan untuk PAUD');
+});
+
+it('does not show the PAUD note banner for a yayasan-scoped actor in "Semua Lembaga" mode', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'))
+        ->assertDontSee('Catatan untuk PAUD');
+});
+
+it('passes isYayasan and activeLembaga to both the full index page and the ajax partial', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    $this->actingAs($manager);
+
+    $this->get(route('admin.mata-pelajaran.index'))->assertOk()
+        ->assertViewHas('isYayasan', true)
+        ->assertViewHas('activeLembaga', null);
+
+    $this->get(route('admin.mata-pelajaran.index'), ['X-Requested-With' => 'XMLHttpRequest'])->assertOk()
+        ->assertViewHas('isYayasan', true)
+        ->assertViewHas('activeLembaga', null);
+});

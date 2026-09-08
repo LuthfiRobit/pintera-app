@@ -30,7 +30,7 @@ class MataPelajaranController extends BaseController
 
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
-        $query = MataPelajaran::orderBy('no_urut')->orderBy('nama');
+        $query = MataPelajaran::with('lembaga')->orderBy('no_urut')->orderBy('nama');
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -57,8 +57,11 @@ class MataPelajaranController extends BaseController
             return view('portals.lembaga.akademik.mata-pelajaran._daftar', [
                 'mataPelajaranList' => $paginated,
                 'perPage' => $perPage,
+                ...$this->scopeHeaderData($request),
             ]);
         }
+
+        $lembagaAktifId = $this->resolveActiveLembagaId($request->user());
 
         return view('portals.lembaga.akademik.mata-pelajaran.index', [
             'mataPelajaranList' => $paginated,
@@ -69,7 +72,7 @@ class MataPelajaranController extends BaseController
             'totalMapel' => MataPelajaran::count(),
             'countKurikulum' => MataPelajaran::where('tipe', TipeMataPelajaran::Mapel->value)->count(),
             'isPaud' => in_array(
-                auth()->user()->lembaga?->bentuk_pendidikan,
+                Lembaga::find($lembagaAktifId)?->bentuk_pendidikan,
                 [
                     BentukPendidikan::Kb->value,
                     BentukPendidikan::Tpa->value,
@@ -78,6 +81,7 @@ class MataPelajaranController extends BaseController
                 ],
                 true
             ),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
