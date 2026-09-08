@@ -12,6 +12,9 @@
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Pengaturan Kurikulum</h1>
                 <p class="text-xs text-gray-500">Kurikulum yang berlaku per jenjang, tingkat, dan tahun ajaran. Kelas baru mengikuti ini otomatis saat dibuat.</p>
+                @if ($isYayasan ?? false)
+                    <p class="mt-1 text-xs text-gray-400">Daftar ini selalu menampilkan SEMUA lembaga di yayasan Anda beserta assignment global — tidak menyempit walau Anda mengganti lembaga aktif lewat pengalih lembaga di pojok kanan atas.</p>
+                @endif
             </div>
             <div class="flex items-center gap-2">
                 @can('kurikulum-assignment.view')

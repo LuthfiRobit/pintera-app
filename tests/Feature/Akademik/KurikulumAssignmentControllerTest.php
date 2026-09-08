@@ -364,3 +364,18 @@ it('shows the active lembaga name on the create page for a yayasan-scoped actor'
 
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))->assertSee('SMA Bintang Persada');
 });
+
+it('shows a static note explaining the index never narrows by active lembaga for a yayasan-scoped actor', function () {
+    $manager = actingAsYayasanKurikulumManager();
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))
+        ->assertSee('tidak menyempit walau Anda mengganti lembaga aktif', false);
+});
+
+it('does not show the aggregate note for a lembaga-scoped actor', function () {
+    $lembaga = Lembaga::factory()->create();
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))
+        ->assertDontSee('tidak menyempit walau Anda mengganti lembaga aktif', false);
+});
