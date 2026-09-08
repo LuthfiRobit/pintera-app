@@ -113,7 +113,7 @@
                                                 method="POST"
                                                 action="{{ route('admin.rpp.submit', $rpp) }}"
                                                 x-data
-                                                @submit.prevent="confirmDialog('Ajukan RPP ke Kurikulum?', 'Apakah Anda yakin ingin mengajukan berkas ini untuk diverifikasi oleh Waka Kurikulum?', { confirmLabel: 'Ya, Ajukan' }).then(c => { if(c) $el.submit() })"
+                                                @submit.prevent="confirmDialog('Ajukan RPP ke Kurikulum?', 'Apakah Anda yakin ingin mengajukan berkas ini untuk diverifikasi oleh pihak kurikulum?', { confirmLabel: 'Ya, Ajukan' }).then(c => { if(c) $el.submit() })"
                                             >
                                                 @csrf
                                                 <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2 text-left text-xs font-semibold text-brand-600 hover:bg-brand-50 transition">

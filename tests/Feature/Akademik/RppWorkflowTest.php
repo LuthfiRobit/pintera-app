@@ -540,3 +540,28 @@ it('tidak menampilkan badge scope utk aktor lembaga-scope', function () {
     $this->actingAs($this->userGuru)->get(route('admin.rpp.index'))
         ->assertDontSee('Semua Lembaga');
 });
+
+it('tidak menyebut role spesifik "Waka Kurikulum" di dialog konfirmasi pengajuan RPP', function () {
+    Rpp::create([
+        'yayasan_id' => $this->yayasan->id,
+        'lembaga_id' => $this->lembaga->id,
+        'guru_id' => $this->guru->id,
+        'kelas_id' => $this->kelas->id,
+        'semester_id' => $this->semester->id,
+        'mata_pelajaran_id' => $this->mapel->id,
+        'tahun_ajaran_id' => $this->tahunAjaran->id,
+        'judul_topik' => 'Topik Uji Wording',
+        'alokasi_waktu' => '2 JP',
+        'file_path' => 'rpp/test.pdf',
+        'file_name' => 'test.pdf',
+        'file_size_bytes' => 1024,
+        'mime_type' => 'application/pdf',
+        'status' => StatusRpp::Draft,
+    ]);
+
+    $response = $this->actingAs($this->userGuru)->get(route('admin.rpp.index'));
+
+    $response->assertOk()
+        ->assertDontSee('Waka Kurikulum', false)
+        ->assertSee('diverifikasi oleh pihak kurikulum', false);
+});
