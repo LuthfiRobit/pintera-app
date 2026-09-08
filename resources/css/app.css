@@ -115,6 +115,7 @@ select.field-select {
     box-shadow: 0 20px 44px rgba(30, 58, 95, 0.14);
     font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
     font-size: 13.5px;
+    z-index: 50;
 }
 .ts-dropdown .active {
     background: theme('colors.portal.50');

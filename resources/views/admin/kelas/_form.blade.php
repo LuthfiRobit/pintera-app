@@ -11,7 +11,7 @@
 @endphp
 
 <div
-    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+    class="rounded-2xl border border-gray-200 bg-white shadow-sm"
     x-data="{
         tingkat: @js($val('tingkat')),
         faseId: @js($val('fase_id')),
@@ -32,7 +32,7 @@
     x-init="if (!faseId) fetchSuggestion()"
 >
     {{-- Card Header --}}
-    <div class="border-b border-gray-100 bg-white px-6 py-4">
+    <div class="rounded-t-2xl border-b border-gray-100 bg-white px-6 py-4">
         <p class="flex items-center gap-2 font-display text-sm font-bold text-gray-900">
             <x-icon name="group" class="h-4 w-4 text-brand-500" />
             Identitas Kelas
@@ -88,7 +88,7 @@
                 <p class="mt-1 text-xs text-gray-400">Otomatis disarankan mengikuti jenjang &amp; tingkat. Bisa diubah manual jika perlu.</p>
             </div>
 
-            <div class="sm:col-span-12" x-data="tomSelectPegawai({
+            <div class="sm:col-span-12 relative z-20" x-data="tomSelectPegawai({
                 options: @js($guruOptions),
                 oldValue: @js($val('wali_kelas_guru_id')),
                 placeholder: '— Pilih atau cari wali kelas —'
