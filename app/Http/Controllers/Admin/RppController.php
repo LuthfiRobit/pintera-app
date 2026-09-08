@@ -72,11 +72,14 @@ class RppController extends BaseController
             $this->authorize('rpp.verify');
         }
 
+        $targetLembagaId = $user->widestScopeLevel() === 'yayasan'
+            ? $this->resolveActiveLembagaId($user)
+            : $user->lembaga_id;
+
         [
             'rppList' => $rppList,
             'stats' => $stats,
             'status' => $status,
-            'targetLembagaId' => $targetLembagaId,
         ] = $this->listRppAction->execute(
             user: $user,
             tab: $tab,
@@ -88,6 +91,7 @@ class RppController extends BaseController
             status: $status,
             perPage: $perPage,
             kurikulum: $kurikulum,
+            targetLembagaId: $targetLembagaId,
         );
 
         if ($request->ajax()) {

@@ -27,7 +27,7 @@ function siapkanRppKurikulumFixture(): array
 
     $userKurikulum = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $userKurikulum->assignRole($role);
-    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['user_id' => $userKurikulum->id, 'lembaga_id' => $lembaga->id]);
 
     $kelasMerdeka = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Kelas Merdeka X', 'kurikulum' => 'merdeka']);
     $kelasK13 = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Kelas K13 Y', 'kurikulum' => 'k13']);

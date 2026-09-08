@@ -471,3 +471,29 @@ it('tidak menampilkan RPP guru lain di tab saya untuk aktor tanpa profil Guru', 
     $response->assertOk()->assertDontSee('Topik Milik Guru Lain');
 });
 
+it('menampilkan mode agregat (bukan kosong salah) di tab verifikasi utk yayasan-scope actor dengan active_lembaga_id stale', function () {
+    $roleYayasanVerify = Role::firstOrCreate(['name' => 'yayasan_rpp_index_stale_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $roleYayasanVerify->givePermissionTo(['rpp.view', 'rpp.verify']);
+
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+    $verifierYayasan = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $this->yayasan->id]);
+    $verifierYayasan->assignRole($roleYayasanVerify);
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $file = UploadedFile::fake()->create('rpp_index_stale.pdf', 200, 'application/pdf');
+    $path = $file->store("rpp/{$this->lembaga->id}", 'public');
+    Rpp::create([
+        'yayasan_id' => $this->yayasan->id, 'lembaga_id' => $this->lembaga->id, 'guru_id' => $this->guru->id,
+        'tahun_ajaran_id' => $this->tahunAjaran->id, 'semester_id' => $this->semester->id, 'kelas_id' => $this->kelas->id,
+        'mata_pelajaran_id' => $this->mapel->id, 'judul_topik' => 'Topik Uji Agregat Stale', 'alokasi_waktu' => '2 JP',
+        'file_path' => $path, 'file_name' => 'rpp_index_stale.pdf', 'file_size_bytes' => 2048,
+        'mime_type' => 'application/pdf', 'status' => StatusRpp::Diajukan,
+    ]);
+
+    $response = $this->actingAs($verifierYayasan)->get(route('admin.rpp.index', ['tab' => 'verifikasi']));
+
+    $response->assertOk()->assertSee('Topik Uji Agregat Stale');
+});
+
+

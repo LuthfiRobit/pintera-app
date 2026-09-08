@@ -6,18 +6,13 @@ namespace App\Domains\Akademik\Actions\Rpp;
 
 use App\Domains\Akademik\Enums\StatusRpp;
 use App\Domains\Akademik\Models\Rpp;
-use App\Domains\Shared\Context\TenantContext;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class ListRppAction
 {
-    public function __construct(
-        private readonly TenantContext $tenantContext,
-    ) {}
-
     /**
-     * @return array{rppList: LengthAwarePaginator, stats: array<string, int>, status: ?string, targetLembagaId: ?int}
+     * @return array{rppList: LengthAwarePaginator, stats: array<string, int>, status: ?string}
      */
     public function execute(
         User $user,
@@ -30,9 +25,8 @@ final class ListRppAction
         ?string $status,
         int $perPage,
         ?string $kurikulum = null,
+        ?int $targetLembagaId = null,
     ): array {
-        $targetLembagaId = $this->tenantContext->activeLembagaId();
-
         $baseQuery = Rpp::query();
         if ($targetLembagaId) {
             $baseQuery->where('lembaga_id', $targetLembagaId);
@@ -94,7 +88,6 @@ final class ListRppAction
             'rppList' => $rppList,
             'stats' => $stats,
             'status' => $status,
-            'targetLembagaId' => $targetLembagaId,
         ];
     }
 }
