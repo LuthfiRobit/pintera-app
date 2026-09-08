@@ -551,5 +551,3 @@ it('warns explicitly about the lack of a usage guard when deleting a global assi
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))->assertOk()
         ->assertSee('PERINGATAN', false);
 });
-
-
