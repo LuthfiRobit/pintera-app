@@ -462,6 +462,18 @@ it('ignores a tampered bentuk_pendidikan value on update() for a non-platform ac
     expect($assignment->fresh()->bentuk_pendidikan)->toBe('SD');
 });
 
+it('renders the restyled Aksi dropdown with explicit action labels for a manageable row', function () {
+    $lembaga = Lembaga::factory()->create();
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))->assertOk()
+        ->assertSee('Edit Assignment')
+        ->assertSee('Hapus Assignment');
+});
+
+
 
 
 
