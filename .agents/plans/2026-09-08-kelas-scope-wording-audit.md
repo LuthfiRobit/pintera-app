@@ -1,6 +1,6 @@
 # Validasi Scope Backend & Kejujuran Wording — Menu Kelas Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Tutup 3 gap backend (guard `create()`, scoping eksplisit dropdown `create()`/`edit()`) dan 3 gap frontend (badge scope, kolom Lembaga di tabel, label filter) di menu "Kelas" — tanpa mengubah `CreateKelasAction`/`UpdateKelasAction` yang sudah aman.
 
@@ -39,7 +39,7 @@
 - Produces: `KelasController::scopeHeaderData(Request $request): array` → `['isYayasan' => bool, 'activeLembaga' => ?Lembaga]`, dipakai Task 2 dan Task 3.
 - Produces: `create()` signature berubah jadi `create(Request $request): View|RedirectResponse`.
 
-- [ ] **Step 1: Tulis test yang gagal — guard create() tanpa lembaga aktif**
+- [x] **Step 1: Tulis test yang gagal — guard create() tanpa lembaga aktif**
 
 Tambahkan ke `tests/Feature/Admin/KelasCrudTest.php` (di akhir file):
 
@@ -73,12 +73,12 @@ it('shows the create form when a yayasan-scoped actor has switched into a lembag
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="opens create without an active lembaga|switched into a lembaga" --compact`
 Expected: FAIL — test pertama gagal (`create()` saat ini SELALU `assertOk()`, tidak pernah redirect); test kedua kemungkinan sudah PASS kebetulan (form memang render tanpa error saat ini) — fokus ke test pertama.
 
-- [ ] **Step 3: Tulis test yang gagal — scoping dropdown create()**
+- [x] **Step 3: Tulis test yang gagal — scoping dropdown create()**
 
 Tambahkan:
 
@@ -105,12 +105,12 @@ it('only offers tahun ajaran belonging to the active lembaga in the create dropd
 });
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan gagal**
+- [x] **Step 4: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="only offers tahun ajaran belonging to the active lembaga" --compact`
 Expected: FAIL — `tahunAjaranList` saat ini berisi TA dari KEDUA lembaga (ambien `TenantScope` untuk yayasan-scope dengan lembaga aktif SEBENARNYA sudah memfilter ke 1 lembaga — cek dulu apakah test ini kebetulan sudah PASS; kalau PASS, lanjut ke Step 5 tanpa khawatir, karena Step 5 tetap membuat kode LEBIH EKSPLISIT walau hasilnya sama untuk kasus lembaga aktif sudah dipilih — nilai baru scoping eksplisit terlihat di Task lain/kasus edge, bukan di test ini).
 
-- [ ] **Step 5: Implementasi minimal**
+- [x] **Step 5: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/KelasController.php`, tambah import (urutan alfabetis, sisipkan di antara import yang sudah ada):
 
@@ -184,17 +184,17 @@ private function scopeHeaderData(Request $request): array
 }
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="opens create without an active lembaga|switched into a lembaga|only offers tahun ajaran belonging to the active lembaga" --compact`
 Expected: PASS semua 3 test.
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KelasCrudTest.php --compact`
 Expected: PASS semua — termasuk test lama "offers only guru belonging to the current lembaga as wali kelas options" (baris 48-70) yang sekarang MELEWATI JALUR SCOPING EKSPLISIT baru (bukan lagi cuma kebetulan lolos via TenantScope ambien) karena aktor test itu lembaga-scope dan `resolveActiveLembagaId()` mengembalikan `$actor->lembaga_id` langsung untuknya.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KelasController.php tests/Feature/Admin/KelasCrudTest.php
@@ -212,7 +212,7 @@ git commit -m "feat(kelas): guard create() + scoping eksplisit dropdown ke lemba
 **Interfaces:**
 - Consumes: `scopeHeaderData()` dari Task 1.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -249,12 +249,12 @@ it('only offers tahun ajaran and guru belonging to the kelas lembaga in the edit
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="Semua Lembaga.*mode" --compact`
 Expected: FAIL — `tahunAjaranList`/`guruList` saat ini AGREGAT (berisi opsi dari Lembaga A DAN B, karena `TenantScope` untuk yayasan-scope tanpa lembaga aktif mengagregasi seluruh yayasan).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Ganti method `edit()`:
 
@@ -293,17 +293,17 @@ public function edit(Request $request, Kelas $kelas): View
 
 (`Request $request` ditambahkan ke signature — dibutuhkan `scopeHeaderData()` untuk Task 3's badge edit; `$kelas` tetap route-model-binding, urutan parameter `Request` sebelum model binding konsisten dengan pola `KaryawanController`/`GuruController` sesi ini).
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="Semua Lembaga.*mode" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KelasCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KelasController.php tests/Feature/Admin/KelasCrudTest.php
@@ -322,7 +322,7 @@ git commit -m "feat(kelas): scoping eksplisit dropdown edit() ke lembaga pemilik
 - Consumes: `scopeHeaderData()` dari Task 1.
 - Produces: view `admin.kelas.index` dan `admin.kelas._daftar` (KEDUA cabang ajax/non-ajax) menerima `$isYayasan`/`$activeLembaga`; `$kelasList` items punya relasi `lembaga` ter-eager-load; `$tahunAjaranList` (filter dropdown) punya relasi `lembaga` ter-eager-load.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -347,12 +347,12 @@ it('passes isYayasan and activeLembaga to both the full index page and the ajax 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="both the full index page and the ajax partial" --compact`
 Expected: FAIL — kedua cabang `index()` belum mengirim `isYayasan`/`activeLembaga`.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Ganti method `index()`:
 
@@ -432,17 +432,17 @@ public function index(Request $request): View
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="both the full index page and the ajax partial" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KelasCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KelasController.php tests/Feature/Admin/KelasCrudTest.php
@@ -462,7 +462,7 @@ git commit -m "feat(kelas): wiring scopeHeaderData() + eager-load lembaga di ind
 **Interfaces:**
 - Consumes: `$isYayasan`, `$activeLembaga` dari Task 1/2/3.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -513,12 +513,12 @@ it('shows the owning lembaga name badge on the edit page even in "Semua Lembaga"
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="Semua Lembaga.*badge|switched lembaga name badge|owning lembaga name badge" --compact`
 Expected: FAIL — 3 test gagal, badge belum ada di ketiga halaman.
 
-- [ ] **Step 3: Implementasi minimal — index**
+- [x] **Step 3: Implementasi minimal — index**
 
 Di `resources/views/admin/kelas/index.blade.php`, ganti (baris ±12-19):
 
@@ -558,7 +558,7 @@ menjadi:
         </div>
 ```
 
-- [ ] **Step 4: Implementasi minimal — create**
+- [x] **Step 4: Implementasi minimal — create**
 
 Di `resources/views/admin/kelas/create.blade.php`, ganti (baris ±12-13):
 
@@ -582,7 +582,7 @@ menjadi:
             </div>
 ```
 
-- [ ] **Step 5: Implementasi minimal — edit**
+- [x] **Step 5: Implementasi minimal — edit**
 
 Di `resources/views/admin/kelas/edit.blade.php`, ganti (baris ±12-13):
 
@@ -606,17 +606,17 @@ menjadi:
             </div>
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="Semua Lembaga.*badge|switched lembaga name badge|owning lembaga name badge" --compact`
 Expected: PASS semua 3 test.
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KelasCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add resources/views/admin/kelas/index.blade.php resources/views/admin/kelas/create.blade.php resources/views/admin/kelas/edit.blade.php tests/Feature/Admin/KelasCrudTest.php
@@ -635,7 +635,7 @@ git commit -m "feat(kelas): badge scope yayasan/lembaga di index, create, edit"
 **Interfaces:**
 - Consumes: `$isYayasan`, `$activeLembaga` (Task 3), `$kelas->lembaga` dan `$ta->lembaga` (eager-loaded Task 3).
 
-- [ ] **Step 1: Tulis test yang gagal — kolom Lembaga**
+- [x] **Step 1: Tulis test yang gagal — kolom Lembaga**
 
 Tambahkan:
 
@@ -679,12 +679,12 @@ it('hides the Lembaga column once a lembaga is switched into', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="Lembaga column" --compact`
 Expected: FAIL — test pertama gagal (kolom belum ada), test kedua kemungkinan sudah PASS kebetulan (kolom memang belum ada sama sekali di kondisi manapun) — normal, fokus ke test pertama.
 
-- [ ] **Step 3: Implementasi minimal — kolom tabel**
+- [x] **Step 3: Implementasi minimal — kolom tabel**
 
 Di `resources/views/admin/kelas/_daftar.blade.php`, ganti header tabel (baris 24-32):
 
@@ -824,12 +824,12 @@ menjadi:
             </tbody>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="Lembaga column" --compact`
 Expected: PASS semua 2 test.
 
-- [ ] **Step 5: Tulis test yang gagal — label filter dropdown**
+- [x] **Step 5: Tulis test yang gagal — label filter dropdown**
 
 Tambahkan:
 
@@ -851,12 +851,12 @@ it('shows the lembaga name suffix in the Tahun Ajaran filter dropdown during agg
 });
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan gagal**
+- [x] **Step 6: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="lembaga name suffix in the Tahun Ajaran filter" --compact`
 Expected: FAIL — teks label lembaga belum ada di option filter.
 
-- [ ] **Step 7: Implementasi minimal — label filter**
+- [x] **Step 7: Implementasi minimal — label filter**
 
 Di `resources/views/admin/kelas/index.blade.php`, ganti (baris ±90-97):
 
@@ -884,17 +884,17 @@ menjadi:
                         </select>
 ```
 
-- [ ] **Step 8: Jalankan test, pastikan lulus**
+- [x] **Step 8: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="lembaga name suffix in the Tahun Ajaran filter" --compact`
 Expected: PASS.
 
-- [ ] **Step 9: Jalankan regresi test file ini secara penuh**
+- [x] **Step 9: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KelasCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 10: Commit**
+- [x] **Step 10: Commit**
 
 ```bash
 git add resources/views/admin/kelas/_daftar.blade.php resources/views/admin/kelas/index.blade.php tests/Feature/Admin/KelasCrudTest.php
@@ -908,21 +908,21 @@ git commit -m "feat(kelas): kolom Lembaga di tabel + label lembaga di filter Tah
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test yang menyentuh Kelas**
+- [x] **Step 1: Jalankan seluruh test yang menyentuh Kelas**
 
 Run: `php artisan test --compact --filter="KelasCrudTest|KelasTest|KelasPolaJamTest|KelasFaseAssignmentTest|KelasFaseSuggestionTest|KelasKurikulumSnapshotTest|CreateKelasActionTest|UpdateKelasActionTest|KelasSeederTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan Pint pada file yang diubah**
+- [x] **Step 2: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 3: Verifikasi manual cepat via browser (opsional tapi disarankan)**
+- [x] **Step 3: Verifikasi manual cepat via browser (opsional tapi disarankan)**
 
 Login sebagai yayasan-scope dalam mode "Semua Lembaga": buka `/admin/kelas`, cek badge "Semua Lembaga", cek kolom "Lembaga" di tabel, cek filter Tahun Ajaran menampilkan nama lembaga. Klik "Tambah Kelas" TANPA switch lembaga dulu → harus redirect balik ke index dengan pesan error. Switch ke 1 lembaga, klik "Tambah Kelas" lagi → form terbuka normal, badge selalu warna brand dengan nama lembaga, dropdown Tahun Ajaran/Wali Kelas/Pola Jam HANYA berisi opsi lembaga itu. Buka edit kelas milik lembaga LAIN (switch balik ke "Semua Lembaga" dulu) → badge edit menunjukkan nama lembaga PEMILIK kelas, dropdown-nya juga cuma opsi lembaga itu.
 
-- [ ] **Step 4: Laporkan hasil**
+- [x] **Step 4: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini (sama seperti plan Tahun Ajaran) — kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
