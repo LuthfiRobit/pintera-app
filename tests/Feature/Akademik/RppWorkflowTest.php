@@ -585,3 +585,30 @@ it('menampilkan keterangan cakupan KPI berbeda per tab', function () {
     $this->actingAs($this->userKurikulum)->get(route('admin.rpp.index', ['tab' => 'verifikasi']))
         ->assertOk()->assertSee('Ringkasan seluruh dokumen di lembaga ini', false);
 });
+
+it('menolak update RPP dengan kelas_id dari lembaga lain', function () {
+    $file = UploadedFile::fake()->create('rpp_uji_lembaga.pdf', 200, 'application/pdf');
+    $path = $file->store("rpp/{$this->lembaga->id}", 'public');
+    $rpp = Rpp::create([
+        'yayasan_id' => $this->yayasan->id, 'lembaga_id' => $this->lembaga->id, 'guru_id' => $this->guru->id,
+        'tahun_ajaran_id' => $this->tahunAjaran->id, 'semester_id' => $this->semester->id, 'kelas_id' => $this->kelas->id,
+        'mata_pelajaran_id' => $this->mapel->id, 'judul_topik' => 'Topik Sebelum Update', 'alokasi_waktu' => '2 JP',
+        'file_path' => $path, 'file_name' => 'rpp_uji_lembaga.pdf', 'file_size_bytes' => 2048,
+        'mime_type' => 'application/pdf', 'status' => StatusRpp::Draft,
+    ]);
+
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $this->yayasan->id]);
+    // tahun_ajaran_id SENGAJA disamakan dengan punya RPP ($this->semester->tahun_ajaran_id)
+    // supaya cek tahun-ajaran LOLOS dan cek lembaga BENAR-BENAR yang menangkap error ini,
+    // bukan tertangkap lebih dulu oleh cek tahun ajaran yang sudah ada.
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $this->semester->tahun_ajaran_id]);
+
+    $response = $this->actingAs($this->userGuru)->put(route('admin.rpp.update', $rpp), [
+        'kelas_id' => $kelasLain->id,
+        'judul_topik' => 'Topik Setelah Update',
+        'alokasi_waktu' => '2 JP',
+    ]);
+
+    $response->assertSessionHasErrors('kelas_id');
+    expect($rpp->fresh()->judul_topik)->toBe('Topik Sebelum Update');
+});

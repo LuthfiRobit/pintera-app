@@ -41,9 +41,17 @@ final class UpdateRppRequest extends FormRequest
                 return;
             }
 
-            $kelas = Kelas::find($kelasId);
-            if ($kelas && $kelas->tahun_ajaran_id !== $rpp->semester->tahun_ajaran_id) {
+            $kelas = Kelas::withoutGlobalScopes()->find($kelasId);
+            if (! $kelas) {
+                return;
+            }
+
+            if ($kelas->tahun_ajaran_id !== $rpp->semester->tahun_ajaran_id) {
                 $validator->errors()->add('kelas_id', 'Kelas yang dipilih bukan berasal dari tahun ajaran yang sama dengan semester dokumen RPP ini.');
+            }
+
+            if ($kelas->lembaga_id !== $rpp->lembaga_id) {
+                $validator->errors()->add('kelas_id', 'Kelas yang dipilih bukan berasal dari lembaga yang sama dengan dokumen RPP ini.');
             }
         });
     }
