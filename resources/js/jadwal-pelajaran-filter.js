@@ -101,7 +101,7 @@ export function jadwalPelajaranFilter(config) {
         openDuplicateModal() {
             this.duplicateForm.target_kelas_id = this.kelasId;
             this.duplicateForm.target_semester_id = this.semesterId;
-            this.duplicateForm.source_semester_id = this.semesterId;
+            this.duplicateForm.source_semester_id = '';
             this.duplicateForm.source_kelas_id = '';
             this.duplicateForm.errorMessage = '';
             this.showModalDuplicate = true;
@@ -181,6 +181,51 @@ export function jadwalPelajaranFilter(config) {
                 onChange: (value) => {
                     this.tahunAjaranId = value;
                     this.gantiTahunAjaran(value);
+                },
+            });
+        },
+
+        initDuplicateTahunAjaranSelect(el) {
+            new TomSelect(el, {
+                maxItems: 1,
+                create: false,
+                placeholder: 'Cari tahun ajaran sumber...',
+                onChange: async (value) => {
+                    this.duplicateForm.source_semester_id = '';
+                    this.duplicateForm.source_kelas_id = '';
+                    this.$refs.duplicateSemesterSelect.innerHTML = '<option value="">— Pilih Semester Sumber —</option>';
+                    this.$refs.duplicateKelasSelect.innerHTML = '<option value="">— Pilih Kelas Sumber —</option>';
+
+                    if (!value) return;
+
+                    try {
+                        const url = new URL(this.opsiUrl, window.location.origin);
+                        url.searchParams.set('tahun_ajaran_id', value);
+                        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                        const json = await response.json();
+
+                        if (!response.ok) {
+                            Alpine.store('toast').push('error', 'Gagal memuat opsi kelas dan semester sumber.');
+                            return;
+                        }
+
+                        json.semesterList.forEach((semester) => {
+                            const option = document.createElement('option');
+                            option.value = semester.id;
+                            option.textContent = semester.nama + (semester.status_aktif ? ' (Aktif)' : '');
+                            this.$refs.duplicateSemesterSelect.appendChild(option);
+                        });
+
+                        json.kelasList.forEach((kelas) => {
+                            if (String(kelas.id) === String(this.duplicateForm.target_kelas_id)) return;
+                            const option = document.createElement('option');
+                            option.value = kelas.id;
+                            option.textContent = kelas.nama;
+                            this.$refs.duplicateKelasSelect.appendChild(option);
+                        });
+                    } catch (error) {
+                        Alpine.store('toast').push('error', 'Gagal memuat opsi kelas dan semester sumber.');
+                    }
                 },
             });
         },

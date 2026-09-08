@@ -54,23 +54,27 @@
 
             <div class="space-y-4">
                 <div>
-                    <x-input-label value="Semester Sumber" />
-                    <select name="source_semester_id" x-model="duplicateForm.source_semester_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                        <option value="">— Pilih Semester Sumber —</option>
-                        @foreach ($semesterList as $sem)
-                            <option value="{{ $sem->id }}">{{ $sem->nama }}</option>
+                    <x-input-label value="Tahun Ajaran Sumber" />
+                    <select x-ref="duplicateTahunAjaranSelect" x-init="initDuplicateTahunAjaranSelect($refs.duplicateTahunAjaranSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">— Pilih Tahun Ajaran Sumber —</option>
+                        @foreach ($tahunAjaranList as $ta)
+                            <option value="{{ $ta->id }}">{{ $ta->nama }}{{ $ta->status_aktif ? ' (Aktif)' : '' }}{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? ' — '.($ta->lembaga->nama ?? '-') : '' }}</option>
                         @endforeach
                     </select>
-                    <p class="mt-1 text-[11px] text-gray-400">Pilih semester asal data yang akan di-copy.</p>
+                    <p class="mt-1 text-[11px] text-gray-400">Boleh dari Tahun Ajaran yang berbeda dari yang sedang dilihat.</p>
+                </div>
+
+                <div>
+                    <x-input-label value="Semester Sumber" />
+                    <select name="source_semester_id" x-ref="duplicateSemesterSelect" x-model="duplicateForm.source_semester_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">— Pilih Tahun Ajaran Sumber Dulu —</option>
+                    </select>
                 </div>
 
                 <div>
                     <x-input-label value="Kelas Sumber" />
-                    <select name="source_kelas_id" x-model="duplicateForm.source_kelas_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                        <option value="">— Pilih Kelas Sumber —</option>
-                        @foreach ($kelasList as $kel)
-                            <option value="{{ $kel->id }}" x-show="String({{ $kel->id }}) !== String(duplicateForm.target_kelas_id)">{{ $kel->nama }}</option>
-                        @endforeach
+                    <select name="source_kelas_id" x-ref="duplicateKelasSelect" x-model="duplicateForm.source_kelas_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <option value="">— Pilih Tahun Ajaran Sumber Dulu —</option>
                     </select>
                     <p class="mt-1 text-[11px] text-gray-400">Pilih kelas yang memiliki konfigurasi jadwal yang ingin diterapkan.</p>
                 </div>

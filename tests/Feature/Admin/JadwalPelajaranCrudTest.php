@@ -1425,3 +1425,58 @@ it('exposes formModal.errors state and per-field error rendering for guru_id in 
 
     $response->assertSee('formModal.errors.guru_id', false);
 });
+
+it('shows a "Tahun Ajaran Sumber" dropdown in the duplicate modal, populated with all tahun ajaran including ones different from the currently filtered one', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaranLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2024/2025']);
+    $tahunAjaranBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026', 'status_aktif' => true]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranBaru->id, 'nama' => 'Ganjil']);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranBaru->id, 'pola_jam_id' => $pola->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'tahun_ajaran_id' => $tahunAjaranBaru->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertSee('Tahun Ajaran Sumber', false)
+        ->assertSee('2024/2025', false)
+        ->assertSee('2025/2026 (Aktif)', false);
+});
+
+it('duplicates jadwal pelajaran from a source kelas belonging to a different tahun ajaran than the one currently filtered', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+
+    $tahunAjaranLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2024/2025']);
+    $tahunAjaranBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026']);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLama->id, 'nama' => 'Ganjil']);
+    $semesterBaru = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranBaru->id, 'nama' => 'Ganjil']);
+
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $slot = JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => Hari::Senin->value, 'urutan' => 1, 'is_pelajaran' => true]);
+
+    $sourceKelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranLama->id, 'pola_jam_id' => $pola->id, 'nama' => '4A (2024/2025)']);
+    $targetKelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranBaru->id, 'pola_jam_id' => $pola->id, 'nama' => '4A (2025/2026)']);
+
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    JadwalPelajaran::factory()->create([
+        'kelas_id' => $sourceKelas->id, 'semester_id' => $semesterLama->id, 'jam_pelajaran_id' => $slot->id,
+        'mata_pelajaran_id' => $mapel->id, 'guru_id' => $guru->id,
+    ]);
+
+    $response = $this->actingAs($manager)->postJson(route('admin.jadwal-pelajaran.duplicate'), [
+        'source_kelas_id' => $sourceKelas->id,
+        'source_semester_id' => $semesterLama->id,
+        'target_kelas_id' => $targetKelas->id,
+        'target_semester_id' => $semesterBaru->id,
+    ]);
+
+    $response->assertOk()->assertJson(['status' => 'success', 'copied_count' => 1, 'skipped_count' => 0]);
+    $this->assertDatabaseHas('jadwal_pelajaran', ['kelas_id' => $targetKelas->id, 'jam_pelajaran_id' => $slot->id]);
+});
