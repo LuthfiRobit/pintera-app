@@ -1,6 +1,6 @@
 # Audit & Perbaikan Menu RPP (Workflow, Wording, Backend) Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Perbaiki 10 temuan audit menu RPP — 1 kritis (tab "Perangkat Ajar Saya" bocor data guru lain untuk aktor tanpa profil Guru), 1 bug scoping (`TenantContext` tidak validasi ulang session), dan 8 item wording/UX/backend minor.
 
@@ -41,7 +41,7 @@
 **Interfaces:**
 - Tidak ada interface baru — perubahan internal query + view.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke `tests/Feature/Akademik/RppWorkflowTest.php` (akhir file):
 
@@ -71,12 +71,12 @@ it('tidak menampilkan RPP guru lain di tab saya untuk aktor tanpa profil Guru', 
 
 **Catatan soal perbaikan #3 (cek kepemilikan eksplisit di tombol aksi)**: TIDAK ada test perilaku terpisah untuk ini di Step 1 — setelah perbaikan #1 (query) diterapkan, tombol Edit/Hapus/Ajukan HANYA PERNAH dirender di cabang `@else` (tab `saya`, lihat `_daftar.blade.php` struktur `@if ($tab === 'verifikasi') ... @else ... @endif`), dan cabang itu sekarang SELALU kosong untuk aktor tanpa profil Guru — TIDAK ADA jalur kode lain saat ini yang bisa merender tombol itu untuk RPP bukan milik aktor. Perbaikan #3 murni defense-in-depth untuk jalur MASA DEPAN (fitur baru yang mungkin menampilkan RPP lintas-guru) — tidak bisa diuji perilakunya secara independen hari ini tanpa jalur nyata yang mengeksposnya. Tetap terapkan perbaikan #3 di Step 3 (kode-nya benar dan murah), TAPI JANGAN memaksakan test tambahan yang sebenarnya cuma menguji ulang perbaikan #1.
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="tidak menampilkan RPP guru lain di tab saya" --compact`
 Expected: FAIL — saat ini operator tanpa profil Guru melihat RPP guru lain di tab "saya".
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Domains/Akademik/Actions/Rpp/ListRppAction.php`, ganti:
 
@@ -124,17 +124,17 @@ menjadi:
 
 (`@endif`/`@endcan` di bawahnya TIDAK berubah.)
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="tidak menampilkan RPP guru lain di tab saya" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php tests/Feature/Akademik/RppControllerIdorTest.php --compact`
 Expected: PASS semua — termasuk `RppControllerIdorTest` (banyak test IDOR pemilik/verifikator yang HARUS tetap lulus, `authorizeMilikGuru()` sendiri tidak diubah).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/Rpp/ListRppAction.php resources/views/portals/lembaga/akademik/rpp/_daftar.blade.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -154,7 +154,7 @@ git commit -m "fix(rpp): tutup kebocoran RPP guru lain di tab Saya utk aktor tan
 - Produces: `ListRppAction::execute()` sekarang menerima `?int $targetLembagaId` sebagai parameter (bukan resolve sendiri), TIDAK lagi mengembalikan `targetLembagaId` di array hasil.
 - Consumes (Task 4): `RppController::index()` menghitung `$targetLembagaId` via `$this->resolveActiveLembagaId()` — dipakai ulang oleh Task 4 (`scopeHeaderData()`).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -185,12 +185,12 @@ it('menampilkan mode agregat (bukan kosong salah) di tab verifikasi utk yayasan-
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menampilkan mode agregat .bukan kosong salah." --compact`
 Expected: FAIL — saat ini `TenantContext::activeLembagaId()` mengembalikan `$lembagaLain->id` mentah tanpa validasi, hasil query jadi kosong (irisan `TenantScope` vs filter manual asing = 0 baris).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/RppController.php`, method `index()`, ganti:
 
@@ -289,17 +289,17 @@ final class ListRppAction
 
 Dan hapus `use App\Domains\Shared\Context\TenantContext;` dari daftar import di atas class, hapus juga baris `return [... 'targetLembagaId' => $targetLembagaId,];` di akhir method — sisakan cuma `'rppList'`, `'stats'`, `'status'`.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="menampilkan mode agregat .bukan kosong salah." --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php tests/Feature/Akademik/RppKurikulumReportingTest.php --compact`
 Expected: PASS semua — termasuk "menolak actor yayasan dengan active_lembaga_id stale saat memverifikasi RPP" (Task ini TIDAK mengubah `verify()`, jadi test itu harus tetap lulus tanpa perubahan).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/RppController.php app/Domains/Akademik/Actions/Rpp/ListRppAction.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -318,7 +318,7 @@ git commit -m "fix(rpp): ganti TenantContext dengan resolveActiveLembagaId() ter
 **Interfaces:**
 - Produces: cabang ajax `index()` sekarang mengirim `search`, `tahunAjaranId`, `semesterId`, `kelasId`, `mapelId`, `kurikulum`, `tahunAjaranAktif` ke `_daftar.blade.php` (Task 4 akan menambah `isYayasan`/`activeLembaga` ke payload YANG SAMA — baca catatan Task 4).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -340,12 +340,12 @@ it('tetap menampilkan pesan default Inbox kosong ketika benar-benar tidak ada fi
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menampilkan pesan sadar-filter di Inbox Verifikasi|tetap menampilkan pesan default Inbox kosong" --compact`
 Expected: test pertama FAIL (pesan generik selalu sama saat ini). Test kedua SUDAH PASS (baseline, tidak berubah).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/RppController.php`, ganti:
 
@@ -418,17 +418,17 @@ menjadi:
 @endif
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="menampilkan pesan sadar-filter di Inbox Verifikasi|tetap menampilkan pesan default Inbox kosong" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/RppController.php resources/views/portals/lembaga/akademik/rpp/_daftar.blade.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -450,7 +450,7 @@ git commit -m "fix(rpp): empty-state Inbox Verifikasi sadar filter (bukan klaim 
 
 **PRASYARAT: Task 2 dan Task 3 HARUS sudah selesai sebelum task ini.**
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -485,12 +485,12 @@ it('tidak menampilkan badge scope utk aktor lembaga-scope', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menampilkan badge nama lembaga aktif|menampilkan badge .Semua Lembaga.|tidak menampilkan badge scope" --compact`
 Expected: 2 test pertama FAIL (badge belum ada). Test ketiga SUDAH PASS (baseline).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/RppController.php`, tambahkan import setelah `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;`:
 
@@ -584,17 +584,17 @@ menjadi:
 </div>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="menampilkan badge nama lembaga aktif|menampilkan badge .Semua Lembaga.|tidak menampilkan badge scope" --compact`
 Expected: PASS ketiga test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/RppController.php resources/views/portals/lembaga/akademik/rpp/index.blade.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -612,7 +612,7 @@ git commit -m "feat(rpp): badge scope isYayasan/activeLembaga di header index"
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -626,12 +626,12 @@ it('tidak menyebut role spesifik "Waka Kurikulum" di dialog konfirmasi pengajuan
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="tidak menyebut role spesifik .Waka Kurikulum." --compact`
 Expected: FAIL — teks "Waka Kurikulum" masih ada.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `_daftar.blade.php` baris ±116, ganti:
 
@@ -645,17 +645,17 @@ menjadi:
 @submit.prevent="confirmDialog('Ajukan RPP ke Kurikulum?', 'Apakah Anda yakin ingin mengajukan berkas ini untuk diverifikasi oleh pihak kurikulum?', { confirmLabel: 'Ya, Ajukan' }).then(c => { if(c) $el.submit() })"
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="tidak menyebut role spesifik .Waka Kurikulum." --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/rpp/_daftar.blade.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -673,7 +673,7 @@ git commit -m "fix(rpp): ganti wording 'Waka Kurikulum' jadi 'pihak kurikulum' (
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -691,12 +691,12 @@ it('tidak menampilkan label default Inbox pada dropdown Status di tab saya', fun
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menampilkan label default Inbox|tidak menampilkan label default Inbox" --compact`
 Expected: test pertama FAIL. Test kedua SUDAH PASS (baseline).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `index.blade.php` baris ±179-187, ganti:
 
@@ -733,17 +733,17 @@ menjadi:
 </div>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="menampilkan label default Inbox|tidak menampilkan label default Inbox" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/rpp/index.blade.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -761,7 +761,7 @@ git commit -m "feat(rpp): label default Inbox pada dropdown Status tab verifikas
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -775,12 +775,12 @@ it('menampilkan keterangan cakupan KPI berbeda per tab', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menampilkan keterangan cakupan KPI" --compact`
 Expected: FAIL — keterangan belum ada.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `index.blade.php`, sebelum baris ±39 (`<div class="grid grid-cols-1 gap-3 sm:grid-cols-4">`), tambahkan:
 
@@ -788,17 +788,17 @@ Di `index.blade.php`, sebelum baris ±39 (`<div class="grid grid-cols-1 gap-3 sm
 <p class="text-[11px] text-gray-400 -mb-1">Ringkasan {{ $tab === 'saya' ? 'dokumen Anda' : 'seluruh dokumen di lembaga ini' }} (tidak berubah mengikuti filter pencarian/Tahun Ajaran/Semester/Kelas/Mapel/Kurikulum di bawah).</p>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="menampilkan keterangan cakupan KPI" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/rpp/index.blade.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -816,7 +816,7 @@ git commit -m "feat(rpp): keterangan cakupan KPI (tidak ikut filter kontrol)"
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -849,12 +849,12 @@ it('menolak update RPP dengan kelas_id dari lembaga lain', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menolak update RPP dengan kelas_id dari lembaga lain" --compact`
 Expected: FAIL — saat ini tidak ada cek lembaga, update lolos.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Requests/Akademik/UpdateRppRequest.php`, ganti:
 
@@ -904,17 +904,17 @@ public function withValidator(Validator $validator): void
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="menolak update RPP dengan kelas_id dari lembaga lain" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php tests/Feature/Akademik/RppControllerIdorTest.php tests/Feature/Akademik/StoreRppRequestKelasSemesterTest.php --compact`
 Expected: PASS semua — termasuk test update RPP normal existing ("mengizinkan guru mengajukan RPP...") yang HARUS tetap lulus (kelas_id sama lembaga, tidak boleh kena error baru).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Requests/Akademik/UpdateRppRequest.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -932,7 +932,7 @@ git commit -m "fix(rpp): tambah cek lembaga kelas_id di UpdateRppRequest, samaka
 **Interfaces:**
 - Tidak ada interface baru — perilaku publik `execute()` (parameter, return type, exception) TIDAK berubah.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -965,12 +965,12 @@ it('tetap mengganti berkas fisik dengan benar saat update RPP dengan file baru (
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan LULUS (baseline, belum ada perubahan kode)**
+- [x] **Step 2: Jalankan test, pastikan LULUS (baseline, belum ada perubahan kode)**
 
 Run: `php artisan test --filter="tetap mengganti berkas fisik dengan benar" --compact`
 Expected: PASS — ini test REGRESI untuk memastikan refactor Task ini TIDAK mengubah perilaku yang benar (file lama tetap terhapus, file baru tetap tersimpan) — bukan test fitur baru. Kalau test ini gagal SEBELUM refactor, STOP dan laporkan ke user (berarti pemahaman kode saat ini salah).
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Di `app/Domains/Akademik/Actions/Rpp/UpdateRppAction.php`, ganti seluruh method `execute()`:
 
@@ -1068,17 +1068,17 @@ public function execute(Rpp $rpp, RppData $data): Rpp
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan TETAP lulus setelah refactor**
+- [x] **Step 4: Jalankan test, pastikan TETAP lulus setelah refactor**
 
 Run: `php artisan test --filter="tetap mengganti berkas fisik dengan benar" --compact`
 Expected: PASS — perilaku observable SAMA, cuma urutan internal berubah.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/RppWorkflowTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Domains/Akademik/Actions/Rpp/UpdateRppAction.php tests/Feature/Akademik/RppWorkflowTest.php
@@ -1092,17 +1092,17 @@ git commit -m "fix(rpp): pindahkan hapus file lama ke SETELAH commit transaksi (
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test domain RPP**
+- [x] **Step 1: Jalankan seluruh test domain RPP**
 
 Run: `php artisan test --compact --filter="RppWorkflowTest|RppControllerIdorTest|RppKurikulumReportingTest|StoreRppRequestKelasSemesterTest|RppVerifyTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan Pint pada file yang diubah**
+- [x] **Step 2: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 3: Verifikasi manual via browser (WAJIB)**
+- [x] **Step 3: Verifikasi manual via browser (WAJIB)**
 
 Login sebagai role tanpa profil Guru (mis. `operator_akademik`): buka RPP, pastikan tab "Perangkat Ajar Saya" KOSONG dengan pesan jelas ("Akun Anda tidak terhubung dengan profil Guru..."), BUKAN menampilkan RPP guru lain.
 
@@ -1114,7 +1114,7 @@ Login sebagai YAYASAN-scope verifikator, mode "Semua Lembaga": badge ungu "Semua
 
 Edit RPP existing dengan ganti berkas baru: pastikan berkas lama benar-benar terganti (bukan menumpuk), tidak ada error.
 
-- [ ] **Step 4: Laporkan hasil**
+- [x] **Step 4: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
