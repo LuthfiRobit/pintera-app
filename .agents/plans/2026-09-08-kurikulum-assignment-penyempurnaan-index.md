@@ -37,7 +37,7 @@
 **Interfaces:**
 - Produces: view `admin.kurikulum-assignment.index` menerima `activeLembaga` (`?Lembaga`) — `null` untuk platform/lembaga-scope, atau untuk yayasan-scope mode "Semua Lembaga"; berisi `Lembaga` untuk yayasan-scope yang sudah switch.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php` (di akhir file):
 
@@ -76,12 +76,12 @@ it('still shows all own-yayasan assignments in aggregate mode (no active lembaga
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan test pertama gagal, test kedua sudah lulus**
+- [x] **Step 2: Jalankan test, pastikan test pertama gagal, test kedua sudah lulus**
 
 Run: `php artisan test --filter="narrows the index to the active lembaga|still shows all own-yayasan assignments" --compact`
 Expected: test PERTAMA FAIL (index saat ini masih menampilkan `$assignmentLain` walau sudah switch — belum ada penyempitan); test KEDUA sudah PASS (perilaku agregat memang belum berubah, ini baseline regresi).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, ganti method `index()`:
 
@@ -159,17 +159,17 @@ public function index(Request $request): View
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="narrows the index to the active lembaga|still shows all own-yayasan assignments" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk test "platform TETAP lihat SEMUA assignment lintas yayasan" dan "yayasan cuma lihat assignment global + milik yayasannya sendiri" (KEDUANYA tidak set `active_lembaga_id`, jatuh ke cabang agregat yang tidak berubah).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -187,7 +187,7 @@ git commit -m "fix(kurikulum-assignment): index() menyempit ke lembaga aktif, me
 **Interfaces:**
 - Consumes: `$isYayasan`, `$activeLembaga` dari Task 1.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -207,12 +207,12 @@ it('shows the "Semua Lembaga" badge in aggregate mode', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="active lembaga name badge in the index header|Semua Lembaga.*badge in aggregate mode" --compact`
 Expected: FAIL — badge belum ada di header saat ini.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/admin/kurikulum-assignment/index.blade.php`, ganti (baris ±11-32):
 
@@ -273,17 +273,17 @@ menjadi:
 </div>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="active lembaga name badge in the index header|Semua Lembaga.*badge in aggregate mode" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/index.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -301,7 +301,7 @@ git commit -m "feat(kurikulum-assignment): badge scope + header responsif + hier
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -316,12 +316,12 @@ it('shows the validation error message when redirected to index after failing to
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="validation error message when redirected to index" --compact`
 Expected: FAIL — `index.blade.php` belum menampilkan `$errors` sama sekali.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/admin/kurikulum-assignment/index.blade.php`, ganti (baris ±1-9):
 
@@ -355,17 +355,17 @@ menjadi:
         @endif
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="validation error message when redirected to index" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/index.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -383,7 +383,7 @@ git commit -m "fix(kurikulum-assignment): tampilkan pesan validasi \$errors di i
 **Interfaces:**
 - Tidak ada interface baru — `confirmDialog()` helper global SUDAH tersedia.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -410,12 +410,12 @@ it('warns explicitly about the lack of a usage guard when deleting a global assi
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="uses the standard confirmDialog|warns explicitly about the lack of a usage guard" --compact`
 Expected: FAIL — form Hapus SAAT INI masih pakai `onsubmit="return confirm(...)"`, tidak ada teks "PERINGATAN" untuk baris global.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/admin/kurikulum-assignment/index.blade.php`, ganti (di dalam `<x-table-actions>`, blok form Hapus):
 
@@ -452,17 +452,17 @@ menjadi:
 </form>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="uses the standard confirmDialog|warns explicitly about the lack of a usage guard" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/index.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -476,26 +476,26 @@ git commit -m "feat(kurikulum-assignment): ganti confirm() native jadi confirmDi
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test domain Kurikulum Assignment**
+- [x] **Step 1: Jalankan seluruh test domain Kurikulum Assignment**
 
 Run: `php artisan test --compact --filter="KurikulumAssignmentControllerTest|KurikulumAssignmentDestroyGuardTest|KurikulumAssignmentTest|KurikulumAssignmentResolverTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan regresi modul Kelas**
+- [x] **Step 2: Jalankan regresi modul Kelas**
 
 Run: `php artisan test --compact --filter="KelasCrudTest|CreateKelasActionTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 3: Jalankan Pint pada file yang diubah**
+- [x] **Step 3: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 4: Verifikasi manual via browser (WAJIB)**
+- [x] **Step 4: Verifikasi manual via browser (WAJIB)**
 
 Login sebagai YAYASAN-scope, mode "Semua Lembaga": lihat badge ungu "Semua Lembaga", header terlihat rapi (2 tombol dengan bobot visual beda — "Tambah Assignment" solid biru, "Cek & Perbaiki" outline). Switch ke 1 lembaga: badge berubah jadi nama lembaga (brand color), tabel HANYA menampilkan assignment lembaga itu + global. Klik "Tambah Assignment" TANPA lembaga aktif (switch ke "Semua Lembaga" dulu): redirect ke index DENGAN pesan error terlihat jelas (bukan diam-diam). Klik "Hapus" pada 1 baris: dialog modal standar muncul (bukan popup browser), pesan menyebutkan detail assignment; kalau baris "Platform Default", pesan ADA peringatan tambahan. Coba perkecil lebar browser (mode HP): header tidak pecah/overflow.
 
-- [ ] **Step 5: Laporkan hasil**
+- [x] **Step 5: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
