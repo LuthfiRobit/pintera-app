@@ -365,11 +365,11 @@ it('shows the active lembaga name on the create page for a yayasan-scoped actor'
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))->assertSee('SMA Bintang Persada');
 });
 
-it('shows a static note explaining the index never narrows by active lembaga for a yayasan-scoped actor', function () {
+it('does not show the outdated aggregate note for a yayasan-scoped actor', function () {
     $manager = actingAsYayasanKurikulumManager();
 
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))
-        ->assertSee('tidak menyempit walau Anda mengganti lembaga aktif', false);
+        ->assertDontSee('tidak menyempit walau Anda mengganti lembaga aktif', false);
 });
 
 it('does not show the aggregate note for a lembaga-scoped actor', function () {
@@ -504,8 +504,20 @@ it('still shows all own-yayasan assignments in aggregate mode (no active lembaga
     });
 });
 
+it('shows the active lembaga name badge in the index header when switched into a lembaga', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'nama' => 'SD Cempaka Raya']);
+    session(['active_lembaga_id' => $lembaga->id]);
 
+    $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))
+        ->assertSee('SD Cempaka Raya')
+        ->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
 
+it('shows the "Semua Lembaga" badge in aggregate mode', function () {
+    $managerA = actingAsYayasanKurikulumManager();
 
-
-
+    $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))
+        ->assertSee('Semua Lembaga')
+        ->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
+});

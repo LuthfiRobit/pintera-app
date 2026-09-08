@@ -8,25 +8,30 @@
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700">{{ session('error') }}</div>
         @endif
 
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="font-display text-lg font-bold text-gray-900">Pengaturan Kurikulum</h1>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <h1 class="font-display text-lg font-bold text-gray-900">Pengaturan Kurikulum</h1>
+                    @if ($isYayasan ?? false)
+                        <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ ($activeLembaga ?? null) ? 'border border-brand-200 bg-brand-50 text-brand-700' : 'border border-purple-200 bg-purple-50 text-purple-700' }}">
+                            <x-icon name="apartment" class="h-3.5 w-3.5" />
+                            {{ ($activeLembaga ?? null) ? $activeLembaga->nama : 'Semua Lembaga' }}
+                        </span>
+                    @endif
+                </div>
                 <p class="text-xs text-gray-500">Kurikulum yang berlaku per jenjang, tingkat, dan tahun ajaran. Kelas baru mengikuti ini otomatis saat dibuat.</p>
-                @if ($isYayasan ?? false)
-                    <p class="mt-1 text-xs text-gray-400">Daftar ini selalu menampilkan SEMUA lembaga di yayasan Anda beserta assignment global — tidak menyempit walau Anda mengganti lembaga aktif lewat pengalih lembaga di pojok kanan atas.</p>
-                @endif
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
                 @can('kurikulum-assignment.view')
-                    <a href="{{ route('admin.kurikulum-assignment.resync') }}" class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                    <x-link-button href="{{ route('admin.kurikulum-assignment.resync') }}" variant="ghost">
                         Cek & Perbaiki Kurikulum/Fase
-                    </a>
+                    </x-link-button>
                 @endcan
                 @can('kurikulum-assignment.create')
-                    <a href="{{ route('admin.kurikulum-assignment.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700">
+                    <x-link-button href="{{ route('admin.kurikulum-assignment.create') }}">
                         <x-icon name="plus" class="h-4 w-4" />
                         Tambah Assignment
-                    </a>
+                    </x-link-button>
                 @endcan
             </div>
         </div>
