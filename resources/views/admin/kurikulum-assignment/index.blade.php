@@ -72,7 +72,16 @@
                                                 </x-dropdown-link>
                                             @endcan
                                             @can('kurikulum-assignment.delete')
-                                                <form method="POST" action="{{ route('admin.kurikulum-assignment.destroy', $a) }}" onsubmit="return confirm('Hapus assignment ini?')">
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route('admin.kurikulum-assignment.destroy', $a) }}"
+                                                    x-data
+                                                    @submit.prevent="confirmDialog(
+                                                        'Hapus Assignment Kurikulum?',
+                                                        @js('Hapus assignment '.$a->bentuk_pendidikan.($a->tingkat ? ' tingkat '.$a->tingkat : ' (semua tingkat)').' untuk '.($a->tahunAjaran->nama ?? 'tahun ajaran ini').'?'.($a->lembaga_id === null ? ' PERINGATAN: ini assignment GLOBAL (Platform Default) — dipakai sebagai cadangan oleh lembaga mana pun yang belum punya assignment sendiri untuk kombinasi ini, dan TIDAK ADA pengecekan otomatis sebelum dihapus.' : '')),
+                                                        { confirmLabel: 'Ya, Hapus', isDanger: true }
+                                                    ).then(confirmed => { if (confirmed) $el.submit() })"
+                                                >
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="flex w-full items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-error-600 transition duration-150 ease-in-out hover:bg-error-50 focus:bg-error-50 focus:outline-none">

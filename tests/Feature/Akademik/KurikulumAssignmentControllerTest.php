@@ -531,3 +531,25 @@ it('shows the validation error message when redirected to index after failing to
         ->assertSee('Pilih lembaga aktif melalui pengalih lembaga sebelum menambah assignment kurikulum.');
 });
 
+it('uses the standard confirmDialog() instead of native browser confirm() for the delete button', function () {
+    $lembaga = Lembaga::factory()->create();
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))->assertOk();
+
+    $response->assertSee('confirmDialog(', false);
+    $response->assertDontSee('onsubmit="return confirm(', false);
+});
+
+it('warns explicitly about the lack of a usage guard when deleting a global assignment', function () {
+    $ta = TahunAjaran::factory()->create();
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+    $manager = actingAsPlatformScopeKurikulumManager();
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))->assertOk()
+        ->assertSee('PERINGATAN', false);
+});
+
+
