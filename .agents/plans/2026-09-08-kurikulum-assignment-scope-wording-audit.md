@@ -38,7 +38,7 @@
 **Interfaces:**
 - Tidak ada interface baru — task ini murni memperbaiki urutan kondisi Blade, tidak menyentuh signature controller.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php` (di akhir file):
 
@@ -61,12 +61,12 @@ it('renders the edit page without crashing for a platform-scoped actor viewing a
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="renders the edit page without crashing" --compact`
 Expected: FAIL — kedua test gagal dengan response BUKAN 200 (Laravel mengonversi `TypeError` dari `foreach()` pada `$lembagaList` yang undefined jadi HTTP 500).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/admin/kurikulum-assignment/_form.blade.php`, ganti (baris 17-38):
 
@@ -127,17 +127,17 @@ menjadi:
 
 **Catatan**: teks di cabang `@else` terakhir (mode create, non-platform) SENGAJA BELUM diubah di task ini (tetap "lembaga yang sedang aktif di sesi Anda") — akan disempurnakan jadi menyebut nama lembaga eksplisit di Task 4, SETELAH controller `create()` mengirim variabel `$activeLembaga`. Task ini FOKUS TUNGGAL menutup crash secepat mungkin.
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="renders the edit page without crashing" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk test-test `create()`/`store()` existing untuk platform (baris ±209, ±224) yang TIDAK terpengaruh perubahan ini (mode create untuk platform TIDAK diubah).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/_form.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -158,7 +158,7 @@ git commit -m "fix(kurikulum-assignment): tutup crash 500 halaman edit untuk akt
 - Produces: setiap item `$assignmentList` (view `index`) punya properti dinamis `->canManage` (bool).
 - Produces: view `index` menerima `isYayasan` (bool) — MENGGANTI `isPlatformOrYayasan` yang dihapus.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -192,12 +192,12 @@ it('does not render an Edit link for a global assignment row to a yayasan-scoped
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="computes canManage correctly|does not render an Edit link for a global assignment" --compact`
 Expected: FAIL — test pertama gagal (`canManage` belum jadi properti assignment, `firstWhere` mengembalikan objek tanpa `canManage`, perbandingan `=== true`/`=== false` gagal); test kedua gagal (link Edit saat ini MUNCUL untuk yayasan-scope di baris global, sesuai bug yang ditemukan).
 
-- [ ] **Step 3: Implementasi minimal — controller**
+- [x] **Step 3: Implementasi minimal — controller**
 
 Di `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, ganti method `index()`:
 
@@ -283,7 +283,7 @@ private function canManageAssignment(User $actor, ?int $existingLembagaId): bool
 }
 ```
 
-- [ ] **Step 4: Implementasi minimal — view**
+- [x] **Step 4: Implementasi minimal — view**
 
 Di `resources/views/admin/kurikulum-assignment/index.blade.php`, ganti (baris 57-61):
 
@@ -304,17 +304,17 @@ menjadi:
 
 (Sisa isi `@if`/`@else` DI BAWAH baris ini TIDAK BERUBAH — termasuk teks "Read-only (Platform)", TIDAK PERLU disentuh.)
 
-- [ ] **Step 5: Jalankan test, pastikan lulus**
+- [x] **Step 5: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="computes canManage correctly|does not render an Edit link for a global assignment" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 6: Jalankan regresi test file ini secara penuh**
+- [x] **Step 6: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk test baris ±267 ("platform TETAP lihat SEMUA assignment lintas yayasan") dan ±285 ("yayasan cuma lihat assignment global + milik yayasannya sendiri") yang memakai `assertViewHas('assignmentList', fn ($list) => $list->contains('id', ...))` — method `contains()` TETAP berfungsi normal pada collection yang sudah dimutasi lewat `->each()`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php resources/views/admin/kurikulum-assignment/index.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -332,7 +332,7 @@ git commit -m "fix(kurikulum-assignment): sinkronkan canManage index dengan auth
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Ubah test existing supaya gagal terhadap kode lama**
+- [x] **Step 1: Ubah test existing supaya gagal terhadap kode lama**
 
 Di `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php`, cari test (baris ±195):
 
@@ -372,12 +372,12 @@ it('yayasan tanpa active_lembaga_id di sesi ditolak dengan pesan jelas saat memb
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="yayasan tanpa active_lembaga_id di sesi ditolak" --compact`
 Expected: FAIL — `store()` saat ini melempar `abort(422)` mentah (bukan redirect dengan session errors), `assertRedirect()` gagal.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, ganti (di method `store()`):
 
@@ -402,17 +402,17 @@ if ($request->user()->widestScopeLevel() === 'yayasan' && $this->resolveActiveLe
 $lembagaId = $this->resolveLembagaId($request->user(), $lembagaIdDiminta);
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="yayasan tanpa active_lembaga_id di sesi ditolak" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk test baris ±158 ("memakai session active_lembaga_id...") dan ±177 ("menolak yayasan membuat assignment global...") yang TIDAK terpengaruh (keduanya punya `active_lembaga_id` valid di session, guard baru TIDAK PERNAH ter-trigger untuk kasus itu).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -432,7 +432,7 @@ git commit -m "fix(kurikulum-assignment): store() redirect ramah, bukan abort(42
 **Interfaces:**
 - Produces: view `create` menerima `activeLembaga` (`?Lembaga`) — `null` untuk platform, WAJIB non-null untuk non-platform (dijamin guard baru).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -454,12 +454,12 @@ it('shows the active lembaga name on the create page for a yayasan-scoped actor'
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="opens create without an active lembaga|active lembaga name on the create page" --compact`
 Expected: FAIL — test pertama gagal (`create()` saat ini SELALU `assertOk()`, tidak pernah redirect); test kedua gagal (belum ada teks nama lembaga di halaman create).
 
-- [ ] **Step 3: Implementasi minimal — controller**
+- [x] **Step 3: Implementasi minimal — controller**
 
 Ganti method `create()`:
 
@@ -507,7 +507,7 @@ public function create(Request $request): View|RedirectResponse
 }
 ```
 
-- [ ] **Step 4: Implementasi minimal — badge di header create**
+- [x] **Step 4: Implementasi minimal — badge di header create**
 
 Di `resources/views/admin/kurikulum-assignment/create.blade.php`, ganti (baris 7):
 
@@ -529,7 +529,7 @@ menjadi:
 </div>
 ```
 
-- [ ] **Step 5: Implementasi minimal — sebut nama lembaga di teks _form.blade.php**
+- [x] **Step 5: Implementasi minimal — sebut nama lembaga di teks _form.blade.php**
 
 Di `resources/views/admin/kurikulum-assignment/_form.blade.php` (struktur SUDAH direstrukturisasi Task 1), ganti cabang `@else` terakhir:
 
@@ -555,17 +555,17 @@ menjadi:
 
 (`$activeLembaga` otomatis tersedia di `_form.blade.php` lewat `@include` tanpa perlu diteruskan eksplisit di `create.blade.php` — Blade `@include` mewarisi SELURUH variabel view parent.)
 
-- [ ] **Step 6: Jalankan test, pastikan lulus**
+- [x] **Step 6: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="opens create without an active lembaga|active lembaga name on the create page" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua — termasuk test `create()`/`store()` platform (TIDAK terpengaruh, guard hanya untuk yayasan-scope) dan test lembaga-scope (`resolveActiveLembagaId()` untuk mereka SELALU `$actor->lembaga_id`, tidak pernah null, guard tidak pernah ter-trigger).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php resources/views/admin/kurikulum-assignment/create.blade.php resources/views/admin/kurikulum-assignment/_form.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -583,7 +583,7 @@ git commit -m "feat(kurikulum-assignment): guard create() + badge dan nama lemba
 **Interfaces:**
 - Consumes: `$isYayasan` dari Task 2.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -604,12 +604,12 @@ it('does not show the aggregate note for a lembaga-scoped actor', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="static note explaining the index|does not show the aggregate note" --compact`
 Expected: FAIL — test pertama gagal (catatan belum ada), test kedua kemungkinan sudah PASS kebetulan (catatan memang belum ada sama sekali) — normal, fokus ke test pertama.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `resources/views/admin/kurikulum-assignment/index.blade.php`, ganti (baris 11-15):
 
@@ -632,17 +632,17 @@ menjadi:
 </div>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="static note explaining the index|does not show the aggregate note" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/index.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -656,26 +656,26 @@ git commit -m "feat(kurikulum-assignment): catatan statis index selalu agregat u
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test domain Kurikulum Assignment**
+- [x] **Step 1: Jalankan seluruh test domain Kurikulum Assignment**
 
 Run: `php artisan test --compact --filter="KurikulumAssignmentControllerTest|KurikulumAssignmentDestroyGuardTest|KurikulumAssignmentTest|KurikulumAssignmentResolverTest"`
 Expected: PASS semua, 0 gagal. **Perhatikan KHUSUS**: `KurikulumAssignmentResolverTest` (Unit) HARUS tetap hijau TANPA satu pun perubahan perilaku — ini bukti langsung blast-radius benar-benar terkurung di Controller+View, tidak merembet ke Resolver.
 
-- [ ] **Step 2: Jalankan regresi modul Kelas (konsumen `KurikulumAssignmentResolver`)**
+- [x] **Step 2: Jalankan regresi modul Kelas (konsumen `KurikulumAssignmentResolver`)**
 
 Run: `php artisan test --compact --filter="KelasCrudTest|CreateKelasActionTest"`
 Expected: PASS semua, 0 gagal — bukti tambahan bahwa perubahan di Kurikulum Assignment TIDAK berdampak ke pembuatan Kelas.
 
-- [ ] **Step 3: Jalankan Pint pada file yang diubah**
+- [x] **Step 3: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 4: Verifikasi manual cepat via browser (WAJIB, bukan opsional — Task 1 menutup crash nyata)**
+- [x] **Step 4: Verifikasi manual cepat via browser (WAJIB, bukan opsional — Task 1 menutup crash nyata)**
 
 Login sebagai PLATFORM-scope: buka index Kurikulum Assignment, klik Edit pada baris "Platform Default" (global) — HARUS terbuka normal (sebelumnya 500). Klik Edit pada baris lembaga-spesifik manapun — HARUS terbuka normal juga, field "Berlaku Untuk" tampil sebagai teks read-only (bukan dropdown). Login sebagai YAYASAN-scope: buka index — baris "Platform Default" TIDAK ADA tombol Edit/Hapus (cuma "Read-only (Platform)"), lihat catatan statis "Daftar ini selalu menampilkan SEMUA lembaga...". Klik "Tambah Assignment" TANPA switch lembaga dulu → redirect balik ke index dengan error. Switch ke 1 lembaga, klik "Tambah Assignment" lagi → badge nama lembaga muncul di header, teks "Berlaku Untuk" menyebut nama lembaga eksplisit.
 
-- [ ] **Step 5: Laporkan hasil**
+- [x] **Step 5: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
