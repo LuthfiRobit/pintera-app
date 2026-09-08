@@ -277,3 +277,28 @@ it('passes isYayasan and activeLembaga to both the full index page and the ajax 
         ->assertViewHas('isYayasan', true)
         ->assertViewHas('activeLembaga', null);
 });
+
+it('passes isYayasan and activeLembaga to the edit view', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.edit', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.edit']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $mapel = MataPelajaran::create([
+        'lembaga_id' => $lembaga->id,
+        'kode' => 'EDT-01',
+        'nama' => 'Mapel Edit Uji',
+        'no_urut' => 1,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    // TIDAK switch lembaga -- mode "Semua Lembaga".
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.edit', $mapel))->assertOk()
+        ->assertViewHas('isYayasan', true);
+});

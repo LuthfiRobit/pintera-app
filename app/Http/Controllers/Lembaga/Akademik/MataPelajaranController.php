@@ -147,7 +147,7 @@ class MataPelajaranController extends BaseController
         return redirect()->route('admin.mata-pelajaran.index')->with('status', 'Mata pelajaran berhasil disimpan.');
     }
 
-    public function edit(MataPelajaran $mataPelajaran): View
+    public function edit(Request $request, MataPelajaran $mataPelajaran): View
     {
         $this->authorize('mata-pelajaran.edit');
 
@@ -156,6 +156,7 @@ class MataPelajaranController extends BaseController
             'tipeList' => TipeMataPelajaran::cases(),
             'kelompokList' => KelompokMataPelajaran::cases(),
             'statusList' => StatusMataPelajaran::cases(),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
