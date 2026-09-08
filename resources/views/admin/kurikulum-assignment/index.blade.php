@@ -55,10 +55,7 @@
                             <td class="whitespace-nowrap px-6 py-3.5 text-sm text-gray-600">{{ $a->tingkat ?? 'Semua Tingkat' }}</td>
                             <td class="whitespace-nowrap px-6 py-3.5 text-sm text-gray-900">{{ $a->kurikulum->label() }}</td>
                             <td class="whitespace-nowrap px-6 py-3.5 text-right text-sm">
-                                @php
-                                    $canManage = $isPlatformOrYayasan || ($a->lembaga_id !== null && $a->lembaga_id === auth()->user()->lembaga_id);
-                                @endphp
-                                @if ($canManage)
+                                @if ($a->canManage)
                                     <div class="inline-flex items-center gap-2">
                                         @can('kurikulum-assignment.edit')
                                             <a href="{{ route('admin.kurikulum-assignment.edit', $a) }}" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Edit</a>

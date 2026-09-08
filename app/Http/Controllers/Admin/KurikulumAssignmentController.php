@@ -33,24 +33,52 @@ class KurikulumAssignmentController extends BaseController
     {
         $this->authorize('kurikulum-assignment.view');
 
-        $scope = $request->user()->widestScopeLevel();
+        $actor = $request->user();
+        $scope = $actor->widestScopeLevel();
         $query = KurikulumAssignment::with(['lembaga', 'tahunAjaran']);
 
         if ($scope === 'yayasan') {
-            $lembagaIds = Lembaga::where('yayasan_id', $request->user()->yayasan_id)->pluck('id');
+            $lembagaIds = Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id');
             $query->where(function ($q) use ($lembagaIds) {
                 $q->whereNull('lembaga_id')->orWhereIn('lembaga_id', $lembagaIds);
             });
         } elseif ($scope !== 'platform') {
-            $query->where(function ($q) use ($request) {
-                $q->whereNull('lembaga_id')->orWhere('lembaga_id', $request->user()->lembaga_id);
+            $query->where(function ($q) use ($actor) {
+                $q->whereNull('lembaga_id')->orWhere('lembaga_id', $actor->lembaga_id);
             });
         }
 
+        $assignmentList = $query->orderByDesc('tahun_ajaran_id')->orderBy('bentuk_pendidikan')->orderByRaw('tingkat IS NULL')->orderBy('tingkat')->get()
+            ->each(function (KurikulumAssignment $assignment) use ($actor) {
+                $assignment->canManage = $this->canManageAssignment($actor, $assignment->lembaga_id);
+            });
+
         return view('admin.kurikulum-assignment.index', [
-            'assignmentList' => $query->orderByDesc('tahun_ajaran_id')->orderBy('bentuk_pendidikan')->orderByRaw('tingkat IS NULL')->orderBy('tingkat')->get(),
-            'isPlatformOrYayasan' => in_array($scope, ['platform', 'yayasan'], true),
+            'assignmentList' => $assignmentList,
+            'isYayasan' => $scope === 'yayasan',
         ]);
+    }
+
+    /**
+     * Mirror PERSIS kondisi authorizeExistingAssignmentScope() TAPI return bool alih-alih abort --
+     * dipakai index() untuk visibilitas tombol Edit/Hapus, BUKAN pengganti authorizeExistingAssignmentScope()
+     * yang tetap dipanggil apa adanya oleh edit()/update()/destroy().
+     */
+    private function canManageAssignment(User $actor, ?int $existingLembagaId): bool
+    {
+        if ($actor->widestScopeLevel() === 'platform') {
+            return true;
+        }
+
+        if ($existingLembagaId === null) {
+            return false;
+        }
+
+        if ($actor->widestScopeLevel() === 'yayasan') {
+            return Lembaga::where('id', $existingLembagaId)->where('yayasan_id', $actor->yayasan_id)->exists();
+        }
+
+        return $existingLembagaId === $actor->lembaga_id;
     }
 
     public function create(Request $request): View

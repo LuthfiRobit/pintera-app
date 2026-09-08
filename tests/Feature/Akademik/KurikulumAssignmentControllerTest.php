@@ -318,3 +318,31 @@ it('renders the edit page without crashing for a platform-scoped actor viewing a
 
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment))->assertOk();
 });
+
+it('computes canManage correctly per assignment for a yayasan-scoped actor (false for global, true for own-yayasan lembaga)', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $lembagaMilikSendiri = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'SD']);
+    $taSendiri = TahunAjaran::factory()->create(['lembaga_id' => $lembagaMilikSendiri->id]);
+    $taGlobal = TahunAjaran::factory()->create();
+    $assignmentSendiri = KurikulumAssignment::create(['lembaga_id' => $lembagaMilikSendiri->id, 'tahun_ajaran_id' => $taSendiri->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+    $assignmentGlobal = KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $taGlobal->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))->assertOk();
+
+    $response->assertViewHas('assignmentList', function ($list) use ($assignmentSendiri, $assignmentGlobal) {
+        $sendiri = $list->firstWhere('id', $assignmentSendiri->id);
+        $global = $list->firstWhere('id', $assignmentGlobal->id);
+
+        return $sendiri->canManage === true && $global->canManage === false;
+    });
+});
+
+it('does not render an Edit link for a global assignment row to a yayasan-scoped actor', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $ta = TahunAjaran::factory()->create();
+    $assignmentGlobal = KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))->assertOk();
+
+    $response->assertDontSee(route('admin.kurikulum-assignment.edit', $assignmentGlobal), false);
+});
