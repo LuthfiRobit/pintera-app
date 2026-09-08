@@ -596,3 +596,38 @@ it('does not show the scope badge for a lembaga-scoped actor', function () {
         ->assertDontSee('Semua Lembaga');
 });
 
+it('shows the lembaga name pill per card in aggregate mode', function () {
+    Permission::firstOrCreate(['name' => 'pola-jam.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_pill_agregat_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Cendekia']);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Agregat Test']);
+
+    $this->actingAs($manager)->get(route('admin.pola-jam.index'))
+        ->assertSee('SMP Cendekia');
+});
+
+it('hides the per-card lembaga pill (keeping only the single header badge mention) once a lembaga is switched into', function () {
+    Permission::firstOrCreate(['name' => 'pola-jam.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_pill_narrow_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Cendekia Utama']);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Narrow Test']);
+
+    $response = $this->actingAs($manager)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->get(route('admin.pola-jam.index'));
+
+    $response->assertDontSee('<span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">SMP Cendekia Utama</span>', false);
+    $response->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
+
+

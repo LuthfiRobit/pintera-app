@@ -92,7 +92,7 @@
                         <div class="flex items-center gap-3">
                             <h2 class="font-display text-lg font-bold text-gray-900">{{ $pola->nama }}</h2>
                             <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600 ring-1 ring-inset ring-brand-500/20">{{ $pola->jamPelajaran->count() }} slot</span>
-                            @if($pola->lembaga)
+                            @if (($isYayasan ?? false) && ! ($activeLembaga ?? null) && $pola->lembaga)
                                 <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">{{ $pola->lembaga->nama }}</span>
                             @endif
                         </div>
