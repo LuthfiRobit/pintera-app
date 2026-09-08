@@ -432,8 +432,3 @@ it('shows the lembaga name suffix in the Tahun Ajaran filter dropdown during agg
     $this->actingAs($manager)->get(route('admin.kelas.index'))
         ->assertSee('2026/2027 — SMA Pelita Bangsa', false);
 });
-
-
-
-
-
