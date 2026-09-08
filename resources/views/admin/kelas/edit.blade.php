@@ -10,7 +10,15 @@
 
         {{-- Header & Breadcrumb --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h1 class="font-display text-lg font-bold text-gray-900">Edit Kelas: {{ $kelas->nama }}</h1>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <h1 class="font-display text-lg font-bold text-gray-900">Edit Kelas: {{ $kelas->nama }}</h1>
+                @if ($isYayasan ?? false)
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
+                        <x-icon name="apartment" class="h-3.5 w-3.5" />
+                        {{ $kelas->lembaga->nama }}
+                    </span>
+                @endif
+            </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
                 <a href="{{ route('admin.kelas.index') }}" class="font-semibold text-gray-700 transition-colors duration-200 hover:text-brand-600">Kelas</a>

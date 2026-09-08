@@ -334,5 +334,51 @@ it('passes isYayasan and activeLembaga to both the full index page and the ajax 
         ->assertViewHas('activeLembaga', null);
 });
 
+it('shows the "Semua Lembaga" badge on the kelas index for a yayasan-scoped actor in aggregate mode', function () {
+    Permission::firstOrCreate(['name' => 'kelas.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.kelas.index'))->assertSee('Semua Lembaga');
+});
+
+it('shows the switched lembaga name badge on the create page (never the "Semua Lembaga" variant)', function () {
+    Permission::firstOrCreate(['name' => 'kelas.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Cakrawala Ilmu']);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.kelas.create'))
+        ->assertSee('SD Cakrawala Ilmu')
+        ->assertDontSee('border-purple-200');
+});
+
+it('shows the owning lembaga name badge on the edit page even in "Semua Lembaga" mode', function () {
+    Permission::firstOrCreate(['name' => 'kelas.edit', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.edit']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Cakrawala Ilmu']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '7A']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    // TIDAK switch lembaga -- mode "Semua Lembaga".
+
+    $this->actingAs($manager)->get(route('admin.kelas.edit', $kelas))->assertSee('SMP Cakrawala Ilmu');
+});
+
+
 
 
