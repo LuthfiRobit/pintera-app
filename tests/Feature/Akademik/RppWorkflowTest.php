@@ -496,4 +496,21 @@ it('menampilkan mode agregat (bukan kosong salah) di tab verifikasi utk yayasan-
     $response->assertOk()->assertSee('Topik Uji Agregat Stale');
 });
 
+it('menampilkan pesan sadar-filter di Inbox Verifikasi ketika hasil kosong karena filter, bukan klaim semua sudah ditinjau', function () {
+    $response = $this->actingAs($this->userKurikulum)->get(route('admin.rpp.index', [
+        'tab' => 'verifikasi', 'search' => 'topik-yang-tidak-ada-sama-sekali',
+    ]));
+
+    $response->assertOk()
+        ->assertDontSee('Semua pengajuan RPP telah selesai ditinjau.')
+        ->assertSee('Tidak ada dokumen yang cocok dengan filter di Inbox Verifikasi.');
+});
+
+it('tetap menampilkan pesan default Inbox kosong ketika benar-benar tidak ada filter aktif', function () {
+    $response = $this->actingAs($this->userKurikulum)->get(route('admin.rpp.index', ['tab' => 'verifikasi']));
+
+    $response->assertOk()->assertSee('Semua pengajuan RPP telah selesai ditinjau.');
+});
+
+
 

@@ -59,7 +59,7 @@ final class ListRppAction
             $query->where(function ($q) use ($search) {
                 $q->where('judul_topik', 'like', "%{$search}%")
                     ->orWhere('file_name', 'like', "%{$search}%")
-                    ->orWhereHas('guru', fn ($g) => $g->where('nama', 'like', "%{$search}%"))
+                    ->orWhereHas('guru', fn ($g) => $g->search($search))
                     ->orWhereHas('mataPelajaran', fn ($m) => $m->where('nama', 'like', "%{$search}%"));
             });
         }

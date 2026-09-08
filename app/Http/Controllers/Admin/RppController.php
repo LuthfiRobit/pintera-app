@@ -95,7 +95,9 @@ class RppController extends BaseController
         );
 
         if ($request->ajax()) {
-            return view('portals.lembaga.akademik.rpp._daftar', compact('rppList', 'tab', 'perPage'));
+            return view('portals.lembaga.akademik.rpp._daftar', compact(
+                'rppList', 'tab', 'perPage', 'search', 'tahunAjaranId', 'semesterId', 'kelasId', 'mapelId', 'status', 'kurikulum', 'tahunAjaranAktif'
+            ));
         }
 
         // Pilihan dropdown berdasar tenant & filter

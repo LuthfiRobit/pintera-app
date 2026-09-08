@@ -248,11 +248,28 @@
                     <tr>
                         <td colspan="8" class="px-5 py-12 text-center text-gray-500">
                             <x-icon name="description" class="mx-auto h-10 w-10 text-gray-300 mb-2" />
+                            @php
+                                $adaFilterAktif = $search || $semesterId || $kelasId || $mapelId || $kurikulum
+                                    || ($tahunAjaranId && $tahunAjaranId != ($tahunAjaranAktif->id ?? null))
+                                    || ($tab === 'verifikasi' && ($status ?? null) !== \App\Domains\Akademik\Enums\StatusRpp::Diajukan->value);
+                            @endphp
                             <p class="font-semibold text-gray-700">
-                                {{ $tab === 'verifikasi' ? 'Tidak ada perangkat ajar yang sedang menunggu review verifikasi kurikulum.' : 'Belum ada dokumen perangkat ajar yang cocok dengan filter.' }}
+                                @if ($tab === 'saya' && ! auth()->user()->guru)
+                                    Akun Anda tidak terhubung dengan profil Guru, sehingga tidak ada dokumen RPP pribadi di sini.
+                                @elseif ($tab === 'verifikasi' && ! $adaFilterAktif)
+                                    Tidak ada perangkat ajar yang sedang menunggu review verifikasi kurikulum.
+                                @elseif ($tab === 'verifikasi')
+                                    Tidak ada dokumen yang cocok dengan filter di Inbox Verifikasi.
+                                @else
+                                    Belum ada dokumen perangkat ajar yang cocok dengan filter.
+                                @endif
                             </p>
                             <p class="text-xs text-gray-400 mt-0.5">
-                                {{ $tab === 'verifikasi' ? 'Semua pengajuan RPP telah selesai ditinjau.' : 'Silakan sesuaikan kriteria filter atau unggah dokumen baru.' }}
+                                @if ($tab === 'verifikasi' && ! $adaFilterAktif)
+                                    Semua pengajuan RPP telah selesai ditinjau.
+                                @else
+                                    Silakan sesuaikan kriteria filter atau unggah dokumen baru.
+                                @endif
                             </p>
                         </td>
                     </tr>
