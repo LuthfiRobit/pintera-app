@@ -565,3 +565,15 @@ it('tidak menyebut role spesifik "Waka Kurikulum" di dialog konfirmasi pengajuan
         ->assertDontSee('Waka Kurikulum', false)
         ->assertSee('diverifikasi oleh pihak kurikulum', false);
 });
+
+it('menampilkan label default Inbox pada dropdown Status di tab verifikasi', function () {
+    $response = $this->actingAs($this->userKurikulum)->get(route('admin.rpp.index', ['tab' => 'verifikasi']));
+
+    $response->assertOk()->assertSee('(Inbox default: Menunggu Verifikasi)', false);
+});
+
+it('tidak menampilkan label default Inbox pada dropdown Status di tab saya', function () {
+    $response = $this->actingAs($this->userGuru)->get(route('admin.rpp.index', ['tab' => 'saya']));
+
+    $response->assertOk()->assertDontSee('(Inbox default: Menunggu Verifikasi)', false);
+});

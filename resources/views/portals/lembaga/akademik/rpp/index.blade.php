@@ -185,9 +185,14 @@
 
                 {{-- Status --}}
                 <div>
-                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Status</label>
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">
+                        Status
+                        @if ($tab === 'verifikasi')
+                            <span class="font-normal text-gray-400">(Inbox default: Menunggu Verifikasi)</span>
+                        @endif
+                    </label>
                     <select x-model="filters.status" @change="muatUlangDaftar()" class="block w-full rounded-lg border-gray-200 text-xs text-gray-800 shadow-sm focus:border-brand-500 focus:ring-brand-500 py-2">
-                        <option value="">— Semua Status —</option>
+                        <option value="">{{ $tab === 'verifikasi' ? '— Semua Status (Keluar dari Inbox Default) —' : '— Semua Status —' }}</option>
                         @foreach (\App\Domains\Akademik\Enums\StatusRpp::cases() as $s)
                             <option value="{{ $s->value }}">{{ $s->label() }}</option>
                         @endforeach
