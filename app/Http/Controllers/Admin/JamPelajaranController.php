@@ -108,6 +108,10 @@ class JamPelajaranController extends BaseController
     {
         $this->authorize('jam-pelajaran.delete');
 
+        if (! PolaJam::find($jamPelajaran->pola_jam_id)) {
+            abort(404);
+        }
+
         try {
             $action->execute($jamPelajaran);
         } catch (ValidationException $e) {

@@ -101,3 +101,18 @@ it('refuses to delete a jam pelajaran that has a jadwal pelajaran', function () 
 
     expect(JamPelajaran::find($jam->id))->not->toBeNull();
 });
+
+it('rejects deleting another lembaga\'s jam pelajaran with 404', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJamPelajaranManager($lembaga);
+    $polaLain = PolaJam::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $jamLain = JamPelajaran::factory()->create(['pola_jam_id' => $polaLain->id]);
+
+    $this->actingAs($manager)->delete(route('admin.jam-pelajaran.destroy', $jamLain))
+        ->assertNotFound();
+
+    expect(JamPelajaran::find($jamLain->id))->not->toBeNull();
+});
+
