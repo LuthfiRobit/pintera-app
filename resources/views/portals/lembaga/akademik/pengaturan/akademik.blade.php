@@ -23,12 +23,43 @@
         </div>
 
         @if ($lembagaBelumDipilih ?? false)
-            <div class="rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                    <x-icon name="apartment" class="h-6 w-6" />
+            <div class="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-gradient-to-b from-brand-50/30 via-white to-white p-10 text-center shadow-xs sm:p-14">
+                {{-- Decorative background gradient accent --}}
+                <div class="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 transform">
+                    <div class="h-48 w-96 rounded-full bg-gradient-to-tr from-brand-200/20 to-brand-400/10 blur-2xl"></div>
                 </div>
-                <h3 class="mt-4 font-display text-sm font-semibold text-gray-900">Pilih Lembaga Aktif Dulu</h3>
-                <p class="mx-auto mt-1 max-w-md text-sm text-gray-500">Hari Aktif Sekolah, Batas Waktu Edit Presensi, dan Kalender Akademik diatur per lembaga. Pilih 1 lembaga lewat pengalih lembaga di pojok kanan atas untuk mulai mengatur.</p>
+
+                <div class="relative">
+                    <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-brand-100 bg-brand-50 text-brand-600 shadow-xs ring-8 ring-brand-50/60">
+                        <x-icon name="apartment" class="h-8 w-8" />
+                    </div>
+
+                    <h3 class="mt-5 font-display text-base font-bold tracking-tight text-gray-900 sm:text-lg">Pilih Lembaga Aktif Dulu</h3>
+
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-gray-500">
+                        Hari Aktif Sekolah, Batas Waktu Edit Presensi, dan Kalender Akademik diatur per lembaga. Silakan pilih 1 lembaga lewat pengalih lembaga di pojok kanan atas untuk mulai mengatur.
+                    </p>
+
+                    <div class="mx-auto mt-6 flex max-w-xl flex-wrap items-center justify-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/90 bg-white/90 px-3 py-1 text-xs font-medium text-gray-600 shadow-2xs">
+                            <x-icon name="calendar_month" class="h-3.5 w-3.5 text-brand-600" />
+                            Hari Aktif Sekolah
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/90 bg-white/90 px-3 py-1 text-xs font-medium text-gray-600 shadow-2xs">
+                            <x-icon name="schedule" class="h-3.5 w-3.5 text-brand-600" />
+                            Batas Waktu Edit Presensi
+                        </span>
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200/90 bg-white/90 px-3 py-1 text-xs font-medium text-gray-600 shadow-2xs">
+                            <x-icon name="edit_note" class="h-3.5 w-3.5 text-brand-600" />
+                            Kalender Akademik
+                        </span>
+                    </div>
+
+                    <div class="mt-7 inline-flex items-center gap-2 rounded-xl border border-brand-200/70 bg-brand-50/70 px-4 py-2 text-xs font-medium text-brand-800">
+                        <x-icon name="info" class="h-4 w-4 shrink-0 text-brand-600" />
+                        <span>Pilih lembaga melalui menu dropdown di bilah navigasi kanan atas</span>
+                    </div>
+                </div>
             </div>
         @else
         <div x-data="{ tab: 'hari-aktif' }">
