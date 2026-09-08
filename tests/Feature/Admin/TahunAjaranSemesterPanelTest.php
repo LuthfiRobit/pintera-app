@@ -327,6 +327,7 @@ it('mentions the owning lembaga name in the activation confirm dialog wording', 
     ]);
 
     $this->get(route('admin.tahun-ajaran.index'))
+        ->assertSee("confirmDialog('Aktifkan 2026/2027?'", false)
         ->assertSee('Tahun Ajaran lain di lembaga SMA Bina Insan akan dinonaktifkan', false);
 });
 
@@ -387,4 +388,20 @@ it('renders the calendar_month icon instead of the unknown-icon placeholder in t
 it('no longer registers the dead admin.tahun-ajaran.create route', function () {
     expect(fn () => route('admin.tahun-ajaran.create'))
         ->toThrow(RouteNotFoundException::class);
+});
+
+it('renders card icons and standard confirm dialog without unknown-icon placeholders', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsTahunAjaranManager($lembaga);
+
+    TahunAjaran::create([
+        'lembaga_id' => $lembaga->id, 'nama' => '2026/2027',
+        'tanggal_mulai' => '2026-07-01', 'tanggal_selesai' => '2027-06-30', 'status_aktif' => false,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.tahun-ajaran.index'))->assertOk();
+
+    // No default (?) placeholder anywhere on the rendered page
+    $response->assertDontSee('M9.5 9a2.5 2.5 0 0 1 4.6-1.4', false);
 });

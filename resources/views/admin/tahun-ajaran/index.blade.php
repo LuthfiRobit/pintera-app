@@ -152,7 +152,9 @@
                                     </button>
                                     @if (!$isTaActive)
                                         @can('tahun-ajaran.activate')
-                                            <form action="{{ route('admin.tahun-ajaran.activate', $ta) }}" method="POST" class="inline" onsubmit="return confirm('Aktifkan {{ $ta->nama }}? Tahun Ajaran lain di lembaga {{ $ta->lembaga->nama ?? 'ini' }} akan dinonaktifkan (tidak memengaruhi lembaga lain).')">
+                                            <form action="{{ route('admin.tahun-ajaran.activate', $ta) }}" method="POST" class="inline"
+                                                x-data
+                                                @submit.prevent="confirmDialog('Aktifkan {{ $ta->nama }}?', @js('Tahun Ajaran lain di lembaga ' . ($ta->lembaga->nama ?? 'ini') . ' akan dinonaktifkan (tidak memengaruhi lembaga lain).'), { confirmLabel: 'Ya, Aktifkan' }).then(confirmed => { if (confirmed) $el.submit() })">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" class="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition" title="Jadikan Tahun Ajaran Aktif">
@@ -206,7 +208,9 @@
                                             <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">Aktif</span>
                                         @elseif ($isTaActive)
                                             @can('semester.activate')
-                                                <form action="{{ route('admin.semester.activate', $semGanjil) }}" method="POST">
+                                                <form action="{{ route('admin.semester.activate', $semGanjil) }}" method="POST"
+                                                    x-data
+                                                    @submit.prevent="confirmDialog('Aktifkan Semester Ganjil?', @js('Aktifkan Semester Ganjil untuk tahun ajaran ' . $ta->nama . '? Semester lain pada tahun ajaran ini akan dinonaktifkan.'), { confirmLabel: 'Ya, Aktifkan' }).then(confirmed => { if (confirmed) $el.submit() })">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit" class="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 shadow-2xs border border-gray-200 hover:bg-gray-50 hover:text-brand-600 transition">Aktifkan</button>
@@ -242,7 +246,9 @@
                                             <span class="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">Aktif</span>
                                         @elseif ($isTaActive)
                                             @can('semester.activate')
-                                                <form action="{{ route('admin.semester.activate', $semGenap) }}" method="POST">
+                                                <form action="{{ route('admin.semester.activate', $semGenap) }}" method="POST"
+                                                    x-data
+                                                    @submit.prevent="confirmDialog('Aktifkan Semester Genap?', @js('Aktifkan Semester Genap untuk tahun ajaran ' . $ta->nama . '? Semester lain pada tahun ajaran ini akan dinonaktifkan.'), { confirmLabel: 'Ya, Aktifkan' }).then(confirmed => { if (confirmed) $el.submit() })">
                                                     @csrf
                                                     @method('PATCH')
                                                     <button type="submit" class="rounded-lg bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 shadow-2xs border border-gray-200 hover:bg-gray-50 hover:text-brand-600 transition">Aktifkan</button>
