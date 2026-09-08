@@ -12,6 +12,7 @@ use App\Domains\Akademik\DataTransferObjects\PolaJamData;
 use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,13 +25,32 @@ class PolaJamController extends BaseController
     use AuthorizesRequests;
     use ResolveLembagaScopeTrait;
 
-    public function index(): View
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+     * halaman (pola sama seperti admin/siswa/index.blade.php) -- HANYA relevan untuk aktor
+     * berscope yayasan (punya switcher lembaga).
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
+    }
+
+    public function index(Request $request): View
     {
         $this->authorize('pola-jam.view');
 
         return view('portals.lembaga.akademik.pola-jam.index', [
             'polaJamList' => PolaJam::with(['jamPelajaran', 'lembaga', 'kelas.tahunAjaran'])->orderBy('nama')->get(),
             'kelasList' => Kelas::with(['tahunAjaran', 'polaJam'])->orderBy('nama')->get(),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 

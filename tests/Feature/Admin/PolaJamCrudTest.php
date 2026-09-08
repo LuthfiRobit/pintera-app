@@ -555,3 +555,44 @@ it('renders timetable matrix headers and slot chips on pola jam index', function
     $response->assertSee('Kegiatan Literasi');
     $response->assertSee('08:45 - 09:20');
 });
+
+it('shows the "Semua Lembaga" badge in aggregate mode on the pola jam index', function () {
+    Permission::firstOrCreate(['name' => 'pola-jam.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_badge_agregat_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.pola-jam.index'))
+        ->assertSee('Semua Lembaga')
+        ->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
+});
+
+it('shows the active lembaga name badge when a yayasan-scoped actor has switched into a lembaga', function () {
+    Permission::firstOrCreate(['name' => 'pola-jam.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_pola_jam_badge_narrow_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['pola-jam.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Cempaka Raya']);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->get(route('admin.pola-jam.index'))
+        ->assertSee('SD Cempaka Raya')
+        ->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
+
+it('does not show the scope badge for a lembaga-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.pola-jam.index'))
+        ->assertDontSee('Semua Lembaga');
+});
+
