@@ -286,7 +286,7 @@ export function jadwalPelajaranFilter(config) {
                         json.semesterList.forEach((semester) => {
                             const option = document.createElement('option');
                             option.value = semester.id;
-                            option.textContent = semester.nama;
+                            option.textContent = semester.nama + (semester.status_aktif ? ' (Aktif)' : '');
                             this.$refs.semesterSelect.appendChild(option);
                         });
                     }

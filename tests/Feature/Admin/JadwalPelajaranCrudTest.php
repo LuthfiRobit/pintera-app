@@ -1276,3 +1276,28 @@ it('does not show the lembaga suffix on the tahun ajaran dropdown for a lembaga-
         ->assertSee('2025/2026 (Aktif)', false)
         ->assertDontSee('2025/2026 (Aktif) —', false);
 });
+
+it('shows "(Aktif)" on the semester dropdown for the active semester', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil', 'status_aktif' => true]);
+    Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap', 'status_aktif' => false]);
+
+    $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', ['tahun_ajaran_id' => $tahunAjaran->id]))
+        ->assertSee('Ganjil (Aktif)', false)
+        ->assertDontSee('Genap (Aktif)', false);
+});
+
+it('includes status_aktif in the opsi() endpoint semester payload', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil', 'status_aktif' => true]);
+
+    $response = $this->actingAs($manager)->getJson(route('admin.jadwal-pelajaran.opsi', ['tahun_ajaran_id' => $tahunAjaran->id]));
+
+    $response->assertOk()->assertJsonFragment(['status_aktif' => true]);
+});
