@@ -22,7 +22,7 @@ Menuntaskan audit backend dan frontend pada menu **Kelas** untuk menutup 2 gap b
 
 2. **Commit `30a631bb` — Pendaftaran SVG Inline Icon Global**
    - `resources/views/components/icon.blade.php`:
-     - Mendaftarkan icon `group_work`, `person_apron`, serta alias `badge` untuk mencegah placeholder tanda tanya `(?)` pada antarmuka.
+     - Mendaftarkan 9 nama icon yang sebelumnya belum terdaftar dan jatuh ke placeholder tanda tanya `(?)`: `check-circle`, `filter_alt`, `plus`, `work_outline`, `error`, `save`, `shield`, `corporate_fare`/`domain` (alias, 1 SVG sama), dan `account_balance`. Dikonfirmasi lewat grep, ikon-ikon ini dipakai di 18 halaman lain di luar Kelas (Tahun Ajaran, Karyawan, Siswa, Orang Tua, Lembaga, Roles, Users, dll) — perbaikan ini bersifat global, ditemukan saat verifikasi browser manual untuk menu Kelas tapi cakupannya lebih luas dari itu.
 
 3. **Commit `f1d4f4cf` — Task 1: Guard `create()` + Scoping Eksplisit Dropdown ke Lembaga Aktif**
    - `app/Http/Controllers/Admin/KelasController.php`:
