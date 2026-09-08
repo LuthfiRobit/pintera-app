@@ -1317,3 +1317,18 @@ it('shows a read-only kelas and semester context banner inside the add/edit slot
     $response->assertSee('Kelas <strong class="font-semibold text-gray-800">4A</strong>', false)
         ->assertSee('Semester <strong class="font-semibold text-gray-800">Ganjil</strong>', false);
 });
+
+it('shows "Menyalin KE" context with the target kelas and semester name inside the duplicate modal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Genap']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '5B']);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertSee('Menyalin KE: Kelas <strong class="font-semibold">5B</strong> · Semester <strong class="font-semibold">Genap</strong>', false);
+});

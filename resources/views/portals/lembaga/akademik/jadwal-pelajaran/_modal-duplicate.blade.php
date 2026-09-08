@@ -24,6 +24,15 @@
             </button>
         </div>
 
+        @if (isset($kelas) && $kelas)
+            <div class="mt-3 rounded-lg bg-brand-50 px-3.5 py-2.5 text-xs text-brand-800 border border-brand-200">
+                <span class="flex items-center gap-1.5">
+                    <x-icon name="arrow_forward" class="h-3.5 w-3.5 text-brand-500" />
+                    Menyalin KE: Kelas <strong class="font-semibold">{{ $kelas->nama }}</strong> · Semester <strong class="font-semibold">{{ $semesterList->firstWhere('id', $semesterId)?->nama ?? '—' }}</strong>
+                </span>
+            </div>
+        @endif
+
         <form action="{{ route('admin.jadwal-pelajaran.duplicate') }}" method="POST" @submit="submitDuplicate($event)" class="mt-4 space-y-5">
             @csrf
             <input type="hidden" name="target_kelas_id" :value="duplicateForm.target_kelas_id">
