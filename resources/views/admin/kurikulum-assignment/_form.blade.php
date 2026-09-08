@@ -14,7 +14,15 @@
 
     <div class="p-6">
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-            @if ($isPlatform ?? false)
+            @if ($assignment)
+                {{-- Mode edit: lembaga_id immutable setelah dibuat (UpdateKurikulumAssignmentAction selalu
+                     pakai nilai lama), jadi SELALU read-only untuk SEMUA scope aktor termasuk platform --
+                     tidak ada gunanya (dan menyesatkan) menampilkan dropdown yang bisa diklik tapi diabaikan. --}}
+                <div class="sm:col-span-6">
+                    <x-input-label value="Berlaku Untuk" />
+                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $assignment->lembaga?->nama ?? '— Global (Platform Default) —' }} <span class="text-gray-400">(tidak bisa diubah setelah dibuat)</span></p>
+                </div>
+            @elseif ($isPlatform ?? false)
                 <div class="sm:col-span-6">
                     <x-input-label value="Berlaku Untuk" />
                     <select name="lembaga_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
@@ -25,15 +33,10 @@
                     </select>
                     <x-input-error :messages="$errors->get('lembaga_id')" class="mt-1.5" />
                 </div>
-            @elseif (! $assignment)
-                <div class="sm:col-span-6">
-                    <x-input-label value="Berlaku Untuk" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga yang sedang aktif di sesi Anda.</p>
-                </div>
             @else
                 <div class="sm:col-span-6">
                     <x-input-label value="Berlaku Untuk" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $assignment->lembaga?->nama ?? '— Global (semua lembaga) —' }}</p>
+                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga yang sedang aktif di sesi Anda.</p>
                 </div>
             @endif
 

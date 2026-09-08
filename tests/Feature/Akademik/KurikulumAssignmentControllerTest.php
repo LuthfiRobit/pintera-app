@@ -301,3 +301,20 @@ it('yayasan cuma lihat assignment global + milik yayasannya sendiri di index, TI
             && ! $list->contains('id', $assignmentB->id);
     });
 });
+
+it('renders the edit page without crashing for a platform-scoped actor viewing a global assignment', function () {
+    $manager = actingAsPlatformScopeKurikulumManager();
+    $ta = TahunAjaran::factory()->create();
+    $assignmentGlobal = KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignmentGlobal))->assertOk();
+});
+
+it('renders the edit page without crashing for a platform-scoped actor viewing a lembaga-specific assignment', function () {
+    $manager = actingAsPlatformScopeKurikulumManager();
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $assignment = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment))->assertOk();
+});
