@@ -302,3 +302,55 @@ it('passes isYayasan and activeLembaga to the edit view', function () {
     $this->actingAs($manager)->get(route('admin.mata-pelajaran.edit', $mapel))->assertOk()
         ->assertViewHas('isYayasan', true);
 });
+
+it('shows the "Semua Lembaga" badge on the mata pelajaran index for a yayasan-scoped actor in aggregate mode', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.index'))->assertSee('Semua Lembaga');
+});
+
+it('shows the switched lembaga name badge on the create page (never the "Semua Lembaga" variant)', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Bina Cendekia']);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.create'))
+        ->assertSee('SD Bina Cendekia')
+        ->assertDontSee('border-purple-200');
+});
+
+it('shows the owning lembaga name badge on the edit page even in "Semua Lembaga" mode', function () {
+    Permission::firstOrCreate(['name' => 'mata-pelajaran.edit', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['mata-pelajaran.edit']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Bina Cendekia']);
+    $mapel = MataPelajaran::create([
+        'lembaga_id' => $lembaga->id,
+        'kode' => 'BDG-01',
+        'nama' => 'Mapel Badge Uji',
+        'no_urut' => 1,
+        'tipe' => TipeMataPelajaran::Mapel->value,
+        'kelompok' => KelompokMataPelajaran::Umum->value,
+        'status' => StatusMataPelajaran::Aktif->value,
+    ]);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    // TIDAK switch lembaga -- mode "Semua Lembaga".
+
+    $this->actingAs($manager)->get(route('admin.mata-pelajaran.edit', $mapel))->assertSee('SMP Bina Cendekia');
+});
