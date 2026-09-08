@@ -521,3 +521,13 @@ it('shows the "Semua Lembaga" badge in aggregate mode', function () {
         ->assertSee('Semua Lembaga')
         ->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
 });
+
+it('shows the validation error message when redirected to index after failing to open create without an active lembaga', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+
+    $this->actingAs($managerA);
+
+    $this->followingRedirects()->get(route('admin.kurikulum-assignment.create'))
+        ->assertSee('Pilih lembaga aktif melalui pengalih lembaga sebelum menambah assignment kurikulum.');
+});
+

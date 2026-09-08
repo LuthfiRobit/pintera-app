@@ -8,6 +8,10 @@
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700">{{ session('error') }}</div>
         @endif
 
+        @if ($errors->any())
+            <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
+        @endif
+
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <div class="flex flex-wrap items-center gap-2.5">
