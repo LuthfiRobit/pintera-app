@@ -191,7 +191,7 @@ it('does not let a yayasan-scoped user without an active lembaga save hari_libur
         ->assertJsonValidationErrors('lembaga_id');
 });
 
-it('redirects a yayasan-scoped user without an active lembaga away from the pengaturan akademik page', function () {
+it('shows an in-page prompt instead of redirecting when a yayasan-scoped user has no active lembaga', function () {
     Permission::firstOrCreate(['name' => 'kalender-akademik.view', 'guard_name' => 'web']);
     $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
     $role->syncPermissions(['kalender-akademik.view']);
@@ -201,11 +201,13 @@ it('redirects a yayasan-scoped user without an active lembaga away from the peng
 
     $this->actingAs($manager)
         ->get(route('admin.pengaturan.akademik.index'))
-        ->assertRedirect(route('dashboard'))
-        ->assertSessionHasErrors('lembaga_id');
+        ->assertOk()
+        ->assertViewIs('portals.lembaga.akademik.pengaturan.akademik')
+        ->assertViewHas('lembagaBelumDipilih', true)
+        ->assertSee('Pilih Lembaga Aktif Dulu');
 });
 
-it('menolak actor yayasan dengan active_lembaga_id stale mengakses Pengaturan Akademik', function () {
+it('shows the same in-page prompt when active_lembaga_id session is stale (belongs to a different yayasan)', function () {
     $yayasanSaya = Yayasan::factory()->create();
     $yayasanLain = Yayasan::factory()->create();
     $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
@@ -218,6 +220,7 @@ it('menolak actor yayasan dengan active_lembaga_id stale mengakses Pengaturan Ak
 
     $response = $this->actingAs($manager)->get(route('admin.pengaturan.akademik.index'));
 
-    $response->assertRedirect();
-    $response->assertSessionHasErrors('lembaga_id');
+    $response->assertOk();
+    $response->assertViewHas('lembagaBelumDipilih', true);
+    $response->assertSee('Pilih Lembaga Aktif Dulu');
 });

@@ -11,7 +11,6 @@ use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\Lembaga;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\View\View;
@@ -20,19 +19,26 @@ class PengaturanAkademikController extends BaseController
 {
     use AuthorizesRequests, ResolveLembagaScopeTrait;
 
-    public function index(Request $request): View|RedirectResponse
+    public function index(Request $request): View
     {
         $this->authorize('kalender-akademik.view');
 
         $lembagaId = $this->resolveActiveLembagaId($request->user());
+
         if ($lembagaId === null) {
-            return redirect()->route('dashboard')
-                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga untuk mengakses Pengaturan Akademik.']);
+            return view('portals.lembaga.akademik.pengaturan.akademik', [
+                'lembagaBelumDipilih' => true,
+                'lembaga' => null,
+                'entriList' => collect(),
+                'bolehNasional' => false,
+                'bolehKelolaHariAktif' => false,
+            ]);
         }
 
         $lembaga = Lembaga::findOrFail($lembagaId);
 
         return view('portals.lembaga.akademik.pengaturan.akademik', [
+            'lembagaBelumDipilih' => false,
             'lembaga' => $lembaga,
             'entriList' => KalenderAkademik::where(fn ($q) => $q->whereNull('lembaga_id')->orWhere('lembaga_id', $lembagaId))
                 ->orderBy('tanggal')
