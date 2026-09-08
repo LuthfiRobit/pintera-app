@@ -40,7 +40,7 @@
 **Interfaces:**
 - Tidak ada interface baru — memakai ulang `PolaJam::find()` (sudah tenant-scoped lewat `BelongsToTenant`) persis seperti pola `edit()`/`update()` di file yang sama.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke `tests/Feature/Admin/JamPelajaranCrudTest.php` (akhir file):
 
@@ -60,12 +60,12 @@ it('rejects deleting another lembaga\'s jam pelajaran with 404', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="rejects deleting another lembaga" --compact`
 Expected: FAIL — `destroy()` saat ini menghapus baris tanpa mengecek scope, jadi `JamPelajaran::find($jamLain->id)` akan `null` (assertion `not->toBeNull()` gagal), dan HTTP response bukan 404 melainkan 302 redirect sukses.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/JamPelajaranController.php`, ganti:
 
@@ -105,17 +105,17 @@ public function destroy(JamPelajaran $jamPelajaran, DeleteJamPelajaranAction $ac
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="rejects deleting another lembaga" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JamPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk test "deletes a jam pelajaran with no jadwal pelajaran" dan "refuses to delete a jam pelajaran that has a jadwal pelajaran" (harus tetap lulus, guard baru tidak boleh mengganggu delete yang sah dalam scope sendiri).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/JamPelajaranController.php tests/Feature/Admin/JamPelajaranCrudTest.php
@@ -134,7 +134,7 @@ git commit -m "fix(jam-pelajaran): tutup IDOR lintas-lembaga di destroy(), samak
 **Interfaces:**
 - Produces: view `portals.lembaga.akademik.pola-jam.index` menerima `isYayasan` (`bool`) dan `activeLembaga` (`?Lembaga`) — dipakai lagi oleh Task 3 dan Task 4.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke `tests/Feature/Admin/PolaJamCrudTest.php` (akhir file):
 
@@ -180,12 +180,12 @@ it('does not show the scope badge for a lembaga-scoped actor', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="Semua Lembaga.*badge|active lembaga name badge|does not show the scope badge" --compact`
 Expected: 2 test pertama FAIL (badge belum ada di view sama sekali), test ketiga sudah PASS (baseline — memang belum ada badge apapun untuk siapapun saat ini).
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/PolaJamController.php`, tambahkan import setelah `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;`:
 
@@ -270,17 +270,17 @@ menjadi:
 </div>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="Semua Lembaga.*badge|active lembaga name badge|does not show the scope badge" --compact`
 Expected: PASS ketiga test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/PolaJamController.php resources/views/portals/lembaga/akademik/pola-jam/index.blade.php tests/Feature/Admin/PolaJamCrudTest.php
@@ -298,7 +298,7 @@ git commit -m "feat(pola-jam): tambah scopeHeaderData() + badge scope di header 
 **Interfaces:**
 - Consumes: `$isYayasan`, `$activeLembaga` dari Task 2.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -337,12 +337,12 @@ it('hides the per-card lembaga pill (keeping only the single header badge mentio
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan test kedua gagal**
+- [x] **Step 2: Jalankan test, pastikan test kedua gagal**
 
 Run: `php artisan test --filter="lembaga name pill per card in aggregate mode|hides the per-card lembaga pill" --compact`
 Expected: test pertama sudah PASS (pill sudah muncul tanpa syarat saat ini). Test kedua FAIL — nama lembaga saat ini muncul 2 kali (badge header + pill kartu), bukan 1 kali.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `index.blade.php`, ganti (baris ±87-89):
 
@@ -360,17 +360,17 @@ menjadi:
 @endif
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="lembaga name pill per card in aggregate mode|hides the per-card lembaga pill" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/pola-jam/index.blade.php tests/Feature/Admin/PolaJamCrudTest.php
@@ -388,7 +388,7 @@ git commit -m "fix(pola-jam): pill nama lembaga per-kartu hanya tampil saat mode
 **Interfaces:**
 - Consumes: `$isYayasan`, `$activeLembaga` dari Task 2.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -418,12 +418,12 @@ it('enables the "+ Tambah Pola Jam" button for a lembaga-scoped actor', function
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan test pertama gagal**
+- [x] **Step 2: Jalankan test, pastikan test pertama gagal**
 
 Run: `php artisan test --filter="disables the .\+ Tambah Pola Jam.|enables the .\+ Tambah Pola Jam." --compact`
 Expected: test kedua sudah PASS (tombol memang selalu aktif saat ini). Test pertama FAIL — belum ada state disabled apapun.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `index.blade.php`, ganti (baris ±65-69):
 
@@ -451,17 +451,17 @@ menjadi:
 @endcan
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="disables the .\+ Tambah Pola Jam.|enables the .\+ Tambah Pola Jam." --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/pola-jam/index.blade.php tests/Feature/Admin/PolaJamCrudTest.php
@@ -481,7 +481,7 @@ git commit -m "feat(pola-jam): nonaktifkan tombol Tambah Pola Jam saat mode agre
 **Interfaces:**
 - Tidak ada interface baru — murni penghapusan.
 
-- [ ] **Step 1: Verifikasi WAJIB sebelum menghapus apapun**
+- [x] **Step 1: Verifikasi WAJIB sebelum menghapus apapun**
 
 Run: `php artisan route:list --name=pola-jam`
 Expected output berisi 8 route: `pola-jam.index`, `pola-jam.create`, `pola-jam.store`, `pola-jam.edit`, `pola-jam.update`, `pola-jam.destroy`, `pola-jam.assign-kelas`, `pola-jam.duplicate`. Catat baik-baik bahwa HANYA `pola-jam.create` (GET) dan `pola-jam.edit` (GET) yang akan dihapus di step ini — 6 route lain TIDAK disentuh.
@@ -489,7 +489,7 @@ Expected output berisi 8 route: `pola-jam.index`, `pola-jam.create`, `pola-jam.s
 Run: `grep -rn "pola-jam.create\|pola-jam.edit" resources/views/ app/`
 Expected: SEMUA hasil adalah `@can('pola-jam.create')`/`@can('pola-jam.edit')` (menggerbangi tombol modal, BUKAN link navigasi) atau definisi controller/route itu sendiri. Kalau ternyata ADA `<a href="{{ route('admin.pola-jam.create') }}">` atau `edit') }}">` di file manapun — STOP, jangan lanjut ke Step 2, laporkan ke user karena berarti asumsi "halaman mati" di spec ini salah.
 
-- [ ] **Step 2: Hapus route**
+- [x] **Step 2: Hapus route**
 
 Di `routes/admin/akademik-master.php`, hapus baris:
 
@@ -505,7 +505,7 @@ Route::get('pola-jam/{polaJam}/edit', [PolaJamController::class, 'edit'])->name(
 
 Baris `pola-jam.index`, `pola-jam.store`, `pola-jam.update`, `pola-jam.destroy`, `pola-jam.assign-kelas`, `pola-jam.duplicate` TETAP ADA, tidak diubah urutan maupun isinya.
 
-- [ ] **Step 3: Hapus method controller**
+- [x] **Step 3: Hapus method controller**
 
 Di `app/Http/Controllers/Admin/PolaJamController.php`, hapus method:
 
@@ -529,24 +529,24 @@ public function edit(PolaJam $polaJam): View
 }
 ```
 
-- [ ] **Step 4: Hapus file view**
+- [x] **Step 4: Hapus file view**
 
 ```bash
 git rm resources/views/portals/lembaga/akademik/pola-jam/create.blade.php
 git rm resources/views/portals/lembaga/akademik/pola-jam/edit.blade.php
 ```
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --compact`
 Expected: PASS semua — tidak ada test yang meng-hit GET `pola-jam.create`/`pola-jam.edit` (sudah diverifikasi di Step 1 spec-level), jadi tidak ada test yang akan gagal karena route hilang.
 
-- [ ] **Step 6: Verifikasi route memang sudah tidak terdaftar**
+- [x] **Step 6: Verifikasi route memang sudah tidak terdaftar**
 
 Run: `php artisan route:list --name=pola-jam`
 Expected: hanya 6 route tersisa (`index`, `store`, `update`, `destroy`, `assign-kelas`, `duplicate`) — `create` dan `edit` sudah tidak ada di daftar.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/PolaJamController.php routes/admin/akademik-master.php
@@ -564,7 +564,7 @@ git commit -m "chore(pola-jam): hapus halaman mati create/edit (alur nyata 100% 
 **Interfaces:**
 - Tidak ada interface baru — `confirmDialog()` helper global sudah tersedia (sudah dipakai form Hapus di file yang sama).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -583,12 +583,12 @@ it('uses confirmDialog() for the Duplikat button instead of submitting instantly
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="uses confirmDialog\(\) for the Duplikat button" --compact`
 Expected: FAIL — form Duplikat saat ini submit langsung tanpa `confirmDialog()` apapun.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `index.blade.php`, ganti (baris ±94-102):
 
@@ -623,17 +623,17 @@ menjadi:
 </form>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="uses confirmDialog\(\) for the Duplikat button" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --compact`
 Expected: PASS semua — termasuk test "duplicates a pola jam along with all its jam pelajaran slots without copying kelas bindings" (mekanisme `duplicate()` di controller/action TIDAK diubah, hanya lapisan konfirmasi di view).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/pola-jam/index.blade.php tests/Feature/Admin/PolaJamCrudTest.php
@@ -647,22 +647,22 @@ git commit -m "feat(pola-jam): confirmDialog() untuk tombol Duplikat + penjelasa
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test domain Pola Jam & Jam Pelajaran**
+- [x] **Step 1: Jalankan seluruh test domain Pola Jam & Jam Pelajaran**
 
 Run: `php artisan test --compact --filter="PolaJamCrudTest|JamPelajaranCrudTest|KelasPolaJamTest|DeletePolaJamActionTest|DuplicatePolaJamActionTest|PolaJamSeederTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan regresi seeder permission**
+- [x] **Step 2: Jalankan regresi seeder permission**
 
 Run: `php artisan test --compact --filter="RolePermissionSeederTest"`
 Expected: PASS — Task 5 menghapus route/method/view tapi TIDAK menyentuh permission `pola-jam.create`/`pola-jam.edit` di seeder, jadi test ini harus tetap lulus tanpa perubahan apapun.
 
-- [ ] **Step 3: Jalankan Pint pada file yang diubah**
+- [x] **Step 3: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 4: Verifikasi manual via browser (WAJIB)**
+- [x] **Step 4: Verifikasi manual via browser (WAJIB)**
 
 Login sebagai LEMBAGA-scope dengan permission `jam-pelajaran.delete`: buka Pola Jam, hapus 1 slot jam pelajaran milik lembaga sendiri — harus berhasil normal (regresi Task 1 tidak boleh memblokir delete yang sah).
 
@@ -672,7 +672,7 @@ Klik tombol "Duplikat" pada salah satu pola jam: dialog modal standar muncul (BU
 
 Coba akses langsung `/pola-jam/create` dan `/pola-jam/{id}/edit` lewat URL bar: harus 404 (route sudah tidak terdaftar).
 
-- [ ] **Step 5: Buat handoff log**
+- [x] **Step 5: Buat handoff log**
 
 Ikuti pola dokumentasi yang sudah dipakai untuk audit-audit sebelumnya di rangkaian ini: tulis 1 file baru di `.agents/logs/` dengan nama `2026-09-08-pola-jam-audit-perbaikan.md`, berisi ringkasan temuan (terutama Item A — IDOR kritis, sertakan bukti empiris HTTP 302 + delete berhasil sebelum fix, dan konfirmasi HTTP 404 + data tidak terhapus setelah fix), daftar 6 item yang diperbaiki, commit hash tiap task, dan hasil regresi test. Ini WAJIB dilakukan sebagai bagian dari Task 7 — BUKAN permintaan tambahan terpisah.
 
