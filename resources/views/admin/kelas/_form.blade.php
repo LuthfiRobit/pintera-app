@@ -1,6 +1,13 @@
 @php
     $kelas = $kelas ?? null;
     $val = fn (string $field, $default = '') => old($field, $kelas?->$field ?? $default);
+    $guruOptions = collect([['id' => '', 'nama' => '— Belum ditentukan —', 'subtext' => '']])
+        ->concat($guruList->map(fn ($g) => [
+            'id' => (string) $g->id,
+            'nama' => $g->nama,
+            'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : ($g->jenis_ptk ? str_replace('_', ' ', ucwords($g->jenis_ptk, '_')) : '')),
+        ]))
+        ->values();
 @endphp
 
 <div
@@ -81,14 +88,25 @@
                 <p class="mt-1 text-xs text-gray-400">Otomatis disarankan mengikuti jenjang &amp; tingkat. Bisa diubah manual jika perlu.</p>
             </div>
 
-            <div class="sm:col-span-12">
+            <div class="sm:col-span-12" x-data="tomSelectPegawai({
+                options: @js($guruOptions),
+                oldValue: @js($val('wali_kelas_guru_id')),
+                placeholder: '— Pilih atau cari wali kelas —'
+            })">
                 <x-input-label value="Wali Kelas (opsional)" />
-                <select name="wali_kelas_guru_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
-                    <option value="">— Belum ditentukan —</option>
-                    @foreach ($guruList as $guru)
-                        <option value="{{ $guru->id }}" @selected($val('wali_kelas_guru_id') == $guru->id)>{{ $guru->nama }}</option>
-                    @endforeach
-                </select>
+                <div class="mt-1.5">
+                    <select
+                        name="wali_kelas_guru_id"
+                        x-ref="selectElement"
+                        class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                        autocomplete="off"
+                    >
+                        <option value="">— Belum ditentukan —</option>
+                        @foreach ($guruList as $guru)
+                            <option value="{{ $guru->id }}" @selected($val('wali_kelas_guru_id') == $guru->id)>{{ $guru->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
                 <x-input-error :messages="$errors->get('wali_kelas_guru_id')" class="mt-1.5" />
             </div>
         </div>

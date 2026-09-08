@@ -18,6 +18,7 @@ export function tomSelectPegawai(config) {
                 options: this.options,
                 items: this.oldValue ? [String(this.oldValue)] : [],
                 placeholder: this.placeholder,
+                allowEmptyOption: true,
                 maxOptions: 100,
                 render: {
                     option: function(data, escape) {

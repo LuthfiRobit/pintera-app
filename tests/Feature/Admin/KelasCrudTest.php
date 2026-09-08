@@ -432,3 +432,35 @@ it('shows the lembaga name suffix in the Tahun Ajaran filter dropdown during agg
     $this->actingAs($manager)->get(route('admin.kelas.index'))
         ->assertSee('2026/2027 — SMA Pelita Bangsa', false);
 });
+
+it('renders the wali kelas field with searchable tomSelectPegawai integration', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'nip' => '198001012010011001']);
+    $manager = actingAsKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kelas.create'));
+
+    $response->assertOk();
+    $response->assertSee('tomSelectPegawai', false);
+    $response->assertSee('NIP: 198001012010011001', false);
+});
+
+it('pre-selects existing wali kelas in the edit form with tomSelectPegawai', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id,
+        'tahun_ajaran_id' => $ta->id,
+        'wali_kelas_guru_id' => $guru->id,
+    ]);
+    $manager = actingAsKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kelas.edit', $kelas));
+
+    $response->assertOk();
+    $response->assertSee('tomSelectPegawai', false);
+    $response->assertSee('oldValue: '.$guru->id, false);
+});
