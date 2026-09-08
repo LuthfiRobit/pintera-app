@@ -77,6 +77,7 @@
                                 @endforeach
                             </select>
                             <p class="mt-1.5 text-[11px] text-gray-400">Pilih satu atau beberapa slot sekaligus. Klik tombol <span class="font-semibold text-gray-600">×</span> pada tag untuk membatalkan pilihan.</p>
+                            <p x-show="formModal.errors.jam_pelajaran_id" x-text="formModal.errors.jam_pelajaran_id?.[0]" class="mt-1 text-[11px] text-error-600"></p>
                         </div>
                     </template>
                     <template x-if="formModal.mode === 'edit'">
@@ -91,6 +92,7 @@
                                     </optgroup>
                                 @endforeach
                             </select>
+                            <p x-show="formModal.errors.jam_pelajaran_id" x-text="formModal.errors.jam_pelajaran_id?.[0]" class="mt-1 text-[11px] text-error-600"></p>
                         </div>
                     </template>
                 </div>
@@ -106,6 +108,7 @@
                             @endforeach
                         </select>
                         <p class="mt-1 text-[11px] text-gray-400">Opsional untuk PAUD/Tematik.</p>
+                        <p x-show="formModal.errors.mata_pelajaran_id" x-text="formModal.errors.mata_pelajaran_id?.[0]" class="mt-1 text-[11px] text-error-600"></p>
                     </div>
 
                     <div>
@@ -116,16 +119,18 @@
                                 <option value="{{ $guru->id }}">{{ $guru->nama }}</option>
                             @endforeach
                         </select>
+                        <p x-show="formModal.errors.guru_id" x-text="formModal.errors.guru_id?.[0]" class="mt-1 text-[11px] text-error-600"></p>
                     </div>
 
                     <div>
                         <x-input-label value="Ruangan Sarpras" />
                         <select name="ruangan_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                            <option value="">— Default Ruang Kelas —</option>
+                            <option value="">— Default Ruang Kelas ({{ $kelas?->ruangan?->nama_ruangan ?? 'Belum Diatur' }}) —</option>
                             @foreach ($ruanganList ?? [] as $ruangan)
-                                <option value="{{ $ruangan->id }}">{{ $ruangan->nama_ruangan }}</option>
+                                <option value="{{ $ruangan->id }}">{{ $ruangan->nama_ruangan }} (Kapasitas: {{ $ruangan->kapasitas ?? $ruangan->kapasitas_siswa ?? '—' }})</option>
                             @endforeach
                         </select>
+                        <p x-show="formModal.errors.ruangan_id" x-text="formModal.errors.ruangan_id?.[0]" class="mt-1 text-[11px] text-error-600"></p>
                     </div>
                 </div>
 

@@ -1364,3 +1364,64 @@ it('does not show the "Menyeduh" typo as the loading state text in the add/edit 
 
     $response->assertDontSee('Menyeduh', false)->assertSee('Menyimpan...', false);
 });
+
+it('shows the default ruangan name and kapasitas in the modal ruangan dropdown', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $gedung = Gedung::create([
+        'yayasan_id' => $yayasan->id,
+        'lembaga_id' => $lembaga->id,
+        'nama_gedung' => 'Gedung A',
+        'kode_gedung' => 'GD-A',
+    ]);
+    $ruanganDefault = Ruangan::create([
+        'yayasan_id' => $yayasan->id,
+        'lembaga_id' => $lembaga->id,
+        'gedung_id' => $gedung->id,
+        'nama_ruangan' => 'Ruang Utama',
+        'kode_ruangan' => 'RG-UTAMA',
+        'is_shared' => false,
+        'is_aktif' => true,
+        'kapasitas_siswa' => 30,
+    ]);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id, 'ruangan_id' => $ruanganDefault->id]);
+    $ruanganOpsi = Ruangan::create([
+        'yayasan_id' => $yayasan->id,
+        'lembaga_id' => $lembaga->id,
+        'gedung_id' => $gedung->id,
+        'nama_ruangan' => 'Lab Komputer',
+        'kode_ruangan' => 'RG-LAB',
+        'is_shared' => false,
+        'is_aktif' => true,
+        'kapasitas_siswa' => 24,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertSee('— Default Ruang Kelas (Ruang Utama) —', false)
+        ->assertSee('Lab Komputer (Kapasitas: 24)', false);
+});
+
+it('exposes formModal.errors state and per-field error rendering for guru_id in the modal', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'is_pelajaran' => true]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $pola->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertSee('formModal.errors.guru_id', false);
+});

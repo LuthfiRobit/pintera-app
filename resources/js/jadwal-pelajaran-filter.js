@@ -25,6 +25,7 @@ export function jadwalPelajaranFilter(config) {
             guru_id: '',
             loading: false,
             errorMessage: '',
+            errors: {},
         },
         duplicateForm: {
             source_kelas_id: '',
@@ -42,6 +43,7 @@ export function jadwalPelajaranFilter(config) {
             this.formModal.mapel_id = '';
             this.formModal.guru_id = '';
             this.formModal.errorMessage = '';
+            this.formModal.errors = {};
             this.showModalForm = true;
 
             this.$nextTick(() => {
@@ -68,6 +70,7 @@ export function jadwalPelajaranFilter(config) {
             this.formModal.mapel_id = data.mapel_id ? String(data.mapel_id) : '';
             this.formModal.guru_id = String(data.guru_id);
             this.formModal.errorMessage = '';
+            this.formModal.errors = {};
             this.showModalForm = true;
 
             this.$nextTick(() => {
@@ -121,6 +124,7 @@ export function jadwalPelajaranFilter(config) {
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok || data.status === 'error') {
+                    this.formModal.errors = data.errors || {};
                     const firstError = data.errors ? Object.values(data.errors)[0][0] : (data.message || 'Gagal menyimpan jadwal.');
                     this.formModal.errorMessage = firstError;
                     Alpine.store('toast').push('error', this.formModal.errorMessage);
