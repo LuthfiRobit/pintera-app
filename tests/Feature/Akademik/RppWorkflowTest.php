@@ -577,3 +577,11 @@ it('tidak menampilkan label default Inbox pada dropdown Status di tab saya', fun
 
     $response->assertOk()->assertDontSee('(Inbox default: Menunggu Verifikasi)', false);
 });
+
+it('menampilkan keterangan cakupan KPI berbeda per tab', function () {
+    $this->actingAs($this->userGuru)->get(route('admin.rpp.index', ['tab' => 'saya']))
+        ->assertOk()->assertSee('Ringkasan dokumen Anda', false);
+
+    $this->actingAs($this->userKurikulum)->get(route('admin.rpp.index', ['tab' => 'verifikasi']))
+        ->assertOk()->assertSee('Ringkasan seluruh dokumen di lembaga ini', false);
+});

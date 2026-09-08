@@ -44,6 +44,7 @@
         </div>
 
         {{-- KPI Cards --}}
+        <p class="text-[11px] text-gray-400 -mb-1">Ringkasan {{ $tab === 'saya' ? 'dokumen Anda' : 'seluruh dokumen di lembaga ini' }} (tidak berubah mengikuti filter pencarian/Tahun Ajaran/Semester/Kelas/Mapel/Kurikulum di bawah).</p>
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-4">
             <div class="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated">
                 <div class="flex items-center gap-3">
