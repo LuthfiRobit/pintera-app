@@ -27,12 +27,10 @@ final class UpdateRppAction
         $originalFileName = $rpp->file_name;
         $fileSize = $rpp->file_size_bytes;
         $mimeType = $rpp->mime_type;
+        $fileBerubah = false;
 
         if ($data->file) {
-            if ($rpp->file_path && Storage::disk('public')->exists($rpp->file_path)) {
-                Storage::disk('public')->delete($rpp->file_path);
-            }
-
+            $fileBerubah = true;
             $file = $data->file;
             $originalFileName = $file->getClientOriginalName();
             $fileSize = $file->getSize();
@@ -40,7 +38,9 @@ final class UpdateRppAction
             $storedPath = $file->store("rpp/{$data->lembagaId}", 'public');
         }
 
-        return DB::transaction(function () use ($rpp, $data, $storedPath, $originalFileName, $fileSize, $mimeType) {
+        return DB::transaction(function () use ($rpp, $data, $storedPath, $originalFileName, $fileSize, $mimeType, $fileBerubah) {
+            $oldFilePath = $rpp->file_path;
+
             $rpp->update([
                 'kelas_id' => $data->kelasId,
                 'mata_pelajaran_id' => $data->mataPelajaranId,
@@ -52,6 +52,10 @@ final class UpdateRppAction
                 'file_size_bytes' => $fileSize,
                 'mime_type' => $mimeType,
             ]);
+
+            if ($fileBerubah && $oldFilePath && Storage::disk('public')->exists($oldFilePath)) {
+                Storage::disk('public')->delete($oldFilePath);
+            }
 
             return $rpp->fresh();
         });

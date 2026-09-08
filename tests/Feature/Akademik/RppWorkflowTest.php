@@ -612,3 +612,30 @@ it('menolak update RPP dengan kelas_id dari lembaga lain', function () {
     $response->assertSessionHasErrors('kelas_id');
     expect($rpp->fresh()->judul_topik)->toBe('Topik Sebelum Update');
 });
+
+it('tetap mengganti berkas fisik dengan benar saat update RPP dengan file baru (regresi urutan hapus-setelah-commit)', function () {
+    $fileLama = UploadedFile::fake()->create('rpp_lama.pdf', 200, 'application/pdf');
+    $pathLama = $fileLama->store("rpp/{$this->lembaga->id}", 'public');
+    $rpp = Rpp::create([
+        'yayasan_id' => $this->yayasan->id, 'lembaga_id' => $this->lembaga->id, 'guru_id' => $this->guru->id,
+        'tahun_ajaran_id' => $this->tahunAjaran->id, 'semester_id' => $this->semester->id, 'kelas_id' => $this->kelas->id,
+        'mata_pelajaran_id' => $this->mapel->id, 'judul_topik' => 'Topik File Lama', 'alokasi_waktu' => '2 JP',
+        'file_path' => $pathLama, 'file_name' => 'rpp_lama.pdf', 'file_size_bytes' => 2048,
+        'mime_type' => 'application/pdf', 'status' => StatusRpp::Draft,
+    ]);
+    Storage::disk('public')->assertExists($pathLama);
+
+    $fileBaru = UploadedFile::fake()->create('rpp_baru.pdf', 300, 'application/pdf');
+    $response = $this->actingAs($this->userGuru)->put(route('admin.rpp.update', $rpp), [
+        'kelas_id' => $this->kelas->id,
+        'judul_topik' => 'Topik File Baru',
+        'alokasi_waktu' => '2 JP',
+        'file' => $fileBaru,
+    ]);
+
+    $response->assertRedirect();
+    $rppFresh = $rpp->fresh();
+    expect($rppFresh->file_name)->toBe('rpp_baru.pdf');
+    Storage::disk('public')->assertMissing($pathLama);
+    Storage::disk('public')->assertExists($rppFresh->file_path);
+});
