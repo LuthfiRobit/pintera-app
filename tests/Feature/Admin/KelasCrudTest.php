@@ -234,3 +234,53 @@ it('menolak actor yayasan dengan active_lembaga_id stale (lembaga di luar yayasa
     $response->assertSessionHasErrors('lembaga_id');
     expect(Kelas::where('nama', 'Kelas Uji Stale')->exists())->toBeFalse();
 });
+
+it('redirects back with an error when a yayasan-scoped actor opens create without an active lembaga', function () {
+    Permission::firstOrCreate(['name' => 'kelas.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $this->actingAs($manager)->get(route('admin.kelas.create'))
+        ->assertRedirect(route('admin.kelas.index'))
+        ->assertSessionHasErrors('lembaga_id');
+});
+
+it('shows the create form when a yayasan-scoped actor has switched into a lembaga', function () {
+    Permission::firstOrCreate(['name' => 'kelas.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.kelas.create'))->assertOk();
+});
+
+it('only offers tahun ajaran belonging to the active lembaga in the create dropdown for a yayasan-scoped actor', function () {
+    Permission::firstOrCreate(['name' => 'kelas.create', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin', 'guard_name' => 'web'], ['scope_level' => 'yayasan', 'is_protected' => true]);
+    $role->givePermissionTo(['kelas.create']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $taA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id, 'nama' => '2026/2027 A']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id, 'nama' => '2026/2027 B']);
+
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+    session(['active_lembaga_id' => $lembagaA->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.kelas.create'))->assertOk();
+    $response->assertViewHas('tahunAjaranList', function ($list) use ($taA) {
+        return $list->count() === 1 && $list->first()->id === $taA->id;
+    });
+});
+

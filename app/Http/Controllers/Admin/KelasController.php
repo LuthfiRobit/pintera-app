@@ -14,6 +14,8 @@ use App\Http\Requests\Akademik\StoreKelasRequest;
 use App\Http\Requests\Akademik\UpdateKelasRequest;
 use App\Models\Guru;
 use App\Models\Kelas;
+use App\Models\Lembaga;
+use App\Models\Scopes\TenantScope;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -80,16 +82,41 @@ class KelasController extends BaseController
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('kelas.create');
 
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+        if ($lembagaId === null) {
+            return redirect()->route('admin.kelas.index')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah kelas.']);
+        }
+
         return view('admin.kelas.create', [
-            'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
-            'guruList' => Guru::with('person')->orderByNama()->get(),
-            'polaJamList' => PolaJam::orderBy('nama')->get(),
+            'tahunAjaranList' => TahunAjaran::withoutGlobalScope(TenantScope::class)->where('lembaga_id', $lembagaId)->orderByDesc('tanggal_mulai')->get(),
+            'guruList' => Guru::withoutGlobalScope(TenantScope::class)->where('lembaga_id', $lembagaId)->with('person')->orderByNama()->get(),
+            'polaJamList' => PolaJam::withoutGlobalScope(TenantScope::class)->where('lembaga_id', $lembagaId)->orderBy('nama')->get(),
             'faseList' => Fase::orderBy('urutan')->get(),
+            ...$this->scopeHeaderData($request),
         ]);
+    }
+
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+     * halaman (pola sama seperti admin/siswa/index.blade.php) -- HANYA relevan untuk aktor
+     * berscope yayasan (punya switcher lembaga).
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
     }
 
     public function store(StoreKelasRequest $request, CreateKelasAction $action): RedirectResponse
