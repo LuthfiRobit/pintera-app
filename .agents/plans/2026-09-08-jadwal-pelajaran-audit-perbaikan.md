@@ -41,7 +41,7 @@
 **Interfaces:**
 - Produces: kedua view (`index` dan `_daftar`) menerima `isYayasan` (`bool`), `activeLembaga` (`?Lembaga`), dan `tahunAjaranList` sekarang eager-load `lembaga`. Task 8 memakai ulang `isYayasan`/`activeLembaga`/`tahunAjaranList` yang SAMA di `_modal-duplicate.blade.php`.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke `tests/Feature/Admin/JadwalPelajaranCrudTest.php` (akhir file):
 
@@ -73,12 +73,12 @@ it('does not show the lembaga suffix on the tahun ajaran dropdown for a lembaga-
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows .\(Aktif\). and the lembaga name suffix|does not show the lembaga suffix on the tahun ajaran dropdown" --compact`
 Expected: FAIL — dropdown saat ini polos tanpa "(Aktif)" atau suffix lembaga.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `app/Http/Controllers/Admin/JadwalPelajaranController.php`, tambahkan import setelah `use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;`:
 
@@ -201,17 +201,17 @@ menjadi:
 @endforeach
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="shows .\(Aktif\). and the lembaga name suffix|does not show the lembaga suffix on the tahun ajaran dropdown" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk test "returns only the schedule fragment for an AJAX request, not the full page" (harus tetap tidak mengandung markup halaman penuh meski payload ajax sekarang lebih besar).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/JadwalPelajaranController.php resources/views/portals/lembaga/akademik/jadwal-pelajaran/index.blade.php tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -231,7 +231,7 @@ git commit -m "feat(jadwal-pelajaran): scopeHeaderData() di kedua cabang index()
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -262,12 +262,12 @@ it('includes status_aktif in the opsi() endpoint semester payload', function () 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows .\(Aktif\). on the semester dropdown|includes status_aktif in the opsi" --compact`
 Expected: FAIL — dropdown Semester dan payload `opsi()` belum menyertakan `status_aktif`.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `index.blade.php`, ganti (baris ±73-75):
 
@@ -319,17 +319,17 @@ json.semesterList.forEach((semester) => {
 });
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="shows .\(Aktif\). on the semester dropdown|includes status_aktif in the opsi" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk "returns kelas and semester options scoped to the given tahun ajaran via the opsi endpoint" (payload sekarang punya field tambahan, TIDAK boleh menghilangkan field lama).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/JadwalPelajaranController.php resources/views/portals/lembaga/akademik/jadwal-pelajaran/index.blade.php resources/js/jadwal-pelajaran-filter.js tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -347,7 +347,7 @@ git commit -m "feat(jadwal-pelajaran): badge (Aktif) di dropdown Semester (rende
 **Interfaces:**
 - Consumes: `$kelas`, `$semesterList`, `$semesterId` (sudah tersedia di scope, tidak perlu perubahan controller).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -368,12 +368,12 @@ it('shows a read-only kelas and semester context banner inside the add/edit slot
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="read-only kelas and semester context banner" --compact`
 Expected: kemungkinan sudah PASS SEBAGIAN (nama kelas/semester mungkin sudah muncul di tempat lain di halaman, mis. dropdown) — kalau begitu, tambahkan assertion `assertSeeInOrder` atau cek jumlah kemunculan spesifik markup modal. Kalau test sudah lulus tanpa perubahan, lanjut ke Step 3 tetap (test ini akan makin kuat setelah modal-nya benar-benar diberi banner), TIDAK PERLU dipaksa gagal dulu -- fokus pastikan Step 4 sungguh menguji markup BARU, bukan cuma teks yang kebetulan sudah ada.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `_modal-form.blade.php`, setelah header (baris ±25, sebelum `@if (isset($jamPelajaranPerHari) ...)`), tambahkan:
 
@@ -392,17 +392,17 @@ Di `_modal-form.blade.php`, setelah header (baris ±25, sebelum `@if (isset($jam
 @endif
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="read-only kelas and semester context banner" --compact`
 Expected: PASS. Perkuat assertion di Step 1 kalau ternyata belum benar-benar menguji markup baru (mis. tambah `assertSee('class', false)` untuk cek ikon spesifik banner, atau `substr_count` kalau perlu presisi lebih).
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/jadwal-pelajaran/_modal-form.blade.php tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -420,7 +420,7 @@ git commit -m "feat(jadwal-pelajaran): banner konteks kelas & semester read-only
 **Interfaces:**
 - Consumes: `$kelas`, `$semesterList`, `$semesterId`.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -441,12 +441,12 @@ it('shows "Menyalin KE" context with the target kelas and semester name inside t
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows .Menyalin KE. context" --compact`
 Expected: FAIL — teks "Menyalin KE" belum ada di manapun saat ini.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `_modal-duplicate.blade.php`, setelah header (baris ±25, sebelum `<form>`), tambahkan:
 
@@ -461,17 +461,17 @@ Di `_modal-duplicate.blade.php`, setelah header (baris ±25, sebelum `<form>`), 
 @endif
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="shows .Menyalin KE. context" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/jadwal-pelajaran/_modal-duplicate.blade.php tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -489,7 +489,7 @@ git commit -m "feat(jadwal-pelajaran): tegaskan kelas & semester TUJUAN di modal
 **Interfaces:**
 - Consumes: `$kelas`, `$semesterList`, `$semesterId`, `$jadwalList`.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -512,12 +512,12 @@ it('shows the actual kelas and semester name in the daftar header, staying corre
 
 Catatan: header `X-Requested-With: XMLHttpRequest` SENGAJA dipakai supaya test ini menghantam cabang `$request->ajax()` — persis skenario yang dulu jadi bug di draf pertama spec (badge basi kalau taruh di tempat yang tidak ikut refresh).
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="actual kelas and semester name in the daftar header" --compact`
 Expected: FAIL — header saat ini generik "Jadwal Pelajaran Kelas" tanpa nama.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `_daftar.blade.php`, ganti (baris ±4-11):
 
@@ -547,17 +547,17 @@ menjadi:
 </div>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="actual kelas and semester name in the daftar header" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk "shows an explanatory message instead of a silent empty state when the filter is incomplete" (kelas/semester belum terpilih, `$kelas`/`$semesterId` null -- pastikan tidak muncul error, `{{ $kelas->nama ?? '' }}` sudah aman untuk itu).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/jadwal-pelajaran/_daftar.blade.php tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -575,7 +575,7 @@ git commit -m "fix(jadwal-pelajaran): tampilkan nama kelas & semester eksplisit 
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -591,12 +591,12 @@ it('does not show the "Menyeduh" typo as the loading state text in the add/edit 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="does not show the .Menyeduh. typo" --compact`
 Expected: FAIL — teks "Menyeduh..." masih ada.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `_modal-form.blade.php` baris 123, ganti:
 
@@ -610,17 +610,17 @@ menjadi:
 <span x-show="formModal.loading">Menyimpan...</span>
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="does not show the .Menyeduh. typo" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/jadwal-pelajaran/_modal-form.blade.php tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -639,7 +639,7 @@ git commit -m "fix(jadwal-pelajaran): perbaiki typo 'Menyeduh...' jadi 'Menyimpa
 **Interfaces:**
 - Produces: `formModal.errors` (object, keyed per field) selain `formModal.errorMessage` (string, tetap dipakai toast).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -673,12 +673,12 @@ it('exposes formModal.errors state and per-field error rendering for guru_id in 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="default ruangan name and kapasitas|formModal.errors state and per-field" --compact`
 Expected: FAIL — dropdown Ruangan modal masih polos, `formModal.errors` belum ada.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `_modal-form.blade.php` baris ±108-116, ganti:
 
@@ -831,17 +831,17 @@ openEditModal(data) {
     this.showModalForm = true;
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="default ruangan name and kapasitas|formModal.errors state and per-field" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/jadwal-pelajaran/_modal-form.blade.php resources/js/jadwal-pelajaran-filter.js tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -861,7 +861,7 @@ git commit -m "feat(jadwal-pelajaran): samakan modal dengan halaman penuh -- nam
 - Consumes: `$tahunAjaranList`, `$isYayasan`, `$activeLembaga` dari Task 1 (SUDAH tersedia di cabang ajax sejak Task 1).
 - Backend `duplicate()` TIDAK diubah — endpoint `opsi()` dipakai ulang apa adanya.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -921,12 +921,12 @@ it('duplicates jadwal pelajaran from a source kelas belonging to a different tah
 
 Catatan: test kedua memvalidasi PREMIS Item H bahwa backend `duplicate()` SUDAH MENDUKUNG lintas tahun ajaran TANPA perubahan apa pun (test ini murni membuktikan ulang fakta yang sudah ada, bukan menguji kode baru) — kalau test ini GAGAL, berarti asumsi spec SALAH dan harus lapor ke user SEBELUM lanjut, JANGAN otak-atik `duplicate()`/`DuplicateJadwalAction` untuk membuatnya lulus.
 
-- [ ] **Step 2: Jalankan test, pastikan test pertama gagal, test kedua SUDAH lulus**
+- [x] **Step 2: Jalankan test, pastikan test pertama gagal, test kedua SUDAH lulus**
 
 Run: `php artisan test --filter="Tahun Ajaran Sumber. dropdown in the duplicate modal|duplicates jadwal pelajaran from a source kelas belonging to a different tahun ajaran" --compact`
 Expected: test pertama (dropdown) FAIL — belum ada dropdown baru. Test KEDUA (backend) HARUS SUDAH PASS tanpa perubahan kode apa pun (membuktikan premis "backend sudah mendukung").
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Di `_modal-duplicate.blade.php` baris ±46-68, ganti:
 
@@ -1063,17 +1063,17 @@ openDuplicateModal() {
 },
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan lulus**
+- [x] **Step 4: Jalankan test, pastikan lulus**
 
 Run: `php artisan test --filter="Tahun Ajaran Sumber. dropdown in the duplicate modal|duplicates jadwal pelajaran from a source kelas belonging to a different tahun ajaran" --compact`
 Expected: PASS kedua test.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/JadwalPelajaranCrudTest.php --compact`
 Expected: PASS semua — termasuk "duplicates jadwal pelajaran from source kelas and semester to target kelas and semester while skipping teacher collisions" dan "rejects schedule duplication when target class belongs to a different tenant" (backend `duplicate()` TIDAK diubah, regresi HARUS tetap lulus tanpa perubahan apa pun).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/jadwal-pelajaran/_modal-duplicate.blade.php resources/js/jadwal-pelajaran-filter.js tests/Feature/Admin/JadwalPelajaranCrudTest.php
@@ -1087,17 +1087,17 @@ git commit -m "feat(jadwal-pelajaran): fitur salin jadwal lintas tahun ajaran (m
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test domain Jadwal Pelajaran**
+- [x] **Step 1: Jalankan seluruh test domain Jadwal Pelajaran**
 
 Run: `php artisan test --compact --filter="JadwalPelajaranCrudTest|JadwalPelajaranBentrokWaktuTest|JadwalPelajaranTenantGuardTest|JadwalPelajaranSiswaControllerTest"`
 Expected: PASS semua, 0 gagal.
 
-- [ ] **Step 2: Jalankan Pint pada file yang diubah**
+- [x] **Step 2: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 3: Verifikasi manual via browser (WAJIB)**
+- [x] **Step 3: Verifikasi manual via browser (WAJIB)**
 
 Login sebagai LEMBAGA-scope: buka Jadwal Pelajaran, pastikan dropdown Tahun Ajaran & Semester menampilkan "(Aktif)" pada entri yang benar. Pilih Kelas — header daftar menampilkan nama kelas & semester eksplisit ("Jadwal Pelajaran Kelas 4A", "Semester Ganjil ..."). Ganti Semester lewat dropdown TANPA reload halaman — header ikut update (bukan basi).
 
@@ -1107,7 +1107,7 @@ Klik "Salin dari Kelas Lain" — modal menampilkan "Menyalin KE: ..." dengan nam
 
 Login sebagai YAYASAN-scope mode "Semua Lembaga" (kalau ada 2+ lembaga dengan Tahun Ajaran senama di data uji): pastikan dropdown Tahun Ajaran (baik filter utama maupun Tahun Ajaran Sumber di modal Duplikat) menampilkan suffix nama lembaga.
 
-- [ ] **Step 4: Laporkan hasil**
+- [x] **Step 4: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — kalau user menghendaki log terpisah, itu permintaan tambahan setelah plan ini selesai.
 
