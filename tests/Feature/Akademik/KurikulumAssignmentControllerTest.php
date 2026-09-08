@@ -379,3 +379,26 @@ it('does not show the aggregate note for a lembaga-scoped actor', function () {
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))
         ->assertDontSee('tidak menyempit walau Anda mengganti lembaga aktif', false);
 });
+
+it('shows the correct tahun ajaran name in the index for an assignment belonging to a different lembaga than the one currently active', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $lembagaAktif = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'TK']);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'SD']);
+    $taLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id, 'nama' => '2030/2031']);
+    KurikulumAssignment::create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $taLain->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+    session(['active_lembaga_id' => $lembagaAktif->id]);
+
+    $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.index'))->assertSee('2030/2031');
+});
+
+it('shows the correct tahun ajaran name on the edit page for an assignment belonging to a different lembaga than the one currently active', function () {
+    $managerA = actingAsYayasanKurikulumManager();
+    $lembagaAktif = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'TK']);
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $managerA->yayasan_id, 'bentuk_pendidikan' => 'SD']);
+    $taLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id, 'nama' => '2031/2032']);
+    $assignment = KurikulumAssignment::create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $taLain->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+    session(['active_lembaga_id' => $lembagaAktif->id]);
+
+    $this->actingAs($managerA)->get(route('admin.kurikulum-assignment.edit', $assignment))->assertSee('2031/2032');
+});
+

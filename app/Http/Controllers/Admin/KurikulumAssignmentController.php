@@ -35,7 +35,7 @@ class KurikulumAssignmentController extends BaseController
 
         $actor = $request->user();
         $scope = $actor->widestScopeLevel();
-        $query = KurikulumAssignment::with(['lembaga', 'tahunAjaran']);
+        $query = KurikulumAssignment::with(['lembaga', 'tahunAjaran' => fn ($q) => $q->withoutGlobalScope(TenantScope::class)]);
 
         if ($scope === 'yayasan') {
             $lembagaIds = Lembaga::where('yayasan_id', $actor->yayasan_id)->pluck('id');
@@ -146,7 +146,10 @@ class KurikulumAssignmentController extends BaseController
         $isPlatform = $request->user()->widestScopeLevel() === 'platform';
 
         return view('admin.kurikulum-assignment.edit', [
-            'assignment' => $kurikulumAssignment->loadMissing('tahunAjaran', 'lembaga'),
+            'assignment' => $kurikulumAssignment->loadMissing([
+                'tahunAjaran' => fn ($q) => $q->withoutGlobalScope(TenantScope::class),
+                'lembaga',
+            ]),
             'kurikulumList' => KurikulumFramework::cases(),
             'bentukPendidikanList' => BentukPendidikan::cases(),
             'isPlatform' => $isPlatform,
