@@ -1332,3 +1332,18 @@ it('shows "Menyalin KE" context with the target kelas and semester name inside t
 
     $response->assertSee('Menyalin KE: Kelas <strong class="font-semibold">5B</strong> · Semester <strong class="font-semibold">Genap</strong>', false);
 });
+
+it('shows the actual kelas and semester name in the daftar header, staying correct after an ajax filter refresh', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6C']);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertSee('Jadwal Pelajaran Kelas 6C', false)->assertSee('Semester Ganjil', false);
+});

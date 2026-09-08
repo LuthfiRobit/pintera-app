@@ -3,12 +3,12 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
             <div>
                 <div class="flex items-center gap-2">
-                    <h2 class="font-display text-base font-bold text-gray-900">Jadwal Pelajaran Kelas</h2>
+                    <h2 class="font-display text-base font-bold text-gray-900">Jadwal Pelajaran Kelas {{ $kelas->nama ?? '' }}</h2>
                     <span class="inline-flex items-center rounded-full bg-brand-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-700 border border-brand-200/60">
                         Total {{ $jadwalList->count() }} Sesi
                     </span>
                 </div>
-                <p class="text-xs text-gray-500 mt-0.5">Jadwal kegiatan belajar mengajar mingguan untuk kelas dan semester yang terpilih.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Semester {{ $semesterList->firstWhere('id', $semesterId)?->nama ?? '—' }} · Jadwal kegiatan belajar mengajar mingguan untuk kelas dan semester yang terpilih.</p>
             </div>
 
             <div class="inline-flex rounded-xl bg-gray-100 p-1 shrink-0 border border-gray-200/60">
