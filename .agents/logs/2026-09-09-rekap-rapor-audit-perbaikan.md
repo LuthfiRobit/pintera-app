@@ -42,6 +42,17 @@ Implementasi menyeluruh dari audit menu Rekap Rapor (`admin.rapor.index`) dan al
    - Mengubah header kolom mata pelajaran untuk menampilkan **kode mapel** (`$mapel->kode ?: $mapel->nama`) agar tabel lebih kompak dan proporsional dalam format kertas horizontal.
    - Menambahkan daftar legenda di bagian bawah tabel (**Keterangan Kode Mapel**) yang memetakan kode mapel ke nama lengkapnya secara otomatis.
 
+### D. Pratinjau Cetak "Buka di Platform" (Modal In-Platform)
+1. **Pola Seragam dengan Modul RPP**:
+   - Menganalisis pola `bukaBerkas` pada `rpp.js` dan `_modal-verify.blade.php`.
+   - Mengganti tombol cetak standar (yang sebelumnya membuka tab/halaman baru `target="_blank"`) menjadi tombol **"Buka di Platform"** dengan ikon `visibility` dan styling senada RPP (`bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200`).
+   - Menyertakan link sekunder **"Unduh"** di sebelahnya untuk kemudahan unduh berkas asli secara langsung.
+2. **Alpine Modal & AJAX Tree Re-binding**:
+   - Mengintegrasikan fungsi `bukaCetakRapor(url, judul)` pada objek `raporFilter` dan `window.bukaCetakRapor` yang memanggil `$store.imagePreview.buka(previewUrl, judul, true)`.
+   - Menambahkan `Alpine.initTree(this.$refs.hasilRapor)` pada metode `muatUlangDaftar()` di `resources/js/rapor-filter.js` agar event listener `@click` pada tombol "Buka di Platform" tetap terikat sempurna setelah fragment tabel dimuat ulang melalui AJAX.
+3. **Pengalaman Pengguna In-App**:
+   - Dokumen rekap nilai PDF landscape langsung ditampilkan di dalam modal dialog platform (iframe bersih tanpa reload atau membuka tab lain), lengkap dengan judul dokumen, tombol unduh, tombol print browser di toolbar iframe, dan tombol tutup / ESC.
+
 ---
 
 ## 2. Keputusan Penting yang Diambil
