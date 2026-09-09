@@ -20,14 +20,14 @@ final class UpdateKomponenPenilaianAction
         return DB::transaction(function () use ($komponen, $data) {
             $dipakai = $komponen->asesmen()->exists() || $komponen->nilaiSiswa()->exists();
 
-            if (! $dipakai && $data->subjekType !== null && $data->subjekId !== null && $data->semesterId !== null) {
-                $komponen->subjek_type = $data->subjekType;
-                $komponen->subjek_id = $data->subjekId;
-                $komponen->semester_id = $data->semesterId;
-                $komponen->lembaga_id = Semester::findOrFail($data->semesterId)->lembaga_id;
-                if ($data->assessmentType !== null) {
-                    $komponen->assessment_type = $data->assessmentType;
-                }
+            // Subjek Penilaian dan Semester TIDAK BISA diubah sejak TP dibuat --
+            // baik sudah dipakai maupun belum. Satu-satunya cara mengganti
+            // Subjek/Semester adalah hapus lalu buat TP baru. Blok reassignment
+            // lama SENGAJA dihapus (bukan dilewati) -- subjek_type/subjek_id/
+            // semester_id di form manapun (Admin maupun Guru) memang tidak
+            // pernah lagi dikirim ke sini.
+            if (! $dipakai && $data->assessmentType !== null) {
+                $komponen->assessment_type = $data->assessmentType;
             }
 
             Semester::where('id', $komponen->semester_id)->lockForUpdate()->first();

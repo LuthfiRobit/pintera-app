@@ -6,8 +6,6 @@ namespace App\Http\Requests\Akademik;
 
 use App\Domains\Akademik\DataTransferObjects\UpdateKomponenPenilaianData;
 use App\Domains\Akademik\Enums\AssessmentType;
-use App\Domains\Akademik\Models\ElemenCp;
-use App\Domains\Akademik\Models\MataPelajaran;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -35,18 +33,6 @@ final class UpdateKomponenPenilaianRequest extends FormRequest
         ];
 
         if (! $dipakai) {
-            $rules['subjek_type'] = ['required', Rule::in(['mata_pelajaran', 'elemen_cp'])];
-            $rules['subjek_id'] = ['required', 'integer', function ($attribute, $value, $fail) {
-                $exists = match ($this->input('subjek_type')) {
-                    'mata_pelajaran' => MataPelajaran::withoutGlobalScopes()->where('id', $value)->exists(),
-                    'elemen_cp' => ElemenCp::where('id', $value)->exists(),
-                    default => false,
-                };
-                if (! $exists) {
-                    $fail('Subjek penilaian yang dipilih tidak valid.');
-                }
-            }];
-            $rules['semester_id'] = ['required', 'integer'];
             $rules['assessment_type'] = ['nullable', Rule::enum(AssessmentType::class)];
         }
 

@@ -277,8 +277,8 @@ it('updates a komponen penilaian including mata pelajaran and semester when not 
     ])->assertRedirect(route('admin.komponen-penilaian.index'));
 
     $komponen->refresh();
-    expect($komponen->subjek_id)->toBe($mapelBaru->id);
-    expect($komponen->semester_id)->toBe($semesterBaru->id);
+    expect($komponen->subjek_id)->toBe($mapelLama->id);
+    expect($komponen->semester_id)->toBe($semesterLama->id);
     expect($komponen->kode)->toBe('TP BARU');
     expect($komponen->deskripsi)->toBe('Deskripsi baru');
 });
@@ -330,7 +330,7 @@ it('locks mata pelajaran and semester when the komponen is already used in a nil
     expect($komponen->fresh()->deskripsi)->toBe('Coba ganti semester');
 });
 
-it('rejects updating to a mata pelajaran and semester from different lembaga when not yet used', function () {
+it('ignores a cross-lembaga subjek/semester reassignment payload instead of rejecting it (field no longer processed)', function () {
     $yayasanA = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasanA->id]);
     $manager = actingAsKomponenManager($lembagaA);
@@ -350,9 +350,12 @@ it('rejects updating to a mata pelajaran and semester from different lembaga whe
         'semester_id' => $semesterB->id,
         'deskripsi' => 'Campur lembaga',
         'bobot' => 100,
-    ])->assertNotFound();
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
 
-    expect($komponen->fresh()->semester_id)->toBe($semesterA->id);
+    $komponen->refresh();
+    expect($komponen->semester_id)->toBe($semesterA->id);
+    expect($komponen->deskripsi)->toBe('Campur lembaga');
+    expect($komponen->bobot)->toBe(100);
 });
 
 it('rejects editing or updating a komponen penilaian belonging to another lembaga', function () {
@@ -589,7 +592,7 @@ function actingAsYayasanKomponenManager(Yayasan $yayasan): User
     return $manager;
 }
 
-it('recomputes lembaga_id to follow the new semester for elemen_cp when a yayasan actor moves it across lembaga', function () {
+it('ignores subjek/semester reassignment payload for elemen_cp even from a yayasan actor (lembaga_id stays put)', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -620,16 +623,17 @@ it('recomputes lembaga_id to follow the new semester for elemen_cp when a yayasa
         'subjek_id' => $elemenCp->id,
         'semester_id' => $semesterB->id,
         'kode' => 'ECP-1',
-        'deskripsi' => 'Deskripsi awal',
+        'deskripsi' => 'Deskripsi diubah',
         'bobot' => 100,
     ])->assertRedirect(route('admin.komponen-penilaian.index'));
 
     $komponen->refresh();
-    expect($komponen->semester_id)->toBe($semesterB->id);
-    expect($komponen->lembaga_id)->toBe($lembagaB->id);
+    expect($komponen->semester_id)->toBe($semesterA->id);
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+    expect($komponen->deskripsi)->toBe('Deskripsi diubah');
 });
 
-it('recomputes lembaga_id to follow the new semester for mata_pelajaran when a yayasan actor moves it across lembaga', function () {
+it('ignores subjek/semester reassignment payload for mata_pelajaran even from a yayasan actor (lembaga_id stays put)', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
@@ -661,14 +665,15 @@ it('recomputes lembaga_id to follow the new semester for mata_pelajaran when a y
         'subjek_id' => $mapelB->id,
         'semester_id' => $semesterB->id,
         'kode' => 'MP-1',
-        'deskripsi' => 'Deskripsi awal',
+        'deskripsi' => 'Deskripsi diubah',
         'bobot' => 100,
     ])->assertRedirect(route('admin.komponen-penilaian.index'));
 
     $komponen->refresh();
-    expect($komponen->subjek_id)->toBe($mapelB->id);
-    expect($komponen->semester_id)->toBe($semesterB->id);
-    expect($komponen->lembaga_id)->toBe($lembagaB->id);
+    expect($komponen->subjek_id)->toBe($mapelA->id);
+    expect($komponen->semester_id)->toBe($semesterA->id);
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+    expect($komponen->deskripsi)->toBe('Deskripsi diubah');
 });
 
 it('does not touch lembaga_id when updating a komponen without changing semester_id', function () {
@@ -722,4 +727,43 @@ it('tetap konsisten menolak bobot melebihi 100% setelah dibungkus lock (regresi,
         subjekType: 'mata_pelajaran', subjekId: $mapel->id, semesterId: $semester->id,
         kode: 'B', deskripsi: 'Komponen B', bobot: 50, kktp: null, kktpMinimal: null, assessmentType: null,
     )))->toThrow(ValidationException::class);
+});
+
+it('successfully saves kode, deskripsi, bobot, kktp, and assessment_type edits for a TP that is not yet used, using the exact payload the real edit form sends', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $createAction = app(CreateKomponenPenilaianAction::class);
+    $komponen = $createAction->execute(new KomponenPenilaianData(
+        subjekType: 'mata_pelajaran',
+        subjekId: $mapel->id,
+        semesterId: $semester->id,
+        kode: 'TP 1.1',
+        deskripsi: 'Deskripsi Awal',
+        bobot: 50,
+        kktp: null,
+        kktpMinimal: null,
+        assessmentType: 'numeric',
+    ));
+
+    // Payload PERSIS seperti yang dikirim edit.blade.php Admin SAAT INI --
+    // TIDAK ADA subjek_type/subjek_id/semester_id sama sekali.
+    $response = $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
+        'assessment_type' => 'narrative',
+        'kode' => 'TP 1.1',
+        'deskripsi' => 'Deskripsi Diubah',
+        'bobot' => 60,
+    ]);
+
+    $response->assertRedirect(route('admin.komponen-penilaian.index'));
+    $response->assertSessionDoesntHaveErrors();
+
+    $komponen->refresh();
+    expect($komponen->deskripsi)->toBe('Deskripsi Diubah');
+    expect($komponen->bobot)->toBe(60);
+    expect($komponen->assessment_type->value)->toBe('narrative');
 });

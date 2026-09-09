@@ -50,6 +50,7 @@
                         <p class="mt-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">{{ $komponenPenilaian->semester->nama }} — {{ $komponenPenilaian->semester->tahunAjaran->nama }}</p>
                     </div>
                 </div>
+                <p class="text-xs text-gray-400 -mt-3">Subjek Penilaian dan Semester tidak bisa diubah di sini — hapus lalu buat TP baru kalau butuh Subjek/Semester yang berbeda.</p>
 
                 <div>
                     <x-input-label value="Tipe Penilaian *" />

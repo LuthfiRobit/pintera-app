@@ -28,8 +28,7 @@ class KomponenPenilaianController extends BaseController
         private readonly CreateKomponenPenilaianAction $createKomponenPenilaianAction,
         private readonly UpdateKomponenPenilaianAction $updateKomponenPenilaianAction,
         private readonly DeleteKomponenPenilaianAction $deleteKomponenPenilaianAction,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View|string
     {
@@ -122,6 +121,7 @@ class KomponenPenilaianController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
+
             return back()->withInput()->withErrors($e->errors());
         }
 
@@ -163,18 +163,6 @@ class KomponenPenilaianController extends BaseController
         $data = $request->validated();
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
-        if (! $dipakai && isset($data['subjek_type'], $data['subjek_id'], $data['semester_id'])) {
-            $subjek = match ($data['subjek_type']) {
-                'mata_pelajaran' => MataPelajaran::withoutGlobalScopes()->find($data['subjek_id']),
-                'elemen_cp' => ElemenCp::find($data['subjek_id']),
-            };
-            $semester = Semester::find($data['semester_id']);
-            abort_if($subjek === null || $semester === null, 404);
-            if ($data['subjek_type'] === 'mata_pelajaran') {
-                abort_if($subjek->lembaga_id !== $semester->lembaga_id, 404);
-            }
-        }
-
         try {
             $this->updateKomponenPenilaianAction->execute($komponenPenilaian, $request->toDTO());
         } catch (ValidationException $e) {
@@ -182,6 +170,7 @@ class KomponenPenilaianController extends BaseController
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
+
             return back()->withInput()->withErrors($e->errors());
         }
 
@@ -208,6 +197,7 @@ class KomponenPenilaianController extends BaseController
             if (request()->ajax() || request()->wantsJson()) {
                 return response()->json(['status' => 'error', 'message' => $msg], 422);
             }
+
             return back()->withErrors($e->errors());
         }
 
