@@ -372,7 +372,9 @@ Catatan: TETAP mengirim `subjek_type`/`subjek_id`/`semester_id` di payload test 
 
 ### Perbaikan
 
-`app/Http/Controllers/Admin/KomponenPenilaianController.php` — tambahkan import `use App\Models\Lembaga;` (dicek: BELUM ada), tambahkan method `scopeHeaderData()` (pola PERSIS sama seperti menu lain), panggil di KEDUA cabang `index()` (ajax dan halaman penuh):
+`app/Http/Controllers/Admin/KomponenPenilaianController.php` — tambahkan import `use App\Models\Lembaga;` (dicek: BELUM ada), tambahkan method `scopeHeaderData()` (pola PERSIS sama seperti menu lain).
+
+**Catatan beda dari pola RPP/Jadwal Pelajaran**: DI SANA `scopeHeaderData()` WAJIB dipanggil di KEDUA cabang `index()` karena ADA item lain yang menaruh sesuatu (dropdown/badge tambahan) di dalam partial yang dirender ulang lewat AJAX. **DI SINI TIDAK ADA kebutuhan seperti itu** — badge scope HANYA muncul di header `index.blade.php` (halaman penuh), yang TIDAK PERNAH dirender ulang oleh AJAX (dikonfirmasi: `_daftar.blade.php` Komponen Penilaian TIDAK menyebut `isYayasan`/`activeLembaga` sama sekali). Jadi `scopeHeaderData()` CUKUP dipanggil di cabang HALAMAN PENUH SAJA — memanggilnya juga di cabang ajax (baris 55-56, `return view('...._daftar', ['komponenList' => $komponenList])->render();`) hanya buang-buang komputasi tanpa manfaat. Cabang ajax TIDAK PERLU disentuh sama sekali di item ini.
 
 ```php
 private function scopeHeaderData(Request $request): array
@@ -421,7 +423,7 @@ menjadi:
 <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}{{ $tahunAjaran->status_aktif ? ' (Aktif)' : '' }}{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? ' — '.($tahunAjaran->lembaga->nama ?? '-') : '' }}</option>
 ```
 
-(Perlu eager-load `lembaga` pada `$tahunAjaranList` di controller — cek dulu apakah sudah, kalau belum tambahkan `TahunAjaran::with('lembaga')->orderByDesc('id')->get()` menggantikan `TahunAjaran::orderByDesc('id')->get()` di KEDUA method `index()` dan `create()`.)
+(Perlu eager-load `lembaga` pada `$tahunAjaranList` — dicek langsung, `index()` method (baris ±60) SAAT INI `TahunAjaran::orderByDesc('id')->get()` TANPA eager-load. Ganti jadi `TahunAjaran::with('lembaga')->orderByDesc('id')->get()`. **HANYA di method `index()`** — method `create()` (baris ±95) TIDAK PERLU diubah, karena dropdown Tahun Ajaran di `create.blade.php` TIDAK disentuh Item B ini (di luar scope, dropdown itu konteksnya beda — 1 form pembuatan TP baru, bukan daftar agregat).)
 
 ---
 
@@ -471,11 +473,11 @@ menjadi:
 - `create.blade.php`: `value="{{ old('bobot', 100) }}"` — default tampilan `100`.
 - `_daftar.blade.php`/`edit.blade.php`: `$komponen->bobot ?? 100` — fallback tampilan `100` untuk data legacy null.
 
-Karena field `bobot` di form CREATE selalu `required`, fallback `10` di DTO praktis TIDAK PERNAH benar-benar terjadi lewat form manapun saat ini (dead code) — tapi inkonsisten dan membingungkan kalau dibaca ulang nanti.
+**Koreksi presisi setelah dicek ulang**: `bobot` di `rules()` Store (Admin MAUPUN Guru) sebenarnya `nullable`, BUKAN `required` — jadi klaim "dead code" tidak 100% akurat di level FormRequest. Yang benar: KEDUA form CREATE (`create.blade.php` Admin baris 147, Guru baris 106) punya atribut HTML `required` + default tampilan `100` — jadi lewat UI BROWSER NORMAL, `bobot` memang selalu terkirim dan fallback `10` tidak pernah kepakai. Fallback `10` HANYA akan kepakai kalau ada permintaan HTTP mentah (API/Postman) yang sengaja tidak menyertakan `bobot` sama sekali — jalur yang secara teknis ADA tapi di luar UI resmi manapun. Tetap inkonsisten dan berpotensi membingungkan kalau dibaca ulang nanti (angka `10` vs `100` tanpa penjelasan kenapa beda).
 
 ### Perbaikan
 
-Samakan fallback DTO dengan yang dipakai di UI (`100`), murni untuk konsistensi kode (BUKAN mengubah perilaku nyata karena jalur ini sudah tidak pernah tereksekusi via form manapun saat ini):
+Samakan fallback DTO dengan yang dipakai di UI (`100`), murni untuk konsistensi kode (perilaku UI browser normal TIDAK berubah karena bobot selalu terkirim dari sana; HANYA memengaruhi jalur API mentah yang sengaja tidak menyertakan bobot):
 
 `app/Domains/Akademik/DataTransferObjects/KomponenPenilaianData.php`, ganti:
 
@@ -504,4 +506,4 @@ bobot: isset($data['bobot']) ? (int) $data['bobot'] : 100,
 | A | Edit TP yang BELUM dipakai (`!$dipakai`) berhasil menyimpan perubahan kode/deskripsi/bobot/kktp/assessment_type TANPA error validasi; payload berisi subjek_type/subjek_id/semester_id (kalaupun dikirim) diabaikan diam-diam, bukan mengubah data ATAU menyebabkan error; regresi 2 test "locks..." existing (dipakai=true) tetap lulus tanpa perubahan |
 | B | Badge scope + label "(Aktif)" konsisten dengan pola menu lain (agregat/narrow) |
 | C | Aktor lembaga PAUD (bentuk_pendidikan KB/TPA/SPS/TK) tetap default ke `elemen_cp`/`narrative` di form create, aktor non-PAUD tetap default ke `mata_pelajaran`/`numeric` (regresi perilaku, BUKAN fitur baru) |
-| D | Tidak ada test perilaku baru (dead code, murni konsistensi kode) |
+| D | Store TP via payload TANPA `bobot` (mensimulasikan API mentah tanpa lewat UI form) menghasilkan `bobot` tersimpan `100`, bukan `10` — satu-satunya perilaku nyata yang berubah, jalur UI form normal TIDAK terpengaruh |
