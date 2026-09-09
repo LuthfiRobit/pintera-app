@@ -77,7 +77,7 @@
             <p class="mapel-legend">
                 <strong>Keterangan Kode Mapel:</strong>
                 @foreach ($mapelList as $mapel)
-                    {{ $mapel->kode ?: $mapel->nama }}: {{ $mapel->nama }}{{ ! $loop->last ? ' &bull; ' : '' }}
+                    {{ $mapel->kode ?: $mapel->nama }}: {{ $mapel->nama }}{{ ! $loop->last ? ' • ' : '' }}
                 @endforeach
             </p>
         @endif

@@ -662,3 +662,33 @@ it('renders pdf with landscape orientation, NIS column, and mapel codes in heade
     $response->assertOk();
     expect($response->headers->get('Content-Type'))->toContain('application/pdf');
 });
+
+it('separates mapel codes in the legend without leaking an escaped HTML entity', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika Wajib', 'kode' => 'MTK']);
+    $mapelB = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Bahasa Indonesia', 'kode' => 'BIN']);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $asesmenA = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelA->id, 'semester_id' => $semester->id]);
+    $komponenA = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelA->id, 'semester_id' => $semester->id]);
+    $asesmenA->komponenPenilaian()->attach($komponenA->id);
+    NilaiSiswa::create(['asesmen_id' => $asesmenA->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenA->id, 'nilai_angka' => 80]);
+
+    $asesmenB = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelB->id, 'semester_id' => $semester->id]);
+    $komponenB = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelB->id, 'semester_id' => $semester->id]);
+    $asesmenB->komponenPenilaian()->attach($komponenB->id);
+    NilaiSiswa::create(['asesmen_id' => $asesmenB->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponenB->id, 'nilai_angka' => 85]);
+
+    $rekap = app(RaporCalculationService::class)->hitungRekapKelas($kelas, $semester);
+
+    $html = view('pdf.rekap-rapor', array_merge(['selectedKelas' => $kelas, 'selectedSemester' => $semester], $rekap))->render();
+
+    expect($html)->not->toContain('&amp;bull;');
+    expect(mb_strpos($html, 'MTK: Matematika Wajib'))->not->toBeFalse();
+    expect(mb_strpos($html, 'BIN: Bahasa Indonesia'))->not->toBeFalse();
+});
