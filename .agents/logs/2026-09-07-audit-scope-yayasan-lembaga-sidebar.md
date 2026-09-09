@@ -86,7 +86,7 @@ Simbol: ✅ didukung & terverifikasi | ⚠️ didukung tapi ada catatan minor | 
 | Jadwal Pelajaran | ⚠️ | ✅ | Dropdown guru/mapel di `index()`/`create()` bisa kurang terfilter di 1 edge case (user platform-level, belum ada kelas/tahun ajaran dipilih) — risiko RENDAH karena `store()`/`update()` (baris 211-239, 356-375) punya validasi eksplisit yang menolak (422) kombinasi guru-lembaga yang salah. Diterima as-is. |
 | Perangkat Ajar (RPP) | ✅ | ✅ | Sudah benar (`TenantContext`) |
 | Komponen Penilaian (TP) | ✅ | ✅ | Otomatis via `TenantScope` |
-| Rekap Rapor | ✅ | ✅ | Diperbaiki Task 7 (label lembaga di dropdown tahun ajaran saat mode agregat) |
+| Rekap Rapor | ✅ | ✅ | Diperbaiki 2026-09-09 (spec `2026-09-09-rekap-rapor-audit-perbaikan.md`) — default filter tidak lagi ambigu di mode agregat, badge scope ditambahkan, konteks kelas/lembaga ditampilkan di hasil & PDF |
 | Persetujuan Rapor | ✅ | ✅ | Sudah benar |
 | Kenaikan Kelas | ✅ | ✅ | Otomatis via `TenantScope` |
 | Jadwal Piket Guru | ➖ (wajib pilih 1) | ✅ | By design — jadwal piket per-lembaga, tidak ada konsep agregat |
