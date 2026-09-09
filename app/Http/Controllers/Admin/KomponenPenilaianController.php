@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Akademik\Actions\Penilaian\CreateKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\DeleteKomponenPenilaianAction;
 use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
+use App\Domains\Akademik\Enums\BentukPendidikan;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
@@ -111,7 +112,7 @@ class KomponenPenilaianController extends BaseController
             'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
             'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
-            'bentukPendidikan' => $request->user()->lembaga?->bentuk_pendidikan,
+            'isPaud' => BentukPendidikan::tryFrom($request->user()->lembaga?->bentuk_pendidikan ?? '')?->isPaud() ?? false,
         ]);
     }
 

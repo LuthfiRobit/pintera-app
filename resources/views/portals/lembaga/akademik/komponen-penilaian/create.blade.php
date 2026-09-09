@@ -28,7 +28,7 @@
                 <p class="mt-0.5 text-xs text-gray-500">Isi rincian kode, deskripsi TP, dan kriteria ketuntasan.</p>
             </div>
 
-            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="Object.assign(komponenPenilaianCreateForm({ tahunAjaranId: @js($tahunAjaranId), opsiUrl: @js(route('admin.komponen-penilaian.opsi')) }), { subjekType: '{{ old('subjek_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'elemen_cp' : 'mata_pelajaran') }}', assessmentType: '{{ old('assessment_type', in_array($bentukPendidikan, ['KB', 'TPA', 'SPS', 'TK'], true) ? 'narrative' : 'numeric') }}' })">
+            <form method="POST" action="{{ route('admin.komponen-penilaian.store') }}" class="p-6 space-y-6" x-data="Object.assign(komponenPenilaianCreateForm({ tahunAjaranId: @js($tahunAjaranId), opsiUrl: @js(route('admin.komponen-penilaian.opsi')) }), { subjekType: '{{ old('subjek_type', $isPaud ? 'elemen_cp' : 'mata_pelajaran') }}', assessmentType: '{{ old('assessment_type', $isPaud ? 'narrative' : 'numeric') }}' })">
                 @csrf
 
                 <div class="rounded-xl border border-gray-200 bg-gray-50/50 p-4 space-y-3">

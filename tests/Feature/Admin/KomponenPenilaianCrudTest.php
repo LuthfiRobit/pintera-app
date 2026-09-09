@@ -806,3 +806,23 @@ it('shows "(Aktif)" on the tahun ajaran dropdown for the active tahun ajaran', f
     $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
         ->assertSee('2025/2026 (Aktif)', false);
 });
+
+it('defaults to elemen_cp and narrative for a PAUD lembaga on the create form', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'TK']);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'));
+
+    $response->assertOk()->assertSee("subjekType: 'elemen_cp'", false);
+});
+
+it('defaults to mata_pelajaran and numeric for a non-PAUD lembaga on the create form', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'));
+
+    $response->assertOk()->assertSee("subjekType: 'mata_pelajaran'", false);
+});
