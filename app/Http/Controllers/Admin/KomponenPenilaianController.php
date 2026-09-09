@@ -60,7 +60,7 @@ class KomponenPenilaianController extends BaseController
         $search = $request->query('search');
 
         $komponenList = KomponenPenilaian::whereNotNull('subjek_id')
-            ->with(['subjek', 'semester.tahunAjaran'])
+            ->with(['subjek', 'semester.tahunAjaran', 'lembaga'])
             ->when($tahunAjaranId, fn ($q) => $q->whereHas('semester', fn ($q2) => $q2->where('tahun_ajaran_id', $tahunAjaranId)))
             ->when($semesterId, fn ($q) => $q->where('semester_id', $semesterId))
             ->when($mataPelajaranId, fn ($q) => $q->where('subjek_type', 'mata_pelajaran')->where('subjek_id', $mataPelajaranId))
@@ -69,7 +69,10 @@ class KomponenPenilaianController extends BaseController
             ->get();
 
         if ($request->ajax()) {
-            return view('portals.lembaga.akademik.komponen-penilaian._daftar', ['komponenList' => $komponenList])->render();
+            return view('portals.lembaga.akademik.komponen-penilaian._daftar', [
+                'komponenList' => $komponenList,
+                ...$this->scopeHeaderData($request),
+            ])->render();
         }
 
         return view('portals.lembaga.akademik.komponen-penilaian.index', [

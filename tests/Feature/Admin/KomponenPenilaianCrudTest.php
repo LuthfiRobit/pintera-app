@@ -1041,5 +1041,46 @@ it('still defaults to the active tahun ajaran for a yayasan actor who has switch
         ->assertDontSee('TP-YAYASAN-LAMA');
 });
 
+it('shows a lembaga label on each TP row and weight-calculator card for a yayasan actor in aggregate mode', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Cendekia Bangsa']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'kode' => 'TP-LABEL-LEMBAGA', 'bobot' => 50]);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('SMP Cendekia Bangsa');
+});
+
+it('does not show a lembaga label on TP rows for a lembaga-scoped actor (regresi)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Tunggal Scope']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'kode' => 'TP-NO-LABEL']);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertDontSee('SMP Tunggal Scope');
+});
+
+it('shows the lembaga label on the ajax-rendered partial too, not just the initial full-page load', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Ajax Partial']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id, 'kode' => 'TP-AJAX']);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)
+        ->get(route('admin.komponen-penilaian.index'), ['X-Requested-With' => 'XMLHttpRequest'])
+        ->assertSee('SD Ajax Partial');
+});
+
+
 
 

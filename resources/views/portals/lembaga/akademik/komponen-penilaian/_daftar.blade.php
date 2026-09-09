@@ -58,7 +58,12 @@
                         <div class="flex items-center justify-between gap-2 mb-2">
                             <div class="truncate">
                                 <h4 class="font-bold text-gray-900 text-sm truncate">{{ $first->subjek->nama }}</h4>
-                                <p class="text-[11px] text-gray-500">{{ $first->semester->nama }} ({{ $first->semester->tahunAjaran->nama }})</p>
+                                <p class="text-[11px] text-gray-500">
+                                    {{ $first->semester->nama }} ({{ $first->semester->tahunAjaran->nama }})
+                                    @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                                        &bull; {{ $first->lembaga->nama ?? '-' }}
+                                    @endif
+                                </p>
                             </div>
                             <span class="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-black {{ $isComplete ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                                 {{ $totalBobot }}%
@@ -109,6 +114,9 @@
                             </span>
                         </div>
                         <div class="flex items-center gap-3">
+                            @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                                <x-badge tone="slate" class="text-xs font-medium">{{ $komponen->lembaga->nama ?? '-' }}</x-badge>
+                            @endif
                             <x-badge tone="slate" class="text-xs font-medium">{{ $komponen->semester->nama }} — {{ $komponen->semester->tahunAjaran->nama }}</x-badge>
                             @can('komponen-penilaian.kelola')
                                 <a href="{{ route('admin.komponen-penilaian.edit', $komponen) }}" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">Edit</a>
