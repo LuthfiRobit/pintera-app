@@ -597,6 +597,64 @@ Style alignment DONE (2026-09-09) — `<x-select>`'s classes now match the prefe
 
 ---
 
+## Item I — 🟢 Kecil: Urutan Dropdown Filter — Tahun Ajaran → Semester → Kelas
+
+### Masalah
+
+Urutan tampilan 3 dropdown filter saat ini (baris 32-58): **Tahun Ajaran → Kelas → Semester**. User minta diurutkan ulang jadi **Tahun Ajaran → Semester → Kelas** — urutan ini lebih sesuai alur berpikir alami (pilih tahun ajaran, lalu semester mana, baru kelas spesifik yang mana), dan konsisten dengan urutan hierarki data (`TahunAjaran` → `Semester` → `Kelas` per tahun ajaran, bukan `Kelas` lepas dari semester).
+
+**Prasyarat urutan kerja**: item ini murni REORDER blok markup, dikerjakan SETELAH Item H (supaya blok yang dipindah adalah versi `<x-select>` yang sudah benar, bukan `<select>` mentah versi lama).
+
+**Tidak ada perubahan logic/JS sama sekali**: `rapor-filter.js` (`initKelasSelect`/`initSemesterSelect`/`gantiTahunAjaran`/dst) TIDAK bergantung pada urutan visual dropdown — masing-masing disambungkan via `x-ref` yang independen dari posisi DOM. Murni reorder 2 blok `<div class="flex-1 min-w-[220px]">` di Blade.
+
+### Perbaikan
+
+`resources/views/portals/lembaga/akademik/rapor/index.blade.php` — ambil kode HASIL Item H (bukan kode asli), ganti urutan blok:
+
+```blade
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Kelas" />
+                        <x-select x-ref="kelasSelect" x-init="initKelasSelect($refs.kelasSelect)" class="mt-1.5 font-bold">
+                            @foreach ($kelasList as $kelas)
+                                <option value="{{ $kelas->id }}" @selected($selectedKelas && $selectedKelas->id === $kelas->id)>{{ $kelas->nama }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
+
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Semester" />
+                        <x-select x-ref="semesterSelect" x-init="initSemesterSelect($refs.semesterSelect)" class="mt-1.5 font-bold">
+                            @foreach ($semesterList as $semester)
+                                <option value="{{ $semester->id }}" @selected($selectedSemester && $selectedSemester->id === $semester->id)>{{ $semester->nama }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
+```
+
+menjadi (blok Semester dipindah ke ATAS, blok Kelas ke BAWAH — isi kedua blok TIDAK diubah sedikit pun, cuma urutannya ditukar):
+
+```blade
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Semester" />
+                        <x-select x-ref="semesterSelect" x-init="initSemesterSelect($refs.semesterSelect)" class="mt-1.5 font-bold">
+                            @foreach ($semesterList as $semester)
+                                <option value="{{ $semester->id }}" @selected($selectedSemester && $selectedSemester->id === $semester->id)>{{ $semester->nama }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
+
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Kelas" />
+                        <x-select x-ref="kelasSelect" x-init="initKelasSelect($refs.kelasSelect)" class="mt-1.5 font-bold">
+                            @foreach ($kelasList as $kelas)
+                                <option value="{{ $kelas->id }}" @selected($selectedKelas && $selectedKelas->id === $kelas->id)>{{ $kelas->nama }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
+```
+
+---
+
 ## Di Luar Scope
 
 - **Backend inti (`RaporCalculationService`, agregasi numeric/predicate/narrative, guard `opsi()`/`cetak()`) TIDAK diubah** — sudah dikonfirmasi benar lewat audit, tidak ada bug hitung/N+1/kebocoran lintas-yayasan.
@@ -616,3 +674,4 @@ Style alignment DONE (2026-09-09) — `<x-select>`'s classes now match the prefe
 | F | Tooltip "Rata-Rata Kelas" menampilkan teks penjelasan metodologi saat hover/fokus pada ikon info. |
 | G | Tidak perlu test otomatis — verifikasi manual (baca ulang file log) sebagai langkah terakhir plan. |
 | H | Ketiga dropdown (Tahun Ajaran/Kelas/Semester) tetap tampil & berfungsi dengan TomSelect setelah migrasi ke `<x-select>` (regresi fungsional — bukan cuma visual): pilih Tahun Ajaran memuat ulang opsi Kelas/Semester lewat `/opsi`, memilih Kelas/Semester memuat ulang hasil rekap lewat AJAX, seperti sebelumnya. Cek juga 1-2 dari 9 file lain pemakai `<x-select>` (mis. `admin/karyawan/_form.blade.php`) tetap render benar setelah perubahan style komponen (regresi visual lintas-file, verifikasi manual/screenshot). |
+| I | Verifikasi visual murni (tidak perlu test otomatis baru) — urutan dropdown tampil Tahun Ajaran → Semester → Kelas dari kiri ke kanan. Regresi fungsional: seluruh alur cascade (pilih Tahun Ajaran → opsi Semester/Kelas termuat → pilih salah satu → rekap termuat) tetap identik, dibuktikan lewat test existing Item A/H yang TIDAK bergantung pada urutan visual sama sekali. |
