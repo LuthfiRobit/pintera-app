@@ -847,3 +847,97 @@ it('defaults to mata_pelajaran and numeric for a non-PAUD lembaga on the create 
 
     $response->assertOk()->assertSee("subjekType: 'mata_pelajaran'", false);
 });
+
+it('blocks a yayasan actor from opening Tambah TP when no lembaga is active (aggregate mode)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'))
+        ->assertStatus(422);
+});
+
+it('blocks a yayasan actor from submitting store() when no lembaga is active (aggregate mode)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'TP-BLOCKED',
+        'deskripsi' => 'Tidak boleh tersimpan',
+        'bobot' => 100,
+    ])->assertStatus(422);
+
+    expect(KomponenPenilaian::where('kode', 'TP-BLOCKED')->exists())->toBeFalse();
+});
+
+it('allows a yayasan actor to open and submit Tambah TP once switched into a lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'))->assertOk();
+
+    $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'TP-ALLOWED',
+        'deskripsi' => 'Harus tersimpan',
+        'bobot' => 100,
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    expect(KomponenPenilaian::where('kode', 'TP-ALLOWED')->exists())->toBeTrue();
+});
+
+it('does not affect a lembaga-scoped actor at all when accessing Tambah TP', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.create'))->assertOk();
+
+    $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'TP-LEMBAGA-SCOPE',
+        'deskripsi' => 'Aktor lembaga-scope tidak terpengaruh guard',
+        'bobot' => 100,
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    expect(KomponenPenilaian::where('kode', 'TP-LEMBAGA-SCOPE')->exists())->toBeTrue();
+});
+
+it('hides the Tambah TP button for a yayasan actor in aggregate mode, with an explanatory message', function () {
+    $yayasan = Yayasan::factory()->create();
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertDontSee('Tambah TP Baru')
+        ->assertDontSee('Tambah TP Pertama')
+        ->assertSee('Pilih 1 lembaga lewat pengalih di topbar untuk mulai menambah TP.');
+});
+
+it('shows the Tambah TP button for a yayasan actor once switched into a lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('Tambah TP Pertama');
+});
+

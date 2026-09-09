@@ -85,9 +85,11 @@
             <p class="font-display text-sm font-bold text-gray-900">Daftar Komponen &amp; Tujuan Pembelajaran</p>
             <div class="flex items-center gap-2">
                 <x-badge tone="brand" class="text-xs font-semibold px-2.5 py-0.5">{{ $komponenList->count() }} Data</x-badge>
-                <x-link-button href="{{ route('admin.komponen-penilaian.create') }}">
-                    <span class="text-base leading-none mr-1.5">+</span> Tambah TP Baru
-                </x-link-button>
+                @if (! ($isYayasan ?? false) || ($activeLembaga ?? null))
+                    <x-link-button href="{{ route('admin.komponen-penilaian.create') }}">
+                        <span class="text-base leading-none mr-1.5">+</span> Tambah TP Baru
+                    </x-link-button>
+                @endif
             </div>
         </div>
 
@@ -142,9 +144,13 @@
                         <p class="text-sm font-semibold text-gray-700">Belum Ada Tujuan Pembelajaran</p>
                         <p class="text-xs text-gray-400 max-w-sm mx-auto mt-0.5">Tambahkan Tujuan Pembelajaran (TP) untuk mempermudah guru merujuk indikator penilaian saat menginput nilai asesmen.</p>
                     </div>
-                    <x-link-button href="{{ route('admin.komponen-penilaian.create') }}" class="inline-flex justify-center">
-                        <span class="text-base leading-none mr-1.5">+</span> Tambah TP Pertama
-                    </x-link-button>
+                    @if (! ($isYayasan ?? false) || ($activeLembaga ?? null))
+                        <x-link-button href="{{ route('admin.komponen-penilaian.create') }}" class="inline-flex justify-center">
+                            <span class="text-base leading-none mr-1.5">+</span> Tambah TP Pertama
+                        </x-link-button>
+                    @else
+                        <p class="text-xs text-gray-400 max-w-sm mx-auto mt-2">Pilih 1 lembaga lewat pengalih di topbar untuk mulai menambah TP.</p>
+                    @endif
                 </div>
             @endforelse
         </div>

@@ -101,6 +101,10 @@ class KomponenPenilaianController extends BaseController
     {
         $this->authorize('komponen-penilaian.kelola');
 
+        if ($request->user()->widestScopeLevel() === 'yayasan') {
+            abort_if($this->resolveActiveLembagaId($request->user()) === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah TP.');
+        }
+
         $tahunAjaranId = old('tahun_ajaran_id', $request->query('tahun_ajaran_id'));
         if (! $tahunAjaranId) {
             $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
@@ -118,6 +122,10 @@ class KomponenPenilaianController extends BaseController
 
     public function store(StoreKomponenPenilaianRequest $request): RedirectResponse|JsonResponse
     {
+        if ($request->user()->widestScopeLevel() === 'yayasan') {
+            abort_if($this->resolveActiveLembagaId($request->user()) === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah TP.');
+        }
+
         $data = $request->validated();
 
         $subjek = match ($data['subjek_type']) {
