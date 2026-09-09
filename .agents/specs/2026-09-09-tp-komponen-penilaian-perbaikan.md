@@ -328,7 +328,17 @@ export function komponenPenilaianEditForm() {
 
 (Import `TomSelect` di baris 1 file JADI TIDAK DIPAKAI LAGI — hapus juga `import TomSelect from 'tom-select';`. Fungsi `komponenPenilaianEditForm()` TETAP DIPERTAHANKAN sebagai objek kosong, JANGAN dihapus seluruhnya — `edit.blade.php` masih memanggilnya lewat `x-data="komponenPenilaianEditForm()"` di form-nya, meski isinya sekarang kosong.)
 
-**6. Test existing yang WAJIB disesuaikan** — `tests/Feature/Admin/KomponenPenilaianCrudTest.php`, test *"updates a komponen penilaian including mata pelajaran and semester when not yet used"* (baris ±258) menguji KEMAMPUAN LAMA yang SENGAJA dihapus di Item A ini. Ganti isinya jadi menguji perilaku BARU (subjek_type/subjek_id/semester_id di payload — kalau dikirim lewat jalur non-browser — diam-diam DIABAIKAN, bukan menyebabkan subjek berubah, TIDAK JUGA menyebabkan error validasi karena field itu sudah tidak ada di `rules()` sama sekali):
+**6. Test existing yang WAJIB disesuaikan — TERNYATA ADA 3, BUKAN 1** (koreksi setelah audit ulang menyisir seluruh file test, bukan cuma test 258 yang saya temukan pertama kali): `tests/Feature/Admin/KomponenPenilaianCrudTest.php` punya 3 test yang SEMUANYA menguji kemampuan reassignment subjek/semester yang SENGAJA dihapus di Item A ini — SEMUANYA lewat HTTP penuh (`$this->actingAs($manager)->put(route('admin.komponen-penilaian.update', ...` dengan payload berisi `subjek_type`/`subjek_id`/`semester_id`, PERSIS pola yang sudah dibuktikan TIDAK PERNAH benar-benar dikirim `edit.blade.php` manapun):
+
+- Baris ±258, *"updates a komponen penilaian including mata pelajaran and semester when not yet used"* — aktor lembaga-scope, ganti mata pelajaran+semester DALAM lembaga yang sama.
+- Baris ±592, *"recomputes lembaga_id to follow the new semester for elemen_cp when a yayasan actor moves it across lembaga"* — aktor YAYASAN-scope, pindahkan TP (Elemen CP) ke semester LEMBAGA LAIN dalam yayasan yang sama, `lembaga_id` ikut berubah otomatis.
+- Baris ±632, *"recomputes lembaga_id to follow the new semester for mata_pelajaran when a yayasan actor moves it across lembaga"* — SAMA seperti di atas, untuk subjek `mata_pelajaran`.
+
+**Catatan penting**: 2 test terakhir (yayasan lintas-lembaga) SEMPAT membuat saya khawatir ada UI TERPISAH untuk aktor yayasan-scope yang belum saya temukan (mis. halaman reorganisasi kurikulum lintas-lembaga). Sudah dicek ulang MENYELURUH — `edit.blade.php` (satu-satunya view edit Admin yang ada) TIDAK PUNYA percabangan apa pun berdasarkan `widestScopeLevel()`/yayasan-scope, tampilannya SAMA PERSIS (read-only) untuk semua jenis aktor. Jadi KETIGA test ini murni menguji kemampuan backend yang SAMA-SAMA TIDAK PERNAH punya jalur UI nyata, hanya beda skenario data uji — bukan bukti adanya fitur/halaman lain yang terlewat. **Keputusan Opsi A tetap sama, TIDAK berubah** — cuma cakupan pembersihan test-nya lebih besar dari perkiraan awal.
+
+**1 test LAIN yang TIDAK perlu diubah**: baris ±674, *"does not touch lembaga_id when updating a komponen without changing semester_id"* — payload-nya JUGA mengirim subjek_type/subjek_id/semester_id, TAPI dengan nilai yang SAMA seperti sebelumnya (kasus "tidak ganti apa-apa"). Assertion test ini (`deskripsi` berubah, `lembaga_id` TIDAK berubah) tetap benar dengan kode BARU (lembaga_id memang tidak pernah lagi disentuh sama sekali) — JANGAN diubah, biarkan apa adanya, akan tetap lulus.
+
+Ganti isi test 258 jadi menguji perilaku BARU (subjek_type/subjek_id/semester_id di payload — kalau dikirim lewat jalur non-browser — diam-diam DIABAIKAN, bukan menyebabkan subjek berubah, TIDAK JUGA menyebabkan error validasi karena field itu sudah tidak ada di `rules()` sama sekali):
 
 ```php
 it('updates a komponen penilaian including mata pelajaran and semester when not yet used', function () {
@@ -361,6 +371,100 @@ it('updates a komponen penilaian including mata pelajaran and semester when not 
 ```
 
 Catatan: TETAP mengirim `subjek_type`/`subjek_id`/`semester_id` di payload test ini (mensimulasikan permintaan mentah non-browser) — TAPI sekarang assert `subjek_id`/`semester_id` TIDAK BERUBAH (tetap `$mapelLama`/`$semesterLama`), field lain (`kode`/`deskripsi`) TETAP berubah normal. Nama test TIDAK diubah (masih ada kata "including mata pelajaran and semester") karena tetap relevan — tesnya kini MEMBUKTIKAN field itu diabaikan, bukan lagi membuktikan field itu ikut berubah.
+
+Ganti isi test baris ±592 (*"recomputes lembaga_id to follow the new semester for elemen_cp when a yayasan actor moves it across lembaga"*) — ganti NAMA test-nya juga (nama lama tidak relevan lagi, perilaku yang diuji sudah terbalik) jadi *"ignores subjek/semester reassignment payload for elemen_cp even from a yayasan actor (lembaga_id stays put)"*:
+
+```php
+it('ignores subjek/semester reassignment payload for elemen_cp even from a yayasan actor (lembaga_id stays put)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+    $elemenCp = ElemenCp::factory()->create();
+
+    $createAction = app(CreateKomponenPenilaianAction::class);
+    $komponen = $createAction->execute(new KomponenPenilaianData(
+        subjekType: 'elemen_cp',
+        subjekId: $elemenCp->id,
+        semesterId: $semesterA->id,
+        kode: 'ECP-1',
+        deskripsi: 'Deskripsi awal',
+        bobot: 100,
+        kktp: null,
+        kktpMinimal: null,
+        assessmentType: null,
+    ));
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
+        'subjek_type' => 'elemen_cp',
+        'subjek_id' => $elemenCp->id,
+        'semester_id' => $semesterB->id,
+        'kode' => 'ECP-1',
+        'deskripsi' => 'Deskripsi diubah',
+        'bobot' => 100,
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    $komponen->refresh();
+    expect($komponen->semester_id)->toBe($semesterA->id);
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+    expect($komponen->deskripsi)->toBe('Deskripsi diubah');
+});
+```
+
+Ganti isi test baris ±632 (*"recomputes lembaga_id to follow the new semester for mata_pelajaran when a yayasan actor moves it across lembaga"*) — ganti nama jadi *"ignores subjek/semester reassignment payload for mata_pelajaran even from a yayasan actor (lembaga_id stays put)"*:
+
+```php
+it('ignores subjek/semester reassignment payload for mata_pelajaran even from a yayasan actor (lembaga_id stays put)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $mapelB = MataPelajaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+
+    $createAction = app(CreateKomponenPenilaianAction::class);
+    $komponen = $createAction->execute(new KomponenPenilaianData(
+        subjekType: 'mata_pelajaran',
+        subjekId: $mapelA->id,
+        semesterId: $semesterA->id,
+        kode: 'MP-1',
+        deskripsi: 'Deskripsi awal',
+        bobot: 100,
+        kktp: null,
+        kktpMinimal: null,
+        assessmentType: null,
+    ));
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapelB->id,
+        'semester_id' => $semesterB->id,
+        'kode' => 'MP-1',
+        'deskripsi' => 'Deskripsi diubah',
+        'bobot' => 100,
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    $komponen->refresh();
+    expect($komponen->subjek_id)->toBe($mapelA->id);
+    expect($komponen->semester_id)->toBe($semesterA->id);
+    expect($komponen->lembaga_id)->toBe($lembagaA->id);
+    expect($komponen->deskripsi)->toBe('Deskripsi diubah');
+});
+```
+
+Test baris ±674 (*"does not touch lembaga_id when updating a komponen without changing semester_id"*) TIDAK DIUBAH sama sekali — sudah dicek, assertion-nya tetap benar dengan kode baru.
 
 ---
 
@@ -503,7 +607,7 @@ bobot: isset($data['bobot']) ? (int) $data['bobot'] : 100,
 
 | Item | Test yang dibutuhkan |
 |---|---|
-| A | Edit TP yang BELUM dipakai (`!$dipakai`) berhasil menyimpan perubahan kode/deskripsi/bobot/kktp/assessment_type TANPA error validasi; payload berisi subjek_type/subjek_id/semester_id (kalaupun dikirim) diabaikan diam-diam, bukan mengubah data ATAU menyebabkan error; regresi 2 test "locks..." existing (dipakai=true) tetap lulus tanpa perubahan |
+| A | Edit TP yang BELUM dipakai (`!$dipakai`) berhasil menyimpan perubahan kode/deskripsi/bobot/kktp/assessment_type TANPA error validasi; payload berisi subjek_type/subjek_id/semester_id (kalaupun dikirim, dari lembaga-scope MAUPUN yayasan-scope actor, subjek mata_pelajaran MAUPUN elemen_cp) diabaikan diam-diam, bukan mengubah data ATAU menyebabkan error; regresi 2 test "locks..." existing (dipakai=true) DAN 1 test "does not touch lembaga_id..." (baris 674) tetap lulus tanpa perubahan |
 | B | Badge scope + label "(Aktif)" konsisten dengan pola menu lain (agregat/narrow) |
 | C | Aktor lembaga PAUD (bentuk_pendidikan KB/TPA/SPS/TK) tetap default ke `elemen_cp`/`narrative` di form create, aktor non-PAUD tetap default ke `mata_pelajaran`/`numeric` (regresi perilaku, BUKAN fitur baru) |
 | D | Store TP via payload TANPA `bobot` (mensimulasikan API mentah tanpa lewat UI form) menghasilkan `bobot` tersimpan `100`, bukan `10` — satu-satunya perilaku nyata yang berubah, jalur UI form normal TIDAK terpengaruh |
