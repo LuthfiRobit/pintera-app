@@ -987,4 +987,59 @@ it('returns a validation error instead of a blank 404 when subjek_id does not ex
     $response->assertSessionHasErrors('subjek_id');
 });
 
+it('does not silently narrow to one lembaga\'s tahun ajaran when a yayasan actor in aggregate mode opens index() with no query string', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id, 'status_aktif' => true]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id, 'status_aktif' => true]);
+    $semesterA = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranA->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $mapelB = MataPelajaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelA->id, 'semester_id' => $semesterA->id, 'kode' => 'TP-LEMBAGA-A']);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapelB->id, 'semester_id' => $semesterB->id, 'kode' => 'TP-LEMBAGA-B']);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('TP-LEMBAGA-A')
+        ->assertSee('TP-LEMBAGA-B');
+});
+
+it('still defaults to the active tahun ajaran for a lembaga-scoped actor (regresi)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $tahunAjaranLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $semesterAktif = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranAktif->id]);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLama->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterAktif->id, 'kode' => 'TP-TAHUN-AKTIF']);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterLama->id, 'kode' => 'TP-TAHUN-LAMA']);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('TP-TAHUN-AKTIF')
+        ->assertDontSee('TP-TAHUN-LAMA');
+});
+
+it('still defaults to the active tahun ajaran for a yayasan actor who has switched into a lembaga (regresi)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $tahunAjaranLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+    $semesterAktif = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranAktif->id]);
+    $semesterLama = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranLama->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterAktif->id, 'kode' => 'TP-YAYASAN-AKTIF']);
+    KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semesterLama->id, 'kode' => 'TP-YAYASAN-LAMA']);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('TP-YAYASAN-AKTIF')
+        ->assertDontSee('TP-YAYASAN-LAMA');
+});
+
+
 

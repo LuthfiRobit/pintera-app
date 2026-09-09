@@ -49,8 +49,10 @@ class KomponenPenilaianController extends BaseController
     {
         $this->authorize('komponen-penilaian.kelola');
 
+        $isYayasanAggregate = $request->user()->widestScopeLevel() === 'yayasan' && $this->resolveActiveLembagaId($request->user()) === null;
+
         $tahunAjaranId = $request->query('tahun_ajaran_id');
-        if ($tahunAjaranId === null && ! $request->query->has('tahun_ajaran_id')) {
+        if ($tahunAjaranId === null && ! $request->query->has('tahun_ajaran_id') && ! $isYayasanAggregate) {
             $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
         }
         $semesterId = $request->query('semester_id');
