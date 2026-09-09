@@ -16,8 +16,7 @@ final readonly class KomponenPenilaianData
         public ?string $kktp,
         public ?int $kktpMinimal,
         public ?string $assessmentType,
-    ) {
-    }
+    ) {}
 
     public static function fromArray(array $data): self
     {
@@ -27,7 +26,7 @@ final readonly class KomponenPenilaianData
             semesterId: (int) $data['semester_id'],
             kode: $data['kode'] ?? null,
             deskripsi: $data['deskripsi'],
-            bobot: isset($data['bobot']) ? (int) $data['bobot'] : 10,
+            bobot: isset($data['bobot']) ? (int) $data['bobot'] : 100,
             kktp: $data['kktp'] ?? null,
             kktpMinimal: isset($data['kktp_minimal']) ? (int) $data['kktp_minimal'] : null,
             assessmentType: isset($data['assessment_type']) && $data['assessment_type'] !== ''

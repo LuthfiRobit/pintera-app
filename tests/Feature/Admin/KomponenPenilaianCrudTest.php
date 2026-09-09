@@ -55,6 +55,27 @@ it('creates a komponen penilaian', function () {
     expect(KomponenPenilaian::where('kode', 'TP 3.1')->exists())->toBeTrue();
 });
 
+it('defaults bobot to 100 (not 10) when a raw store request omits the bobot field entirely', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapel->id,
+        'semester_id' => $semester->id,
+        'kode' => 'TP-NO-BOBOT',
+        'deskripsi' => 'Tanpa bobot dikirim sama sekali',
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    $komponen = KomponenPenilaian::where('kode', 'TP-NO-BOBOT')->first();
+    expect($komponen)->not->toBeNull();
+    expect($komponen->bobot)->toBe(100);
+});
+
 it('does not list another lembaga\'s komponen penilaian', function () {
     $yayasan = Yayasan::factory()->create();
     $lembagaSaya = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
