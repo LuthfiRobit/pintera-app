@@ -89,6 +89,15 @@ Penyelesaian tuntas seluruh 10 task pada rencana implementasi audit mendalam men
   Penghapusan berkas lama (`Storage::disk('public')->delete($oldFilePath)`) dipindahkan ke dalam transaksi database SETELAH `$rpp->update()` berhasil dieksekusi.
 - **Commit:** `2e820adf`
 
+### Item J (Addendum, pasca-Task 10) — Tahun Ajaran Tidak Terlihat di Dropdown Semester Modal Tambah/Edit RPP
+- **Latar Belakang:**  
+  Ditemukan oleh user setelah Task 1-10 selesai & direview. Dropdown "Semester" pada modal Tambah/Edit RPP (`_modal-form.blade.php`) hanya menampilkan nama semester (*"Ganjil"*/*"Genap"*) tanpa keterangan Tahun Ajaran, sehingga user tidak punya konfirmasi visual sedang membuat/mengubah RPP untuk tahun pelajaran yang mana.
+- **Implementasi:**  
+  1. Di `RppController::index()`, `$semesterQuery` ditambahkan eager-load `->with('tahunAjaran')`.
+  2. Di `_modal-form.blade.php`, dropdown Semester dikelompokkan pakai `<optgroup label="{{ $namaTahunAjaran }}">` per Tahun Ajaran (mengikuti pola yang sudah ada di modul Piket Guru, `piket-guru/create.blade.php`), dan label field diubah dari "Semester" jadi "Tahun Ajaran & Semester".
+  3. Test baru ditambahkan di `RppWorkflowTest.php` yang mengecek keberadaan `<optgroup label="...">` dengan nama Tahun Ajaran pada render halaman index.
+- **Commit:** `01008e73`
+
 ### Task 10 — Regresi Penuh, Pint, & Verifikasi Browser
 - Seluruh 51 test domain RPP lulus tanpa kegagalan (143 assertions).
 - Laravel Pint formatting lulus (`{"tool":"pint","result":"passed"}`).
@@ -124,6 +133,7 @@ Penyelesaian tuntas seluruh 10 task pada rencana implementasi audit mendalam men
 | Task 8 | `34e1b10d` | `fix(rpp): tambah cek lembaga kelas_id di UpdateRppRequest, samakan dengan StoreRppRequest` |
 | Task 9 | `2e820adf` | `fix(rpp): pindahkan hapus file lama ke SETELAH commit transaksi (hindari state tidak konsisten kalau update gagal)` |
 | Task 10 | `91b9b4c2` | `docs(rpp): tandai semua task selesai pada implementation plan` |
+| Item J (Addendum) | `01008e73` | `fix(rpp): tampilkan Tahun Ajaran di dropdown Semester pada modal Tambah/Edit RPP` |
 
 ---
 
@@ -135,7 +145,8 @@ Perintah:
 php artisan test --compact --filter="RppWorkflowTest|RppControllerIdorTest|RppKurikulumReportingTest|StoreRppRequestKelasSemesterTest|RppVerifyTest"
 ```
 Hasil:
-- **51 tests passed** (143 assertions, 0 failed)
+- **51 tests passed** (143 assertions, 0 failed) — pada saat Task 10 selesai.
+- **52 tests passed** (145 assertions, 0 failed) — setelah Item J (Addendum) ditambahkan.
 - Domain RPP secara menyeluruh lulus verifikasi fungsional, otorisasi IDOR, dan validasi tenancy.
 
 ### Linter & Formatter
