@@ -1081,6 +1081,60 @@ it('shows the lembaga label on the ajax-rendered partial too, not just the initi
         ->assertSee('SD Ajax Partial');
 });
 
+it('shows a lembaga badge on the Edit TP header for a yayasan actor in aggregate mode', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA Edit Aggregate']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.edit', $komponen))
+        ->assertSee('SMA Edit Aggregate');
+});
+
+it('does not show a lembaga badge on the Edit TP header for a lembaga-scoped actor (regresi)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA Edit Lembaga Scope']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.edit', $komponen))
+        ->assertDontSee('SMA Edit Lembaga Scope');
+});
+
+it('still allows editing kode, deskripsi, bobot, kktp, and assessment_type after edit() query cleanup (regresi)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.edit', $komponen))->assertOk();
+
+    $this->actingAs($manager)->put(route('admin.komponen-penilaian.update', $komponen), [
+        'assessment_type' => 'narrative',
+        'kode' => 'TP-EDIT-OK',
+        'deskripsi' => 'Deskripsi setelah edit',
+        'bobot' => 80,
+        'kktp' => 'KKTP setelah edit',
+    ])->assertRedirect(route('admin.komponen-penilaian.index'));
+
+    $komponen->refresh();
+    expect($komponen->kode)->toBe('TP-EDIT-OK');
+    expect($komponen->deskripsi)->toBe('Deskripsi setelah edit');
+    expect($komponen->bobot)->toBe(80);
+    expect($komponen->kktp)->toBe('KKTP setelah edit');
+    expect($komponen->assessment_type->value)->toBe('narrative');
+});
+
+
 
 
 

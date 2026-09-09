@@ -163,7 +163,7 @@ class KomponenPenilaianController extends BaseController
         return redirect()->route('admin.komponen-penilaian.index')->with('status', 'Komponen penilaian (TP) berhasil disimpan.');
     }
 
-    public function edit(KomponenPenilaian $komponenPenilaian): View
+    public function edit(Request $request, KomponenPenilaian $komponenPenilaian): View
     {
         $this->authorize('komponen-penilaian.kelola');
 
@@ -175,12 +175,9 @@ class KomponenPenilaianController extends BaseController
         $dipakai = $komponenPenilaian->asesmen()->exists() || $komponenPenilaian->nilaiSiswa()->exists();
 
         return view('portals.lembaga.akademik.komponen-penilaian.edit', [
-            'komponenPenilaian' => $komponenPenilaian->load(['subjek', 'semester.tahunAjaran']),
+            'komponenPenilaian' => $komponenPenilaian->load(['subjek', 'semester.tahunAjaran', 'lembaga']),
             'dipakai' => $dipakai,
-            'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
-            'elemenCpList' => ElemenCp::orderBy('no_urut')->get(),
-            'semesterList' => Semester::with('tahunAjaran')->orderByDesc('id')->get(),
-            'bentukPendidikan' => auth()->user()->lembaga?->bentuk_pendidikan,
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
