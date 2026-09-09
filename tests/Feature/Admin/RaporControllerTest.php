@@ -630,8 +630,33 @@ it('still loads and submits the tahun ajaran, semester, and kelas filters correc
     expect(strpos($html, 'Pilih Semester'))->toBeLessThan(strpos($html, 'Pilih Kelas'));
 });
 
+it('renders pdf with landscape orientation, NIS column, and mapel codes in header', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $mapel = MataPelajaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Matematika Wajib', 'kode' => 'MTK']);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'nama_lengkap' => 'Zahra Amalia', 'nis' => '123456']);
 
+    $asesmen = Asesmen::factory()->create(['guru_id' => $guru->id, 'kelas_id' => $kelas->id, 'subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $komponen = KomponenPenilaian::factory()->create(['subjek_type' => 'mata_pelajaran', 'subjek_id' => $mapel->id, 'semester_id' => $semester->id]);
+    $asesmen->komponenPenilaian()->attach($komponen->id);
+    NilaiSiswa::create(['asesmen_id' => $asesmen->id, 'siswa_id' => $siswa->id, 'komponen_penilaian_id' => $komponen->id, 'nilai_angka' => 92]);
 
+    $rekap = app(RaporCalculationService::class)->hitungRekapKelas($kelas, $semester);
 
+    $html = view('pdf.rekap-rapor', array_merge(['selectedKelas' => $kelas, 'selectedSemester' => $semester], $rekap))->render();
 
+    expect($html)->toContain('size: a4 landscape')
+        ->toContain('NIS')
+        ->toContain('123456')
+        ->toContain('Zahra Amalia')
+        ->toContain('MTK');
 
+    $viewer = actingAsRaporViewer($lembaga);
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+    $response->assertOk();
+    expect($response->headers->get('Content-Type'))->toContain('application/pdf');
+});

@@ -2,18 +2,25 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <title>Rekap Nilai Rapor — {{ $selectedKelas->nama }}</title>
     <style>
-        body { font-family: sans-serif; font-size: 11px; color: #111827; }
+        @page {
+            size: a4 landscape;
+            margin: 12mm 15mm 12mm 15mm;
+        }
+        body { font-family: sans-serif; font-size: 10px; color: #111827; }
         h1 { font-size: 15px; margin-bottom: 2px; }
-        p.subtitle { color: #5B6478; margin-top: 0; margin-bottom: 14px; }
+        p.subtitle { color: #5B6478; margin-top: 0; margin-bottom: 12px; font-size: 10px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #E5E7EB; padding: 5px 6px; text-align: center; }
-        th { background-color: #F3F4F6; font-size: 10px; text-transform: uppercase; }
-        td.nama { text-align: left; font-weight: bold; }
+        th, td { border: 1px solid #D1D5DB; padding: 4px 6px; text-align: center; }
+        th { background-color: #F3F4F6; font-size: 9.5px; font-weight: bold; text-transform: uppercase; }
+        td.nama { text-align: left; font-weight: 600; }
+        td.nis { font-family: monospace; font-size: 9.5px; color: #4B5563; }
         td.tuntas { background-color: #ECFDF5; color: #047857; font-weight: bold; }
         td.bimbingan { background-color: #FFFBEB; color: #B45309; font-weight: bold; }
         td.umum { background-color: #EFF6FF; color: #1D4ED8; font-weight: bold; }
-        p.legend { margin-top: 10px; font-size: 10px; color: #5B6478; }
+        .legend-container { margin-top: 10px; font-size: 9px; color: #4B5563; }
+        .mapel-legend { margin-top: 4px; font-size: 8.5px; color: #6B7280; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -23,10 +30,11 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 30px;">No</th>
-                <th style="width: 140px; text-align: left;">Nama Peserta Didik</th>
+                <th style="width: 25px;">No</th>
+                <th style="width: 80px;">NIS</th>
+                <th style="width: 160px; text-align: left;">Nama Peserta Didik</th>
                 @forelse ($mapelList as $mapel)
-                    <th>{{ $mapel->nama }}</th>
+                    <th style="min-width: 45px;">{{ $mapel->kode ?: $mapel->nama }}</th>
                 @empty
                     <th>Belum Ada Mapel Terasesmen</th>
                 @endforelse
@@ -43,6 +51,7 @@
                 @endphp
                 <tr>
                     <td>{{ $index + 1 }}</td>
+                    <td class="nis">{{ $siswa->nis ?: ($siswa->nisn ?: '-') }}</td>
                     <td class="nama">{{ $siswa->nama_lengkap }}</td>
                     @forelse ($mapelList as $subjekKey => $mapel)
                         @php $sel = $rekapNilai[$siswa->id][$subjekKey] ?? null; @endphp
@@ -56,12 +65,22 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ 3 + $mapelList->count() }}">Belum ada siswa terdaftar di kelas ini.</td>
+                    <td colspan="{{ 4 + $mapelList->count() }}">Belum ada siswa terdaftar di kelas ini.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 
-    <p class="legend">Tuntas: skor &ge; {{ config('akademik.ambang_tuntas') }} &nbsp;&nbsp; Perlu Bimbingan: skor &lt; {{ config('akademik.ambang_tuntas') }}</p>
+    <div class="legend-container">
+        <p style="margin: 0;"><strong>Kriteria:</strong> Tuntas (skor &ge; {{ config('akademik.ambang_tuntas') }}) &nbsp;&bull;&nbsp; Perlu Bimbingan (skor &lt; {{ config('akademik.ambang_tuntas') }})</p>
+        @if ($mapelList->isNotEmpty())
+            <p class="mapel-legend">
+                <strong>Keterangan Kode Mapel:</strong>
+                @foreach ($mapelList as $mapel)
+                    {{ $mapel->kode ?: $mapel->nama }}: {{ $mapel->nama }}{{ ! $loop->last ? ' &bull; ' : '' }}
+                @endforeach
+            </p>
+        @endif
+    </div>
 </body>
 </html>

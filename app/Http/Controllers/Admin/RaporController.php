@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller as BaseController;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -24,8 +25,7 @@ class RaporController extends BaseController
 
     public function __construct(
         private readonly RaporCalculationService $raporCalculationService,
-    ) {
-    }
+    ) {}
 
     private function scopeHeaderData(Request $request): array
     {
@@ -127,13 +127,14 @@ class RaporController extends BaseController
         $pdf = Pdf::loadView('pdf.rekap-rapor', array_merge([
             'selectedKelas' => $selectedKelas,
             'selectedSemester' => $selectedSemester,
-        ], $rekap));
+        ], $rekap))
+            ->setPaper('a4', 'landscape');
 
         return $pdf->stream('rekap-rapor-'.Str::slug($selectedKelas->nama).'.pdf');
     }
 
     /**
-     * @return array{siswaList: \Illuminate\Support\Collection, mapelList: \Illuminate\Support\Collection, rekapNilai: array<int, array<int, float|null>>, classAvg: float|null, highestScore: float|null}
+     * @return array{siswaList: Collection, mapelList: Collection, rekapNilai: array<int, array<int, float|null>>, classAvg: float|null, highestScore: float|null}
      */
     private function rekapKosong(): array
     {
