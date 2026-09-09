@@ -133,9 +133,11 @@ class KomponenPenilaianController extends BaseController
             'elemen_cp' => ElemenCp::find($data['subjek_id']),
         };
         $semester = Semester::find($data['semester_id']);
-        abort_if($subjek === null || $semester === null, 404);
-        if ($data['subjek_type'] === 'mata_pelajaran') {
-            abort_if($subjek->lembaga_id !== $semester->lembaga_id, 404);
+        if ($subjek === null || $semester === null) {
+            return back()->withInput()->withErrors(['subjek_id' => 'Subjek Penilaian atau Semester yang dipilih tidak valid.']);
+        }
+        if ($data['subjek_type'] === 'mata_pelajaran' && $subjek->lembaga_id !== $semester->lembaga_id) {
+            return back()->withInput()->withErrors(['subjek_id' => 'Mata Pelajaran dan Semester yang dipilih berasal dari lembaga yang berbeda.']);
         }
 
         try {

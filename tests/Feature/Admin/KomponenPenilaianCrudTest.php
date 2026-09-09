@@ -117,7 +117,7 @@ it('rejects creating a komponen penilaian mixing a mata pelajaran and semester f
         'semester_id' => $semesterLain->id,
         'deskripsi' => 'Campur lembaga',
         'bobot' => 100,
-    ])->assertNotFound();
+    ])->assertRedirect()->assertSessionHasErrors('subjek_id');
 
     expect(KomponenPenilaian::where('deskripsi', 'Campur lembaga')->exists())->toBeFalse();
 });
@@ -940,4 +940,51 @@ it('shows the Tambah TP button for a yayasan actor once switched into a lembaga'
     $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
         ->assertSee('Tambah TP Pertama');
 });
+
+it('returns a validation error with preserved input instead of a blank 404 when subjek and semester belong to different lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembagaA = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $lembagaB = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranA = TahunAjaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $tahunAjaranB = TahunAjaran::factory()->create(['lembaga_id' => $lembagaB->id]);
+    $semesterB = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranB->id]);
+    $mapelA = MataPelajaran::factory()->create(['lembaga_id' => $lembagaA->id]);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+    session(['active_lembaga_id' => $lembagaA->id]);
+
+    $response = $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => $mapelA->id,
+        'semester_id' => $semesterB->id,
+        'kode' => 'TP-MISMATCH',
+        'deskripsi' => 'Deskripsi yang harus tetap ada di form setelah gagal',
+        'bobot' => 100,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('subjek_id');
+    $response->assertSessionHas('_old_input.deskripsi', 'Deskripsi yang harus tetap ada di form setelah gagal');
+    expect(KomponenPenilaian::where('kode', 'TP-MISMATCH')->exists())->toBeFalse();
+});
+
+it('returns a validation error instead of a blank 404 when subjek_id does not exist at all', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $response = $this->actingAs($manager)->post(route('admin.komponen-penilaian.store'), [
+        'subjek_type' => 'mata_pelajaran',
+        'subjek_id' => 999999,
+        'semester_id' => $semester->id,
+        'kode' => 'TP-NOTFOUND',
+        'deskripsi' => 'Subjek tidak pernah ada',
+        'bobot' => 100,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('subjek_id');
+});
+
 
