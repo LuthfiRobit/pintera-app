@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Akademik\Services\RaporCalculationService;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -18,15 +20,29 @@ use Illuminate\View\View;
 class RaporController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function __construct(
         private readonly RaporCalculationService $raporCalculationService,
     ) {
     }
 
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
+    }
+
     public function index(Request $request): View|string
     {
         $this->authorize('rapor.view');
+
+        $isYayasanAggregate = $request->user()->widestScopeLevel() === 'yayasan' && $this->resolveActiveLembagaId($request->user()) === null;
 
         $tahunAjaranId = is_scalar($request->query('tahun_ajaran_id')) ? $request->query('tahun_ajaran_id') : null;
         $kelasIdParam = is_scalar($request->query('kelas_id')) ? $request->query('kelas_id') : null;
@@ -36,11 +52,11 @@ class RaporController extends BaseController
             // ajaran, which may not be the one the kelas actually belongs to.
             $tahunAjaranId = Kelas::find($kelasIdParam)?->tahun_ajaran_id;
         }
-        if (! $tahunAjaranId) {
+        if (! $tahunAjaranId && ! $isYayasanAggregate) {
             $tahunAjaranId = TahunAjaran::where('status_aktif', true)->value('id');
         }
 
-        $kelasList = $tahunAjaranId ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->orderBy('nama')->get() : collect();
+        $kelasList = $tahunAjaranId ? Kelas::with('lembaga')->where('tahun_ajaran_id', $tahunAjaranId)->orderBy('nama')->get() : collect();
         $semesterList = $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect();
 
         $kelasId = $kelasIdParam;
@@ -52,8 +68,8 @@ class RaporController extends BaseController
             $semesterId = $semesterList->first()?->id;
         }
 
-        $selectedKelas = $kelasId ? Kelas::find($kelasId) : null;
-        $selectedSemester = $semesterId ? Semester::find($semesterId) : null;
+        $selectedKelas = $kelasId ? $kelasList->firstWhere('id', (int) $kelasId) : null;
+        $selectedSemester = $semesterId ? $semesterList->firstWhere('id', (int) $semesterId) : null;
 
         $rekap = ($selectedKelas && $selectedSemester)
             ? $this->raporCalculationService->hitungRekapKelas($selectedKelas, $selectedSemester)
@@ -63,7 +79,7 @@ class RaporController extends BaseController
             return view('portals.lembaga.akademik.rapor._hasil', array_merge([
                 'selectedKelas' => $selectedKelas,
                 'selectedSemester' => $selectedSemester,
-            ], $rekap))->render();
+            ], $rekap, $this->scopeHeaderData($request)))->render();
         }
 
         return view('portals.lembaga.akademik.rapor.index', array_merge([
@@ -73,7 +89,7 @@ class RaporController extends BaseController
             'semesterList' => $semesterList,
             'selectedKelas' => $selectedKelas,
             'selectedSemester' => $selectedSemester,
-        ], $rekap));
+        ], $rekap, $this->scopeHeaderData($request)));
     }
 
     public function opsi(Request $request): JsonResponse

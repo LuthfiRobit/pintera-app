@@ -1,5 +1,17 @@
 <div class="space-y-4">
     @if ($selectedKelas && $selectedSemester)
+        <div class="flex flex-wrap items-center gap-2 text-sm">
+            <span class="font-display font-bold text-gray-900">{{ $selectedKelas->nama }}</span>
+            <span class="text-gray-300">&bull;</span>
+            <span class="text-gray-600">{{ $selectedSemester->nama }} — {{ $selectedSemester->tahunAjaran->nama }}</span>
+            @if (($isYayasan ?? false) && ! ($activeLembaga ?? null))
+                <span class="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                    <x-icon name="apartment" class="h-3 w-3" />
+                    {{ $selectedKelas->lembaga->nama ?? '-' }}
+                </span>
+            @endif
+        </div>
+
         <!-- Class Stat Summary -->
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
@@ -16,8 +28,12 @@
 
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Rata-Rata Kelas</p>
+                        <div class="flex items-center gap-1">
+                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Rata-Rata Kelas</p>
+                            <x-tooltip text="Dihitung dari rata-rata SELURUH nilai numerik individual (siswa x mapel), bukan rata-rata dari nilai rata-rata tiap siswa.">
+                                <x-icon name="info" class="h-3 w-3 cursor-help text-gray-400" />
+                            </x-tooltip>
+                        </div>
                         <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $classAvg ?? '—' }}</p>
                     </div>
                     <div class="rounded-xl bg-emerald-50 p-3 text-emerald-600">
@@ -144,8 +160,8 @@
                 <x-icon name="assessment" class="h-7 w-7" />
             </div>
             <div>
-                <p class="text-base font-semibold text-gray-700">Silakan Pilih Kelas dan Semester</p>
-                <p class="text-xs text-gray-400 max-w-sm mx-auto mt-0.5">Pilih parameter kelas di bagian atas untuk menampilkan rekapitulasi nilai rapor peserta didik.</p>
+                <p class="text-base font-semibold text-gray-700">Silakan Pilih Tahun Ajaran, Kelas, dan Semester</p>
+                <p class="text-xs text-gray-400 max-w-sm mx-auto mt-0.5">Pilih parameter di bagian atas untuk menampilkan rekapitulasi nilai rapor peserta didik.</p>
             </div>
         </div>
     @endif

@@ -437,3 +437,201 @@ it('renders the score inside the per-mapel matrix cell, not only in the class su
     // di bawah ini akan GAGAL pada kode lama (0 badge ter-render), membuktikan regresi tertutup.
     $response->assertSeeText('70');
 });
+
+it('does not auto-select any tahun ajaran, kelas, or semester for a yayasan actor in aggregate mode with no query string', function () {
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_rapor_aggregate_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranAktif->id]);
+    Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranAktif->id]);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('admin.rapor.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('tahunAjaranId', null);
+    $response->assertViewHas('selectedKelas', null);
+    $response->assertViewHas('selectedSemester', null);
+    $response->assertSee('Silakan Pilih Tahun Ajaran, Kelas, dan Semester');
+});
+
+it('still auto-selects tahun ajaran, kelas, and semester for a yayasan actor who has switched into a lembaga', function () {
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_rapor_switched_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaranAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaranAktif->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaranAktif->id]);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($user)->get(route('admin.rapor.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('tahunAjaranId', $tahunAjaranAktif->id);
+    $response->assertViewHas('selectedKelas', fn ($k) => $k->id === $kelas->id);
+    $response->assertViewHas('selectedSemester', fn ($s) => $s->id === $semester->id);
+});
+
+it('shows the scope badge for a yayasan actor, purple in aggregate mode and brand-colored once switched', function () {
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_rapor_badge_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMA Badge Test']);
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->get(route('admin.rapor.index'))
+        ->assertSee('Semua Lembaga')
+        ->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
+
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($user)->get(route('admin.rapor.index'))
+        ->assertSee('SMA Badge Test')
+        ->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
+
+it('does not show the scope badge for a lembaga-scoped viewer', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $this->actingAs($viewer)->get(route('admin.rapor.index'))
+        ->assertDontSee('Semua Lembaga');
+});
+
+it('shows the lembaga suffix even when session active_lembaga_id is stale (belongs to a different yayasan)', function () {
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_rapor_stale_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMP Stale Session Test']);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2027/2028']);
+
+    $yayasanLain = Yayasan::factory()->create();
+    $lembagaLain = Lembaga::factory()->create(['yayasan_id' => $yayasanLain->id]);
+
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+    // Session berisi lembaga milik YAYASAN LAIN -- basi/tidak valid untuk aktor ini.
+    session(['active_lembaga_id' => $lembagaLain->id]);
+
+    $response = $this->actingAs($user)->get(route('admin.rapor.index'));
+
+    $response->assertOk();
+    $response->assertSee('2027/2028 — SMP Stale Session Test');
+});
+
+it('shows a blank placeholder option in the tahun ajaran dropdown when nothing is selected', function () {
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_rapor_placeholder_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+
+    $yayasan = Yayasan::factory()->create();
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $this->actingAs($user)->get(route('admin.rapor.index'))
+        ->assertSee('— Pilih Tahun Ajaran —');
+});
+
+it('shows a context header with kelas, semester, and lembaga badge for a yayasan actor in aggregate mode', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Konteks Rekap']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'nama' => 'Ganjil']);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '5B']);
+
+    Permission::firstOrCreate(['name' => 'rapor.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_super_admin_rapor_context_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo(['rapor.view']);
+    $user = User::factory()->create(['yayasan_id' => $yayasan->id]);
+    $user->assignRole($role);
+
+    $response = $this->actingAs($user)->get(route('admin.rapor.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('5B');
+    $response->assertSee('SD Konteks Rekap');
+});
+
+it('does not show a lembaga badge in the context header for a lembaga-scoped viewer (regresi)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Konteks Lembaga Scope']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '6A']);
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.index', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('6A');
+    $response->assertDontSee('SD Konteks Lembaga Scope');
+});
+
+it('shows the lembaga name in the printed pdf subtitle', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SMK Cetak PDF Test']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+
+    $rekap = app(RaporCalculationService::class)->hitungRekapKelas($kelas, $semester);
+
+    $html = view('pdf.rekap-rapor', array_merge(['selectedKelas' => $kelas, 'selectedSemester' => $semester], $rekap))->render();
+
+    expect($html)->toContain('SMK Cetak PDF Test');
+});
+
+it('shows a tooltip explaining the Rata-Rata Kelas calculation methodology', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.index', ['tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('Dihitung dari rata-rata SELURUH nilai numerik individual', false);
+});
+
+it('still loads and submits the tahun ajaran, semester, and kelas filters correctly after migrating to x-select', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'nama' => '4C']);
+    $viewer = actingAsRaporViewer($lembaga);
+
+    $response = $this->actingAs($viewer)->get(route('admin.rapor.index', ['tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('4C');
+    // Urutan visual (Item I): label "Pilih Semester" harus muncul SEBELUM "Pilih Kelas" di HTML mentah.
+    $html = $response->getContent();
+    expect(strpos($html, 'Pilih Semester'))->toBeLessThan(strpos($html, 'Pilih Kelas'));
+});
+
+
+
+
+
+
