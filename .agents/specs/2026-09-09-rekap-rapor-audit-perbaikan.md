@@ -457,11 +457,150 @@ Setelah Item A-F selesai diimplementasi DAN diverifikasi, update baris 89 file i
 
 ---
 
+## Item H — 🟢 Kecil: Adopsi `<x-select>` untuk 3 Dropdown Filter (Tahun Ajaran/Kelas/Semester)
+
+### Masalah
+
+Ketiga dropdown filter (Tahun Ajaran, Kelas, Semester) di `index.blade.php` hardcode class Tailwind sendiri alih-alih memakai komponen `<x-select>` yang SUDAH ADA (`resources/views/components/select.blade.php`, dipakai 9 file lain) — persis pola yang sudah tercatat sebagai backlog di `.ai/rules/components.md` ("Align `<x-select>` styling to the Komponen Penilaian index look, then adopt it everywhere"). User minta dikerjakan SEKARANG di halaman ini, bukan ditunda.
+
+**Prasyarat urutan kerja**: item ini HARUS dikerjakan SETELAH Item C selesai (dropdown Tahun Ajaran di Item H memakai versi markup yang SUDAH diperbarui Item C — placeholder kosong + suffix lembaga lewat `$isYayasan`/`$activeLembaga`, bukan raw `session()`). Kelas & Semester tidak punya ketergantungan ke item lain.
+
+### Perbaikan
+
+**1. `resources/views/components/select.blade.php`** — selaraskan style ke tampilan yang disukai user di index TP (ring fokus tipis, tanpa efek hover border), sesuai arah yang SUDAH diputuskan di `.ai/rules/components.md`. Ganti:
+
+```blade
+@props(['disabled' => false, 'error' => false])
+
+@php
+    $baseClasses = 'block w-full rounded-lg text-sm shadow-sm transition-all focus:outline-none focus:ring-4 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+    $stateClasses = $error
+        ? 'border-error-300 text-error-900 focus:border-error-500 focus:ring-error-500/20 bg-error-50/30'
+        : 'border-gray-200 text-gray-900 focus:border-brand-500 focus:ring-brand-500/20 bg-white hover:border-gray-300';
+@endphp
+
+<select @disabled($disabled) {{ $attributes->merge(['class' => $baseClasses . ' ' . $stateClasses]) }}>
+    {{ $slot }}
+</select>
+```
+
+menjadi:
+
+```blade
+@props(['disabled' => false, 'error' => false])
+
+@php
+    $baseClasses = 'block w-full rounded-lg text-sm shadow-sm transition duration-150 disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+    $stateClasses = $error
+        ? 'border-error-300 text-error-900 focus:border-error-500 focus:ring-error-500'
+        : 'border-gray-200 text-gray-900 focus:border-brand-500 focus:ring-brand-500 bg-white';
+@endphp
+
+<select @disabled($disabled) {{ $attributes->merge(['class' => $baseClasses . ' ' . $stateClasses]) }}>
+    {{ $slot }}
+</select>
+```
+
+**PENTING — dampak lintas-file yang DISENGAJA**: perubahan ini otomatis mengubah tampilan 9 file lain yang SUDAH pakai `<x-select>` (Karyawan, Roles, Siswa, Users, Kasus) — ring fokus jadi lebih tipis, efek hover border hilang. Ini SESUAI keputusan yang sudah direkam di `.ai/rules/components.md`, BUKAN efek samping tak disengaja. Kalau saat implementasi ternyata salah satu dari 9 file itu terlihat rusak/aneh secara visual (bukan cuma beda tipis), STOP dan laporkan — jangan asumsikan otomatis aman di semua 9 tanpa dicek screenshot/manual sekilas.
+
+**2. `resources/views/portals/lembaga/akademik/rapor/index.blade.php`** — ganti 3 `<select>` jadi `<x-select>`. Dropdown Kelas (baris 41-48 kode ASLI, TIDAK diubah item lain):
+
+```blade
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Kelas" />
+                        <select x-ref="kelasSelect" x-init="initKelasSelect($refs.kelasSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-bold text-gray-900 transition focus:border-brand-500 focus:ring-brand-500">
+                            @foreach ($kelasList as $kelas)
+                                <option value="{{ $kelas->id }}" @selected($selectedKelas && $selectedKelas->id === $kelas->id)>{{ $kelas->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+```
+
+menjadi:
+
+```blade
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Kelas" />
+                        <x-select x-ref="kelasSelect" x-init="initKelasSelect($refs.kelasSelect)" class="mt-1.5 font-bold">
+                            @foreach ($kelasList as $kelas)
+                                <option value="{{ $kelas->id }}" @selected($selectedKelas && $selectedKelas->id === $kelas->id)>{{ $kelas->nama }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
+```
+
+Dropdown Semester (baris 50-57 kode ASLI):
+
+```blade
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Semester" />
+                        <select x-ref="semesterSelect" x-init="initSemesterSelect($refs.semesterSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-bold text-gray-900 transition focus:border-brand-500 focus:ring-brand-500">
+                            @foreach ($semesterList as $semester)
+                                <option value="{{ $semester->id }}" @selected($selectedSemester && $selectedSemester->id === $semester->id)>{{ $semester->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+```
+
+menjadi:
+
+```blade
+                    <div class="flex-1 min-w-[220px]">
+                        <x-input-label value="Pilih Semester" />
+                        <x-select x-ref="semesterSelect" x-init="initSemesterSelect($refs.semesterSelect)" class="mt-1.5 font-bold">
+                            @foreach ($semesterList as $semester)
+                                <option value="{{ $semester->id }}" @selected($selectedSemester && $selectedSemester->id === $semester->id)>{{ $semester->nama }}</option>
+                            @endforeach
+                        </x-select>
+                    </div>
+```
+
+Dropdown Tahun Ajaran — ambil kode HASIL Item C (BUKAN kode asli sebelum spec ini), ganti:
+
+```blade
+                        <select x-ref="tahunAjaranSelect" x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm font-bold text-gray-900 transition focus:border-brand-500 focus:ring-brand-500">
+                            <option value="">— Pilih Tahun Ajaran —</option>
+                            @foreach ($tahunAjaranList as $tahunAjaran)
+                                <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? ' — '.($tahunAjaran->lembaga->nama ?? '-') : '' }}</option>
+                            @endforeach
+                        </select>
+```
+
+menjadi:
+
+```blade
+                        <x-select x-ref="tahunAjaranSelect" x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)" class="mt-1.5 font-bold">
+                            <option value="">— Pilih Tahun Ajaran —</option>
+                            @foreach ($tahunAjaranList as $tahunAjaran)
+                                <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? ' — '.($tahunAjaran->lembaga->nama ?? '-') : '' }}</option>
+                            @endforeach
+                        </x-select>
+```
+
+**Catatan `x-ref`/`x-init`/`class` tetap berfungsi**: `<x-select>` pakai `{{ $attributes->merge([...]) }}` yang otomatis meneruskan SEMUA atribut tak dikenal (termasuk `x-ref`, `x-init`) ke elemen `<select>` asli, dan `class="mt-1.5 font-bold"` dari sisi pemanggil di-GABUNG (bukan menimpa) dengan class bawaan komponen. TomSelect tetap bisa diinisialisasi persis seperti sebelumnya — TIDAK ADA perubahan di `resources/js/rapor-filter.js`.
+
+**Kenapa `transition`/`focus:ring-brand-500`/dll TIDAK perlu lagi ditulis di sisi pemanggil**: sudah jadi bagian `baseClasses`/`stateClasses` bawaan `<x-select>` (lihat perubahan #1). Cuma `mt-1.5` (jarak dari label) dan `font-bold` (penekanan visual khusus filter kelas ini) yang genuinely spesifik ke halaman ini, jadi cuma itu yang tetap dikirim lewat `class=""`.
+
+**3. `.ai/rules/components.md`** — perbarui catatan rule "Align `<x-select>` styling..." supaya tidak jadi basi setelah item ini selesai (pola sama seperti Item G). Bagian style-alignment SUDAH selesai (bukan lagi "backlog"), dan Rekap Rapor sudah 1 dari yang bermigrasi — sisa 62 file lain (dari klaim asli 63+) TETAP backlog. Ganti kalimat terakhir catatan itu:
+
+```
+When doing this consolidation, update `<x-select>`'s own classes to match the preferred look first, then migrate the 63+ files to use it — don't push the preferred page toward the component's current style.
+```
+
+menjadi:
+
+```
+Style alignment DONE (2026-09-09) — `<x-select>`'s classes now match the preferred look. Rekap Rapor's 3 filters migrated as the first adopter; ~62 other files (Karyawan, Roles, Siswa, Users, Kasus, TP, etc) still bypass the component and remain backlog.
+```
+
+(Dilakukan sebagai langkah TERAKHIR di task Item H, setelah perubahan komponen+view terverifikasi lulus test — bukan diasumsikan otomatis benar.)
+
+---
+
 ## Di Luar Scope
 
 - **Backend inti (`RaporCalculationService`, agregasi numeric/predicate/narrative, guard `opsi()`/`cetak()`) TIDAK diubah** — sudah dikonfirmasi benar lewat audit, tidak ada bug hitung/N+1/kebocoran lintas-yayasan.
 - **`<x-input-label>` tidak pernah pakai atribut `for=`/`id=` untuk menghubungkan label ke input (aksesibilitas screen reader)** — DITEMUKAN saat audit ini, TAPI ini pola yang dipakai IDENTIK di HAMPIR SEMUA form di seluruh aplikasi (bukan spesifik Rekap Rapor). Memperbaikinya di sini saja tidak menyelesaikan masalahnya secara sistemik, dan memperbaikinya di seluruh app jauh di luar scope 1 halaman. TIDAK dikerjakan di spec ini — dicatat di sini secara eksplisit sebagai permintaan user ("catat saja semua dalam spec"), keputusan tindak lanjut (mis. jadi `.ai/rules` terpisah) diserahkan ke user.
-- **Adopsi `<x-select>` untuk 3 dropdown filter (Tahun Ajaran/Kelas/Semester)** — SUDAH tercatat sebagai backlog lintas-app di `.ai/rules/components.md` (temuan sesi TP sebelumnya, 63+ file terpengaruh termasuk Rekap Rapor). TIDAK perlu item terpisah di spec ini, cukup jadi 1 data poin tambahan yang mengonfirmasi cakupan backlog itu.
 - **Tidak ada perubahan skema database, tidak ada migrasi baru.**
 - **Tidak pakai worktree, tidak pindah branch.**
 
@@ -476,3 +615,4 @@ Setelah Item A-F selesai diimplementasi DAN diverifikasi, update baris 89 file i
 | E | PDF cetak menampilkan nama lembaga di subtitle header. |
 | F | Tooltip "Rata-Rata Kelas" menampilkan teks penjelasan metodologi saat hover/fokus pada ikon info. |
 | G | Tidak perlu test otomatis — verifikasi manual (baca ulang file log) sebagai langkah terakhir plan. |
+| H | Ketiga dropdown (Tahun Ajaran/Kelas/Semester) tetap tampil & berfungsi dengan TomSelect setelah migrasi ke `<x-select>` (regresi fungsional — bukan cuma visual): pilih Tahun Ajaran memuat ulang opsi Kelas/Semester lewat `/opsi`, memilih Kelas/Semester memuat ulang hasil rekap lewat AJAX, seperti sebelumnya. Cek juga 1-2 dari 9 file lain pemakai `<x-select>` (mis. `admin/karyawan/_form.blade.php`) tetap render benar setelah perubahan style komponen (regresi visual lintas-file, verifikasi manual/screenshot). |
