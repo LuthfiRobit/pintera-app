@@ -7,11 +7,12 @@ export function raporFilter(config) {
         semesterId: config.semesterId ?? '',
         opsiUrl: config.opsiUrl,
         indexUrlBase: config.indexUrlBase,
+        tahunAjaranTomSelect: null,
         kelasTomSelect: null,
         semesterTomSelect: null,
 
         initTahunAjaranSelect(el) {
-            new TomSelect(el, {
+            this.tahunAjaranTomSelect = new TomSelect(el, {
                 maxItems: 1,
                 create: false,
                 placeholder: 'Cari tahun ajaran...',
@@ -120,10 +121,22 @@ export function raporFilter(config) {
             }
         },
 
+        resetFilters() {
+            this.tahunAjaranId = '';
+            this.kelasId = '';
+            this.semesterId = '';
+            this.tahunAjaranTomSelect?.clear(true);
+            this.semesterTomSelect?.clear(true);
+            this.semesterTomSelect?.clearOptions();
+            this.kelasTomSelect?.clear(true);
+            this.kelasTomSelect?.clearOptions();
+            this.muatUlangDaftar();
+        },
+
         perbaruiUrl() {
             const url = new URL(window.location.href);
             const params = url.searchParams;
-            params.set('tahun_ajaran_id', this.tahunAjaranId ?? '');
+            this.tahunAjaranId ? params.set('tahun_ajaran_id', this.tahunAjaranId) : params.delete('tahun_ajaran_id');
             this.kelasId ? params.set('kelas_id', this.kelasId) : params.delete('kelas_id');
             this.semesterId ? params.set('semester_id', this.semesterId) : params.delete('semester_id');
             window.history.pushState({}, '', url);

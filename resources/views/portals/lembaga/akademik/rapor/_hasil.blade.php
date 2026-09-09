@@ -17,7 +17,7 @@
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total Peserta Didik</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Total Peserta Didik</p>
                         <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $siswaList->count() }} <span class="text-xs font-normal text-gray-400">Siswa</span></p>
                     </div>
                     <div class="rounded-xl bg-brand-50 p-3 text-brand-600">
@@ -30,7 +30,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <div class="flex items-center gap-1">
-                            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Rata-Rata Kelas</p>
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Rata-Rata Kelas</p>
                             <x-tooltip text="Dihitung dari rata-rata SELURUH nilai numerik individual (siswa x mapel), bukan rata-rata dari nilai rata-rata tiap siswa.">
                                 <x-icon name="info" class="h-3 w-3 cursor-help text-gray-400" />
                             </x-tooltip>
@@ -46,7 +46,7 @@
             <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card transition duration-200 hover:shadow-md">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Skor Tertinggi</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Skor Tertinggi</p>
                         <p class="mt-1 font-display text-2xl font-bold text-gray-900">{{ $highestScore ?? '—' }}</p>
                     </div>
                     <div class="rounded-xl bg-amber-50 p-3 text-amber-600">
@@ -82,23 +82,23 @@
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm min-w-[600px]">
-                    <thead>
-                        <tr class="border-b border-gray-200 bg-gray-100 text-xs font-bold uppercase tracking-wider text-gray-600">
-                            <th class="py-3 pl-6 pr-3 w-12 text-center">No</th>
-                            <th class="px-4 py-3 min-w-[220px]">Nama Peserta Didik</th>
+            <div class="overflow-auto max-h-[calc(100vh-280px)] min-h-[350px] scrollbar-thin">
+                <table class="w-full text-left text-sm min-w-[700px] border-separate border-spacing-0">
+                    <thead class="sticky top-0 z-20 bg-gray-100">
+                        <tr class="text-xs font-bold uppercase tracking-wider text-gray-600">
+                            <th scope="col" class="sticky top-0 left-0 z-30 bg-gray-100 py-3.5 pl-6 pr-3 w-[56px] min-w-[56px] max-w-[56px] text-center border-b border-r border-gray-200">No</th>
+                            <th scope="col" class="sticky top-0 left-[56px] z-30 bg-gray-100 px-4 py-3.5 min-w-[220px] border-b border-r border-gray-200 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)]">Nama Peserta Didik</th>
                             @forelse ($mapelList as $subjekKey => $mapel)
-                                <th class="px-3 py-3 text-center min-w-[120px]">
-                                    <span class="block text-gray-900 font-extrabold">{{ $mapel->nama }}</span>
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-100 px-3 py-3.5 text-center min-w-[120px] border-b border-r border-gray-200">
+                                    <span class="block text-gray-700 font-bold truncate max-w-[160px] mx-auto" title="{{ $mapel->nama }}">{{ $mapel->nama }}</span>
                                 </th>
                             @empty
-                                <th class="px-4 py-3 text-center text-gray-400 font-medium">Belum Ada Mapel Terasesmen</th>
+                                <th scope="col" class="sticky top-0 z-20 bg-gray-100 px-4 py-3.5 text-center text-gray-400 font-medium border-b border-r border-gray-200">Belum Ada Mapel Terasesmen</th>
                             @endforelse
-                            <th class="px-6 py-3 text-center font-extrabold text-brand-700 w-32 bg-brand-50/50">Rata-Rata Umum</th>
+                            <th scope="col" class="sticky top-0 z-20 bg-brand-50/90 px-6 py-3.5 text-center font-bold text-brand-700 w-32 border-b border-gray-200">Rata-Rata Umum</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100 bg-white">
                         @forelse ($siswaList as $index => $siswa)
                             @php
                                 $studentScores = collect($rekapNilai[$siswa->id] ?? [])
@@ -106,37 +106,37 @@
                                     ->map(fn ($sel) => (float) $sel->label);
                                 $generalAvg = $studentScores->count() > 0 ? round($studentScores->avg(), 1) : null;
                             @endphp
-                            <tr class="transition hover:bg-gray-50/60">
-                                <td class="py-4 pl-6 pr-3 text-center font-semibold text-gray-500">
+                            <tr class="group transition hover:bg-gray-50/60">
+                                <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50/90 py-3 pl-6 pr-3 text-center text-xs font-semibold text-gray-500 border-b border-r border-gray-100 w-[56px] min-w-[56px] max-w-[56px]">
                                     {{ $index + 1 }}
                                 </td>
-                                <td class="px-4 py-4">
-                                    <div class="font-bold text-gray-900 text-base">{{ $siswa->nama_lengkap }}</div>
-                                    <div class="text-xs text-gray-400">{{ $siswa->nis ?: ($siswa->nisn ?: 'Tanpa NIS') }}</div>
+                                <td class="sticky left-[56px] z-10 bg-white group-hover:bg-gray-50/90 px-4 py-3 border-b border-r border-gray-100 shadow-[2px_0_4px_-1px_rgba(0,0,0,0.06)] min-w-[220px]">
+                                    <div class="font-semibold text-gray-900 text-sm">{{ $siswa->nama_lengkap }}</div>
+                                    <div class="text-[11px] text-gray-400 font-mono mt-0.5">{{ $siswa->nis ?: ($siswa->nisn ?: 'Tanpa NIS') }}</div>
                                 </td>
                                 @forelse ($mapelList as $subjekKey => $mapel)
                                     @php
                                         $sel = $rekapNilai[$siswa->id][$subjekKey] ?? null;
                                     @endphp
-                                    <td class="px-3 py-4 text-center font-extrabold text-base">
+                                    <td class="px-3 py-3 text-center text-sm border-b border-r border-gray-100">
                                         @if ($sel === null)
                                             <span class="text-gray-300 font-normal text-xs">—</span>
                                         @elseif ($sel->tuntas !== null)
-                                            <span class="inline-block rounded-lg px-2.5 py-1 {{ $sel->tuntas ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                            <span class="inline-flex items-center justify-center min-w-[40px] rounded-lg px-2.5 py-1 text-xs font-semibold {{ $sel->tuntas ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
                                                 {{ $sel->label }}
                                             </span>
                                         @else
-                                            <span class="inline-block rounded-lg px-2.5 py-1 bg-gray-100 text-gray-700 border border-gray-200">
+                                            <span class="inline-flex items-center justify-center min-w-[40px] rounded-lg px-2.5 py-1 text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-200">
                                                 {{ $sel->label }}
                                             </span>
                                         @endif
                                     </td>
                                 @empty
-                                    <td class="px-4 py-4 text-center text-gray-300 text-xs">—</td>
+                                    <td class="px-4 py-3 text-center text-gray-300 text-xs border-b border-r border-gray-100">—</td>
                                 @endforelse
-                                <td class="px-6 py-4 text-center font-black text-lg text-brand-700 bg-brand-50/20">
+                                <td class="px-6 py-3 text-center text-sm font-bold text-brand-700 bg-brand-50/20 border-b border-gray-100">
                                     @if ($generalAvg !== null)
-                                        <span class="inline-block rounded-xl px-3 py-1 bg-brand-50 text-brand-800 border border-brand-200">
+                                        <span class="inline-flex items-center justify-center min-w-[46px] rounded-xl px-3 py-1 text-xs font-bold bg-brand-50 text-brand-800 border border-brand-200">
                                             {{ $generalAvg }}
                                         </span>
                                     @else
