@@ -48,9 +48,11 @@ import { triaseForm } from './triase-form';
 import { virtualAccountFilter } from './virtual-account-filter';
 import { virtualAccountGenerateModal } from './virtual-account-generate-modal';
 import { rppPageManager } from './rpp';
+import TomSelect from 'tom-select';
 
 window.Alpine = Alpine;
 window.flatpickr = flatpickr;
+window.TomSelect = TomSelect;
 flatpickr.localize(Indonesian);
 
 Alpine.plugin(anchor);

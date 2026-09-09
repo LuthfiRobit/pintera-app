@@ -921,14 +921,15 @@ it('does not affect a lembaga-scoped actor at all when accessing Tambah TP', fun
     expect(KomponenPenilaian::where('kode', 'TP-LEMBAGA-SCOPE')->exists())->toBeTrue();
 });
 
-it('hides the Tambah TP button for a yayasan actor in aggregate mode, with an explanatory message', function () {
+it('disables (not hides) the Tambah TP button for a yayasan actor in aggregate mode, with an explanatory tooltip', function () {
     $yayasan = Yayasan::factory()->create();
     $manager = actingAsYayasanKomponenManager($yayasan);
 
     $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
-        ->assertDontSee('Tambah TP Baru')
-        ->assertDontSee('Tambah TP Pertama')
-        ->assertSee('Pilih 1 lembaga lewat pengalih di topbar untuk mulai menambah TP.');
+        ->assertSee('Tambah TP Baru')
+        ->assertSee('Tambah TP Pertama')
+        ->assertSee('disabled', false)
+        ->assertSee('Pilih 1 lembaga aktif dulu untuk menambah TP.');
 });
 
 it('shows the Tambah TP button for a yayasan actor once switched into a lembaga', function () {
@@ -1133,8 +1134,3 @@ it('still allows editing kode, deskripsi, bobot, kktp, and assessment_type after
     expect($komponen->kktp)->toBe('KKTP setelah edit');
     expect($komponen->assessment_type->value)->toBe('narrative');
 });
-
-
-
-
-
