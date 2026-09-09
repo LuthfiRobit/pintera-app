@@ -7,6 +7,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Domains/*/Actions/** | .ai/rules/actions.md |
 | app/Services/** | .ai/rules/app-services.md |
 | app/** | .ai/rules/app.md |
+| resources/views/components/** | .ai/rules/components.md |
 | app/Domains/*/Contracts/** | .ai/rules/contracts.md |
 | app/Http/Controllers/** | .ai/rules/controllers.md |
 | app/Domains/*/DataTransferObjects/** | .ai/rules/data-transfer-objects.md |
