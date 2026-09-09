@@ -1,6 +1,6 @@
 # Perbaikan Scope Lembaga Menu TP (Komponen Penilaian) Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Tutup kebocoran/ambiguitas scope lembaga di menu Admin TP (Komponen Penilaian) untuk aktor yayasan mode "Semua Lembaga" — guard "Tambah TP" supaya wajib sudah switch ke 1 lembaga, perbaiki error handling, default filter, dan label lembaga di berbagai tampilan.
 
@@ -30,7 +30,7 @@
 **Interfaces:**
 - Tidak ada interface baru — perubahan murni guard di method existing `create()`/`store()`.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke akhir `tests/Feature/Admin/KomponenPenilaianCrudTest.php`:
 
@@ -129,12 +129,12 @@ it('shows the Tambah TP button for a yayasan actor once switched into a lembaga'
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="blocks a yayasan actor|allows a yayasan actor to open and submit|does not affect a lembaga-scoped actor|hides the Tambah TP button|shows the Tambah TP button" --compact`
 Expected: test "blocks..." (2 test pertama) FAIL (saat ini `create()`/`store()` TIDAK punya guard, jadi malah `assertOk()`/berhasil, bukan 422). Test "hides the Tambah TP button..." FAIL (tombol saat ini SELALU muncul). Test "allows...", "does not affect...", "shows the Tambah TP button..." kemungkinan SUDAH PASS (perilaku itu belum berubah) — itu wajar, jadi baseline regresi untuk langkah berikutnya.
 
-- [ ] **Step 3: Implementasi guard di controller**
+- [x] **Step 3: Implementasi guard di controller**
 
 Di `app/Http/Controllers/Admin/KomponenPenilaianController.php`, method `create()` (baris 100-117) — sisipkan blok guard TEPAT SETELAH baris `$this->authorize('komponen-penilaian.kelola');`, SEBELUM baris `$tahunAjaranId = old('tahun_ajaran_id', $request->query('tahun_ajaran_id'));`. Baris-baris lain di method ini TIDAK berubah:
 
@@ -205,7 +205,7 @@ public function store(StoreKomponenPenilaianRequest $request): RedirectResponse|
 
 **Catatan**: `abort_if($subjek === null || ..., 404)` dan cross-check lembaga di atas TETAP APA ADANYA di Task ini — perubahannya khusus untuk Task 2 (Item B), JANGAN diubah sekarang, supaya diff Task 1 tetap fokus 1 hal.
 
-- [ ] **Step 4: Sembunyikan tombol Tambah TP di partial**
+- [x] **Step 4: Sembunyikan tombol Tambah TP di partial**
 
 Di `resources/views/portals/lembaga/akademik/komponen-penilaian/_daftar.blade.php`, ganti (baris 84-92):
 
@@ -281,17 +281,17 @@ menjadi:
 
 **PENTING — prasyarat `$isYayasan`/`$activeLembaga` di partial ini**: `_daftar.blade.php` SAAT INI, untuk cabang render AJAX (`index()` baris 69-71), belum menerima variabel `isYayasan`/`activeLembaga` sama sekali — HANYA cabang halaman-penuh yang mengirimnya. Task 1 ini ditulis dan test-nya HANYA menguji lewat `route('admin.komponen-penilaian.index')` GET biasa (bukan `->ajax()`), jadi test di atas TETAP LULUS memakai jalur halaman-penuh yang sudah punya variabel itu. Task 4 (Item D) akan mengirim `scopeHeaderData()` juga ke cabang AJAX — TIDAK perlu diantisipasi di Task 1 ini.
 
-- [ ] **Step 5: Jalankan semua test Step 1, pastikan lulus**
+- [x] **Step 5: Jalankan semua test Step 1, pastikan lulus**
 
 Run: `php artisan test --filter="blocks a yayasan actor|allows a yayasan actor to open and submit|does not affect a lembaga-scoped actor|hides the Tambah TP button|shows the Tambah TP button" --compact`
 Expected: PASS semua 6 test.
 
-- [ ] **Step 6: Jalankan regresi test file ini secara penuh**
+- [x] **Step 6: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --compact`
 Expected: PASS semua (test existing termasuk yang sudah membuat TP lewat `actingAsKomponenManager` — pastikan TIDAK ADA yang tiba-tiba gagal karena guard baru salah sasaran ke aktor lembaga-scope).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KomponenPenilaianController.php resources/views/portals/lembaga/akademik/komponen-penilaian/_daftar.blade.php tests/Feature/Admin/KomponenPenilaianCrudTest.php
@@ -309,7 +309,7 @@ git commit -m "fix(komponen-penilaian): guard Tambah TP -- wajib aktor yayasan s
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -361,14 +361,14 @@ it('returns a validation error instead of a blank 404 when subjek_id does not ex
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="returns a validation error with preserved input|returns a validation error instead of a blank 404" --compact`
 Expected: FAIL keduanya (saat ini `abort_if(..., 404)` menghasilkan response 404 murni, `assertRedirect()` gagal, `assertSessionHasErrors()` tidak menemukan apa-apa di session).
 
 **Catatan**: test pertama TIDAK akan pernah GAGAL akibat guard Task 1 (aktor sudah switch ke `$lembagaA`, jadi guard lolos) — test ini murni untuk membuktikan skenario mismatch lembaga (defense-in-depth) yang MASIH bisa terjadi lewat payload mentah SETELAH guard Task 1 ada, karena guard Task 1 hanya menjamin AKTOR sudah pilih 1 lembaga, TIDAK menjamin `subjek_id`/`semester_id` yang dikirim konsisten satu sama lain (mis. lembaga sengaja mengirim `semester_id` lembaga lain lewat request mentah/tools seperti Postman).
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Di `app/Http/Controllers/Admin/KomponenPenilaianController.php`, method `store()` — ganti blok cross-check (persis setelah baris guard Task 1, sebelum blok `try { $this->createKomponenPenilaianAction->execute(...) }`):
 
@@ -400,17 +400,17 @@ if ($data['subjek_type'] === 'mata_pelajaran' && $subjek->lembaga_id !== $semest
 }
 ```
 
-- [ ] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
+- [x] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
 
 Run: `php artisan test --filter="returns a validation error with preserved input|returns a validation error instead of a blank 404" --compact`
 Expected: PASS keduanya.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KomponenPenilaianController.php tests/Feature/Admin/KomponenPenilaianCrudTest.php
@@ -428,7 +428,7 @@ git commit -m "fix(komponen-penilaian): store() kembalikan pesan validasi (bukan
 **Interfaces:**
 - Tidak ada interface baru.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -488,12 +488,12 @@ it('still defaults to the active tahun ajaran for a yayasan actor who has switch
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan test pertama gagal, 2 test regresi lulus**
+- [x] **Step 2: Jalankan test, pastikan test pertama gagal, 2 test regresi lulus**
 
 Run: `php artisan test --filter="does not silently narrow to one lembaga|still defaults to the active tahun ajaran" --compact`
 Expected: test "does not silently narrow..." FAIL (saat ini hanya salah satu dari `TP-LEMBAGA-A`/`TP-LEMBAGA-B` yang muncul, tergantung urutan baris DB — `assertSee` untuk yang tidak muncul akan gagal). 2 test "still defaults..." SUDAH PASS (baseline, perilaku itu belum diubah — konfirmasi paham kondisi awal sebelum lanjut).
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Di `app/Http/Controllers/Admin/KomponenPenilaianController.php`, method `index()` — ganti (baris 52-55):
 
@@ -515,17 +515,17 @@ if ($tahunAjaranId === null && ! $request->query->has('tahun_ajaran_id') && ! $i
 }
 ```
 
-- [ ] **Step 4: Jalankan test Step 1 lagi, pastikan semua lulus**
+- [x] **Step 4: Jalankan test Step 1 lagi, pastikan semua lulus**
 
 Run: `php artisan test --filter="does not silently narrow to one lembaga|still defaults to the active tahun ajaran" --compact`
 Expected: PASS ketiganya.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KomponenPenilaianController.php tests/Feature/Admin/KomponenPenilaianCrudTest.php
@@ -544,7 +544,7 @@ git commit -m "fix(komponen-penilaian): index() tidak lagi auto-pilih 1 lembaga 
 **Interfaces:**
 - Produces: cabang AJAX `index()` (`_daftar.blade.php` di-render ulang lewat `route('admin.komponen-penilaian.index')` dengan header `X-Requested-With: XMLHttpRequest`) SEKARANG JUGA menerima `isYayasan`/`activeLembaga` (sebelumnya HANYA cabang halaman-penuh).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -590,12 +590,12 @@ it('shows the lembaga label on the ajax-rendered partial too, not just the initi
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows a lembaga label on each TP row|does not show a lembaga label|shows the lembaga label on the ajax-rendered partial" --compact`
 Expected: test "shows a lembaga label..." dan "shows the lembaga label on the ajax..." FAIL (nama lembaga belum pernah ditampilkan di baris/kartu). Test "does not show..." SUDAH PASS (baseline).
 
-- [ ] **Step 3: Implementasi — controller**
+- [x] **Step 3: Implementasi — controller**
 
 Di `app/Http/Controllers/Admin/KomponenPenilaianController.php`, method `index()` — tambahkan `lembaga` ke eager-load `$komponenList` (baris 60-61):
 
@@ -630,7 +630,7 @@ if ($request->ajax()) {
 }
 ```
 
-- [ ] **Step 4: Implementasi — view**
+- [x] **Step 4: Implementasi — view**
 
 Di `resources/views/portals/lembaga/akademik/komponen-penilaian/_daftar.blade.php`, kartu Live Calculator Bobot — ganti (baris 57-66, HANYA blok `<div class="truncate">` di dalamnya):
 
@@ -672,17 +672,17 @@ menjadi:
                             <x-badge tone="slate" class="text-xs font-medium">{{ $komponen->semester->nama }} — {{ $komponen->semester->tahunAjaran->nama }}</x-badge>
 ```
 
-- [ ] **Step 5: Jalankan test Step 1 lagi, pastikan semua lulus**
+- [x] **Step 5: Jalankan test Step 1 lagi, pastikan semua lulus**
 
 Run: `php artisan test --filter="shows a lembaga label on each TP row|does not show a lembaga label|shows the lembaga label on the ajax-rendered partial" --compact`
 Expected: PASS ketiganya.
 
-- [ ] **Step 6: Jalankan regresi test file ini secara penuh**
+- [x] **Step 6: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --compact`
 Expected: PASS semua (termasuk seluruh test Task 1 yang bergantung pada `_daftar.blade.php` — pastikan tidak rusak oleh perubahan variabel `isYayasan`/`activeLembaga` yang sekarang juga hadir di cabang AJAX).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KomponenPenilaianController.php resources/views/portals/lembaga/akademik/komponen-penilaian/_daftar.blade.php tests/Feature/Admin/KomponenPenilaianCrudTest.php
@@ -701,7 +701,7 @@ git commit -m "feat(komponen-penilaian): label nama lembaga di baris daftar & ka
 **Interfaces:**
 - Produces: `KomponenPenilaianController::edit()` — signature berubah dari `edit(KomponenPenilaian $komponenPenilaian): View` menjadi `edit(Request $request, KomponenPenilaian $komponenPenilaian): View`. Tidak ada caller lain method ini selain route-model-binding (dicek: route `admin.komponen-penilaian.edit` tidak memanggilnya secara manual dari kode lain).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -760,12 +760,12 @@ it('still allows editing kode, deskripsi, bobot, kktp, and assessment_type after
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan hasil sesuai ekspektasi**
+- [x] **Step 2: Jalankan test, pastikan hasil sesuai ekspektasi**
 
 Run: `php artisan test --filter="shows a lembaga badge on the Edit TP header|does not show a lembaga badge|still allows editing kode" --compact`
 Expected: test "shows a lembaga badge..." FAIL (badge belum ada). Test "does not show..." SUDAH PASS (baseline). Test "still allows editing..." SUDAH PASS (perilaku update belum diubah Task ini — ini baseline regresi, WAJIB tetap lulus setelah Step 3-4 nanti).
 
-- [ ] **Step 3: Implementasi — controller**
+- [x] **Step 3: Implementasi — controller**
 
 Di `app/Http/Controllers/Admin/KomponenPenilaianController.php`, method `edit()` — ganti SELURUH method (baris 151-170):
 
@@ -814,7 +814,7 @@ public function edit(Request $request, KomponenPenilaian $komponenPenilaian): Vi
 }
 ```
 
-- [ ] **Step 4: Implementasi — view**
+- [x] **Step 4: Implementasi — view**
 
 Di `resources/views/portals/lembaga/akademik/komponen-penilaian/edit.blade.php`, ganti blok header LENGKAP (baris 11-19):
 
@@ -852,17 +852,17 @@ menjadi:
         </div>
 ```
 
-- [ ] **Step 5: Jalankan test Step 1 lagi, pastikan semua lulus**
+- [x] **Step 5: Jalankan test Step 1 lagi, pastikan semua lulus**
 
 Run: `php artisan test --filter="shows a lembaga badge on the Edit TP header|does not show a lembaga badge|still allows editing kode" --compact`
 Expected: PASS ketiganya.
 
-- [ ] **Step 6: Jalankan regresi test file ini secara penuh**
+- [x] **Step 6: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/KomponenPenilaianCrudTest.php --compact`
 Expected: PASS semua (termasuk seluruh test Edit dari Task 1 spec sebelumnya — `it('locks mata pelajaran and semester when the komponen is already used...')` dan sejenisnya, WAJIB tetap lulus tanpa perubahan assertion, karena `edit()` hanya kehilangan data yang TIDAK PERNAH dipakai view manapun).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KomponenPenilaianController.php resources/views/portals/lembaga/akademik/komponen-penilaian/edit.blade.php tests/Feature/Admin/KomponenPenilaianCrudTest.php
@@ -876,17 +876,17 @@ git commit -m "refactor(komponen-penilaian): bersihkan query mati di edit() + ta
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan seluruh test domain Komponen Penilaian (Admin + Guru)**
+- [x] **Step 1: Jalankan seluruh test domain Komponen Penilaian (Admin + Guru)**
 
 Run: `php artisan test --compact --filter="KomponenPenilaianCrudTest|KomponenPenilaianControllerTest"`
 Expected: PASS semua, 0 gagal. (Filter kedua meng-cover `tests/Feature/Guru/KomponenPenilaianControllerTest.php` — WAJIB tetap lulus tanpa perubahan, membuktikan jalur Guru sungguh tidak tersentuh oleh 5 task di atas.)
 
-- [ ] **Step 2: Jalankan Pint pada file yang diubah**
+- [x] **Step 2: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 3: Verifikasi manual via browser (OPSIONAL — bukan langkah blocking)**
+- [x] **Step 3: Verifikasi manual via browser (OPSIONAL — bukan langkah blocking)**
 
 Kalau memungkinkan (akses browser interaktif tersedia), verifikasi manual berikut. **Kalau TIDAK memungkinkan (mis. tidak ada akses browser di sesi ini), lewati langkah ini dan serahkan ke user untuk dicek manual sebelum merge — JANGAN mengklaim langkah ini "selesai" tanpa benar-benar menjalankannya.**
 
@@ -895,7 +895,7 @@ Kalau memungkinkan (akses browser interaktif tersedia), verifikasi manual beriku
 - Kembali ke mode "Semua Lembaga": daftar TP menampilkan TP dari BERBAGAI lembaga sekaligus (kalau ada), masing-masing baris & kartu kalkulator bobot berlabel nama lembaganya.
 - Buka Edit salah satu TP dari mode agregat: badge nama lembaga TP itu muncul di header Edit.
 
-- [ ] **Step 4: Laporkan hasil**
+- [x] **Step 4: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — permintaan terpisah kalau user menghendaki nanti.
 
