@@ -37,7 +37,7 @@
 - Produces: `RaporController::scopeHeaderData(Request $request): array` (private method baru, pola PERSIS sama seperti `KomponenPenilaianController`/`RppController`) — mengembalikan `['isYayasan' => bool, 'activeLembaga' => ?Lembaga]`. Dipakai Task 2 dan Task 3.
 - Produces: view `index` dan `_hasil` (cabang ajax) SEKARANG menerima `isYayasan`/`activeLembaga`.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan ke akhir `tests/Feature/Admin/RaporControllerTest.php`:
 
@@ -119,12 +119,12 @@ it('does not show the scope badge for a lembaga-scoped viewer', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="does not auto-select any tahun ajaran|still auto-selects tahun ajaran, kelas, and semester for a yayasan actor who has switched|shows the scope badge for a yayasan actor|does not show the scope badge for a lembaga-scoped viewer" --compact`
 Expected: FAIL semua 4 test (guard belum ada, badge belum ada, wording empty-state belum diubah).
 
-- [ ] **Step 3: Implementasi controller**
+- [x] **Step 3: Implementasi controller**
 
 Di `app/Http/Controllers/Admin/RaporController.php` — ganti (baris 1-20, seluruh blok `use` + deklarasi class):
 
@@ -301,7 +301,7 @@ menjadi:
     }
 ```
 
-- [ ] **Step 4: Implementasi view header (badge)**
+- [x] **Step 4: Implementasi view header (badge)**
 
 Di `resources/views/portals/lembaga/akademik/rapor/index.blade.php` — ganti (baris 11-17):
 
@@ -335,7 +335,7 @@ menjadi:
         </div>
 ```
 
-- [ ] **Step 5: Sesuaikan wording empty-state (prasyarat test Step 1 lulus)**
+- [x] **Step 5: Sesuaikan wording empty-state (prasyarat test Step 1 lulus)**
 
 Di `resources/views/portals/lembaga/akademik/rapor/_hasil.blade.php` — ganti blok `@else` (baris 141-150):
 
@@ -369,17 +369,17 @@ menjadi:
     @endif
 ```
 
-- [ ] **Step 6: Jalankan test Step 1 lagi, pastikan lulus**
+- [x] **Step 6: Jalankan test Step 1 lagi, pastikan lulus**
 
 Run: `php artisan test --filter="does not auto-select any tahun ajaran|still auto-selects tahun ajaran, kelas, and semester for a yayasan actor who has switched|shows the scope badge for a yayasan actor|does not show the scope badge for a lembaga-scoped viewer" --compact`
 Expected: PASS semua 4 test.
 
-- [ ] **Step 7: Jalankan SELURUH test file sebagai regresi**
+- [x] **Step 7: Jalankan SELURUH test file sebagai regresi**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php --compact`
 Expected: PASS semua (termasuk 23 test existing + 4 test baru = 27 test). **STOP TOTAL kalau ada satupun yang gagal** — ini task paling sensitif di plan ini (mengubah `index()` sepenuhnya).
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/RaporController.php resources/views/portals/lembaga/akademik/rapor/index.blade.php resources/views/portals/lembaga/akademik/rapor/_hasil.blade.php tests/Feature/Admin/RaporControllerTest.php
@@ -397,7 +397,7 @@ git commit -m "fix(rapor): guard default filter mode agregat + tambah badge scop
 **Interfaces:**
 - Consumes: `$isYayasan`/`$activeLembaga` dari Task 1.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -439,12 +439,12 @@ it('shows a blank placeholder option in the tahun ajaran dropdown when nothing i
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows the lembaga suffix even when session active_lembaga_id is stale|shows a blank placeholder option" --compact`
 Expected: FAIL keduanya (raw session check belum diganti, placeholder belum ada).
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Di `resources/views/portals/lembaga/akademik/rapor/index.blade.php` — ganti dropdown Tahun Ajaran (baris 34-38):
 
@@ -467,17 +467,17 @@ menjadi:
                         </select>
 ```
 
-- [ ] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
+- [x] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
 
 Run: `php artisan test --filter="shows the lembaga suffix even when session active_lembaga_id is stale|shows a blank placeholder option" --compact`
 Expected: PASS keduanya.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php --compact`
 Expected: PASS semua (termasuk `it('labels tahun ajaran options with lembaga name when yayasan scope has no active lembaga selected', ...)` dan `it('does not add a lembaga label to tahun ajaran options for a lembaga-scoped viewer', ...)` — 2 test existing yang HARUS tetap lulus tanpa perubahan assertion).
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/rapor/index.blade.php tests/Feature/Admin/RaporControllerTest.php
@@ -495,7 +495,7 @@ git commit -m "fix(rapor): dropdown Tahun Ajaran pakai activeLembaga tervalidasi
 **Interfaces:**
 - Consumes: `$isYayasan`/`$activeLembaga` dari Task 1, `$selectedKelas->lembaga` (eager-loaded di Task 1, TIDAK PERLU query tambahan).
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -536,12 +536,12 @@ it('does not show a lembaga badge in the context header for a lembaga-scoped vie
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal (test kedua kemungkinan sudah lulus sebagian)**
+- [x] **Step 2: Jalankan test, pastikan gagal (test kedua kemungkinan sudah lulus sebagian)**
 
 Run: `php artisan test --filter="shows a context header with kelas, semester, and lembaga badge|does not show a lembaga badge in the context header" --compact`
 Expected: test pertama FAIL (judul konteks belum ada). Test kedua BISA lulus sebagian (nama kelas mungkin sudah kebetulan tampil di tempat lain), pastikan setelah Step 3 keduanya PASS dengan makna yang benar.
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Di `resources/views/portals/lembaga/akademik/rapor/_hasil.blade.php` — ganti (baris 1-4):
 
@@ -573,17 +573,17 @@ menjadi:
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
 ```
 
-- [ ] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
+- [x] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
 
 Run: `php artisan test --filter="shows a context header with kelas, semester, and lembaga badge|does not show a lembaga badge in the context header" --compact`
 Expected: PASS keduanya.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/rapor/_hasil.blade.php tests/Feature/Admin/RaporControllerTest.php
@@ -601,7 +601,7 @@ git commit -m "feat(rapor): tampilkan judul konteks kelas/semester + badge lemba
 **Interfaces:**
 - Tidak ada interface baru. Tidak bergantung pada task lain.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -621,12 +621,12 @@ it('shows the lembaga name in the printed pdf subtitle', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows the lembaga name in the printed pdf subtitle" --compact`
 Expected: FAIL (nama lembaga belum ada di PDF).
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Di `resources/views/pdf/rekap-rapor.blade.php` — ganti (baris 20-21):
 
@@ -642,17 +642,17 @@ menjadi:
     <p class="subtitle">{{ $selectedKelas->lembaga->nama ?? '-' }} &middot; {{ $selectedSemester->nama }} — {{ $selectedSemester->tahunAjaran->nama }} &middot; Dicetak {{ now()->translatedFormat('d F Y H:i') }}</p>
 ```
 
-- [ ] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
+- [x] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
 
 Run: `php artisan test --filter="shows the lembaga name in the printed pdf subtitle" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php --compact`
 Expected: PASS semua — terutama `it('streams a pdf for the selected kelas and semester via the cetak endpoint', ...)`, `it('does not crash when streaming a pdf for a kelas that has real nilai data (RekapNilaiSel regression)', ...)`, dan `it('renders the score inside the per-mapel matrix cell of the printable pdf rekap (key-mismatch regression)', ...)` — pastikan tidak rusak oleh penambahan 1 baris ini.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/pdf/rekap-rapor.blade.php tests/Feature/Admin/RaporControllerTest.php
@@ -670,7 +670,7 @@ git commit -m "fix(rapor): tampilkan nama lembaga di subtitle PDF cetak rekap"
 **Interfaces:**
 - Tidak ada interface baru. Tidak bergantung pada task lain.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -690,12 +690,12 @@ it('shows a tooltip explaining the Rata-Rata Kelas calculation methodology', fun
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="shows a tooltip explaining the Rata-Rata Kelas calculation methodology" --compact`
 Expected: FAIL (tooltip belum ada).
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Di `resources/views/portals/lembaga/akademik/rapor/_hasil.blade.php` — ganti (baris 20):
 
@@ -714,17 +714,17 @@ menjadi:
                         </div>
 ```
 
-- [ ] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
+- [x] **Step 4: Jalankan test Step 1 lagi, pastikan lulus**
 
 Run: `php artisan test --filter="shows a tooltip explaining the Rata-Rata Kelas calculation methodology" --compact`
 Expected: PASS.
 
-- [ ] **Step 5: Jalankan regresi test file ini secara penuh**
+- [x] **Step 5: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add resources/views/portals/lembaga/akademik/rapor/_hasil.blade.php tests/Feature/Admin/RaporControllerTest.php
@@ -745,7 +745,7 @@ git commit -m "feat(rapor): tooltip metodologi perhitungan Rata-Rata Kelas"
 
 **PENTING sebelum mulai**: Task ini mengubah `resources/views/components/select.blade.php` yang JUGA dipakai 9 file lain di luar Rekap Rapor (`admin/karyawan/_form.blade.php`, `admin/roles/create.blade.php`, `admin/roles/edit.blade.php`, `admin/siswa/_form.blade.php`, `admin/siswa/_orang_tua.blade.php`, `admin/users/_form.blade.php`, `portals/kasus/partials/_tab-evaluasi.blade.php`, `portals/kasus/partials/_tab-sesi.blade.php`, `portals/kasus/partials/_tab-tugas.blade.php`). Ini DAMPAK DISENGAJA (sudah direkam di `.ai/rules/components.md` — "Align `<x-select>` styling to the Komponen Penilaian index look, then adopt it everywhere"), BUKAN efek samping tak terduga. Setelah Step 3, buka SALAH SATU dari 9 file itu (mis. `admin/karyawan/_form.blade.php`) dan pastikan tetap render wajar (ring fokus lebih tipis, TIDAK ada perubahan lain yang aneh) — kalau terlihat rusak (bukan cuma beda tipis), STOP dan laporkan.
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan:
 
@@ -768,12 +768,12 @@ it('still loads and submits the tahun ajaran, semester, and kelas filters correc
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="still loads and submits the tahun ajaran, semester, and kelas filters correctly after migrating to x-select" --compact`
 Expected: FAIL pada assertion urutan (`Pilih Kelas` masih muncul SEBELUM `Pilih Semester` di kode saat ini).
 
-- [ ] **Step 3: Selaraskan style `<x-select>`**
+- [x] **Step 3: Selaraskan style `<x-select>`**
 
 Di `resources/views/components/select.blade.php` — ganti seluruh isi file:
 
@@ -809,7 +809,7 @@ menjadi:
 </select>
 ```
 
-- [ ] **Step 4: Migrasi 3 dropdown Rekap Rapor + reorder**
+- [x] **Step 4: Migrasi 3 dropdown Rekap Rapor + reorder**
 
 Di `resources/views/portals/lembaga/akademik/rapor/index.blade.php` — ganti SELURUH blok 3 dropdown (Tahun Ajaran, Kelas, Semester — kode Tahun Ajaran adalah HASIL Task 2):
 
@@ -877,21 +877,21 @@ menjadi (`<x-select>` menggantikan `<select>`, DAN urutan blok Kelas/Semester di
 
 **Catatan `x-ref`/`x-init` tetap berfungsi**: `<x-select>` pakai `$attributes->merge()` yang otomatis meneruskan atribut tak dikenal (`x-ref`, `x-init`) ke elemen `<select>` asli. TIDAK ADA perubahan di `resources/js/rapor-filter.js` — `initTahunAjaranSelect`/`initKelasSelect`/`initSemesterSelect` tetap disambungkan dengan cara yang sama persis, independen dari urutan visual.
 
-- [ ] **Step 5: Jalankan test Step 1 lagi, pastikan lulus**
+- [x] **Step 5: Jalankan test Step 1 lagi, pastikan lulus**
 
 Run: `php artisan test --filter="still loads and submits the tahun ajaran, semester, and kelas filters correctly after migrating to x-select" --compact`
 Expected: PASS.
 
-- [ ] **Step 6: Verifikasi manual dampak lintas-file (WAJIB, bukan opsional)**
+- [x] **Step 6: Verifikasi manual dampak lintas-file (WAJIB, bukan opsional)**
 
 Baca `resources/views/admin/karyawan/_form.blade.php` (atau file lain dari 9 yang disebut di atas) dan pastikan strukturnya tetap valid Blade — tidak perlu render visual di browser (tidak selalu ada akses), TAPI pastikan tidak ada `<x-select>` yang sekarang error karena kehilangan atribut yang sebelumnya WAJIB (`error`/`disabled` props tetap didukung, sudah dicek di Step 3 — keduanya TIDAK dihapus, hanya class CSS yang berubah).
 
-- [ ] **Step 7: Jalankan regresi test file ini secara penuh**
+- [x] **Step 7: Jalankan regresi test file ini secara penuh**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php --compact`
 Expected: PASS semua.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add resources/views/components/select.blade.php resources/views/portals/lembaga/akademik/rapor/index.blade.php tests/Feature/Admin/RaporControllerTest.php
@@ -908,11 +908,11 @@ git commit -m "refactor(rapor): migrasi 3 dropdown filter ke <x-select> + urutan
 **Interfaces:**
 - Consumes: SEMUA Task 1-6 harus SELESAI dan LULUS TEST sebelum task ini dikerjakan.
 
-- [ ] **Step 1: Pastikan seluruh task sebelumnya sudah lulus (prasyarat, bukan langkah teknis)**
+- [x] **Step 1: Pastikan seluruh task sebelumnya sudah lulus (prasyarat, bukan langkah teknis)**
 
 Konfirmasi Task 1-6 semuanya sudah di-commit dan test filenya lulus (akan diverifikasi ulang secara menyeluruh di Task 8 — task ini HANYA update dokumentasi, jangan dikerjakan kalau Task 1-6 belum benar-benar selesai).
 
-- [ ] **Step 2: Update baris checklist**
+- [x] **Step 2: Update baris checklist**
 
 Di `.agents/logs/2026-09-07-audit-scope-yayasan-lembaga-sidebar.md` baris 89 — ganti:
 
@@ -926,7 +926,7 @@ menjadi:
 | Rekap Rapor | ✅ | ✅ | Diperbaiki 2026-09-09 (spec `2026-09-09-rekap-rapor-audit-perbaikan.md`) — default filter tidak lagi ambigu di mode agregat, badge scope ditambahkan, konteks kelas/lembaga ditampilkan di hasil & PDF |
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add .agents/logs/2026-09-07-audit-scope-yayasan-lembaga-sidebar.md
@@ -940,21 +940,21 @@ git commit -m "docs(rapor): perbarui catatan checklist scope lembaga -- Rekap Ra
 **Files:**
 - Tidak ada file baru — task verifikasi murni.
 
-- [ ] **Step 1: Jalankan SELURUH `tests/Feature/Admin/RaporControllerTest.php`**
+- [x] **Step 1: Jalankan SELURUH `tests/Feature/Admin/RaporControllerTest.php`**
 
 Run: `php artisan test tests/Feature/Admin/RaporControllerTest.php --compact`
 Expected: PASS semua (23 test existing + ~14 test baru dari Task 1-6). **0 gagal** — kalau ada yang gagal, STOP dan laporkan, JANGAN lanjut ke Task 7 kalau belum dijalankan, dan JANGAN klaim Task 8 selesai kalau ada test merah.
 
-- [ ] **Step 2: Jalankan Pint pada file yang diubah**
+- [x] **Step 2: Jalankan Pint pada file yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 3: Verifikasi manual via browser (OPSIONAL — bukan langkah blocking)**
+- [x] **Step 3: Verifikasi manual via browser (OPSIONAL — bukan langkah blocking)**
 
 Kalau memungkinkan (akses browser interaktif tersedia): login sebagai yayasan-scope mode agregat, buka Rekap Rapor — pastikan badge "Semua Lembaga" muncul, dropdown Tahun Ajaran kosong (belum ada Kelas/Semester terisi), pilih Tahun Ajaran → Semester → Kelas (urutan baru) → rekap termuat dengan judul konteks + badge lembaga. Cetak PDF, pastikan nama lembaga muncul di subtitle. **Kalau TIDAK memungkinkan (tidak ada akses browser), lewati langkah ini dan JANGAN mengklaim "sudah diverifikasi" — laporkan dengan jujur bahwa langkah ini diserahkan ke user.**
 
-- [ ] **Step 4: Laporkan hasil**
+- [x] **Step 4: Laporkan hasil**
 
 TIDAK perlu menulis file handoff log baru di task ini — permintaan terpisah kalau user menghendaki nanti.
 
