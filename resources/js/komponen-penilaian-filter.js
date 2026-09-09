@@ -24,7 +24,7 @@ export function komponenPenilaianFilter(config) {
                 this.$el.querySelectorAll('[data-accordion-key]').forEach((el) => {
                     const key = el.getAttribute('data-accordion-key');
                     if (key && !(key in this.expandedCards)) {
-                        this.expandedCards[key] = true;
+                        this.expandedCards[key] = false;
                     }
                 });
             });

@@ -152,8 +152,12 @@
                 {{-- ACCORDION HEADER (Clickable to Toggle) --}}
                 <div
                     @click="toggleCard(@js($groupKey))"
+                    @keydown.enter.prevent="toggleCard(@js($groupKey))"
+                    @keydown.space.prevent="toggleCard(@js($groupKey))"
                     role="button"
                     tabindex="0"
+                    :aria-expanded="(expandedCards[@js($groupKey)] ?? false).toString()"
+                    aria-controls="tp-accordion-body-{{ $groupKey }}"
                     class="cursor-pointer select-none border-b border-gray-100 p-4 sm:p-5 transition hover:bg-gray-50/70 {{ $isComplete ? 'bg-white' : 'bg-amber-50/20' }}"
                 >
                     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -232,6 +236,7 @@
 
                 {{-- ACCORDION BODY (List of TP Rows) --}}
                 <div
+                    id="tp-accordion-body-{{ $groupKey }}"
                     x-show="expandedCards[@js($groupKey)]"
                     x-transition:enter="transition ease-out duration-150"
                     x-transition:enter-start="opacity-0 -translate-y-1"

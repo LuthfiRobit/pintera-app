@@ -128,14 +128,13 @@
                 <input
                     type="text"
                     x-model="search"
-                    @input.debounce.400ms="muatUlangDaftar()"
                     placeholder="Ketik untuk mencari kode TP, deskripsi, KKTP (respons instan)..."
                     class="w-full rounded-xl border-gray-200 pl-10 pr-10 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500 py-2.5 shadow-sm"
                 >
                 <button
                     type="button"
                     x-show="search"
-                    @click="search = ''; muatUlangDaftar()"
+                    @click="search = ''"
                     class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
                 >
                     ✕
