@@ -767,3 +767,42 @@ it('successfully saves kode, deskripsi, bobot, kktp, and assessment_type edits f
     expect($komponen->bobot)->toBe(60);
     expect($komponen->assessment_type->value)->toBe('narrative');
 });
+
+it('shows the active lembaga badge for a yayasan-scoped actor who has switched into a lembaga', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Cempaka Raya']);
+    $manager = actingAsYayasanKomponenManager($yayasan);
+    session(['active_lembaga_id' => $lembaga->id]);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('SD Cempaka Raya')
+        ->assertSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
+
+it('shows the "Semua Lembaga" badge in aggregate mode for a yayasan-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $manager = actingAsYayasanKomponenManager($yayasan);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('Semua Lembaga')
+        ->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
+});
+
+it('does not show the scope badge for a lembaga-scoped actor', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertDontSee('Semua Lembaga');
+});
+
+it('shows "(Aktif)" on the tahun ajaran dropdown for the active tahun ajaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsKomponenManager($lembaga);
+    TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026', 'status_aktif' => true]);
+
+    $this->actingAs($manager)->get(route('admin.komponen-penilaian.index'))
+        ->assertSee('2025/2026 (Aktif)', false);
+});

@@ -8,8 +8,10 @@ use App\Domains\Akademik\Actions\Penilaian\UpdateKomponenPenilaianAction;
 use App\Domains\Akademik\Models\ElemenCp;
 use App\Domains\Akademik\Models\KomponenPenilaian;
 use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Http\Requests\Akademik\StoreKomponenPenilaianRequest;
 use App\Http\Requests\Akademik\UpdateKomponenPenilaianRequest;
+use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -23,12 +25,24 @@ use Illuminate\View\View;
 class KomponenPenilaianController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function __construct(
         private readonly CreateKomponenPenilaianAction $createKomponenPenilaianAction,
         private readonly UpdateKomponenPenilaianAction $updateKomponenPenilaianAction,
         private readonly DeleteKomponenPenilaianAction $deleteKomponenPenilaianAction,
     ) {}
+
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $this->resolveActiveLembagaId($request->user());
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
+    }
 
     public function index(Request $request): View|string
     {
@@ -56,7 +70,7 @@ class KomponenPenilaianController extends BaseController
         }
 
         return view('portals.lembaga.akademik.komponen-penilaian.index', [
-            'tahunAjaranList' => TahunAjaran::orderByDesc('id')->get(),
+            'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('id')->get(),
             'tahunAjaranId' => $tahunAjaranId,
             'semesterList' => $tahunAjaranId ? Semester::where('tahun_ajaran_id', $tahunAjaranId)->orderByDesc('id')->get() : collect(),
             'mataPelajaranList' => MataPelajaran::orderBy('nama')->get(),
@@ -64,6 +78,7 @@ class KomponenPenilaianController extends BaseController
             'mataPelajaranId' => $mataPelajaranId,
             'search' => $search,
             'komponenList' => $komponenList,
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
