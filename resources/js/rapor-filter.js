@@ -116,8 +116,21 @@ export function raporFilter(config) {
                 const html = await response.text();
                 this.perbaruiUrl();
                 this.$refs.hasilRapor.innerHTML = html;
+                if (window.Alpine) {
+                    window.Alpine.initTree(this.$refs.hasilRapor);
+                }
             } catch (error) {
                 Alpine.store('toast').push('error', 'Gagal memuat rekap nilai.');
+            }
+        },
+
+        bukaCetakRapor(url, judul = 'Rekap Nilai Rapor') {
+            const isPdf = true;
+            const previewUrl = url.includes('?') ? `${url}&inline=1` : `${url}?inline=1`;
+            if (window.Alpine && window.Alpine.store('imagePreview')) {
+                window.Alpine.store('imagePreview').buka(previewUrl, judul, isPdf);
+            } else {
+                window.open(previewUrl, '_blank');
             }
         },
 
@@ -141,5 +154,17 @@ export function raporFilter(config) {
             this.semesterId ? params.set('semester_id', this.semesterId) : params.delete('semester_id');
             window.history.pushState({}, '', url);
         },
+    };
+}
+
+if (typeof window !== 'undefined') {
+    window.bukaCetakRapor = function (url, judul = 'Rekap Nilai Rapor') {
+        const isPdf = true;
+        const previewUrl = url.includes('?') ? `${url}&inline=1` : `${url}?inline=1`;
+        if (window.Alpine && window.Alpine.store('imagePreview')) {
+            window.Alpine.store('imagePreview').buka(previewUrl, judul, isPdf);
+        } else {
+            window.open(previewUrl, '_blank');
+        }
     };
 }

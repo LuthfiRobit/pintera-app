@@ -313,6 +313,8 @@ it('shows the cetak rekap nilai link pointing at the cetak route when there are 
     $response = $this->actingAs($viewer)->get(route('admin.rapor.index', ['tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id]));
 
     $response->assertSee(e(route('admin.rapor.cetak', ['kelas_id' => $kelas->id, 'semester_id' => $semester->id])), false);
+    $response->assertSee('Buka di Platform');
+    $response->assertSee('bukaCetakRapor');
 });
 
 it('does not mix a kelas and semester from different lembaga within the same yayasan on the index recap', function () {

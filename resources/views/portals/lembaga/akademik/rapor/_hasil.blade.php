@@ -74,10 +74,26 @@
                         </span>
                     </div>
                     @if ($siswaList->isNotEmpty())
-                        <x-link-button variant="ghost" href="{{ route('admin.rapor.cetak', ['kelas_id' => $selectedKelas->id, 'semester_id' => $selectedSemester->id]) }}" target="_blank">
-                            <x-icon name="print" class="h-4 w-4 mr-1.5 text-gray-500" />
-                            Cetak Rekap Nilai
-                        </x-link-button>
+                        <div class="flex items-center gap-2">
+                            <button
+                                type="button"
+                                @click="bukaCetakRapor('{{ route('admin.rapor.cetak', ['kelas_id' => $selectedKelas->id, 'semester_id' => $selectedSemester->id]) }}', 'Rekap Nilai Rapor — {{ $selectedKelas->nama }} ({{ $selectedSemester->nama }})')"
+                                class="inline-flex items-center gap-1.5 rounded-lg bg-brand-50 px-3 py-1.5 text-xs font-bold text-brand-700 hover:bg-brand-100 border border-brand-200 transition shadow-sm"
+                                title="Buka pratinjau cetak di platform"
+                            >
+                                <x-icon name="visibility" class="h-3.5 w-3.5 text-brand-600" />
+                                <span>Buka di Platform</span>
+                            </button>
+                            <a
+                                href="{{ route('admin.rapor.cetak', ['kelas_id' => $selectedKelas->id, 'semester_id' => $selectedSemester->id]) }}"
+                                target="_blank"
+                                class="inline-flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-800 transition py-1 px-1.5"
+                                title="Unduh berkas PDF asli atau buka di tab baru"
+                            >
+                                <x-icon name="download" class="h-3.5 w-3.5 text-gray-400" />
+                                <span>Unduh</span>
+                            </a>
+                        </div>
                     @endif
                 </div>
             </div>
