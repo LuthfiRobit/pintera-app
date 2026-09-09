@@ -134,7 +134,7 @@ class RppController extends BaseController
         }
         $guruList = $guruQuery->orderByNama()->get();
 
-        $semesterQuery = Semester::query();
+        $semesterQuery = Semester::query()->with('tahunAjaran');
         if ($tahunAjaranId) {
             $semesterQuery->where('tahun_ajaran_id', $tahunAjaranId);
         }

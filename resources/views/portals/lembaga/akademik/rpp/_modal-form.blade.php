@@ -38,11 +38,15 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {{-- Semester --}}
                 <div>
-                    <x-input-label value="Semester" />
+                    <x-input-label value="Tahun Ajaran & Semester" />
                     <select name="semester_id" required x-model="formModal.semester_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-xs text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Semester —</option>
-                        @foreach ($semesterList as $semester)
-                            <option value="{{ $semester->id }}">{{ $semester->nama }}</option>
+                        @foreach ($semesterList->groupBy(fn ($semester) => $semester->tahunAjaran->nama) as $namaTahunAjaran => $semesterGrup)
+                            <optgroup label="{{ $namaTahunAjaran }}">
+                                @foreach ($semesterGrup as $semester)
+                                    <option value="{{ $semester->id }}">{{ $semester->nama }}</option>
+                                @endforeach
+                            </optgroup>
                         @endforeach
                     </select>
                 </div>

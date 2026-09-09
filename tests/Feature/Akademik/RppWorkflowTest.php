@@ -639,3 +639,9 @@ it('tetap mengganti berkas fisik dengan benar saat update RPP dengan file baru (
     Storage::disk('public')->assertMissing($pathLama);
     Storage::disk('public')->assertExists($rppFresh->file_path);
 });
+
+it('menampilkan nama Tahun Ajaran pada dropdown Semester di modal Tambah/Edit RPP', function () {
+    $response = $this->actingAs($this->userGuru)->get(route('admin.rpp.index'));
+
+    $response->assertOk()->assertSee('<optgroup label="'.$this->tahunAjaran->nama.'">', false);
+});
