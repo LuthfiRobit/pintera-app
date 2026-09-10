@@ -28,6 +28,12 @@ final class AjukanIzinCutiAction
         string $tanggalSelesai,
         string $alasan,
     ): PengajuanIzinCuti {
+        if ($pegawai->lembaga_id === null) {
+            throw ValidationException::withMessages([
+                'pegawai' => 'Pengajuan izin/cuti mandiri belum didukung untuk pegawai pool yayasan (tanpa lembaga tetap). Silakan hubungi admin SDM untuk memprosesnya secara manual.',
+            ]);
+        }
+
         if ($tanggalMulai > $tanggalSelesai) {
             throw ValidationException::withMessages([
                 'tanggal_mulai' => 'Tanggal mulai tidak boleh setelah tanggal selesai.',
