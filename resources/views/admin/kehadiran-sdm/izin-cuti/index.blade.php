@@ -8,14 +8,19 @@
                 'sakit' => 'bg-rose-100 text-rose-800',
                 default => 'bg-amber-100 text-amber-800',
             };
+            $status = $item->approvalRequest?->status;
             return [
                 'id' => $item->id,
                 'nama' => $item->pegawai->nama ?? '—',
+                'alasan' => $item->alasan,
                 'kategori' => $k,
                 'kategoriLabel' => $item->kategori->label(),
                 'kategoriClass' => $class,
                 'periode' => $item->tanggal_mulai->format('d M Y') . ' — ' . $item->tanggal_selesai->format('d M Y'),
                 'step' => $item->approvalRequest?->currentStep?->step_name ?? '—',
+                'statusLabel' => $status?->label() ?? '—',
+                'statusTone' => $status?->badgeTone() ?? 'slate',
+                'isDecided' => $status !== null && ! in_array($status, [\App\Domains\Workflow\Enums\ApprovalStatus::Pending, \App\Domains\Workflow\Enums\ApprovalStatus::InReview], true),
                 'showUrl' => route('admin.kehadiran-sdm.izin-cuti.show', $item),
             ];
         })->values()->all()),
@@ -50,7 +55,7 @@
                     </span>
                     <div>
                         <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-amber-600">Menunggu Approval</p>
-                        <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="items.length"></p>
+                        <p class="font-display text-lg font-bold text-gray-900 leading-tight" x-text="totalPending"></p>
                     </div>
                 </div>
                 <span class="text-[11px] font-semibold text-amber-600">Perlu Tindakan</span>
@@ -90,19 +95,38 @@
         {{-- Filter Card --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-end">
+                {{-- View Mode Toggle --}}
+                <div class="lg:col-span-3">
+                    <label class="mb-1.5 block text-xs font-semibold text-gray-500">Tampilan</label>
+                    <div class="flex items-center gap-1 rounded-xl border border-gray-200 bg-gray-50 p-1">
+                        <button
+                            @click="viewMode = 'menunggu'"
+                            type="button"
+                            :class="viewMode === 'menunggu' ? 'bg-white shadow-2xs font-semibold text-gray-900' : 'text-gray-500 hover:text-gray-700'"
+                            class="flex-1 rounded-lg px-3 py-1.5 text-xs transition-all"
+                        >Menunggu</button>
+                        <button
+                            @click="viewMode = 'riwayat'"
+                            type="button"
+                            :class="viewMode === 'riwayat' ? 'bg-white shadow-2xs font-semibold text-gray-900' : 'text-gray-500 hover:text-gray-700'"
+                            class="flex-1 rounded-lg px-3 py-1.5 text-xs transition-all"
+                        >Riwayat</button>
+                    </div>
+                </div>
+
                 {{-- Search Input --}}
-                <div class="lg:col-span-6">
+                <div class="lg:col-span-5">
                     <label class="mb-1.5 block text-xs font-semibold text-gray-500">Cari Pegawai / Alasan</label>
                     <div class="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
                         <svg class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <input x-model="searchQuery" type="text" placeholder="Ketik nama pegawai..." class="w-full border-0 bg-transparent p-0 text-xs text-gray-900 placeholder:text-gray-400 focus:ring-0">
+                        <input x-model="searchQuery" type="text" placeholder="Ketik nama pegawai atau alasan..." class="w-full border-0 bg-transparent p-0 text-xs text-gray-900 placeholder:text-gray-400 focus:ring-0">
                     </div>
                 </div>
 
                 {{-- Pill Tabs Filters --}}
-                <div class="lg:col-span-6 flex items-center justify-start lg:justify-end gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
+                <div class="lg:col-span-4 flex items-center justify-start lg:justify-end gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
                     <button 
                         @click="activeFilter = 'semua'" 
                         type="button" 
@@ -110,7 +134,7 @@
                         class="px-3.5 py-1.5 rounded-lg text-xs border transition-all whitespace-nowrap flex items-center gap-2"
                     >
                         <span>Semua</span>
-                        <span :class="activeFilter === 'semua' ? 'bg-brand-100 text-brand-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="items.length"></span>
+                        <span :class="activeFilter === 'semua' ? 'bg-brand-100 text-brand-700' : 'bg-gray-200 text-gray-700'" class="px-2 py-0.5 text-[10px] rounded-full font-bold" x-text="itemsInView.length"></span>
                     </button>
                     <button 
                         @click="activeFilter = 'cuti'" 
@@ -164,12 +188,13 @@
                             <th class="px-5 py-3">Kategori</th>
                             <th class="px-5 py-3">Periode Tanggal</th>
                             <th class="px-5 py-3">Langkah Saat Ini</th>
+                            <th class="px-5 py-3">Status</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <template x-if="filteredItems.length === 0">
                             <tr>
-                                <td colspan="5" class="px-5 py-12 text-center text-gray-400">
+                                <td colspan="6" class="px-5 py-12 text-center text-gray-400">
                                     <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-3">
                                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -212,6 +237,9 @@
                                         </svg>
                                         <span x-text="item.step"></span>
                                     </span>
+                                </td>
+                                <td class="px-5 py-3.5">
+                                    <span :class="'bg-' + item.statusTone + '-100 text-' + item.statusTone + '-800'" class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold" x-text="item.statusLabel"></span>
                                 </td>
                             </tr>
                         </template>

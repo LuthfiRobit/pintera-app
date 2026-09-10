@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Sdm\Actions\ProsesApprovalIzinCutiAction;
 use App\Domains\Sdm\Models\PengajuanIzinCuti;
 use App\Domains\Workflow\Enums\ApprovalAction;
-use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Domains\Workflow\Services\ApproverResolverService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +22,7 @@ class ApprovalIzinCutiController extends BaseController
         $this->authorize('kehadiran-sdm.izin.approve');
 
         $daftar = PengajuanIzinCuti::with(['pegawai', 'approvalRequest.currentStep'])
-            ->whereHas('approvalRequest', fn ($q) => $q->whereIn('status', [ApprovalStatus::Pending, ApprovalStatus::InReview]))
+            ->whereHas('approvalRequest')
             ->latest('tanggal_mulai')
             ->get();
 

@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Admin/ApprovalIzinCutiControllerTest.php
 
 use App\Domains\Sdm\Actions\AjukanIzinCutiAction;
@@ -67,4 +68,36 @@ it('rejects an admin without kehadiran-sdm.izin.approve permission', function ()
     $pengajuan = app(AjukanIzinCutiAction::class)->execute($guru, KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit.');
 
     $this->actingAs($noPermissionUser)->get(route('admin.kehadiran-sdm.izin-cuti.index'))->assertForbidden();
+});
+
+it('includes both active (Pending) and decided (Approved) pengajuan in the index payload (riwayat support)', function () {
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\PermissionSeeder']);
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\RoleSeeder']);
+    Artisan::call('db:seed', ['--class' => 'Database\\Seeders\\WorkflowDefinitionSeeder']);
+    Permission::firstOrCreate(['name' => 'kehadiran-sdm.izin.approve', 'guard_name' => 'web']);
+    $kepsekRole = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $kepsekRole->givePermissionTo('kehadiran-sdm.izin.approve');
+    $adminSdmRole = Role::firstOrCreate(['name' => 'admin_sdm', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $adminSdmRole->givePermissionTo('kehadiran-sdm.izin.approve');
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $kepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kepsek->assignRole($kepsekRole);
+    $adminSdm = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $adminSdm->assignRole($adminSdmRole);
+
+    $guruPending = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Guru Pending Test']);
+    $pengajuanPending = app(AjukanIzinCutiAction::class)->execute($guruPending, KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Sakit demam.');
+
+    $guruApproved = Guru::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Guru Approved Test']);
+    $pengajuanApproved = app(AjukanIzinCutiAction::class)->execute($guruApproved, KategoriPengajuanIzin::Izin, '2026-09-02', '2026-09-02', 'Keperluan keluarga.');
+    $this->actingAs($kepsek)->post(route('admin.kehadiran-sdm.izin-cuti.decision', $pengajuanApproved), ['action' => 'APPROVE']);
+    $this->actingAs($adminSdm)->post(route('admin.kehadiran-sdm.izin-cuti.decision', $pengajuanApproved->fresh()), ['action' => 'APPROVE']);
+    expect($pengajuanApproved->fresh()->approvalRequest->status)->toBe(ApprovalStatus::Approved);
+
+    $response = $this->actingAs($kepsek)->get(route('admin.kehadiran-sdm.izin-cuti.index'));
+
+    $response->assertOk();
+    $response->assertSee('Guru Pending Test');
+    $response->assertSee('Guru Approved Test');
 });

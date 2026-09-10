@@ -3,29 +3,39 @@ export function approvalIzinCutiSPA(config) {
         items: config.items ?? [],
         searchQuery: '',
         activeFilter: 'semua',
+        viewMode: 'menunggu',
+
+        get itemsInView() {
+            return this.items.filter((item) => this.viewMode === 'menunggu' ? !item.isDecided : item.isDecided);
+        },
 
         get filteredItems() {
-            return this.items.filter((item) => {
-                const matchSearch = item.nama.toLowerCase().includes(this.searchQuery.toLowerCase());
-                if (this.activeFilter === 'semua') return matchSearch;
-                return matchSearch && item.kategori === this.activeFilter;
+            return this.itemsInView.filter((item) => {
+                const query = this.searchQuery.toLowerCase();
+                const matchSearch = item.nama.toLowerCase().includes(query) || item.alasan.toLowerCase().includes(query);
+                const matchFilter = this.activeFilter === 'semua' || item.kategori === this.activeFilter;
+                return matchSearch && matchFilter;
             });
         },
 
+        get totalPending() {
+            return this.items.filter((i) => !i.isDecided).length;
+        },
+
         get countCuti() {
-            return this.items.filter((i) => i.kategori === 'cuti').length;
+            return this.itemsInView.filter((i) => i.kategori === 'cuti').length;
         },
 
         get countSakit() {
-            return this.items.filter((i) => i.kategori === 'sakit').length;
+            return this.itemsInView.filter((i) => i.kategori === 'sakit').length;
         },
 
         get countIzin() {
-            return this.items.filter((i) => i.kategori === 'izin').length;
+            return this.itemsInView.filter((i) => i.kategori === 'izin').length;
         },
 
         get countDispensasi() {
-            return this.items.filter((i) => ['izin', 'sakit'].includes(i.kategori)).length;
+            return this.itemsInView.filter((i) => ['izin', 'sakit'].includes(i.kategori)).length;
         },
     };
 }
