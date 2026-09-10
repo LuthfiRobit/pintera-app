@@ -1,4 +1,5 @@
 <?php
+
 // tests/Feature/Sdm/ProsesApprovalIzinCutiActionTest.php
 
 use App\Domains\Sdm\Actions\AjukanIzinCutiAction;
@@ -14,6 +15,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Yayasan;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Validation\ValidationException;
 
 function seedIzinCutiWorkflowForTest(): void
 {
@@ -79,4 +81,29 @@ it('creates no AttendanceEvent when rejected', function () {
     $pengajuan->refresh();
     expect($pengajuan->approvalRequest->status)->toBe(ApprovalStatus::Rejected);
     expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->exists())->toBeFalse();
+});
+
+it('rejects a second approve call on a pengajuan already Approved, without creating a duplicate AttendanceRecord or ApprovalLog', function () {
+    seedIzinCutiWorkflowForTest();
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kepsekRole = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $adminSdmRole = Role::firstOrCreate(['name' => 'admin_sdm', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+    $kepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kepsek->assignRole($kepsekRole);
+    $adminSdm = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $adminSdm->assignRole($adminSdmRole);
+    $pengajuan = app(AjukanIzinCutiAction::class)->execute($guru, KategoriPengajuanIzin::Sakit, '2026-09-01', '2026-09-01', 'Demam.');
+    app(ProsesApprovalIzinCutiAction::class)->execute($pengajuan, $kepsek, ApprovalAction::Approve);
+    app(ProsesApprovalIzinCutiAction::class)->execute($pengajuan->fresh(), $adminSdm, ApprovalAction::Approve);
+
+    $recordCountAfterFirst = AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->count();
+    $logCountAfterFirst = $pengajuan->fresh()->approvalRequest->logs()->count();
+
+    expect(fn () => app(ProsesApprovalIzinCutiAction::class)->execute($pengajuan->fresh(), $adminSdm, ApprovalAction::Approve))
+        ->toThrow(ValidationException::class);
+
+    expect(AttendanceRecord::where('pegawai_type', Guru::class)->where('pegawai_id', $guru->id)->count())->toBe($recordCountAfterFirst);
+    expect($pengajuan->fresh()->approvalRequest->logs()->count())->toBe($logCountAfterFirst);
 });
