@@ -60,6 +60,15 @@ class NilaiAnakController extends BaseController
                 ->first()
             : null;
 
+        // Rapor dengan status apapun (untuk info banner ketika belum Disetujui)
+        $pengajuanRaporSemua = (! $pengajuanRapor && $anak && $semesterId)
+            ? PengajuanRapor::withoutGlobalScope(TenantScope::class)
+                ->where('kelas_id', $anak->kelas_id)
+                ->where('semester_id', $semesterId)
+                ->latest()
+                ->first()
+            : null;
+
         return view('admin.orang-tua.nilai-anak', [
             'anakList' => $anakList,
             'anak' => $anak,
@@ -67,6 +76,7 @@ class NilaiAnakController extends BaseController
             'semesterId' => $semesterId,
             'nilaiList' => $nilaiList,
             'pengajuanRapor' => $pengajuanRapor,
+            'pengajuanRaporSemua' => $pengajuanRaporSemua,
         ]);
     }
 
