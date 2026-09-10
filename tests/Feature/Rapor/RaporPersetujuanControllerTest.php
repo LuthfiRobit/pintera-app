@@ -1,5 +1,6 @@
 <?php
 
+use App\Domains\Akademik\Actions\Rapor\ApprovePengajuanRaporAction;
 use App\Domains\Akademik\Actions\Rapor\SimpanCatatanWaliKelasAction;
 use App\Domains\Akademik\Actions\Rapor\SubmitPengajuanRaporAction;
 use App\Domains\Akademik\Actions\Rapor\VerifyPengajuanRaporAction;
@@ -25,6 +26,7 @@ use App\Models\Yayasan;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -427,4 +429,18 @@ it('returns semester list via opsi endpoint for cascading select in persetujuan 
     $response->assertOk();
     $response->assertJsonStructure(['semesterList' => [['id', 'nama']]]);
     $response->assertJsonFragment(['id' => $semester->id, 'nama' => $semester->nama]);
+});
+
+it('rejects a second Kepsek approve call on a pengajuan already Disetujui, without creating a duplicate ApprovalLog', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'userKepsek' => $userKepsek, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+    (new VerifyPengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan, $userWaka, ApprovalAction::Approve);
+    (new ApprovePengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan->fresh(), $userKepsek, ApprovalAction::Approve);
+
+    $logCountAfterFirst = $pengajuan->fresh()->approvalRequest->logs()->count();
+
+    expect(fn () => (new ApprovePengajuanRaporAction(app(ProcessApprovalAction::class)))->execute($pengajuan->fresh(), $userKepsek, ApprovalAction::Approve))
+        ->toThrow(ValidationException::class);
+
+    expect($pengajuan->fresh()->approvalRequest->logs()->count())->toBe($logCountAfterFirst);
 });
