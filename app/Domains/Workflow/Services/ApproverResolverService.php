@@ -30,14 +30,17 @@ class ApproverResolverService
         }
 
         if ($step->scope_level === 'lembaga') {
+            // Fail-closed: kalau target lembaga tidak bisa ditentukan sama sekali
+            // (approvable/requester gagal di-resolve -- termasuk kalau TenantScope
+            // memfilternya jadi null), itu WAJIB dianggap ditolak, bukan diloloskan.
+            // Setiap step scope_level 'lembaga' yang valid SELALU py target dengan
+            // lembaga_id yang sah begitu record-nya dibuat benar -- null di sini
+            // selalu berarti ada yang salah, tidak pernah kasus bisnis yang sah.
             $targetLembagaId = $request->approvable?->lembaga_id ?? $request->requester?->lembaga_id;
+            $effectiveLembagaId = $this->resolveEffectiveLembagaId($user);
 
-            if ($targetLembagaId !== null) {
-                $effectiveLembagaId = $this->resolveEffectiveLembagaId($user);
-
-                if ($effectiveLembagaId === null || (int) $targetLembagaId !== (int) $effectiveLembagaId) {
-                    return false;
-                }
+            if ($targetLembagaId === null || $effectiveLembagaId === null || (int) $targetLembagaId !== (int) $effectiveLembagaId) {
+                return false;
             }
         }
 

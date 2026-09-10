@@ -8,7 +8,9 @@ use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalStatus;
 use App\Domains\Workflow\Models\WorkflowDefinition;
 use App\Domains\Workflow\Models\WorkflowStep;
+use App\Models\Lembaga;
 use App\Models\User;
+use App\Models\Yayasan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -22,13 +24,20 @@ class WorkflowEngineTest extends TestCase
         $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
         $roleYayasan = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web']);
 
-        $userKepsek = User::factory()->create();
+        // Step 1 di bawah scope_level 'lembaga' -- requester/approvable WAJIB punya
+        // lembaga_id yang sah (fail-closed di ApproverResolverService menolak kalau
+        // target lembaga tidak bisa ditentukan sama sekali). Pakai User nyata dengan
+        // lembaga_id terisi, bukan User telanjang, supaya skenario ini realistis.
+        $yayasan = Yayasan::factory()->create();
+        $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+
+        $userKepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
         $userKepsek->assignRole($roleKepsek);
 
         $userYayasan = User::factory()->create();
         $userYayasan->assignRole($roleYayasan);
 
-        $requester = User::factory()->create();
+        $requester = User::factory()->create(['lembaga_id' => $lembaga->id]);
 
         $def = WorkflowDefinition::create([
             'code' => 'TEST_FLOW',

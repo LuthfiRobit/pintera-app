@@ -116,3 +116,40 @@ it('denies a yayasan-scope kepala_sekolah whose active lembaga is valid but does
 
     expect((new ApproverResolverService)->canUserApprove($step, $user, $approvalRequest))->toBeFalse();
 });
+
+it('fails closed (denies) when the approvable/requester target cannot be resolved at all, even for an otherwise-valid lembaga-scope approver', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $roleKepsek = Role::where('name', 'kepala_sekolah')->firstOrFail();
+    $user = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    $user->assignRole($roleKepsek);
+
+    $workflow = WorkflowDefinition::create([
+        'code' => 'TEST_FAIL_CLOSED_NULL_TARGET',
+        'nama_workflow' => 'Test Fail Closed Null Target',
+        'is_active' => true,
+    ]);
+    $step = WorkflowStep::create([
+        'workflow_definition_id' => $workflow->id,
+        'step_number' => 1,
+        'step_name' => 'Verifikasi Kepala Sekolah',
+        'approver_type' => ApproverType::Role,
+        'approver_value' => 'kepala_sekolah',
+        'scope_level' => 'lembaga',
+        'is_final_step' => true,
+    ]);
+
+    // approvable_id menunjuk ke record yang tidak pernah ada -- relasi MorphTo
+    // approvable() gagal resolve jadi null, requester juga tidak diisi, jadi
+    // targetLembagaId tidak bisa ditentukan sama sekali. Sebelum perbaikan ini,
+    // kondisi "tidak bisa ditentukan" diam-diam diloloskan (fail-open).
+    $approvalRequest = ApprovalRequest::create([
+        'workflow_definition_id' => $workflow->id,
+        'approvable_type' => PengajuanRapor::class,
+        'approvable_id' => 999999,
+        'current_step_id' => $step->id,
+        'status' => ApprovalStatus::InReview,
+    ]);
+
+    expect((new ApproverResolverService)->canUserApprove($step, $user, $approvalRequest))->toBeFalse();
+});
