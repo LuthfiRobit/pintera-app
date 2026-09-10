@@ -6,6 +6,7 @@ namespace App\Domains\Akademik\Actions\Rapor;
 
 use App\Domains\Akademik\Enums\StatusPengajuanRapor;
 use App\Domains\Akademik\Models\PengajuanRapor;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Domains\Workflow\Actions\ProcessApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Domains\Workflow\Enums\ApprovalStatus;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 final class VerifyPengajuanRaporAction
 {
+    use ResolveLembagaScopeTrait;
+
     public function __construct(
         private readonly ProcessApprovalAction $processApprovalAction,
     ) {}
@@ -24,6 +27,22 @@ final class VerifyPengajuanRaporAction
      */
     public function execute(PengajuanRapor $pengajuanRapor, User $user, ApprovalAction $action, ?string $catatan = null): PengajuanRapor
     {
+        // Defense-in-depth: bukan duplikat murni dari ApproverResolverService.
+        // Kalau relasi approvable/requester pada ApprovalRequest ikut ter-scope
+        // null oleh TenantScope (mis. instance PengajuanRapor diteruskan langsung
+        // ke Action ini di luar route-model-binding, seperti dari command/job
+        // internal), ApproverResolverService::checkRoleApprover() fail-open
+        // (targetLembagaId null -> skip pengecekan). Guard di sini menutup celah
+        // itu berdasarkan lembaga_id milik PengajuanRapor itu sendiri, memakai
+        // resolusi lembaga aktif yang SUDAH tervalidasi (bukan raw session).
+        $effectiveLembagaId = $this->resolveActiveLembagaId($user);
+
+        if ($effectiveLembagaId === null || (int) $pengajuanRapor->lembaga_id !== (int) $effectiveLembagaId) {
+            throw ValidationException::withMessages([
+                'approval' => 'Anda tidak berwenang memverifikasi pengajuan rapor lembaga lain.',
+            ]);
+        }
+
         $approvalRequest = $pengajuanRapor->approvalRequest;
 
         if (! $approvalRequest) {
