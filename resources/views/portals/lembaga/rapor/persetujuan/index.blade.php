@@ -49,7 +49,7 @@
             </div>
 
             <div x-ref="tableContainer">
-                @include('portals.lembaga.rapor.persetujuan._daftar', ['pengajuanList' => $pengajuanList])
+                @include('portals.lembaga.rapor.persetujuan._daftar', ['pengajuanList' => $pengajuanList, 'tab' => $tab])
             </div>
         </div>
     </div>

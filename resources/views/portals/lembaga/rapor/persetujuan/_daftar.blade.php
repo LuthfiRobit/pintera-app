@@ -23,7 +23,7 @@
                     <tr>
                         <td colspan="4" class="px-5 py-12 text-center text-gray-500">
                             <x-icon name="inbox" class="mx-auto h-8 w-8 text-gray-400 mb-2" />
-                            Tidak ada pengajuan rapor yang menunggu keputusan Anda saat ini.
+                            {{ ($tab ?? 'menunggu') === 'riwayat' ? 'Belum ada riwayat keputusan persetujuan rapor.' : 'Tidak ada pengajuan rapor yang menunggu keputusan Anda saat ini.' }}
                         </td>
                     </tr>
                 @endforelse
