@@ -1,6 +1,25 @@
 {{-- resources/views/admin/kehadiran-sdm/izin-cuti/index.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0" x-data="approvalIzinCutiSPA()">
+    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0" x-data="approvalIzinCutiSPA({
+        items: @js($daftar->map(function ($item) {
+            $k = $item->kategori->value;
+            $class = match($k) {
+                'cuti' => 'bg-blue-100 text-blue-800',
+                'sakit' => 'bg-rose-100 text-rose-800',
+                default => 'bg-amber-100 text-amber-800',
+            };
+            return [
+                'id' => $item->id,
+                'nama' => $item->pegawai->nama ?? '—',
+                'kategori' => $k,
+                'kategoriLabel' => $item->kategori->label(),
+                'kategoriClass' => $class,
+                'periode' => $item->tanggal_mulai->format('d M Y') . ' — ' . $item->tanggal_selesai->format('d M Y'),
+                'step' => $item->approvalRequest?->currentStep?->step_name ?? '—',
+                'showUrl' => route('admin.kehadiran-sdm.izin-cuti.show', $item),
+            ];
+        })->values()->all()),
+    })">
         
         {{-- Flash Notification --}}
         @if (session('status'))
@@ -201,56 +220,4 @@
             </div>
         </div>
     </div>
-
-    {{-- Inline SPA Factory Script --}}
-    <script>
-        function approvalIzinCutiSPA() {
-            return {
-                items: @js($daftar->map(function ($item) {
-                    $k = $item->kategori->value;
-                    $class = match($k) {
-                        'cuti' => 'bg-blue-100 text-blue-800',
-                        'sakit' => 'bg-rose-100 text-rose-800',
-                        default => 'bg-amber-100 text-amber-800',
-                    };
-                    return [
-                        'id' => $item->id,
-                        'nama' => $item->pegawai->nama ?? '—',
-                        'kategori' => $k,
-                        'kategoriLabel' => $item->kategori->label(),
-                        'kategoriClass' => $class,
-                        'periode' => $item->tanggal_mulai->format('d M Y') . ' — ' . $item->tanggal_selesai->format('d M Y'),
-                        'step' => $item->approvalRequest?->currentStep?->step_name ?? '—',
-                        'showUrl' => route('admin.kehadiran-sdm.izin-cuti.show', $item),
-                    ];
-                })->values()->all()),
-                searchQuery: '',
-                activeFilter: 'semua',
-
-                get filteredItems() {
-                    return this.items.filter(item => {
-                        const matchSearch = item.nama.toLowerCase().includes(this.searchQuery.toLowerCase());
-                        if (this.activeFilter === 'semua') return matchSearch;
-                        return matchSearch && item.kategori === this.activeFilter;
-                    });
-                },
-
-                get countCuti() {
-                    return this.items.filter(i => i.kategori === 'cuti').length;
-                },
-
-                get countSakit() {
-                    return this.items.filter(i => i.kategori === 'sakit').length;
-                },
-
-                get countIzin() {
-                    return this.items.filter(i => i.kategori === 'izin').length;
-                },
-
-                get countDispensasi() {
-                    return this.items.filter(i => ['izin', 'sakit'].includes(i.kategori)).length;
-                }
-            }
-        }
-    </script>
 </x-app-layout>

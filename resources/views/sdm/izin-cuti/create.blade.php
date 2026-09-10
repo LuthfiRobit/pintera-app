@@ -48,14 +48,14 @@
                 {{-- Kategori Dropdown --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-700">Kategori Permohonan <span class="text-rose-500">*</span></label>
-                    <select name="kategori" x-model="kategori" required class="w-full rounded-xl border-gray-200 bg-gray-50 p-2.5 text-xs text-gray-900 shadow-2xs focus:border-brand-500 focus:ring-brand-500">
+                    <x-select name="kategori" x-model="kategori" required>
                         <option value="">— Pilih Kategori Permohonan —</option>
                         @foreach ($kategoriOptions as $kategori)
                             <option value="{{ $kategori->value }}" {{ old('kategori') === $kategori->value ? 'selected' : '' }}>
                                 {{ $kategori->label() }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
 
                 @if ($adaKonfigurasiKuota)

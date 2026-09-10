@@ -1,6 +1,16 @@
 {{-- resources/views/sdm/izin-cuti/index.blade.php --}}
 <x-app-layout>
-    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0" x-data="riwayatIzinCutiSPA()">
+    <div class="mx-auto max-w-6xl space-y-4 px-4 sm:px-0" x-data="riwayatIzinCutiSPA({
+        items: @js($riwayat->map(function ($item) {
+            $ar = $item->approvalRequest;
+            return [
+                'id' => $item->id,
+                'kategori' => $item->kategori->label(),
+                'status' => $ar?->status->value ?? 'none',
+                'periode' => $item->tanggal_mulai->format('d M Y') . ' — ' . $item->tanggal_selesai->format('d M Y'),
+            ];
+        })->values()->all()),
+    })">
         
         {{-- Flash Notification --}}
         @if (session('status'))
@@ -221,42 +231,4 @@
             </div>
         </div>
     </div>
-
-    {{-- Inline SPA Script --}}
-    <script>
-        function riwayatIzinCutiSPA() {
-            return {
-                items: @js($riwayat->map(function ($item) {
-                    $ar = $item->approvalRequest;
-                    return [
-                        'id' => $item->id,
-                        'kategori' => $item->kategori->label(),
-                        'status' => $ar?->status->value ?? 'none',
-                        'periode' => $item->tanggal_mulai->format('d M Y') . ' — ' . $item->tanggal_selesai->format('d M Y'),
-                    ];
-                })->values()->all()),
-                searchQuery: '',
-                activeFilter: 'semua',
-
-                get filteredItems() {
-                    return this.items.filter(i => {
-                        const q = this.searchQuery.toLowerCase();
-                        const matchSearch = i.kategori.toLowerCase().includes(q) || i.periode.toLowerCase().includes(q);
-                        if (this.activeFilter === 'semua') return matchSearch;
-                        if (this.activeFilter === 'pending') return matchSearch && ['pending', 'in_review'].includes(i.status);
-                        if (this.activeFilter === 'approved') return matchSearch && i.status === 'approved';
-                        return matchSearch;
-                    });
-                },
-
-                get countPending() {
-                    return this.items.filter(i => ['pending', 'in_review'].includes(i.status)).length;
-                },
-
-                get countApproved() {
-                    return this.items.filter(i => i.status === 'approved').length;
-                }
-            }
-        }
-    </script>
 </x-app-layout>
