@@ -225,6 +225,8 @@
                                     </div>
                                     <p class="text-sm font-semibold text-gray-700">Belum ada pengajuan izin/cuti.</p>
                                     <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">Klik tombol "+ Ajukan Baru" di atas untuk mengajukan permohonan izin atau cuti.</p>
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
