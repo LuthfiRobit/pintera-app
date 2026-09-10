@@ -41,12 +41,7 @@ class PersetujuanController extends BaseController
         $tab = $request->query('tab', 'menunggu');
 
         if ($tab === 'riwayat') {
-            $effectiveLembagaId = $request->user()->widestScopeLevel() === 'yayasan'
-                ? session('active_lembaga_id')
-                : $request->user()->lembaga_id;
-
             $query = PengajuanRapor::whereIn('status', [StatusPengajuanRapor::Disetujui, StatusPengajuanRapor::Ditolak])
-                ->when($effectiveLembagaId, fn ($q) => $q->where('lembaga_id', $effectiveLembagaId))
                 ->with(['kelas.tahunAjaran', 'semester'])
                 ->when($request->search, function ($q, $search) {
                     $q->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
