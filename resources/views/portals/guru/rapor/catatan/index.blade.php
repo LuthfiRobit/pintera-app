@@ -150,10 +150,9 @@
                 {{-- 1. Tahun Ajaran --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-600">Tahun Ajaran</label>
-                    <select
+                    <x-select
                         x-ref="tahunAjaranSelect"
                         x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)"
-                        class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm"
                     >
                         <option value="">Semua Tahun Ajaran</option>
                         @foreach ($tahunAjaranList as $ta)
@@ -161,16 +160,15 @@
                                 {{ $ta->nama }} {{ $ta->status_aktif ? '(Aktif)' : '' }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
 
                 {{-- 2. Semester --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-600">Semester</label>
-                    <select
+                    <x-select
                         x-ref="semesterSelect"
                         x-init="initSemesterSelect($refs.semesterSelect)"
-                        class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm"
                     >
                         <option value="">Semua Semester</option>
                         @foreach ($semesterList as $sem)
@@ -178,16 +176,15 @@
                                 {{ $sem->nama }} {{ $sem->status_aktif ? '(Aktif)' : '' }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
 
                 {{-- 3. Kelas Perwalian --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-600">Kelas Perwalian</label>
-                    <select
+                    <x-select
                         x-ref="kelasSelect"
                         x-init="initKelasSelect($refs.kelasSelect)"
-                        class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm"
                     >
                         @if ($kelasList->isEmpty())
                             <option value="">— Anda Bukan Wali Kelas —</option>
@@ -198,7 +195,7 @@
                                 </option>
                             @endforeach
                         @endif
-                    </select>
+                    </x-select>
                 </div>
             </div>
 

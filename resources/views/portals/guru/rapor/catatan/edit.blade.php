@@ -71,7 +71,15 @@
                 </div>
                 <template x-for="(row, index) in ekstrakurikuler" :key="index">
                     <div class="grid grid-cols-1 gap-2 sm:grid-cols-5 items-center">
-                        <select :name="`ekstrakurikuler[${index}][nama]`" x-model="row.nama" class="sm:col-span-2 rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500">
+                        {{-- Bukan <x-select> di sini dengan sengaja: :name pakai template literal Alpine
+                             (terikat ke $index loop x-for), bukan ekspresi PHP -- kalau dipakai di tag
+                             komponen <x-...>, Blade akan mencoba evaluasi :name sebagai PHP dan gagal
+                             ("Undefined variable $index"). Class disamakan manual dengan <x-select>. --}}
+                        <select
+                            :name="`ekstrakurikuler[${index}][nama]`"
+                            x-model="row.nama"
+                            class="sm:col-span-2 text-xs block w-full rounded-lg border-gray-200 text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500 bg-white"
+                        >
                             <option value="">— Pilih Ekskul —</option>
                             @foreach ($ekskulOptions as $namaEkskul)
                                 <option value="{{ $namaEkskul }}">{{ $namaEkskul }}</option>

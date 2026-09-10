@@ -122,10 +122,9 @@
                     <label class="mb-1.5 block text-xs font-semibold text-gray-600">
                         Pilih Semester
                     </label>
-                    <select
+                    <x-select
                         id="semester_id_select"
                         name="semester_id"
-                        class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm"
                         onchange="window.location.href = '{{ route('admin.nilai-rapor-saya.index') }}?semester_id=' + this.value"
                     >
                         @foreach ($semesterList as $sem)
@@ -133,7 +132,7 @@
                                 {{ $sem->nama }}{{ $sem->status_aktif ? ' (Aktif)' : '' }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
                 @if ($siswa?->kelas)
                     <div class="hidden sm:flex items-center gap-2 text-xs text-gray-400 pb-2">

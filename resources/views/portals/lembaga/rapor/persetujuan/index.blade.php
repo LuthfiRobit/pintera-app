@@ -124,10 +124,9 @@
                 {{-- 1. Tahun Ajaran (Searchable TomSelect) --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-600">Tahun Ajaran</label>
-                    <select
+                    <x-select
                         x-ref="tahunAjaranSelect"
                         x-init="initTahunAjaranSelect($refs.tahunAjaranSelect)"
-                        class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm"
                     >
                         <option value="">Semua Tahun Ajaran</option>
                         @foreach ($tahunAjaranList as $tahunAjaran)
@@ -135,16 +134,15 @@
                                 {{ $tahunAjaran->nama }}{{ $tahunAjaran->status_aktif ? ' (Aktif)' : '' }}{{ ($isYayasan ?? false) && ! ($activeLembaga ?? null) ? ' — '.($tahunAjaran->lembaga->nama ?? '-') : '' }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
 
                 {{-- 2. Semester (Searchable TomSelect) --}}
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-600">Semester</label>
-                    <select
+                    <x-select
                         x-ref="semesterSelect"
                         x-init="initSemesterSelect($refs.semesterSelect)"
-                        class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm"
                     >
                         <option value="">Semua Semester</option>
                         @foreach ($semesterList as $sem)
@@ -152,7 +150,7 @@
                                 {{ $sem->nama }} ({{ $sem->tahunAjaran->nama ?? '-' }})
                             </option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
             </div>
 
