@@ -24,16 +24,6 @@ final class VerifyPengajuanRaporAction
      */
     public function execute(PengajuanRapor $pengajuanRapor, User $user, ApprovalAction $action, ?string $catatan = null): PengajuanRapor
     {
-        $effectiveLembagaId = $user->widestScopeLevel() === 'yayasan'
-            ? session('active_lembaga_id')
-            : $user->lembaga_id;
-
-        if ($effectiveLembagaId === null || (int) $pengajuanRapor->lembaga_id !== (int) $effectiveLembagaId) {
-            throw ValidationException::withMessages([
-                'approval' => 'Anda tidak berwenang memverifikasi pengajuan rapor lembaga lain.',
-            ]);
-        }
-
         $approvalRequest = $pengajuanRapor->approvalRequest;
 
         if (! $approvalRequest) {
