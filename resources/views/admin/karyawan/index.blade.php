@@ -16,12 +16,7 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2.5">
                     <h1 class="font-display text-lg font-bold text-gray-900">Karyawan & Tenaga Ahli</h1>
-                    @if ($isYayasan ?? (auth()->user()?->widestScopeLevel() === 'yayasan'))
-                        <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ ($activeLembaga ?? null) ? 'border border-brand-200 bg-brand-50 text-brand-700' : 'border border-purple-200 bg-purple-50 text-purple-700' }}">
-                            <x-icon name="apartment" class="h-3.5 w-3.5" />
-                            {{ ($activeLembaga ?? null) ? $activeLembaga->nama : 'Semua Lembaga' }}
-                        </span>
-                    @endif
+                    <x-scope-badge :is-yayasan="$isYayasan ?? (auth()->user()?->widestScopeLevel() === 'yayasan')" :active-lembaga="$activeLembaga ?? null" />
                 </div>
                 <p class="text-xs text-gray-500 mt-0.5">Kelola data penempatan dan akun login karyawan. "Karyawan Pool" berarti karyawan itu melayani semua lembaga di bawah yayasan (mis. Konselor BK/Psikolog), berbeda dari karyawan biasa yang terikat 1 lembaga tertentu.</p>
             </div>

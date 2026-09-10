@@ -14,9 +14,12 @@ use App\Domains\Akademik\Services\RaporPdfDataBuilder;
 use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Http\Requests\Akademik\ProcessRaporApprovalRequest;
 use App\Models\Lembaga;
+use App\Models\Semester;
 use App\Models\Siswa;
+use App\Models\TahunAjaran;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -40,35 +43,83 @@ class PersetujuanController extends BaseController
         abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
 
         $tab = $request->query('tab', 'menunggu');
+        $statusYangDicari = $this->statusUntukAktor($request);
+
+        $eagerLoads = ['kelas.tahunAjaran', 'semester', 'kelas.waliKelas.person', 'diajukanOleh', 'diverifikasiOleh', 'disetujuiOleh'];
+
+        $filterClosure = function ($q) use ($request) {
+            $q->when($request->filled('tahun_ajaran_id'), function ($subQ) use ($request) {
+                $subQ->whereHas('kelas', fn ($k) => $k->where('tahun_ajaran_id', $request->tahun_ajaran_id));
+            })
+                ->when($request->filled('semester_id'), function ($subQ) use ($request) {
+                    $subQ->where('semester_id', $request->semester_id);
+                })
+                ->when($request->filled('search'), function ($subQ) use ($request) {
+                    $search = $request->search;
+                    $subQ->where(function ($sub) use ($search) {
+                        $sub->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"))
+                            ->orWhereHas('kelas.waliKelas.person', fn ($p) => $p->where('nama_lengkap', 'like', "%{$search}%"))
+                            ->orWhereHas('diajukanOleh', fn ($u) => $u->where('name', 'like', "%{$search}%"));
+                    });
+                });
+        };
 
         if ($tab === 'riwayat') {
             $query = PengajuanRapor::whereIn('status', [StatusPengajuanRapor::Disetujui, StatusPengajuanRapor::Ditolak])
-                ->with(['kelas.tahunAjaran', 'semester'])
-                ->when($request->search, function ($q, $search) {
-                    $q->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
-                })
+                ->with($eagerLoads)
+                ->tap($filterClosure)
                 ->latest();
         } else {
-            $statusYangDicari = $this->statusUntukAktor($request);
-
             $query = PengajuanRapor::where('status', $statusYangDicari)
-                ->with(['kelas.tahunAjaran', 'semester'])
-                ->when($request->search, function ($q, $search) {
-                    $q->whereHas('kelas', fn ($k) => $k->where('nama', 'like', "%{$search}%"));
-                })
+                ->with($eagerLoads)
+                ->tap($filterClosure)
                 ->latest();
         }
 
         $pengajuanList = $query->get();
 
-        if ($request->ajax()) {
-            return view('portals.lembaga.rapor.persetujuan._daftar', compact('pengajuanList', 'tab'))->render();
+        $statsBase = PengajuanRapor::query()
+            ->when($request->filled('tahun_ajaran_id'), fn ($q) => $q->whereHas('kelas', fn ($k) => $k->where('tahun_ajaran_id', $request->tahun_ajaran_id)))
+            ->when($request->filled('semester_id'), fn ($q) => $q->where('semester_id', $request->semester_id));
+
+        $stats = [
+            'totalMenunggu' => (clone $statsBase)->where('status', $statusYangDicari)->count(),
+            'totalRiwayat' => (clone $statsBase)->whereIn('status', [StatusPengajuanRapor::Disetujui, StatusPengajuanRapor::Ditolak])->count(),
+            'totalDisetujui' => (clone $statsBase)->where('status', StatusPengajuanRapor::Disetujui)->count(),
+            'totalDitolak' => (clone $statsBase)->where('status', StatusPengajuanRapor::Ditolak)->count(),
+            'roleAktor' => $request->user()->can('rapor.approve') ? 'Kepala Sekolah' : 'Wakasek Kurikulum',
+        ];
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.lembaga.rapor.persetujuan._daftar', compact('pengajuanList', 'tab', 'stats'))->render();
         }
 
+        $tahunAjaranList = TahunAjaran::with('lembaga')->orderByDesc('id')->get();
+        $semesterList = $request->filled('tahun_ajaran_id')
+            ? Semester::where('tahun_ajaran_id', $request->tahun_ajaran_id)->with('tahunAjaran')->orderByDesc('id')->get()
+            : Semester::with('tahunAjaran')->orderByDesc('id')->get();
+
         return view('portals.lembaga.rapor.persetujuan.index', array_merge(
-            compact('pengajuanList', 'tab'),
+            compact('pengajuanList', 'tab', 'stats', 'tahunAjaranList', 'semesterList'),
             $this->scopeHeaderData($request)
         ));
+    }
+
+    public function opsi(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
+
+        $data = $request->validate([
+            'tahun_ajaran_id' => ['required', 'integer'],
+        ]);
+
+        $semesterList = Semester::where('tahun_ajaran_id', $data['tahun_ajaran_id'])
+            ->orderByDesc('id')
+            ->get(['id', 'nama']);
+
+        return response()->json([
+            'semesterList' => $semesterList,
+        ]);
     }
 
     public function show(PengajuanRapor $pengajuanRapor, Request $request): View
@@ -81,7 +132,14 @@ class PersetujuanController extends BaseController
 
         $isReadOnly = $pengajuanRapor->status !== $statusUntukAktor;
 
-        $pengajuanRapor->load(['kelas', 'semester', 'approvalRequest.logs.user', 'approvalRequest.currentStep']);
+        $pengajuanRapor->load([
+            'kelas.tahunAjaran',
+            'kelas.waliKelas.person',
+            'semester',
+            'diajukanOleh',
+            'approvalRequest.logs.user',
+            'approvalRequest.currentStep',
+        ]);
 
         $logKeputusanTerakhir = $pengajuanRapor->approvalRequest?->logs?->sortByDesc('created_at')->first();
 

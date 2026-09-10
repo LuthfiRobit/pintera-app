@@ -17,6 +17,7 @@ Route::get('rapor', [RaporController::class, 'index'])->name('rapor.index');
 Route::get('rapor/opsi', [RaporController::class, 'opsi'])->name('rapor.opsi');
 Route::get('rapor/cetak', [RaporController::class, 'cetak'])->name('rapor.cetak');
 Route::get('rapor/persetujuan', [PersetujuanController::class, 'index'])->name('rapor.persetujuan.index');
+Route::get('rapor/persetujuan/opsi', [PersetujuanController::class, 'opsi'])->name('rapor.persetujuan.opsi');
 Route::get('rapor/persetujuan/{pengajuanRapor}', [PersetujuanController::class, 'show'])->name('rapor.persetujuan.show');
 Route::post('rapor/persetujuan/{pengajuanRapor}/keputusan', [PersetujuanController::class, 'decision'])->name('rapor.persetujuan.decision');
 Route::get('rapor/persetujuan/{pengajuanRapor}/cetak/{siswa}', [PersetujuanController::class, 'cetak'])->name('rapor.persetujuan.cetak');

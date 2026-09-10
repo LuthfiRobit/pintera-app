@@ -380,3 +380,51 @@ it('eager-loads kelas.lembaga in cetak() to avoid lazy-loading', function () {
         Model::preventLazyLoading(false);
     }
 });
+
+it('can filter pengajuan by tahun_ajaran_id and semester_id', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'kelas' => $kelas, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $tahunLain = TahunAjaran::factory()->create(['lembaga_id' => $kelas->lembaga_id]);
+    $semesterLain = Semester::factory()->create(['tahun_ajaran_id' => $tahunLain->id]);
+
+    $resMatch = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.index', [
+        'tahun_ajaran_id' => $kelas->tahun_ajaran_id,
+        'semester_id' => $pengajuan->semester_id,
+    ]));
+    $resMatch->assertOk();
+    $resMatch->assertSee($kelas->nama);
+
+    $resMismatch = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.index', [
+        'tahun_ajaran_id' => $tahunLain->id,
+        'semester_id' => $semesterLain->id,
+    ]));
+    $resMismatch->assertOk();
+    $resMismatch->assertDontSee($kelas->nama);
+});
+
+it('renders partial _daftar view on AJAX request to index without full layout', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'kelas' => $kelas] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.index'), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
+
+    $response->assertOk();
+    $response->assertSee($kelas->nama);
+    $response->assertDontSee('<!DOCTYPE html>', false);
+});
+
+it('returns semester list via opsi endpoint for cascading select in persetujuan rapor', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'kelas' => $kelas, 'semester' => $semester] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userWaka)->getJson(route('admin.rapor.persetujuan.opsi', [
+        'tahun_ajaran_id' => $kelas->tahun_ajaran_id,
+    ]));
+
+    $response->assertOk();
+    $response->assertJsonStructure(['semesterList' => [['id', 'nama']]]);
+    $response->assertJsonFragment(['id' => $semester->id, 'nama' => $semester->nama]);
+});
