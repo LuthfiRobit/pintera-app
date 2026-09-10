@@ -28,7 +28,7 @@
 - Consumes: `App\Domains\Workflow\Models\ApprovalRequest` (field: `status`, cast to `App\Domains\Workflow\Enums\ApprovalStatus`), `App\Domains\Workflow\Enums\ApprovalStatus` (cases: `Pending`, `InReview`, `Approved`, `Rejected`, `RevisionRequired`, `Cancelled`).
 - Produces: `ProcessApprovalAction::execute(ApprovalRequest $request, User $user, ApprovalAction $action, ?string $notes = null): bool` — signature unchanged. Now throws `ValidationException` (key `approval`) immediately when `$request->status` is not `Pending`/`InReview`, before touching `currentStep` or `canUserApprove()`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `tests/Feature/Workflow/ProcessApprovalActionTest.php`:
 
@@ -181,12 +181,12 @@ it('still processes an InReview request normally (multi-step workflow mid-flight
 });
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `vendor/bin/pest tests/Feature/Workflow/ProcessApprovalActionTest.php --compact`
 Expected: the "rejects reprocessing..." tests (4 of them) FAIL — no `ValidationException` is thrown today, so `expect(fn () => ...)->toThrow(...)` fails. The "processes a Pending request normally" and "still processes an InReview request" tests already PASS (they test existing behavior).
 
-- [ ] **Step 3: Apply the fix**
+- [x] **Step 3: Apply the fix**
 
 In `app/Domains/Workflow/Actions/ProcessApprovalAction.php`, change the `execute()` method from:
 
@@ -236,17 +236,17 @@ to:
 
 (the rest of the method — the `DB::transaction(...)` block — is unchanged.)
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run: `vendor/bin/pest tests/Feature/Workflow/ProcessApprovalActionTest.php --compact`
 Expected: all 6 tests PASS.
 
-- [ ] **Step 5: Run Pint**
+- [x] **Step 5: Run Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: no errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/Domains/Workflow/Actions/ProcessApprovalAction.php tests/Feature/Workflow/ProcessApprovalActionTest.php
@@ -264,7 +264,7 @@ git commit -m "fix(workflow): tolak memproses ulang ApprovalRequest yang statusn
 - Consumes: `App\Domains\Akademik\Actions\Rapor\ApprovePengajuanRaporAction::execute()`, `App\Domains\Akademik\Actions\Rapor\VerifyPengajuanRaporAction::execute()`, existing test helper `siapkanAktorPersetujuan(): array` (defined at the bottom of this same file, returns `['lembaga', 'kelas', 'semester', 'siswa', 'userWaka', 'userKepsek', 'pengajuan']`).
 - Produces: nothing new for later tasks — this task only adds regression coverage.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/Feature/Rapor/RaporPersetujuanControllerTest.php` (before the closing of the file, after the existing `it('renders the score inside the per-mapel matrix cell...')` test):
 
@@ -286,21 +286,21 @@ it('rejects a second Kepsek approve call on a pengajuan already Disetujui, witho
 
 This file already imports `ApprovePengajuanRaporAction`, `VerifyPengajuanRaporAction`, `ProcessApprovalAction`, `ApprovalAction`, and `WorkflowDefinitionSeeder` at the top (used by the existing tests in this file) — no new imports needed.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `vendor/bin/pest tests/Feature/Rapor/RaporPersetujuanControllerTest.php --filter="rejects a second Kepsek approve"`
 Expected: FAIL — before Task 1's fix, the second `execute()` call succeeds instead of throwing.
 
-- [ ] **Step 3: Run the full Rapor regression suite**
+- [x] **Step 3: Run the full Rapor regression suite**
 
 Run: `vendor/bin/pest tests/Feature/Rapor/RaporPersetujuanControllerTest.php tests/Feature/Akademik/PersetujuanRaporRiwayatTest.php tests/Feature/Akademik/RaporApprovalActionsTest.php tests/Feature/Akademik/RaporApprovalLockTest.php tests/Feature/Akademik/RaporApprovalTenantScopeTest.php tests/Feature/Akademik/SubmitPengajuanRaporActionGuardTest.php tests/Feature/Akademik/SubmitPengajuanRaporActionTest.php --compact`
 Expected: all tests PASS, including the new one. `SubmitPengajuanRaporActionTest.php` passing here is the concrete proof that "resubmit after Ditolak" is unaffected by Task 1's fix (that Action resets `ApprovalRequest.status` directly and never calls `ProcessApprovalAction`).
 
-- [ ] **Step 4: Run Pint**
+- [x] **Step 4: Run Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tests/Feature/Rapor/RaporPersetujuanControllerTest.php
@@ -318,7 +318,7 @@ git commit -m "test(rapor): regresi double-approve pada pengajuan rapor yang sud
 - Consumes: `App\Domains\Pengadaan\Actions\ProcessProposalApprovalAction::execute()`, `App\Domains\Pengadaan\Actions\CreatePengajuanAction::execute()`, `App\Domains\Pengadaan\Actions\SubmitPengajuanAction::execute()` — same setup pattern already used by `test_submit_partial_approval_and_disbursement_lifecycle` in this file (Yayasan/Lembaga/Gedung/KategoriAset/Ruangan fixtures, `kepala_sekolah`/`bendahara_yayasan` roles).
 - Produces: nothing new for later tasks — regression coverage only.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append this method to the `PengajuanApprovalActionTest` class in `tests/Unit/Domains/Pengadaan/PengajuanApprovalActionTest.php` (after `test_submit_partial_approval_and_disbursement_lifecycle`, same class, same imports already present):
 
@@ -386,21 +386,21 @@ use App\Domains\Workflow\Models\ApprovalLog;
 use Illuminate\Validation\ValidationException;
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `vendor/bin/pest tests/Unit/Domains/Pengadaan/PengajuanApprovalActionTest.php --filter="rejects_a_second_approve_call"`
 Expected: FAIL — before Task 1's fix, no exception is thrown, so `expectException` never gets satisfied.
 
-- [ ] **Step 3: Run the full Pengadaan regression suite**
+- [x] **Step 3: Run the full Pengadaan regression suite**
 
 Run: `vendor/bin/pest tests/Feature/Pengadaan tests/Unit/Domains/Pengadaan --compact`
 Expected: all tests PASS, including `tests/Feature/Pengadaan/ProposalEditAndResubmitTest.php` — this is the concrete proof that Pengadaan's "edit and resubmit after revision" flow is unaffected (its `SubmitPengajuanAction` resets `ApprovalRequest.status` directly, never calling `ProcessApprovalAction`).
 
-- [ ] **Step 4: Run Pint**
+- [x] **Step 4: Run Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tests/Unit/Domains/Pengadaan/PengajuanApprovalActionTest.php
@@ -418,7 +418,7 @@ git commit -m "test(pengadaan): regresi double-approve pada proposal yang sudah 
 - Consumes: `App\Domains\Sdm\Actions\ProsesApprovalIzinCutiAction::execute()`, `App\Domains\Sdm\Actions\AjukanIzinCutiAction::execute()`, `App\Domains\Sdm\Models\AttendanceRecord` (queried by `pegawai_type`/`pegawai_id`, confirmed the correct model class — NOT a class named `AttendanceEvent`, that name only appears as the relation method `$pegawai->attendanceEvents()`), existing helper `seedIzinCutiWorkflowForTest()` (defined at the top of this same file).
 - Produces: nothing new for later tasks — regression coverage only.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `tests/Feature/Sdm/ProsesApprovalIzinCutiActionTest.php` (after the existing `it('creates no AttendanceEvent when rejected', ...)` test):
 
@@ -451,21 +451,21 @@ it('rejects a second approve call on a pengajuan already Approved, without creat
 
 This file already imports `AttendanceRecord`, `AjukanIzinCutiAction`, `ProsesApprovalIzinCutiAction`, `KategoriPengajuanIzin`, `ApprovalAction`, `Guru`, `Lembaga`, `Role`, `User`, `Yayasan` at the top — no new imports needed.
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `vendor/bin/pest tests/Feature/Sdm/ProsesApprovalIzinCutiActionTest.php --filter="rejects a second approve call"`
 Expected: FAIL — before Task 1's fix, the second call succeeds and creates a duplicate `AttendanceRecord` + `ApprovalLog` instead of throwing.
 
-- [ ] **Step 3: Run the full SDM regression suite**
+- [x] **Step 3: Run the full SDM regression suite**
 
 Run: `vendor/bin/pest tests/Feature/Sdm tests/Feature/Admin/ApprovalIzinCutiControllerTest.php --compact`
 Expected: all tests PASS, including the new one.
 
-- [ ] **Step 4: Run Pint**
+- [x] **Step 4: Run Pint**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add tests/Feature/Sdm/ProsesApprovalIzinCutiActionTest.php
@@ -480,12 +480,12 @@ git commit -m "test(sdm): regresi double-approve pada izin/cuti yang sudah Appro
 
 **Interfaces:** none.
 
-- [ ] **Step 1: Run the full targeted regression suite once more, all 3 domains together**
+- [x] **Step 1: Run the full targeted regression suite once more, all 3 domains together**
 
 Run: `vendor/bin/pest tests/Feature/Workflow tests/Feature/Rapor tests/Feature/Akademik/PersetujuanRaporRiwayatTest.php tests/Feature/Akademik/RaporApprovalActionsTest.php tests/Feature/Akademik/RaporApprovalLockTest.php tests/Feature/Akademik/RaporApprovalTenantScopeTest.php tests/Feature/Akademik/SubmitPengajuanRaporActionGuardTest.php tests/Feature/Akademik/SubmitPengajuanRaporActionTest.php tests/Feature/Pengadaan tests/Unit/Domains/Pengadaan tests/Feature/Sdm tests/Feature/Admin/ApprovalIzinCutiControllerTest.php --compact`
 Expected: all tests PASS.
 
-- [ ] **Step 2: Run the full project test suite**
+- [x] **Step 2: Run the full project test suite**
 
 Run: `php artisan test --compact`
 Expected: some failures may appear, but ONLY these 3, all pre-existing and unrelated to this change (confirmed via `git log` on each file showing no commit in this change's range touches them):
@@ -495,11 +495,11 @@ Expected: some failures may appear, but ONLY these 3, all pre-existing and unrel
 
 If ANY OTHER test fails, STOP and investigate before proceeding — that would be a real regression from this change, not a known pre-existing failure.
 
-- [ ] **Step 3: Run Pint across the whole diff**
+- [x] **Step 3: Run Pint across the whole diff**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: no errors.
 
-- [ ] **Step 4: Ask the user to run the complete suite**
+- [x] **Step 4: Ask the user to run the complete suite**
 
 Per project convention (Pest rules), report the full-suite result from Step 2 to the user rather than claiming final sign-off yourself.
