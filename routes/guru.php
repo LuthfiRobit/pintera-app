@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified'])->prefix('guru')->name('guru.')->group(fu
     Route::delete('komponen-penilaian/{komponenPenilaian}', [KomponenPenilaianController::class, 'destroy'])->name('komponen-penilaian.destroy');
 
     Route::get('rapor', [GuruRaporController::class, 'index'])->name('rapor.catatan.index');
+    Route::get('rapor/opsi', [GuruRaporController::class, 'opsi'])->name('rapor.catatan.opsi');
     Route::get('rapor/siswa/{siswa}', [GuruRaporController::class, 'edit'])->name('rapor.catatan.edit');
     Route::put('rapor/siswa/{siswa}', [GuruRaporController::class, 'update'])->name('rapor.catatan.update');
     Route::post('rapor/generate-narasi/{siswa}', [GuruRaporController::class, 'generateNarasi'])->name('rapor.catatan.generate-narasi');

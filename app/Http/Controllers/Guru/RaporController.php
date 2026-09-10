@@ -43,7 +43,7 @@ class RaporController extends BaseController
         private readonly RaporCalculationService $raporCalculationService,
     ) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|string
     {
         $this->authorize('rapor.input-wali');
 
@@ -93,23 +93,78 @@ class RaporController extends BaseController
         $siswaList = collect();
         $pengajuanRapor = null;
         $kelengkapanNilai = collect();
+        $stats = [
+            'totalSiswa' => 0,
+            'totalLengkap' => 0,
+            'totalBelumLengkap' => 0,
+            'isNilaiComplete' => true,
+            'totalNilaiKosong' => 0,
+            'statusPengajuan' => null,
+        ];
+
         if ($kelas && $semester) {
-            $siswaList = Siswa::where('kelas_id', $kelas->id)->with('person')->orderByNama()->get();
-            $siswaIdsWithCatatan = CatatanWaliKelas::where('semester_id', $semester->id)
-                ->whereIn('siswa_id', $siswaList->pluck('id'))
-                ->pluck('siswa_id');
-            $siswaList = $siswaList->map(function (Siswa $siswa) use ($siswaIdsWithCatatan) {
-                $siswa->catatan_lengkap = $siswaIdsWithCatatan->contains($siswa->id);
+            $rawSiswaList = Siswa::where('kelas_id', $kelas->id)->with('person')->orderByNama()->get();
+            $catatanList = CatatanWaliKelas::where('semester_id', $semester->id)
+                ->whereIn('siswa_id', $rawSiswaList->pluck('id'))
+                ->get()
+                ->keyBy('siswa_id');
+
+            $allSiswaWithCatatan = $rawSiswaList->map(function (Siswa $siswa) use ($catatanList) {
+                $catatan = $catatanList->get($siswa->id);
+                $siswa->catatan = $catatan;
+                $siswa->catatan_lengkap = $catatan !== null;
 
                 return $siswa;
             });
 
             $pengajuanRapor = PengajuanRapor::where('kelas_id', $kelas->id)->where('semester_id', $semester->id)->first();
-
-            // Lapis 1 (peringatan lembut, tidak blokir): wali kelas tetap boleh
-            // mengajukan rapor meski ada nilai kosong -- keputusan ada di tangan Waka
-            // Kurikulum saat verifikasi (lihat Lembaga\Rapor\PersetujuanController).
             $kelengkapanNilai = $this->raporCalculationService->kelengkapanNilaiKelas($kelas, $semester);
+
+            $stats = [
+                'totalSiswa' => $allSiswaWithCatatan->count(),
+                'totalLengkap' => $allSiswaWithCatatan->where('catatan_lengkap', true)->count(),
+                'totalBelumLengkap' => $allSiswaWithCatatan->where('catatan_lengkap', false)->count(),
+                'isNilaiComplete' => $kelengkapanNilai->isEmpty(),
+                'totalNilaiKosong' => $kelengkapanNilai->sum(fn ($sel) => $sel->siswaBelumLengkap->count()),
+                'statusPengajuan' => $pengajuanRapor?->status,
+                'statusLabel' => $pengajuanRapor?->status?->label() ?? 'Draft',
+                'diajukanPadaLabel' => $pengajuanRapor?->diajukan_pada?->format('d M Y H:i'),
+            ];
+
+            // Filter search & status jika ada request query
+            $filtered = $allSiswaWithCatatan;
+            if ($request->filled('search')) {
+                $search = trim((string) $request->query('search'));
+                $filtered = $filtered->filter(function (Siswa $s) use ($search) {
+                    $q = mb_strtolower($search);
+
+                    return str_contains(mb_strtolower($s->nama_lengkap ?? ''), $q)
+                        || str_contains(mb_strtolower($s->nis ?? ''), $q)
+                        || str_contains(mb_strtolower($s->nisn ?? ''), $q);
+                })->values();
+            }
+
+            if ($request->filled('status_catatan')) {
+                $statusCatatan = (string) $request->query('status_catatan');
+                if (in_array($statusCatatan, ['complete', 'lengkap'], true)) {
+                    $filtered = $filtered->where('catatan_lengkap', true)->values();
+                } elseif (in_array($statusCatatan, ['incomplete', 'perlu_dilengkapi'], true)) {
+                    $filtered = $filtered->where('catatan_lengkap', false)->values();
+                }
+            }
+
+            $siswaList = $filtered;
+        }
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.guru.rapor.catatan._daftar', [
+                'kelas' => $kelas,
+                'semester' => $semester,
+                'siswaList' => $siswaList,
+                'pengajuanRapor' => $pengajuanRapor,
+                'kelengkapanNilai' => $kelengkapanNilai,
+                'stats' => $stats,
+            ])->render();
         }
 
         return view('portals.guru.rapor.catatan.index', [
@@ -124,6 +179,38 @@ class RaporController extends BaseController
             'siswaList' => $siswaList,
             'pengajuanRapor' => $pengajuanRapor,
             'kelengkapanNilai' => $kelengkapanNilai,
+            'stats' => $stats,
+        ]);
+    }
+
+    public function opsi(Request $request): JsonResponse
+    {
+        $this->authorize('rapor.input-wali');
+
+        $guru = $request->user()->guru;
+        abort_if($guru === null, 403);
+
+        $data = $request->validate([
+            'tahun_ajaran_id' => ['required', 'integer'],
+        ]);
+
+        $tahunAjaranId = (int) $data['tahun_ajaran_id'];
+        $lembagaId = $request->user()->lembaga_id;
+
+        $semesterQuery = Semester::where('tahun_ajaran_id', $tahunAjaranId);
+        if ($lembagaId) {
+            $semesterQuery->where('lembaga_id', $lembagaId);
+        }
+        $semesterList = $semesterQuery->orderBy('urutan')->orderBy('nama')->get(['id', 'nama', 'status_aktif']);
+
+        $kelasList = Kelas::where('wali_kelas_guru_id', $guru->id)
+            ->where('tahun_ajaran_id', $tahunAjaranId)
+            ->orderBy('nama')
+            ->get(['id', 'nama']);
+
+        return response()->json([
+            'semesterList' => $semesterList,
+            'kelasList' => $kelasList,
         ]);
     }
 

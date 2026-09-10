@@ -118,6 +118,19 @@ it('does not list a kelas the guru is not wali kelas of', function () {
     $response->assertViewHas('kelas', fn ($kelas) => $kelas === null);
 });
 
+it('shows the pilih-kelas placeholder, not the empty-table state, when no kelas is selected via AJAX', function () {
+    ['guruUser' => $guruUser, 'lembaga' => $lembaga, 'tahunAjaran' => $tahunAjaran] = siapkanWaliKelasUntukRapor();
+    $kelasBukanWali = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', ['kelas_id' => $kelasBukanWali->id]), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
+
+    $response->assertOk();
+    $response->assertSee('Pilih kelas dan semester untuk melihat daftar siswa.');
+    $response->assertDontSee('Belum Ada Siswa Terdaftar');
+});
+
 it('shows antropometri fields on the edit form for a TK kelas but not for an SMP kelas', function () {
     ['guruUser' => $guruUser, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor('TK');
     $responseTk = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.edit', ['siswa' => $siswa->id, 'semester_id' => $semester->id]));
@@ -395,4 +408,104 @@ it('skips a siswa Keluar entirely when computing siswaSebelumnya/siswaBerikutnya
     $response->assertViewHas('siswaBerikutnya', function ($siswa) use ($citra) {
         return $siswa !== null && $siswa->id === $citra->id;
     });
+});
+
+it('returns json options for semester and kelas for the given tahun ajaran', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'semester' => $semester, 'tahunAjaran' => $tahunAjaran, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
+    $kelasLain = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+
+    $response = $this->actingAs($guruUser)->getJson(route('guru.rapor.catatan.opsi', ['tahun_ajaran_id' => $tahunAjaran->id]));
+
+    $response->assertOk();
+    $response->assertJsonStructure(['semesterList', 'kelasList']);
+    $response->assertJsonFragment(['id' => $semester->id, 'nama' => $semester->nama]);
+    $response->assertJsonFragment(['id' => $kelas->id, 'nama' => $kelas->nama]);
+    $response->assertJsonMissing(['id' => $kelasLain->id]);
+});
+
+it('renders partial _daftar table when requested via ajax', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester, 'tahunAjaran' => $tahunAjaran] = siapkanWaliKelasUntukRapor();
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', [
+        'tahun_ajaran_id' => $tahunAjaran->id,
+        'semester_id' => $semester->id,
+        'kelas_id' => $kelas->id,
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertSee('Ahmad Fauzi');
+    $response->assertSee('Status Catatan');
+    $response->assertSee('Ringkasan Catatan / Ekskul');
+    $response->assertDontSee('<!DOCTYPE html>');
+});
+
+it('filters siswa list by search query and status catatan', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswaLengkap, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    CatatanWaliKelas::factory()->create(['siswa_id' => $siswaLengkap->id, 'semester_id' => $semester->id]);
+
+    $siswaBelum = Siswa::factory()->create([
+        'lembaga_id' => $kelas->lembaga_id,
+        'kelas_id' => $kelas->id,
+        'nama_lengkap' => 'Cahya Ramadhan',
+        'nis' => '1002',
+    ]);
+
+    // Test Search
+    $searchResponse = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'search' => 'Cahya',
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $searchResponse->assertOk();
+    $searchResponse->assertSee('Cahya Ramadhan');
+    $searchResponse->assertDontSee('Ahmad Fauzi');
+
+    // Test status_catatan filter: lengkap
+    $filterLengkapResponse = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'status_catatan' => 'lengkap',
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $filterLengkapResponse->assertOk();
+    $filterLengkapResponse->assertSee('Ahmad Fauzi');
+    $filterLengkapResponse->assertDontSee('Cahya Ramadhan');
+
+    // Test status_catatan filter: perlu_dilengkapi
+    $filterPerluResponse = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'status_catatan' => 'perlu_dilengkapi',
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $filterPerluResponse->assertOk();
+    $filterPerluResponse->assertSee('Cahya Ramadhan');
+    $filterPerluResponse->assertDontSee('Ahmad Fauzi');
+});
+
+it('keeps the submit gate based on the full kelas roster, not the currently filtered siswa list', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswaLengkap, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    CatatanWaliKelas::factory()->create(['siswa_id' => $siswaLengkap->id, 'semester_id' => $semester->id]);
+
+    Siswa::factory()->create([
+        'lembaga_id' => $kelas->lembaga_id,
+        'kelas_id' => $kelas->id,
+        'nama_lengkap' => 'Cahya Ramadhan',
+        'nis' => '1002',
+    ]);
+
+    // Difilter ke tab "Catatan Lengkap" -- siswaList yang dirender cuma berisi Ahmad Fauzi
+    // (yang sudah lengkap), tapi Cahya Ramadhan (belum lengkap) tetap ada di kelas ini.
+    // Banner & tombol ajukan WAJIB tetap menganggap kelas ini belum lengkap.
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'status_catatan' => 'lengkap',
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertSee('Lengkapi seluruh catatan siswa terlebih dahulu sebelum mengajukan rapor kelas.');
+    $response->assertDontSee('Semua catatan siswa telah lengkap');
+    $response->assertSee('disabled', false);
 });
