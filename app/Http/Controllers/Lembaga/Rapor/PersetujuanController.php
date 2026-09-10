@@ -117,6 +117,8 @@ class PersetujuanController extends BaseController
         abort_unless($request->user()->canAny(['rapor.verify', 'rapor.approve']), 403);
         abort_unless($siswa->kelas_id === $pengajuanRapor->kelas_id, 404);
 
+        $pengajuanRapor->loadMissing('kelas.lembaga');
+
         $data = $this->raporPdfDataBuilder->build($siswa, $pengajuanRapor->semester);
         $template = $this->raporPdfDataBuilder->templateUntukJenjang($pengajuanRapor->kelas->lembaga->bentuk_pendidikan);
 

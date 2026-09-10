@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Models\Yayasan;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
+use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -364,4 +365,18 @@ it('does not require catatan when approving a pengajuan rapor', function () {
     $this->actingAs($userWaka)
         ->post(route('admin.rapor.persetujuan.decision', $pengajuan), ['action' => 'APPROVE'])
         ->assertSessionDoesntHaveErrors('catatan');
+});
+
+it('eager-loads kelas.lembaga in cetak() to avoid lazy-loading', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan, 'siswa' => $siswa] = siapkanAktorPersetujuan();
+
+    Model::preventLazyLoading();
+
+    try {
+        $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.cetak', ['pengajuanRapor' => $pengajuan->id, 'siswa' => $siswa->id]));
+        $response->assertOk();
+    } finally {
+        Model::preventLazyLoading(false);
+    }
 });
