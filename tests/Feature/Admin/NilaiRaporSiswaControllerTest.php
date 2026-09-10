@@ -84,6 +84,22 @@ it('mengizinkan unduh rapor kalau PengajuanRapor sudah Disetujui', function () {
     $response->assertHeader('content-type', 'application/pdf');
 });
 
+it('shows Perlu Revisi status, not Belum Diajukan, when the PengajuanRapor was rejected', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    [$user, $siswa] = buatSiswaDenganAkun($lembaga, $kelas);
+    PengajuanRapor::factory()->create(['kelas_id' => $kelas->id, 'semester_id' => $semester->id, 'status' => StatusPengajuanRapor::Ditolak]);
+
+    $response = $this->actingAs($user)->get(route('admin.nilai-rapor-saya.index', ['semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertSee('Perlu Revisi');
+    $response->assertDontSee('Belum Diajukan');
+});
+
 it('menolak unduh rapor kalau PengajuanRapor belum Disetujui', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'bentuk_pendidikan' => 'SD']);

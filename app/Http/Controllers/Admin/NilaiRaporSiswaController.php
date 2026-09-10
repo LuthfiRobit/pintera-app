@@ -36,14 +36,23 @@ class NilaiRaporSiswaController extends BaseController
             ? NilaiSiswa::where('siswa_id', $siswa->id)
                 ->whereNotNull('nilai_angka')
                 ->whereHas('asesmen', fn ($q) => $q->where('semester_id', $semesterId)->whereIn('jenis', JenisAsesmen::masukRapor()))
-                ->with(['komponenPenilaian.subjek', 'asesmen.subjek'])
+                ->with(['komponenPenilaian.subjek', 'asesmen.subjek', 'komponenPenilaian'])
                 ->get()
             : collect();
 
+        // Rapor yang sudah Disetujui (boleh diunduh)
         $pengajuanRapor = ($siswa && $semesterId)
             ? PengajuanRapor::where('kelas_id', $siswa->kelas_id)
                 ->where('semester_id', $semesterId)
                 ->where('status', StatusPengajuanRapor::Disetujui)
+                ->first()
+            : null;
+
+        // Rapor dengan status apapun (untuk info banner)
+        $pengajuanRaporSemua = (! $pengajuanRapor && $siswa && $semesterId)
+            ? PengajuanRapor::where('kelas_id', $siswa->kelas_id)
+                ->where('semester_id', $semesterId)
+                ->latest()
                 ->first()
             : null;
 
@@ -53,6 +62,7 @@ class NilaiRaporSiswaController extends BaseController
             'semesterId' => $semesterId,
             'nilaiList' => $nilaiList,
             'pengajuanRapor' => $pengajuanRapor,
+            'pengajuanRaporSemua' => $pengajuanRaporSemua,
         ]);
     }
 
