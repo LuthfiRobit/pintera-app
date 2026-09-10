@@ -5,6 +5,7 @@ namespace App\Domains\Workflow\Services;
 use App\Domains\Workflow\Enums\ApproverType;
 use App\Domains\Workflow\Models\ApprovalRequest;
 use App\Domains\Workflow\Models\WorkflowStep;
+use App\Models\Lembaga;
 use App\Models\User;
 
 class ApproverResolverService
@@ -32,9 +33,7 @@ class ApproverResolverService
             $targetLembagaId = $request->approvable?->lembaga_id ?? $request->requester?->lembaga_id;
 
             if ($targetLembagaId !== null) {
-                $effectiveLembagaId = $user->widestScopeLevel() === 'yayasan'
-                    ? session('active_lembaga_id')
-                    : $user->lembaga_id;
+                $effectiveLembagaId = $this->resolveEffectiveLembagaId($user);
 
                 if ($effectiveLembagaId === null || (int) $targetLembagaId !== (int) $effectiveLembagaId) {
                     return false;
@@ -59,5 +58,32 @@ class ApproverResolverService
         }
 
         return false;
+    }
+
+    /**
+     * Resolusi lembaga aktif aktor yang tervalidasi -- BUKAN raw session read.
+     * Untuk aktor lembaga-scope, lembaga sudah tetap (User::lembaga_id). Untuk
+     * aktor yayasan-scope, session('active_lembaga_id') divalidasi dulu
+     * terhadap kepemilikan yayasan sebelum dipercaya -- session stale/lintas
+     * yayasan menghasilkan null, BUKAN nilai yang salah dipakai.
+     *
+     * Sengaja tidak reuse App\Domains\Akademik\Support\ResolveLembagaScopeTrait
+     * -- Workflow adalah engine generik dipakai Akademik/Pengadaan/SDM dan
+     * tidak boleh bergantung pada namespace domain manapun.
+     */
+    private function resolveEffectiveLembagaId(User $user): ?int
+    {
+        if ($user->widestScopeLevel() !== 'yayasan') {
+            return $user->lembaga_id;
+        }
+
+        $lembagaId = session('active_lembaga_id');
+        if ($lembagaId === null) {
+            return null;
+        }
+
+        $milikYayasan = Lembaga::where('id', $lembagaId)->where('yayasan_id', $user->yayasan_id)->exists();
+
+        return $milikYayasan ? $lembagaId : null;
     }
 }
