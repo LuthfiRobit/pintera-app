@@ -327,3 +327,23 @@ it('does not show the scope badge for a lembaga-scope actor', function () {
     $response->assertDontSee('border-purple-200 bg-purple-50 text-purple-700', false);
     $response->assertDontSee('border-brand-200 bg-brand-50 text-brand-700', false);
 });
+
+it('shows the tahun ajaran name next to semester on the index list', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'kelas' => $kelas] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.index'));
+
+    $response->assertOk();
+    $response->assertSee($kelas->tahunAjaran->nama);
+});
+
+it('shows the tahun ajaran name next to semester on the show page', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'kelas' => $kelas, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.show', $pengajuan));
+
+    $response->assertOk();
+    $response->assertSee($kelas->tahunAjaran->nama);
+});

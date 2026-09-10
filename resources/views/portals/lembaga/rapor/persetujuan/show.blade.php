@@ -7,7 +7,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Review Rapor — {{ $pengajuanRapor->kelas->nama }}</h1>
-                <p class="text-xs text-gray-500 mt-0.5 font-mono">Semester: {{ $pengajuanRapor->semester->nama }}</p>
+                <p class="text-xs text-gray-500 mt-0.5 font-mono">Semester: {{ $pengajuanRapor->semester->nama }} — {{ $pengajuanRapor->kelas->tahunAjaran->nama }}</p>
             </div>
             <a href="{{ route('admin.rapor.persetujuan.index') }}" class="text-sm font-semibold text-gray-500 hover:text-gray-700">&larr; Kembali ke Daftar</a>
         </div>

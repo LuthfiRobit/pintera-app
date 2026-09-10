@@ -16,7 +16,7 @@
                             <a href="{{ route('admin.rapor.persetujuan.show', $pengajuan) }}" class="font-semibold text-brand-600 hover:underline">Review & Keputusan</a>
                         </td>
                         <td class="px-5 py-3.5 font-medium text-gray-900">{{ $pengajuan->kelas->nama }}</td>
-                        <td class="px-5 py-3.5 text-gray-600">{{ $pengajuan->semester->nama }}</td>
+                        <td class="px-5 py-3.5 text-gray-600">{{ $pengajuan->semester->nama }} — {{ $pengajuan->kelas->tahunAjaran->nama }}</td>
                         <td class="px-5 py-3.5 text-gray-500">{{ $pengajuan->diajukan_pada?->format('d M Y H:i') ?? '—' }}</td>
                     </tr>
                 @empty
