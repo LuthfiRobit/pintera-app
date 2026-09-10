@@ -136,7 +136,7 @@
                     </label>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700 mb-1">Catatan (Opsional)</label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1" x-text="action === 'REJECT' ? 'Catatan (Wajib diisi untuk penolakan)' : 'Catatan (Opsional)'"></label>
                     <textarea name="catatan" rows="2" placeholder="Catatan untuk wali kelas..." class="w-full rounded-lg border-gray-200 text-xs focus:border-brand-500 focus:ring-brand-500"></textarea>
                 </div>
                 <div class="flex items-center justify-end">

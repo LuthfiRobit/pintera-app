@@ -21,7 +21,12 @@ final class ProcessRaporApprovalRequest extends FormRequest
     {
         return [
             'action' => ['required', Rule::in(['APPROVE', 'REJECT'])],
-            'catatan' => ['nullable', 'string', 'max:1000'],
+            'catatan' => [
+                Rule::requiredIf(fn () => $this->input('action') === 'REJECT'),
+                'nullable',
+                'string',
+                'max:1000',
+            ],
         ];
     }
 }

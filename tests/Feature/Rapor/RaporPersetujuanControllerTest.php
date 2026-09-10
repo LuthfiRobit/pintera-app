@@ -347,3 +347,21 @@ it('shows the tahun ajaran name next to semester on the show page', function () 
     $response->assertOk();
     $response->assertSee($kelas->tahunAjaran->nama);
 });
+
+it('requires catatan when rejecting a pengajuan rapor', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $this->actingAs($userWaka)
+        ->post(route('admin.rapor.persetujuan.decision', $pengajuan), ['action' => 'REJECT'])
+        ->assertSessionHasErrors('catatan');
+});
+
+it('does not require catatan when approving a pengajuan rapor', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka, 'pengajuan' => $pengajuan] = siapkanAktorPersetujuan();
+
+    $this->actingAs($userWaka)
+        ->post(route('admin.rapor.persetujuan.decision', $pengajuan), ['action' => 'APPROVE'])
+        ->assertSessionDoesntHaveErrors('catatan');
+});
