@@ -17,7 +17,7 @@ use App\Domains\Sarpras\Models\Gedung;
 use App\Domains\Sarpras\Models\KategoriAset;
 use App\Domains\Sarpras\Models\Ruangan;
 use App\Domains\Workflow\Enums\ApprovalAction;
-use App\Domains\Workflow\Enums\ApprovalStatus;
+use App\Domains\Workflow\Models\ApprovalLog;
 use App\Models\Lembaga;
 use App\Models\User;
 use App\Models\Yayasan;
@@ -25,6 +25,7 @@ use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\WorkflowDefinitionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -107,7 +108,7 @@ class PengajuanApprovalActionTest extends TestCase
                     'estimasi_harga_satuan' => 1000000,
                     'total_estimasi' => 1000000,
                     'tipe_pencatatan' => TipePencatatanAset::Unit->value,
-                ]
+                ],
             ]
         );
 
@@ -151,5 +152,60 @@ class PengajuanApprovalActionTest extends TestCase
         $proposal->refresh();
         $this->assertEquals(StatusPengajuan::Disbursed, $proposal->status);
         $this->assertEquals(6000000, $proposal->nominal_pencairan);
+    }
+
+    public function test_rejects_a_second_approve_call_on_a_proposal_already_approved_without_duplicating_approval_log(): void
+    {
+        $this->seed([PermissionSeeder::class, RoleSeeder::class, WorkflowDefinitionSeeder::class]);
+
+        $roleKepsek = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web']);
+        $roleYayasan = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web']);
+
+        $yayasan = Yayasan::create(['nama' => 'Yayasan Terminal Guard']);
+        $lembaga = Lembaga::create([
+            'yayasan_id' => $yayasan->id, 'nama' => 'SMA Terminal Guard', 'jenjang' => 'SMA', 'npsn' => '99999997', 'status_aktif' => true,
+        ]);
+
+        $userPengaju = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $userKepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $userKepsek->assignRole($roleKepsek);
+        $userYayasan = User::factory()->create();
+        $userYayasan->assignRole($roleYayasan);
+
+        $gedung = Gedung::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'kode_gedung' => 'GD-TG', 'nama_gedung' => 'Gedung TG', 'jumlah_lantai' => 1]);
+        $kategori = KategoriAset::create(['nama_kategori' => 'IT', 'kode_kategori' => 'IT-TG', 'lembaga_id' => $lembaga->id, 'yayasan_id' => $yayasan->id]);
+        $ruangan = Ruangan::create(['yayasan_id' => $yayasan->id, 'lembaga_id' => $lembaga->id, 'gedung_id' => $gedung->id, 'kode_ruangan' => 'R-TG', 'nama_ruangan' => 'Ruang TG', 'lantai' => 1, 'jenis_ruangan' => JenisRuangan::KelasTeori]);
+
+        $dto = new PengajuanPengadaanData(
+            lembagaId: $lembaga->id,
+            yayasanId: $yayasan->id,
+            judulPengajuan: 'Terminal Guard Test',
+            latarBelakang: 'Regresi double-approve',
+            tingkatUrgensi: TingkatUrgensi::Mendesak,
+            items: [[
+                'kategori_aset_id' => $kategori->id, 'target_ruangan_id' => $ruangan->id, 'nama_barang' => 'Item TG',
+                'qty' => 1, 'satuan' => 'unit', 'estimasi_harga_satuan' => 500000, 'total_estimasi' => 500000,
+                'tipe_pencatatan' => TipePencatatanAset::Unit->value,
+            ]]
+        );
+
+        $proposal = app(CreatePengajuanAction::class)->execute($dto, $userPengaju->id);
+        app(SubmitPengajuanAction::class)->execute($proposal);
+        $proposal->refresh();
+
+        app(ProcessProposalApprovalAction::class)->execute($proposal, $userKepsek, ApprovalAction::Approve, [], 'ok');
+        $proposal->refresh();
+        app(ProcessProposalApprovalAction::class)->execute($proposal, $userYayasan, ApprovalAction::Approve, [], 'final ok');
+        $proposal->refresh();
+        $this->assertEquals(StatusPengajuan::Approved, $proposal->status);
+
+        $logCountAfterFirst = ApprovalLog::where('approval_request_id', $proposal->approvalRequest->id)->count();
+
+        $this->expectException(ValidationException::class);
+        try {
+            app(ProcessProposalApprovalAction::class)->execute($proposal->fresh(), $userYayasan, ApprovalAction::Approve, [], 'lagi');
+        } finally {
+            $this->assertEquals($logCountAfterFirst, ApprovalLog::where('approval_request_id', $proposal->approvalRequest->id)->count());
+        }
     }
 }
