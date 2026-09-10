@@ -33,14 +33,14 @@
                                     <span>Edit</span>
                                 </a>
 
-                                <a
-                                    href="{{ route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semester->id]) }}"
-                                    target="_blank"
+                                <button
+                                    type="button"
+                                    @click="$store.imagePreview.buka('{{ route('guru.rapor.cetak', ['siswa' => $siswa->id, 'semester_id' => $semester->id]) }}?inline=1', 'Pratinjau Rapor - {{ $siswa->nama_lengkap }}', true)"
                                     class="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition shadow-2xs"
                                 >
                                     <x-icon name="print" class="h-3.5 w-3.5 text-gray-500" />
                                     <span>PDF</span>
-                                </a>
+                                </button>
                             </div>
                         </td>
 
@@ -100,12 +100,14 @@
                                         @endphp
                                         @if ($ekskulCount > 0)
                                             <span class="inline-flex items-center gap-1 rounded-md bg-purple-50 px-1.5 py-0.5 font-medium text-purple-700 border border-purple-200">
-                                                <span>🏅 {{ $ekskulCount }} Ekskul</span>
+                                                <x-icon name="badge" class="h-3 w-3" />
+                                                <span>{{ $ekskulCount }} Ekskul</span>
                                             </span>
                                         @endif
                                         @if ($prestasiCount > 0)
                                             <span class="inline-flex items-center gap-1 rounded-md bg-amber-50 px-1.5 py-0.5 font-medium text-amber-800 border border-amber-200">
-                                                <span>🏆 {{ $prestasiCount }} Prestasi</span>
+                                                <x-icon name="verified" class="h-3 w-3" />
+                                                <span>{{ $prestasiCount }} Prestasi</span>
                                             </span>
                                         @endif
                                         @if (! $siswa->catatan->catatan_perkembangan && ! $siswa->catatan->catatan_sikap && $ekskulCount === 0 && $prestasiCount === 0)

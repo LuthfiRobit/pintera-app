@@ -201,7 +201,8 @@
                     @click="resetFilters()"
                     class="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800 transition self-start sm:self-auto"
                 >
-                    <span>✕ Reset Semua Filter</span>
+                    <x-icon name="close" class="h-3.5 w-3.5" />
+                    <span>Reset Semua Filter</span>
                 </button>
             </div>
 
@@ -276,9 +277,9 @@
                     type="button"
                     x-show="search"
                     @click="search = ''; muatUlangDaftar()"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 font-bold"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                    ✕
+                    <x-icon name="close" class="h-4 w-4" />
                 </button>
             </div>
         </div>
