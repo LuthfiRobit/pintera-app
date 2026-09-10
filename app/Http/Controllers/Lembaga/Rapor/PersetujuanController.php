@@ -13,6 +13,7 @@ use App\Domains\Akademik\Services\RaporCalculationService;
 use App\Domains\Akademik\Services\RaporPdfDataBuilder;
 use App\Domains\Workflow\Enums\ApprovalAction;
 use App\Http\Requests\Akademik\ProcessRaporApprovalRequest;
+use App\Models\Lembaga;
 use App\Models\Siswa;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -64,7 +65,10 @@ class PersetujuanController extends BaseController
             return view('portals.lembaga.rapor.persetujuan._daftar', compact('pengajuanList', 'tab'))->render();
         }
 
-        return view('portals.lembaga.rapor.persetujuan.index', compact('pengajuanList', 'tab'));
+        return view('portals.lembaga.rapor.persetujuan.index', array_merge(
+            compact('pengajuanList', 'tab'),
+            $this->scopeHeaderData($request)
+        ));
     }
 
     public function show(PengajuanRapor $pengajuanRapor, Request $request): View
@@ -144,5 +148,24 @@ class PersetujuanController extends BaseController
     private function statusUntukAktor(Request $request): StatusPengajuanRapor
     {
         return $request->user()->can('rapor.approve') ? StatusPengajuanRapor::Diverifikasi : StatusPengajuanRapor::Diajukan;
+    }
+
+    /**
+     * Info scope yayasan/lembaga yang sedang aktif, ditampilkan sebagai badge di header
+     * halaman (pola sama seperti admin/karyawan/index.blade.php) -- HANYA relevan untuk aktor
+     * berscope yayasan (punya switcher lembaga); aktor lembaga-scope tidak butuh badge ini
+     * karena mereka selalu berada di 1 lembaga tetap.
+     *
+     * @return array{isYayasan: bool, activeLembaga: ?Lembaga}
+     */
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = session('active_lembaga_id');
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $lembagaId) ? Lembaga::withoutGlobalScopes()->find($lembagaId) : null,
+        ];
     }
 }

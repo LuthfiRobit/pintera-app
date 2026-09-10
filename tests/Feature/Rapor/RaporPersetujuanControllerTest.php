@@ -296,3 +296,34 @@ it('renders the score inside the per-mapel matrix cell on the persetujuan show p
     $response->assertOk();
     $response->assertSeeText('65');
 });
+
+it('shows the yayasan scope badge for a yayasan-scope actor with no active lembaga', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    $yayasan = Yayasan::factory()->create();
+    $role = Role::firstOrCreate(['name' => 'wakasek_kurikulum', 'guard_name' => 'web']);
+    Permission::firstOrCreate(['name' => 'rapor.verify', 'guard_name' => 'web']);
+    $role->givePermissionTo('rapor.verify');
+    $rolePegawaiYayasan = Role::firstOrCreate(['name' => 'pegawai_yayasan', 'guard_name' => 'web']);
+
+    $user = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $user->assignRole([$role, $rolePegawaiYayasan]);
+
+    session(['active_lembaga_id' => null]);
+
+    $response = $this->actingAs($user)->get(route('admin.rapor.persetujuan.index'));
+
+    $response->assertOk();
+    $response->assertSee('border-purple-200 bg-purple-50 text-purple-700', false);
+    $response->assertSee('Semua Lembaga');
+});
+
+it('does not show the scope badge for a lembaga-scope actor', function () {
+    $this->seed(WorkflowDefinitionSeeder::class);
+    ['userWaka' => $userWaka] = siapkanAktorPersetujuan();
+
+    $response = $this->actingAs($userWaka)->get(route('admin.rapor.persetujuan.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('border-purple-200 bg-purple-50 text-purple-700', false);
+    $response->assertDontSee('border-brand-200 bg-brand-50 text-brand-700', false);
+});
