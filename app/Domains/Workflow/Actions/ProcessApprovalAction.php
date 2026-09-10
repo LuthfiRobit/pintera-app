@@ -15,16 +15,21 @@ class ProcessApprovalAction
 {
     public function __construct(
         protected ApproverResolverService $resolverService,
-    ) {
-    }
+    ) {}
 
     public function execute(ApprovalRequest $request, User $user, ApprovalAction $action, ?string $notes = null): bool
     {
+        if (! in_array($request->status, [ApprovalStatus::Pending, ApprovalStatus::InReview], true)) {
+            throw ValidationException::withMessages([
+                'approval' => 'Permintaan persetujuan ini sudah selesai diproses ('.$request->status->label().'), tidak dapat diproses ulang.',
+            ]);
+        }
+
         $currentStep = $request->currentStep;
 
         if (! $currentStep) {
             throw ValidationException::withMessages([
-                'approval' => 'Permintaan persetujuan ini sudah selesai atau tidak memiliki langkah aktif.',
+                'approval' => 'Permintaan persetujuan ini tidak memiliki langkah aktif.',
             ]);
         }
 
@@ -48,12 +53,14 @@ class ProcessApprovalAction
             if ($action === ApprovalAction::Reject) {
                 $request->status = ApprovalStatus::Rejected;
                 $request->save();
+
                 return true;
             }
 
             if ($action === ApprovalAction::RequestRevision) {
                 $request->status = ApprovalStatus::RevisionRequired;
                 $request->save();
+
                 return true;
             }
 
@@ -61,6 +68,7 @@ class ProcessApprovalAction
                 if ($currentStep->is_final_step) {
                     $request->status = ApprovalStatus::Approved;
                     $request->save();
+
                     return true;
                 }
 
@@ -73,6 +81,7 @@ class ProcessApprovalAction
                 }
 
                 $request->save();
+
                 return true;
             }
 
