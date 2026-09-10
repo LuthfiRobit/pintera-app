@@ -126,67 +126,6 @@
             </div>
         </div>
 
-        {{-- Status Notification Alerts (Jika Ditolak / Diverifikasi / Nilai Kosong) --}}
-        @if ($pengajuanRapor && $pengajuanRapor->status === \App\Domains\Akademik\Enums\StatusPengajuanRapor::Ditolak)
-            <div class="rounded-2xl border border-rose-200 bg-rose-50/90 p-4 text-sm text-rose-800 shadow-xs flex items-start gap-3">
-                <x-icon name="warning" class="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
-                <div class="space-y-1">
-                    <p class="font-bold">Pengajuan rapor kelas ini dikembalikan / perlu direvisi oleh pimpinan.</p>
-                    @if ($pengajuanRapor->catatan_revisi)
-                        <p class="text-xs text-rose-700 bg-white/80 p-2.5 rounded-xl border border-rose-200 font-medium">
-                            <span class="font-bold text-rose-900">Catatan Pimpinan:</span> {{ $pengajuanRapor->catatan_revisi }}
-                        </p>
-                    @endif
-                    <p class="text-xs text-rose-600">Silakan lakukan penyesuaian catatan sesuai arahan lalu ajukan ulang rapor.</p>
-                </div>
-            </div>
-        @endif
-
-        @if ($pengajuanRapor && in_array($pengajuanRapor->status, [\App\Domains\Akademik\Enums\StatusPengajuanRapor::Diverifikasi, \App\Domains\Akademik\Enums\StatusPengajuanRapor::Disetujui]))
-            <div class="rounded-2xl border border-blue-200 bg-blue-50/80 p-4 text-sm text-blue-800 shadow-xs flex items-center gap-3">
-                <x-icon name="info" class="h-5 w-5 text-blue-600 shrink-0" />
-                <div>
-                    <p class="font-semibold">Rapor kelas ini sudah berstatus "{{ $pengajuanRapor->status->label() }}" sejak {{ $pengajuanRapor->diajukan_pada?->translatedFormat('d F Y, H:i') }}. Tidak bisa diajukan ulang dari halaman ini.</p>
-                    <p class="text-xs text-blue-600 mt-0.5">Pengajuan telah dikunci dan sedang dalam tahap finalisasi pengesahan.</p>
-                </div>
-            </div>
-        @endif
-
-        @if ($kelengkapanNilai->isNotEmpty())
-            @php
-                $totalSiswaBelumLengkap = $kelengkapanNilai->sum(fn ($sel) => $sel->siswaBelumLengkap->count());
-            @endphp
-            <div class="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-800 shadow-xs" x-data="{ bukaRincian: false }">
-                <div class="flex items-start justify-between gap-3">
-                    <div class="flex items-start gap-3">
-                        <x-icon name="warning" class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                            <p class="font-bold">Perhatian: masih ada {{ $totalSiswaBelumLengkap }} nilai yang kosong di kelas ini.</p>
-                            <p class="text-xs text-amber-700 mt-0.5">Anda tetap dapat mengajukan rapor kelas, namun pastikan hal ini telah dikoordinasikan dengan guru mata pelajaran terkait.</p>
-                        </div>
-                    </div>
-                    <button
-                        type="button"
-                        @click="bukaRincian = !bukaRincian"
-                        class="text-xs font-semibold text-amber-800 hover:text-amber-950 underline shrink-0"
-                        x-text="bukaRincian ? 'Tutup Rincian' : 'Lihat Rincian'"
-                    ></button>
-                </div>
-
-                <div x-show="bukaRincian" x-collapse class="mt-3 pt-3 border-t border-amber-200/60 text-xs space-y-1.5">
-                    @foreach ($kelengkapanNilai as $sel)
-                        <div class="flex items-center justify-between text-amber-900 bg-white/60 px-3 py-1.5 rounded-lg">
-                            <span class="font-semibold">{{ $sel->subjek->nama }}</span>
-                            <span class="text-amber-800">
-                                {{ $sel->siswaBelumLengkap->count() }} dari {{ $sel->totalSiswa }} siswa belum lengkap
-                                ({{ $sel->siswaBelumLengkap->pluck('nama_lengkap')->join(', ') }})
-                            </span>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
         {{-- FILTER & CONTROLS TOOLBAR (Searchable TomSelect Standar Pintera) --}}
         <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-card space-y-4">
             {{-- Header of Filter --}}

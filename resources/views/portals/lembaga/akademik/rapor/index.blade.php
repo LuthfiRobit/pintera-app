@@ -53,7 +53,8 @@
                         @click="resetFilters()"
                         class="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800 transition self-start sm:self-auto"
                     >
-                        <span>✕ Reset Semua Filter</span>
+                        <x-icon name="close" class="h-3.5 w-3.5" />
+                        <span>Reset Semua Filter</span>
                     </button>
                 </div>
 

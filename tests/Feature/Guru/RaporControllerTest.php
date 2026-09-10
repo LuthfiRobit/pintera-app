@@ -352,6 +352,25 @@ it('shows an info banner and disables Ajukan Rapor when pengajuan sudah Diverifi
     expect($btnTag)->toContain('disabled');
 });
 
+it('includes the Ditolak status banner in the AJAX partial, so it refreshes when switching kelas via filter', function () {
+    ['guruUser' => $guruUser, 'kelas' => $kelas, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+    PengajuanRapor::factory()->create([
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'status' => StatusPengajuanRapor::Ditolak,
+        'catatan_revisi' => 'Mohon lengkapi catatan sikap semua siswa.',
+    ]);
+
+    $response = $this->actingAs($guruUser)->get(route('guru.rapor.catatan.index', [
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+    ]), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertSee('dikembalikan / perlu direvisi', false);
+    $response->assertSee('Mohon lengkapi catatan sikap semua siswa.');
+});
+
 it('rejects saving catatan wali kelas when semester_id belongs to a different tahun ajaran than the siswa kelas', function () {
     ['guruUser' => $guruUser, 'siswa' => $siswa, 'lembaga' => $lembaga] = siapkanWaliKelasUntukRapor();
     $tahunAjaranLain = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);

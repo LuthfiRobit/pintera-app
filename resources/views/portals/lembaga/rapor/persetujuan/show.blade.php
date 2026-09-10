@@ -410,8 +410,8 @@
                                     <p class="font-display font-bold text-sm text-gray-900">Setujui Rapor Kelas</p>
                                     <span
                                         x-show="action === 'APPROVE'"
-                                        class="h-4 w-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-bold"
-                                    >✓</span>
+                                        class="h-4 w-4 rounded-full bg-emerald-500 text-white flex items-center justify-center"
+                                    ><x-icon name="check" class="h-2.5 w-2.5" /></span>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1 leading-relaxed">
                                     Loloskan rapor kelas ini untuk tahap persetujuan berikutnya atau langsung siap cetak/dibagikan kepada wali murid.
@@ -439,8 +439,8 @@
                                     <p class="font-display font-bold text-sm text-gray-900">Tolak, Minta Revisi Wali Kelas</p>
                                     <span
                                         x-show="action === 'REJECT'"
-                                        class="h-4 w-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold"
-                                    >✓</span>
+                                        class="h-4 w-4 rounded-full bg-rose-500 text-white flex items-center justify-center"
+                                    ><x-icon name="check" class="h-2.5 w-2.5" /></span>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1 leading-relaxed">
                                     Kembalikan berkas pengajuan ke wali kelas untuk melengkapi nilai yang belum tuntas atau memperbaiki catatan.
@@ -478,7 +478,8 @@
                         class="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold text-white shadow-xs transition-all duration-200"
                         :class="action === 'APPROVE' ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-md' : 'bg-rose-600 hover:bg-rose-700 hover:shadow-md'"
                     >
-                        <span x-text="action === 'APPROVE' ? '✓' : '✕'"></span>
+                        <x-icon name="check" class="h-3.5 w-3.5" x-show="action === 'APPROVE'" />
+                        <x-icon name="close" class="h-3.5 w-3.5" x-show="action === 'REJECT'" />
                         <span x-text="action === 'APPROVE' ? 'Setujui Rapor Kelas Ini' : 'Tolak, Minta Revisi Wali Kelas'"></span>
                     </button>
                 </div>
