@@ -3,6 +3,9 @@
         ekstrakurikuler: @js($catatan->ekstrakurikuler ?? []),
         prestasi: @js($catatan->prestasi ?? []),
         pklInfo: @js($catatan->pkl_info ?? []),
+        generateNarasiUrl: @js(route('guru.rapor.catatan.generate-narasi', $siswa)),
+        semesterId: @js($semester->id),
+        csrfToken: @js(csrf_token()),
     })">
         @if ($errors->any())
             <div class="rounded-lg bg-error-50 p-4 text-sm text-error-700" x-data x-init="$store.toast.push('error', @js($errors->first()))">{{ $errors->first() }}</div>
@@ -32,9 +35,13 @@
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="block text-xs font-semibold text-gray-700">Catatan Perkembangan</label>
-                        <button type="button" @click="generateNarasi()" class="text-xs font-semibold text-brand-600 hover:underline">
-                            Generate Otomatis
-                        </button>
+                        <button
+                            type="button"
+                            @click="generateNarasi()"
+                            :disabled="isGeneratingNarasi"
+                            class="text-xs font-semibold text-brand-600 hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                            x-text="isGeneratingNarasi ? 'Membuat draft...' : 'Generate Otomatis'"
+                        ></button>
                     </div>
                     <textarea name="catatan_perkembangan" x-ref="catatanPerkembangan" rows="4" class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500">{{ old('catatan_perkembangan', $catatan->catatan_perkembangan) }}</textarea>
                 </div>
@@ -135,24 +142,4 @@
             </div>
         </form>
     </div>
-
-    <script>
-        function catatanWaliKelasForm(initial) {
-            return {
-                ekstrakurikuler: initial.ekstrakurikuler.length ? initial.ekstrakurikuler : [],
-                prestasi: initial.prestasi.length ? initial.prestasi : [],
-                pklInfo: initial.pklInfo.length ? initial.pklInfo : [],
-                async generateNarasi() {
-                    const existing = this.$refs.catatanPerkembangan.value.trim();
-                    if (existing && !(await confirmDialog('Timpa Catatan?', 'Draft otomatis akan menimpa isi catatan perkembangan yang sudah ada. Lanjutkan?'))) {
-                        return;
-                    }
-                    const url = @js(route('guru.rapor.catatan.generate-narasi', $siswa)) + '?semester_id=' + @js($semester->id);
-                    const response = await fetch(url, { method: 'POST', headers: { 'X-CSRF-TOKEN': @js(csrf_token()), Accept: 'application/json' } });
-                    const data = await response.json();
-                    this.$refs.catatanPerkembangan.value = data.narasi;
-                },
-            };
-        }
-    </script>
 </x-app-layout>

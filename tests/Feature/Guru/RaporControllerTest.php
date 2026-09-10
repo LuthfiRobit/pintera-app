@@ -212,6 +212,15 @@ it('generates a narasi draft via AJAX for a siswa with nilai', function () {
     $response->assertJson(['narasi' => 'Menunjukkan penguasaan sangat baik dalam membaca lancar.']);
 });
 
+it('returns an empty narasi when the kelas has no asesmen for the semester, so the frontend can warn instead of overwriting', function () {
+    ['guruUser' => $guruUser, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
+
+    $response = $this->actingAs($guruUser)->post(route('guru.rapor.catatan.generate-narasi', ['siswa' => $siswa->id, 'semester_id' => $semester->id]));
+
+    $response->assertOk();
+    $response->assertJson(['narasi' => '']);
+});
+
 it('submits the pengajuan rapor when every siswa has a CatatanWaliKelas', function () {
     ['guruUser' => $guruUser, 'kelas' => $kelas, 'siswa' => $siswa, 'semester' => $semester] = siapkanWaliKelasUntukRapor();
     CatatanWaliKelas::factory()->create(['siswa_id' => $siswa->id, 'semester_id' => $semester->id]);
