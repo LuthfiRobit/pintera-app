@@ -31,7 +31,7 @@
 - Consumes: `App\Domains\Akademik\Enums\BentukPendidikan::validTingkatValues(): array` (sudah ada, TIDAK diubah) — dipanggil untuk SETIAP case di `BentukPendidikan::cases()`.
 - Produces: view data key `tingkatOptionsByBentuk` (bentuk `\Illuminate\Support\Collection<string, array<int,string>>`, contoh: `['SD' => ['1','2','3','4','5','6'], 'SMK' => ['10','11','12'], ...]`), dikonsumsi oleh `_form.blade.php` di Task ini dan tetap dipakai apa adanya oleh Task 4.
 
-- [ ] **Step 1: Tulis test yang gagal — controller mengirim `tingkatOptionsByBentuk` yang benar**
+- [x] **Step 1: Tulis test yang gagal — controller mengirim `tingkatOptionsByBentuk` yang benar**
 
 Tambahkan di akhir `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php`:
 ```php
@@ -72,12 +72,12 @@ it('halaman create menampilkan pill Tingkat Tertentu (bukan input teks bebas)', 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="tingkatOptionsByBentuk" --compact`
 Expected: FAIL — `tingkatOptionsByBentuk` belum ada di view data, dan teks pill belum ada di halaman.
 
-- [ ] **Step 3: Tambahkan `tingkatOptionsByBentuk` di controller**
+- [x] **Step 3: Tambahkan `tingkatOptionsByBentuk` di controller**
 
 Di `app/Http/Controllers/Admin/KurikulumAssignmentController.php`, method `create()` (sekitar baris 92-113), tambahkan key baru ke array yang dikembalikan `view('admin.kurikulum-assignment.create', [...])`:
 
@@ -132,12 +132,12 @@ public function edit(Request $request, KurikulumAssignment $kurikulumAssignment)
 }
 ```
 
-- [ ] **Step 4: Jalankan test controller-only, pastikan 2 test `tingkatOptionsByBentuk` PASS (test pill markup masih FAIL)**
+- [x] **Step 4: Jalankan test controller-only, pastikan 2 test `tingkatOptionsByBentuk` PASS (test pill markup masih FAIL)**
 
 Run: `php artisan test --filter="tingkatOptionsByBentuk" --compact`
 Expected: 2 PASS, 1 FAIL (test markup "Semua Tingkat (Default Jenjang)" karena Blade belum diubah).
 
-- [ ] **Step 5: Ganti `_form.blade.php` — bungkus dengan `x-data` dan ganti field Tingkat jadi pill selector**
+- [x] **Step 5: Ganti `_form.blade.php` — bungkus dengan `x-data` dan ganti field Tingkat jadi pill selector**
 
 Ganti SELURUH isi `resources/views/admin/kurikulum-assignment/_form.blade.php` menjadi:
 
@@ -282,16 +282,16 @@ Ganti SELURUH isi `resources/views/admin/kurikulum-assignment/_form.blade.php` m
 
 **Catatan penting** (BERBEDA dari draf awal spec — dikoreksi di sini): spec menyebut variabel bantu `$lembagaBentukPendidikanUntukPill` yang diturunkan dari `$assignment->lembaga?->bentuk_pendidikan`. Itu SALAH untuk assignment GLOBAL (`lembaga_id === null`) di mode edit — `$assignment->lembaga` bernilai `null` untuk assignment global, sehingga `bentukPendidikan` Alpine ikut `null` dan pill kosong sama sekali walau assignment itu tetap punya `bentuk_pendidikan` sendiri yang valid. Plan ini pakai `$assignment->bentuk_pendidikan` langsung (field pada baris assignment itu sendiri, SELALU terisi terlepas dari `lembaga_id` null atau tidak) — benar untuk kedua kasus.
 
-- [ ] **Step 6: Jalankan seluruh test file, pastikan semua PASS**
+- [x] **Step 6: Jalankan seluruh test file, pastikan semua PASS**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: semua test PASS (termasuk test lama yang sudah ada sebelum plan ini — pastikan tidak ada regresi).
 
-- [ ] **Step 7: Format PHP yang diubah**
+- [x] **Step 7: Format PHP yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/KurikulumAssignmentController.php resources/views/admin/kurikulum-assignment/_form.blade.php tests/Feature/Akademik/KurikulumAssignmentControllerTest.php
@@ -310,7 +310,7 @@ git commit -m "feat(kurikulum-assignment): ganti input tingkat jadi pill selecto
 - Consumes: Alpine global `confirmDialog(title, message, options)` (dipakai identik di `index.blade.php:78-83` modul ini sendiri, dan di puluhan halaman lain — TIDAK perlu didaftarkan ulang, sudah tersedia global).
 - Produces: Alpine state `terpilih` (array of string kelas-id) pada `<form>` sinkronisasi — dikonsumsi lagi oleh Task 5 (floating bulk bar) di file yang sama.
 
-- [ ] **Step 1: Tulis test yang gagal — halaman resync merender wiring confirmDialog dan checkbox x-model**
+- [x] **Step 1: Tulis test yang gagal — halaman resync merender wiring confirmDialog dan checkbox x-model**
 
 Tambahkan di akhir `tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php`:
 ```php
@@ -350,12 +350,12 @@ function actingAsKurikulumAssignmentManager(Lembaga $lembaga): User
 ```
 (kalau fungsi dengan nama sama sudah ter-declare di file lain dalam test suite yang sama, Pest/PHP akan fatal error "cannot redeclare" — sebelum menambahkan, jalankan `grep -rn "function actingAsKurikulumAssignmentManager" tests/` dan HANYA tambahkan definisi ini jika belum ada di file manapun yang ikut ter-load bareng file ini.)
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="membungkus submit sinkronisasi" --compact`
 Expected: FAIL — halaman belum punya `confirmDialog` ataupun `x-model="terpilih"`.
 
-- [ ] **Step 3: Ubah `resync.blade.php` — tambah `x-data`, `confirmDialog`, checkbox `x-model`**
+- [x] **Step 3: Ubah `resync.blade.php` — tambah `x-data`, `confirmDialog`, checkbox `x-model`**
 
 Ganti blok form sinkronisasi (baris 36-70 di file saat ini) dari:
 ```blade
@@ -446,12 +446,12 @@ menjadi (bagian tabel/diff/floating-bar akan disempurnakan lagi di Task 5 — st
 @endif
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan PASS**
+- [x] **Step 4: Jalankan test, pastikan PASS**
 
 Run: `php artisan test tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php --compact`
 Expected: semua PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add resources/views/admin/kurikulum-assignment/resync.blade.php tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php
@@ -472,7 +472,7 @@ git commit -m "feat(kurikulum-assignment): tambah confirmDialog sebelum sinkroni
 - Consumes: Alpine global `dataTableFilter(config)` (`resources/js/data-table-filter.js`, sudah terdaftar di `resources/js/app.js` via `Alpine.data('dataTableFilter', dataTableFilter)` — dipakai identik dengan pola `piket-guru/index.blade.php`, TIDAK perlu registrasi baru).
 - Produces: partial view `admin.kurikulum-assignment._daftar` menerima `$assignmentList` (Collection hasil query yang SUDAH di-scope tenant + filter, tiap item punya properti dinamis `canManage` seperti sebelumnya).
 
-- [ ] **Step 1: Tulis test yang gagal — index() punya cabang ajax dan menerima filter tahun_ajaran_id/bentuk_pendidikan**
+- [x] **Step 1: Tulis test yang gagal — index() punya cabang ajax dan menerima filter tahun_ajaran_id/bentuk_pendidikan**
 
 Tambahkan di akhir `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php`:
 ```php
@@ -516,12 +516,12 @@ it('filter index() TIDAK bisa dipakai lembaga-scope actor untuk melihat assignme
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="index\(\) mengembalikan partial|index\(\) memfilter|filter index\(\) TIDAK bisa" --compact`
 Expected: FAIL — belum ada cabang ajax maupun filter query.
 
-- [ ] **Step 3: Ubah `index()` di controller — tambah filter (SETELAH tenant-scoping) dan cabang ajax**
+- [x] **Step 3: Ubah `index()` di controller — tambah filter (SETELAH tenant-scoping) dan cabang ajax**
 
 Ganti method `index()` (baris 32-68 saat ini) menjadi:
 ```php
@@ -585,12 +585,12 @@ public function index(Request $request): View
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan test controller PASS**
+- [x] **Step 4: Jalankan test, pastikan test controller PASS**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: semua PASS (termasuk test lama).
 
-- [ ] **Step 5: Ekstrak tabel jadi `_daftar.blade.php`**
+- [x] **Step 5: Ekstrak tabel jadi `_daftar.blade.php`**
 
 Create `resources/views/admin/kurikulum-assignment/_daftar.blade.php` — isi PERSIS tabel yang sekarang ada di `index.blade.php:43-120` (card pembungkus + table), TANPA perubahan visual di step ini (badge hierarki & tooltip baru ditambahkan di Step 6):
 ```blade
@@ -690,7 +690,7 @@ Create `resources/views/admin/kurikulum-assignment/_daftar.blade.php` — isi PE
 ```
 (Wording "Assignment"→"Aturan" dan "Platform Default"→"Standar Platform" serta badge hierarki/tooltip SENGAJA sudah termasuk langsung di sini karena partial ini baru dibuat di task ini — bukan menyalahi urutan Task 6 "wording terakhir", karena Task 6 nanti tinggal verifikasi tidak ada teks lama yang tersisa, bukan mengubah file yang belum ada.)
 
-- [ ] **Step 6: Ganti `index.blade.php` — kontainer, KPI, filter AJAX, include partial**
+- [x] **Step 6: Ganti `index.blade.php` — kontainer, KPI, filter AJAX, include partial**
 
 Ganti SELURUH isi `resources/views/admin/kurikulum-assignment/index.blade.php` menjadi:
 ```blade
@@ -805,7 +805,7 @@ Ganti SELURUH isi `resources/views/admin/kurikulum-assignment/index.blade.php` m
 </x-app-layout>
 ```
 
-- [ ] **Step 7: Jalankan test controller lagi (pastikan view baru tidak error render) dan build asset**
+- [x] **Step 7: Jalankan test controller lagi (pastikan view baru tidak error render) dan build asset**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: semua PASS (test lama seperti `denies access to a user without kurikulum-assignment.view permission` yang meng-GET index tidak boleh error render Blade).
@@ -813,7 +813,7 @@ Expected: semua PASS (test lama seperti `denies access to a user without kurikul
 Run: `npm run build`
 Expected: build sukses tanpa error (memverifikasi `dataTableFilter`/`initFilterSelect`/`confirmDialog` sudah ter-bundle, tidak ada typo Alpine directive).
 
-- [ ] **Step 8: Format & commit**
+- [x] **Step 8: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -836,7 +836,7 @@ git commit -m "feat(kurikulum-assignment): index dapat filter AJAX, KPI ringkas,
 
 **Catatan penting**: field **Bentuk Pendidikan** SENGAJA TIDAK ikut masuk ke metadata card read-only, walaupun spec awal menyebutnya immutable. Alasan (dikonfirmasi dari kode `KurikulumAssignmentController@update` baris 187-190): untuk aktor **platform**, `bentuk_pendidikan` BOLEH diubah lewat dropdown bahkan di mode edit (`if ($request->user()->widestScopeLevel() !== 'platform') { $bentukPendidikan = Lembaga::find(...)->bentuk_pendidikan; }` — hanya non-platform yang dipaksa ikut lembaga). Kalau field ini dipaksa jadi badge read-only, aktor platform kehilangan kemampuan yang sudah ada. Blok Bentuk Pendidikan (`@if ($isPlatform ?? false) ... @else ... @endif`) TETAP seperti hasil Task 1, HANYA dipindah urutannya ke bawah metadata card.
 
-- [ ] **Step 1: Tulis test yang gagal — halaman edit menampilkan metadata card & callout, TIDAK lagi teks lama**
+- [x] **Step 1: Tulis test yang gagal — halaman edit menampilkan metadata card & callout, TIDAK lagi teks lama**
 
 Tambahkan di akhir `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php`:
 ```php
@@ -863,12 +863,12 @@ it('halaman create dan edit menampilkan breadcrumb Pengaturan Kurikulum', functi
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="metadata card ringkas|breadcrumb Pengaturan Kurikulum" --compact`
 Expected: FAIL.
 
-- [ ] **Step 3: Ubah `_form.blade.php` — pindahkan metadata immutable ke card, tambah callout**
+- [x] **Step 3: Ubah `_form.blade.php` — pindahkan metadata immutable ke card, tambah callout**
 
 Ganti isi `<div class="p-6"> ... </div>` (bagian dalam wrapper `x-data` dari Task 1) menjadi struktur berikut. SELURUH file `_form.blade.php` setelah step ini:
 ```blade
@@ -1020,7 +1020,7 @@ Ganti isi `<div class="p-6"> ... </div>` (bagian dalam wrapper `x-data` dari Tas
 </div>
 ```
 
-- [ ] **Step 4: Tambah breadcrumb di `create.blade.php`**
+- [x] **Step 4: Tambah breadcrumb di `create.blade.php`**
 
 Ganti isi `resources/views/admin/kurikulum-assignment/create.blade.php` menjadi:
 ```blade
@@ -1056,7 +1056,7 @@ Ganti isi `resources/views/admin/kurikulum-assignment/create.blade.php` menjadi:
 </x-app-layout>
 ```
 
-- [ ] **Step 5: Tambah breadcrumb di `edit.blade.php`**
+- [x] **Step 5: Tambah breadcrumb di `edit.blade.php`**
 
 Ganti isi `resources/views/admin/kurikulum-assignment/edit.blade.php` menjadi:
 ```blade
@@ -1089,12 +1089,12 @@ Ganti isi `resources/views/admin/kurikulum-assignment/edit.blade.php` menjadi:
 </x-app-layout>
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan PASS**
+- [x] **Step 6: Jalankan test, pastikan PASS**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php --compact`
 Expected: semua PASS.
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1115,7 +1115,7 @@ git commit -m "feat(kurikulum-assignment): metadata card + callout dampak di edi
 - Consumes: Alpine state `terpilih` dari Task 2 (array kelas-id terpilih pada `<form>` yang sama).
 - Produces: `ResyncKurikulumFaseKelasAction::hitungDiff()` mengembalikan array dengan key baru `faseLamaNama: ?string` di setiap baris (selain key lama yang TETAP ada: `kelas`, `kurikulumLama`, `kurikulumBaru`, `faseLamaId`, `faseBaruId`, `faseBaruNama`).
 
-- [ ] **Step 1: Tulis test yang gagal — `hitungDiff()` mengembalikan `faseLamaNama`**
+- [x] **Step 1: Tulis test yang gagal — `hitungDiff()` mengembalikan `faseLamaNama`**
 
 Tambahkan di akhir `tests/Feature/Akademik/ResyncKurikulumFaseKelasTest.php`:
 ```php
@@ -1139,12 +1139,12 @@ it('hitungDiff menyertakan nama fase lama, bukan cuma id mentah', function () {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="hitungDiff menyertakan nama fase lama" --compact`
 Expected: FAIL — key `faseLamaNama` belum ada (undefined array key).
 
-- [ ] **Step 3: Tambah `faseLamaNama` di `ResyncKurikulumFaseKelasAction::hitungDiff()`**
+- [x] **Step 3: Tambah `faseLamaNama` di `ResyncKurikulumFaseKelasAction::hitungDiff()`**
 
 Di `app/Domains/Akademik/Actions/Kelas/ResyncKurikulumFaseKelasAction.php`, ubah docblock method (baris 21-22) dan body (baris 58-65):
 ```php
@@ -1201,12 +1201,12 @@ Di `app/Domains/Akademik/Actions/Kelas/ResyncKurikulumFaseKelasAction.php`, ubah
 ```
 (HANYA 2 baris yang berubah: docblock `@return`, dan penambahan `'faseLamaNama' => $kelas->fase?->nama,` — sisanya identik dengan file saat ini.)
 
-- [ ] **Step 4: Jalankan test action, pastikan PASS**
+- [x] **Step 4: Jalankan test action, pastikan PASS**
 
 Run: `php artisan test tests/Feature/Akademik/ResyncKurikulumFaseKelasTest.php --compact`
 Expected: semua PASS (termasuk test lama, `faseLamaNama` tidak mengubah kondisi `continue`/skip yang sudah ada).
 
-- [ ] **Step 5: Tulis test yang gagal — halaman resync merender diff chip, zero-drift state, dan empty state awal**
+- [x] **Step 5: Tulis test yang gagal — halaman resync merender diff chip, zero-drift state, dan empty state awal**
 
 Tambahkan di akhir `tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php`:
 ```php
@@ -1253,12 +1253,12 @@ it('menampilkan nama fase lama (bukan id mentah) dan floating bulk bar saat ada 
 });
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan gagal**
+- [x] **Step 6: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="empty state instruksional|zero-drift success state|nama fase lama.*floating" --compact`
 Expected: FAIL — belum ada teks/markup tersebut.
 
-- [ ] **Step 7: Ubah `resync.blade.php` — empty state, diff chip, zero-drift state, floating bar, styling select, wording**
+- [x] **Step 7: Ubah `resync.blade.php` — empty state, diff chip, zero-drift state, floating bar, styling select, wording**
 
 Ganti SELURUH isi `resources/views/admin/kurikulum-assignment/resync.blade.php` menjadi:
 ```blade
@@ -1382,7 +1382,7 @@ Ganti SELURUH isi `resources/views/admin/kurikulum-assignment/resync.blade.php` 
 
 **Catatan**: icon dipakai `sync` (BUKAN `sync_alt`, yang tidak ada di `resources/views/components/icon.blade.php` — akan menyebabkan Blade fatal error `Undefined array key` di komponen icon kalau dipaksakan). Tombol submit lama di bawah tabel (di luar floating bar) SUDAH DIHAPUS, digantikan tombol di floating bar sesuai spec.
 
-- [ ] **Step 8: Jalankan test, pastikan PASS**
+- [x] **Step 8: Jalankan test, pastikan PASS**
 
 Run: `php artisan test tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php tests/Feature/Akademik/ResyncKurikulumFaseKelasTest.php --compact`
 Expected: semua PASS.
@@ -1390,7 +1390,7 @@ Expected: semua PASS.
 Run: `npm run build`
 Expected: build sukses.
 
-- [ ] **Step 9: Format & commit**
+- [x] **Step 9: Format & commit**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -1425,7 +1425,7 @@ Tabel wording lengkap (referensi, SEMUA baris ini seharusnya SUDAH benar setelah
 | "Sinkronkan yang Dicentang" | "Terapkan Sinkronisasi" (floating bar) | Task 5 |
 | "Platform Default" (badge) | "Standar Platform" | Task 3 |
 
-- [ ] **Step 1: Tulis test yang gagal — grep negatif memastikan tidak ada sisa wording lama**
+- [x] **Step 1: Tulis test yang gagal — grep negatif memastikan tidak ada sisa wording lama**
 
 Tambahkan di akhir `tests/Feature/Akademik/KurikulumAssignmentControllerTest.php`:
 ```php
@@ -1467,12 +1467,12 @@ it('tidak ada sisa wording lama "Cek Drift"/"Sinkronkan yang Dicentang" di halam
 });
 ```
 
-- [ ] **Step 2: Jalankan test**
+- [x] **Step 2: Jalankan test**
 
 Run: `php artisan test --filter="tidak ada sisa wording lama" --compact`
 Expected: SEHARUSNYA sudah PASS langsung (semua wording sudah benar sejak Task 1-5). Kalau ADA yang FAIL, berarti ada teks yang terlewat saat Task 1-5 — perbaiki file terkait sampai PASS (grep `Assignment` dan `Cek Drift` di kelima file `resources/views/admin/kurikulum-assignment/*.blade.php` untuk menemukan sisa yang terlewat).
 
-- [ ] **Step 3: Commit (kalau ada perbaikan sisa wording; kalau step 2 langsung PASS tanpa perubahan file, commit hanya test barunya)**
+- [x] **Step 3: Commit (kalau ada perbaikan sisa wording; kalau step 2 langsung PASS tanpa perubahan file, commit hanya test barunya)**
 
 ```bash
 git add tests/Feature/Akademik/KurikulumAssignmentControllerTest.php tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php resources/views/admin/kurikulum-assignment/
@@ -1485,22 +1485,22 @@ git commit -m "test(kurikulum-assignment): kunci standardisasi wording dengan te
 
 **Files:** tidak ada file baru — task ini murni verifikasi.
 
-- [ ] **Step 1: Jalankan semua test scoped modul ini**
+- [x] **Step 1: Jalankan semua test scoped modul ini**
 
 Run: `php artisan test tests/Feature/Akademik/KurikulumAssignmentControllerTest.php tests/Feature/Akademik/ResyncKurikulumFaseControllerTest.php tests/Feature/Akademik/ResyncKurikulumFaseKelasTest.php tests/Feature/Admin/KurikulumAssignmentDestroyGuardTest.php tests/Unit/Models/KurikulumAssignmentTest.php tests/Unit/Services/KurikulumAssignmentResolverTest.php --compact`
 Expected: semua PASS.
 
-- [ ] **Step 2: Format seluruh perubahan PHP**
+- [x] **Step 2: Format seluruh perubahan PHP**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}` atau daftar file yang di-fix otomatis — kalau ada yang di-fix, ulangi Step 1.
 
-- [ ] **Step 3: Build asset frontend**
+- [x] **Step 3: Build asset frontend**
 
 Run: `npm run build`
 Expected: build sukses tanpa error/warning baru terkait Alpine directive.
 
-- [ ] **Step 4: Verifikasi visual — buka halaman index dengan `php artisan route:list --name=kurikulum-assignment`**
+- [x] **Step 4: Verifikasi visual — buka halaman index dengan `php artisan route:list --name=kurikulum-assignment`**
 
 Run: `php artisan route:list --name=kurikulum-assignment`
 Expected: semua route (`index`, `create`, `store`, `edit`, `update`, `destroy`, `resync`, `resync.apply`) masih terdaftar persis seperti sebelumnya — TIDAK ada route yang berubah nama/hilang (plan ini murni ubah controller method body + view, bukan routing).
