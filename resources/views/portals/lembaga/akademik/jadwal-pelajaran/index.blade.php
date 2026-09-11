@@ -11,11 +11,19 @@
         {{-- Header & Breadcrumb --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="font-display text-lg font-bold text-gray-900">Jadwal Pelajaran</h1>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <h1 class="font-display text-lg font-bold text-gray-900">Jadwal Pelajaran</h1>
+                    @if ($isYayasan ?? false)
+                        <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ ($activeLembaga ?? null) ? 'border border-brand-200 bg-brand-50 text-brand-700' : 'border border-purple-200 bg-purple-50 text-purple-700' }}">
+                            <x-icon name="apartment" class="h-3.5 w-3.5" />
+                            {{ ($activeLembaga ?? null) ? $activeLembaga->nama : 'Semua Lembaga' }}
+                        </span>
+                    @endif
+                </div>
                 <p class="text-xs text-gray-500 mt-0.5">Kelola penomoran slot belajar, mata pelajaran, dan pengampu untuk tiap kelas.</p>
             </div>
             <p class="text-sm text-gray-500">
-                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Jadwal Pelajaran</b>
+                Akademik <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Jadwal Pelajaran</b>
             </p>
         </div>
 
@@ -55,6 +63,15 @@
                     </template>
                 </div>
 
+                <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                    <div></div>
+                    <template x-if="tahunAjaranId || kelasId || semesterId">
+                        <button type="button" @click="resetFilter()" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 transition">
+                            <x-icon name="close" class="h-3.5 w-3.5" />
+                            Reset Filter
+                        </button>
+                    </template>
+                </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
                         <x-input-label value="Tahun Ajaran" />
@@ -70,7 +87,7 @@
 
                     <div>
                         <x-input-label value="Semester" />
-                        <select x-ref="semesterSelect" x-model="semesterId" @change="muatUlangDaftar()" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500">
+                        <select x-ref="semesterSelect" x-init="initSemesterSelect($refs.semesterSelect)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm">
                             <option value="">— Pilih Semester —</option>
                             @foreach ($semesterList as $semester)
                                 <option value="{{ $semester->id }}" @selected($semesterId == $semester->id)>{{ $semester->nama }}{{ $semester->status_aktif ? ' (Aktif)' : '' }}</option>

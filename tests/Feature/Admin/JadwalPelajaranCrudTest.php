@@ -1569,3 +1569,43 @@ it('judul daftar jadwal tidak mengulang kata Kelas (nama kelas sudah diawali kat
     $response->assertDontSee('Jadwal Pelajaran Kelas Kelas 1-A');
     $response->assertSee('Jadwal Pelajaran — Kelas 1-A');
 });
+
+it('halaman index jadwal pelajaran menampilkan badge scope lembaga untuk aktor yayasan', function () {
+    Permission::firstOrCreate(['name' => 'jadwal-pelajaran.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_jadwal_scope_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->syncPermissions(['jadwal-pelajaran.kelola']);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Pintera Cabang Utama']);
+    $manager = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
+    $manager->assignRole($role);
+
+    $response = $this->actingAs($manager)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->get(route('admin.jadwal-pelajaran.index'));
+
+    $response->assertOk();
+    $response->assertSee('SD Pintera Cabang Utama');
+});
+
+it('breadcrumb index jadwal pelajaran memakai Akademik, bukan Beranda', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index'));
+
+    $response->assertOk();
+    $response->assertSee('Akademik');
+});
+
+it('filter menampilkan tombol Reset Filter dan Semester dikelola TomSelect', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index'));
+
+    $response->assertOk();
+    $response->assertSee('resetFilter()', false);
+    $response->assertSee('initSemesterSelect', false);
+});

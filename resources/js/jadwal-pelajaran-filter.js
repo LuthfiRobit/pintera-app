@@ -9,6 +9,8 @@ export function jadwalPelajaranFilter(config) {
         indexUrlBase: config.indexUrlBase,
         createUrlBase: config.createUrlBase ?? '',
         storeUrlBase: config.storeUrlBase ?? '',
+        tahunAjaranTomSelect: null,
+        semesterTomSelect: null,
         kelasTomSelect: null,
         modalJamCreateTomSelect: null,
         modalJamEditTomSelect: null,
@@ -207,7 +209,7 @@ export function jadwalPelajaranFilter(config) {
         },
 
         initTahunAjaranSelect(el) {
-            new TomSelect(el, {
+            this.tahunAjaranTomSelect = new TomSelect(el, {
                 maxItems: 1,
                 create: false,
                 placeholder: 'Cari tahun ajaran...',
@@ -216,6 +218,24 @@ export function jadwalPelajaranFilter(config) {
                     this.gantiTahunAjaran(value);
                 },
             });
+        },
+
+        initSemesterSelect(el) {
+            this.semesterTomSelect = new TomSelect(el, {
+                maxItems: 1,
+                create: false,
+                placeholder: 'Cari semester...',
+                onChange: (value) => {
+                    this.semesterId = value;
+                    this.muatUlangDaftar();
+                },
+            });
+        },
+
+        resetFilter() {
+            this.tahunAjaranTomSelect?.clear(true);
+            this.tahunAjaranId = '';
+            this.gantiTahunAjaran('');
         },
 
         initDuplicateTahunAjaranSelect(el) {
@@ -346,9 +366,8 @@ export function jadwalPelajaranFilter(config) {
             this.semesterId = '';
             this.kelasTomSelect?.clear(true);
             this.kelasTomSelect?.clearOptions();
-            if (this.$refs.semesterSelect) {
-                this.$refs.semesterSelect.innerHTML = '<option value="">— Pilih Semester —</option>';
-            }
+            this.semesterTomSelect?.clear(true);
+            this.semesterTomSelect?.clearOptions();
 
             if (tahunAjaranId) {
                 try {
@@ -366,11 +385,12 @@ export function jadwalPelajaranFilter(config) {
                         this.kelasTomSelect.refreshOptions(false);
 
                         json.semesterList.forEach((semester) => {
-                            const option = document.createElement('option');
-                            option.value = semester.id;
-                            option.textContent = semester.nama + (semester.status_aktif ? ' (Aktif)' : '');
-                            this.$refs.semesterSelect.appendChild(option);
+                            this.semesterTomSelect.addOption({
+                                value: String(semester.id),
+                                text: semester.nama + (semester.status_aktif ? ' (Aktif)' : ''),
+                            });
                         });
+                        this.semesterTomSelect.refreshOptions(false);
                     }
                 } catch (error) {
                     Alpine.store('toast').push('error', 'Gagal memuat opsi kelas dan semester.');
