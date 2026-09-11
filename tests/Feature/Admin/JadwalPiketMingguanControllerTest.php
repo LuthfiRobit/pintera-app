@@ -348,4 +348,20 @@ it('admin yayasan pada mode Semua Lembaga diarahkan kembali jika membuka create 
     $response->assertSessionHasErrors('lembaga_id');
 });
 
+it('index mengembalikan partial view _daftar jika request adalah ajax', function () {
+    ['lembaga' => $lembaga, 'semester' => $semester, 'guru' => $guru, 'admin' => $admin] = siapkanAdminPiketKelola();
+    JadwalPiketMingguan::create([
+        'lembaga_id' => $lembaga->id, 'guru_id' => $guru->id, 'hari' => 1,
+        'semester_id' => $semester->id, 'dibuat_oleh_user_id' => $admin->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin.piket-guru.index'), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertViewIs('portals.lembaga.akademik.piket-guru._daftar');
+    $response->assertSee($guru->nama);
+});
+
+
 

@@ -61,5 +61,36 @@
    - Branch: `rbac-v2`
    - Semua perubahan tersimpan secara lokal dan belum dimerge ataupun dipush ke origin.
 2. **Cakupan Pengujian**:
-   - Sebanyak 80 tests di 15 test suite terkait lulus dengan 192 assertions.
-   - Tidak ada file di luar modul piket (`JadwalPiketMingguanController`, `PiketHarianController`, dan view `piket-guru/index.blade.php`) yang terpengaruh.
+   - Sebanyak 53 tests di 10 test suite terkait lulus dengan 120 assertions (termasuk verifikasi partial AJAX).
+   - Seluruh fungsionalitas piket, sinkronisasi otomatis, dan override manual bekerja tanpa regresi.
+
+---
+
+## 4. Perbaikan Lanjutan Standarisasi UI/UX (5 Poin Review Pengguna)
+
+Menindaklanjuti review dan feedback pengguna terkait keseragaman halaman:
+
+1. **Penyeragaman Container Utama (`max-w-6xl`)**:
+   - Mengubah wrapper pada `portals/lembaga/akademik/piket-guru/index.blade.php` dari `max-w-7xl px-4 sm:px-6 lg:px-8` menjadi `<div class="mx-auto max-w-6xl space-y-4">`.
+   - Menghilangkan redundansi horizontal padding karena `<main class="flex-1 px-4 py-6 sm:px-6 lg:px-10">` pada `layouts/app.blade.php` sudah menyediakan padding luar standar.
+
+2. **Standardisasi Style Select & Search Filter**:
+   - Mengadopsi struktur input pencarian standar kelas: wrapper `flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2` dengan icon kaca pembesar dan input unbordered debounced.
+   - Menggunakan `x-ref="..." x-init="initFilterSelect($refs...., '...', ...)"` dengan style `w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500` yang terintegrasi dengan TomSelect.
+
+3. **Penghapusan Tombol "Terapkan Filter"**:
+   - Menghilangkan elemen `<x-primary-button>Terapkan Filter</x-primary-button>` dan tag `<form>` statis.
+   - Filter langsung bereaksi otomatis secara real-time via `dataTableFilter` saat nilai select berubah atau teks input diketik.
+
+4. **Filter AJAX Instan Tanpa Reload Halaman Penuh**:
+   - Mengimplementasikan pemanggilan AJAX via `dataTableFilter.muatUlangDaftar()`.
+   - Menambahkan pengenalan request AJAX di `JadwalPiketMingguanController::index()` yang mereturn partial `portals.lembaga.akademik.piket-guru._daftar`.
+   - Memperbarui `resources/js/data-table-filter.js` dengan `window.Alpine.initTree(this.$refs.tableContainer)` setelah penggantian `innerHTML` agar seluruh komponen Alpine (`<x-table-actions>`, listeners, bindings) langsung reaktif.
+   - Menambahkan loading overlay transparan dengan ikon animasi berputar (`x-icon name="sync" class="animate-spin"`) yang mendengarkan event `@ajax-start.window` dan `@ajax-end.window`.
+
+5. **Standardisasi Tabel Sesuai Halaman Kelas (`admin/kelas`)**:
+   - Memisahkan tabel dan tab ke dalam partial `_daftar.blade.php`.
+   - Mengubah posisi kolom `Aksi` dari kanan ke kolom pertama di sisi kiri secara sticky (`sticky left-0 z-10 bg-white px-5 py-3`).
+   - Mengintegrasikan `<x-table-actions>` dropdown menu (Edit Jadwal & Hapus via modal dialog konfirmasi `confirmDialog`).
+   - Memperbarui visual baris tabel: nama guru tebal (`font-semibold text-gray-900`) dengan subtext NIP/NUPTK abu-abu, dan badge hari menggunakan `<x-badge tone="...">`.
+   - Memastikan tab navigation (Jadwal Mingguan, Kalender Piket Harian, Override Manual) dan badge hitungan data terbarukan serentak secara reaktif setiap kali filter diterapkan.

@@ -36,7 +36,7 @@ class JadwalPiketMingguanController extends BaseController
         ];
     }
 
-    public function index(Request $request): View
+    public function index(Request $request): View|string
     {
         $this->authorize('piket.kelola');
 
@@ -96,6 +96,16 @@ class JadwalPiketMingguanController extends BaseController
                 ? $jadwalList->pluck('lembaga_id')->unique()->count()
                 : $jadwalList->pluck('hari')->unique()->count(),
         ];
+
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('portals.lembaga.akademik.piket-guru._daftar', [
+                'jadwalList' => $jadwalList,
+                'overrides' => $overrides,
+                'piketHarianMendatang' => $piketHarianMendatang,
+                'guruList' => $guruList,
+                ...$this->scopeHeaderData($request),
+            ]);
+        }
 
         return view('portals.lembaga.akademik.piket-guru.index', [
             'jadwalList' => $jadwalList,

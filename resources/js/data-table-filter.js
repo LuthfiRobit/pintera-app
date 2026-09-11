@@ -71,6 +71,9 @@ export function dataTableFilter(config) {
                     const html = await response.text();
                     window.history.pushState({}, '', url);
                     this.$refs.tableContainer.innerHTML = html;
+                    if (window.Alpine) {
+                        window.Alpine.initTree(this.$refs.tableContainer);
+                    }
                 } else {
                     window.Alpine.store('toast').push('error', 'Gagal memuat data.');
                 }
