@@ -1,3 +1,13 @@
+@php
+    $guruOptions = collect([['id' => '', 'nama' => '— Pilih atau cari guru —', 'subtext' => '']])
+        ->concat(($guruList ?? collect())->map(fn ($g) => [
+            'id' => (string) $g->id,
+            'nama' => $g->nama,
+            'subtext' => $g->nip ? 'NIP: '.$g->nip : ($g->nuptk ? 'NUPTK: '.$g->nuptk : ($g->jenis_ptk ? str_replace('_', ' ', ucwords($g->jenis_ptk, '_')) : '')),
+        ]))
+        ->values();
+@endphp
+
 <x-app-layout>
     <div class="mx-auto max-w-4xl space-y-4">
         @if (session('status'))
@@ -53,14 +63,26 @@
 
             <form method="POST" action="{{ route('admin.piket-harian.store') }}" class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-end">
                 @csrf
-                <div>
+                <div class="relative z-20" x-data="tomSelectPegawai({
+                    options: @js($guruOptions),
+                    oldValue: @js(old('guru_id', '')),
+                    placeholder: '— Pilih atau cari guru —'
+                })">
                     <x-input-label value="Pilih Guru" />
-                    <select name="guru_id" required class="mt-1.5 w-full rounded-lg border-gray-200 text-sm">
-                        <option value="">-- Pilih Guru --</option>
-                        @foreach ($guruList ?? [] as $guru)
-                            <option value="{{ $guru->id }}">{{ $guru->nama }}</option>
-                        @endforeach
-                    </select>
+                    <div class="mt-1.5">
+                        <select
+                            name="guru_id"
+                            x-ref="selectElement"
+                            class="block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm transition duration-150 focus:border-brand-500 focus:ring-brand-500"
+                            autocomplete="off"
+                            required
+                        >
+                            <option value="">— Pilih atau cari guru —</option>
+                            @foreach ($guruList ?? [] as $guru)
+                                <option value="{{ $guru->id }}">{{ $guru->nama }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <x-input-label value="Tanggal Piket" />
