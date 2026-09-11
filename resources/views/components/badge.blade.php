@@ -8,6 +8,9 @@
         'amber' => 'bg-warning-50 text-warning-700',
         'blue' => 'bg-blue-100 text-blue-700',
         'slate' => 'bg-gray-100 text-gray-600',
+        'purple' => 'bg-purple-100 text-purple-700',
+        'rose' => 'bg-rose-100 text-rose-700',
+        'indigo' => 'bg-indigo-100 text-indigo-700',
     ];
 @endphp
 

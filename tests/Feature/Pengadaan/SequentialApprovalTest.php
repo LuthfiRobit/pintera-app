@@ -49,7 +49,7 @@ class SequentialApprovalTest extends TestCase
         $kepsek->givePermissionTo(['pengadaan.proposal.view', 'pengadaan.approval.internal']);
 
         $bendaharaRole = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
-        $bendahara = User::factory()->create(['lembaga_id' => null]);
+        $bendahara = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $yayasan->id]);
         $bendahara->assignRole($bendaharaRole);
         $bendahara->givePermissionTo(['pengadaan.proposal.view', 'pengadaan.approval.yayasan', 'pengadaan.disbursement.manage']);
 

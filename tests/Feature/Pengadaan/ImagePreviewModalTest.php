@@ -61,7 +61,7 @@ class ImagePreviewModalTest extends TestCase
         $this->userAdmin->assignRole($roleAdmin);
         $this->userAdmin->givePermissionTo(['pengadaan.proposal.view', 'pengadaan.proposal.create', 'pengadaan.proposal.edit']);
 
-        $this->userAuditor = User::factory()->create(['lembaga_id' => null]);
+        $this->userAuditor = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $this->yayasan->id]);
         $roleAuditor = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
         $this->userAuditor->assignRole($roleAuditor);
         $this->userAuditor->givePermissionTo(['pengadaan.proposal.view', 'pengadaan.lpj.verify', 'pengadaan.approval.yayasan']);
