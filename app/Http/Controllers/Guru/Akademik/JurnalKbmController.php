@@ -146,7 +146,7 @@ class JurnalKbmController extends BaseController
         $this->authorize('presensi.isi');
         $this->authorizeMilikGuru($sesi);
 
-        $sesi->loadMissing('kelas.tahunAjaran');
+        $sesi->loadMissing('kelas.tahunAjaran', 'guru');
         $mapelTerjadwal = $this->mapelTerjadwalUntukSesiTematik(collect([$sesi]), $sesi->tanggal);
 
         $guru = auth()->user()->guru;

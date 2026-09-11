@@ -15,6 +15,13 @@
             </div>
         @endif
 
+        @if ($sesi->guru_id !== (auth()->user()->guru->id ?? null))
+            <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                <p class="font-semibold">Anda mengisi sebagai Guru Piket untuk kelas milik {{ $sesi->guru?->nama ?? 'guru lain' }}.</p>
+                <p class="mt-1 text-xs">Data yang Anda isi akan tercatat sebagai diisi oleh Anda (piket), bukan guru pemilik asli sesi ini.</p>
+            </div>
+        @endif
+
         {{-- Header & Breadcrumb --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
