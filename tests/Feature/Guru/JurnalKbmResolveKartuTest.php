@@ -3,8 +3,10 @@
 use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\KartuSiswa;
 use App\Domains\Akademik\Models\MataPelajaran;
+use App\Domains\Akademik\Models\PiketHarian;
 use App\Domains\Akademik\Models\PolaJam;
 use App\Domains\Akademik\Models\SesiPembelajaran;
+use App\Domains\Identity\Models\Person;
 use App\Enums\Hari;
 use App\Models\Guru;
 use App\Models\JadwalPelajaran;
@@ -100,4 +102,36 @@ it('resolve-kartu mengembalikan 422 untuk siswa beda lembaga dari guru', functio
 
     $response->assertStatus(422);
     $response->assertJson(['message' => 'Siswa ini tidak terdaftar di lembaga Anda.']);
+});
+
+it('resolve-kartu berfungsi untuk guru piket yang mengisi sesi guru lain, bukan cuma guru pemilik', function () {
+    Permission::firstOrCreate(['name' => 'presensi.isi', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'guru_piket_resolve_kartu_test', 'guard_name' => 'web'], ['scope_level' => 'diri_sendiri']);
+    $role->givePermissionTo(['presensi.isi']);
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id]);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id]);
+
+    $guruPemilik = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $sesi = SesiPembelajaran::factory()->create([
+        'lembaga_id' => $lembaga->id, 'kelas_id' => $kelas->id, 'guru_id' => $guruPemilik->id, 'tanggal' => now()->toDateString(),
+    ]);
+
+    $guruPiket = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $userPiket = User::factory()->create(['lembaga_id' => $lembaga->id]);
+    Person::where('id', $guruPiket->person_id)->update(['user_id' => $userPiket->id]);
+    $userPiket->assignRole($role);
+    PiketHarian::create([
+        'lembaga_id' => $lembaga->id, 'guru_id' => $guruPiket->id, 'tanggal' => now()->toDateString(), 'sumber' => 'override_manual',
+    ]);
+
+    KartuSiswa::create(['siswa_id' => $siswa->id, 'tipe' => 'qr', 'kode' => 'kode-guru-piket-scan', 'is_active' => true]);
+
+    $response = $this->actingAs($userPiket)->postJson(route('guru.jurnal-kbm.resolve-kartu', $sesi), ['kode' => 'kode-guru-piket-scan']);
+
+    $response->assertOk();
+    $response->assertJson(['siswa_id' => $siswa->id, 'nama_lengkap' => $siswa->nama_lengkap]);
 });
