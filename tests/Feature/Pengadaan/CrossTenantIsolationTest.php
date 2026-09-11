@@ -217,4 +217,25 @@ class CrossTenantIsolationTest extends TestCase
             'pengajuan_pengadaan_id' => $this->proposalA2->id,
         ]);
     }
+
+    public function test_user_yayasan_scope_tanpa_yayasan_id_ditolak_bukan_fallback_ke_yayasan_pertama(): void
+    {
+        $yayasanRole = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+        $yayasanRole->givePermissionTo(['pengadaan.approval.yayasan', 'pengadaan.disbursement.manage', 'pengadaan.lpj.verify']);
+
+        $userTanpaYayasan = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => null]);
+        $userTanpaYayasan->assignRole($yayasanRole);
+
+        $this->actingAs($userTanpaYayasan)
+            ->get(route('admin.pengadaan.inbox.index'))
+            ->assertForbidden();
+
+        $this->actingAs($userTanpaYayasan)
+            ->get(route('admin.pengadaan.disbursement.index'))
+            ->assertForbidden();
+
+        $this->actingAs($userTanpaYayasan)
+            ->get(route('admin.pengadaan.audit-lpj.index'))
+            ->assertForbidden();
+    }
 }

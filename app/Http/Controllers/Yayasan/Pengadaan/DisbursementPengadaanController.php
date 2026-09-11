@@ -17,14 +17,14 @@ class DisbursementPengadaanController extends Controller
     public function __construct(
         protected TenantContext $tenantContext,
         protected RecordDisbursementAction $recordDisbursementAction,
-    ) {
-    }
+    ) {}
 
     public function index(Request $request): View
     {
         $this->authorize('pengadaan.disbursement.manage');
 
-        $yayasanId = $this->tenantContext->activeYayasanId() ?? \App\Models\Yayasan::first()?->id;
+        $yayasanId = $this->tenantContext->activeYayasanId();
+        abort_if($yayasanId === null, 403, 'Akun Anda belum terhubung ke yayasan manapun. Hubungi Super Admin Platform untuk memperbaiki data akun Anda.');
         $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50]) ? (int) $request->input('per_page') : 20;
 
         $baseQuery = PengajuanPengadaan::query()

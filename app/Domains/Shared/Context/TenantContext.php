@@ -3,6 +3,7 @@
 namespace App\Domains\Shared\Context;
 
 use App\Domains\Shared\Context\Contracts\TenantContextInterface;
+use App\Models\Lembaga;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
@@ -59,13 +60,13 @@ class TenantContext implements TenantContextInterface
 
         $activeLembagaId = $this->activeLembagaId();
         if ($activeLembagaId) {
-            $lembaga = \App\Models\Lembaga::find($activeLembagaId);
+            $lembaga = Lembaga::find($activeLembagaId);
 
             if ($lembaga?->yayasan_id) {
                 return $lembaga->yayasan_id;
             }
         }
 
-        return \App\Models\Yayasan::first()?->id;
+        return null;
     }
 }
