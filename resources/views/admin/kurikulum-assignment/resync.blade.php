@@ -25,11 +25,37 @@
             </p>
         </div>
 
-        <form method="GET" action="{{ route('admin.kurikulum-assignment.resync') }}" class="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <form
+            method="GET"
+            action="{{ route('admin.kurikulum-assignment.resync') }}"
+            class="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+            x-data="{
+                initSelect(el, placeholder, isSearchable = false, autoSubmit = false) {
+                    if (!window.TomSelect || el.tomselect) return;
+                    const config = {
+                        maxItems: 1,
+                        create: false,
+                        placeholder: placeholder,
+                        allowEmptyOption: true,
+                    };
+                    if (!isSearchable) {
+                        config.controlInput = null;
+                    }
+                    if (autoSubmit) {
+                        config.onChange = (val) => {
+                            if (val) {
+                                el.form.submit();
+                            }
+                        };
+                    }
+                    new window.TomSelect(el, config);
+                }
+            }"
+        >
             @if ($activeLembaga)
                 <div class="w-full sm:w-64">
-                    <x-input-label value="Lembaga" />
-                    <div class="mt-1.5 flex h-[42px] items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3.5 text-sm font-medium text-gray-700">
+                    <x-input-label value="Lembaga" class="mb-1.5" />
+                    <div class="flex h-[42px] items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3.5 text-sm font-medium text-gray-700">
                         <x-icon name="apartment" class="h-4 w-4 shrink-0 text-gray-400" />
                         <span class="truncate">{{ $activeLembaga->nama }}</span>
                     </div>
@@ -37,8 +63,11 @@
                 </div>
             @elseif ($isPlatformOrYayasan)
                 <div class="w-full sm:w-64">
-                    <x-input-label value="Lembaga" />
-                    <x-select name="lembaga_id" class="mt-1.5" onchange="this.form.submit()">
+                    <x-input-label value="Lembaga" class="mb-1.5" />
+                    <x-select
+                        name="lembaga_id"
+                        x-init="$nextTick(() => initSelect($el, '— Pilih Lembaga —', true, true))"
+                    >
                         <option value="">— Pilih Lembaga —</option>
                         @foreach ($lembagaList as $l)
                             <option value="{{ $l->id }}" @selected($lembagaId === $l->id)>{{ $l->nama }}</option>
@@ -50,8 +79,11 @@
             @endif
 
             <div class="w-full sm:w-64">
-                <x-input-label value="Tahun Ajaran" />
-                <x-select name="tahun_ajaran_id" class="mt-1.5">
+                <x-input-label value="Tahun Ajaran" class="mb-1.5" />
+                <x-select
+                    name="tahun_ajaran_id"
+                    x-init="$nextTick(() => initSelect($el, '— Pilih Tahun Ajaran —', true, false))"
+                >
                     <option value="">— Pilih Tahun Ajaran —</option>
                     @foreach ($tahunAjaranList as $ta)
                         <option value="{{ $ta->id }}" @selected($tahunAjaranId === $ta->id)>{{ $ta->nama }}</option>

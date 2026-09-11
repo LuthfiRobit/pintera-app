@@ -20,6 +20,22 @@
         modeTingkat: @js($val('tingkat') ? 'spesifik' : 'semua'),
         tingkat: @js($val('tingkat')),
         get pillOptions() { return this.tingkatOptions[this.bentukPendidikan] ?? []; },
+        initTomSelect(el, placeholder, isSearchable = false, onChangeCallback = null) {
+            if (!window.TomSelect || el.tomselect) return;
+            const config = {
+                maxItems: 1,
+                create: false,
+                placeholder: placeholder,
+                allowEmptyOption: true,
+            };
+            if (!isSearchable) {
+                config.controlInput = null;
+            }
+            if (onChangeCallback) {
+                config.onChange = onChangeCallback;
+            }
+            new window.TomSelect(el, config);
+        }
     }"
     class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
 >
@@ -52,8 +68,12 @@
             @if (! $assignment)
                 @if ($isPlatform ?? false)
                     <div class="sm:col-span-6">
-                        <x-input-label value="Berlaku Untuk" />
-                        <x-select name="lembaga_id" class="mt-1.5" :error="$errors->has('lembaga_id')">
+                        <x-input-label value="Berlaku Untuk" class="mb-1.5" />
+                        <x-select
+                            name="lembaga_id"
+                            :error="$errors->has('lembaga_id')"
+                            x-init="$nextTick(() => initTomSelect($el, '— Platform (semua lembaga) —', true))"
+                        >
                             <option value="" @selected($val('lembaga_id') === '')>— Platform (semua lembaga) —</option>
                             @foreach ($lembagaList as $lembaga)
                                 <option value="{{ $lembaga->id }}" @selected($val('lembaga_id') == $lembaga->id)>{{ $lembaga->nama }}</option>
@@ -63,14 +83,18 @@
                     </div>
                 @else
                     <div class="sm:col-span-6">
-                        <x-input-label value="Berlaku Untuk" />
-                        <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga aktif Anda saat ini: <strong class="font-semibold text-gray-900">{{ $activeLembaga->nama }}</strong>.</p>
+                        <x-input-label value="Berlaku Untuk" class="mb-1.5" />
+                        <p class="rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga aktif Anda saat ini: <strong class="font-semibold text-gray-900">{{ $activeLembaga->nama }}</strong>.</p>
                     </div>
                 @endif
 
                 <div class="sm:col-span-6">
-                    <x-input-label value="Tahun Ajaran" />
-                    <x-select name="tahun_ajaran_id" class="mt-1.5" :error="$errors->has('tahun_ajaran_id')">
+                    <x-input-label value="Tahun Ajaran" class="mb-1.5" />
+                    <x-select
+                        name="tahun_ajaran_id"
+                        :error="$errors->has('tahun_ajaran_id')"
+                        x-init="$nextTick(() => initTomSelect($el, '— Pilih Tahun Ajaran —', true))"
+                    >
                         @foreach ($tahunAjaranList as $ta)
                             <option value="{{ $ta->id }}" @selected($val('tahun_ajaran_id') == $ta->id)>{{ $ta->nama }}</option>
                         @endforeach
@@ -81,8 +105,12 @@
 
             @if ($isPlatform ?? false)
                 <div class="sm:col-span-6">
-                    <x-input-label value="Bentuk Pendidikan" />
-                    <x-select name="bentuk_pendidikan" x-model="bentukPendidikan" @change="modeTingkat = 'semua'; tingkat = ''" class="mt-1.5" :error="$errors->has('bentuk_pendidikan')">
+                    <x-input-label value="Bentuk Pendidikan" class="mb-1.5" />
+                    <x-select
+                        name="bentuk_pendidikan"
+                        :error="$errors->has('bentuk_pendidikan')"
+                        x-init="$nextTick(() => initTomSelect($el, 'Pilih Bentuk Pendidikan', false, (val) => { bentukPendidikan = val; modeTingkat = 'semua'; tingkat = ''; }))"
+                    >
                         @foreach ($bentukPendidikanList as $bp)
                             <option value="{{ $bp->value }}" @selected($val('bentuk_pendidikan') === $bp->value)>{{ $bp->value }}</option>
                         @endforeach
@@ -94,15 +122,15 @@
                     $lembagaBentukPendidikan = $assignment ? $assignment->lembaga?->bentuk_pendidikan : ($activeLembaga->bentuk_pendidikan ?? null);
                 @endphp
                 <div class="sm:col-span-6">
-                    <x-input-label value="Bentuk Pendidikan" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $lembagaBentukPendidikan }} <span class="text-gray-400">(mengikuti bentuk pendidikan lembaga, tidak bisa diubah)</span></p>
+                    <x-input-label value="Bentuk Pendidikan" class="mb-1.5" />
+                    <p class="rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $lembagaBentukPendidikan }} <span class="text-gray-400">(mengikuti bentuk pendidikan lembaga, tidak bisa diubah)</span></p>
                     <input type="hidden" name="bentuk_pendidikan" value="{{ $lembagaBentukPendidikan }}">
                 </div>
             @endif
 
             <div class="sm:col-span-12">
-                <x-input-label value="Tingkat" />
-                <div class="mt-1.5 flex flex-wrap gap-2">
+                <x-input-label value="Tingkat" class="mb-1.5" />
+                <div class="flex flex-wrap gap-2">
                     <button type="button" @click="modeTingkat = 'semua'; tingkat = ''"
                         :class="modeTingkat === 'semua' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
                         class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition">
@@ -128,8 +156,12 @@
             </div>
 
             <div class="sm:col-span-12">
-                <x-input-label value="Kurikulum" />
-                <x-select name="kurikulum" class="mt-1.5" :error="$errors->has('kurikulum')">
+                <x-input-label value="Kurikulum" class="mb-1.5" />
+                <x-select
+                    name="kurikulum"
+                    :error="$errors->has('kurikulum')"
+                    x-init="$nextTick(() => initTomSelect($el, 'Pilih Kurikulum', false))"
+                >
                     @foreach ($kurikulumList as $k)
                         <option value="{{ $k->value }}" @selected($val('kurikulum') === $k->value)>{{ $k->label() }}</option>
                     @endforeach
