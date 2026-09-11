@@ -42,12 +42,14 @@ class LpjPengadaanController extends Controller
     {
         abort_unless($proposal->lembaga_id === $this->tenantContext->activeLembagaId(), 404);
 
+        $existingItems = $proposal->lpj?->items->keyBy('pengajuan_item_id') ?? collect();
         $items = $request->validated()['items'];
         $processedItems = [];
 
         foreach ($items as $idx => $item) {
-            $fotoNotaPath = null;
-            $fotoFisikPath = null;
+            $existing = $existingItems->get($item['pengajuan_item_id']);
+            $fotoNotaPath = $existing?->foto_nota_path;
+            $fotoFisikPath = $existing?->foto_fisik_barang_path;
 
             if ($request->hasFile("items.{$idx}.foto_nota")) {
                 $fotoNotaPath = $request->file("items.{$idx}.foto_nota")->store('pengadaan/nota', 'public');

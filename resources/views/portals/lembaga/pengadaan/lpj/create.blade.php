@@ -29,6 +29,9 @@
             </div>
             <p class="text-xs text-indigo-800 max-w-sm text-right leading-relaxed">
                 Input nominal nota riil per barang dan lampirkan <b>scan nota/faktur</b> serta <b>foto fisik barang</b> saat tiba di sekolah.
+                @if ($proposal->lpj)
+                    Item yang tidak diunggah ulang akan tetap memakai berkas sebelumnya.
+                @endif
             </p>
         </div>
 
@@ -85,12 +88,18 @@
 
                                 {{-- Scan Nota / Faktur --}}
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-gray-600 mb-1">Scan Nota / Faktur <span class="text-error-600">*</span></label>
+                                    <label class="block text-[11px] font-semibold text-gray-600 mb-1">
+                                        Scan Nota / Faktur <span class="text-error-600" x-show="!item.fotoNotaUrl">*</span>
+                                    </label>
+                                    <template x-if="item.fotoNotaUrl">
+                                        <button type="button" @click="$store.imagePreview.buka(item.fotoNotaUrl, 'Nota Tersimpan')" class="mb-1 inline-flex items-center gap-1 text-[10px] font-medium text-brand-600 hover:text-brand-800">
+                                            <x-icon name="visibility" class="h-3 w-3" /> Lihat nota tersimpan (upload baru untuk mengganti)
+                                        </button>
+                                    </template>
                                     <input
                                         type="file"
                                         :name="`items[${index}][foto_nota]`"
                                         accept="image/jpeg,image/png,image/jpg,application/pdf"
-                                        required
                                         class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
                                     >
                                     <p class="text-[10px] text-gray-400 mt-0.5">JPG, PNG, PDF (Maks 5MB)</p>
@@ -98,12 +107,18 @@
 
                                 {{-- Foto Fisik Barang Tiba --}}
                                 <div>
-                                    <label class="block text-[11px] font-semibold text-gray-600 mb-1">Foto Fisik Barang Tiba <span class="text-error-600">*</span></label>
+                                    <label class="block text-[11px] font-semibold text-gray-600 mb-1">
+                                        Foto Fisik Barang Tiba <span class="text-error-600" x-show="!item.fotoFisikUrl">*</span>
+                                    </label>
+                                    <template x-if="item.fotoFisikUrl">
+                                        <button type="button" @click="$store.imagePreview.buka(item.fotoFisikUrl, 'Foto Fisik Tersimpan')" class="mb-1 inline-flex items-center gap-1 text-[10px] font-medium text-brand-600 hover:text-brand-800">
+                                            <x-icon name="visibility" class="h-3 w-3" /> Lihat foto tersimpan (upload baru untuk mengganti)
+                                        </button>
+                                    </template>
                                     <input
                                         type="file"
                                         :name="`items[${index}][foto_fisik]`"
                                         accept="image/jpeg,image/png,image/jpg"
-                                        required
                                         class="block w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
                                     >
                                     <p class="text-[10px] text-gray-400 mt-0.5">Foto Barang JPG, PNG (Maks 5MB)</p>
@@ -184,12 +199,15 @@
                 nominalCair: {{ (float) $proposal->nominal_pencairan }},
                 items: [
                     @foreach ($proposal->items as $idx => $item)
+                    @php $lpjItem = $proposal->lpj?->items->firstWhere('pengajuan_item_id', $item->id); @endphp
                     {
                         id: {{ $item->id }},
                         nama: @js($item->nama_barang),
                         qty: {{ $item->qty }},
                         satuan: @js($item->satuan),
-                        harga_satuan_riil: {{ (float) $item->estimasi_harga_satuan }},
+                        harga_satuan_riil: {{ (float) ($lpjItem->harga_satuan_riil ?? $item->estimasi_harga_satuan) }},
+                        fotoNotaUrl: @js($lpjItem?->foto_nota_path ? \Illuminate\Support\Facades\Storage::url($lpjItem->foto_nota_path) : null),
+                        fotoFisikUrl: @js($lpjItem?->foto_fisik_barang_path ? \Illuminate\Support\Facades\Storage::url($lpjItem->foto_fisik_barang_path) : null),
                         get total_riil() { return this.qty * (Number(this.harga_satuan_riil) || 0); }
                     },
                     @endforeach

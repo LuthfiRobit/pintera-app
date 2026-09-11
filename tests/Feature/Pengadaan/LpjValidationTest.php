@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Pengadaan;
 
+use App\Domains\Pengadaan\Actions\VerifyLpjAction;
 use App\Domains\Pengadaan\Enums\StatusItemPengajuan;
 use App\Domains\Pengadaan\Enums\StatusLpj;
 use App\Domains\Pengadaan\Enums\StatusPengajuan;
 use App\Domains\Pengadaan\Enums\TingkatUrgensi;
+use App\Domains\Pengadaan\Models\LpjPengadaan;
 use App\Domains\Pengadaan\Models\PengajuanPengadaan;
 use App\Domains\Pengadaan\Models\PengajuanPengadaanItem;
 use App\Domains\Sarpras\Enums\JenisRuangan;
@@ -31,11 +33,17 @@ class LpjValidationTest extends TestCase
     use RefreshDatabase;
 
     protected Yayasan $yayasan;
+
     protected Lembaga $lembaga;
+
     protected User $user;
+
     protected Ruangan $ruangan;
+
     protected KategoriAset $kategori;
+
     protected PengajuanPengadaan $proposal;
+
     protected PengajuanPengadaanItem $item;
 
     protected function setUp(): void
@@ -123,8 +131,8 @@ class LpjValidationTest extends TestCase
                     'pengajuan_item_id' => $this->item->id,
                     'harga_satuan_riil' => 5000000,
                     'total_riil' => 5000000,
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $response->assertSessionHasErrors([
@@ -144,7 +152,7 @@ class LpjValidationTest extends TestCase
                     'total_riil' => 4000000,
                     'foto_nota' => UploadedFile::fake()->create('nota.pdf', 200, 'application/pdf'),
                     'foto_fisik' => UploadedFile::fake()->image('barang.jpg'),
-                ]
+                ],
             ],
             // Tanpa bukti_kembali_sisa
         ]);
@@ -162,7 +170,7 @@ class LpjValidationTest extends TestCase
                     'total_riil' => 4000000,
                     'foto_nota' => UploadedFile::fake()->create('nota.pdf', 200, 'application/pdf'),
                     'foto_fisik' => UploadedFile::fake()->image('barang.jpg'),
-                ]
+                ],
             ],
             'bukti_kembali_sisa' => UploadedFile::fake()->create('transfer_sisa.pdf', 200, 'application/pdf'),
         ]);
@@ -176,5 +184,77 @@ class LpjValidationTest extends TestCase
             'selisih_dana' => 1000000,
             'status_lpj' => StatusLpj::Submitted->value,
         ]);
+    }
+
+    public function test_resubmit_lpj_setelah_revision_required_tidak_wajib_upload_ulang_item_yang_tidak_diubah(): void
+    {
+        $this->proposal->update(['nominal_pencairan' => 5500000]);
+
+        $item2 = PengajuanPengadaanItem::create([
+            'pengajuan_pengadaan_id' => $this->proposal->id,
+            'kategori_aset_id' => $this->kategori->id,
+            'target_ruangan_id' => $this->ruangan->id,
+            'nama_barang' => 'Layar Proyektor',
+            'qty' => 1,
+            'satuan' => 'unit',
+            'estimasi_harga_satuan' => 500000,
+            'total_estimasi' => 500000,
+            'tipe_pencatatan' => TipePencatatanAset::Unit,
+            'status_item' => StatusItemPengajuan::Approved,
+        ]);
+
+        // Submit pertama: kedua item lengkap dengan file.
+        $this->actingAs($this->user)->post(route('admin.pengadaan.lpj.store', $this->proposal), [
+            'items' => [
+                [
+                    'pengajuan_item_id' => $this->item->id,
+                    'harga_satuan_riil' => 5000000,
+                    'total_riil' => 5000000,
+                    'foto_nota' => UploadedFile::fake()->create('nota1.pdf', 200, 'application/pdf'),
+                    'foto_fisik' => UploadedFile::fake()->image('barang1.jpg'),
+                ],
+                [
+                    'pengajuan_item_id' => $item2->id,
+                    'harga_satuan_riil' => 500000,
+                    'total_riil' => 500000,
+                    'foto_nota' => UploadedFile::fake()->create('nota2.pdf', 200, 'application/pdf'),
+                    'foto_fisik' => UploadedFile::fake()->image('barang2.jpg'),
+                ],
+            ],
+        ]);
+
+        $lpj = LpjPengadaan::where('pengajuan_pengadaan_id', $this->proposal->id)->firstOrFail();
+        $itemLpjPertama = $lpj->items()->where('pengajuan_item_id', $this->item->id)->firstOrFail();
+        $fotoNotaPathLama = $itemLpjPertama->foto_nota_path;
+        $fotoFisikPathLama = $itemLpjPertama->foto_fisik_barang_path;
+        $this->assertNotNull($fotoNotaPathLama);
+
+        // Yayasan minta revisi.
+        app(VerifyLpjAction::class)->execute($lpj, $this->user->id, false, 'Nota item 2 buram.');
+
+        // Resubmit: HANYA item 2 yang diganti file-nya, item 1 TIDAK mengirim foto sama sekali.
+        $response = $this->actingAs($this->user)->post(route('admin.pengadaan.lpj.store', $this->proposal), [
+            'items' => [
+                [
+                    'pengajuan_item_id' => $this->item->id,
+                    'harga_satuan_riil' => 5000000,
+                    'total_riil' => 5000000,
+                ],
+                [
+                    'pengajuan_item_id' => $item2->id,
+                    'harga_satuan_riil' => 500000,
+                    'total_riil' => 500000,
+                    'foto_nota' => UploadedFile::fake()->create('nota2-ulang.pdf', 200, 'application/pdf'),
+                    'foto_fisik' => UploadedFile::fake()->image('barang2-ulang.jpg'),
+                ],
+            ],
+        ]);
+
+        $response->assertRedirect(route('admin.pengadaan.proposal.show', $this->proposal));
+        $response->assertSessionDoesntHaveErrors();
+
+        $itemLpjPertamaSetelahResubmit = $lpj->fresh()->items()->where('pengajuan_item_id', $this->item->id)->firstOrFail();
+        $this->assertSame($fotoNotaPathLama, $itemLpjPertamaSetelahResubmit->foto_nota_path);
+        $this->assertSame($fotoFisikPathLama, $itemLpjPertamaSetelahResubmit->foto_fisik_barang_path);
     }
 }

@@ -52,7 +52,8 @@
 
                 @if ($proposal->status === \App\Domains\Pengadaan\Enums\StatusPengajuan::Disbursed && auth()->user()->can('pengadaan.lpj.submit'))
                     <x-link-button href="{{ route('admin.pengadaan.lpj.create', $proposal) }}">
-                        <x-icon name="receipt_long" class="h-4 w-4 mr-1" /> Unggah LPJ Belanja
+                        <x-icon name="receipt_long" class="h-4 w-4 mr-1" />
+                        {{ $proposal->lpj && $proposal->lpj->status_lpj === \App\Domains\Pengadaan\Enums\StatusLpj::RevisionRequired ? 'Perbaiki & Kirim Ulang LPJ' : 'Unggah LPJ Belanja' }}
                     </x-link-button>
                 @endif
 
@@ -93,6 +94,24 @@
                             <x-icon name="edit" class="h-4 w-4 mr-1" /> Edit & Sesuaikan Usulan
                         </x-link-button>
                     @endcan
+                </div>
+            </div>
+        @endif
+        {{-- LPJ Revision Callout Banner --}}
+        @if ($proposal->lpj && $proposal->lpj->status_lpj === \App\Domains\Pengadaan\Enums\StatusLpj::RevisionRequired)
+            <div class="rounded-2xl border border-amber-300 bg-amber-50 p-5 shadow-card">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-sm">
+                            <x-icon name="assignment_late" class="h-5 w-5" />
+                        </span>
+                        <div class="space-y-1">
+                            <h2 class="font-display text-sm font-bold text-amber-900">Perhatian: LPJ Ini Memerlukan Perbaikan</h2>
+                            <p class="text-xs text-amber-800 leading-relaxed">
+                                Catatan Auditor Yayasan: <b>{{ $proposal->lpj->catatan_verifikasi ?? 'Silakan periksa kembali nota dan foto fisik barang sesuai instruksi auditor.' }}</b>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         @endif

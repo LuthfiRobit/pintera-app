@@ -26,8 +26,8 @@ class StoreLpjRequest extends FormRequest
             'items.*.pengajuan_item_id' => ['required', 'exists:pengajuan_pengadaan_item,id'],
             'items.*.harga_satuan_riil' => ['required', 'numeric', 'min:0'],
             'items.*.total_riil' => ['required', 'numeric', 'min:0'],
-            'items.*.foto_nota' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
-            'items.*.foto_fisik' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
+            'items.*.foto_nota' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'items.*.foto_fisik' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
             'bukti_kembali_sisa' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ];
     }
@@ -38,6 +38,18 @@ class StoreLpjRequest extends FormRequest
             $proposal = $this->route('proposal');
             if (! $proposal) {
                 return;
+            }
+
+            $existingItems = $proposal->lpj?->items->keyBy('pengajuan_item_id') ?? collect();
+            foreach ($this->input('items', []) as $idx => $item) {
+                $existing = $existingItems->get($item['pengajuan_item_id'] ?? null);
+
+                if (! $this->hasFile("items.{$idx}.foto_nota") && ! $existing?->foto_nota_path) {
+                    $validator->errors()->add("items.{$idx}.foto_nota", 'Scan nota/faktur pembelian untuk setiap item barang wajib diunggah.');
+                }
+                if (! $this->hasFile("items.{$idx}.foto_fisik") && ! $existing?->foto_fisik_barang_path) {
+                    $validator->errors()->add("items.{$idx}.foto_fisik", 'Foto fisik barang saat tiba di sekolah wajib diunggah untuk setiap item.');
+                }
             }
 
             $nominalPencairan = (float) $proposal->nominal_pencairan;
@@ -65,10 +77,8 @@ class StoreLpjRequest extends FormRequest
             'items.*.harga_satuan_riil.required' => 'Harga satuan riil aktual wajib diisi.',
             'items.*.harga_satuan_riil.min' => 'Harga satuan riil tidak boleh negatif.',
             'items.*.total_riil.required' => 'Total belanja riil wajib diisi.',
-            'items.*.foto_nota.required' => 'Scan nota/faktur pembelian untuk setiap item barang wajib diunggah.',
             'items.*.foto_nota.mimes' => 'Berkas scan nota fisik harus berformat JPG, JPEG, PNG, atau PDF.',
             'items.*.foto_nota.max' => 'Ukuran berkas scan nota maksimal 5MB.',
-            'items.*.foto_fisik.required' => 'Foto fisik barang saat tiba di sekolah wajib diunggah untuk setiap item.',
             'items.*.foto_fisik.image' => 'Foto fisik barang harus berupa file gambar (JPG, JPEG, PNG).',
             'items.*.foto_fisik.mimes' => 'Foto fisik barang harus berformat JPG, JPEG, atau PNG.',
             'items.*.foto_fisik.max' => 'Ukuran foto fisik barang maksimal 5MB.',
