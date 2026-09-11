@@ -1625,3 +1625,19 @@ it('menampilkan KPI Mata Pelajaran Aktif dan Guru Pengampu Terlibat', function (
     $response->assertSee('Mata Pelajaran Aktif');
     $response->assertSee('Guru Pengampu Terlibat');
 });
+
+it('menampilkan tooltip pada tombol Salin dari Kelas Lain dan badge anti-bentrok di modal duplikasi', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $semester->tahun_ajaran_id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('Salin susunan mata pelajaran, guru, dan ruangan dari kelas lain');
+    $response->assertSee('Slot yang sudah terisi di kelas tujuan');
+});

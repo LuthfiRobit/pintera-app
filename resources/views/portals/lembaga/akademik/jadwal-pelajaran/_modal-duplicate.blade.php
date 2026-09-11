@@ -42,15 +42,17 @@
                 <p x-text="duplicateForm.errorMessage"></p>
             </div>
 
-            <div class="rounded-xl bg-brand-50/70 p-3.5 border border-brand-100 text-xs space-y-1 text-brand-900">
-                <div class="flex items-center gap-1.5 font-semibold text-brand-700">
-                    <x-icon name="info" class="h-4 w-4 shrink-0 text-brand-500" />
-                    <span>Mekanisme Anti-Bentrok Proaktif</span>
+            <x-tooltip text="Slot yang sudah terisi di kelas tujuan, atau guru yang sudah mengajar di jam yang sama di kelas lain, otomatis dilewati tanpa menimpa data yang ada.">
+                <div class="rounded-xl bg-brand-50/70 p-3.5 border border-brand-100 text-xs space-y-1 text-brand-900 cursor-help">
+                    <div class="flex items-center gap-1.5 font-semibold text-brand-700">
+                        <x-icon name="info" class="h-4 w-4 shrink-0 text-brand-500" />
+                        <span>Mekanisme Anti-Bentrok Proaktif</span>
+                    </div>
+                    <p class="text-brand-800/80 leading-relaxed">
+                        Sistem akan secara otomatis melepaskan slot yang bertentangan (jika slot sudah diisi di kelas tujuan, atau guru sudah mengajar di kelas lain pada jam tersebut).
+                    </p>
                 </div>
-                <p class="text-brand-800/80 leading-relaxed">
-                    Sistem akan secara otomatis melepaskan slot yang bertentangan (jika slot sudah diisi di kelas tujuan, atau guru sudah mengajar di kelas lain pada jam tersebut).
-                </p>
-            </div>
+            </x-tooltip>
 
             <div class="space-y-4">
                 <div>
