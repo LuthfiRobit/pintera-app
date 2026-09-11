@@ -197,4 +197,24 @@ class CrossTenantIsolationTest extends TestCase
             return $stats['total'] === 2 && $stats['draft'] === 1;
         });
     }
+
+    public function test_lembaga_lain_tidak_bisa_akses_lpj_create_dan_store(): void
+    {
+        $this->proposalA2->update(['status' => StatusPengajuan::Disbursed]);
+
+        $adminB1 = User::factory()->create(['lembaga_id' => $this->lembagaB1->id]);
+        $adminB1->givePermissionTo(['pengadaan.lpj.submit']);
+
+        $this->actingAs($adminB1)
+            ->get(route('admin.pengadaan.lpj.create', $this->proposalA2))
+            ->assertNotFound();
+
+        $this->actingAs($adminB1)
+            ->post(route('admin.pengadaan.lpj.store', $this->proposalA2), [])
+            ->assertNotFound();
+
+        $this->assertDatabaseMissing('lpj_pengadaan', [
+            'pengajuan_pengadaan_id' => $this->proposalA2->id,
+        ]);
+    }
 }

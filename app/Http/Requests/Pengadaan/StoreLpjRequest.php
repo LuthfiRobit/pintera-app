@@ -3,12 +3,19 @@
 namespace App\Http\Requests\Pengadaan;
 
 use App\Domains\Pengadaan\DataTransferObjects\LpjPengadaanData;
+use App\Domains\Pengadaan\Models\PengajuanPengadaan;
+use App\Domains\Shared\Context\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLpjRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        $proposal = $this->route('proposal');
+        if ($proposal instanceof PengajuanPengadaan) {
+            abort_unless($proposal->lembaga_id === app(TenantContext::class)->activeLembagaId(), 404);
+        }
+
         return $this->user()?->can('pengadaan.lpj.submit') ?? false;
     }
 
@@ -45,7 +52,7 @@ class StoreLpjRequest extends FormRequest
             if ($sisaKas > 0 && ! $this->hasFile('bukti_kembali_sisa')) {
                 $validator->errors()->add(
                     'bukti_kembali_sisa',
-                    'Terdapat sisa dana kas sebesar Rp ' . number_format($sisaKas, 0, ',', '.') . '. Bukti transfer/setoran pengembalian sisa kas ke Yayasan wajib dilampirkan.'
+                    'Terdapat sisa dana kas sebesar Rp '.number_format($sisaKas, 0, ',', '.').'. Bukti transfer/setoran pengembalian sisa kas ke Yayasan wajib dilampirkan.'
                 );
             }
         });

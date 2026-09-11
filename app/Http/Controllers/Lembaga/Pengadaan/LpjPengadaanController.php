@@ -22,12 +22,12 @@ class LpjPengadaanController extends Controller
         protected TenantContext $tenantContext,
         protected SubmitLpjPengadaanAction $submitLpjAction,
         protected GenerateInventoryFromLpjAction $generateInventoryAction,
-    ) {
-    }
+    ) {}
 
     public function create(PengajuanPengadaan $proposal): View
     {
         $this->authorize('pengadaan.lpj.submit');
+        abort_unless($proposal->lembaga_id === $this->tenantContext->activeLembagaId(), 404);
 
         if ($proposal->status !== StatusPengajuan::Disbursed) {
             abort(403, 'LPJ hanya dapat diisi untuk proposal yang telah dicairkan dananya.');
@@ -40,6 +40,8 @@ class LpjPengadaanController extends Controller
 
     public function store(StoreLpjRequest $request, PengajuanPengadaan $proposal): RedirectResponse
     {
+        abort_unless($proposal->lembaga_id === $this->tenantContext->activeLembagaId(), 404);
+
         $items = $request->validated()['items'];
         $processedItems = [];
 
