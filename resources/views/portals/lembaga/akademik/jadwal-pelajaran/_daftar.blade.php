@@ -33,6 +33,21 @@
             </div>
         </div>
 
+        @php
+            $totalMapel = $jadwalList->pluck('mata_pelajaran_id')->filter()->unique()->count();
+            $totalGuru = $jadwalList->pluck('guru_id')->unique()->count();
+        @endphp
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
+                <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Mata Pelajaran Aktif</p>
+                <p class="font-display text-lg font-bold text-gray-900">{{ $totalMapel }}</p>
+            </div>
+            <div class="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
+                <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Guru Pengampu Terlibat</p>
+                <p class="font-display text-lg font-bold text-gray-900">{{ $totalGuru }}</p>
+            </div>
+        </div>
+
         {{-- Tampilan Matriks Mingguan --}}
         <div x-show="viewMode === 'matrix'" x-transition:enter="transition ease-out duration-200 opacity-0 transform translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0">
             @include('portals.lembaga.akademik.jadwal-pelajaran._matrix-roster')
