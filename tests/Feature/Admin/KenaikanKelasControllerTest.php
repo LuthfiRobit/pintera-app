@@ -358,3 +358,15 @@ it('renders the mapping table normally when tujuan is a genuinely later tahun aj
     $response->assertViewHas('errorTahunAjaran', fn ($error) => $error === null);
     $response->assertViewHas('kelasLamaList', fn ($list) => $list->isNotEmpty());
 });
+
+it('shows the lembaga name alongside each tahun ajaran option to disambiguate aggregate mode', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Test Unik']);
+    $tahun = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026']);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index'));
+
+    $response->assertOk();
+    $response->assertSee('2025/2026 — SD Test Unik');
+});

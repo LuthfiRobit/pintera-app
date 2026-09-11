@@ -21,20 +21,20 @@
         <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-card">
             <form method="GET" action="{{ route('admin.kenaikan-kelas.index') }}" class="flex flex-wrap items-end gap-3">
                 <div class="flex-1 min-w-[220px]">
-                    <x-input-label value="Tahun Ajaran Sumber (kelas lama)" />
-                    <select name="tahun_ajaran_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <x-input-label for="tahun_ajaran_id" value="Tahun Ajaran Sumber (kelas lama)" />
+                    <select id="tahun_ajaran_id" name="tahun_ajaran_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih —</option>
                         @foreach ($tahunAjaranList as $tahunAjaran)
-                            <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
+                            <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranId == $tahunAjaran->id)>{{ $tahunAjaran->nama }} — {{ $tahunAjaran->lembaga->nama }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="flex-1 min-w-[220px]">
-                    <x-input-label value="Tahun Ajaran Tujuan (kelas baru)" />
-                    <select name="tahun_ajaran_tujuan_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <x-input-label for="tahun_ajaran_tujuan_id" value="Tahun Ajaran Tujuan (kelas baru)" />
+                    <select id="tahun_ajaran_tujuan_id" name="tahun_ajaran_tujuan_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih —</option>
                         @foreach ($tahunAjaranList as $tahunAjaran)
-                            <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranTujuanId == $tahunAjaran->id)>{{ $tahunAjaran->nama }}</option>
+                            <option value="{{ $tahunAjaran->id }}" @selected($tahunAjaranTujuanId == $tahunAjaran->id)>{{ $tahunAjaran->nama }} — {{ $tahunAjaran->lembaga->nama }}</option>
                         @endforeach
                     </select>
                 </div>
