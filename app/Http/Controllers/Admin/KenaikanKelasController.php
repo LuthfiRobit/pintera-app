@@ -62,9 +62,12 @@ class KenaikanKelasController extends BaseController
         $data = $request->validate([
             'mapping' => ['required', 'array'],
             'mapping.*.tindakan' => ['required', 'in:naik,lulus,lewati'],
-            'mapping.*.kelas_baru_id' => ['required_if:mapping.*.tindakan,naik', 'nullable', 'integer'],
+            'mapping.*.kelas_baru_id' => ['required_if:mapping.*.tindakan,naik', 'nullable', 'integer', 'exists:kelas,id'],
             'mapping.*.salin_jadwal' => ['nullable', 'boolean'],
-            'mapping.*.semester_tujuan_id' => ['nullable', 'integer'],
+            'mapping.*.semester_tujuan_id' => ['required_if:mapping.*.salin_jadwal,1', 'nullable', 'integer', 'exists:semester,id'],
+        ], [
+            'mapping.*.kelas_baru_id.exists' => 'Kelas tujuan yang dipilih tidak valid atau sudah tidak tersedia.',
+            'mapping.*.semester_tujuan_id.required_if' => 'Anda mencentang "Salin Jadwal" untuk salah satu kelas, tapi belum memilih semester tujuan. Pilih semester tujuan atau batalkan centang tersebut.',
         ]);
 
         try {

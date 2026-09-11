@@ -370,3 +370,43 @@ it('shows the lembaga name alongside each tahun ajaran option to disambiguate ag
     $response->assertOk();
     $response->assertSee('2025/2026 — SD Test Unik');
 });
+
+it('rejects a kelas_baru_id that does not exist in the database', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '5A']);
+    $siswa = Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLama->id, 'status' => StatusSiswa::Aktif->value]);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $this->actingAs($manager)->post(route('admin.kenaikan-kelas.store'), [
+        'mapping' => [
+            $kelasLama->id => ['tindakan' => 'naik', 'kelas_baru_id' => 999999],
+        ],
+    ])->assertSessionHasErrors();
+
+    $siswa->refresh();
+    expect($siswa->kelas_id)->toBe($kelasLama->id);
+});
+
+it('rejects checking salin_jadwal without selecting a semester_tujuan_id', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasLama = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '5A']);
+    $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => '6A']);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->post(route('admin.kenaikan-kelas.store'), [
+        'mapping' => [
+            $kelasLama->id => [
+                'tindakan' => 'naik',
+                'kelas_baru_id' => $kelasBaru->id,
+                'salin_jadwal' => '1',
+            ],
+        ],
+    ]);
+
+    $response->assertSessionHasErrors();
+});
