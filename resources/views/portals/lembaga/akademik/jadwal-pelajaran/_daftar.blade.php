@@ -18,7 +18,7 @@
                     :class="viewMode === 'matrix' ? 'bg-white text-gray-900 shadow-xs font-bold' : 'text-gray-500 hover:text-gray-800 font-medium'"
                     class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs transition-all duration-200"
                 >
-                    <x-icon name="grid_on" class="h-4 w-4 text-brand-500" />
+                    <x-icon name="data_table" class="h-4 w-4 text-brand-500" />
                     <span>Matriks Roster</span>
                 </button>
                 <button
@@ -27,7 +27,7 @@
                     :class="viewMode === 'list' ? 'bg-white text-gray-900 shadow-xs font-bold' : 'text-gray-500 hover:text-gray-800 font-medium'"
                     class="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-xs transition-all duration-200"
                 >
-                    <x-icon name="format_list_bulleted" class="h-4 w-4 text-gray-500" />
+                    <x-icon name="list" class="h-4 w-4 text-gray-500" />
                     <span>Tampilan Daftar</span>
                 </button>
             </div>

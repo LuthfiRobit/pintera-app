@@ -27,7 +27,7 @@
         @if (isset($kelas) && $kelas)
             <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg bg-gray-50 px-3.5 py-2.5 text-xs text-gray-600 border border-gray-200">
                 <span class="flex items-center gap-1.5">
-                    <x-icon name="class" class="h-3.5 w-3.5 text-gray-400" />
+                    <x-icon name="school" class="h-3.5 w-3.5 text-gray-400" />
                     Kelas <strong class="font-semibold text-gray-800">{{ $kelas->nama }}</strong>
                 </span>
                 <span class="flex items-center gap-1.5">
