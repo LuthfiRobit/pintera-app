@@ -99,6 +99,45 @@
                 </div>
             @endif
         </div>
+
+        {{-- Seksi Kalender Piket Harian Mendatang (Semua Sumber, Read-Only) --}}
+        <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-card space-y-4">
+            <div class="border-b border-gray-150 pb-3">
+                <h2 class="font-display text-base font-bold text-gray-900">Kalender Piket Harian Mendatang</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Hasil generate otomatis dari Jadwal Piket Mingguan di atas, digabung dengan Override Manual. Maksimal 60 baris ke depan ditampilkan. Baris "Otomatis" TIDAK bisa dihapus langsung dari sini — ubah lewat Jadwal Piket Mingguan di atas.</p>
+            </div>
+
+            @if ($piketHarianMendatang->isNotEmpty())
+                <div class="overflow-hidden rounded-xl border border-gray-200">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-50 text-left text-gray-500 font-semibold border-b border-gray-200">
+                            <tr>
+                                <th class="px-4 py-2.5">Tanggal</th>
+                                <th class="px-4 py-2.5">Guru Piket</th>
+                                <th class="px-4 py-2.5">Sumber</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-150 bg-white">
+                            @foreach ($piketHarianMendatang as $item)
+                                <tr>
+                                    <td class="px-4 py-2.5 font-medium text-gray-900">{{ \Carbon\Carbon::parse($item->tanggal)->isoFormat('dddd, D MMMM Y') }}</td>
+                                    <td class="px-4 py-2.5 text-gray-700">{{ $item->guru?->nama ?? '-' }}</td>
+                                    <td class="px-4 py-2.5">
+                                        @if ($item->sumber === 'override_manual')
+                                            <span class="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-semibold text-purple-700">Manual</span>
+                                        @else
+                                            <span class="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">Otomatis</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <p class="text-xs text-gray-500">Belum ada baris piket harian mendatang. Buat Jadwal Piket Mingguan di atas untuk mulai generate otomatis.</p>
+            @endif
+        </div>
     </div>
 </x-app-layout>
 

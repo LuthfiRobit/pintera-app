@@ -253,3 +253,21 @@ it('admin lembaga A TIDAK BISA pilih semester milik lembaga B saat update()', fu
     $response->assertSessionHasErrors('semester_id');
     expect($jadwal->fresh()->semester_id)->toBe($semesterA->id);
 });
+
+it('mengirim piketHarianMendatang berisi kedua sumber (otomatis dan manual) ke view', function () {
+    ['lembaga' => $lembaga, 'guru' => $guru, 'admin' => $admin] = siapkanAdminPiketKelola();
+
+    PiketHarian::create([
+        'lembaga_id' => $lembaga->id, 'guru_id' => $guru->id, 'tanggal' => now()->addDay()->toDateString(), 'sumber' => 'dari_jadwal_mingguan',
+    ]);
+    PiketHarian::create([
+        'lembaga_id' => $lembaga->id, 'guru_id' => $guru->id, 'tanggal' => now()->addDays(2)->toDateString(), 'sumber' => 'override_manual',
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('admin.piket-guru.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('piketHarianMendatang', fn ($list) => $list->count() === 2);
+    $response->assertViewHas('overrides', fn ($list) => $list->count() === 1);
+});
+

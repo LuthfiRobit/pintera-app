@@ -36,6 +36,12 @@ class JadwalPiketMingguanController extends BaseController
                 ->with('guru')
                 ->orderBy('tanggal')
                 ->get(),
+            'piketHarianMendatang' => PiketHarian::where('lembaga_id', $lembagaId)
+                ->where('tanggal', '>=', now()->toDateString())
+                ->with('guru')
+                ->orderBy('tanggal')
+                ->limit(60)
+                ->get(),
             'guruList' => Guru::where('lembaga_id', $lembagaId)->orderByNama()->get(),
         ]);
     }
