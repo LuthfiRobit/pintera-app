@@ -93,7 +93,7 @@
 
                                                 @can('jadwal-pelajaran.kelola')
                                                     <div class="mt-3.5 pt-2.5 border-t border-gray-100 flex items-center justify-end gap-3 opacity-95 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <a href="{{ route('admin.jadwal-pelajaran.edit', $jadwal) }}" @click.prevent="openEditModal({ id: {{ $jadwal->id }}, jam_id: {{ $jadwal->jam_pelajaran_id }}, mapel_id: {{ $jadwal->mata_pelajaran_id ?? 'null' }}, guru_id: {{ $jadwal->guru_id }}, url: '{{ route('admin.jadwal-pelajaran.update', $jadwal) }}' })" class="inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-700 transition">
+                                                        <a href="{{ route('admin.jadwal-pelajaran.edit', $jadwal) }}" @click.prevent="openEditModal({ id: {{ $jadwal->id }}, jam_id: {{ $jadwal->jam_pelajaran_id }}, mapel_id: {{ $jadwal->mata_pelajaran_id ?? 'null' }}, guru_id: {{ $jadwal->guru_id }}, ruangan_id: {{ $jadwal->ruangan_id ?? 'null' }}, url: '{{ route('admin.jadwal-pelajaran.update', $jadwal) }}' })" class="inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-700 transition">
                                                             <x-icon name="edit" class="h-3.5 w-3.5" />
                                                             <span>Edit</span>
                                                         </a>

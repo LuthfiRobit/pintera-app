@@ -33,28 +33,13 @@
             </div>
         </div>
 
-        @php
-            $totalMapel = $jadwalList->pluck('mata_pelajaran_id')->filter()->unique()->count();
-            $totalGuru = $jadwalList->pluck('guru_id')->unique()->count();
-        @endphp
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div class="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
-                <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Mata Pelajaran Aktif</p>
-                <p class="font-display text-lg font-bold text-gray-900">{{ $totalMapel }}</p>
-            </div>
-            <div class="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card">
-                <p class="font-display text-[11px] font-semibold uppercase tracking-wider text-gray-500">Guru Pengampu Terlibat</p>
-                <p class="font-display text-lg font-bold text-gray-900">{{ $totalGuru }}</p>
-            </div>
-        </div>
-
         {{-- Tampilan Matriks Mingguan --}}
         <div x-show="viewMode === 'matrix'" x-transition:enter="transition ease-out duration-200 opacity-0 transform translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0">
             @include('portals.lembaga.akademik.jadwal-pelajaran._matrix-roster')
         </div>
 
-        {{-- Tampilan Daftar Klasik --}}
-        <div x-show="viewMode === 'list'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-200 opacity-0 transform translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0">
+        {{-- Tampilan Daftar Harian (Style Pola Jam) --}}
+        <div x-data="{ hariAktif: '{{ collect($hariAktif)->first()?->value ?? 'senin' }}' }" x-show="viewMode === 'list'" x-cloak style="display: none;" x-transition:enter="transition ease-out duration-200 opacity-0 transform translate-y-1" x-transition:enter-end="opacity-100 transform translate-y-0">
             <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                 <div class="flex items-center justify-between border-b border-gray-100 bg-white px-6 py-4">
                     <div>
@@ -70,76 +55,115 @@
                         <p class="text-xs text-gray-500 mt-1">Belum ada slot waktu dan mata pelajaran yang diatur untuk kelas dan semester ini.</p>
                     </div>
                 @else
-                    <div class="divide-y divide-gray-100 bg-white">
-                        @foreach ($hariAktif as $hari)
-                            @php $jadwalHariIni = $jadwalList->where('jamPelajaran.hari', $hari)->sortBy('jamPelajaran.urutan'); @endphp
-                            @if ($jadwalHariIni->isNotEmpty())
-                                <div>
-                                    {{-- Section Hari --}}
-                                    <div class="flex items-center justify-between bg-gray-50/75 px-6 py-3 border-y border-gray-100 mt-[-1px]">
-                                        <div class="flex items-center gap-2">
-                                            <x-icon name="calendar_today" class="h-4 w-4 text-brand-500" />
-                                            <span class="text-[12px] font-bold uppercase tracking-wider text-gray-700">{{ $hari->label() }}</span>
-                                        </div>
-                                        <span class="text-xs font-medium text-gray-500">{{ $jadwalHariIni->count() }} sesi</span>
-                                    </div>
-
-                                    {{-- Daftar Slot per Hari --}}
-                                    <ul class="divide-y divide-gray-100">
-                                        @foreach ($jadwalHariIni as $jadwal)
-                                            <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-6 py-4 transition-colors duration-150 hover:bg-gray-50/60">
-                                                <div class="flex flex-wrap items-center gap-3 md:gap-4">
-                                                    {{-- Badge Waktu (Format tanpa detik: H:i) --}}
-                                                    <div class="flex items-center gap-2 font-mono text-xs">
-                                                        <span class="rounded bg-brand-50 px-2.5 py-1 font-bold text-brand-600 ring-1 ring-inset ring-brand-500/20">
-                                                            {{ substr($jadwal->jamPelajaran->jam_mulai, 0, 5) }}
-                                                        </span>
-                                                        <span class="text-gray-400 font-medium">&rarr;</span>
-                                                        <span class="rounded bg-gray-100 px-2.5 py-1 font-semibold text-gray-700 ring-1 ring-inset ring-gray-300/60">
-                                                            {{ substr($jadwal->jamPelajaran->jam_selesai, 0, 5) }}
-                                                        </span>
-                                                    </div>
-
-                                                    <span class="hidden md:inline text-gray-300">&bull;</span>
-
-                                                    {{-- Badge Label Slot (Jam ke-1, Istirahat, dll) --}}
-                                                    <span class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200/60">
-                                                        {{ $jadwal->jamPelajaran->label }}
-                                                    </span>
-
-                                                    <span class="hidden md:inline text-gray-300">&bull;</span>
-
-                                                    {{-- Mata Pelajaran & Guru & Ruangan --}}
-                                                    <div class="flex flex-wrap items-center gap-2 md:gap-3">
-                                                        <span class="text-sm font-bold text-gray-900">
-                                                            {{ $jadwal->mataPelajaran?->nama ?? '(tanpa mapel)' }}
-                                                        </span>
-                                                        <span class="inline-flex items-center gap-1.5 text-xs text-gray-600 sm:border-l sm:border-gray-200 sm:pl-3">
-                                                            <x-icon name="person" class="h-3.5 w-3.5 text-gray-400" />
-                                                            <span>Guru: <strong class="font-semibold text-gray-800">{{ $jadwal->guru->nama }}</strong></span>
-                                                        </span>
-                                                        @if ($jadwal->ruangan)
-                                                            <span class="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 border border-brand-200/60">
-                                                                <x-icon name="meeting_room" class="h-3 w-3 text-brand-500" />
-                                                                <span>{{ $jadwal->ruangan->nama_ruangan }}</span>
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                </div>
-
-                                                @can('jadwal-pelajaran.kelola')
-                                                    <div class="flex items-center gap-4">
-                                                        <a href="{{ route('admin.jadwal-pelajaran.edit', $jadwal) }}" @click.prevent="openEditModal({ id: {{ $jadwal->id }}, jam_id: {{ $jadwal->jam_pelajaran_id }}, mapel_id: {{ $jadwal->mata_pelajaran_id ?? 'null' }}, guru_id: {{ $jadwal->guru_id }}, url: '{{ route('admin.jadwal-pelajaran.update', $jadwal) }}' })" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">Edit</a>
-                                                        <button type="button" @click="hapusJadwal('{{ route('admin.jadwal-pelajaran.destroy', $jadwal) }}', @js(($jadwal->mataPelajaran?->nama ?? 'ini') . ' oleh ' . $jadwal->guru->nama))" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
-                                                    </div>
-                                                @endcan
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
+                    {{-- Tab Filter Hari Horizontal --}}
+                    <div class="flex border-b border-gray-100 bg-gray-50/40 px-6 gap-2 overflow-x-auto">
+                        @foreach ($hariAktif as $tabHari)
+                            @php
+                                $jumlahSesiHari = $jadwalList->where('jamPelajaran.hari', $tabHari)->count();
+                            @endphp
+                            <button type="button"
+                                    @click="hariAktif = '{{ $tabHari->value }}'"
+                                    :class="hariAktif === '{{ $tabHari->value }}' ? 'border-brand-500 text-brand-600 font-bold bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 font-medium'"
+                                    class="py-2.5 px-3 border-b-2 text-xs transition flex items-center gap-1.5 whitespace-nowrap">
+                                <span>{{ $tabHari->label() }}</span>
+                                <span class="rounded-full bg-gray-100 px-1.5 py-0.2 text-[10px] text-gray-600 font-semibold"
+                                      :class="hariAktif === '{{ $tabHari->value }}' ? 'bg-brand-50 text-brand-700' : ''">
+                                    {{ $jumlahSesiHari }}
+                                </span>
+                            </button>
                         @endforeach
                     </div>
+
+                    {{-- Konten List Per Hari --}}
+                    @foreach ($hariAktif as $daftarHari)
+                        <div x-show="hariAktif === '{{ $daftarHari->value }}'" class="divide-y divide-gray-100">
+                            @php
+                                $jadwalHariIni = $jadwalList->where('jamPelajaran.hari', $daftarHari)->sortBy('jamPelajaran.urutan');
+                            @endphp
+
+                            @if ($jadwalHariIni->isEmpty())
+                                <div class="px-6 py-8 text-center text-xs text-gray-400 italic">
+                                    Belum ada jadwal pelajaran untuk hari {{ $daftarHari->label() }}.
+                                </div>
+                            @else
+                                <ul class="divide-y divide-gray-100">
+                                    @foreach ($jadwalHariIni as $jadwal)
+                                        @php
+                                            $jamMulai = substr($jadwal->jamPelajaran->jam_mulai, 0, 5);
+                                            $jamSelesai = substr($jadwal->jamPelajaran->jam_selesai, 0, 5);
+                                            $durasi = \Carbon\Carbon::parse($jadwal->jamPelajaran->jam_mulai)->diffInMinutes(\Carbon\Carbon::parse($jadwal->jamPelajaran->jam_selesai));
+                                        @endphp
+                                        <li class="flex flex-col md:flex-row md:items-center justify-between gap-4 px-6 py-3.5 transition hover:bg-gray-50/60">
+                                            <div class="flex flex-wrap items-center gap-3 md:gap-4">
+                                                {{-- Badge Urutan Jam --}}
+                                                <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-gray-100 font-mono text-xs font-bold text-gray-700">
+                                                    {{ $jadwal->jamPelajaran->urutan }}
+                                                </span>
+
+                                                {{-- Rentang Waktu --}}
+                                                <div class="flex items-center gap-1.5 font-mono text-xs">
+                                                    <span class="rounded bg-brand-50 px-2 py-1 font-bold text-brand-700 ring-1 ring-inset ring-brand-500/20">
+                                                        {{ $jamMulai }}
+                                                    </span>
+                                                    <span class="text-gray-400">&rarr;</span>
+                                                    <span class="rounded bg-gray-100 px-2 py-1 font-semibold text-gray-700 ring-1 ring-inset ring-gray-300/50">
+                                                        {{ $jamSelesai }}
+                                                    </span>
+                                                </div>
+
+                                                <span class="text-[10px] font-semibold text-gray-400">({{ $durasi }} mnt)</span>
+                                                <span class="text-gray-300 hidden md:inline">&bull;</span>
+
+                                                {{-- Label Slot Jam --}}
+                                                <span class="inline-flex items-center rounded-md bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200/60">
+                                                    {{ $jadwal->jamPelajaran->label }}
+                                                </span>
+
+                                                <span class="text-gray-300 hidden md:inline">&bull;</span>
+
+                                                {{-- Mata Pelajaran, Guru & Ruangan --}}
+                                                <div class="flex flex-wrap items-center gap-2.5">
+                                                    <span class="text-sm font-bold text-gray-900">
+                                                        {{ $jadwal->mataPelajaran?->nama ?? '(tanpa mapel)' }}
+                                                    </span>
+                                                    <span class="inline-flex items-center gap-1.5 text-xs text-gray-600 sm:border-l sm:border-gray-200 sm:pl-3">
+                                                        <x-icon name="person" class="h-3.5 w-3.5 text-gray-400" />
+                                                        <span>Guru: <strong class="font-semibold text-gray-800">{{ $jadwal->guru->nama }}</strong></span>
+                                                    </span>
+                                                    @if ($jadwal->ruangan)
+                                                        <span class="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 border border-brand-200/60">
+                                                            <x-icon name="meeting_room" class="h-3 w-3 text-brand-500" />
+                                                            <span>{{ $jadwal->ruangan->nama_ruangan }}</span>
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            {{-- Tombol Aksi Badge Ber-border ala Pola Jam --}}
+                                            @can('jadwal-pelajaran.kelola')
+                                                <div class="flex items-center gap-2 shrink-0">
+                                                    <x-tooltip text="Edit Sesi Jadwal">
+                                                        <a href="{{ route('admin.jadwal-pelajaran.edit', $jadwal) }}"
+                                                           @click.prevent="openEditModal({ id: {{ $jadwal->id }}, jam_id: {{ $jadwal->jam_pelajaran_id }}, mapel_id: {{ $jadwal->mata_pelajaran_id ?? 'null' }}, guru_id: {{ $jadwal->guru_id }}, ruangan_id: {{ $jadwal->ruangan_id ?? 'null' }}, url: '{{ route('admin.jadwal-pelajaran.update', $jadwal) }}' })"
+                                                           class="rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition">
+                                                            Edit
+                                                        </a>
+                                                    </x-tooltip>
+                                                    <x-tooltip text="Hapus Sesi Jadwal">
+                                                        <button type="button"
+                                                                @click="hapusJadwal('{{ route('admin.jadwal-pelajaran.destroy', $jadwal) }}', @js(($jadwal->mataPelajaran?->nama ?? 'Sesi') . ' oleh ' . $jadwal->guru->nama))"
+                                                                class="rounded-lg border border-error-200 bg-error-50/30 px-2.5 py-1 text-xs font-semibold text-error-600 hover:bg-error-50 hover:text-error-700 transition">
+                                                            Hapus
+                                                        </button>
+                                                    </x-tooltip>
+                                                </div>
+                                            @endcan
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endif
+                        </div>
+                    @endforeach
                 @endif
             </div>
         </div>

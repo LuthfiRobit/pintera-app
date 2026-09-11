@@ -111,6 +111,8 @@
                             <x-input-label value="Ruangan Sarpras" />
                             <select
                                 name="ruangan_id"
+                                x-ref="ruanganSelect"
+                                x-init="initRuanganSelect($refs.ruanganSelect)"
                                 class="mt-1.5 w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500"
                             >
                                 <option value="">— Default Ruang Kelas ({{ $kelas->ruangan?->nama_ruangan ?? 'Belum Diatur' }}) —</option>

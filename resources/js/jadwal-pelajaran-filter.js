@@ -16,6 +16,10 @@ export function jadwalPelajaranFilter(config) {
         modalJamEditTomSelect: null,
         modalMapelTomSelect: null,
         modalGuruTomSelect: null,
+        modalRuanganTomSelect: null,
+        duplicateTahunAjaranTomSelect: null,
+        duplicateSemesterTomSelect: null,
+        duplicateKelasTomSelect: null,
         viewMode: 'matrix',
         showModalForm: false,
         showModalDuplicate: false,
@@ -26,6 +30,7 @@ export function jadwalPelajaranFilter(config) {
             jam_id: '',
             mapel_id: '',
             guru_id: '',
+            ruangan_id: '',
             loading: false,
             errorMessage: '',
             errors: {},
@@ -45,6 +50,7 @@ export function jadwalPelajaranFilter(config) {
             this.formModal.jam_ids = data && data.jam_ids ? data.jam_ids.map(String) : [];
             this.formModal.mapel_id = '';
             this.formModal.guru_id = '';
+            this.formModal.ruangan_id = '';
             this.formModal.errorMessage = '';
             this.formModal.errors = {};
             this.showModalForm = true;
@@ -63,6 +69,9 @@ export function jadwalPelajaranFilter(config) {
                 if (this.modalGuruTomSelect) {
                     this.modalGuruTomSelect.clear(true);
                 }
+                if (this.modalRuanganTomSelect) {
+                    this.modalRuanganTomSelect.clear(true);
+                }
             });
         },
 
@@ -72,6 +81,7 @@ export function jadwalPelajaranFilter(config) {
             this.formModal.jam_id = String(data.jam_id);
             this.formModal.mapel_id = data.mapel_id ? String(data.mapel_id) : '';
             this.formModal.guru_id = String(data.guru_id);
+            this.formModal.ruangan_id = data.ruangan_id ? String(data.ruangan_id) : '';
             this.formModal.errorMessage = '';
             this.formModal.errors = {};
             this.showModalForm = true;
@@ -98,6 +108,13 @@ export function jadwalPelajaranFilter(config) {
                         this.modalGuruTomSelect.clear(true);
                     }
                 }
+                if (this.modalRuanganTomSelect) {
+                    if (this.formModal.ruangan_id) {
+                        this.modalRuanganTomSelect.setValue(this.formModal.ruangan_id, true);
+                    } else {
+                        this.modalRuanganTomSelect.clear(true);
+                    }
+                }
             });
         },
 
@@ -108,6 +125,14 @@ export function jadwalPelajaranFilter(config) {
             this.duplicateForm.source_kelas_id = '';
             this.duplicateForm.errorMessage = '';
             this.showModalDuplicate = true;
+
+            this.$nextTick(() => {
+                this.duplicateTahunAjaranTomSelect?.clear(true);
+                this.duplicateSemesterTomSelect?.clear(true);
+                this.duplicateSemesterTomSelect?.clearOptions();
+                this.duplicateKelasTomSelect?.clear(true);
+                this.duplicateKelasTomSelect?.clearOptions();
+            });
         },
 
         async submitForm(event) {
@@ -239,15 +264,17 @@ export function jadwalPelajaranFilter(config) {
         },
 
         initDuplicateTahunAjaranSelect(el) {
-            new TomSelect(el, {
+            this.duplicateTahunAjaranTomSelect = new TomSelect(el, {
                 maxItems: 1,
                 create: false,
                 placeholder: 'Cari tahun ajaran sumber...',
                 onChange: async (value) => {
                     this.duplicateForm.source_semester_id = '';
                     this.duplicateForm.source_kelas_id = '';
-                    this.$refs.duplicateSemesterSelect.innerHTML = '<option value="">— Pilih Semester Sumber —</option>';
-                    this.$refs.duplicateKelasSelect.innerHTML = '<option value="">— Pilih Kelas Sumber —</option>';
+                    this.duplicateSemesterTomSelect?.clear(true);
+                    this.duplicateSemesterTomSelect?.clearOptions();
+                    this.duplicateKelasTomSelect?.clear(true);
+                    this.duplicateKelasTomSelect?.clearOptions();
 
                     if (!value) return;
 
@@ -263,22 +290,48 @@ export function jadwalPelajaranFilter(config) {
                         }
 
                         json.semesterList.forEach((semester) => {
-                            const option = document.createElement('option');
-                            option.value = semester.id;
-                            option.textContent = semester.nama + (semester.status_aktif ? ' (Aktif)' : '');
-                            this.$refs.duplicateSemesterSelect.appendChild(option);
+                            this.duplicateSemesterTomSelect?.addOption({
+                                value: String(semester.id),
+                                text: semester.nama + (semester.status_aktif ? ' (Aktif)' : ''),
+                            });
                         });
+                        this.duplicateSemesterTomSelect?.refreshOptions(false);
 
                         json.kelasList.forEach((kelas) => {
                             if (String(kelas.id) === String(this.duplicateForm.target_kelas_id)) return;
-                            const option = document.createElement('option');
-                            option.value = kelas.id;
-                            option.textContent = kelas.nama;
-                            this.$refs.duplicateKelasSelect.appendChild(option);
+                            this.duplicateKelasTomSelect?.addOption({
+                                value: String(kelas.id),
+                                text: kelas.nama,
+                            });
                         });
+                        this.duplicateKelasTomSelect?.refreshOptions(false);
                     } catch (error) {
                         Alpine.store('toast').push('error', 'Gagal memuat opsi kelas dan semester sumber.');
                     }
+                },
+            });
+        },
+
+        initDuplicateSemesterSelect(el) {
+            if (el.tomselect) el.tomselect.destroy();
+            this.duplicateSemesterTomSelect = new TomSelect(el, {
+                maxItems: 1,
+                create: false,
+                placeholder: '— Pilih Semester Sumber —',
+                onChange: (value) => {
+                    this.duplicateForm.source_semester_id = value;
+                },
+            });
+        },
+
+        initDuplicateKelasSelect(el) {
+            if (el.tomselect) el.tomselect.destroy();
+            this.duplicateKelasTomSelect = new TomSelect(el, {
+                maxItems: 1,
+                create: false,
+                placeholder: '— Pilih Kelas Sumber —',
+                onChange: (value) => {
+                    this.duplicateForm.source_kelas_id = value;
                 },
             });
         },
@@ -358,6 +411,23 @@ export function jadwalPelajaranFilter(config) {
                 this.modalGuruTomSelect.setValue(this.formModal.guru_id, true);
             } else {
                 this.modalGuruTomSelect.clear(true);
+            }
+        },
+
+        initModalRuanganSelect(el) {
+            if (el.tomselect) el.tomselect.destroy();
+            this.modalRuanganTomSelect = new TomSelect(el, {
+                maxItems: 1,
+                create: false,
+                placeholder: '— Default Ruang Kelas —',
+                onChange: (value) => {
+                    this.formModal.ruangan_id = value;
+                },
+            });
+            if (this.formModal.ruangan_id) {
+                this.modalRuanganTomSelect.setValue(this.formModal.ruangan_id, true);
+            } else {
+                this.modalRuanganTomSelect.clear(true);
             }
         },
 

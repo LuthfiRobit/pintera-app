@@ -68,14 +68,14 @@
 
                 <div>
                     <x-input-label value="Semester Sumber" />
-                    <select name="source_semester_id" x-ref="duplicateSemesterSelect" x-model="duplicateForm.source_semester_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <select name="source_semester_id" x-ref="duplicateSemesterSelect" x-init="initDuplicateSemesterSelect($refs.duplicateSemesterSelect)" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Tahun Ajaran Sumber Dulu —</option>
                     </select>
                 </div>
 
                 <div>
                     <x-input-label value="Kelas Sumber" />
-                    <select name="source_kelas_id" x-ref="duplicateKelasSelect" x-model="duplicateForm.source_kelas_id" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <select name="source_kelas_id" x-ref="duplicateKelasSelect" x-init="initDuplicateKelasSelect($refs.duplicateKelasSelect)" required class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         <option value="">— Pilih Tahun Ajaran Sumber Dulu —</option>
                     </select>
                     <p class="mt-1 text-[11px] text-gray-400">Pilih kelas yang memiliki konfigurasi jadwal yang ingin diterapkan.</p>

@@ -5,7 +5,7 @@
         <div class="absolute inset-0 bg-gray-900/60"></div>
     </div>
 
-    <div x-show="showModalForm" class="bg-white rounded-2xl overflow-hidden shadow-elevated transform transition-all sm:max-w-xl sm:w-full z-10 p-6 relative text-left max-h-[90vh] flex flex-col"
+    <div x-show="showModalForm" class="bg-white rounded-2xl overflow-hidden shadow-elevated transform transition-all sm:max-w-2xl sm:w-full z-10 p-6 relative text-left max-h-[90vh] flex flex-col"
          x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
          x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
          x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
@@ -124,7 +124,7 @@
 
                     <div>
                         <x-input-label value="Ruangan Sarpras" />
-                        <select name="ruangan_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <select name="ruangan_id" x-init="initModalRuanganSelect($el)" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                             <option value="">— Default Ruang Kelas ({{ $kelas?->ruangan?->nama_ruangan ?? 'Belum Diatur' }}) —</option>
                             @foreach ($ruanganList ?? [] as $ruangan)
                                 <option value="{{ $ruangan->id }}">{{ $ruangan->nama_ruangan }} (Kapasitas: {{ $ruangan->kapasitas ?? $ruangan->kapasitas_siswa ?? '—' }})</option>

@@ -1610,7 +1610,7 @@ it('filter menampilkan tombol Reset Filter dan Semester dikelola TomSelect', fun
     $response->assertSee('initSemesterSelect', false);
 });
 
-it('menampilkan KPI Mata Pelajaran Aktif dan Guru Pengampu Terlibat', function () {
+it('tidak lagi menampilkan KPI card dan menampilkan tombol Reset Filter pada header', function () {
     $yayasan = Yayasan::factory()->create();
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsJadwalManager($lembaga);
@@ -1622,8 +1622,9 @@ it('menampilkan KPI Mata Pelajaran Aktif dan Guru Pengampu Terlibat', function (
     ]));
 
     $response->assertOk();
-    $response->assertSee('Mata Pelajaran Aktif');
-    $response->assertSee('Guru Pengampu Terlibat');
+    $response->assertDontSee('Mata Pelajaran Aktif');
+    $response->assertDontSee('Guru Pengampu Terlibat');
+    $response->assertSee('Reset Filter');
 });
 
 it('menampilkan tooltip pada tombol Salin dari Kelas Lain dan badge anti-bentrok di modal duplikasi', function () {
@@ -1667,4 +1668,48 @@ it('breadcrumb halaman create dan edit jadwal pelajaran memakai Akademik, bukan 
     $edit->assertOk();
     $edit->assertSee('Akademik <span class="mx-1 text-gray-300">&rsaquo;</span>', false);
     $edit->assertDontSee('Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>', false);
+});
+
+it('tampilan daftar memiliki tab filter hari horizontal, modal max-w-2xl, dan seluruh dropdown memakai TomSelect', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+    $polaJam = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $polaJam->id]);
+    $jamPelajaran = JamPelajaran::factory()->create(['pola_jam_id' => $polaJam->id, 'hari' => Hari::Senin->value, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    JadwalPelajaran::create([
+        'kelas_id' => $kelas->id,
+        'semester_id' => $semester->id,
+        'jam_pelajaran_id' => $jamPelajaran->id,
+        'guru_id' => $guru->id,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertOk();
+    // Modal diperlebar ke max-w-2xl
+    $response->assertSee('sm:max-w-2xl', false);
+    // TomSelect universal
+    $response->assertSee('initModalRuanganSelect', false);
+    $response->assertSee('initDuplicateSemesterSelect', false);
+    $response->assertSee('initDuplicateKelasSelect', false);
+    // Tab daftar harian style pola jam
+    $response->assertSee('hariAktif', false);
+    $response->assertSee('Daftar Jadwal Pelajaran');
+
+    // Cek TomSelect ruangan di fallback create & edit
+    $create = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.create', [
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+    $create->assertSee('initRuanganSelect', false);
+
+    $jadwal = JadwalPelajaran::first();
+    $edit = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.edit', $jadwal));
+    $edit->assertSee('initRuanganSelect', false);
 });

@@ -24,5 +24,13 @@ export function jadwalPelajaranCreateForm() {
                 placeholder: 'Cari guru...',
             });
         },
+
+        initRuanganSelect(el) {
+            new TomSelect(el, {
+                maxItems: 1,
+                create: false,
+                placeholder: '— Default Ruang Kelas —',
+            });
+        },
     };
 }

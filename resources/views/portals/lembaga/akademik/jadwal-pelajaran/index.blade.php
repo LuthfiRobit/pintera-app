@@ -46,34 +46,38 @@
                         <h2 class="font-display text-base font-bold text-gray-900">Filter Jadwal Pelajaran</h2>
                         <p class="text-xs text-gray-500 mt-0.5">Pilih parameter tahun ajaran, semester, dan kelas untuk menampilkan data.</p>
                     </div>
-                    <template x-if="kelasId && semesterId">
-                        <div class="flex flex-wrap items-center gap-2 shrink-0">
-                            <x-tooltip text="Salin susunan mata pelajaran, guru, dan ruangan dari kelas lain yang jadwalnya sudah diatur.">
-                                <button
-                                    type="button"
-                                    @click="openDuplicateModal()"
-                                    class="inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
-                                >
-                                    <x-icon name="content_copy" class="h-4 w-4 text-gray-500" />
-                                    <span>Salin dari Kelas Lain</span>
-                                </button>
-                            </x-tooltip>
-                            <x-link-button href="#" x-bind:href="tambahSlotUrl()" @click.prevent="openCreateModal()" class="shrink-0 justify-center">
-                                <span class="text-base leading-none mr-1.5">+</span> Tambah Slot Jadwal
-                            </x-link-button>
-                        </div>
-                    </template>
+                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                        <template x-if="tahunAjaranId || kelasId || semesterId">
+                            <button
+                                type="button"
+                                @click="resetFilter()"
+                                class="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-gray-600 shadow-sm border border-gray-200 hover:bg-gray-50 hover:text-red-600 transition-colors"
+                            >
+                                <x-icon name="close" class="h-3.5 w-3.5 text-gray-400" />
+                                <span>Reset Filter</span>
+                            </button>
+                        </template>
+
+                        <template x-if="kelasId && semesterId">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <x-tooltip text="Salin susunan mata pelajaran, guru, dan ruangan dari kelas lain yang jadwalnya sudah diatur.">
+                                    <button
+                                        type="button"
+                                        @click="openDuplicateModal()"
+                                        class="inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-700 shadow-sm border border-gray-200 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <x-icon name="content_copy" class="h-4 w-4 text-gray-500" />
+                                        <span>Salin dari Kelas Lain</span>
+                                    </button>
+                                </x-tooltip>
+                                <x-link-button href="#" x-bind:href="tambahSlotUrl()" @click.prevent="openCreateModal()" class="shrink-0 justify-center">
+                                    <span class="text-base leading-none mr-1.5">+</span> Tambah Slot Jadwal
+                                </x-link-button>
+                            </div>
+                        </template>
+                    </div>
                 </div>
 
-                <div class="flex items-center justify-between border-b border-gray-100 pb-2">
-                    <div></div>
-                    <template x-if="tahunAjaranId || kelasId || semesterId">
-                        <button type="button" @click="resetFilter()" class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 transition">
-                            <x-icon name="close" class="h-3.5 w-3.5" />
-                            Reset Filter
-                        </button>
-                    </template>
-                </div>
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <div>
                         <x-input-label value="Tahun Ajaran" />
