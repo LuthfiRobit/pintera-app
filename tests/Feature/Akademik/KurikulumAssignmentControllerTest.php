@@ -551,3 +551,39 @@ it('warns explicitly about the lack of a usage guard when deleting a global assi
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))->assertOk()
         ->assertSee('PERINGATAN', false);
 });
+
+it('mengirim tingkatOptionsByBentuk yang bersumber dari BentukPendidikan::validTingkatValues() ke halaman create', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SMK']);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'));
+
+    $response->assertOk();
+    $response->assertViewHas('tingkatOptionsByBentuk', function ($map) {
+        return $map['SMK'] === ['10', '11', '12'] && $map['SD'] === ['1', '2', '3', '4', '5', '6'];
+    });
+});
+
+it('mengirim tingkatOptionsByBentuk ke halaman edit juga', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $assignment = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment));
+
+    $response->assertOk();
+    $response->assertViewHas('tingkatOptionsByBentuk', fn ($map) => $map['SD'] === ['1', '2', '3', '4', '5', '6']);
+});
+
+it('halaman create menampilkan pill Tingkat Tertentu (bukan input teks bebas)', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'));
+
+    $response->assertOk();
+    $response->assertSee('Semua Tingkat (Default Jenjang)');
+    $response->assertSee('Tingkat Tertentu');
+    $response->assertDontSee('Contoh: 1, 10, A (kosongkan utk catch-all)');
+});

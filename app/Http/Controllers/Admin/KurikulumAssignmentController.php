@@ -109,6 +109,8 @@ class KurikulumAssignmentController extends BaseController
             'lembagaList' => $isPlatform ? Lembaga::orderBy('nama')->get() : collect(),
             'isPlatform' => $isPlatform,
             'activeLembaga' => $activeLembagaId ? Lembaga::find($activeLembagaId) : null,
+            'tingkatOptionsByBentuk' => collect(BentukPendidikan::cases())
+                ->mapWithKeys(fn (BentukPendidikan $bp) => [$bp->value => $bp->validTingkatValues()]),
         ]);
     }
 
@@ -170,6 +172,8 @@ class KurikulumAssignmentController extends BaseController
             'kurikulumList' => KurikulumFramework::cases(),
             'bentukPendidikanList' => BentukPendidikan::cases(),
             'isPlatform' => $isPlatform,
+            'tingkatOptionsByBentuk' => collect(BentukPendidikan::cases())
+                ->mapWithKeys(fn (BentukPendidikan $bp) => [$bp->value => $bp->validTingkatValues()]),
         ]);
     }
 

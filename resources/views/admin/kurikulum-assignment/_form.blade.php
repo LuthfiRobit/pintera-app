@@ -1,9 +1,21 @@
 @php
     $assignment = $assignment ?? null;
     $val = fn (string $field, $default = '') => old($field, $assignment?->$field ?? $default);
+    $bentukPendidikanAwal = $assignment
+        ? $assignment->bentuk_pendidikan
+        : (($isPlatform ?? false) ? $val('bentuk_pendidikan', $bentukPendidikanList[0]->value ?? null) : ($activeLembaga->bentuk_pendidikan ?? null));
 @endphp
 
-<div class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+<div
+    x-data="{
+        bentukPendidikan: @js($bentukPendidikanAwal),
+        tingkatOptions: @js($tingkatOptionsByBentuk),
+        modeTingkat: @js($val('tingkat') ? 'spesifik' : 'semua'),
+        tingkat: @js($val('tingkat')),
+        get pillOptions() { return this.tingkatOptions[this.bentukPendidikan] ?? []; },
+    }"
+    class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+>
     <div class="border-b border-gray-100 bg-white px-6 py-4">
         <p class="flex items-center gap-2 font-display text-sm font-bold text-gray-900">
             <x-icon name="group" class="h-4 w-4 text-brand-500" />
@@ -60,7 +72,7 @@
             @if ($isPlatform ?? false)
                 <div class="sm:col-span-6">
                     <x-input-label value="Bentuk Pendidikan" />
-                    <select name="bentuk_pendidikan" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <select name="bentuk_pendidikan" x-model="bentukPendidikan" @change="modeTingkat = 'semua'; tingkat = ''" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                         @foreach ($bentukPendidikanList as $bp)
                             <option value="{{ $bp->value }}" @selected($val('bentuk_pendidikan') === $bp->value)>{{ $bp->value }}</option>
                         @endforeach
@@ -78,9 +90,30 @@
                 </div>
             @endif
 
-            <div class="sm:col-span-6">
-                <x-input-label value="Tingkat (kosongkan = berlaku semua tingkat)" />
-                <x-text-input type="text" name="tingkat" value="{{ $val('tingkat') }}" placeholder="Contoh: 1, 10, A (kosongkan utk catch-all)" class="mt-1.5 w-full" />
+            <div class="sm:col-span-12">
+                <x-input-label value="Tingkat" />
+                <div class="mt-1.5 flex flex-wrap gap-2">
+                    <button type="button" @click="modeTingkat = 'semua'; tingkat = ''"
+                        :class="modeTingkat === 'semua' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+                        class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition">
+                        Semua Tingkat (Default Jenjang)
+                    </button>
+                    <button type="button" @click="modeTingkat = 'spesifik'"
+                        :class="modeTingkat === 'spesifik' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+                        class="rounded-full border px-3.5 py-1.5 text-xs font-semibold transition">
+                        Tingkat Tertentu
+                    </button>
+                </div>
+                <div x-show="modeTingkat === 'spesifik'" x-cloak class="mt-2.5 flex flex-wrap gap-2">
+                    <template x-for="opsi in pillOptions" :key="opsi">
+                        <button type="button" @click="tingkat = opsi"
+                            :class="tingkat === opsi ? 'border-brand-600 bg-brand-600 text-white' : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'"
+                            class="rounded-lg border px-3.5 py-1.5 text-sm font-semibold transition"
+                            x-text="opsi"
+                        ></button>
+                    </template>
+                </div>
+                <input type="hidden" name="tingkat" :value="tingkat">
                 <x-input-error :messages="$errors->get('tingkat')" class="mt-1.5" />
             </div>
 
