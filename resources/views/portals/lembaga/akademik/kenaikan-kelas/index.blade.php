@@ -42,6 +42,12 @@
             </form>
         </div>
 
+        @if ($errorTahunAjaran)
+            <div class="rounded-2xl border border-error-200 bg-error-50 p-4 text-sm text-error-700">
+                {{ $errorTahunAjaran }}
+            </div>
+        @endif
+
         @if ($kelasLamaList->isNotEmpty() && $tahunAjaranTujuanId === null)
             <div class="rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-700">
                 Pilih juga <b>Tahun Ajaran Tujuan</b> di atas untuk menampilkan pilihan kelas &amp; semester tujuan.
@@ -61,12 +67,15 @@
                     <div class="overflow-x-auto">
                         <table class="w-full min-w-[800px] text-left text-sm">
                             <thead>
-                                <tr class="border-b border-gray-200 bg-gray-100 text-xs uppercase font-bold tracking-wider text-gray-600">
-                                    <th class="px-6 py-3.5">Kelas Lama</th>
-                                    <th class="px-4 py-3.5 text-center">Jml Siswa</th>
-                                    <th class="px-4 py-3.5">Tindakan</th>
-                                    <th class="px-4 py-3.5">Kelas Tujuan</th>
-                                    <th class="px-4 py-3.5">Salin Jadwal ke Semester</th>
+                                <tr class="border-b border-gray-200 bg-gray-50/50 text-xs uppercase font-bold tracking-wider text-gray-600">
+                                    <th class="px-5 py-3">Kelas Lama</th>
+                                    <th class="px-4 py-3 text-center">Jml Siswa</th>
+                                    <th class="px-4 py-3">Tindakan</th>
+                                    <th class="px-4 py-3">Kelas Tujuan</th>
+                                    <th class="px-4 py-3">
+                                        Salin Jadwal ke Semester
+                                        <span class="block text-[10px] font-normal normal-case text-gray-400 mt-0.5">Menyalin struktur jadwal pelajaran kelas lama ke kelas tujuan, di semester yang dipilih</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
@@ -77,13 +86,16 @@
                                         class="transition hover:bg-gray-50/60"
                                         x-data="{
                                         kurikulumAsal: {{ Js::from($kelasLama->kurikulum?->value) }},
+                                        kurikulumAsalLabel: {{ Js::from($kelasLama->kurikulum?->label()) }},
                                         kurikulumTujuan: null,
+                                        kurikulumTujuanLabel: null,
                                         tingkatTujuan: null,
                                         tingkatAsal: {{ Js::from($kelasLama->tingkat) }},
                                         daftarTingkat: {{ Js::from($kelasLama->lembaga ? BentukPendidikan::from($kelasLama->lembaga->bentuk_pendidikan)->validTingkatValues() : []) }},
                                         onKelasTujuanChange(event) {
                                             const opt = event.target.selectedOptions[0];
                                             this.kurikulumTujuan = opt?.dataset.kurikulum || null;
+                                            this.kurikulumTujuanLabel = opt?.dataset.kurikulumLabel || null;
                                             this.tingkatTujuan = opt?.dataset.tingkat || null;
                                         },
                                         get selisihIndexTingkat() {
@@ -94,25 +106,23 @@
                                             return indexTujuan - indexAsal;
                                         },
                                     }">
-                                        <td class="px-6 py-4 font-bold text-gray-900">{{ $kelasLama->nama }}
+                                        <td class="px-5 py-3.5 font-bold text-gray-900">{{ $kelasLama->nama }}
                                             @if ($kelasLama->siswa_count === 0)
-                                                <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                                                 <span class="ml-2 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
                                                     Sudah diproses / kosong
                                                 </span>
                                             @endif
                                             <span class="text-xs font-normal text-gray-400">(Tingkat {{ $kelasLama->tingkat ?? '-' }})</span>
                                         </td>
-                                        <td class="px-4 py-4 text-center text-gray-500">{{ $kelasLama->siswa_count }}</td>
+                                        <td class="px-4 py-3.5 text-center text-gray-500">{{ $kelasLama->siswa_count }}</td>
                                         @php
                                             $isTingkatAkhir = $kelasLama->lembaga
                                                 ? BentukPendidikan::from($kelasLama->lembaga->bentuk_pendidikan)->isTingkatAkhir($kelasLama->tingkat)
                                                 : false;
                                         @endphp
-                                        <td class="px-4 py-4">
+                                        <td class="px-4 py-3.5">
                                             <select name="mapping[{{ $kelasLama->id }}][tindakan]" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                                                @if ($kelasLama->siswa_count === 0)
-                                                    <option value="lewati" selected>Lewati (sudah kosong)</option>
-                                                @endif
+                                                <option value="lewati" @selected($kelasLama->siswa_count === 0)>Lewati{{ $kelasLama->siswa_count === 0 ? ' (sudah kosong)' : '' }}</option>
                                                 <option value="naik" @selected(! $isTingkatAkhir && $kelasLama->siswa_count > 0)>Naik Kelas</option>
                                                 <option value="lulus" @selected($isTingkatAkhir && $kelasLama->siswa_count > 0)>Lulus</option>
                                             </select>
@@ -120,23 +130,23 @@
                                                 <p class="mt-1 text-xs text-amber-600">Disarankan: tingkat akhir jenjang</p>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-4">
+                                        <td class="px-4 py-3.5">
                                             <select name="mapping[{{ $kelasLama->id }}][kelas_baru_id]" x-on:change="onKelasTujuanChange($event)" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                                                 <option value="">—</option>
                                                 @foreach ($kelasTujuanList as $kelasBaru)
-                                                    <option value="{{ $kelasBaru->id }}" data-kurikulum="{{ $kelasBaru->kurikulum?->value }}" data-tingkat="{{ $kelasBaru->tingkat }}">{{ $kelasBaru->nama }}</option>
+                                                    <option value="{{ $kelasBaru->id }}" data-kurikulum="{{ $kelasBaru->kurikulum?->value }}" data-kurikulum-label="{{ $kelasBaru->kurikulum?->label() }}" data-tingkat="{{ $kelasBaru->tingkat }}">{{ $kelasBaru->nama }}</option>
                                                 @endforeach
                                             </select>
                                             <p x-show="tingkatTujuan !== null" class="mt-1 text-xs text-gray-400" x-text="'Tingkat tujuan: ' + tingkatTujuan"></p>
                                             <p x-show="kurikulumTujuan !== null && kurikulumAsal !== null && kurikulumTujuan !== kurikulumAsal"
                                                class="mt-1 text-xs font-medium text-amber-600"
-                                               x-text="'⚠ Kurikulum berbeda: kelas asal ' + kurikulumAsal + ', kelas tujuan ' + kurikulumTujuan"></p>
+                                               x-text="'⚠ Kurikulum berbeda: kelas asal ' + kurikulumAsalLabel + ', kelas tujuan ' + kurikulumTujuanLabel"></p>
                                             <p x-show="selisihIndexTingkat === 0" class="mt-1 text-xs text-gray-400" x-text="'↔ Tinggal kelas: tingkat tidak berubah (' + tingkatAsal + ')'"></p>
                                             <p x-show="selisihIndexTingkat !== null && selisihIndexTingkat !== 0 && selisihIndexTingkat !== 1"
                                                class="mt-1 text-xs font-medium text-amber-600"
                                                x-text="'⚠ Tingkat tidak wajar: dari tingkat ' + tingkatAsal + ' ke ' + tingkatTujuan + ' — periksa kembali pilihan kelas tujuan'"></p>
                                         </td>
-                                        <td class="px-4 py-4">
+                                        <td class="px-4 py-3.5">
                                             <label class="flex items-center gap-2">
                                                 <input type="checkbox" name="mapping[{{ $kelasLama->id }}][salin_jadwal]" value="1" class="rounded border-gray-300 text-brand-600 focus:ring-brand-500">
                                                 <select name="mapping[{{ $kelasLama->id }}][semester_tujuan_id]" class="rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">

@@ -433,3 +433,21 @@ it('includes a summary of siswa naik/lulus/kelas dilewati counts in the success 
     $response->assertRedirect(route('admin.kelas.index'));
     $response->assertSessionHas('status', fn ($status) => str_contains($status, '2 siswa naik kelas') && str_contains($status, '1 siswa diluluskan'));
 });
+
+it('still offers the Lewati option for a kelas that has siswa, not just empty ones', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasBerisi = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '5A']);
+    Siswa::factory()->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasBerisi->id]);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunLalu->id,
+        'tahun_ajaran_tujuan_id' => $tahunBaru->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('value="lewati"', false);
+});
