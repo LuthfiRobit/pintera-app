@@ -31,7 +31,7 @@
 - Consumes: `App\Models\Karyawan` (factory state `pool()` sudah ada di `database/factories/KaryawanFactory.php:61-66`, mengeset `lembaga_id => null`), `App\Domains\Sdm\Models\PengajuanIzinCuti` (untuk assert count).
 - Produces: tidak ada interface baru — `AjukanIzinCutiAction::execute()` tetap signature yang sama (`Model $pegawai, KategoriPengajuanIzin $kategori, string $tanggalMulai, string $tanggalSelesai, string $alasan`), sekarang melempar `ValidationException` tambahan untuk 1 kondisi baru.
 
-- [ ] **Step 1: Tulis test yang gagal — pegawai pool (lembaga_id null) ditolak dengan pesan jelas, bukan crash**
+- [x] **Step 1: Tulis test yang gagal — pegawai pool (lembaga_id null) ditolak dengan pesan jelas, bukan crash**
 
 Tambahkan di `tests/Feature/Sdm/AjukanIzinCutiActionTest.php`, setelah test terakhir (`it('serializes concurrent Cuti submissions...')`, baris 125) dan SEBELUM fungsi `function seedKuotaCutiWorkflowForTest_ajukan()` (baris 127):
 
@@ -59,12 +59,12 @@ it('still allows a non-pool karyawan (lembaga_id set) to submit normally (regres
 
 **Catatan**: tidak perlu memanggil `seedKuotaCutiWorkflowForTest_ajukan()` di 2 test baru ini. Test pertama harus gagal SEBELUM mencapai kode apa pun yang butuh workflow/role seeding (guard baru ada di baris paling awal `execute()`). Test kedua memakai kategori `Izin` (bukan `Cuti`), yang tidak melewati cabang kuota resolver sama sekali (lihat `AjukanIzinCutiAction.php:46` — cabang kuota cuma jalan kalau `$kategori === KategoriPengajuanIzin::Cuti`), jadi juga tidak butuh seeding workflow.
 
-- [ ] **Step 2: Jalankan test untuk memastikan GAGAL (bug belum diperbaiki)**
+- [x] **Step 2: Jalankan test untuk memastikan GAGAL (bug belum diperbaiki)**
 
 Run: `vendor/bin/pest tests/Feature/Sdm/AjukanIzinCutiActionTest.php --filter="rejects a pengajuan from a pool karyawan"`
 Expected: FAIL — bukan `ValidationException` yang tertangkap, melainkan `Illuminate\Database\QueryException` (SQLSTATE 23000 constraint violation) yang tidak match ekspektasi `toThrow(ValidationException::class, ...)`.
 
-- [ ] **Step 3: Tambahkan guard di `AjukanIzinCutiAction::execute()`**
+- [x] **Step 3: Tambahkan guard di `AjukanIzinCutiAction::execute()`**
 
 Di `app/Domains/Sdm/Actions/AjukanIzinCutiAction.php`, method `execute()` saat ini dimulai:
 
@@ -100,12 +100,12 @@ Ubah jadi (menambah guard SEBELUM validasi tanggal existing):
 
 Sisa method (`buatPengajuan()` dan seterusnya) TIDAK berubah. `ValidationException` sudah di-import di file ini (baris 15, `use Illuminate\Validation\ValidationException;`) — tidak perlu import baru.
 
-- [ ] **Step 4: Jalankan test untuk memastikan LOLOS**
+- [x] **Step 4: Jalankan test untuk memastikan LOLOS**
 
 Run: `vendor/bin/pest tests/Feature/Sdm/AjukanIzinCutiActionTest.php --compact`
 Expected: PASS — semua test di file ini (termasuk 2 yang baru ditambahkan DAN semua test lama yang sudah ada sebelumnya) hijau.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/Domains/Sdm/Actions/AjukanIzinCutiAction.php tests/Feature/Sdm/AjukanIzinCutiActionTest.php
@@ -125,7 +125,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Consumes: tidak ada (murni markup, tidak menyentuh data/logika).
 - Produces: tidak ada interface baru.
 
-- [ ] **Step 1: Baca kondisi saat ini untuk konfirmasi baris persis**
+- [x] **Step 1: Baca kondisi saat ini untuk konfirmasi baris persis**
 
 File `resources/views/sdm/izin-cuti/index.blade.php`, baris 218-229 saat ini:
 
@@ -147,7 +147,7 @@ File `resources/views/sdm/izin-cuti/index.blade.php`, baris 218-229 saat ini:
 
 `<td>` dan `<tr>` dibuka di baris 219-220 tapi tidak pernah ditutup sebelum `@endforelse` di baris 228.
 
-- [ ] **Step 2: Tutup tag yang hilang**
+- [x] **Step 2: Tutup tag yang hilang**
 
 Ganti blok di atas menjadi:
 
@@ -169,16 +169,16 @@ Ganti blok di atas menjadi:
                 </table>
 ```
 
-- [ ] **Step 3: Verifikasi manual — tidak ada automated test untuk markup murni ini**
+- [x] **Step 3: Verifikasi manual — tidak ada automated test untuk markup murni ini**
 
 Proyek ini tidak punya test Feature yang meng-assert struktur HTML persis untuk halaman ini. Jalankan `php artisan serve` (atau pakai `composer run dev` kalau sudah jalan), login sebagai pegawai (guru/karyawan) yang belum pernah mengajukan izin/cuti, buka `/sdm/izin-cuti`, dan konfirmasi lewat browser DevTools (tab Elements) bahwa `<tr><td>...</td></tr>` sekarang tertutup dengan benar (sebelumnya browser auto-repair membuat ini sulit terlihat dari tampilan visual saja — harus dicek dari DOM inspector, bukan cuma dilihat sekilas).
 
-- [ ] **Step 4: Jalankan test Feature existing yang menyentuh halaman ini (kalau ada) untuk memastikan tidak ada regresi**
+- [x] **Step 4: Jalankan test Feature existing yang menyentuh halaman ini (kalau ada) untuk memastikan tidak ada regresi**
 
 Run: `vendor/bin/pest --filter="izin-cuti" --compact`
 Expected: semua test yang match nama filter ini tetap PASS (perubahan murni markup, tidak ada test yang seharusnya terpengaruh).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add resources/views/sdm/izin-cuti/index.blade.php
@@ -201,7 +201,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Consumes: `App\Domains\Sdm\Actions\AjukanIzinCutiAction` (untuk setup test — sudah dipakai test lain di file yang sama), `App\Domains\Workflow\Enums\ApprovalStatus` (untuk badge status).
 - Produces: `approvalIzinCutiSPA(config)` (fungsi Alpine.js yang di-import `resources/js/app.js` — TIDAK BERUBAH nama/cara pemanggilannya, hanya isi internalnya) sekarang mengekspos state baru `viewMode` (default `'menunggu'`) dan getter baru `itemsInView`, `totalPending`, menggantikan pemakaian langsung `items.length` di beberapa tempat. Setiap item di `config.items` sekarang WAJIB membawa field `alasan` (string), `statusLabel` (string), `statusTone` (string), `isDecided` (boolean) — field baru ini dikonsumsi oleh getter-getter di atas.
 
-- [ ] **Step 1: Tulis test yang gagal — index() sekarang harus mengembalikan pengajuan Pending DAN Approved sekaligus**
+- [x] **Step 1: Tulis test yang gagal — index() sekarang harus mengembalikan pengajuan Pending DAN Approved sekaligus**
 
 Tambahkan di `tests/Feature/Admin/ApprovalIzinCutiControllerTest.php`, setelah test terakhir (`it('rejects an admin without kehadiran-sdm.izin.approve permission'...)`, baris 70) di akhir file:
 
@@ -242,12 +242,12 @@ it('includes both active (Pending) and decided (Approved) pengajuan in the index
 
 **Catatan**: cek dulu `WorkflowDefinitionSeeder` untuk konfirmasi step 2 workflow `IZIN_CUTI_SDM` memang role `admin_sdm` (dipakai test lain di file yang sama secara implisit — `AjukanIzinCutiActionTest.php:30` mengonfirmasi step 1 adalah `kepala_sekolah`; test `test_submit_partial_approval_and_disbursement_lifecycle`-style 2-step approve di atas mengasumsikan pola 2 langkah kepsek→admin_sdm yang sama seperti test lain di `ProsesApprovalIzinCutiActionTest.php` — kalau ternyata urutan/role berbeda, sesuaikan urutan `actingAs` di step ini mengikuti apa yang benar-benar dikonfirmasi `WorkflowDefinitionSeeder`, jangan asumsikan buta.
 
-- [ ] **Step 2: Jalankan test untuk memastikan GAGAL (bug belum diperbaiki)**
+- [x] **Step 2: Jalankan test untuk memastikan GAGAL (bug belum diperbaiki)**
 
 Run: `vendor/bin/pest tests/Feature/Admin/ApprovalIzinCutiControllerTest.php --filter="includes both active"`
 Expected: FAIL — assertion `assertSee('Guru Approved Test')` gagal karena `index()` saat ini menyaring HANYA status Pending/InReview, pengajuan yang sudah Approved tidak pernah muncul di response.
 
-- [ ] **Step 3: Ubah query `index()` di controller — ganti total filter status lama**
+- [x] **Step 3: Ubah query `index()` di controller — ganti total filter status lama**
 
 Di `app/Http/Controllers/Admin/ApprovalIzinCutiController.php`, method `index()` saat ini:
 
@@ -283,7 +283,7 @@ Ubah jadi (GANTI baris `whereHas` yang lama, jangan ditambah di atasnya):
 
 `ApprovalStatus` masih dipakai method `show()` di file yang sama (baris 41, `in_array($approvalRequest->status->value, ['pending', 'in_review'], true)`) — JANGAN hapus `use App\Domains\Workflow\Enums\ApprovalStatus;` di baris import, itu masih dibutuhkan.
 
-- [ ] **Step 4: Ubah mapping item di view admin — tambah field `alasan`, `statusLabel`, `statusTone`, `isDecided`**
+- [x] **Step 4: Ubah mapping item di view admin — tambah field `alasan`, `statusLabel`, `statusTone`, `isDecided`**
 
 Di `resources/views/admin/kehadiran-sdm/izin-cuti/index.blade.php`, baris 1-22 saat ini:
 
@@ -344,7 +344,7 @@ Ubah jadi:
     })">
 ```
 
-- [ ] **Step 5: Tambah toggle tab Menunggu/Riwayat, sesuaikan grid kolom filter card**
+- [x] **Step 5: Tambah toggle tab Menunggu/Riwayat, sesuaikan grid kolom filter card**
 
 Di file yang sama, baris 90-144 (Filter Card) saat ini:
 
@@ -485,7 +485,7 @@ Ubah jadi (tambah blok toggle tab sebagai kolom pertama, `lg:col-span-6` search 
         </div>
 ```
 
-- [ ] **Step 6: Ubah stat card "Menunggu Approval" — pakai `totalPending`, bukan `items.length`**
+- [x] **Step 6: Ubah stat card "Menunggu Approval" — pakai `totalPending`, bukan `items.length`**
 
 Di file yang sama, baris 51-56 (di dalam kartu statistik pertama) saat ini:
 
@@ -505,7 +505,7 @@ Ubah jadi:
                     </div>
 ```
 
-- [ ] **Step 7: Tambah kolom "Status" di header tabel dan baris data, ubah colspan empty-state**
+- [x] **Step 7: Tambah kolom "Status" di header tabel dan baris data, ubah colspan empty-state**
 
 Di file yang sama, header tabel baris 160-167 saat ini:
 
@@ -575,7 +575,7 @@ Ubah jadi (tambah 1 `<td>` baru untuk Status setelah sel step):
                         </template>
 ```
 
-- [ ] **Step 8: Ganti seluruh isi `resources/js/approval-izin-cuti-spa.js`**
+- [x] **Step 8: Ganti seluruh isi `resources/js/approval-izin-cuti-spa.js`**
 
 Isi file saat ini:
 
@@ -661,17 +661,17 @@ export function approvalIzinCutiSPA(config) {
 
 **Ini menggabungkan 2 perbaikan sekaligus (pencarian alasan + toggle riwayat)** karena keduanya menyentuh `filteredItems` di file JS yang sama — mengerjakannya terpisah akan membuat 1 patch menimpa yang lain. `countCuti`/`countSakit`/`countIzin`/`countDispensasi` SEKARANG dihitung dari `itemsInView` (ikut `viewMode` aktif), BUKAN dari `items` mentah seperti sebelumnya — ini perubahan perilaku yang disengaja (lihat Global Constraints).
 
-- [ ] **Step 9: Jalankan test untuk memastikan LOLOS**
+- [x] **Step 9: Jalankan test untuk memastikan LOLOS**
 
 Run: `vendor/bin/pest tests/Feature/Admin/ApprovalIzinCutiControllerTest.php --compact`
 Expected: PASS — semua test di file ini (3 test lama + 1 test baru) hijau.
 
-- [ ] **Step 10: Build asset frontend supaya perubahan JS ter-bundle**
+- [x] **Step 10: Build asset frontend supaya perubahan JS ter-bundle**
 
 Run: `npm run build`
 Expected: build sukses tanpa error (memastikan `approval-izin-cuti-spa.js` yang baru ter-compile ke bundle yang benar-benar dipakai browser).
 
-- [ ] **Step 11: Verifikasi manual — toggle tab dan pencarian alasan, tidak ada automated test JS di proyek ini**
+- [x] **Step 11: Verifikasi manual — toggle tab dan pencarian alasan, tidak ada automated test JS di proyek ini**
 
 Login sebagai admin/kepala sekolah dengan permission `kehadiran-sdm.izin.approve`, buka `/admin/kehadiran-sdm/izin-cuti`. Konfirmasi lewat browser:
 1. Tab "Menunggu" (default aktif) hanya menampilkan pengajuan Pending/InReview — sama seperti perilaku sebelumnya.
@@ -680,7 +680,7 @@ Login sebagai admin/kepala sekolah dengan permission `kehadiran-sdm.izin.approve
 4. Ketik sebagian teks dari `alasan` salah satu pengajuan (bukan nama pegawai) di kolom pencarian — pengajuan itu muncul di hasil filter.
 5. Pill kategori (Semua/Cuti/Sakit/Izin) angkanya berubah mengikuti tab yang aktif (mis. pill "Cuti" di tab Riwayat menunjukkan jumlah cuti yang SUDAH diputuskan, beda dengan angka di tab Menunggu).
 
-- [ ] **Step 12: Commit**
+- [x] **Step 12: Commit**
 
 ```bash
 git add app/Http/Controllers/Admin/ApprovalIzinCutiController.php resources/views/admin/kehadiran-sdm/izin-cuti/index.blade.php resources/js/approval-izin-cuti-spa.js tests/Feature/Admin/ApprovalIzinCutiControllerTest.php
@@ -700,28 +700,28 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 - Consumes: seluruh perubahan dari Task 1-3.
 - Produces: tidak ada.
 
-- [ ] **Step 1: Jalankan seluruh test SDM**
+- [x] **Step 1: Jalankan seluruh test SDM**
 
 Run: `vendor/bin/pest tests/Feature/Sdm tests/Feature/Admin/ApprovalIzinCutiControllerTest.php --compact`
 Expected: semua PASS, tidak ada yang gagal.
 
-- [ ] **Step 2: Jalankan Pint pada semua file PHP yang diubah**
+- [x] **Step 2: Jalankan Pint pada semua file PHP yang diubah**
 
 Run: `vendor/bin/pint --dirty --format agent`
 Expected: `{"tool":"pint","result":"passed"}` (atau, kalau ada perbaikan style otomatis diterapkan, jalankan lagi sampai hasilnya `passed`).
 
-- [ ] **Step 3: Jalankan full test suite proyek untuk memastikan tidak ada regresi lintas-domain**
+- [x] **Step 3: Jalankan full test suite proyek untuk memastikan tidak ada regresi lintas-domain**
 
 Run: `php artisan test --compact`
 Expected: HANYA 3 kegagalan pre-existing yang sudah dikenal sepanjang sesi ini (`Tests\Unit\M3DemoDataSeederTest` x2, `Tests\Feature\Akademik\SubjekTenantValidationTest`) yang muncul. KALAU ADA kegagalan lain di luar 3 itu — STOP, jangan lanjut, laporkan detail kegagalannya (nama test, pesan error, stack trace) alih-alih mengasumsikan itu juga pre-existing.
 
-- [ ] **Step 4: Verifikasi manual dev-server untuk 2 perubahan UI murni (rekap, sudah dilakukan per-task tapi dikonfirmasi ulang di sini sebagai bagian dari checklist penutup)**
+- [x] **Step 4: Verifikasi manual dev-server untuk 2 perubahan UI murni (rekap, sudah dilakukan per-task tapi dikonfirmasi ulang di sini sebagai bagian dari checklist penutup)**
 
 Konfirmasi ulang (boleh screenshot untuk laporan handoff kalau relevan):
 - Task 2: markup HTML empty-state riwayat pegawai (`/sdm/izin-cuti` saat kosong) sudah valid, tidak ada elemen `<tr>`/`<td>` yang tidak tertutup di DOM inspector.
 - Task 3: toggle Menunggu/Riwayat dan pencarian alasan di `/admin/kehadiran-sdm/izin-cuti` berfungsi sesuai 5 poin verifikasi di Task 3 Step 11.
 
-- [ ] **Step 5: Commit penutup (kalau ada file yang berubah dari Pint di Step 2 yang belum ter-commit)**
+- [x] **Step 5: Commit penutup (kalau ada file yang berubah dari Pint di Step 2 yang belum ter-commit)**
 
 ```bash
 git status
