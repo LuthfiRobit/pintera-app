@@ -12,7 +12,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
                 <h1 class="font-display text-lg font-bold text-gray-900">Pengadaan Sarana & Prasarana</h1>
-                <p class="text-xs text-gray-500 mt-0.5">Kelola proposal usulan belanja fasilitas, pelacakan alur persetujuan, dan LPJ realisasi.</p>
+                <p class="text-xs text-gray-500 mt-0.5">Kelola pengajuan belanja fasilitas, pelacakan alur persetujuan, dan LPJ realisasi.</p>
             </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span> Sarpras <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Pengadaan</b>
@@ -91,7 +91,7 @@
                 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                     <p class="flex items-center gap-2 text-sm font-semibold text-gray-700">
                         <x-icon name="filter" class="h-[15px] w-[15px] text-gray-400" />
-                        Filter Data Usulan
+                        Filter Data Pengajuan
                     </p>
                     <div class="flex items-center gap-2">
                         @can('pengadaan.proposal.create')
@@ -109,6 +109,7 @@
                         <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                             <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
                             <input
+                                id="search"
                                 type="text" x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()"
                                 placeholder="Nomor pengajuan, judul..."
                                 class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"
@@ -119,7 +120,7 @@
                     {{-- Filter Status --}}
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold text-gray-500">Status Tahapan</label>
-                        <select x-model="filters.status" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        <x-select x-model="filters.status" @change="muatUlangDaftar()">
                             <option value="">Semua Status</option>
                             <option value="draft">Draft Usulan</option>
                             <option value="submitted">Diajukan</option>
@@ -129,18 +130,18 @@
                             <option value="disbursed">Dana Cair</option>
                             <option value="completed">Selesai (LPJ Terverifikasi)</option>
                             <option value="rejected">Ditolak</option>
-                        </select>
+                        </x-select>
                     </div>
 
                     {{-- Filter Urgensi --}}
                     <div>
                         <label class="mb-1.5 block text-xs font-semibold text-gray-500">Tingkat Urgensi</label>
-                        <select x-model="filters.urgensi" @change="muatUlangDaftar()" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                        <x-select x-model="filters.urgensi" @change="muatUlangDaftar()">
                             <option value="">Semua Tingkat</option>
                             <option value="biasa">Biasa / Rutin</option>
                             <option value="mendesak">Mendesak</option>
                             <option value="kritis">Kritis / Darurat</option>
-                        </select>
+                        </x-select>
                     </div>
                 </div>
             </div>

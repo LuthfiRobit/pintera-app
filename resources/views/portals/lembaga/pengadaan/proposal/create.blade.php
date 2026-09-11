@@ -8,11 +8,11 @@
         {{-- Header & Breadcrumb --}}
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="font-display text-lg font-bold text-gray-900">Buat Usulan Pengadaan Sarpras</h1>
+                <h1 class="font-display text-lg font-bold text-gray-900">Buat Pengajuan Pengadaan Sarpras</h1>
                 <p class="text-xs text-gray-500 mt-0.5">Ajukan daftar barang/fasilitas yang dibutuhkan unit sekolah beserta estimasi anggaran.</p>
             </div>
             <p class="text-sm text-gray-500">
-                <a href="{{ route('admin.pengadaan.proposal.index') }}" class="hover:underline">Pengadaan</a> <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Buat Usulan</b>
+                <a href="{{ route('admin.pengadaan.proposal.index') }}" class="hover:underline">Pengadaan</a> <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Buat Pengajuan</b>
             </p>
         </div>
 
@@ -38,11 +38,12 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Tingkat Urgensi <span class="text-error-600">*</span></label>
-                        <select name="tingkat_urgensi" required class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 @error('tingkat_urgensi') border-error-500 ring-error-500 @enderror">
+                        <x-select name="tingkat_urgensi" required>
+                            <option value="">-- Pilih Tingkat Urgensi --</option>
                             <option value="biasa" {{ old('tingkat_urgensi', 'biasa') == 'biasa' ? 'selected' : '' }}>Biasa / Rutin</option>
-                            <option value="mendesak" {{ old('tingkat_urgensi') == 'mendesak' ? 'selected' : '' }}>Mendesak (Dibutuhkan Segera)</option>
+                            <option value="mendesak" {{ old('tingkat_urgensi') == 'mendesak' ? 'selected' : '' }}>Mendesak</option>
                             <option value="kritis" {{ old('tingkat_urgensi') == 'kritis' ? 'selected' : '' }}>Kritis / Darurat</option>
-                        </select>
+                        </x-select>
                         <x-input-error :messages="$errors->get('tingkat_urgensi')" class="mt-1" />
                     </div>
 

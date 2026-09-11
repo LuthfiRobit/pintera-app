@@ -87,6 +87,7 @@
                         <div class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                             <x-icon name="search" class="h-[13px] w-[13px] shrink-0 text-gray-400" />
                             <input
+                                id="search"
                                 type="text" x-model="filters.search" @input.debounce.500ms="muatUlangDaftar()"
                                 placeholder="Nomor proposal, judul, nama unit sekolah..."
                                 class="w-full border-0 bg-transparent p-0 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-0"

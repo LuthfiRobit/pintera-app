@@ -85,11 +85,11 @@
 
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Tingkat Urgensi <span class="text-error-600">*</span></label>
-                        <select name="tingkat_urgensi" required class="w-full rounded-lg border-gray-200 text-sm focus:border-brand-500 focus:ring-brand-500 @error('tingkat_urgensi') border-error-500 ring-error-500 @enderror">
+                        <x-select name="tingkat_urgensi" required>
                             <option value="biasa" {{ old('tingkat_urgensi', $proposal->tingkat_urgensi->value) == 'biasa' ? 'selected' : '' }}>Biasa / Rutin</option>
                             <option value="mendesak" {{ old('tingkat_urgensi', $proposal->tingkat_urgensi->value) == 'mendesak' ? 'selected' : '' }}>Mendesak</option>
                             <option value="kritis" {{ old('tingkat_urgensi', $proposal->tingkat_urgensi->value) == 'kritis' ? 'selected' : '' }}>Kritis / Darurat</option>
-                        </select>
+                        </x-select>
                         <x-input-error :messages="$errors->get('tingkat_urgensi')" class="mt-1" />
                     </div>
                 </div>

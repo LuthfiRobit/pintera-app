@@ -36,7 +36,7 @@
                                     <x-dropdown-link :href="route('admin.pengadaan.lpj.create', $p)">
                                         <span class="inline-flex items-center gap-2.5 text-emerald-600 font-semibold">
                                             <x-icon name="receipt_long" class="h-4 w-4 text-emerald-500" />
-                                             Isi LPJ Belanja
+                                            Unggah LPJ Belanja
                                         </span>
                                     </x-dropdown-link>
                                 @endif

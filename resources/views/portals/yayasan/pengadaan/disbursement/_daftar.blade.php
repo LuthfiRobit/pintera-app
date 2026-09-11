@@ -54,8 +54,12 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-12 text-center text-gray-500">
-                            <p class="font-medium text-gray-900">Belum ada proposal yang menunggu pencairan dana</p>
+                        <td colspan="5" class="px-5 py-12 text-center text-gray-500">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-3">
+                                <x-icon name="payments" class="h-6 w-6" />
+                            </div>
+                            <p class="font-medium text-gray-900">Belum ada pencairan dana.</p>
+                            <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">Proposal yang sudah disetujui akan muncul di sini untuk diproses pencairan.</p>
                         </td>
                     </tr>
                 @endforelse

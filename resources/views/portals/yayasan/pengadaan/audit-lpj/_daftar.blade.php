@@ -57,8 +57,12 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            <p class="font-medium text-gray-900">Belum ada dokumen LPJ yang masuk untuk diaudit</p>
+                        <td colspan="6" class="px-5 py-12 text-center text-gray-500">
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 text-gray-400 mb-3">
+                                <x-icon name="receipt_long" class="h-6 w-6" />
+                            </div>
+                            <p class="font-medium text-gray-900">Belum ada LPJ untuk diaudit.</p>
+                            <p class="text-xs text-gray-400 mt-1 max-w-sm mx-auto">LPJ yang sudah dikirim sekolah akan muncul di sini untuk diverifikasi.</p>
                         </td>
                     </tr>
                 @endforelse
