@@ -74,3 +74,19 @@ it('rejects resync for a kelas belonging to a different lembaga (cross-tenant gu
 
     expect($kelasLain->fresh()->kurikulum->value)->toBe('k13');
 });
+
+it('halaman resync membungkus submit sinkronisasi dengan confirmDialog (bukan submit langsung)', function () {
+    [$manager, $lembaga, $ta] = siapkanResyncControllerUser();
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'tingkat' => '1', 'kurikulum' => 'k13']);
+    KurikulumAssignment::where('tahun_ajaran_id', $ta->id)->first()->update(['kurikulum' => 'merdeka']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.resync', [
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('confirmDialog', false);
+    $response->assertSee('x-model="terpilih"', false);
+});
+

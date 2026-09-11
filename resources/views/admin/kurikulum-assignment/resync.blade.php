@@ -34,7 +34,17 @@
         </form>
 
         @if ($lembagaId !== null && $tahunAjaranId !== null)
-            <form method="POST" action="{{ route('admin.kurikulum-assignment.resync.apply') }}" class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+            <form
+                method="POST"
+                action="{{ route('admin.kurikulum-assignment.resync.apply') }}"
+                class="rounded-2xl border border-gray-200 bg-white shadow-sm"
+                x-data="{ terpilih: [] }"
+                @submit.prevent="confirmDialog(
+                    'Sinkronkan Kurikulum/Fase Kelas Terpilih?',
+                    `Kurikulum dan fase pada ${terpilih.length} kelas terpilih akan diperbarui ke aturan terbaru. Pastikan guru dan wali kelas sudah mengetahui perubahan ini sebelum melanjutkan.`,
+                    { confirmLabel: 'Ya, Sinkronkan Sekarang', isDanger: false }
+                ).then(confirmed => { if (confirmed) $el.submit() })"
+            >
                 @csrf
                 <input type="hidden" name="lembaga_id" value="{{ $lembagaId }}">
                 <input type="hidden" name="tahun_ajaran_id" value="{{ $tahunAjaranId }}">
@@ -45,7 +55,9 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600"><input type="checkbox" onclick="document.querySelectorAll('.resync-row').forEach(c => c.checked = this.checked)"></th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">
+                                    <input type="checkbox" @click="terpilih = $event.target.checked ? @js(collect($diff)->pluck('kelas.id')->map(fn ($v) => (string) $v)->all()) : []">
+                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Kelas</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Kurikulum: Lama → Seharusnya</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Fase: Lama → Seharusnya</th>
@@ -54,7 +66,7 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach ($diff as $row)
                                 <tr>
-                                    <td class="px-4 py-3"><input type="checkbox" name="kelas_ids[]" value="{{ $row['kelas']->id }}" class="resync-row"></td>
+                                    <td class="px-4 py-3"><input type="checkbox" name="kelas_ids[]" value="{{ $row['kelas']->id }}" x-model="terpilih"></td>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $row['kelas']->nama }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-600">{{ $row['kurikulumLama'] ?? '-' }} → {{ $row['kurikulumBaru'] ?? '-' }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-600">{{ $row['faseLamaId'] ?? '-' }} → {{ $row['faseBaruNama'] ?? '-' }}</td>
@@ -63,7 +75,7 @@
                         </tbody>
                     </table>
                     <div class="p-4">
-                        <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">Sinkronkan yang Dicentang</button>
+                        <button type="submit" :disabled="terpilih.length === 0" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">Sinkronkan yang Dicentang</button>
                     </div>
                 @endif
             </form>
