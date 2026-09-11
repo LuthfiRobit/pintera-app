@@ -98,13 +98,24 @@ Seluruh pekerjaan telah terkomit rapi di branch `rbac-v2`:
    - `npm.cmd run build` (Vite) sukses tanpa error/warning.
 
 4. **Visual Browser Subagent**:
-   - Index Page: `index_page_filters_1789140122698.png` (filter select rapi dan seragam).
-   - Edit Page: `edit_page_selects_1789140150367.png` (kurikulum otomatis ter-select).
-   - Resync Page: `resync_page_controls_1789140169013.png` (lembaga terkunci sesuai switcher aktif, checkbox bergaya modern).
+   - Index Page: `index_page_filters_1789140122698.png` (filter select TomSelect rapi dan seragam).
+   - Edit Page: `edit_kurikulum_open_1789140688174.png` (kurikulum otomatis ter-select dan dropdown TomSelect terbuka dengan styling Outfit font, border-radius 10px, shadow, dan hover highlight).
+   - Create Page: `create_kurikulum_options_open_1789140798020.png` (Tahun Ajaran & Kurikulum TomSelect aktif dan seragam).
+   - Resync Page: `resync_tahun_ajaran_open_1789140656866.png` (Lembaga & Tahun Ajaran TomSelect dengan floating dropdown menu).
 
 ---
 
-## 5. Hal yang Perlu Direview Manusia / Claude Selanjutnya
+## 5. Rollout Standarisasi Select Option (TomSelect Pintera)
+
+Seluruh elemen `<select>` di modul Kurikulum Assignment kini telah diupgrade ke TomSelect standar Pintera:
+- **`resync.blade.php`**: `lembaga_id` (pada mode agregat yayasan/platform) dan `tahun_ajaran_id` diinisialisasi menggunakan `window.TomSelect` dengan opsi `allowEmptyOption: true` dan container `h-[42px]`. Menggantikan popup select native browser dengan floating box `.ts-dropdown` bertema Outfit font dan border-radius 10px.
+- **`_form.blade.php`**: `lembaga_id`, `tahun_ajaran_id`, `bentuk_pendidikan`, dan `kurikulum` diinisialisasi melalui helper Alpine `initTomSelect()`.
+  - `kurikulum`: Dropdown rapi dengan pilihan kurikulum ter-styling, mempertahankan nilai default saat create maupun nilai tersimpan saat edit.
+  - `bentuk_pendidikan`: Sinkron dua arah dengan reactive state Alpine, mereset pilihan pill tingkat saat bentuk pendidikan diubah.
+
+---
+
+## 6. Hal yang Perlu Direview Manusia / Claude Selanjutnya
 
 1. **Mode Agregat Resync**:
    Saat yayasan berada dalam mode *Semua Lembaga* (tanpa active lembaga terpilih di sesi), form resync menampilkan dropdown yang hanya berisi daftar lembaga di bawah yayasan tersebut. Begitu lembaga dipilih, form melakukan submit GET untuk memuat tahun ajaran lembaga yang bersangkutan.
