@@ -55,8 +55,8 @@
                 decisions: {
                     @foreach ($proposal->items as $item)
                         {{ $item->id }}: {
-                            status: 'approved',
-                            catatan: ''
+                            status: '{{ $item->status_item->value === 'rejected' ? 'rejected' : 'approved' }}',
+                            catatan: @js($item->catatan_reviewer ?? '')
                         },
                     @endforeach
                 }
