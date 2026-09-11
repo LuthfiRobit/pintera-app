@@ -70,7 +70,9 @@ class AuditLpjController extends Controller
 
         $request->validate([
             'is_approved' => ['required', 'boolean'],
-            'catatan_verifikasi' => ['nullable', 'string', 'max:1000'],
+            'catatan_verifikasi' => ['nullable', 'string', 'max:1000', 'required_if:is_approved,0,false'],
+        ], [
+            'catatan_verifikasi.required_if' => 'Catatan wajib diisi saat meminta perbaikan LPJ, supaya sekolah tahu apa yang perlu diperbaiki.',
         ]);
 
         $this->verifyLpjAction->execute(

@@ -133,4 +133,43 @@ class PengadaanControllerTest extends TestCase
         $response->assertDontSee('LPJ ini telah selesai diverifikasi');
         $response->assertSee('Nota barang ke-2 tidak terbaca, mohon unggah ulang.');
     }
+
+    public function test_verify_lpj_minta_perbaikan_tanpa_catatan_ditolak_validasi(): void
+    {
+        $this->seed([
+            PermissionSeeder::class,
+            RoleSeeder::class,
+            RolePermissionAssignmentSeeder::class,
+            WorkflowDefinitionSeeder::class,
+        ]);
+
+        $yayasan = Yayasan::create(['nama' => 'Yayasan Catatan Test']);
+        $lembaga = Lembaga::create(['yayasan_id' => $yayasan->id, 'nama' => 'Sekolah Catatan Test', 'npsn' => '99997777', 'status_aktif' => true]);
+        $bendahara = User::factory()->create(['yayasan_id' => $yayasan->id]);
+        $role = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+        $role->givePermissionTo(['pengadaan.lpj.verify']);
+        $bendahara->assignRole($role);
+
+        $proposal = PengajuanPengadaan::create([
+            'yayasan_id' => $yayasan->id,
+            'lembaga_id' => $lembaga->id,
+            'nomor_pengajuan' => 'PR/2026/09/CATATAN-TEST',
+            'judul_pengajuan' => 'Pengadaan Test Catatan',
+            'tingkat_urgensi' => 'biasa',
+            'total_estimasi' => 1000000,
+            'nominal_pencairan' => 1000000,
+            'status' => StatusPengajuan::Disbursed,
+        ]);
+
+        $lpj = LpjPengadaan::create([
+            'pengajuan_pengadaan_id' => $proposal->id,
+            'status_lpj' => StatusLpj::Submitted,
+        ]);
+
+        $response = $this->actingAs($bendahara)->post(route('admin.pengadaan.audit-lpj.verify', $lpj), [
+            'is_approved' => false,
+        ]);
+
+        $response->assertSessionHasErrors(['catatan_verifikasi']);
+    }
 }

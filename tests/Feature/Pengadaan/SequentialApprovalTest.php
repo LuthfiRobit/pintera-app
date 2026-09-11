@@ -85,7 +85,7 @@ class SequentialApprovalTest extends TestCase
                     'satuan' => 'buah',
                     'estimasi_harga_satuan' => 200000,
                     'tipe_pencatatan' => 'batch',
-                ]
+                ],
             ]
         );
 
@@ -121,8 +121,8 @@ class SequentialApprovalTest extends TestCase
                     'item_id' => $items[1]->id,
                     'status' => StatusItemPengajuan::Approved->value,
                     'catatan' => 'ACC',
-                ]
-            ]
+                ],
+            ],
         ];
 
         $respKepsekDecision = $this->actingAs($kepsek)->post(route('admin.pengadaan.inbox.decision', $proposal), $decisionData);
@@ -153,8 +153,8 @@ class SequentialApprovalTest extends TestCase
                     'item_id' => $items[1]->id,
                     'status' => StatusItemPengajuan::Approved->value,
                     'catatan' => 'Anggaran disetujui penuh',
-                ]
-            ]
+                ],
+            ],
         ];
 
         $respBendaharaDecision = $this->actingAs($bendahara)->post(route('admin.pengadaan.inbox.decision', $proposal), $decisionDataYayasan);
@@ -162,5 +162,61 @@ class SequentialApprovalTest extends TestCase
 
         $proposal->refresh();
         $this->assertEquals(StatusPengajuan::Approved, $proposal->status);
+    }
+
+    public function test_reject_proposal_tanpa_notes_ditolak_validasi(): void
+    {
+        $this->seed([
+            PermissionSeeder::class,
+            RoleSeeder::class,
+            RolePermissionAssignmentSeeder::class,
+            WorkflowDefinitionSeeder::class,
+        ]);
+
+        $yayasan = Yayasan::create(['nama' => 'Yayasan Reject Test']);
+        $lembaga = Lembaga::create([
+            'yayasan_id' => $yayasan->id,
+            'nama' => 'SMP IT Reject',
+            'jenjang' => 'SMP',
+            'npsn' => '12345679',
+            'status_aktif' => true,
+        ]);
+
+        $kepsekRole = Role::firstOrCreate(['name' => 'kepala_sekolah', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
+        $kepsek = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $kepsek->assignRole($kepsekRole);
+        $kepsek->givePermissionTo(['pengadaan.proposal.view', 'pengadaan.approval.internal']);
+
+        $adm = User::factory()->create(['lembaga_id' => $lembaga->id]);
+        $adm->givePermissionTo(['pengadaan.proposal.create', 'pengadaan.proposal.view']);
+
+        $dto = new PengajuanPengadaanData(
+            lembagaId: $lembaga->id,
+            yayasanId: $yayasan->id,
+            judulPengajuan: 'Pengadaan Meja',
+            latarBelakang: 'KBM baru',
+            tingkatUrgensi: TingkatUrgensi::Biasa,
+            items: [
+                [
+                    'kategori_aset_id' => null,
+                    'target_ruangan_id' => null,
+                    'nama_barang' => 'Meja Guru',
+                    'qty' => 1,
+                    'satuan' => 'unit',
+                    'estimasi_harga_satuan' => 500000,
+                    'tipe_pencatatan' => 'unit',
+                ],
+            ]
+        );
+
+        $proposal = app(CreatePengajuanAction::class)->execute($dto, $adm->id);
+        app(SubmitPengajuanAction::class)->execute($proposal);
+
+        $response = $this->actingAs($kepsek)
+            ->post(route('admin.pengadaan.inbox.decision', $proposal), [
+                'action' => ApprovalAction::Reject->value,
+            ]);
+
+        $response->assertSessionHasErrors(['notes']);
     }
 }
