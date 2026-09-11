@@ -27,7 +27,7 @@
 - Consumes: `ResolveLembagaScopeTrait`, `TenantScope`, `BelongsToTenant`.
 - Produces: Data view `index`: `jadwalList`, `overrides`, `piketHarianMendatang`, `stats`, `isYayasan`, `activeLembaga`, `isYayasanAggregate`, `lembagaList`, `semesterList`.
 
-- [ ] **Step 1: Tulis feature test yang gagal untuk mode agregat yayasan**
+- [x] **Step 1: Tulis feature test yang gagal untuk mode agregat yayasan**
   - Buat test di `tests/Feature/Admin/JadwalPiketMingguanControllerTest.php`:
     - User yayasan dengan `session(['active_lembaga_id' => null])` mengakses `admin/piket-guru` harus mendapatkan response **HTTP 200** (bukan 422).
     - Memastikan data jadwal dari 2 lembaga berbeda di bawah yayasan yang sama muncul di `jadwalList`.
@@ -35,10 +35,10 @@
   - Buat test di `tests/Feature/Admin/PiketHarianControllerTest.php`:
     - User yayasan di mode agregat dapat menghapus override milik salah satu lembaganya.
 
-- [ ] **Step 2: Jalankan test dan pastikan GAGAL (karena masih ada `abort_if(null, 422)`)**
+- [x] **Step 2: Jalankan test dan pastikan GAGAL (karena masih ada `abort_if(null, 422)`)**
   - Run: `vendor/bin/pest tests/Feature/Admin/JadwalPiketMingguanControllerTest.php --filter="agregat"`
 
-- [ ] **Step 3: Perbaiki `JadwalPiketMingguanController.php`**
+- [x] **Step 3: Perbaiki `JadwalPiketMingguanController.php`**
   - Tambahkan helper `scopeHeaderData(Request $request): array` (pola standar `KomponenPenilaianController` dan `KelasController`).
   - Hapus pemanggilan `resolveLembagaIdAktif()` di `index()`.
   - Pada `index()`:
@@ -54,13 +54,13 @@
     - Di `create()`: jika `$activeLembagaId === null`, redirect ke `index` dengan flash error `'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jadwal piket.'`.
   - Kirimkan data ke view: `jadwalList`, `overrides`, `piketHarianMendatang`, `stats`, `guruList`, `semesterList`, `lembagaList`, dan `...$this->scopeHeaderData($request)`.
 
-- [ ] **Step 4: Perbaiki `PiketHarianController.php`**
+- [x] **Step 4: Perbaiki `PiketHarianController.php`**
   - Di `destroy()`: izinkan penghapusan jika `$isYayasan` dan `$piketHarian->lembaga->yayasan_id === $actingUser->yayasan_id`.
 
-- [ ] **Step 5: Jalankan test untuk memastikan LOLOS**
+- [x] **Step 5: Jalankan test untuk memastikan LOLOS**
   - Run: `vendor/bin/pest tests/Feature/Admin/JadwalPiketMingguanControllerTest.php tests/Feature/Admin/PiketHarianControllerTest.php --compact`
 
-- [ ] **Step 6: Commit Task 1**
+- [x] **Step 6: Commit Task 1**
   - Commit: `feat(piket): dukung mode agregat yayasan di JadwalPiketMingguanController dan PiketHarianController`
 
 ---
@@ -74,7 +74,7 @@
 - Consumes: Data view dari Task 1 (`stats`, `isYayasan`, `activeLembaga`, `isYayasanAggregate`, `lembagaList`, dsb.).
 - Produces: Tampilan UI/UX modern dengan tabbed navigation, KPI cards, scope badge, dan filter toolbar.
 
-- [ ] **Step 1: Rancang ulang struktur layout view**
+- [x] **Step 1: Rancang ulang struktur layout view**
   - Container responsif: `mx-auto max-w-7xl space-y-6 px-4 sm:px-6 lg:px-8`.
   - **Header**:
     - Judul "Jadwal Piket Guru", subtitle deskriptif.
@@ -108,13 +108,13 @@
       - Jika agregat yayasan: Notice banner informatif amber bahwa form penambahan membutuhkan pemilihan 1 lembaga aktif di topbar.
       - Tabel daftar override manual mendatang dengan tombol hapus (`confirmDialog`).
 
-- [ ] **Step 2: Compile asset Vite**
+- [x] **Step 2: Compile asset Vite**
   - Run: `npm.cmd run build`
 
-- [ ] **Step 3: Jalankan test feature admin untuk memastikan tidak ada Blade syntax error**
+- [x] **Step 3: Jalankan test feature admin untuk memastikan tidak ada Blade syntax error**
   - Run: `vendor/bin/pest tests/Feature/Admin/JadwalPiketMingguanControllerTest.php tests/Feature/Admin/PiketHarianControllerTest.php --compact`
 
-- [ ] **Step 4: Commit Task 2**
+- [x] **Step 4: Commit Task 2**
   - Commit: `style(piket): redesign index piket guru dengan KPI cards, filter toolbar, tab navigation, dan scope badge`
 
 ---
@@ -125,7 +125,7 @@
 - Test: `tests/Feature/Admin/JadwalPiketMingguanControllerTest.php`
 - Test: Seluruh 15 test suite piket & jurnal
 
-- [ ] **Step 1: Uji visual dev-server via browser subagent**
+- [x] **Step 1: Uji visual dev-server via browser subagent**
   - Buka `http://127.0.0.1:8000/admin/piket-guru?switch_lembaga=all` (mode Semua Lembaga / agregat):
     - Pastikan halaman berhasil tampil (HTTP 200).
     - Scope badge "Semua Lembaga" terlihat.
@@ -139,13 +139,13 @@
   - Uji perpindahan tab (Mingguan -> Kalender -> Override) tanpa reload halaman.
   - Ambil screenshot untuk bukti verifikasi.
 
-- [ ] **Step 2: Jalankan 15 test suite terkait**
+- [x] **Step 2: Jalankan 15 test suite terkait**
   - Run: `vendor/bin/pest tests/Feature/Admin/JadwalPiketMingguanControllerTest.php tests/Feature/Admin/PiketHarianControllerTest.php tests/Feature/Guru/JurnalKbmPiketAksesTest.php tests/Feature/Guru/JurnalKbmSesiPiketTest.php tests/Unit/Domains/Akademik/GenerateJadwalPiketHarianActionTest.php tests/Unit/Domains/Akademik/PiketAccessCheckerTest.php tests/Unit/Domains/Akademik/PiketModelsTest.php tests/Unit/Domains/Akademik/RegenerateJadwalPiketHarianActionTest.php tests/Feature/Akademik/JurnalKbmTanggalSusulanTest.php tests/Feature/Guru/JurnalKbmResolveKartuTest.php tests/Feature/Guru/JurnalKbmBatasEditTest.php tests/Feature/Guru/JurnalKbmDiisiOlehGuruTest.php tests/Feature/Akademik/JurnalKbmAdaptiveTest.php tests/Feature/Guru/JurnalKbmControllerTest.php tests/Feature/Guru/JurnalKbmTenantScopeTest.php --compact`
   - Expected: Semua PASS 100%.
 
-- [ ] **Step 3: Jalankan Pint**
+- [x] **Step 3: Jalankan Pint**
   - Run: `vendor/bin/pint --dirty --format agent`
   - Expected: `{"tool":"pint","result":"passed"}`.
 
-- [ ] **Step 4: Update handoff log `.agents/logs/2026-09-11-jadwal-piket-guru-agregat-dan-ui.md`**
+- [x] **Step 4: Update handoff log `.agents/logs/2026-09-11-jadwal-piket-guru-agregat-dan-ui.md`**
   - Tulis ringkasan hasil kerja, keputusan teknis, dan verifikasi visual.
