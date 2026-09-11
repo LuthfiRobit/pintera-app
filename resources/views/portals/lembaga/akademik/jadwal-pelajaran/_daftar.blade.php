@@ -115,11 +115,7 @@
                                                 @can('jadwal-pelajaran.kelola')
                                                     <div class="flex items-center gap-4">
                                                         <a href="{{ route('admin.jadwal-pelajaran.edit', $jadwal) }}" @click.prevent="openEditModal({ id: {{ $jadwal->id }}, jam_id: {{ $jadwal->jam_pelajaran_id }}, mapel_id: {{ $jadwal->mata_pelajaran_id ?? 'null' }}, guru_id: {{ $jadwal->guru_id }}, url: '{{ route('admin.jadwal-pelajaran.update', $jadwal) }}' })" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition-colors">Edit</a>
-                                                        <form method="POST" action="{{ route('admin.jadwal-pelajaran.destroy', $jadwal) }}" x-data @submit.prevent="confirmDialog('Hapus Jadwal?', @js('Apakah Anda yakin ingin menghapus jadwal ' . ($jadwal->mataPelajaran?->nama ?? 'ini') . ' oleh ' . $jadwal->guru->nama . '?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
-                                                        </form>
+                                                        <button type="button" @click="hapusJadwal('{{ route('admin.jadwal-pelajaran.destroy', $jadwal) }}', @js(($jadwal->mataPelajaran?->nama ?? 'ini') . ' oleh ' . $jadwal->guru->nama))" class="text-xs font-semibold text-error-500 hover:text-error-700 transition-colors">Hapus</button>
                                                     </div>
                                                 @endcan
                                             </li>

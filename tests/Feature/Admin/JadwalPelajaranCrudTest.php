@@ -1510,3 +1510,46 @@ it('tidak ada nama icon rusak (grid_on/format_list_bulleted/class/event_busy) di
     $response->assertDontSee('name="class"', false);
     $response->assertDontSee('name="event_busy"', false);
 });
+
+it('tombol hapus jadwal memanggil hapusJadwal() lewat AJAX, bukan submit form biasa', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $semester->tahun_ajaran_id]);
+    $polaJam = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jamPelajaran = JamPelajaran::factory()->create(['pola_jam_id' => $polaJam->id, 'hari' => Hari::Senin->value, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jadwal = JadwalPelajaran::create([
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id, 'jam_pelajaran_id' => $jamPelajaran->id, 'guru_id' => $guru->id,
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('hapusJadwal(', false);
+    $response->assertDontSee('@submit.prevent="confirmDialog(\'Hapus Jadwal?\'', false);
+});
+
+it('slot non-pelajaran di matriks roster tidak bisa diklik untuk diisi jadwal', function () {
+    $slot = (object) [
+        'id' => 999,
+        'is_pelajaran' => false,
+        'label' => 'Istirahat',
+        'jam_mulai' => '10:00:00',
+        'jam_selesai' => '10:30:00',
+    ];
+    $jamPelajaranPerHari = collect([
+        ['hari' => Hari::Senin, 'items' => collect([$slot])],
+    ]);
+
+    $view = $this->blade(
+        '@include("portals.lembaga.akademik.jadwal-pelajaran._matrix-roster", ["jamPelajaranPerHari" => $jamPelajaranPerHari, "jadwalList" => collect(), "kelas" => null])',
+        ['jamPelajaranPerHari' => $jamPelajaranPerHari]
+    );
+
+    $view->assertSee('Istirahat');
+    $view->assertDontSee('openCreateModal({ jam_ids:', false);
+});

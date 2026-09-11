@@ -174,6 +174,38 @@ export function jadwalPelajaranFilter(config) {
             }
         },
 
+        async hapusJadwal(url, label) {
+            const konfirmasi = await confirmDialog('Hapus Jadwal?', `Apakah Anda yakin ingin menghapus jadwal ${label}?`, { confirmLabel: 'Ya, Hapus' });
+            if (!konfirmasi) return;
+
+            try {
+                window.dispatchEvent(new CustomEvent('ajax-start'));
+                const formData = new FormData();
+                formData.append('_method', 'DELETE');
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]')?.content ?? '');
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        Accept: 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+                const data = await response.json().catch(() => ({}));
+                if (response.ok) {
+                    Alpine.store('toast').push('success', data.message || 'Jadwal berhasil dihapus.');
+                    await this.muatUlangDaftar();
+                } else {
+                    Alpine.store('toast').push('error', data.message || 'Gagal menghapus jadwal.');
+                }
+            } catch (e) {
+                Alpine.store('toast').push('error', 'Terjadi kesalahan jaringan saat menghapus jadwal.');
+            } finally {
+                window.dispatchEvent(new CustomEvent('ajax-end'));
+            }
+        },
+
         initTahunAjaranSelect(el) {
             new TomSelect(el, {
                 maxItems: 1,

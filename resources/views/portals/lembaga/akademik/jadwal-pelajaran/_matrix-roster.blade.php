@@ -97,36 +97,40 @@
                                                             <x-icon name="edit" class="h-3.5 w-3.5" />
                                                             <span>Edit</span>
                                                         </a>
-                                                        <form method="POST" action="{{ route('admin.jadwal-pelajaran.destroy', $jadwal) }}" x-data @submit.prevent="confirmDialog('Hapus Jadwal?', @js('Apakah Anda yakin ingin menghapus jadwal ' . ($jadwal->mataPelajaran?->nama ?? 'ini') . ' oleh ' . $jadwal->guru->nama . '?'), { confirmLabel: 'Ya, Hapus' }).then(confirmed => { if (confirmed) $el.submit() })" class="inline-flex">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="inline-flex items-center gap-1 text-[11px] font-bold text-error-500 hover:text-error-700 transition">
-                                                                <x-icon name="delete" class="h-3.5 w-3.5" />
-                                                                <span>Hapus</span>
-                                                            </button>
-                                                        </form>
+                                                        <button type="button" @click="hapusJadwal('{{ route('admin.jadwal-pelajaran.destroy', $jadwal) }}', @js(($jadwal->mataPelajaran?->nama ?? 'ini') . ' oleh ' . $jadwal->guru->nama))" class="inline-flex items-center gap-1 text-[11px] font-bold text-error-500 hover:text-error-700 transition">
+                                                            <x-icon name="delete" class="h-3.5 w-3.5" />
+                                                            <span>Hapus</span>
+                                                        </button>
                                                     </div>
                                                 @endcan
                                             </div>
                                         @else
-                                            {{-- Empty Slot Dropzone --}}
-                                            @can('jadwal-pelajaran.kelola')
-                                                <div @click="openCreateModal({ jam_ids: [{{ $slot->id }}] })" class="group flex flex-col items-center justify-center text-center rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-400 bg-gray-50/40 hover:bg-brand-50/30 p-4 transition-all duration-200 cursor-pointer h-full min-h-[140px]">
-                                                    <span class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200/60 bg-white/80 px-2.5 py-1 text-xs font-mono font-bold text-gray-500 group-hover:text-brand-600 group-hover:border-brand-200 mb-2">
-                                                        <x-icon name="schedule" class="h-3.5 w-3.5 opacity-60" />
-                                                        <span>{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
-                                                    </span>
-                                                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-white shadow-xs border border-gray-200 group-hover:border-brand-300 group-hover:bg-brand-50 text-gray-400 group-hover:text-brand-600 transition-all mb-1 group-hover:scale-105">
-                                                        <x-icon name="add" class="h-4 w-4" />
-                                                    </span>
-                                                    <span class="text-xs font-bold text-gray-400 group-hover:text-brand-700 transition-colors">+ Isi Jadwal</span>
+                                            @if (! $slot->is_pelajaran)
+                                                {{-- Slot non-pelajaran (Istirahat/Upacara dari Pola Jam) -- tidak bisa diisi mata pelajaran --}}
+                                                <div class="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 p-4 h-full min-h-[140px] text-amber-600">
+                                                    <span class="text-xs font-mono font-semibold">{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
+                                                    <span class="text-xs font-bold mt-1">{{ $slot->label }}</span>
                                                 </div>
                                             @else
-                                                <div class="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/20 p-4 h-full min-h-[140px] text-gray-400">
-                                                    <span class="text-xs font-mono font-semibold text-gray-500">{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
-                                                    <span class="text-xs font-medium text-gray-400 mt-1">Kosong</span>
-                                                </div>
-                                            @endcan
+                                                {{-- Empty Slot Dropzone --}}
+                                                @can('jadwal-pelajaran.kelola')
+                                                    <div @click="openCreateModal({ jam_ids: [{{ $slot->id }}] })" class="group flex flex-col items-center justify-center text-center rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand-400 bg-gray-50/40 hover:bg-brand-50/30 p-4 transition-all duration-200 cursor-pointer h-full min-h-[140px]">
+                                                        <span class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200/60 bg-white/80 px-2.5 py-1 text-xs font-mono font-bold text-gray-500 group-hover:text-brand-600 group-hover:border-brand-200 mb-2">
+                                                            <x-icon name="schedule" class="h-3.5 w-3.5 opacity-60" />
+                                                            <span>{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
+                                                        </span>
+                                                        <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-white shadow-xs border border-gray-200 group-hover:border-brand-300 group-hover:bg-brand-50 text-gray-400 group-hover:text-brand-600 transition-all mb-1 group-hover:scale-105">
+                                                            <x-icon name="add" class="h-4 w-4" />
+                                                        </span>
+                                                        <span class="text-xs font-bold text-gray-400 group-hover:text-brand-700 transition-colors">+ Isi Jadwal</span>
+                                                    </div>
+                                                @else
+                                                    <div class="flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/20 p-4 h-full min-h-[140px] text-gray-400">
+                                                        <span class="text-xs font-mono font-semibold text-gray-500">{{ $waktuMulai }}–{{ $waktuSelesai }}</span>
+                                                        <span class="text-xs font-medium text-gray-400 mt-1">Kosong</span>
+                                                    </div>
+                                                @endcan
+                                            @endif
                                         @endif
                                     @else
                                         <div class="h-full min-h-[140px] bg-gray-50/30 rounded-2xl border border-dashed border-gray-100 flex items-center justify-center text-gray-300 text-xs">
