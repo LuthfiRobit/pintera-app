@@ -1480,3 +1480,15 @@ it('duplicates jadwal pelajaran from a source kelas belonging to a different tah
     $response->assertOk()->assertJson(['status' => 'success', 'copied_count' => 1, 'skipped_count' => 0]);
     $this->assertDatabaseHas('jadwal_pelajaran', ['kelas_id' => $targetKelas->id, 'jam_pelajaran_id' => $slot->id]);
 });
+
+it('halaman index mengirim createUrlBase yang benar ke Alpine (bukti fix bug /undefined pada tombol Tambah Slot)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index'));
+
+    $response->assertOk();
+    $response->assertSee('createUrlBase:', false);
+    $response->assertSee('admin\/jadwal-pelajaran\/create', false);
+});

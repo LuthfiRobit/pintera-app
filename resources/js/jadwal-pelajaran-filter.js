@@ -7,6 +7,7 @@ export function jadwalPelajaranFilter(config) {
         semesterId: config.semesterId ?? '',
         opsiUrl: config.opsiUrl,
         indexUrlBase: config.indexUrlBase,
+        createUrlBase: config.createUrlBase ?? '',
         storeUrlBase: config.storeUrlBase ?? '',
         kelasTomSelect: null,
         modalJamCreateTomSelect: null,
