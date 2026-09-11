@@ -9,6 +9,7 @@ use App\Models\Semester;
 use App\Models\TahunAjaran;
 use App\Models\User;
 use App\Models\Yayasan;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -392,9 +393,82 @@ it('kalender piket harian terpaginasi dan tanggal berbahasa indonesia di view _d
 
     $response->assertOk();
     $response->assertSee('Senin, 14 September 2026');
-    $response->assertViewHas('piketHarianMendatang', fn ($piket) => $piket instanceof \Illuminate\Pagination\LengthAwarePaginator);
+    $response->assertViewHas('piketHarianMendatang', fn ($piket) => $piket instanceof LengthAwarePaginator);
 });
 
+it('store() via AJAX (modal) mengembalikan JSON sukses, bukan redirect', function () {
+    ['lembaga' => $lembaga, 'semester' => $semester, 'guru' => $guru, 'admin' => $admin] = siapkanAdminPiketKelola();
 
+    $response = $this->actingAs($admin)
+        ->postJson(route('admin.piket-guru.store'), [
+            'guru_id' => $guru->id, 'hari' => now()->dayOfWeek, 'semester_id' => $semester->id,
+        ]);
 
+    $response->assertOk();
+    $response->assertJson(['status' => 'success']);
+    expect(JadwalPiketMingguan::where('lembaga_id', $lembaga->id)->where('guru_id', $guru->id)->exists())->toBeTrue();
+});
 
+it('store() via AJAX (modal) dengan input tidak valid mengembalikan JSON 422 berisi errors', function () {
+    ['semester' => $semester, 'admin' => $admin] = siapkanAdminPiketKelola();
+
+    $response = $this->actingAs($admin)
+        ->postJson(route('admin.piket-guru.store'), [
+            'guru_id' => null, 'hari' => now()->dayOfWeek, 'semester_id' => $semester->id,
+        ]);
+
+    $response->assertStatus(422);
+    $response->assertJson(['status' => 'error']);
+    $response->assertJsonValidationErrors('guru_id');
+});
+
+it('update() via AJAX (modal) mengembalikan JSON sukses, bukan redirect', function () {
+    ['lembaga' => $lembaga, 'semester' => $semester, 'admin' => $admin] = siapkanAdminPiketKelola();
+    $guruA = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $guruB = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $jadwal = JadwalPiketMingguan::create([
+        'lembaga_id' => $lembaga->id, 'guru_id' => $guruA->id, 'hari' => 1,
+        'semester_id' => $semester->id, 'dibuat_oleh_user_id' => $admin->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->putJson(route('admin.piket-guru.update', $jadwal), [
+            'guru_id' => $guruB->id, 'hari' => 2, 'semester_id' => $semester->id,
+        ]);
+
+    $response->assertOk();
+    $response->assertJson(['status' => 'success']);
+    expect($jadwal->fresh()->guru_id)->toBe($guruB->id);
+});
+
+it('admin yayasan pada mode Semua Lembaga tetap BISA edit jadwal piket miliknya (aksi pada record spesifik, tidak ambigu)', function () {
+    ['lembaga1' => $l1, 'sem1' => $s1, 'guru1' => $g1, 'adminYayasan' => $admin] = siapkanAdminYayasanPiket();
+    $jadwal = JadwalPiketMingguan::create([
+        'lembaga_id' => $l1->id, 'guru_id' => $g1->id, 'hari' => 1, 'semester_id' => $s1->id, 'dibuat_oleh_user_id' => $admin->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->withSession(['active_lembaga_id' => null])
+        ->put(route('admin.piket-guru.update', $jadwal), [
+            'guru_id' => $g1->id, 'hari' => 2, 'semester_id' => $s1->id,
+        ]);
+
+    $response->assertRedirect(route('admin.piket-guru.index'));
+    $response->assertSessionDoesntHaveErrors();
+    expect($jadwal->fresh()->hari)->toBe(2);
+});
+
+it('admin yayasan pada mode Semua Lembaga tetap BISA hapus jadwal piket miliknya (aksi pada record spesifik, tidak ambigu)', function () {
+    ['lembaga1' => $l1, 'sem1' => $s1, 'guru1' => $g1, 'adminYayasan' => $admin] = siapkanAdminYayasanPiket();
+    $jadwal = JadwalPiketMingguan::create([
+        'lembaga_id' => $l1->id, 'guru_id' => $g1->id, 'hari' => 1, 'semester_id' => $s1->id, 'dibuat_oleh_user_id' => $admin->id,
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->withSession(['active_lembaga_id' => null])
+        ->delete(route('admin.piket-guru.destroy', $jadwal));
+
+    $response->assertRedirect(route('admin.piket-guru.index'));
+    $response->assertSessionDoesntHaveErrors();
+    expect(JadwalPiketMingguan::find($jadwal->id))->toBeNull();
+});

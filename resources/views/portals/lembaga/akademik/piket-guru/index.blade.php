@@ -16,6 +16,12 @@
                 },
                 perPage: 20,
                 indexUrlBase: @js(route('admin.piket-guru.index'))
+            }),
+            ...piketGuruModal({
+                storeUrlBase: @js(route('admin.piket-guru.store')),
+                activeLembagaId: @js(($activeLembaga->id ?? null) ?: (auth()->user()->lembaga_id ?? null)),
+                guruList: @js($guruList->map(fn ($g) => ['id' => $g->id, 'nama' => $g->nama, 'lembaga_id' => $g->lembaga_id])->values()),
+                lembagaMap: @js($guruList->pluck('lembaga.nama', 'lembaga_id'))
             })
         }"
     >
@@ -117,7 +123,7 @@
 
                 <div class="flex items-center gap-2">
                     @if (! ($isYayasanAggregate ?? false))
-                        <x-link-button href="{{ route('admin.piket-guru.create') }}">
+                        <x-link-button href="{{ route('admin.piket-guru.create') }}" @click.prevent="openCreateModal()">
                             <span class="text-base leading-none">+</span> Tambah Jadwal
                         </x-link-button>
                     @else
@@ -193,5 +199,7 @@
         <div x-ref="tableContainer">
             @include('portals.lembaga.akademik.piket-guru._daftar')
         </div>
+
+        @include('portals.lembaga.akademik.piket-guru._modal-form')
     </div>
 </x-app-layout>

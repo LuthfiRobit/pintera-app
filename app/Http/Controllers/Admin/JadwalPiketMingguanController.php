@@ -11,11 +11,13 @@ use App\Models\Guru;
 use App\Models\Lembaga;
 use App\Models\Semester;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class JadwalPiketMingguanController extends BaseController
@@ -149,22 +151,33 @@ class JadwalPiketMingguanController extends BaseController
         ]);
     }
 
-    public function store(Request $request, GenerateJadwalPiketHarianAction $generateAction, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse
+    public function store(Request $request, GenerateJadwalPiketHarianAction $generateAction, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse|JsonResponse
     {
         $this->authorize('piket.kelola');
 
         $lembagaId = $this->resolveLembagaIdAktif($request);
         if ($lembagaId === null) {
-            return redirect()->route('admin.piket-guru.index')
-                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jadwal piket.'])
-                ->withInput();
+            $msg = 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jadwal piket.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['lembaga_id' => [$msg]]], 422);
+            }
+
+            return redirect()->route('admin.piket-guru.index')->withErrors(['lembaga_id' => $msg])->withInput();
         }
 
-        $data = $request->validate([
-            'guru_id' => ['required', 'integer', Rule::exists('guru', 'id')->where('lembaga_id', $lembagaId)],
-            'hari' => ['required', 'integer', 'between:0,6'],
-            'semester_id' => ['required', 'integer', Rule::exists('semester', 'id')->where('lembaga_id', $lembagaId)],
-        ]);
+        try {
+            $data = $request->validate([
+                'guru_id' => ['required', 'integer', Rule::exists('guru', 'id')->where('lembaga_id', $lembagaId)],
+                'hari' => ['required', 'integer', 'between:0,6'],
+                'semester_id' => ['required', 'integer', Rule::exists('semester', 'id')->where('lembaga_id', $lembagaId)],
+            ]);
+        } catch (ValidationException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->validator->errors()->first(), 'errors' => $e->errors()], 422);
+            }
+
+            throw $e;
+        }
 
         $jadwal = JadwalPiketMingguan::create([
             'lembaga_id' => $lembagaId,
@@ -185,7 +198,12 @@ class JadwalPiketMingguanController extends BaseController
             $generateAction->execute($jadwal);
         }
 
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil disimpan.');
+        $message = 'Jadwal piket mingguan berhasil disimpan.';
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => $message]);
+        }
+
+        return redirect()->route('admin.piket-guru.index')->with('status', $message);
     }
 
     public function edit(JadwalPiketMingguan $jadwalPiketMingguan, Request $request): View|RedirectResponse
@@ -216,7 +234,7 @@ class JadwalPiketMingguanController extends BaseController
         ]);
     }
 
-    public function update(Request $request, JadwalPiketMingguan $jadwalPiketMingguan, GenerateJadwalPiketHarianAction $generateAction, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse
+    public function update(Request $request, JadwalPiketMingguan $jadwalPiketMingguan, GenerateJadwalPiketHarianAction $generateAction, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse|JsonResponse
     {
         $this->authorize('piket.kelola');
 
@@ -224,23 +242,39 @@ class JadwalPiketMingguanController extends BaseController
         if ($isYayasan) {
             $isMilikYayasan = $jadwalPiketMingguan->lembaga && $jadwalPiketMingguan->lembaga->yayasan_id === $request->user()->yayasan_id;
             if (! $isMilikYayasan) {
-                return redirect()->route('admin.piket-guru.index')
-                    ->withErrors(['lembaga_id' => 'Jadwal piket tidak ditemukan atau di luar wewenang yayasan Anda.']);
+                $msg = 'Jadwal piket tidak ditemukan atau di luar wewenang yayasan Anda.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['lembaga_id' => [$msg]]], 422);
+                }
+
+                return redirect()->route('admin.piket-guru.index')->withErrors(['lembaga_id' => $msg]);
             }
         } else {
             if ($jadwalPiketMingguan->lembaga_id !== $request->user()->lembaga_id) {
-                return redirect()->route('admin.piket-guru.index')
-                    ->withErrors(['lembaga_id' => 'Jadwal piket bukan milik lembaga Anda.']);
+                $msg = 'Jadwal piket bukan milik lembaga Anda.';
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json(['status' => 'error', 'message' => $msg, 'errors' => ['lembaga_id' => [$msg]]], 422);
+                }
+
+                return redirect()->route('admin.piket-guru.index')->withErrors(['lembaga_id' => $msg]);
             }
         }
 
         $lembagaId = $jadwalPiketMingguan->lembaga_id;
 
-        $data = $request->validate([
-            'guru_id' => ['required', 'integer', Rule::exists('guru', 'id')->where('lembaga_id', $lembagaId)],
-            'hari' => ['required', 'integer', 'between:0,6'],
-            'semester_id' => ['required', 'integer', Rule::exists('semester', 'id')->where('lembaga_id', $lembagaId)],
-        ]);
+        try {
+            $data = $request->validate([
+                'guru_id' => ['required', 'integer', Rule::exists('guru', 'id')->where('lembaga_id', $lembagaId)],
+                'hari' => ['required', 'integer', 'between:0,6'],
+                'semester_id' => ['required', 'integer', Rule::exists('semester', 'id')->where('lembaga_id', $lembagaId)],
+            ]);
+        } catch (ValidationException $e) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['status' => 'error', 'message' => $e->validator->errors()->first(), 'errors' => $e->errors()], 422);
+            }
+
+            throw $e;
+        }
 
         $semesterLamaId = $jadwalPiketMingguan->semester_id;
         $semesterBerubah = (int) $data['semester_id'] !== $semesterLamaId;
@@ -264,7 +298,12 @@ class JadwalPiketMingguanController extends BaseController
             $regenerateAction->execute($lembagaId, $jadwalPiketMingguan->semester_id);
         }
 
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil diperbarui.');
+        $message = 'Jadwal piket mingguan berhasil diperbarui.';
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json(['status' => 'success', 'message' => $message]);
+        }
+
+        return redirect()->route('admin.piket-guru.index')->with('status', $message);
     }
 
     public function destroy(JadwalPiketMingguan $jadwalPiketMingguan, Request $request, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse

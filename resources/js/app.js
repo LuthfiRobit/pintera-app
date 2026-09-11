@@ -54,6 +54,7 @@ import { triaseForm } from './triase-form';
 import { virtualAccountFilter } from './virtual-account-filter';
 import { virtualAccountGenerateModal } from './virtual-account-generate-modal';
 import { rppPageManager } from './rpp';
+import { piketGuruModal } from './piket-guru-modal';
 import TomSelect from 'tom-select';
 
 window.Alpine = Alpine;
@@ -119,5 +120,6 @@ Alpine.data('virtualAccountFilter', virtualAccountFilter);
 Alpine.data('virtualAccountGenerateModal', virtualAccountGenerateModal);
 Alpine.data('rppPageManager', rppPageManager);
 Alpine.data('kenaikanKelasForm', kenaikanKelasForm);
+Alpine.data('piketGuruModal', piketGuruModal);
 
 Alpine.start();

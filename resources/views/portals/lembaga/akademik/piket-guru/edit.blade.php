@@ -11,7 +11,10 @@
 <x-app-layout>
     <div class="mx-auto max-w-lg space-y-4">
         <div class="flex items-center justify-between">
-            <h1 class="font-display text-lg font-bold text-gray-900">Edit Jadwal Piket Mingguan</h1>
+            <div class="flex items-center gap-2.5">
+                <h1 class="font-display text-lg font-bold text-gray-900">Edit Jadwal Piket Mingguan</h1>
+                <x-scope-badge :is-yayasan="$isYayasan ?? false" :active-lembaga="$activeLembaga ?? null" />
+            </div>
             <a href="{{ route('admin.piket-guru.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Kembali</a>
         </div>
 

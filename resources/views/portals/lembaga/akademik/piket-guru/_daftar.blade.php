@@ -106,12 +106,20 @@
                             <tr class="transition hover:bg-gray-50">
                                 <td class="sticky left-0 z-10 bg-white px-5 py-3">
                                     <x-table-actions>
-                                        <x-dropdown-link :href="route('admin.piket-guru.edit', $jadwal)">
-                                            <span class="inline-flex items-center gap-2.5">
-                                                <x-icon name="edit" class="h-4 w-4 text-gray-500" />
-                                                Edit Jadwal
-                                            </span>
-                                        </x-dropdown-link>
+                                        <a
+                                            href="{{ route('admin.piket-guru.edit', $jadwal) }}"
+                                            @click.prevent="openEditModal({
+                                                url: @js(route('admin.piket-guru.update', $jadwal)),
+                                                guru_id: @js($jadwal->guru_id),
+                                                hari: @js($jadwal->hari),
+                                                semester_id: @js($jadwal->semester_id),
+                                                lembaga_id: @js($jadwal->lembaga_id),
+                                            })"
+                                            class="flex items-center gap-2.5 px-4 py-2.5 text-start text-sm leading-5 text-gray-700 transition duration-150 ease-in-out hover:bg-gray-50 focus:bg-gray-50 focus:outline-none"
+                                        >
+                                            <x-icon name="edit" class="h-4 w-4 text-gray-500" />
+                                            Edit Jadwal
+                                        </a>
                                         <button
                                             type="button"
                                             class="block w-full px-4 py-2 text-left text-sm leading-5 text-error-600 transition hover:bg-error-50 hover:text-error-700"
