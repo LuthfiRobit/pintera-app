@@ -35,6 +35,7 @@ class RekapAsetGlobalTest extends TestCase
         $superAdmin = User::factory()->create([
             'email' => 'superadmin@sistem.test',
             'lembaga_id' => null,
+            'yayasan_id' => $yayasan->id,
         ]);
         $superAdmin->assignRole($superAdminRole);
         $superAdmin->givePermissionTo('sarpras.aset.view');
