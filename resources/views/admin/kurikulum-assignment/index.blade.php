@@ -118,21 +118,21 @@
             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-500">Tahun Ajaran</label>
-                    <select x-ref="taSelect" x-init="initFilterSelect($refs.taSelect, 'tahun_ajaran_id', true)" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <x-select x-ref="taSelect" x-init="initFilterSelect($refs.taSelect, 'tahun_ajaran_id', true)">
                         <option value="">Semua Tahun Ajaran</option>
                         @foreach ($tahunAjaranList as $ta)
                             <option value="{{ $ta->id }}" @selected(($filters['tahun_ajaran_id'] ?? null) == $ta->id)>{{ $ta->nama }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-500">Bentuk Pendidikan</label>
-                    <select x-ref="bpSelect" x-init="initFilterSelect($refs.bpSelect, 'bentuk_pendidikan', false)" class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <x-select x-ref="bpSelect" x-init="initFilterSelect($refs.bpSelect, 'bentuk_pendidikan', false)">
                         <option value="">Semua Bentuk Pendidikan</option>
                         @foreach ($bentukPendidikanList as $bp)
                             <option value="{{ $bp->value }}" @selected(($filters['bentuk_pendidikan'] ?? null) === $bp->value)>{{ $bp->value }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
             </div>
 

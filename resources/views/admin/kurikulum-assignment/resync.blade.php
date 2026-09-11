@@ -6,8 +6,16 @@
 
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <h1 class="font-display text-lg font-bold text-gray-900">Sinkronisasi Kurikulum Kelas</h1>
-                <p class="text-xs text-gray-500">Alat koreksi manual untuk kelas yang kurikulum/fase tersimpannya sudah tidak sesuai dengan aturan kurikulum terbaru. Tidak ada yang berubah otomatis -- pilih kelas yang mau disinkronkan.</p>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <h1 class="font-display text-lg font-bold text-gray-900">Sinkronisasi Kurikulum Kelas</h1>
+                    @if ($isPlatformOrYayasan ?? false)
+                        <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold {{ ($activeLembaga ?? null) ? 'border border-brand-200 bg-brand-50 text-brand-700' : 'border border-purple-200 bg-purple-50 text-purple-700' }}">
+                            <x-icon name="apartment" class="h-3.5 w-3.5" />
+                            {{ ($activeLembaga ?? null) ? $activeLembaga->nama : 'Semua Lembaga' }}
+                        </span>
+                    @endif
+                </div>
+                <p class="mt-0.5 text-xs text-gray-500">Alat koreksi manual untuk kelas yang kurikulum/fase tersimpannya sudah tidak sesuai dengan aturan kurikulum terbaru. Tidak ada yang berubah otomatis -- pilih kelas yang mau disinkronkan.</p>
             </div>
             <p class="text-sm text-gray-500">
                 Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
@@ -18,27 +26,39 @@
         </div>
 
         <form method="GET" action="{{ route('admin.kurikulum-assignment.resync') }}" class="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-            @if ($isPlatformOrYayasan)
-                <div>
+            @if ($activeLembaga)
+                <div class="w-full sm:w-64">
                     <x-input-label value="Lembaga" />
-                    <select name="lembaga_id" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500" onchange="this.form.submit()">
+                    <div class="mt-1.5 flex h-[42px] items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3.5 text-sm font-medium text-gray-700">
+                        <x-icon name="apartment" class="h-4 w-4 shrink-0 text-gray-400" />
+                        <span class="truncate">{{ $activeLembaga->nama }}</span>
+                    </div>
+                    <input type="hidden" name="lembaga_id" value="{{ $activeLembaga->id }}">
+                </div>
+            @elseif ($isPlatformOrYayasan)
+                <div class="w-full sm:w-64">
+                    <x-input-label value="Lembaga" />
+                    <x-select name="lembaga_id" class="mt-1.5" onchange="this.form.submit()">
                         <option value="">— Pilih Lembaga —</option>
                         @foreach ($lembagaList as $l)
                             <option value="{{ $l->id }}" @selected($lembagaId === $l->id)>{{ $l->nama }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
+            @else
+                <input type="hidden" name="lembaga_id" value="{{ $lembagaId }}">
             @endif
-            <div>
+
+            <div class="w-full sm:w-64">
                 <x-input-label value="Tahun Ajaran" />
-                <select name="tahun_ajaran_id" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                <x-select name="tahun_ajaran_id" class="mt-1.5">
                     <option value="">— Pilih Tahun Ajaran —</option>
                     @foreach ($tahunAjaranList as $ta)
                         <option value="{{ $ta->id }}" @selected($tahunAjaranId === $ta->id)>{{ $ta->nama }}</option>
                     @endforeach
-                </select>
+                </x-select>
             </div>
-            <x-primary-button type="submit">Pindai Keselarasan</x-primary-button>
+            <x-primary-button type="submit" class="h-[42px]">Pindai Keselarasan</x-primary-button>
         </form>
 
         @if ($lembagaId !== null && $tahunAjaranId !== null)
@@ -68,7 +88,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">
-                                    <input type="checkbox" @click="terpilih = $event.target.checked ? @js(collect($diff)->pluck('kelas.id')->map(fn ($v) => (string) $v)->all()) : []">
+                                    <input type="checkbox" @click="terpilih = $event.target.checked ? @js(collect($diff)->pluck('kelas.id')->map(fn ($v) => (string) $v)->all()) : []" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition cursor-pointer">
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Kelas</th>
                                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600">Kurikulum: Lama → Seharusnya</th>
@@ -78,7 +98,9 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach ($diff as $row)
                                 <tr>
-                                    <td class="px-4 py-3"><input type="checkbox" name="kelas_ids[]" value="{{ $row['kelas']->id }}" x-model="terpilih"></td>
+                                    <td class="px-4 py-3">
+                                        <input type="checkbox" name="kelas_ids[]" value="{{ $row['kelas']->id }}" x-model="terpilih" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500 transition cursor-pointer">
+                                    </td>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $row['kelas']->nama }}</td>
                                     <td class="px-4 py-3 text-sm">
                                         <span class="inline-flex items-center gap-1.5">

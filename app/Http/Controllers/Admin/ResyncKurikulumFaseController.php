@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Domains\Akademik\Actions\Kelas\ResyncKurikulumFaseKelasAction;
+use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\Kelas;
 use App\Models\Lembaga;
 use App\Models\TahunAjaran;
@@ -17,6 +18,7 @@ use Illuminate\View\View;
 class ResyncKurikulumFaseController extends BaseController
 {
     use AuthorizesRequests;
+    use ResolveLembagaScopeTrait;
 
     public function __construct(private readonly ResyncKurikulumFaseKelasAction $action) {}
 
@@ -24,8 +26,17 @@ class ResyncKurikulumFaseController extends BaseController
     {
         $this->authorize('kurikulum-assignment.view');
 
-        $isPlatformOrYayasan = $this->isPlatformOrYayasan($request);
-        $lembagaId = $request->query('lembaga_id') !== null ? (int) $request->query('lembaga_id') : ($isPlatformOrYayasan ? null : $request->user()->lembaga_id);
+        $actor = $request->user();
+        $scope = $actor->widestScopeLevel();
+        $activeLembagaId = $this->resolveActiveLembagaId($actor);
+        $activeLembaga = $activeLembagaId !== null ? Lembaga::find($activeLembagaId) : null;
+
+        if ($activeLembaga !== null) {
+            $lembagaId = $activeLembaga->id;
+        } else {
+            $lembagaId = $request->query('lembaga_id') !== null ? (int) $request->query('lembaga_id') : null;
+        }
+
         $tahunAjaranId = $request->query('tahun_ajaran_id') !== null ? (int) $request->query('tahun_ajaran_id') : null;
 
         $diff = [];
@@ -34,13 +45,24 @@ class ResyncKurikulumFaseController extends BaseController
             $diff = $this->action->hitungDiff($lembagaId, $tahunAjaranId);
         }
 
+        $lembagaList = match ($scope) {
+            'platform' => Lembaga::orderBy('nama')->get(),
+            'yayasan' => Lembaga::where('yayasan_id', $actor->yayasan_id)->orderBy('nama')->get(),
+            default => collect($actor->lembaga ? [$actor->lembaga] : []),
+        };
+
+        $tahunAjaranList = $lembagaId !== null
+            ? TahunAjaran::where('lembaga_id', $lembagaId)->orderByDesc('tanggal_mulai')->get()
+            : collect();
+
         return view('admin.kurikulum-assignment.resync', [
-            'lembagaList' => $isPlatformOrYayasan ? Lembaga::orderBy('nama')->get() : collect([$request->user()->lembaga]),
-            'tahunAjaranList' => $lembagaId !== null ? TahunAjaran::where('lembaga_id', $lembagaId)->orderByDesc('tanggal_mulai')->get() : collect(),
+            'lembagaList' => $lembagaList,
+            'tahunAjaranList' => $tahunAjaranList,
             'lembagaId' => $lembagaId,
             'tahunAjaranId' => $tahunAjaranId,
             'diff' => $diff,
-            'isPlatformOrYayasan' => $isPlatformOrYayasan,
+            'activeLembaga' => $activeLembaga,
+            'isPlatformOrYayasan' => in_array($scope, ['platform', 'yayasan'], true),
         ]);
     }
 
@@ -78,6 +100,27 @@ class ResyncKurikulumFaseController extends BaseController
 
     private function authorizeScope(Request $request, int $lembagaId): void
     {
-        abort_unless($this->isPlatformOrYayasan($request) || $lembagaId === $request->user()->lembaga_id, 403);
+        $actor = $request->user();
+        $scope = $actor->widestScopeLevel();
+
+        if ($scope === 'platform') {
+            return;
+        }
+
+        $activeLembagaId = $this->resolveActiveLembagaId($actor);
+        if ($activeLembagaId !== null) {
+            abort_unless($lembagaId === $activeLembagaId, 403);
+
+            return;
+        }
+
+        if ($scope === 'yayasan') {
+            $milikYayasan = Lembaga::where('id', $lembagaId)->where('yayasan_id', $actor->yayasan_id)->exists();
+            abort_unless($milikYayasan, 403);
+
+            return;
+        }
+
+        abort_unless($lembagaId === $actor->lembaga_id, 403);
     }
 }

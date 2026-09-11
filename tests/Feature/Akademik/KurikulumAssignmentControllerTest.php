@@ -671,3 +671,21 @@ it('tidak ada sisa wording lama "Assignment"/"Platform Default"/"Cek Drift" di h
     $edit = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment));
     $edit->assertOk()->assertDontSee('Edit Assignment Kurikulum')->assertSee('Edit Aturan Kurikulum');
 });
+
+it('halaman edit meng-auto-select nilai kurikulum yang tersimpan pada assignment', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $assignment = KurikulumAssignment::create([
+        'lembaga_id' => $lembaga->id,
+        'tahun_ajaran_id' => $ta->id,
+        'bentuk_pendidikan' => 'SD',
+        'tingkat' => '1',
+        'kurikulum' => 'merdeka',
+    ]);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment));
+
+    $response->assertOk();
+    $response->assertSee('<option value="merdeka" selected>Kurikulum Merdeka</option>', false);
+});

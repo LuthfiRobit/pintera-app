@@ -1,8 +1,15 @@
 @php
     $assignment = $assignment ?? null;
-    $val = fn (string $field, $default = '') => old($field, $assignment?->$field ?? $default);
+    $val = function (string $field, $default = '') use ($assignment) {
+        $current = $assignment?->$field;
+        if ($current instanceof \BackedEnum) {
+            $current = $current->value;
+        }
+
+        return old($field, $current ?? $default);
+    };
     $bentukPendidikanAwal = $assignment
-        ? $assignment->bentuk_pendidikan
+        ? ($assignment->bentuk_pendidikan instanceof \BackedEnum ? $assignment->bentuk_pendidikan->value : $assignment->bentuk_pendidikan)
         : (($isPlatform ?? false) ? $val('bentuk_pendidikan', $bentukPendidikanList[0]->value ?? null) : ($activeLembaga->bentuk_pendidikan ?? null));
 @endphp
 
@@ -46,12 +53,12 @@
                 @if ($isPlatform ?? false)
                     <div class="sm:col-span-6">
                         <x-input-label value="Berlaku Untuk" />
-                        <select name="lembaga_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                        <x-select name="lembaga_id" class="mt-1.5" :error="$errors->has('lembaga_id')">
                             <option value="" @selected($val('lembaga_id') === '')>— Platform (semua lembaga) —</option>
                             @foreach ($lembagaList as $lembaga)
                                 <option value="{{ $lembaga->id }}" @selected($val('lembaga_id') == $lembaga->id)>{{ $lembaga->nama }}</option>
                             @endforeach
-                        </select>
+                        </x-select>
                         <x-input-error :messages="$errors->get('lembaga_id')" class="mt-1.5" />
                     </div>
                 @else
@@ -63,11 +70,11 @@
 
                 <div class="sm:col-span-6">
                     <x-input-label value="Tahun Ajaran" />
-                    <select name="tahun_ajaran_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <x-select name="tahun_ajaran_id" class="mt-1.5" :error="$errors->has('tahun_ajaran_id')">
                         @foreach ($tahunAjaranList as $ta)
                             <option value="{{ $ta->id }}" @selected($val('tahun_ajaran_id') == $ta->id)>{{ $ta->nama }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                     <x-input-error :messages="$errors->get('tahun_ajaran_id')" class="mt-1.5" />
                 </div>
             @endif
@@ -75,11 +82,11 @@
             @if ($isPlatform ?? false)
                 <div class="sm:col-span-6">
                     <x-input-label value="Bentuk Pendidikan" />
-                    <select name="bentuk_pendidikan" x-model="bentukPendidikan" @change="modeTingkat = 'semua'; tingkat = ''" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                    <x-select name="bentuk_pendidikan" x-model="bentukPendidikan" @change="modeTingkat = 'semua'; tingkat = ''" class="mt-1.5" :error="$errors->has('bentuk_pendidikan')">
                         @foreach ($bentukPendidikanList as $bp)
                             <option value="{{ $bp->value }}" @selected($val('bentuk_pendidikan') === $bp->value)>{{ $bp->value }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                     <x-input-error :messages="$errors->get('bentuk_pendidikan')" class="mt-1.5" />
                 </div>
             @else
@@ -122,11 +129,11 @@
 
             <div class="sm:col-span-12">
                 <x-input-label value="Kurikulum" />
-                <select name="kurikulum" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                <x-select name="kurikulum" class="mt-1.5" :error="$errors->has('kurikulum')">
                     @foreach ($kurikulumList as $k)
                         <option value="{{ $k->value }}" @selected($val('kurikulum') === $k->value)>{{ $k->label() }}</option>
                     @endforeach
-                </select>
+                </x-select>
                 <x-input-error :messages="$errors->get('kurikulum')" class="mt-1.5" />
             </div>
 
