@@ -1641,3 +1641,30 @@ it('menampilkan tooltip pada tombol Salin dari Kelas Lain dan badge anti-bentrok
     $response->assertSee('Salin susunan mata pelajaran, guru, dan ruangan dari kelas lain');
     $response->assertSee('Slot yang sudah terisi di kelas tujuan');
 });
+
+it('breadcrumb halaman create dan edit jadwal pelajaran memakai Akademik, bukan Beranda', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $tahunAjaran = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $semester = Semester::factory()->create(['tahun_ajaran_id' => $tahunAjaran->id, 'status_aktif' => true]);
+    $polaJam = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunAjaran->id, 'pola_jam_id' => $polaJam->id]);
+    $jamPelajaran = JamPelajaran::factory()->create(['pola_jam_id' => $polaJam->id, 'hari' => Hari::Senin->value, 'is_pelajaran' => true]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $create = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.create', [
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+    $create->assertOk();
+    $create->assertSee('Akademik <span class="mx-1 text-gray-300">&rsaquo;</span>', false);
+    $create->assertDontSee('Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>', false);
+
+    $jadwal = JadwalPelajaran::create([
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id, 'jam_pelajaran_id' => $jamPelajaran->id, 'guru_id' => $guru->id,
+    ]);
+    $edit = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.edit', $jadwal));
+    $edit->assertOk();
+    $edit->assertSee('Akademik <span class="mx-1 text-gray-300">&rsaquo;</span>', false);
+    $edit->assertDontSee('Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>', false);
+});

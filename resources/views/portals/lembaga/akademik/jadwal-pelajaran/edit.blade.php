@@ -11,7 +11,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <h1 class="font-display text-lg font-bold text-gray-900">Edit Jadwal — {{ $kelas->nama }}</h1>
             <p class="text-sm text-gray-500">
-                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                Akademik <span class="mx-1 text-gray-300">&rsaquo;</span>
                 <a href="{{ route('admin.jadwal-pelajaran.index', ['kelas_id' => $kelas->id, 'semester_id' => $jadwalPelajaran->semester_id]) }}" class="font-semibold text-gray-700 hover:text-brand-600">Jadwal Pelajaran</a>
                 <span class="mx-1 text-gray-300">&rsaquo;</span> <b class="font-semibold text-gray-700">Edit</b>
             </p>
