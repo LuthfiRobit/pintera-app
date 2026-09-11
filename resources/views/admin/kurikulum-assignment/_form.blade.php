@@ -19,40 +19,48 @@
     <div class="border-b border-gray-100 bg-white px-6 py-4">
         <p class="flex items-center gap-2 font-display text-sm font-bold text-gray-900">
             <x-icon name="group" class="h-4 w-4 text-brand-500" />
-            Assignment Kurikulum
+            Aturan Kurikulum
         </p>
-        <p class="mt-0.5 text-xs text-gray-500">Kurikulum yang berlaku untuk jenjang &amp; tingkat pada tahun ajaran tertentu. Kelas baru akan otomatis mengikuti assignment ini saat dibuat.</p>
+        <p class="mt-0.5 text-xs text-gray-500">Kurikulum yang berlaku untuk jenjang &amp; tingkat pada tahun ajaran tertentu. Kelas baru akan otomatis mengikuti aturan ini saat dibuat.</p>
     </div>
 
     <div class="p-6">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-            @if ($assignment)
-                {{-- Mode edit: lembaga_id immutable setelah dibuat (UpdateKurikulumAssignmentAction selalu
-                     pakai nilai lama), jadi SELALU read-only untuk SEMUA scope aktor termasuk platform --
-                     tidak ada gunanya (dan menyesatkan) menampilkan dropdown yang bisa diklik tapi diabaikan. --}}
-                <div class="sm:col-span-6">
-                    <x-input-label value="Berlaku Untuk" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $assignment->lembaga?->nama ?? '— Global (Platform Default) —' }} <span class="text-gray-400">(tidak bisa diubah setelah dibuat)</span></p>
+        @if ($assignment)
+            <div class="mb-5 rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p class="mb-2 text-xs font-semibold text-gray-500">Identitas Aturan (terkunci, tidak bisa diubah)</p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+                        <x-icon name="apartment" class="h-3.5 w-3.5" />
+                        {{ $assignment->lembaga?->nama ?? 'Global (Platform Default)' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                        <x-icon name="calendar_month" class="h-3.5 w-3.5" />
+                        {{ $assignment->tahunAjaran?->nama ?? '-' }}
+                    </span>
                 </div>
-            @elseif ($isPlatform ?? false)
-                <div class="sm:col-span-6">
-                    <x-input-label value="Berlaku Untuk" />
-                    <select name="lembaga_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
-                        <option value="" @selected($val('lembaga_id') === '')>— Platform (semua lembaga) —</option>
-                        @foreach ($lembagaList as $lembaga)
-                            <option value="{{ $lembaga->id }}" @selected($val('lembaga_id') == $lembaga->id)>{{ $lembaga->nama }}</option>
-                        @endforeach
-                    </select>
-                    <x-input-error :messages="$errors->get('lembaga_id')" class="mt-1.5" />
-                </div>
-            @else
-                <div class="sm:col-span-6">
-                    <x-input-label value="Berlaku Untuk" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga aktif Anda saat ini: <strong class="font-semibold text-gray-900">{{ $activeLembaga->nama }}</strong>.</p>
-                </div>
-            @endif
+            </div>
+        @endif
 
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
             @if (! $assignment)
+                @if ($isPlatform ?? false)
+                    <div class="sm:col-span-6">
+                        <x-input-label value="Berlaku Untuk" />
+                        <select name="lembaga_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
+                            <option value="" @selected($val('lembaga_id') === '')>— Platform (semua lembaga) —</option>
+                            @foreach ($lembagaList as $lembaga)
+                                <option value="{{ $lembaga->id }}" @selected($val('lembaga_id') == $lembaga->id)>{{ $lembaga->nama }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('lembaga_id')" class="mt-1.5" />
+                    </div>
+                @else
+                    <div class="sm:col-span-6">
+                        <x-input-label value="Berlaku Untuk" />
+                        <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">Assignment ini akan dibuat untuk lembaga aktif Anda saat ini: <strong class="font-semibold text-gray-900">{{ $activeLembaga->nama }}</strong>.</p>
+                    </div>
+                @endif
+
                 <div class="sm:col-span-6">
                     <x-input-label value="Tahun Ajaran" />
                     <select name="tahun_ajaran_id" class="mt-1.5 block w-full rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
@@ -61,11 +69,6 @@
                         @endforeach
                     </select>
                     <x-input-error :messages="$errors->get('tahun_ajaran_id')" class="mt-1.5" />
-                </div>
-            @else
-                <div class="sm:col-span-6">
-                    <x-input-label value="Tahun Ajaran" />
-                    <p class="mt-1.5 rounded-lg border border-gray-100 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-600">{{ $assignment->tahunAjaran?->nama ?? '-' }} (tidak bisa diubah setelah dibuat)</p>
                 </div>
             @endif
 
@@ -126,6 +129,13 @@
                 </select>
                 <x-input-error :messages="$errors->get('kurikulum')" class="mt-1.5" />
             </div>
+
+            @if ($assignment)
+                <div class="sm:col-span-12 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-xs text-blue-800">
+                    <x-icon name="info" class="mt-0.5 h-4 w-4 shrink-0 text-blue-500" />
+                    <p>Perubahan ini hanya berlaku otomatis untuk <strong>kelas baru</strong> yang dibuat setelah ini. Kelas yang sudah ada TIDAK berubah otomatis — gunakan menu <strong>Sinkronisasi Kurikulum Kelas</strong> untuk menyelaraskannya secara sadar.</p>
+                </div>
+            @endif
         </div>
     </div>
 

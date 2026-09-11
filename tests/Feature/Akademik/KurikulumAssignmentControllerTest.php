@@ -587,3 +587,25 @@ it('halaman create menampilkan pill Tingkat Tertentu (bukan input teks bebas)', 
     $response->assertSee('Tingkat Tertentu');
     $response->assertDontSee('Contoh: 1, 10, A (kosongkan utk catch-all)');
 });
+
+it('halaman edit menampilkan metadata card ringkas dan callout dampak resync', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $assignment = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment));
+
+    $response->assertOk();
+    $response->assertSee('Identitas Aturan (terkunci, tidak bisa diubah)');
+    $response->assertSee('Sinkronisasi Kurikulum Kelas');
+    $response->assertDontSee('(tidak bisa diubah setelah dibuat)');
+});
+
+it('halaman create dan edit menampilkan breadcrumb Pengaturan Kurikulum', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+
+    $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))
+        ->assertOk()->assertSee('Pengaturan Kurikulum')->assertSee('Tambah Aturan');
+});
