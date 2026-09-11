@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Akademik\Actions\KenaikanKelas;
 
 use App\Domains\Akademik\Actions\Jadwal\CreateJadwalPelajaranAction;
+use App\Domains\Akademik\Actions\Siswa\UpdateStatusSiswaAction;
 use App\Domains\Akademik\DataTransferObjects\JadwalPelajaranData;
 use App\Domains\Akademik\DataTransferObjects\KenaikanKelasData;
 use App\Enums\StatusSiswa;
@@ -19,32 +20,38 @@ use Illuminate\Validation\ValidationException;
 final class ProsesKenaikanKelasAction
 {
     public function __construct(
-        private readonly CreateJadwalPelajaranAction $createJadwalPelajaranAction
+        private readonly CreateJadwalPelajaranAction $createJadwalPelajaranAction,
+        private readonly UpdateStatusSiswaAction $updateStatusSiswaAction,
     ) {}
 
     /**
-     * @return array{jadwalGagal: array<int, string>}
+     * @return array{jadwalGagal: array<int, string>, siswaNaik: int, siswaLulus: int, kelasDilewati: int}
      *
      * @throws \DomainException kalau kelas tujuan berada di tahun ajaran yang sama dengan kelas asal
      */
     public function execute(KenaikanKelasData $data): array
     {
         $jadwalGagal = [];
+        $siswaNaik = 0;
+        $siswaLulus = 0;
+        $kelasDilewati = 0;
 
-        DB::transaction(function () use ($data, &$jadwalGagal) {
+        DB::transaction(function () use ($data, &$jadwalGagal, &$siswaNaik, &$siswaLulus, &$kelasDilewati) {
             foreach ($data->mapping as $kelasLamaId => $aksi) {
                 if ($aksi['tindakan'] === 'lewati') {
+                    $kelasDilewati++;
+
                     continue;
                 }
 
                 $kelasLama = Kelas::findOrFail($kelasLamaId);
 
                 if ($aksi['tindakan'] === 'lulus') {
-                    Siswa::where('kelas_id', $kelasLama->id)->update([
-                        'status' => StatusSiswa::Lulus->value,
-                        'kelas_terakhir_id' => DB::raw('kelas_id'),
-                        'kelas_id' => null,
-                    ]);
+                    $siswaList = Siswa::where('kelas_id', $kelasLama->id)->get();
+                    foreach ($siswaList as $siswa) {
+                        $this->updateStatusSiswaAction->execute($siswa, StatusSiswa::Lulus);
+                        $siswaLulus++;
+                    }
 
                     continue;
                 }
@@ -63,7 +70,11 @@ final class ProsesKenaikanKelasAction
                     throw new \DomainException("Kelas tujuan \"{$kelasBaru->nama}\" berada di tahun ajaran \"{$tahunAjaranBaru->nama}\" yang lebih lama dari tahun ajaran kelas asal \"{$tahunAjaranLama->nama}\". Pilih kelas tujuan dari tahun ajaran berikutnya.");
                 }
 
-                Siswa::where('kelas_id', $kelasLama->id)->update(['kelas_id' => $kelasBaru->id]);
+                $siswaList = Siswa::where('kelas_id', $kelasLama->id)->get();
+                foreach ($siswaList as $siswa) {
+                    $siswa->update(['kelas_id' => $kelasBaru->id]);
+                    $siswaNaik++;
+                }
 
                 if (($aksi['salin_jadwal'] ?? false) && ! empty($aksi['semester_tujuan_id'])) {
                     $semesterTujuan = Semester::find($aksi['semester_tujuan_id']);
@@ -80,7 +91,12 @@ final class ProsesKenaikanKelasAction
             }
         });
 
-        return ['jadwalGagal' => $jadwalGagal];
+        return [
+            'jadwalGagal' => $jadwalGagal,
+            'siswaNaik' => $siswaNaik,
+            'siswaLulus' => $siswaLulus,
+            'kelasDilewati' => $kelasDilewati,
+        ];
     }
 
     /**
