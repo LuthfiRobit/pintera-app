@@ -305,3 +305,56 @@ it('does not block promoting a siswa into a kelas at the same tingkat (tinggal k
 
     expect($siswa->fresh()->kelas_id)->toBe($kelasBaruSamaTingkat->id);
 });
+
+it('rejects rendering the mapping table when tahun ajaran sumber and tujuan are the same', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahun = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahun->id, 'nama' => '5A']);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahun->id,
+        'tahun_ajaran_tujuan_id' => $tahun->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('errorTahunAjaran', fn ($error) => $error !== null);
+    $response->assertViewHas('kelasLamaList', fn ($list) => $list->isEmpty());
+});
+
+it('rejects rendering the mapping table when tahun ajaran tujuan is older than sumber', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01']);
+    $tahunLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026', 'tanggal_mulai' => '2025-07-01']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id]);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunBaru->id,
+        'tahun_ajaran_tujuan_id' => $tahunLama->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('errorTahunAjaran', fn ($error) => $error !== null);
+    $response->assertViewHas('kelasLamaList', fn ($list) => $list->isEmpty());
+});
+
+it('renders the mapping table normally when tujuan is a genuinely later tahun ajaran', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLama = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2025/2026', 'tanggal_mulai' => '2025-07-01']);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => '2026/2027', 'tanggal_mulai' => '2026-07-01']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLama->id]);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.kenaikan-kelas.index', [
+        'tahun_ajaran_id' => $tahunLama->id,
+        'tahun_ajaran_tujuan_id' => $tahunBaru->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertViewHas('errorTahunAjaran', fn ($error) => $error === null);
+    $response->assertViewHas('kelasLamaList', fn ($list) => $list->isNotEmpty());
+});

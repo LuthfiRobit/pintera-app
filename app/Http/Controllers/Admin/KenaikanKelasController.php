@@ -24,19 +24,34 @@ class KenaikanKelasController extends BaseController
         $tahunAjaranId = $request->query('tahun_ajaran_id');
         $tahunAjaranTujuanId = $request->query('tahun_ajaran_tujuan_id');
 
+        $errorTahunAjaran = null;
+        if ($tahunAjaranId && $tahunAjaranTujuanId) {
+            $tahunSumber = TahunAjaran::find($tahunAjaranId);
+            $tahunTujuan = TahunAjaran::find($tahunAjaranTujuanId);
+
+            if ($tahunSumber && $tahunTujuan) {
+                if ((int) $tahunAjaranId === (int) $tahunAjaranTujuanId) {
+                    $errorTahunAjaran = 'Tahun Ajaran Sumber dan Tujuan tidak boleh sama. Pilih Tahun Ajaran Tujuan yang berbeda (biasanya tahun ajaran berikutnya).';
+                } elseif ($tahunTujuan->tanggal_mulai < $tahunSumber->tanggal_mulai) {
+                    $errorTahunAjaran = "Tahun Ajaran Tujuan (\"{$tahunTujuan->nama}\") lebih lama dari Tahun Ajaran Sumber (\"{$tahunSumber->nama}\"). Pilih Tahun Ajaran Tujuan yang lebih baru.";
+                }
+            }
+        }
+
         return view('portals.lembaga.akademik.kenaikan-kelas.index', [
-            'tahunAjaranList' => TahunAjaran::orderByDesc('tanggal_mulai')->get(),
-            'kelasLamaList' => $tahunAjaranId
+            'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('tanggal_mulai')->get(),
+            'kelasLamaList' => ($tahunAjaranId && ! $errorTahunAjaran)
                 ? Kelas::where('tahun_ajaran_id', $tahunAjaranId)->with('lembaga')->withCount('siswa')->orderBy('nama')->get()
                 : collect(),
-            'kelasTujuanList' => $tahunAjaranTujuanId
+            'kelasTujuanList' => ($tahunAjaranTujuanId && ! $errorTahunAjaran)
                 ? Kelas::where('tahun_ajaran_id', $tahunAjaranTujuanId)->orderBy('nama')->get()
                 : collect(),
-            'semesterList' => $tahunAjaranTujuanId
+            'semesterList' => ($tahunAjaranTujuanId && ! $errorTahunAjaran)
                 ? Semester::where('tahun_ajaran_id', $tahunAjaranTujuanId)->orderByDesc('id')->get()
                 : collect(),
             'tahunAjaranId' => $tahunAjaranId,
             'tahunAjaranTujuanId' => $tahunAjaranTujuanId,
+            'errorTahunAjaran' => $errorTahunAjaran,
         ]);
     }
 
