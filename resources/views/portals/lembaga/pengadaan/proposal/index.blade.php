@@ -146,7 +146,7 @@
             </div>
 
             {{-- Table Partial Wrapper --}}
-            <div id="wadah-daftar-tabel" class="relative">
+            <div x-ref="tableContainer" class="relative">
                 @include('portals.lembaga.pengadaan.proposal._daftar', ['proposals' => $proposals])
             </div>
         </div>

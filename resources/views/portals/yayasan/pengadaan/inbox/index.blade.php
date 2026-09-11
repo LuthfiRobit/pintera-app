@@ -87,7 +87,7 @@
                 </div>
             </div>
 
-            <div id="wadah-daftar-tabel" class="relative">
+            <div x-ref="tableContainer" class="relative">
                 @include('portals.yayasan.pengadaan.inbox._daftar', ['proposals' => $proposals])
             </div>
         </div>
