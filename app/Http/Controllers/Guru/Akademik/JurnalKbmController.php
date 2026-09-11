@@ -75,15 +75,16 @@ class JurnalKbmController extends BaseController
 
         $sesiPiket = null;
         if ($guru) {
+            $tanggalHariIniSungguhan = now('Asia/Jakarta')->toDateString();
             $piketHariIni = PiketHarian::where('lembaga_id', $guru->lembaga_id)
                 ->where('guru_id', $guru->id)
-                ->where('tanggal', now()->toDateString())
+                ->where('tanggal', $tanggalHariIniSungguhan)
                 ->exists();
 
             if ($piketHariIni) {
                 $sesiPiket = SesiPembelajaran::where('lembaga_id', $guru->lembaga_id)
                     ->where('guru_id', '!=', $guru->id)
-                    ->whereDate('tanggal', $hariIni)
+                    ->whereDate('tanggal', $tanggalHariIniSungguhan)
                     ->with('kelas.tahunAjaran', 'mataPelajaran', 'guru')
                     ->get();
             }

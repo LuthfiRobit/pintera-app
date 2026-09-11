@@ -30,7 +30,7 @@ final class GenerateJadwalPiketHarianAction
         // piket sengaja hanya berlaku hari ini/ke depan (spec §2 poin 3); men-generate baris
         // utk tanggal lampau akan diam-diam memberi akses piket ke sesi lama lewat
         // PiketAccessChecker (yang sengaja cuma cek kecocokan tabel, bukan cek tanggal=hari ini).
-        $tanggalMulai = $semester->tanggal_mulai->isPast() ? now()->startOfDay() : $semester->tanggal_mulai;
+        $tanggalMulai = $semester->tanggal_mulai->isPast() ? now('Asia/Jakarta')->startOfDay() : $semester->tanggal_mulai;
         $periode = CarbonPeriod::create($tanggalMulai, $semester->tanggal_selesai);
 
         foreach ($periode as $tanggal) {

@@ -30,7 +30,7 @@ final class RegenerateJadwalPiketHarianAction
             // sudah disiapkan lebih awal (mis. saat admin mengganti semester jadwal
             // mingguan lewat halaman edit).
             $kandidat = PiketHarian::where('lembaga_id', $lembagaId)
-                ->where('tanggal', '>=', now()->toDateString())
+                ->where('tanggal', '>=', now('Asia/Jakarta')->toDateString())
                 ->where('tanggal', '<=', $semester->tanggal_selesai)
                 ->where('sumber', 'dari_jadwal_mingguan')
                 ->get();
