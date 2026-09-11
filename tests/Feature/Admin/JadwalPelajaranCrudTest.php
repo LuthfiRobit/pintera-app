@@ -1345,7 +1345,7 @@ it('shows the actual kelas and semester name in the daftar header, staying corre
         'tahun_ajaran_id' => $tahunAjaran->id, 'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
     ]), ['X-Requested-With' => 'XMLHttpRequest']);
 
-    $response->assertSee('Jadwal Pelajaran Kelas 6C', false)->assertSee('Semester Ganjil', false);
+    $response->assertSee('Jadwal Pelajaran — 6C', false)->assertSee('Semester Ganjil', false);
 });
 
 it('does not show the "Menyeduh" typo as the loading state text in the add/edit slot modal', function () {
@@ -1552,4 +1552,20 @@ it('slot non-pelajaran di matriks roster tidak bisa diklik untuk diisi jadwal', 
 
     $view->assertSee('Istirahat');
     $view->assertDontSee('openCreateModal({ jam_ids:', false);
+});
+
+it('judul daftar jadwal tidak mengulang kata Kelas (nama kelas sudah diawali kata Kelas)', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsJadwalManager($lembaga);
+    $semester = Semester::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $semester->tahun_ajaran_id, 'nama' => 'Kelas 1-A']);
+
+    $response = $this->actingAs($manager)->get(route('admin.jadwal-pelajaran.index', [
+        'kelas_id' => $kelas->id, 'semester_id' => $semester->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertDontSee('Jadwal Pelajaran Kelas Kelas 1-A');
+    $response->assertSee('Jadwal Pelajaran — Kelas 1-A');
 });
