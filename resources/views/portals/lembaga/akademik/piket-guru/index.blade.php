@@ -31,7 +31,7 @@
                             <td class="px-5 py-3 text-gray-600">{{ $jadwal->semester ? $jadwal->semester->tahunAjaran->nama . ' - ' . $jadwal->semester->nama : '-' }}</td>
                             <td class="px-5 py-3 text-right space-x-3">
                                 <a href="{{ route('admin.piket-guru.edit', $jadwal) }}" class="text-brand-600 hover:underline">Edit</a>
-                                <form method="POST" action="{{ route('admin.piket-guru.destroy', $jadwal) }}" class="inline" onsubmit="return confirm('Hapus jadwal piket ini?')">
+                                <form method="POST" action="{{ route('admin.piket-guru.destroy', $jadwal) }}" class="inline" @submit.prevent="confirmDialog('Hapus Jadwal Piket?', @js('Piket ' . ($jadwal->guru?->nama ?? 'guru ini') . ' pada hari ' . ($namaHari[$jadwal->hari] ?? $jadwal->hari) . ' akan dihapus. Baris piket harian mendatang yang terkait juga akan ikut disesuaikan otomatis.'), { confirmLabel: 'Ya, Hapus', isDanger: true }).then(confirmed => { if (confirmed) $el.submit() })">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-error-600 hover:underline ml-3">Hapus</button>
                                 </form>
@@ -87,7 +87,7 @@
                                     <td class="px-4 py-2.5 font-medium text-gray-900">{{ \Carbon\Carbon::parse($override->tanggal)->isoFormat('dddd, D MMMM Y') }}</td>
                                     <td class="px-4 py-2.5 text-gray-700">{{ $override->guru?->nama ?? '-' }}</td>
                                     <td class="px-4 py-2.5 text-right">
-                                        <form method="POST" action="{{ route('admin.piket-harian.destroy', $override) }}" class="inline" onsubmit="return confirm('Hapus override manual ini?')">
+                                        <form method="POST" action="{{ route('admin.piket-harian.destroy', $override) }}" class="inline" @submit.prevent="confirmDialog('Hapus Override Piket?', @js('Override piket manual untuk ' . \Carbon\Carbon::parse($override->tanggal)->isoFormat('D MMMM Y') . ' akan dihapus.'), { confirmLabel: 'Ya, Hapus', isDanger: true }).then(confirmed => { if (confirmed) $el.submit() })">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="text-error-600 hover:underline">Hapus</button>
                                         </form>
