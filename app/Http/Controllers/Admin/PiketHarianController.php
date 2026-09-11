@@ -48,11 +48,20 @@ class PiketHarianController extends BaseController
     {
         $this->authorize('piket.kelola');
 
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $lembagaId = $isYayasan
             ? $this->resolveActiveLembagaId($request->user())
             : $request->user()->lembaga_id;
 
-        abort_if($piketHarian->lembaga_id !== $lembagaId, 403);
+        if ($isYayasan) {
+            $isMilikYayasan = $piketHarian->lembaga && $piketHarian->lembaga->yayasan_id === $request->user()->yayasan_id;
+            abort_if(! $isMilikYayasan, 403);
+            if ($lembagaId !== null) {
+                abort_if($piketHarian->lembaga_id !== $lembagaId, 403);
+            }
+        } else {
+            abort_if($piketHarian->lembaga_id !== $lembagaId, 403);
+        }
 
         $piketHarian->delete();
 

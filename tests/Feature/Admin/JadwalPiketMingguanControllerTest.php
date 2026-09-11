@@ -271,3 +271,81 @@ it('mengirim piketHarianMendatang berisi kedua sumber (otomatis dan manual) ke v
     $response->assertViewHas('overrides', fn ($list) => $list->count() === 1);
 });
 
+function siapkanAdminYayasanPiket(): array
+{
+    Permission::firstOrCreate(['name' => 'piket.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'pengurus_yayasan_piket_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo('piket.kelola');
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga1 = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan' => []]);
+    $lembaga2 = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'hari_libur_mingguan' => []]);
+
+    $ta1 = TahunAjaran::factory()->create(['lembaga_id' => $lembaga1->id]);
+    $sem1 = Semester::factory()->create(['tahun_ajaran_id' => $ta1->id, 'lembaga_id' => $lembaga1->id, 'status_aktif' => true]);
+
+    $ta2 = TahunAjaran::factory()->create(['lembaga_id' => $lembaga2->id]);
+    $sem2 = Semester::factory()->create(['tahun_ajaran_id' => $ta2->id, 'lembaga_id' => $lembaga2->id, 'status_aktif' => true]);
+
+    $guru1 = Guru::factory()->create(['lembaga_id' => $lembaga1->id]);
+    $guru2 = Guru::factory()->create(['lembaga_id' => $lembaga2->id]);
+
+    $adminYayasan = User::factory()->create(['yayasan_id' => $yayasan->id, 'lembaga_id' => null]);
+    $adminYayasan->assignRole($role);
+
+    return compact('yayasan', 'lembaga1', 'lembaga2', 'sem1', 'sem2', 'guru1', 'guru2', 'adminYayasan');
+}
+
+it('admin yayasan pada mode Semua Lembaga berhasil membuka index (agregat, HTTP 200) dan melihat data lintas lembaga', function () {
+    ['lembaga1' => $l1, 'lembaga2' => $l2, 'sem1' => $s1, 'sem2' => $s2, 'guru1' => $g1, 'guru2' => $g2, 'adminYayasan' => $admin] = siapkanAdminYayasanPiket();
+
+    JadwalPiketMingguan::create(['lembaga_id' => $l1->id, 'guru_id' => $g1->id, 'hari' => 1, 'semester_id' => $s1->id, 'dibuat_oleh_user_id' => $admin->id]);
+    JadwalPiketMingguan::create(['lembaga_id' => $l2->id, 'guru_id' => $g2->id, 'hari' => 2, 'semester_id' => $s2->id, 'dibuat_oleh_user_id' => $admin->id]);
+
+    $response = $this->actingAs($admin)
+        ->withSession(['active_lembaga_id' => null])
+        ->get(route('admin.piket-guru.index'));
+
+    $response->assertOk();
+    $response->assertViewHas('isYayasan', true);
+    $response->assertViewHas('isYayasanAggregate', true);
+    $response->assertViewHas('activeLembaga', null);
+    $response->assertViewHas('jadwalList', fn ($list) => $list->count() === 2);
+    $response->assertViewHas('stats', fn ($stats) => $stats['totalJadwal'] === 2 && $stats['guruTerjadwal'] === 2 && $stats['lembagaTerjadwal'] === 2);
+});
+
+it('admin yayasan pada mode agregat dapat memfilter berdasarkan lembaga_id, hari, semester_id, dan search', function () {
+    ['lembaga1' => $l1, 'lembaga2' => $l2, 'sem1' => $s1, 'sem2' => $s2, 'guru1' => $g1, 'guru2' => $g2, 'adminYayasan' => $admin] = siapkanAdminYayasanPiket();
+
+    JadwalPiketMingguan::create(['lembaga_id' => $l1->id, 'guru_id' => $g1->id, 'hari' => 1, 'semester_id' => $s1->id, 'dibuat_oleh_user_id' => $admin->id]);
+    JadwalPiketMingguan::create(['lembaga_id' => $l2->id, 'guru_id' => $g2->id, 'hari' => 2, 'semester_id' => $s2->id, 'dibuat_oleh_user_id' => $admin->id]);
+
+    // Filter by lembaga_id
+    $response = $this->actingAs($admin)
+        ->withSession(['active_lembaga_id' => null])
+        ->get(route('admin.piket-guru.index', ['lembaga_id' => $l1->id]));
+
+    $response->assertOk();
+    $response->assertViewHas('jadwalList', fn ($list) => $list->count() === 1 && $list->first()->lembaga_id === $l1->id);
+
+    // Filter by hari
+    $responseHari = $this->actingAs($admin)
+        ->withSession(['active_lembaga_id' => null])
+        ->get(route('admin.piket-guru.index', ['hari' => 2]));
+
+    $responseHari->assertOk();
+    $responseHari->assertViewHas('jadwalList', fn ($list) => $list->count() === 1 && $list->first()->hari === 2);
+});
+
+it('admin yayasan pada mode Semua Lembaga diarahkan kembali jika membuka create langsung', function () {
+    ['adminYayasan' => $admin] = siapkanAdminYayasanPiket();
+
+    $response = $this->actingAs($admin)
+        ->withSession(['active_lembaga_id' => null])
+        ->get(route('admin.piket-guru.create'));
+
+    $response->assertRedirect(route('admin.piket-guru.index'));
+    $response->assertSessionHasErrors('lembaga_id');
+});
+
+

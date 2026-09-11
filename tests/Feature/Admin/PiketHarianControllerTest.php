@@ -57,3 +57,25 @@ it('admin bisa hapus baris PiketHarian', function () {
     $response->assertRedirect();
     expect(PiketHarian::find($piket->id))->toBeNull();
 });
+
+it('admin yayasan pada mode agregat bisa menghapus baris override lembaga miliknya', function () {
+    Permission::firstOrCreate(['name' => 'piket.kelola', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'pengurus_yayasan_piket_harian_test', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo('piket.kelola');
+
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $guru = Guru::factory()->create(['lembaga_id' => $lembaga->id]);
+    $adminYayasan = User::factory()->create(['yayasan_id' => $yayasan->id, 'lembaga_id' => null]);
+    $adminYayasan->assignRole($role);
+
+    $piket = PiketHarian::create(['lembaga_id' => $lembaga->id, 'guru_id' => $guru->id, 'tanggal' => now()->addDays(3)->toDateString(), 'sumber' => 'override_manual']);
+
+    $response = $this->actingAs($adminYayasan)
+        ->withSession(['active_lembaga_id' => null])
+        ->delete(route('admin.piket-harian.destroy', $piket));
+
+    $response->assertRedirect();
+    expect(PiketHarian::find($piket->id))->toBeNull();
+});
+

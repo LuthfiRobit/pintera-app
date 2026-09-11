@@ -8,6 +8,7 @@ use App\Domains\Akademik\Models\JadwalPiketMingguan;
 use App\Domains\Akademik\Models\PiketHarian;
 use App\Domains\Akademik\Support\ResolveLembagaScopeTrait;
 use App\Models\Guru;
+use App\Models\Lembaga;
 use App\Models\Semester;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\RedirectResponse;
@@ -22,40 +23,115 @@ class JadwalPiketMingguanController extends BaseController
     use AuthorizesRequests;
     use ResolveLembagaScopeTrait;
 
+    private function scopeHeaderData(Request $request): array
+    {
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $activeLembagaId = $isYayasan ? $this->resolveActiveLembagaId($request->user()) : $request->user()->lembaga_id;
+        $isYayasanAggregate = $isYayasan && $activeLembagaId === null;
+
+        return [
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => ($isYayasan && $activeLembagaId) ? Lembaga::withoutGlobalScopes()->find($activeLembagaId) : null,
+            'isYayasanAggregate' => $isYayasanAggregate,
+        ];
+    }
+
     public function index(Request $request): View
     {
         $this->authorize('piket.kelola');
 
-        $lembagaId = $this->resolveLembagaIdAktif($request);
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $activeLembagaId = $isYayasan ? $this->resolveActiveLembagaId($request->user()) : $request->user()->lembaga_id;
+        $isYayasanAggregate = $isYayasan && $activeLembagaId === null;
+
+        // Parameter query filter
+        $filterLembagaId = $request->query('lembaga_id');
+        $filterHari = $request->query('hari');
+        $filterSemesterId = $request->query('semester_id');
+        $search = $request->query('search');
+
+        $targetLembagaId = $activeLembagaId ?? ($filterLembagaId ? (int) $filterLembagaId : null);
+
+        $jadwalList = JadwalPiketMingguan::with(['guru.person', 'semester.tahunAjaran', 'lembaga'])
+            ->when($targetLembagaId, fn ($q) => $q->where('lembaga_id', $targetLembagaId))
+            ->when($filterHari !== null && $filterHari !== '', fn ($q) => $q->where('hari', (int) $filterHari))
+            ->when($filterSemesterId, fn ($q) => $q->where('semester_id', (int) $filterSemesterId))
+            ->when($search, fn ($q) => $q->whereHas('guru.person', fn ($q2) => $q2->where('nama_lengkap', 'like', "%{$search}%")))
+            ->orderBy('hari')
+            ->get();
+
+        $overrides = PiketHarian::where('sumber', 'override_manual')
+            ->where('tanggal', '>=', now()->toDateString())
+            ->with(['guru.person', 'lembaga'])
+            ->when($targetLembagaId, fn ($q) => $q->where('lembaga_id', $targetLembagaId))
+            ->when($search, fn ($q) => $q->whereHas('guru.person', fn ($q2) => $q2->where('nama_lengkap', 'like', "%{$search}%")))
+            ->orderBy('tanggal')
+            ->get();
+
+        $piketHarianMendatang = PiketHarian::where('tanggal', '>=', now()->toDateString())
+            ->with(['guru.person', 'lembaga'])
+            ->when($targetLembagaId, fn ($q) => $q->where('lembaga_id', $targetLembagaId))
+            ->when($search, fn ($q) => $q->whereHas('guru.person', fn ($q2) => $q2->where('nama_lengkap', 'like', "%{$search}%")))
+            ->orderBy('tanggal')
+            ->limit(60)
+            ->get();
+
+        $guruList = $targetLembagaId
+            ? Guru::where('lembaga_id', $targetLembagaId)->orderByNama()->get()
+            : Guru::with('lembaga')->orderByNama()->get();
+
+        $semesterList = $targetLembagaId
+            ? $this->semesterListUntukLembaga($targetLembagaId)
+            : Semester::with('tahunAjaran', 'lembaga')->where('status_aktif', true)->get();
+
+        $lembagaList = $isYayasan
+            ? Lembaga::where('yayasan_id', $request->user()->yayasan_id)->orderBy('nama')->get()
+            : collect();
+
+        $stats = [
+            'totalJadwal' => $jadwalList->count(),
+            'guruTerjadwal' => $jadwalList->pluck('guru_id')->unique()->count(),
+            'overrideAktif' => $overrides->count(),
+            'lembagaTerjadwal' => $isYayasanAggregate
+                ? $jadwalList->pluck('lembaga_id')->unique()->count()
+                : $jadwalList->pluck('hari')->unique()->count(),
+        ];
 
         return view('portals.lembaga.akademik.piket-guru.index', [
-            'jadwalList' => JadwalPiketMingguan::where('lembaga_id', $lembagaId)->with(['guru', 'semester.tahunAjaran'])->orderBy('hari')->get(),
-            'overrides' => PiketHarian::where('lembaga_id', $lembagaId)
-                ->where('sumber', 'override_manual')
-                ->where('tanggal', '>=', now()->toDateString())
-                ->with('guru')
-                ->orderBy('tanggal')
-                ->get(),
-            'piketHarianMendatang' => PiketHarian::where('lembaga_id', $lembagaId)
-                ->where('tanggal', '>=', now()->toDateString())
-                ->with('guru')
-                ->orderBy('tanggal')
-                ->limit(60)
-                ->get(),
-            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderByNama()->get(),
+            'jadwalList' => $jadwalList,
+            'overrides' => $overrides,
+            'piketHarianMendatang' => $piketHarianMendatang,
+            'guruList' => $guruList,
+            'semesterList' => $semesterList,
+            'lembagaList' => $lembagaList,
+            'stats' => $stats,
+            'filters' => [
+                'search' => $search,
+                'hari' => $filterHari,
+                'semester_id' => $filterSemesterId,
+                'lembaga_id' => $filterLembagaId,
+            ],
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
-    public function create(Request $request): View
+    public function create(Request $request): View|RedirectResponse
     {
         $this->authorize('piket.kelola');
 
-        $lembagaId = $this->resolveLembagaIdAktif($request);
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        $activeLembagaId = $isYayasan ? $this->resolveActiveLembagaId($request->user()) : $request->user()->lembaga_id;
+
+        if ($activeLembagaId === null) {
+            return redirect()->route('admin.piket-guru.index')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jadwal piket.']);
+        }
 
         return view('portals.lembaga.akademik.piket-guru.create', [
-            'guruList' => Guru::where('lembaga_id', $lembagaId)->orderByNama()->get(),
-            'semesterList' => $this->semesterListUntukLembaga($lembagaId),
-            'semesterAktif' => Semester::where('lembaga_id', $lembagaId)->where('status_aktif', true)->first(),
+            'guruList' => Guru::where('lembaga_id', $activeLembagaId)->orderByNama()->get(),
+            'semesterList' => $this->semesterListUntukLembaga($activeLembagaId),
+            'semesterAktif' => Semester::where('lembaga_id', $activeLembagaId)->where('status_aktif', true)->first(),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
