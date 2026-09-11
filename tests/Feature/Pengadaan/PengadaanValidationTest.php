@@ -3,7 +3,9 @@
 namespace Tests\Feature\Pengadaan;
 
 use App\Domains\Pengadaan\Enums\StatusPengajuan;
+use App\Domains\Pengadaan\Enums\TingkatUrgensi;
 use App\Domains\Pengadaan\Models\PengajuanPengadaan;
+use App\Domains\Sarpras\Models\Gedung;
 use App\Domains\Sarpras\Models\KategoriAset;
 use App\Domains\Sarpras\Models\Ruangan;
 use App\Models\Lembaga;
@@ -22,8 +24,11 @@ class PengadaanValidationTest extends TestCase
     use RefreshDatabase;
 
     protected Yayasan $yayasan;
+
     protected Lembaga $lembaga;
+
     protected User $admUser;
+
     protected User $bendaharaUser;
 
     protected function setUp(): void
@@ -50,7 +55,7 @@ class PengadaanValidationTest extends TestCase
         $admRole->givePermissionTo(['pengadaan.proposal.create', 'pengadaan.proposal.view', 'pengadaan.lpj.submit']);
         $this->admUser->assignRole($admRole);
 
-        $this->bendaharaUser = User::factory()->create(['lembaga_id' => null]);
+        $this->bendaharaUser = User::factory()->create(['lembaga_id' => null, 'yayasan_id' => $this->yayasan->id]);
         $bendaharaRole = Role::firstOrCreate(['name' => 'bendahara_yayasan', 'guard_name' => 'web']);
         $this->bendaharaUser->assignRole($bendaharaRole);
     }
@@ -74,7 +79,7 @@ class PengadaanValidationTest extends TestCase
             'nama_kategori' => 'Elektronik',
             'kode_kategori' => 'ELK',
         ]);
-        $gedung = \App\Domains\Sarpras\Models\Gedung::create([
+        $gedung = Gedung::create([
             'yayasan_id' => $this->yayasan->id,
             'lembaga_id' => $this->lembaga->id,
             'nama_gedung' => 'Gedung Utama',
@@ -100,7 +105,7 @@ class PengadaanValidationTest extends TestCase
                     'satuan' => '',
                     'estimasi_harga_satuan' => -500, // invalid min:0
                     'tipe_pencatatan' => 'invalid_type',
-                ]
+                ],
             ],
         ]);
 
@@ -131,5 +136,27 @@ class PengadaanValidationTest extends TestCase
         ]);
 
         $response->assertSessionHasErrors(['nominal_pencairan', 'tanggal_pencairan']);
+    }
+
+    public function test_form_edit_menampilkan_opsi_kritis_dengan_value_yang_benar_untuk_proposal_urgensi_kritis(): void
+    {
+        $this->admUser->givePermissionTo('pengadaan.proposal.edit');
+
+        $proposal = PengajuanPengadaan::create([
+            'yayasan_id' => $this->yayasan->id,
+            'lembaga_id' => $this->lembaga->id,
+            'nomor_pengajuan' => 'PR/2026/09/TEST-URGENSI',
+            'judul_pengajuan' => 'Perbaikan Atap Bocor',
+            'tingkat_urgensi' => TingkatUrgensi::Kritis,
+            'total_estimasi' => 1000000,
+            'status' => StatusPengajuan::RevisionRequired,
+            'created_by_user_id' => $this->admUser->id,
+        ]);
+
+        $response = $this->actingAs($this->admUser)->get(route('admin.pengadaan.proposal.edit', $proposal));
+
+        $response->assertOk();
+        $response->assertSee('value="kritis" selected', false);
+        $response->assertDontSee('value="darurat"', false);
     }
 }
