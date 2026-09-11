@@ -410,3 +410,26 @@ it('rejects checking salin_jadwal without selecting a semester_tujuan_id', funct
 
     $response->assertSessionHasErrors();
 });
+
+it('includes a summary of siswa naik/lulus/kelas dilewati counts in the success flash message', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $tahunLalu = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $tahunBaru = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $kelasNaik = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '5A']);
+    $kelasBaru = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunBaru->id, 'nama' => '6A']);
+    $kelasLulus = Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $tahunLalu->id, 'nama' => '6B']);
+    Siswa::factory()->count(2)->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasNaik->id, 'status' => StatusSiswa::Aktif->value]);
+    Siswa::factory()->count(1)->create(['lembaga_id' => $lembaga->id, 'kelas_id' => $kelasLulus->id, 'status' => StatusSiswa::Aktif->value]);
+    $manager = actingAsKenaikanKelasManager($lembaga);
+
+    $response = $this->actingAs($manager)->post(route('admin.kenaikan-kelas.store'), [
+        'mapping' => [
+            $kelasNaik->id => ['tindakan' => 'naik', 'kelas_baru_id' => $kelasBaru->id],
+            $kelasLulus->id => ['tindakan' => 'lulus'],
+        ],
+    ]);
+
+    $response->assertRedirect(route('admin.kelas.index'));
+    $response->assertSessionHas('status', fn ($status) => str_contains($status, '2 siswa naik kelas') && str_contains($status, '1 siswa diluluskan'));
+});

@@ -76,7 +76,7 @@ class KenaikanKelasController extends BaseController
             return back()->withErrors(['mapping' => $e->getMessage()]);
         }
 
-        $status = 'Kenaikan kelas berhasil diproses.';
+        $status = "Kenaikan kelas berhasil diproses: {$result['siswaNaik']} siswa naik kelas, {$result['siswaLulus']} siswa diluluskan, {$result['kelasDilewati']} kelas dilewati.";
         if (! empty($result['jadwalGagal'])) {
             $status .= ' '.count($result['jadwalGagal']).' jadwal tidak tersalin karena bentrok: '.implode('; ', $result['jadwalGagal']).'.';
         }
