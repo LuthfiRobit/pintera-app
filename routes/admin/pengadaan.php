@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 // Pengadaan & LPJ Sarpras
 Route::prefix('pengadaan')->name('pengadaan.')->group(function () {
     // Portal Lembaga
-    Route::resource('proposal', \App\Http\Controllers\Lembaga\Pengadaan\PengajuanPengadaanController::class);
+    Route::resource('proposal', \App\Http\Controllers\Lembaga\Pengadaan\PengajuanPengadaanController::class)->except(['destroy']);
     Route::post('proposal/{proposal}/submit', [\App\Http\Controllers\Lembaga\Pengadaan\PengajuanPengadaanController::class, 'submit'])->name('proposal.submit');
     Route::get('lpj/{proposal}/create', [\App\Http\Controllers\Lembaga\Pengadaan\LpjPengadaanController::class, 'create'])->name('lpj.create');
     Route::post('lpj/{proposal}', [\App\Http\Controllers\Lembaga\Pengadaan\LpjPengadaanController::class, 'store'])->name('lpj.store');
