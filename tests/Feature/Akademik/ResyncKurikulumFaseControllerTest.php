@@ -90,3 +90,39 @@ it('halaman resync membungkus submit sinkronisasi dengan confirmDialog (bukan su
     $response->assertSee('x-model="terpilih"', false);
 });
 
+it('menampilkan empty state instruksional sebelum lembaga/tahun ajaran dipilih', function () {
+    [$manager, $lembaga, $ta] = siapkanResyncControllerUser();
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.resync'));
+
+    $response->assertOk();
+    $response->assertSee('Pilih Lembaga & Tahun Ajaran untuk Memindai');
+});
+
+it('menampilkan zero-drift success state kalau tidak ada perbedaan', function () {
+    [$manager, $lembaga, $ta] = siapkanResyncControllerUser();
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'merdeka']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'tingkat' => '1', 'kurikulum' => 'merdeka']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.resync', [
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('Semua Kelas Sudah Selaras');
+});
+
+it('menampilkan nama fase lama (bukan id mentah) dan floating bulk bar saat ada drift', function () {
+    [$manager, $lembaga, $ta] = siapkanResyncControllerUser();
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'tingkat' => '1', 'kurikulum' => 'k13', 'fase_id' => null]);
+    KurikulumAssignment::where('tahun_ajaran_id', $ta->id)->first()->update(['kurikulum' => 'merdeka']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.resync', [
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id,
+    ]));
+
+    $response->assertOk();
+    $response->assertSee('Tanpa Fase');
+    $response->assertSee('terpilih.length', false);
+});

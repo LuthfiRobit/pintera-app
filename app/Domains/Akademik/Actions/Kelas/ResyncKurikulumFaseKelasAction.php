@@ -19,7 +19,7 @@ final class ResyncKurikulumFaseKelasAction
     ) {}
 
     /**
-     * @return array<int, array{kelas: Kelas, kurikulumLama: ?string, kurikulumBaru: ?string, faseLamaId: ?int, faseBaruId: ?int, faseBaruNama: ?string}>
+     * @return array<int, array{kelas: Kelas, kurikulumLama: ?string, kurikulumBaru: ?string, faseLamaId: ?int, faseLamaNama: ?string, faseBaruId: ?int, faseBaruNama: ?string}>
      */
     public function hitungDiff(int $lembagaId, int $tahunAjaranId): array
     {
@@ -60,6 +60,7 @@ final class ResyncKurikulumFaseKelasAction
                 'kurikulumLama' => $kurikulumLamaValue,
                 'kurikulumBaru' => $kurikulumBaruValue,
                 'faseLamaId' => $faseLamaId,
+                'faseLamaNama' => $kelas->fase?->nama,
                 'faseBaruId' => $faseBaruId,
                 'faseBaruNama' => $faseBaru?->nama,
             ];

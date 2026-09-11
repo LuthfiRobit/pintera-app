@@ -1,19 +1,27 @@
 <x-app-layout>
-    <div class="space-y-4">
+    <div class="mx-auto max-w-5xl space-y-4">
         @if (session('status'))
             <div class="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-700">{{ session('status') }}</div>
         @endif
 
-        <div>
-            <h1 class="font-display text-lg font-bold text-gray-900">Cek & Perbaiki Kurikulum/Fase Kelas</h1>
-            <p class="text-xs text-gray-500">Alat koreksi manual untuk kelas yang kurikulum/fase tersimpannya sudah tidak sesuai dengan assignment terbaru. Tidak ada yang berubah otomatis -- pilih kelas yang mau disinkronkan.</p>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="font-display text-lg font-bold text-gray-900">Sinkronisasi Kurikulum Kelas</h1>
+                <p class="text-xs text-gray-500">Alat koreksi manual untuk kelas yang kurikulum/fase tersimpannya sudah tidak sesuai dengan aturan kurikulum terbaru. Tidak ada yang berubah otomatis -- pilih kelas yang mau disinkronkan.</p>
+            </div>
+            <p class="text-sm text-gray-500">
+                Beranda <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <a href="{{ route('admin.kurikulum-assignment.index') }}" class="hover:text-gray-700">Pengaturan Kurikulum</a>
+                <span class="mx-1 text-gray-300">&rsaquo;</span>
+                <b class="font-semibold text-gray-700">Sinkronisasi</b>
+            </p>
         </div>
 
         <form method="GET" action="{{ route('admin.kurikulum-assignment.resync') }}" class="flex flex-wrap items-end gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
             @if ($isPlatformOrYayasan)
                 <div>
-                    <label class="block text-xs font-semibold text-gray-700">Lembaga</label>
-                    <select name="lembaga_id" class="mt-1 rounded-lg border-gray-200 text-sm" onchange="this.form.submit()">
+                    <x-input-label value="Lembaga" />
+                    <select name="lembaga_id" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500" onchange="this.form.submit()">
                         <option value="">— Pilih Lembaga —</option>
                         @foreach ($lembagaList as $l)
                             <option value="{{ $l->id }}" @selected($lembagaId === $l->id)>{{ $l->nama }}</option>
@@ -22,15 +30,15 @@
                 </div>
             @endif
             <div>
-                <label class="block text-xs font-semibold text-gray-700">Tahun Ajaran</label>
-                <select name="tahun_ajaran_id" class="mt-1 rounded-lg border-gray-200 text-sm">
+                <x-input-label value="Tahun Ajaran" />
+                <select name="tahun_ajaran_id" class="mt-1.5 rounded-lg border-gray-200 text-sm text-gray-900 shadow-sm focus:border-brand-500 focus:ring-brand-500">
                     <option value="">— Pilih Tahun Ajaran —</option>
                     @foreach ($tahunAjaranList as $ta)
                         <option value="{{ $ta->id }}" @selected($tahunAjaranId === $ta->id)>{{ $ta->nama }}</option>
                     @endforeach
                 </select>
             </div>
-            <button type="submit" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700">Cek Drift</button>
+            <x-primary-button type="submit">Pindai Keselarasan</x-primary-button>
         </form>
 
         @if ($lembagaId !== null && $tahunAjaranId !== null)
@@ -50,7 +58,11 @@
                 <input type="hidden" name="tahun_ajaran_id" value="{{ $tahunAjaranId }}">
 
                 @if (empty($diff))
-                    <p class="p-6 text-sm text-gray-500">Tidak ada kelas yang perlu disinkronkan -- semua kelas di kombinasi ini sudah sesuai dengan assignment terbaru.</p>
+                    <div class="flex flex-col items-center justify-center gap-2 p-10 text-center">
+                        <x-icon name="check_circle" class="h-8 w-8 text-success-500" />
+                        <p class="font-display text-sm font-bold text-gray-900">Semua Kelas Sudah Selaras</p>
+                        <p class="text-xs text-gray-500">Tidak ada kelas di kombinasi ini yang perlu disinkronkan.</p>
+                    </div>
                 @else
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -68,17 +80,37 @@
                                 <tr>
                                     <td class="px-4 py-3"><input type="checkbox" name="kelas_ids[]" value="{{ $row['kelas']->id }}" x-model="terpilih"></td>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $row['kelas']->nama }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600">{{ $row['kurikulumLama'] ?? '-' }} → {{ $row['kurikulumBaru'] ?? '-' }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-600">{{ $row['faseLamaId'] ?? '-' }} → {{ $row['faseBaruNama'] ?? '-' }}</td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $row['kurikulumLama'] ?? '—' }}</span>
+                                            <x-icon name="arrow_forward" class="h-3.5 w-3.5 text-gray-300" />
+                                            <span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{{ $row['kurikulumBaru'] ?? '—' }}</span>
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3 text-sm">
+                                        <span class="inline-flex items-center gap-1.5">
+                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ $row['faseLamaNama'] ?? 'Tanpa Fase' }}</span>
+                                            <x-icon name="arrow_forward" class="h-3.5 w-3.5 text-gray-300" />
+                                            <span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{{ $row['faseBaruNama'] ?? 'Tanpa Fase' }}</span>
+                                        </span>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
-                    <div class="p-4">
-                        <button type="submit" :disabled="terpilih.length === 0" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">Sinkronkan yang Dicentang</button>
+
+                    <div x-show="terpilih.length > 0" x-cloak x-transition class="sticky bottom-0 flex items-center justify-between gap-3 border-t border-gray-200 bg-white/95 px-5 py-3.5 backdrop-blur">
+                        <p class="text-xs font-medium text-gray-600"><span x-text="terpilih.length"></span> kelas dipilih untuk disinkronkan</p>
+                        <button type="submit" :disabled="terpilih.length === 0" class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50">Terapkan Sinkronisasi</button>
                     </div>
                 @endif
             </form>
+        @else
+            <div class="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white px-6 py-16 text-center">
+                <x-icon name="sync" class="h-10 w-10 text-gray-300" />
+                <p class="mt-3 font-display text-sm font-bold text-gray-900">Pilih Lembaga &amp; Tahun Ajaran untuk Memindai</p>
+                <p class="mt-1 max-w-sm text-xs text-gray-500">Sistem akan memeriksa apakah ada kelas yang kurikulum atau fasenya berbeda dari aturan kurikulum terbaru.</p>
+            </div>
         @endif
     </div>
 </x-app-layout>

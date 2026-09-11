@@ -108,3 +108,22 @@ it('applies resync only to the selected kelas ids, recomputing values on the ser
     expect($kelasA->fresh()->kurikulum->value)->toBe('merdeka');
     expect($kelasB->fresh()->kurikulum->value)->toBe('k13'); // tidak dicentang, tidak berubah
 });
+
+it('hitungDiff menyertakan nama fase lama, bukan cuma id mentah', function () {
+    [$lembaga, $ta] = siapkanResyncFixture();
+    $faseLama = Fase::firstOrCreate(['kode' => 'a'], ['nama' => 'Fase A', 'urutan' => 1]);
+
+    KurikulumAssignment::create([
+        'lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13',
+    ]);
+    $kelas = Kelas::factory()->create([
+        'lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'tingkat' => '1', 'kurikulum' => 'k13', 'fase_id' => $faseLama->id,
+    ]);
+    KurikulumAssignment::where('tahun_ajaran_id', $ta->id)->first()->update(['kurikulum' => 'merdeka']);
+
+    $action = app(ResyncKurikulumFaseKelasAction::class);
+    $diff = $action->hitungDiff($lembaga->id, $ta->id);
+
+    expect($diff)->toHaveCount(1);
+    expect($diff[0]['faseLamaNama'])->toBe('Fase A');
+});
