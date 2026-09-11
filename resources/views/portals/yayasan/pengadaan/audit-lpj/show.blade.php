@@ -134,6 +134,17 @@
                     </x-primary-button>
                 </div>
             </form>
+        @elseif ($lpj->status_lpj === \App\Domains\Pengadaan\Enums\StatusLpj::RevisionRequired)
+            <div class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-xs text-amber-900 flex items-start gap-2">
+                <x-icon name="assignment_late" class="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div class="space-y-1">
+                    <p class="font-bold">LPJ ini diminta perbaikan, menunggu unggah ulang dari sekolah.</p>
+                    @if ($lpj->catatan_verifikasi)
+                        <p>Catatan Anda: <b>{{ $lpj->catatan_verifikasi }}</b></p>
+                    @endif
+                    <p class="text-amber-700">Diproses oleh <b>{{ $lpj->verifiedBy->name ?? 'Auditor Yayasan' }}</b> pada {{ $lpj->verified_at?->translatedFormat('d F Y H:i') }}.</p>
+                </div>
+            </div>
         @else
             <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 text-xs text-emerald-900 flex items-center gap-2">
                 <x-icon name="verified" class="h-5 w-5 text-emerald-600" />
