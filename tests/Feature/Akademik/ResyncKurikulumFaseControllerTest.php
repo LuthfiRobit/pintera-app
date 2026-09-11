@@ -126,3 +126,13 @@ it('menampilkan nama fase lama (bukan id mentah) dan floating bulk bar saat ada 
     $response->assertSee('Tanpa Fase');
     $response->assertSee('terpilih.length', false);
 });
+
+it('tidak ada sisa wording lama "Cek Drift"/"Sinkronkan yang Dicentang" di halaman resync', function () {
+    [$manager, $lembaga, $ta] = siapkanResyncControllerUser();
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.resync'));
+
+    $response->assertOk();
+    $response->assertDontSee('Cek Drift');
+    $response->assertSee('Pindai Keselarasan');
+});

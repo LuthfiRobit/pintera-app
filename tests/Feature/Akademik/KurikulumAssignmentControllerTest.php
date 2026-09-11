@@ -648,3 +648,26 @@ it('filter index() TIDAK bisa dipakai lembaga-scope actor untuk melihat assignme
     $response->assertOk();
     $response->assertViewHas('assignmentList', fn ($list) => $list->isEmpty());
 });
+
+it('tidak ada sisa wording lama "Assignment"/"Platform Default"/"Cek Drift" di halaman index, create, edit', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    KurikulumAssignment::create(['lembaga_id' => null, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => null, 'kurikulum' => 'k13']);
+    $assignment = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $index = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'));
+    $index->assertOk();
+    $index->assertDontSee('Platform Default');
+    $index->assertDontSee('Tambah Assignment');
+    $index->assertDontSee('Cek & Perbaiki Kurikulum/Fase');
+    $index->assertSee('Standar Platform');
+    $index->assertSee('Tambah Aturan Kurikulum');
+    $index->assertSee('Sinkronisasi Kurikulum Kelas');
+
+    $create = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'));
+    $create->assertOk()->assertDontSee('Tambah Assignment Kurikulum')->assertSee('Tambah Aturan Kurikulum');
+
+    $edit = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.edit', $assignment));
+    $edit->assertOk()->assertDontSee('Edit Assignment Kurikulum')->assertSee('Edit Aturan Kurikulum');
+});
