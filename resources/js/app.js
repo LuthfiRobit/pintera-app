@@ -21,6 +21,7 @@ import { raporFilter } from './rapor-filter';
 import { persetujuanRaporFilter } from './persetujuan-rapor-filter';
 import { catatanWaliKelasForm } from './catatan-wali-kelas-form';
 import { raporWaliKelasFilter } from './rapor-wali-kelas-filter';
+import { kenaikanKelasForm } from './kenaikan-kelas-form';
 import { riwayatIzinCutiSPA } from './riwayat-izin-cuti-spa';
 import { approvalIzinCutiSPA } from './approval-izin-cuti-spa';
 import { otpInput } from './otp-input';
@@ -116,5 +117,6 @@ Alpine.data('triaseForm', triaseForm);
 Alpine.data('virtualAccountFilter', virtualAccountFilter);
 Alpine.data('virtualAccountGenerateModal', virtualAccountGenerateModal);
 Alpine.data('rppPageManager', rppPageManager);
+Alpine.data('kenaikanKelasForm', kenaikanKelasForm);
 
 Alpine.start();

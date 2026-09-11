@@ -55,7 +55,7 @@
                     <p class="mt-0.5 text-xs text-gray-500">Tentukan tindakan untuk setiap kelas lama: naikkan ke kelas tujuan, atau luluskan.</p>
                 </div>
 
-                <form method="POST" action="{{ route('admin.kenaikan-kelas.store') }}">
+                <form method="POST" action="{{ route('admin.kenaikan-kelas.store') }}" x-data="kenaikanKelasForm()" @submit.prevent="konfirmasiDanKirim($event)">
                     @csrf
 
                     <div class="overflow-x-auto">
@@ -71,7 +71,11 @@
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 @foreach ($kelasLamaList as $kelasLama)
-                                    <tr class="transition hover:bg-gray-50/60" x-data="{
+                                    <tr data-kelas-lama="{{ $kelasLama->id }}"
+                                        :data-warning="((kurikulumTujuan !== null && kurikulumAsal !== null && kurikulumTujuan !== kurikulumAsal) || (selisihIndexTingkat !== null && selisihIndexTingkat !== 0 && selisihIndexTingkat !== 1)) ? '1' : '0'"
+                                        :class="{ 'border-l-4 border-amber-400 bg-amber-50/30': ((kurikulumTujuan !== null && kurikulumAsal !== null && kurikulumTujuan !== kurikulumAsal) || (selisihIndexTingkat !== null && selisihIndexTingkat !== 0 && selisihIndexTingkat !== 1)) }"
+                                        class="transition hover:bg-gray-50/60"
+                                        x-data="{
                                         kurikulumAsal: {{ Js::from($kelasLama->kurikulum?->value) }},
                                         kurikulumTujuan: null,
                                         tingkatTujuan: null,
@@ -150,7 +154,7 @@
                     </div>
 
                     <div class="flex items-center justify-end border-t border-gray-100 bg-gray-50/50 px-6 py-4">
-                        <x-primary-button type="submit">Proses Kenaikan Kelas</x-primary-button>
+                        <x-primary-button type="submit" x-bind:disabled="submitting">Proses Kenaikan Kelas</x-primary-button>
                     </div>
                 </form>
             </div>
