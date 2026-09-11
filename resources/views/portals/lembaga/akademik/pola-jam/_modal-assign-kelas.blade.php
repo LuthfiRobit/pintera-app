@@ -24,7 +24,12 @@
             </button>
         </div>
 
-        <form :action="formAssign.actionUrl" method="POST" class="mt-4 flex-1 overflow-y-auto pr-1 space-y-6">
+        <div class="mt-3 relative">
+            <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input type="text" x-model="pencarianKelas" placeholder="Cari nama kelas..." class="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-brand-500 focus:ring-brand-500">
+        </div>
+
+        <form :action="formAssign.actionUrl" method="POST" class="mt-4 flex-1 overflow-y-auto pr-1 space-y-6" @submit.prevent="submitAjaxForm($el, () => { showModalAssign = false })">
             @csrf
             @method('PUT')
 
@@ -36,9 +41,11 @@
 
             <div class="space-y-5">
                 @foreach ($groupedKelas as $groupTitle => $classes)
-                    <div x-show="formAssign.lembagaId === null || {{ $classes->pluck('lembaga_id')->unique()->values()->toJson() }}.includes(formAssign.lembagaId)" 
-                         class="rounded-xl border border-gray-200 overflow-hidden">
-                        <div class="bg-gray-50/80 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between">
+                    <div
+                        x-show="(formAssign.lembagaId === null || {{ $classes->pluck('lembaga_id')->unique()->values()->toJson() }}.includes(formAssign.lembagaId)) && (pencarianKelas === '' || {{ $classes->pluck('nama')->values()->toJson() }}.some(n => n.toLowerCase().includes(pencarianKelas.toLowerCase())))"
+                        class="rounded-xl border border-gray-200 overflow-hidden"
+                    >
+                        <div class="bg-gray-50/80 px-4 py-2.5 border-b border-gray-200 flex items-center justify-between gap-2">
                             <span class="font-display text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                                 @if (str_contains($groupTitle, '(Aktif)'))
                                     <span class="inline-block h-2 w-2 rounded-full bg-success-500"></span>
@@ -48,9 +55,18 @@
                                     <span>{{ $groupTitle }}</span>
                                 @endif
                             </span>
-                            <span class="text-[11px] font-medium text-gray-400">
-                                <span x-text="($el.closest('.rounded-xl').querySelectorAll('input[type=checkbox]:not([disabled])')).length"></span> opsi kompatibel
-                            </span>
+                            <button type="button"
+                                @click="
+                                    const idGrup = {{ $classes->pluck('id')->values()->toJson() }};
+                                    const semuaTerpilih = idGrup.every(id => formAssign.selectedKelasIds.includes(id));
+                                    formAssign.selectedKelasIds = semuaTerpilih
+                                        ? formAssign.selectedKelasIds.filter(id => !idGrup.includes(id))
+                                        : [...new Set([...formAssign.selectedKelasIds, ...idGrup])];
+                                "
+                                class="shrink-0 text-[11px] font-semibold text-brand-600 hover:text-brand-800 transition"
+                            >
+                                Pilih Semua di Grup Ini
+                            </button>
                         </div>
                         <div class="p-4 bg-white grid grid-cols-2 sm:grid-cols-3 gap-3">
                             @foreach ($classes as $kelasOpsi)
@@ -84,7 +100,7 @@
 
             <div class="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-gray-100 shrink-0">
                 <x-secondary-button type="button" @click="showModalAssign = false">Batal</x-secondary-button>
-                <x-primary-button type="submit">Simpan Tautan</x-primary-button>
+                <x-primary-button type="submit" x-bind:disabled="submitting">Simpan Tautan</x-primary-button>
             </div>
         </form>
     </div>

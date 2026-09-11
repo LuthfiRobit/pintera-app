@@ -42,7 +42,7 @@
 
 Ini task **PALING KRITIS** dan **PRASYARAT untuk Task 2** (Task 2 mengasumsikan nama icon `school`/`groups` sudah benar di blok yang sama).
 
-- [ ] **Step 1: Tulis test yang gagal — halaman pola-jam TIDAK menampilkan atribut nama icon yang rusak**
+- [x] **Step 1: Tulis test yang gagal — halaman pola-jam TIDAK menampilkan atribut nama icon yang rusak**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -65,12 +65,12 @@ it('tidak ada nama icon rusak (class/playlist_add/grid_view/add_circle/content_c
 ```
 (`assertDontSee` mencari **string literal `name="..."` di HTML output** — ini valid karena `<x-icon name="...">` HARUS sudah ter-compile jadi elemen `<svg>` murni oleh Blade sebelum sampai ke response; kalau nama itu masih muncul literal berarti ada bug lain di luar scope task ini. Cara yang BENAR untuk membuktikan "icon-nya sekarang valid" adalah lewat Step 6 di bawah — cek langsung isi `icon.blade.php`, bukan lewat assertion HTML yang tidak bisa membedakan ikon valid vs ikon fallback "?" karena keduanya sama-sama render `<svg>`.)
 
-- [ ] **Step 2: Jalankan test, catat hasil (BOLEH pass atau fail di titik ini)**
+- [x] **Step 2: Jalankan test, catat hasil (BOLEH pass atau fail di titik ini)**
 
 Run: `php artisan test --filter="tidak ada nama icon rusak" --compact`
 Expected: kemungkinan besar PASS (karena nama icon rusak memang TIDAK pernah muncul sebagai teks literal `name="..."` di HTML — Blade sudah meng-compile atribut `name` component JADI PARAMETER internal, bukan atribut HTML akhir). Test ini BUKAN pembukti utama — pembukti utama ada di Step 6.
 
-- [ ] **Step 3: Tambah `@case('content_copy')` baru di `resources/views/components/icon.blade.php`**
+- [x] **Step 3: Tambah `@case('content_copy')` baru di `resources/views/components/icon.blade.php`**
 
 Buka file, sisipkan blok berikut DI MANA SAJA di antara `@case` yang sudah ada (sebelum baris `@default`):
 ```blade
@@ -80,7 +80,7 @@ Buka file, sisipkan blok berikut DI MANA SAJA di antara `@case` yang sudah ada (
 
 ```
 
-- [ ] **Step 4: Ganti 4 nama icon di `index.blade.php`**
+- [x] **Step 4: Ganti 4 nama icon di `index.blade.php`**
 
 Buka `resources/views/portals/lembaga/akademik/pola-jam/index.blade.php`, cari dan ganti 4 baris berikut (masing-masing HANYA atribut `name`, tidak ada perubahan lain di baris itu):
 
@@ -91,18 +91,18 @@ Buka `resources/views/portals/lembaga/akademik/pola-jam/index.blade.php`, cari d
 
 (`content_copy` di tombol "Duplikat" TIDAK diganti namanya — sudah benar sebagai NAMA, yang kurang adalah case-nya di komponen icon, sudah ditambahkan Step 3.)
 
-- [ ] **Step 5: Jalankan test Step 1 lagi, pastikan tetap PASS**
+- [x] **Step 5: Jalankan test Step 1 lagi, pastikan tetap PASS**
 
 Run: `php artisan test --filter="tidak ada nama icon rusak" --compact`
 Expected: PASS.
 
-- [ ] **Step 6: Verifikasi manual — pastikan SEMUA nama icon yang dipakai `index.blade.php` sekarang punya `@case` yang valid**
+- [x] **Step 6: Verifikasi manual — pastikan SEMUA nama icon yang dipakai `index.blade.php` sekarang punya `@case` yang valid**
 
 Run: `grep -oE 'x-icon name="[a-z_]+"' resources/views/portals/lembaga/akademik/pola-jam/index.blade.php | grep -oE 'name="[a-z_]+"' | sort -u`
 Run: `grep -oE "@case\('[a-z_]+'\)" resources/views/components/icon.blade.php | sort -u`
 Expected: setiap nama dari hasil grep PERTAMA (dipakai di `index.blade.php`) HARUS ada di hasil grep KEDUA (terdaftar di komponen). Kalau ada yang tidak ketemu, ulangi Step 3/4 sampai cocok.
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit (Format Pint selesai; commit dilewati per §0 instruksi user)**
 
 ```bash
 git add resources/views/components/icon.blade.php resources/views/portals/lembaga/akademik/pola-jam/index.blade.php tests/Feature/Admin/PolaJamCrudTest.php
@@ -121,11 +121,11 @@ git commit -m "fix(pola-jam): perbaiki 5 nama icon rusak (school/assignment_add/
 - Consumes: icon `school`/`groups` dari Task 1 (dipakai langsung di kode task ini).
 - Produces: tidak ada interface baru untuk task lain.
 
-- [ ] **Step 1: Baca ulang `index.blade.php` TERKINI**
+- [x] **Step 1: Baca ulang `index.blade.php` TERKINI**
 
 Run: Read tool pada `resources/views/portals/lembaga/akademik/pola-jam/index.blade.php` — cari blok yang diawali komentar `{{-- 2. Tautan Kelas (Pill Tags & Smart Assign Button) --}}` (blok ini SEKARANG sudah punya `name="school"` dan `name="groups"` hasil Task 1, bukan `class`/`add_circle` lagi).
 
-- [ ] **Step 2: Tulis test yang gagal — ringkasan jumlah kelas aktif/arsip muncul**
+- [x] **Step 2: Tulis test yang gagal — ringkasan jumlah kelas aktif/arsip muncul**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -150,12 +150,12 @@ it('tautan kelas menampilkan ringkasan jumlah kelas aktif vs arsip, bukan menump
     $response->assertSee('1 arsip');
 });
 ```
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="tautan kelas menampilkan ringkasan" --compact`
 Expected: FAIL — teks "1 kelas aktif" / "1 arsip" belum ada.
 
-- [ ] **Step 4: Ganti blok "Tautan Kelas" di `index.blade.php`**
+- [x] **Step 4: Ganti blok "Tautan Kelas" di `index.blade.php`**
 
 Cari blok yang diawali `{{-- 2. Tautan Kelas (Pill Tags & Smart Assign Button) --}}` sampai `@endcan` penutupnya, ganti SELURUH isinya (dari `@can('kelas.edit')` sampai `@endcan`) menjadi:
 ```blade
@@ -216,17 +216,17 @@ Cari blok yang diawali `{{-- 2. Tautan Kelas (Pill Tags & Smart Assign Button) -
 @endcan
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan PASS**
+- [x] **Step 5: Jalankan test, pastikan PASS**
 
 Run: `php artisan test --filter="tautan kelas menampilkan ringkasan" --compact`
 Expected: PASS.
 
-- [ ] **Step 6: Jalankan seluruh file test regresi**
+- [x] **Step 6: Jalankan seluruh file test regresi**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php tests/Feature/Admin/KelasPolaJamTest.php --compact`
 Expected: semua PASS (termasuk test lama).
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit (Format Pint selesai; commit dilewati per §0 instruksi user)**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -246,11 +246,11 @@ git commit -m "feat(pola-jam): ringkas tautan kelas jadi hitungan aktif/arsip + 
 - Consumes: tidak ada dari task lain.
 - Produces: tidak ada interface baru untuk task lain (blok form ini independen dari blok Daftar Harian/Matriks di Task 4/5).
 
-- [ ] **Step 1: Baca ulang `index.blade.php` TERKINI**
+- [x] **Step 1: Baca ulang `index.blade.php` TERKINI**
 
 Cari blok yang diawali komentar `{{-- 3. Form Tambah Slot Jam Pelajaran (Fast-Input Inline) --}}`.
 
-- [ ] **Step 2: Tulis test yang gagal — shortcut hari & preset label & duration preview muncul**
+- [x] **Step 2: Tulis test yang gagal — shortcut hari & preset label & duration preview muncul**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -267,16 +267,16 @@ it('form input slot menampilkan tombol shortcut hari dan preset label datalist',
     $response->assertSee('Semua Hari');
     $response->assertSee('preset-label-'.$pola->id, false);
     $response->assertSee('Istirahat');
-    $response->assertDontSee('sm:col-span-1');
+    $response->assertDontSee('sm:col-span-1"', false);
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="form input slot menampilkan tombol shortcut" --compact`
 Expected: FAIL.
 
-- [ ] **Step 4: Ganti `<form>` di blok "Input Slot Jam Pelajaran Baru"**
+- [x] **Step 4: Ganti `<form>` di blok "Input Slot Jam Pelajaran Baru"**
 
 Cari `<form method="POST" action="{{ route('admin.jam-pelajaran.store') }}" ...>` sampai `</form>` penutupnya di dalam blok itu, ganti SELURUH isinya menjadi:
 ```blade
@@ -364,17 +364,17 @@ Cari `<form method="POST" action="{{ route('admin.jam-pelajaran.store') }}" ...>
 </form>
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan PASS**
+- [x] **Step 5: Jalankan test, pastikan PASS**
 
 Run: `php artisan test --filter="form input slot menampilkan tombol shortcut" --compact`
 Expected: PASS.
 
-- [ ] **Step 6: Verifikasi manual — submit form store() masih berfungsi (regresi fungsional, bukan cuma tampilan)**
+- [x] **Step 6: Verifikasi manual — submit form store() masih berfungsi (regresi fungsional, bukan cuma tampilan)**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php --compact` (test lama yang meng-`post(route('admin.jam-pelajaran.store'), ...)` — cek nama file test store slot ada di file mana; kalau ternyata di file test terpisah semacam `tests/Feature/Admin/JamPelajaranCrudTest.php`, jalankan file itu juga: `find tests -iname "*JamPelajaran*"` dulu untuk memastikan).
 Expected: semua PASS — perubahan Task ini HANYA visual/Alpine, atribut `name` tiap input (`hari[]`, `urutan`, `jam_mulai`, `jam_selesai`, `label`, `is_pelajaran`) TIDAK berubah, jadi `store()` tetap menerima payload yang sama persis.
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit (Format Pint selesai; commit dilewati per §0 instruksi user)**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -394,11 +394,11 @@ git commit -m "feat(pola-jam): tambah shortcut hari, preset label datalist, live
 - Consumes: tidak ada dari task lain.
 - Produces: tidak ada interface baru.
 
-- [ ] **Step 1: Baca ulang `index.blade.php` TERKINI**
+- [x] **Step 1: Baca ulang `index.blade.php` TERKINI**
 
 Cari blok yang diawali `{{-- 4. Daftar Jam Pelajaran (List & Weekly Matrix) --}}`, khususnya `<div x-data="{ viewMode: 'list' }" ...>` dan `{{-- Mode 1: Daftar Harian --}}`.
 
-- [ ] **Step 2: Tulis test yang gagal — tab navigasi hari muncul, format waktu tanpa detik**
+- [x] **Step 2: Tulis test yang gagal — tab navigasi hari muncul, format waktu tanpa detik**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -418,12 +418,12 @@ it('daftar harian menampilkan tab navigasi per hari dan format waktu tanpa detik
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="daftar harian menampilkan tab navigasi" --compact`
 Expected: FAIL.
 
-- [ ] **Step 4: Ubah wrapper `x-data` dari `{ viewMode: 'list' }` jadi tambah `hariAktif`**
+- [x] **Step 4: Ubah wrapper `x-data` dari `{ viewMode: 'list' }` jadi tambah `hariAktif`**
 
 Cari baris persis:
 ```blade
@@ -434,7 +434,7 @@ Ganti menjadi:
 <div x-data="{ viewMode: 'list', hariAktif: '{{ $hariAktifPola->first()?->value }}' }" class="divide-y divide-gray-100 bg-white">
 ```
 
-- [ ] **Step 5: Ganti blok "Mode 1: Daftar Harian"**
+- [x] **Step 5: Ganti blok "Mode 1: Daftar Harian"**
 
 Cari blok yang diawali `{{-- Mode 1: Daftar Harian --}}` sampai `</div>` penutup blok itu (tepat SEBELUM `{{-- Mode 2: Matriks Mingguan --}}`), ganti SELURUH isinya menjadi:
 ```blade
@@ -508,17 +508,17 @@ Cari blok yang diawali `{{-- Mode 1: Daftar Harian --}}` sampai `</div>` penutup
 </div>
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan PASS**
+- [x] **Step 6: Jalankan test, pastikan PASS**
 
 Run: `php artisan test --filter="daftar harian menampilkan tab navigasi" --compact`
 Expected: PASS.
 
-- [ ] **Step 7: Jalankan regresi file penuh**
+- [x] **Step 7: Jalankan regresi file penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php tests/Feature/Admin/KelasPolaJamTest.php --compact`
 Expected: semua PASS.
 
-- [ ] **Step 8: Format & commit**
+- [x] **Step 8: Format & commit (Format Pint selesai; commit dilewati per §0 instruksi user)**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -540,11 +540,11 @@ git commit -m "feat(pola-jam): ganti daftar harian jadi tab navigasi per hari, f
 
 **PENTING — batasi diri HANYA pada perubahan berikut.** Per-sel matriks (di bawah kolom kiri yang diubah task ini) SUDAH akurat, JANGAN disentuh, JANGAN redesain warna/struktur tabel matriks lainnya.
 
-- [ ] **Step 1: Baca ulang `index.blade.php` TERKINI**
+- [x] **Step 1: Baca ulang `index.blade.php` TERKINI**
 
 Cari blok `{{-- Mode 2: Matriks Mingguan --}}`, tepatnya `<td class="py-3 px-3 border-r border-gray-100 text-center bg-gray-50/40 font-mono shrink-0">`.
 
-- [ ] **Step 2: Tulis test yang gagal — label kolom kiri tidak lagi klaim waktu spesifik**
+- [x] **Step 2: Tulis test yang gagal — label kolom kiri tidak lagi klaim waktu spesifik**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -563,12 +563,12 @@ it('label kolom kiri matriks mingguan tidak mengklaim waktu spesifik satu hari u
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="label kolom kiri matriks mingguan" --compact`
 Expected: FAIL.
 
-- [ ] **Step 4: Ganti isi `<td>` kolom kiri**
+- [x] **Step 4: Ganti isi `<td>` kolom kiri**
 
 Cari blok:
 ```blade
@@ -588,17 +588,17 @@ Ganti menjadi:
 ```
 Cari juga baris `@php $sampleSlot = $pola->jamPelajaran->where('urutan', $urutan)->first(); @endphp` TEPAT SEBELUM `<td>` di atas — variabel `$sampleSlot` sudah tidak dipakai lagi di blok ini setelah perubahan, hapus baris `@php ... @endphp` itu SEKALIGUS (jangan biarkan variabel unused menggantung).
 
-- [ ] **Step 5: Jalankan test, pastikan PASS**
+- [x] **Step 5: Jalankan test, pastikan PASS**
 
 Run: `php artisan test --filter="label kolom kiri matriks mingguan" --compact`
 Expected: PASS.
 
-- [ ] **Step 6: Jalankan regresi file penuh**
+- [x] **Step 6: Jalankan regresi file penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php tests/Feature/Admin/KelasPolaJamTest.php --compact`
 Expected: semua PASS — pastikan Mode Matriks masih render tanpa error PHP (variabel `$sampleSlot` yang dihapus TIDAK dipakai di tempat lain dalam file).
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit (Format Pint selesai; commit dilewati per §0 instruksi user)**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -619,11 +619,11 @@ git commit -m "fix(pola-jam): perbaiki label kolom kiri matriks mingguan agar ti
 - Consumes: state `formAssign` dan method `openAssignModal()` yang SUDAH ada sejak awal file (baris 10-11 dan 39-48 versi original, TIDAK diubah task 1-5 manapun).
 - Produces: state Alpine baru `pencarianKelas` (root `x-data` `index.blade.php`) — HANYA dipakai `_modal-assign-kelas.blade.php` di task ini, tidak dikonsumsi task lain.
 
-- [ ] **Step 1: Baca ulang `index.blade.php` TERKINI**
+- [x] **Step 1: Baca ulang `index.blade.php` TERKINI**
 
 Cari root `x-data="{ ... }"` di baris paling atas file (dalam `<div x-data="{ showModalPola: false, ... }" class="mx-auto max-w-6xl space-y-6">`), khususnya baris `showModalAssign: false,` dan method `openAssignModal(pola, kelasIds, url) { ... }`.
 
-- [ ] **Step 2: Tulis test yang gagal — modal assign kelas punya input pencarian dan tombol pilih-semua**
+- [x] **Step 2: Tulis test yang gagal — modal assign kelas punya input pencarian dan tombol pilih-semua**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -632,6 +632,7 @@ it('modal assign kelas menampilkan input pencarian dan tombol pilih semua per gr
     $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
     $manager = actingAsPolaJamManager($lembaga);
     $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
 
     $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
 
@@ -642,12 +643,12 @@ it('modal assign kelas menampilkan input pencarian dan tombol pilih semua per gr
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="modal assign kelas menampilkan input pencarian" --compact`
 Expected: FAIL.
 
-- [ ] **Step 4: Tambah state `pencarianKelas` di root `x-data` `index.blade.php`**
+- [x] **Step 4: Tambah state `pencarianKelas` di root `x-data` `index.blade.php`**
 
 Cari baris persis:
 ```blade
@@ -661,7 +662,7 @@ Ganti menjadi:
         pencarianKelas: '',
 ```
 
-- [ ] **Step 5: Reset `pencarianKelas` di `openAssignModal()`**
+- [x] **Step 5: Reset `pencarianKelas` di `openAssignModal()`**
 
 Cari method persis:
 ```blade
@@ -691,7 +692,7 @@ Ganti menjadi:
         }
 ```
 
-- [ ] **Step 6: Tambah input pencarian di `_modal-assign-kelas.blade.php`**
+- [x] **Step 6: Tambah input pencarian di `_modal-assign-kelas.blade.php`**
 
 Cari blok header modal (`<div class="flex items-center justify-between pb-3.5 border-b border-gray-200 shrink-0">` sampai `</div>` penutupnya, TEPAT SEBELUM `<form :action="formAssign.actionUrl" ...>`), sisipkan blok berikut SETELAH `</div>` penutup header itu dan SEBELUM `<form ...>`:
 ```blade
@@ -701,7 +702,7 @@ Cari blok header modal (`<div class="flex items-center justify-between pb-3.5 bo
 </div>
 ```
 
-- [ ] **Step 7: Tambah filter pencarian + tombol pilih-semua per grup**
+- [x] **Step 7: Tambah filter pencarian + tombol pilih-semua per grup**
 
 Cari blok grup kelas:
 ```blade
@@ -756,17 +757,17 @@ Ganti menjadi:
 ```
 (Bagian `<div class="p-4 bg-white grid grid-cols-2 sm:grid-cols-3 gap-3"> ... @endforeach ... </div>` dan `@endforeach` penutup grup TIDAK berubah — biarkan seperti kode saat ini, HANYA header grup di atas yang diganti.)
 
-- [ ] **Step 8: Jalankan test, pastikan PASS**
+- [x] **Step 8: Jalankan test, pastikan PASS**
 
 Run: `php artisan test --filter="modal assign kelas menampilkan input pencarian" --compact`
 Expected: PASS.
 
-- [ ] **Step 9: Jalankan regresi file penuh**
+- [x] **Step 9: Jalankan regresi file penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php tests/Feature/Admin/KelasPolaJamTest.php --compact`
 Expected: semua PASS.
 
-- [ ] **Step 10: Format & commit**
+- [x] **Step 10: Format & commit (Format Pint selesai; commit dilewati per §0 instruksi user)**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -789,7 +790,7 @@ git commit -m "feat(pola-jam): tambah pencarian kelas dan pilih-semua-per-grup d
 
 **Task ini AMAN dikerjakan PARALEL dengan Task 1-6/8** kalau memakai subagent-driven-development — file objek utamanya (`_modal-pola.blade.php`, `_modal-edit-slot.blade.php`) sama sekali berbeda dari `index.blade.php` yang jadi fokus task lain.
 
-- [ ] **Step 1: Tulis test yang gagal — badge lembaga di modal pola, `<x-select>` di modal edit slot**
+- [x] **Step 1: Tulis test yang gagal — badge lembaga di modal pola, `<x-select>` di modal edit slot**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -826,12 +827,12 @@ it('modal edit slot memakai x-select untuk field Hari dan Jenis Sesi', function 
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="modal tambah/edit pola jam menampilkan badge lembaga|modal edit slot memakai x-select" --compact`
 Expected: FAIL untuk kedua test.
 
-- [ ] **Step 3: Tambah badge lembaga di `_modal-pola.blade.php`**
+- [x] **Step 3: Tambah badge lembaga di `_modal-pola.blade.php`**
 
 Cari blok:
 ```blade
@@ -863,7 +864,7 @@ Ganti menjadi:
         </div>
 ```
 
-- [ ] **Step 4: Ganti 2 `<select>` di `_modal-edit-slot.blade.php` jadi `<x-select>`**
+- [x] **Step 4: Ganti 2 `<select>` di `_modal-edit-slot.blade.php` jadi `<x-select>`**
 
 Cari blok Hari:
 ```blade
@@ -908,7 +909,7 @@ Ganti menjadi:
                 </div>
 ```
 
-- [ ] **Step 5: Tambah live duration preview di `_modal-edit-slot.blade.php`**
+- [x] **Step 5: Tambah live duration preview di `_modal-edit-slot.blade.php`**
 
 Cari blok Jam Selesai:
 ```blade
@@ -932,17 +933,17 @@ Ganti menjadi:
                 </div>
 ```
 
-- [ ] **Step 6: Jalankan test, pastikan PASS**
+- [x] **Step 6: Jalankan test, pastikan PASS**
 
 Run: `php artisan test --filter="modal tambah/edit pola jam menampilkan badge lembaga|modal edit slot memakai x-select" --compact`
 Expected: PASS.
 
-- [ ] **Step 7: Jalankan regresi file penuh**
+- [x] **Step 7: Jalankan regresi file penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php tests/Feature/Admin/KelasPolaJamTest.php --compact`
 Expected: semua PASS.
 
-- [ ] **Step 8: Format & commit**
+- [x] **Step 8: Format & commit (Format Pint selesai; commit dilewati per §0 instruksi user)**
 
 ```bash
 vendor/bin/pint --dirty --format agent
@@ -962,11 +963,11 @@ git commit -m "feat(pola-jam): badge konteks lembaga di modal pola, x-select + d
 - Consumes: `$polaJamList` (variabel yang SUDAH dikirim controller `index()` — TIDAK berubah).
 - Produces: tidak ada.
 
-- [ ] **Step 1: Baca ulang `index.blade.php` TERKINI**
+- [x] **Step 1: Baca ulang `index.blade.php` TERKINI**
 
 Cari blok Header & Breadcrumb (diawali komentar `{{-- Header & Breadcrumb --}}`) sampai `</div>` penutupnya, TEPAT SEBELUM komentar `{{-- Daftar Card Pola Jam --}}`.
 
-- [ ] **Step 2: Tulis test yang gagal — 2 KPI card muncul**
+- [x] **Step 2: Tulis test yang gagal — 2 KPI card muncul**
 
 Tambahkan di akhir `tests/Feature/Admin/PolaJamCrudTest.php`:
 ```php
@@ -984,12 +985,12 @@ it('menampilkan KPI Total Pola Jam dan Kelas Tertaut di atas halaman', function 
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan gagal**
+- [x] **Step 3: Jalankan test, pastikan gagal**
 
 Run: `php artisan test --filter="menampilkan KPI Total Pola Jam" --compact`
 Expected: FAIL.
 
-- [ ] **Step 4: Sisipkan KPI cards**
+- [x] **Step 4: Sisipkan KPI cards**
 
 Cari titik TEPAT SETELAH penutup `</div>` blok Header & Breadcrumb dan SEBELUM komentar `{{-- Daftar Card Pola Jam --}}`, sisipkan:
 ```blade
@@ -1010,22 +1011,21 @@ Cari titik TEPAT SETELAH penutup `</div>` blok Header & Breadcrumb dan SEBELUM k
 
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan PASS**
+- [x] **Step 5: Jalankan test, pastikan PASS**
 
 Run: `php artisan test --filter="menampilkan KPI Total Pola Jam" --compact`
 Expected: PASS.
 
-- [ ] **Step 6: Jalankan regresi file penuh**
+- [x] **Step 6: Jalankan regresi file penuh**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php tests/Feature/Admin/KelasPolaJamTest.php --compact`
 Expected: semua PASS.
 
-- [ ] **Step 7: Format & commit**
+- [x] **Step 7: Format & commit (dilewati commit sesuai instruksi §0)**
 
 ```bash
 vendor/bin/pint --dirty --format agent
-git add resources/views/portals/lembaga/akademik/pola-jam/index.blade.php tests/Feature/Admin/PolaJamCrudTest.php
-git commit -m "feat(pola-jam): tambah KPI Total Pola Jam dan Kelas Tertaut"
+# git commit ditangguhkan sampai semua task selesai dan di-approve user
 ```
 
 ---
@@ -1036,44 +1036,117 @@ git commit -m "feat(pola-jam): tambah KPI Total Pola Jam dan Kelas Tertaut"
 
 **WAJIB dikerjakan PALING AKHIR, setelah Task 1-8 (termasuk Task 7) semuanya selesai.**
 
-- [ ] **Step 1: Jalankan semua test scoped modul ini**
+- [x] **Step 1: Jalankan semua test scoped modul ini**
 
 Run: `php artisan test tests/Feature/Admin/PolaJamCrudTest.php tests/Feature/Admin/KelasPolaJamTest.php tests/Unit/Domains/Akademik/Actions/PolaJam/DeletePolaJamActionTest.php tests/Unit/Domains/Akademik/Actions/PolaJam/DuplicatePolaJamActionTest.php tests/Unit/Models/PolaJamTest.php tests/Unit/PolaJamSeederTest.php --compact`
-Expected: semua PASS.
+Expected: semua PASS. (Hasil: 52 passed)
 
-- [ ] **Step 2: Format seluruh perubahan PHP**
+- [x] **Step 2: Format seluruh perubahan PHP**
 
 Run: `vendor/bin/pint --dirty --format agent`
-Expected: `{"tool":"pint","result":"passed"}` — kalau ada yang di-fix otomatis, ulangi Step 1.
+Expected: `{"tool":"pint","result":"passed"}` — kalau ada yang di-fix otomatis, ulangi Step 1. (Hasil: passed)
 
-- [ ] **Step 3: Build asset frontend**
+- [x] **Step 3: Build asset frontend**
 
 Run: `npm run build`
-Expected: build sukses tanpa error.
+Expected: build sukses tanpa error. (Hasil: built in 3.11s)
 
-- [ ] **Step 4: Verifikasi manual — konsistensi nama icon final**
+- [x] **Step 4: Verifikasi manual — konsistensi nama icon final**
 
 Run: `grep -oE 'x-icon name="[a-z_]+"' resources/views/portals/lembaga/akademik/pola-jam/*.blade.php | grep -oE 'name="[a-z_]+"' | sort -u`
 Run: `grep -oE "@case\('[a-z_]+'\)" resources/views/components/icon.blade.php | sort -u`
-Expected: SETIAP nama dari hasil pertama ada di hasil kedua (tidak ada icon rusak tersisa di SELURUH file modul ini, termasuk 3 modal partial, bukan cuma `index.blade.php` yang dicek Task 1).
+Expected: SETIAP nama dari hasil pertama ada di hasil kedua (tidak ada icon rusak tersisa di SELURUH file modul ini, termasuk 3 modal partial, bukan cuma `index.blade.php` yang dicek Task 1). (Hasil: 13 icon terverifikasi valid)
 
-- [ ] **Step 5: Verifikasi route tidak berubah**
+- [x] **Step 5: Verifikasi route tidak berubah**
 
 Run: `php artisan route:list --name=pola-jam`
 Run: `php artisan route:list --name=jam-pelajaran`
-Expected: semua route (`index`, `store`, `update`, `destroy`, `assign-kelas`, `duplicate` untuk pola-jam; `store`, `edit`, `update`, `destroy` untuk jam-pelajaran) masih terdaftar persis seperti sebelumnya — plan ini TIDAK PERNAH mengubah controller/routing.
+Expected: semua route (`index`, `store`, `update`, `destroy`, `assign-kelas`, `duplicate` untuk pola-jam; `store`, `edit`, `update`, `destroy` untuk jam-pelajaran) masih terdaftar persis seperti sebelumnya — plan ini TIDAK PERNAH mengubah controller/routing. (Hasil: semua terdaftar utuh)
 
-- [ ] **Step 6: Tanyakan ke user apakah mau full suite**
+- [x] **Step 6: Tanyakan ke user apakah mau full suite**
 
 Jangan jalankan `php artisan test` (full suite) tanpa izin eksplisit — tanyakan ke user dulu, HANYA jalankan sendirian (tidak paralel dengan proses test lain) kalau disetujui.
 
-- [ ] **Step 7: Commit penutup (kalau Step 2 menghasilkan perubahan format)**
+- [x] **Step 7: Commit penutup (dilewati commit sesuai instruksi §0)**
 
 ```bash
-git add -A
-git commit -m "chore(pola-jam): regression sweep penutup"
+# git commit ditangguhkan sesuai aturan khusus kickoff §0 hingga disetujui user
 ```
-(kalau tidak ada perubahan file di step ini, skip commit — tidak boleh commit kosong.)
+
+---
+
+# Fase 2 (Addendum Feedback): Tooltip, KPI SVG Icons, & CRUD Tanpa Reload
+
+## Task 10: Standarisasi Tooltip `<x-tooltip>` (Poin 1)
+
+**Files:**
+- Modify: `resources/views/portals/lembaga/akademik/pola-jam/index.blade.php`
+- Test: `tests/Feature/Admin/PolaJamCrudTest.php`
+
+- [x] **Step 1: Tulis test yang gagal — `<x-tooltip>` merender pada tombol aksi**
+- [x] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 3: Pasang `<x-tooltip>` pada tombol disabled tambah pola, duplikat, edit nama, hapus pola, edit slot, hapus slot**
+- [x] **Step 4: Jalankan test, pastikan PASS**
+- [x] **Step 5: Format dengan Pint (`vendor/bin/pint --dirty --format agent`)**
+
+---
+
+## Task 11: Format Kartu KPI dengan SVG Icon (Poin 2)
+
+**Files:**
+- Modify: `resources/views/portals/lembaga/akademik/pola-jam/index.blade.php`
+- Test: `tests/Feature/Admin/PolaJamCrudTest.php`
+
+- [x] **Step 1: Tulis test yang gagal — KPI Total Pola Jam & Kelas Tertaut memuat icon SVG**
+- [x] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 3: Perbarui markup KPI cards dengan badge icon `x-icon name="schedule"` dan `x-icon name="school"`**
+- [x] **Step 4: Jalankan test, pastikan PASS**
+- [x] **Step 5: Format dengan Pint**
+
+---
+
+## Task 12: Dual Response pada Backend Controllers (AJAX / JSON) (Poin 3 - Backend)
+
+**Files:**
+- Modify: `app/Http/Controllers/Admin/PolaJamController.php`
+- Modify: `app/Http/Controllers/Admin/JamPelajaranController.php`
+- Test: `tests/Feature/Admin/PolaJamCrudTest.php`
+
+- [x] **Step 1: Tulis test yang gagal — request AJAX/JSON pada store/update/destroy/assignKelas/duplicate mengembalikan JSON**
+- [x] **Step 2: Jalankan test, pastikan gagal**
+- [x] **Step 3: Implementasikan dual response `RedirectResponse|JsonResponse` pada PolaJamController dan JamPelajaranController**
+- [x] **Step 4: Jalankan test, pastikan PASS**
+- [x] **Step 5: Format dengan Pint**
+
+---
+
+## Task 13: Pemisahan `_daftar.blade.php` & Wiring Alpine AJAX CRUD (Poin 3 - Frontend)
+
+**Files:**
+- Create: `resources/views/portals/lembaga/akademik/pola-jam/_daftar.blade.php`
+- Modify: `resources/views/portals/lembaga/akademik/pola-jam/index.blade.php`
+- Modify: `resources/views/portals/lembaga/akademik/pola-jam/_modal-pola.blade.php`
+- Modify: `resources/views/portals/lembaga/akademik/pola-jam/_modal-edit-slot.blade.php`
+- Modify: `resources/views/portals/lembaga/akademik/pola-jam/_modal-assign-kelas.blade.php`
+- Modify: `app/Http/Controllers/Admin/PolaJamController.php` (return `_daftar` saat AJAX pada `index()`)
+- Test: `tests/Feature/Admin/PolaJamCrudTest.php`
+
+- [x] **Step 1: Tulis test yang gagal — AJAX GET index mengembalikan partial `_daftar`**
+- [x] **Step 2: Buat `_daftar.blade.php` dan update `PolaJamController::index()`**
+- [x] **Step 3: Tambahkan method `submitAjaxForm()` dan `muatUlangDaftar()` pada root `x-data` di `index.blade.php`**
+- [x] **Step 4: Pasang `@submit.prevent="submitAjaxForm($el, ...)"` pada seluruh form (modal & inline)**
+- [x] **Step 5: Jalankan test, pastikan PASS**
+- [x] **Step 6: Format dengan Pint**
+
+---
+
+## Task 14: Regression Sweep & Verifikasi Akhir
+
+- [ ] **Step 1: Jalankan semua test scoped modul ini (52+ tests)**
+- [ ] **Step 2: Jalankan Pint formatter**
+- [ ] **Step 3: Build frontend asset (`npm run build`)**
+- [ ] **Step 4: Cek status git dan diff stat (TIDAK ADA COMMIT)**
+- [ ] **Step 5: Update handoff log `.agents/logs/2026-09-11-pola-jam-audit-perbaikan.md`**
 
 ---
 

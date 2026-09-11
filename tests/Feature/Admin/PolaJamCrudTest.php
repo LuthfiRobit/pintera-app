@@ -15,11 +15,12 @@ use Spatie\Permission\Models\Permission;
 
 function actingAsPolaJamManager(Lembaga $lembaga): User
 {
-    foreach (['pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete', 'jam-pelajaran.create'] as $permission) {
+    $perms = ['pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete', 'jam-pelajaran.create', 'jam-pelajaran.edit', 'jam-pelajaran.delete', 'kelas.edit'];
+    foreach ($perms as $permission) {
         Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
     }
     $role = Role::firstOrCreate(['name' => 'operator_akademik', 'guard_name' => 'web'], ['scope_level' => 'lembaga']);
-    $role->givePermissionTo(['pola-jam.view', 'pola-jam.create', 'pola-jam.edit', 'pola-jam.delete', 'jam-pelajaran.create']);
+    $role->givePermissionTo($perms);
 
     $manager = User::factory()->create(['lembaga_id' => $lembaga->id]);
     $manager->assignRole($role);
@@ -666,4 +667,262 @@ it('uses confirmDialog() for the Duplikat button instead of submitting instantly
 
     $response->assertSee('confirmDialog(', false);
     $response->assertSee('Tautan kelas TIDAK ikut disalin', false);
+});
+
+it('tidak ada nama icon rusak (class/playlist_add/grid_view/add_circle/content_copy) yang bocor sebagai teks literal di halaman pola-jam', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('name="class"', false);
+    $response->assertDontSee('name="playlist_add"', false);
+    $response->assertDontSee('name="grid_view"', false);
+    $response->assertDontSee('name="add_circle"', false);
+    $response->assertDontSee('name="content_copy"', false);
+});
+
+it('tautan kelas menampilkan ringkasan jumlah kelas aktif vs arsip, bukan menumpuk semua pill mentah', function () {
+    Permission::firstOrCreate(['name' => 'kelas.edit', 'guard_name' => 'web']);
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $manager->givePermissionTo('kelas.edit');
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $taAktif = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => true]);
+    $taArsip = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id, 'status_aktif' => false]);
+
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taAktif->id, 'pola_jam_id' => $pola->id, 'nama' => 'Kelas 1A Aktif']);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $taArsip->id, 'pola_jam_id' => $pola->id, 'nama' => 'Kelas 1A Arsip']);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('1 kelas aktif');
+    $response->assertSee('1 arsip');
+});
+
+it('form input slot menampilkan tombol shortcut hari dan preset label datalist', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('Senin–Kamis');
+    $response->assertSee('Semua Hari');
+    $response->assertSee('preset-label-'.$pola->id, false);
+    $response->assertSee('Istirahat');
+    $response->assertDontSee('sm:col-span-1"', false);
+});
+
+it('daftar harian menampilkan tab navigasi per hari dan format waktu tanpa detik', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'senin', 'urutan' => 1, 'jam_mulai' => '07:00', 'jam_selesai' => '07:35']);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('hariAktif', false);
+    $response->assertSee('07:00');
+    $response->assertDontSee('07:00:00');
+});
+
+it('label kolom kiri matriks mingguan tidak mengklaim waktu spesifik satu hari untuk semua kolom', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'senin', 'urutan' => 1, 'jam_mulai' => '07:00', 'jam_selesai' => '07:35']);
+    JamPelajaran::factory()->create(['pola_jam_id' => $pola->id, 'hari' => 'jumat', 'urutan' => 1, 'jam_mulai' => '07:00', 'jam_selesai' => '07:30']);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('lihat per hari');
+});
+
+it('modal assign kelas menampilkan input pencarian dan tombol pilih semua per grup', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+    Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('Cari nama kelas...');
+    $response->assertSee('Pilih Semua di Grup Ini');
+    $response->assertSee('pencarianKelas', false);
+});
+
+it('modal tambah/edit pola jam menampilkan badge lembaga aktif untuk aktor yayasan', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id, 'nama' => 'SD Pintera Cabang Utama']);
+    Permission::firstOrCreate(['name' => 'pola-jam.view', 'guard_name' => 'web']);
+    $role = Role::firstOrCreate(['name' => 'yayasan_admin_pola_jam', 'guard_name' => 'web'], ['scope_level' => 'yayasan']);
+    $role->givePermissionTo('pola-jam.view');
+    $manager = User::factory()->create(['yayasan_id' => $yayasan->id, 'lembaga_id' => null]);
+    $manager->assignRole($role);
+
+    $response = $this->actingAs($manager)
+        ->withSession(['active_lembaga_id' => $lembaga->id])
+        ->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('Untuk lembaga');
+    $response->assertSee('SD Pintera Cabang Utama');
+});
+
+it('modal edit slot memakai x-select untuk field Hari dan Jenis Sesi', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    // <x-select> merender base classes tertentu (lihat resources/views/components/select.blade.php)
+    // yang tidak dipakai native <select> lama -- disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+    // adalah base class KHAS komponen ini.
+    $response->assertSee('disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed', false);
+});
+
+it('menampilkan KPI Total Pola Jam dan Kelas Tertaut di atas halaman', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('Total Pola Jam');
+    $response->assertSee('Kelas Tertaut');
+});
+
+it('tombol aksi pada pola jam menggunakan komponen x-tooltip standar pintera', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('bg-[#1E293B]', false);
+    $response->assertSee('Salin / Duplikasi Pola Jam');
+});
+
+it('kartu kpi total pola jam dan kelas tertaut memuat badge icon svg standar pintera', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    PolaJam::factory()->create(['lembaga_id' => $lembaga->id]);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'));
+
+    $response->assertOk();
+    $response->assertSee('bg-brand-50 text-brand-600', false);
+    $response->assertSee('bg-blue-50 text-blue-600', false);
+    $response->assertSee('Pola Jadwal');
+});
+
+it('controller pola jam dan jam pelajaran mengembalikan json response pada request ajax', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+
+    // Test JSON store Pola Jam
+    $resStore = $this->actingAs($manager)->postJson(route('admin.pola-jam.store'), [
+        'nama' => 'Pola Jam Khusus AJAX',
+    ]);
+    $resStore->assertCreated();
+    $resStore->assertJson(['status' => 'success']);
+
+    $pola = PolaJam::where('nama', 'Pola Jam Khusus AJAX')->firstOrFail();
+
+    // Test JSON update Pola Jam
+    $resUpdate = $this->actingAs($manager)->putJson(route('admin.pola-jam.update', $pola), [
+        'nama' => 'Pola Jam Khusus AJAX Edited',
+    ]);
+    $resUpdate->assertOk();
+    $resUpdate->assertJson(['status' => 'success']);
+
+    // Test JSON duplicate Pola Jam
+    $resDuplicate = $this->actingAs($manager)->postJson(route('admin.pola-jam.duplicate', $pola));
+    $resDuplicate->assertOk();
+    $resDuplicate->assertJson(['status' => 'success']);
+
+    // Test JSON store Jam Pelajaran
+    $resSlot = $this->actingAs($manager)->postJson(route('admin.jam-pelajaran.store'), [
+        'pola_jam_id' => $pola->id,
+        'hari' => ['senin'],
+        'urutan' => 1,
+        'label' => 'Jam ke-1',
+        'jam_mulai' => '07:00',
+        'jam_selesai' => '07:45',
+        'is_pelajaran' => 1,
+    ]);
+    $resSlot->assertOk();
+    $resSlot->assertJson(['status' => 'success']);
+
+    $slot = JamPelajaran::where('pola_jam_id', $pola->id)->firstOrFail();
+
+    // Test JSON update Jam Pelajaran
+    $resSlotUpdate = $this->actingAs($manager)->putJson(route('admin.jam-pelajaran.update', $slot), [
+        'label' => 'Jam ke-1 Revisi',
+        'jam_mulai' => '07:05',
+        'jam_selesai' => '07:50',
+        'is_pelajaran' => 1,
+    ]);
+    $resSlotUpdate->assertOk();
+    $resSlotUpdate->assertJson(['status' => 'success']);
+
+    // Test JSON assign kelas
+    $kelas = Kelas::factory()->create(['lembaga_id' => $lembaga->id]);
+    $resAssign = $this->actingAs($manager)->putJson(route('admin.pola-jam.assign-kelas', $pola), [
+        'kelas_ids' => [$kelas->id],
+    ]);
+    $resAssign->assertOk();
+    $resAssign->assertJson(['status' => 'success']);
+
+    // Test JSON delete Jam Pelajaran
+    $resSlotDelete = $this->actingAs($manager)->deleteJson(route('admin.jam-pelajaran.destroy', $slot));
+    $resSlotDelete->assertOk();
+    $resSlotDelete->assertJson(['status' => 'success']);
+
+    // Unassign kelas so pola can be deleted
+    $pola->kelas()->update(['pola_jam_id' => null]);
+
+    // Test JSON delete Pola Jam
+    $resDelete = $this->actingAs($manager)->deleteJson(route('admin.pola-jam.destroy', $pola));
+    $resDelete->assertOk();
+    $resDelete->assertJson(['status' => 'success']);
+});
+
+it('permintaan ajax get index mengembalikan partial view _daftar', function () {
+    $yayasan = Yayasan::factory()->create();
+    $lembaga = Lembaga::factory()->create(['yayasan_id' => $yayasan->id]);
+    $manager = actingAsPolaJamManager($lembaga);
+    $pola = PolaJam::factory()->create(['lembaga_id' => $lembaga->id, 'nama' => 'Pola Uji Partial']);
+
+    $response = $this->actingAs($manager)->get(route('admin.pola-jam.index'), [
+        'X-Requested-With' => 'XMLHttpRequest',
+    ]);
+
+    $response->assertOk();
+    $response->assertSee('Pola Uji Partial');
+    $response->assertDontSee('Kelola jadwal waktu belajar harian dan tautkan dengan kelas yang relevan.');
 });

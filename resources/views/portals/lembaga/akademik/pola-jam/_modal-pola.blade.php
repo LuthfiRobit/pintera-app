@@ -12,16 +12,21 @@
          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
         
         <div class="flex items-center justify-between pb-3.5 border-b border-gray-200">
-            <h3 class="font-display text-base font-bold text-gray-900 flex items-center gap-2">
-                <x-icon name="schedule" class="h-5 w-5 text-brand-500" />
-                <span x-text="modalPolaMode === 'create' ? 'Tambah Pola Jam Baru' : 'Edit Nama Pola Jam'"></span>
-            </h3>
+            <div>
+                <h3 class="font-display text-base font-bold text-gray-900 flex items-center gap-2">
+                    <x-icon name="schedule" class="h-5 w-5 text-brand-500" />
+                    <span x-text="modalPolaMode === 'create' ? 'Tambah Pola Jam Baru' : 'Edit Nama Pola Jam'"></span>
+                </h3>
+                @if (($isYayasan ?? false) && ($activeLembaga ?? null))
+                    <p class="mt-0.5 text-xs text-gray-500">Untuk lembaga <strong class="font-semibold text-gray-700">{{ $activeLembaga->nama }}</strong>.</p>
+                @endif
+            </div>
             <button @click="showModalPola = false" type="button" class="text-gray-400 hover:text-gray-600 transition">
                 <x-icon name="cancel" class="h-5 w-5" />
             </button>
         </div>
 
-        <form :action="formPola.actionUrl" method="POST" class="mt-4 space-y-4">
+        <form :action="formPola.actionUrl" method="POST" class="mt-4 space-y-4" @submit.prevent="submitAjaxForm($el, () => { showModalPola = false })">
             @csrf
             <template x-if="modalPolaMode === 'edit'">
                 <input type="hidden" name="_method" value="PUT">
@@ -32,7 +37,7 @@
             </div>
             <div class="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-gray-100">
                 <x-secondary-button type="button" @click="showModalPola = false">Batal</x-secondary-button>
-                <x-primary-button type="submit">Simpan</x-primary-button>
+                <x-primary-button type="submit" x-bind:disabled="submitting">Simpan</x-primary-button>
             </div>
         </form>
     </div>

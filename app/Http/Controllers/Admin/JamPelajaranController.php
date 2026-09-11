@@ -10,6 +10,7 @@ use App\Domains\Akademik\Models\JamPelajaran;
 use App\Domains\Akademik\Models\PolaJam;
 use App\Enums\Hari;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
@@ -20,7 +21,7 @@ class JamPelajaranController extends BaseController
 {
     use AuthorizesRequests;
 
-    public function store(Request $request, CreateJamPelajaranAction $action): RedirectResponse
+    public function store(Request $request, CreateJamPelajaranAction $action): RedirectResponse|JsonResponse
     {
         $this->authorize('jam-pelajaran.create');
 
@@ -51,14 +52,30 @@ class JamPelajaranController extends BaseController
         ));
 
         if (empty($result['berhasil'])) {
+            $errMsg = 'Semua hari yang dipilih ('.$this->formatDaftarHari($data['hari']).') sudah punya slot di urutan ini — tidak ada yang ditambahkan.';
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $errMsg,
+                    'errors' => ['hari' => [$errMsg]],
+                ], 422);
+            }
+
             return back()->withErrors([
-                'hari' => 'Semua hari yang dipilih (' . $this->formatDaftarHari($data['hari']) . ') sudah punya slot di urutan ini — tidak ada yang ditambahkan.',
+                'hari' => $errMsg,
             ])->withInput();
         }
 
-        $status = 'Slot berhasil ditambahkan untuk ' . $this->formatDaftarHari($result['berhasil']) . '.';
+        $status = 'Slot berhasil ditambahkan untuk '.$this->formatDaftarHari($result['berhasil']).'.';
         if (! empty($result['dilewati'])) {
-            $status .= ' ' . $this->formatDaftarHari($result['dilewati']) . ' dilewati karena urutan ini sudah dipakai.';
+            $status .= ' '.$this->formatDaftarHari($result['dilewati']).' dilewati karena urutan ini sudah dipakai.';
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => $status,
+            ]);
         }
 
         return redirect()->route('admin.pola-jam.index')->with('status', $status);
@@ -75,7 +92,7 @@ class JamPelajaranController extends BaseController
         return view('portals.lembaga.akademik.jam-pelajaran.edit', ['jamPelajaran' => $jamPelajaran]);
     }
 
-    public function update(Request $request, JamPelajaran $jamPelajaran, UpdateJamPelajaranAction $action): RedirectResponse
+    public function update(Request $request, JamPelajaran $jamPelajaran, UpdateJamPelajaranAction $action): RedirectResponse|JsonResponse
     {
         $this->authorize('jam-pelajaran.edit');
 
@@ -98,13 +115,29 @@ class JamPelajaranController extends BaseController
         try {
             $action->execute($jamPelajaran, $hari, $urutan, $data['label'], $data['jam_mulai'], $data['jam_selesai'], $data['is_pelajaran']);
         } catch (ValidationException $e) {
-            return back()->withErrors(['urutan' => $e->validator->errors()->first('urutan')])->withInput();
+            $errMsg = $e->validator->errors()->first('urutan');
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $errMsg,
+                    'errors' => ['urutan' => [$errMsg]],
+                ], 422);
+            }
+
+            return back()->withErrors(['urutan' => $errMsg])->withInput();
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Jam pelajaran berhasil diperbarui.',
+            ]);
         }
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Jam pelajaran berhasil diperbarui.');
     }
 
-    public function destroy(JamPelajaran $jamPelajaran, DeleteJamPelajaranAction $action): RedirectResponse
+    public function destroy(Request $request, JamPelajaran $jamPelajaran, DeleteJamPelajaranAction $action): RedirectResponse|JsonResponse
     {
         $this->authorize('jam-pelajaran.delete');
 
@@ -115,7 +148,23 @@ class JamPelajaranController extends BaseController
         try {
             $action->execute($jamPelajaran);
         } catch (ValidationException $e) {
-            return back()->withErrors(['jam_pelajaran' => $e->validator->errors()->first('jam_pelajaran')]);
+            $errMsg = $e->validator->errors()->first('jam_pelajaran');
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $errMsg,
+                    'errors' => ['jam_pelajaran' => [$errMsg]],
+                ], 422);
+            }
+
+            return back()->withErrors(['jam_pelajaran' => $errMsg]);
+        }
+
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Jam pelajaran berhasil dihapus.',
+            ]);
         }
 
         return redirect()->route('admin.pola-jam.index')->with('status', 'Jam pelajaran berhasil dihapus.');
@@ -131,6 +180,6 @@ class JamPelajaranController extends BaseController
 
         $terakhir = array_pop($label);
 
-        return implode(', ', $label) . ' dan ' . $terakhir;
+        return implode(', ', $label).' dan '.$terakhir;
     }
 }

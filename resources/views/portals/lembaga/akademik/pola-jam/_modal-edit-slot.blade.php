@@ -21,18 +21,18 @@
             </button>
         </div>
 
-        <form :action="formSlot.updateUrl" method="POST" class="mt-4 space-y-4">
+        <form :action="formSlot.updateUrl" method="POST" class="mt-4 space-y-4" @submit.prevent="submitAjaxForm($el, () => { showModalEditSlot = false })">
             @csrf
             @method('PUT')
             
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-700">Hari <span class="text-error-500">*</span></label>
-                    <select x-model="formSlot.hari" name="hari" required class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <x-select x-model="formSlot.hari" name="hari" required>
                         @foreach (\App\Enums\Hari::cases() as $hariOpsi)
                             <option value="{{ $hariOpsi->value }}">{{ $hariOpsi->label() }}</option>
                         @endforeach
-                    </select>
+                    </x-select>
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-700">Urutan Ke- <span class="text-error-500">*</span></label>
@@ -48,6 +48,13 @@
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jam Selesai <span class="text-error-500">*</span></label>
                     <input x-model="formSlot.jam_selesai" type="time" name="jam_selesai" required class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-2 font-mono text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <p x-show="formSlot.jam_mulai && formSlot.jam_selesai" class="mt-1 text-[11px] font-semibold text-brand-600" x-text="(() => {
+                        if (!formSlot.jam_mulai || !formSlot.jam_selesai) return '';
+                        const [h1, m1] = formSlot.jam_mulai.split(':').map(Number);
+                        const [h2, m2] = formSlot.jam_selesai.split(':').map(Number);
+                        const menit = (h2 * 60 + m2) - (h1 * 60 + m1);
+                        return menit > 0 ? `Durasi: ${menit} menit` : '';
+                    })()"></p>
                 </div>
             </div>
 
@@ -58,16 +65,16 @@
                 </div>
                 <div>
                     <label class="mb-1.5 block text-xs font-semibold text-gray-700">Jenis Sesi <span class="text-error-500">*</span></label>
-                    <select x-model="formSlot.is_pelajaran" name="is_pelajaran" class="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-brand-500">
+                    <x-select x-model="formSlot.is_pelajaran" name="is_pelajaran">
                         <option :value="1">Jam Belajar</option>
                         <option :value="0">Non-pelajaran</option>
-                    </select>
+                    </x-select>
                 </div>
             </div>
 
             <div class="flex items-center justify-end gap-2 pt-4 mt-6 border-t border-gray-100">
                 <x-secondary-button type="button" @click="showModalEditSlot = false">Batal</x-secondary-button>
-                <x-primary-button type="submit">Simpan Perubahan</x-primary-button>
+                <x-primary-button type="submit" x-bind:disabled="submitting">Simpan Perubahan</x-primary-button>
             </div>
         </form>
     </div>

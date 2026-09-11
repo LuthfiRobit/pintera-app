@@ -478,10 +478,36 @@ Tambah duration preview di bawah field Jam Selesai (`_modal-edit-slot.blade.php`
 
 **Putaran 1 — Verifikasi klaim laporan audit vs kode asli**: SEMUA klaim ikon rusak diverifikasi via grep + baca `icon.blade.php` langsung (bukan percaya laporan) — akurat, 5/5 nama memang tidak ada di `@case`. Klaim "matriks kolom kiri menyesatkan" (§2.5) diverifikasi BERLEBIHAN — per-sel matriks sudah akurat, dikoreksi jadi temuan minor. Klaim "warna Jam Belajar vs Non-KBM belum dibedakan" salah total — SUDAH ada di kode, dikeluarkan dari scope (§4).
 
-**Putaran 2 — Cakupan temuan vs perbaikan**: Semua 8 kelompok temuan laporan audit (ikon, tautan kelas, form slot, daftar harian, matriks, modal assign, modal pola+edit-slot, KPI) punya bagian §2.x yang eksplisit menjawabnya, termasuk yang DIKOREKSI turun level (matriks) atau DIKELUARKAN sebagian (KPI ke-3, auto-increment).
+---
 
-**Putaran 3 — Konsistensi kode vs current state**: Re-cek nomor baris di setiap "Current"/kode current untuk `index.blade.php`, `_modal-pola.blade.php`, `_modal-edit-slot.blade.php`, `_modal-assign-kelas.blade.php` — semua dibaca langsung dari file per 2026-09-11 (bukan diasumsikan), cocok.
+## 6. Addendum Update: Tooltip Pintera, KPI Card SVG Icons, & CRUD Tanpa Reload
 
-**Putaran 4 — Keamanan/regresi**: Semua perubahan §2.1-§2.8 murni presentational (Blade + Alpine client-side), TIDAK ADA perubahan controller/action/validasi/otorisasi. `PolaJamController::index()` TIDAK diubah — data yang dibutuhkan KPI (§2.8) dan tautan-kelas-ringkas (§2.2) semuanya SUDAH ada di eager-load yang ada saat ini (`with(['jamPelajaran', 'lembaga', 'kelas.tahunAjaran'])`), dikonfirmasi lewat pembacaan `PolaJamController.php` langsung — tidak ada N+1 baru yang diperkenalkan.
+Berdasarkan review lanjutan user:
+1. **Poin 1: Tooltip Menggunakan Style Standar Pintera (`<x-tooltip>`)**
+   - Mengganti semua atribut native browser `title="..."` dengan komponen resmi `<x-tooltip text="...">` (dark slate badge `bg-[#1E293B]`, teleport Alpine `x-anchor`).
+   - Diterapkan pada:
+     - Tombol disabled *+ Tambah Pola Jam* (saat aktor yayasan belum memilih lembaga aktif).
+     - Tombol aksi per-card: *Duplikat* (`Salin / Duplikasi Pola Jam`), *Edit Nama* (`Edit Nama Pola Jam`), *Hapus* (`Hapus Pola Jam`).
+     - Tombol aksi per-slot (Daftar Harian): *Edit* (`Edit Slot Jam Pelajaran`), *Hapus* (`Hapus Slot Jam Pelajaran`).
 
-**Putaran 5 — Placeholder scan & konsistensi data attribute**: Scan ulang §2.1-§2.8 untuk pola red-flag — tidak ditemukan. Dicek konsistensi nama variabel Alpine baru (`pencarianKelas`, `hariAktif`, `tampilkanArsip`) tidak bentrok dengan state `x-data` yang sudah ada di `index.blade.php` (`showModalPola`, `modalPolaMode`, `formPola`, `showModalEditSlot`, `formSlot`, `showModalAssign`, `formAssign`) — semua nama baru unik, tidak menimpa state lama manapun.
+2. **Poin 2: Icon SVG pada KPI Cards Ringkas**
+   - Memperbarui 2 KPI Card (Total Pola Jam & Kelas Tertaut) agar menggunakan pola visual KPI Pintera:
+     - Container: `flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-card transition hover:shadow-elevated`.
+     - Card Total Pola Jam: Badge icon `bg-brand-50 text-brand-600` dengan `<x-icon name="schedule" class="h-5 w-5" />`, angka tebal, subtitle pill `Pola Jadwal`.
+     - Card Kelas Tertaut: Badge icon `bg-blue-50 text-blue-600` dengan `<x-icon name="school" class="h-5 w-5" />`, angka tebal, subtitle pill `Kelas Aktif & Arsip`.
+
+3. **Poin 3: Alur CRUD Tanpa Reload Seluruh Halaman (AJAX / Fetch + Toast)**
+   - **Tujuan**: Mencegah browser refresh penuh, hilangnya posisi scroll, dan reset tab ketika pengguna melakukan aksi mutasi data.
+   - **Struktur Blade**:
+     - Memisahkan blok KPI cards dan loop kartu pola jam ke partial `resources/views/portals/lembaga/akademik/pola-jam/_daftar.blade.php`.
+     - Di `index.blade.php`, bungkus dengan `<div x-ref="cardsContainer" id="pola-jam-cards-container">@include('..._daftar')</div>`.
+     - Modals (`_modal-pola`, `_modal-edit-slot`, `_modal-assign-kelas`) tetap berada di root `index.blade.php` agar tidak ikut ter-render ulang saat AJAX reload.
+   - **Backend Controllers**:
+     - `PolaJamController::index()`: Mengembalikan partial `_daftar.blade.php` jika `$request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest'`.
+     - `PolaJamController` (`store`, `update`, `destroy`, `assignKelas`, `duplicate`): Mendukung dual response `RedirectResponse|JsonResponse`. Jika request AJAX/JSON, mengembalikan `{ "status": "success", "message": "..." }` (atau JSON 422 jika error validasi).
+     - `JamPelajaranController` (`store`, `update`, `destroy`): Mendukung dual response `RedirectResponse|JsonResponse`. Jika request AJAX/JSON, mengembalikan JSON 200/201 atau JSON 422.
+   - **Frontend Alpine.js**:
+     - Menyediakan method `submitAjaxForm(formEl, successCallback)` dan `muatUlangDaftar()` di root `x-data`.
+     - Form submit dicegat via `@submit.prevent="submitAjaxForm($el, ...)"`.
+     - Feedback sukses / error ditampilkan via sistem Toast global Pintera (`window.Alpine.store('toast').push('success'|'error', msg)`).
+     - Setelah mutasi berhasil, modal otomatis tertutup (jika form modal) dan `muatUlangDaftar()` memperbarui inner HTML `#pola-jam-cards-container` lalu memanggil `window.Alpine.initTree(container)` untuk re-binding state Alpine secara mulus.

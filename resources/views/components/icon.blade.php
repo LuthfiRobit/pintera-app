@@ -66,6 +66,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><circle cx="7" cy="8" r="3"/><circle cx="17" cy="8" r="3"/><path d="M1 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M11 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
         @break
 
+    @case('content_copy')
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        @break
+
     @case('shield_person')
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><path d="M12 2 4 5v6c0 5 3.4 8.5 8 11 4.6-2.5 8-6 8-11V5l-8-3Z"/><circle cx="12" cy="10" r="2.3"/><path d="M8.5 16c.7-2 2-3 3.5-3s2.8 1 3.5 3"/></svg>
         @break
@@ -181,6 +185,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><path d="M12 5v14M5 12h14"/></svg>
         @break
 
+    @case('list')
     @case('checklist')
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v1H4zM4 12h1v1H4zM4 18h1v1H4z"/><path d="M3 6l2 2 4-4M3 12l2 2 4-4M3 18l2 2 4-4"/></svg>
         @break
