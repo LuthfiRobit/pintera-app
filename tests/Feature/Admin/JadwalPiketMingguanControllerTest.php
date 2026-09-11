@@ -363,5 +363,38 @@ it('index mengembalikan partial view _daftar jika request adalah ajax', function
     $response->assertSee($guru->nama);
 });
 
+it('admin yayasan pada mode Semua Lembaga diarahkan kembali dengan pesan error jika store dipanggil langsung tanpa 422', function () {
+    ['adminYayasan' => $admin, 'guru1' => $guru, 'sem1' => $semester] = siapkanAdminYayasanPiket();
+
+    $response = $this->actingAs($admin)
+        ->withSession(['active_lembaga_id' => null])
+        ->post(route('admin.piket-guru.store'), [
+            'guru_id' => $guru->id,
+            'hari' => 1,
+            'semester_id' => $semester->id,
+        ]);
+
+    $response->assertRedirect(route('admin.piket-guru.index'));
+    $response->assertSessionHasErrors('lembaga_id');
+});
+
+it('kalender piket harian terpaginasi dan tanggal berbahasa indonesia di view _daftar', function () {
+    ['lembaga' => $lembaga, 'semester' => $semester, 'guru' => $guru, 'admin' => $admin] = siapkanAdminPiketKelola();
+    PiketHarian::create([
+        'lembaga_id' => $lembaga->id,
+        'guru_id' => $guru->id,
+        'tanggal' => '2026-09-14', // Senin
+        'sumber' => 'override_manual',
+    ]);
+
+    $response = $this->actingAs($admin)
+        ->get(route('admin.piket-guru.index'), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertSee('Senin, 14 September 2026');
+    $response->assertViewHas('piketHarianMendatang', fn ($piket) => $piket instanceof \Illuminate\Pagination\LengthAwarePaginator);
+});
+
+
 
 

@@ -24,7 +24,11 @@ class PiketHarianController extends BaseController
             ? $this->resolveActiveLembagaId($request->user())
             : $request->user()->lembaga_id;
 
-        abort_if($lembagaId === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.');
+        if ($lembagaId === null) {
+            return redirect()->route('admin.piket-guru.index')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.'])
+                ->withInput();
+        }
 
         $data = $request->validate([
             'guru_id' => ['required', 'integer'],
@@ -49,22 +53,22 @@ class PiketHarianController extends BaseController
         $this->authorize('piket.kelola');
 
         $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
-        $lembagaId = $isYayasan
-            ? $this->resolveActiveLembagaId($request->user())
-            : $request->user()->lembaga_id;
 
         if ($isYayasan) {
             $isMilikYayasan = $piketHarian->lembaga && $piketHarian->lembaga->yayasan_id === $request->user()->yayasan_id;
-            abort_if(! $isMilikYayasan, 403);
-            if ($lembagaId !== null) {
-                abort_if($piketHarian->lembaga_id !== $lembagaId, 403);
+            if (! $isMilikYayasan) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Override piket tidak ditemukan atau di luar wewenang yayasan Anda.']);
             }
         } else {
-            abort_if($piketHarian->lembaga_id !== $lembagaId, 403);
+            if ($piketHarian->lembaga_id !== $request->user()->lembaga_id) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Override piket bukan milik lembaga Anda.']);
+            }
         }
 
         $piketHarian->delete();
 
-        return redirect()->route('admin.piket-guru.index')->with('status', 'Baris piket harian berhasil dihapus.');
+        return redirect()->route('admin.piket-guru.index')->with('status', 'Override piket harian berhasil dihapus.');
     }
 }

@@ -50,7 +50,7 @@
                     class="rounded-full px-2 py-0.5 text-[11px] font-mono transition"
                     :class="activeTab === 'kalender' ? 'bg-brand-100 text-brand-800' : 'bg-gray-100 text-gray-600'"
                 >
-                    {{ $piketHarianMendatang->count() }}
+                    {{ $piketHarianMendatang->total() }}
                 </span>
             </button>
 
@@ -166,9 +166,20 @@
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4">
                 <div>
                     <p class="font-display text-sm font-bold text-gray-900">Kalender Piket Harian Mendatang</p>
-                    <p class="text-xs text-gray-500 mt-0.5">Hasil generate otomatis mingguan digabung dengan override manual (maksimal 60 hari ke depan).</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Hasil generate otomatis mingguan digabung dengan override manual.</p>
                 </div>
-                <span class="text-xs text-gray-500">{{ $piketHarianMendatang->count() }} data</span>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="per_page_piket" class="text-xs font-medium text-gray-500">Tampilkan:</label>
+                        <select id="per_page_piket" x-model="perPage" @change="muatUlangDaftar()" class="rounded-lg border-gray-200 py-1 pl-2.5 pr-8 text-xs text-gray-700 shadow-sm transition focus:border-brand-500 focus:ring-brand-500">
+                            <option value="10">10 / hal</option>
+                            <option value="20">20 / hal</option>
+                            <option value="25">25 / hal</option>
+                            <option value="50">50 / hal</option>
+                        </select>
+                    </div>
+                    <span class="text-xs text-gray-500">{{ $piketHarianMendatang->total() }} data</span>
+                </div>
             </div>
 
             <div class="relative overflow-x-auto">
@@ -195,7 +206,7 @@
                         @forelse ($piketHarianMendatang as $item)
                             <tr class="transition hover:bg-gray-50">
                                 <td class="px-5 py-3.5 font-semibold text-gray-900">
-                                    {{ \Carbon\Carbon::parse($item->tanggal)->isoFormat('dddd, D MMMM Y') }}
+                                    {{ \Carbon\Carbon::parse($item->tanggal)->locale('id')->isoFormat('dddd, D MMMM Y') }}
                                 </td>
                                 <td class="px-5 py-3.5 text-gray-700">
                                     {{ $item->guru?->nama ?? '-' }}
@@ -226,6 +237,12 @@
                     </tbody>
                 </table>
             </div>
+
+            @if ($piketHarianMendatang->hasPages())
+                <div class="border-t border-gray-200 px-5 py-4">
+                    {{ $piketHarianMendatang->links('pagination.tailadmin') }}
+                </div>
+            @endif
         </div>
     </div>
 
@@ -314,7 +331,7 @@
                                         <button
                                             type="button"
                                             class="block w-full px-4 py-2 text-left text-sm leading-5 text-error-600 transition hover:bg-error-50 hover:text-error-700"
-                                            @click="confirmDialog('Hapus Override Piket?', @js('Override piket manual untuk ' . \Carbon\Carbon::parse($override->tanggal)->isoFormat('D MMMM Y') . ' akan dihapus.'), { confirmLabel: 'Ya, Hapus', isDanger: true }).then(confirmed => { if (confirmed) $refs['deleteOverrideForm' + {{ $override->id }}].submit() })"
+                                            @click="confirmDialog('Hapus Override Piket?', @js('Override piket manual untuk ' . \Carbon\Carbon::parse($override->tanggal)->locale('id')->isoFormat('D MMMM Y') . ' akan dihapus.'), { confirmLabel: 'Ya, Hapus', isDanger: true }).then(confirmed => { if (confirmed) $refs['deleteOverrideForm' + {{ $override->id }}].submit() })"
                                         >
                                             <span class="inline-flex items-center gap-2.5">
                                                 <x-icon name="delete" class="h-4 w-4 text-error-500" />
@@ -327,7 +344,7 @@
                                     </x-table-actions>
                                 </td>
                                 <td class="px-5 py-3.5 font-semibold text-gray-900">
-                                    {{ \Carbon\Carbon::parse($override->tanggal)->isoFormat('dddd, D MMMM Y') }}
+                                    {{ \Carbon\Carbon::parse($override->tanggal)->locale('id')->isoFormat('dddd, D MMMM Y') }}
                                 </td>
                                 <td class="px-5 py-3.5 text-gray-700">
                                     {{ $override->guru?->nama ?? '-' }}

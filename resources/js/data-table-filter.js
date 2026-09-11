@@ -8,6 +8,23 @@ export function dataTableFilter(config) {
         roleGroups: config.roleGroups || {},
         tomSelects: {},
 
+        init() {
+            this.$nextTick(() => {
+                this.bindPagination();
+            });
+        },
+
+        bindPagination() {
+            if (!this.$refs.tableContainer) return;
+            const paginationLinks = this.$refs.tableContainer.querySelectorAll('nav[role="navigation"] a');
+            paginationLinks.forEach((link) => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.muatUlangDaftar(link.href);
+                });
+            });
+        },
+
         setScopeGroup(group) {
             this.filters.scope_group = group;
             this.filters.role = '';
@@ -51,14 +68,19 @@ export function dataTableFilter(config) {
             this.tomSelects[fieldName] = new TomSelect(el, tomConfig);
         },
 
-        async muatUlangDaftar() {
+        async muatUlangDaftar(pageUrl = null) {
             try {
                 window.dispatchEvent(new CustomEvent('ajax-start'));
-                const url = new URL(this.indexUrlBase, window.location.origin);
-                for (const [key, value] of Object.entries(this.filters)) {
-                    if (value) url.searchParams.set(key, value);
+                let url;
+                if (pageUrl) {
+                    url = new URL(pageUrl, window.location.origin);
+                } else {
+                    url = new URL(this.indexUrlBase, window.location.origin);
+                    for (const [key, value] of Object.entries(this.filters)) {
+                        if (value) url.searchParams.set(key, value);
+                    }
+                    if (this.perPage !== 20) url.searchParams.set('per_page', this.perPage);
                 }
-                if (this.perPage !== 20) url.searchParams.set('per_page', this.perPage);
 
                 const response = await fetch(url, {
                     headers: {
@@ -74,6 +96,9 @@ export function dataTableFilter(config) {
                     if (window.Alpine) {
                         window.Alpine.initTree(this.$refs.tableContainer);
                     }
+                    this.$nextTick(() => {
+                        this.bindPagination();
+                    });
                 } else {
                     window.Alpine.store('toast').push('error', 'Gagal memuat data.');
                 }

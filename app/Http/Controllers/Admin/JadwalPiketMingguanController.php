@@ -44,6 +44,8 @@ class JadwalPiketMingguanController extends BaseController
         $activeLembagaId = $isYayasan ? $this->resolveActiveLembagaId($request->user()) : $request->user()->lembaga_id;
         $isYayasanAggregate = $isYayasan && $activeLembagaId === null;
 
+        $perPage = in_array((int) $request->input('per_page'), [10, 20, 25, 50], true) ? (int) $request->input('per_page') : 20;
+
         // Parameter query filter
         $filterLembagaId = $request->query('lembaga_id');
         $filterHari = $request->query('hari');
@@ -73,8 +75,8 @@ class JadwalPiketMingguanController extends BaseController
             ->when($targetLembagaId, fn ($q) => $q->where('lembaga_id', $targetLembagaId))
             ->when($search, fn ($q) => $q->whereHas('guru.person', fn ($q2) => $q2->where('nama_lengkap', 'like', "%{$search}%")))
             ->orderBy('tanggal')
-            ->limit(60)
-            ->get();
+            ->paginate($perPage, ['*'], 'piket_page')
+            ->withQueryString();
 
         $guruList = $targetLembagaId
             ? Guru::where('lembaga_id', $targetLembagaId)->orderByNama()->get()
@@ -103,6 +105,7 @@ class JadwalPiketMingguanController extends BaseController
                 'overrides' => $overrides,
                 'piketHarianMendatang' => $piketHarianMendatang,
                 'guruList' => $guruList,
+                'perPage' => $perPage,
                 ...$this->scopeHeaderData($request),
             ]);
         }
@@ -115,6 +118,7 @@ class JadwalPiketMingguanController extends BaseController
             'semesterList' => $semesterList,
             'lembagaList' => $lembagaList,
             'stats' => $stats,
+            'perPage' => $perPage,
             'filters' => [
                 'search' => $search,
                 'hari' => $filterHari,
@@ -150,6 +154,11 @@ class JadwalPiketMingguanController extends BaseController
         $this->authorize('piket.kelola');
 
         $lembagaId = $this->resolveLembagaIdAktif($request);
+        if ($lembagaId === null) {
+            return redirect()->route('admin.piket-guru.index')
+                ->withErrors(['lembaga_id' => 'Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jadwal piket.'])
+                ->withInput();
+        }
 
         $data = $request->validate([
             'guru_id' => ['required', 'integer', Rule::exists('guru', 'id')->where('lembaga_id', $lembagaId)],
@@ -179,16 +188,31 @@ class JadwalPiketMingguanController extends BaseController
         return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil disimpan.');
     }
 
-    public function edit(JadwalPiketMingguan $jadwalPiketMingguan, Request $request): View
+    public function edit(JadwalPiketMingguan $jadwalPiketMingguan, Request $request): View|RedirectResponse
     {
         $this->authorize('piket.kelola');
 
-        $lembagaId = $this->resolveLembagaIdAktif($request);
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        if ($isYayasan) {
+            $isMilikYayasan = $jadwalPiketMingguan->lembaga && $jadwalPiketMingguan->lembaga->yayasan_id === $request->user()->yayasan_id;
+            if (! $isMilikYayasan) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Jadwal piket tidak ditemukan atau di luar wewenang yayasan Anda.']);
+            }
+        } else {
+            if ($jadwalPiketMingguan->lembaga_id !== $request->user()->lembaga_id) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Jadwal piket bukan milik lembaga Anda.']);
+            }
+        }
+
+        $lembagaId = $jadwalPiketMingguan->lembaga_id;
 
         return view('portals.lembaga.akademik.piket-guru.edit', [
             'jadwal' => $jadwalPiketMingguan,
             'guruList' => Guru::where('lembaga_id', $lembagaId)->orderByNama()->get(),
             'semesterList' => $this->semesterListUntukLembaga($lembagaId),
+            ...$this->scopeHeaderData($request),
         ]);
     }
 
@@ -196,7 +220,21 @@ class JadwalPiketMingguanController extends BaseController
     {
         $this->authorize('piket.kelola');
 
-        $lembagaId = $this->resolveLembagaIdAktif($request);
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        if ($isYayasan) {
+            $isMilikYayasan = $jadwalPiketMingguan->lembaga && $jadwalPiketMingguan->lembaga->yayasan_id === $request->user()->yayasan_id;
+            if (! $isMilikYayasan) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Jadwal piket tidak ditemukan atau di luar wewenang yayasan Anda.']);
+            }
+        } else {
+            if ($jadwalPiketMingguan->lembaga_id !== $request->user()->lembaga_id) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Jadwal piket bukan milik lembaga Anda.']);
+            }
+        }
+
+        $lembagaId = $jadwalPiketMingguan->lembaga_id;
 
         $data = $request->validate([
             'guru_id' => ['required', 'integer', Rule::exists('guru', 'id')->where('lembaga_id', $lembagaId)],
@@ -210,14 +248,8 @@ class JadwalPiketMingguanController extends BaseController
         $jadwalPiketMingguan->update($data);
 
         if ($semesterBerubah) {
-            // Semester lama: jadwal ini sudah pindah, jadi baris piket harian otomatis
-            // miliknya di semester lama harus dibersihkan lewat Regenerate (baris beku --
-            // override manual, tanggal lampau, sudah dipakai -- tetap dilindungi seperti biasa).
             $regenerateAction->execute($lembagaId, $semesterLamaId);
 
-            // Semester baru: pakai kriteria yang sama seperti store() -- kalau lembaga sudah
-            // pernah generate piket harian sejak awal semester baru ini, Regenerate; kalau
-            // belum pernah sama sekali, Generate dari nol.
             $semesterBaru = Semester::findOrFail($data['semester_id']);
             $sudahAdaPiketHarian = PiketHarian::where('lembaga_id', $lembagaId)
                 ->where('tanggal', '>=', $semesterBaru->tanggal_mulai)
@@ -229,17 +261,29 @@ class JadwalPiketMingguanController extends BaseController
                 $generateAction->execute($jadwalPiketMingguan);
             }
         } else {
-            // Baris ini SUDAH ADA sebelumnya (sedang diedit), semester TIDAK berubah -> lembaga
-            // PASTI sudah punya PiketHarian utk semester ini -> SELALU Regenerate.
             $regenerateAction->execute($lembagaId, $jadwalPiketMingguan->semester_id);
         }
 
         return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil diperbarui.');
     }
 
-    public function destroy(JadwalPiketMingguan $jadwalPiketMingguan, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse
+    public function destroy(JadwalPiketMingguan $jadwalPiketMingguan, Request $request, RegenerateJadwalPiketHarianAction $regenerateAction): RedirectResponse
     {
         $this->authorize('piket.kelola');
+
+        $isYayasan = $request->user()->widestScopeLevel() === 'yayasan';
+        if ($isYayasan) {
+            $isMilikYayasan = $jadwalPiketMingguan->lembaga && $jadwalPiketMingguan->lembaga->yayasan_id === $request->user()->yayasan_id;
+            if (! $isMilikYayasan) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Jadwal piket tidak ditemukan atau di luar wewenang yayasan Anda.']);
+            }
+        } else {
+            if ($jadwalPiketMingguan->lembaga_id !== $request->user()->lembaga_id) {
+                return redirect()->route('admin.piket-guru.index')
+                    ->withErrors(['lembaga_id' => 'Jadwal piket bukan milik lembaga Anda.']);
+            }
+        }
 
         $lembagaId = $jadwalPiketMingguan->lembaga_id;
         $semesterId = $jadwalPiketMingguan->semester_id;
@@ -250,15 +294,11 @@ class JadwalPiketMingguanController extends BaseController
         return redirect()->route('admin.piket-guru.index')->with('status', 'Jadwal piket mingguan berhasil dihapus.');
     }
 
-    private function resolveLembagaIdAktif(Request $request): int
+    private function resolveLembagaIdAktif(Request $request): ?int
     {
-        $lembagaId = $request->user()->widestScopeLevel() === 'yayasan'
+        return $request->user()->widestScopeLevel() === 'yayasan'
             ? $this->resolveActiveLembagaId($request->user())
             : $request->user()->lembaga_id;
-
-        abort_if($lembagaId === null, 422, 'Pilih lembaga aktif melalui pengalih lembaga terlebih dahulu.');
-
-        return $lembagaId;
     }
 
     /**

@@ -94,3 +94,25 @@ Menindaklanjuti review dan feedback pengguna terkait keseragaman halaman:
    - Mengintegrasikan `<x-table-actions>` dropdown menu (Edit Jadwal & Hapus via modal dialog konfirmasi `confirmDialog`).
    - Memperbarui visual baris tabel: nama guru tebal (`font-semibold text-gray-900`) dengan subtext NIP/NUPTK abu-abu, dan badge hari menggunakan `<x-badge tone="...">`.
    - Memastikan tab navigation (Jadwal Mingguan, Kalender Piket Harian, Override Manual) dan badge hitungan data terbarukan serentak secara reaktif setiap kali filter diterapkan.
+
+---
+
+## 5. Perbaikan Lanjutan (Non-422 Redirect & Lokalisasi + Pagination Kalender Piket)
+
+Menindaklanjuti perbaikan berikutnya:
+
+1. **Penanganan Error Tanpa Halaman 422 (Pola Halaman Mata Pelajaran)**:
+   - Menghapus semua panggilan `abort(..., 422)` dan `abort(..., 403)` pada alur mutasi di `JadwalPiketMingguanController` (`store`, `edit`, `update`, `destroy`) dan `PiketHarianController` (`store`, `destroy`).
+   - Jika pengguna yayasan mencoba menambah jadwal atau override saat berada pada mode agregat ("Semua Lembaga"), sistem tidak lagi memunculkan halaman error HTTP 422/403 mentah, melainkan mengarahkan kembali (redirect) ke halaman index dengan pesan validasi ramah: `"Pilih lembaga aktif melalui pengalih lembaga sebelum menambah jadwal piket."` yang langsung dirender via alert banner dan toast notification (persis seperti standar di `MataPelajaranController`).
+   - Pada aksi `edit`, `update`, dan `destroy`, otorisasi kepemilikan lembaga/yayasan diperiksa secara aman. Jika tidak sesuai, pengguna diredirect dengan pesan error alih-alih melempar exception fatal.
+
+2. **Lokalisasi Bahasa Indonesia pada Kalender Piket Harian & Override**:
+   - Menambahkan `->locale('id')` pada pemformatan tanggal Carbon (`\Carbon\Carbon::parse(...)->locale('id')->isoFormat('dddd, D MMMM Y')`), sehingga nama hari dan bulan kini 100% berbahasa Indonesia (contoh: *"Senin, 14 September 2026"* bukan *"Monday, 14 September 2026"*).
+   - Mengaplikasikan lokalisasi serupa pada teks konfirmasi hapus override di Alpine dialog.
+
+3. **Pagination & Pemilihan Data Per Halaman pada Kalender Piket Harian**:
+   - Mengubah query `piketHarianMendatang` dari batas statis (`limit(60)`) menjadi paginasi dinamis via `paginate($perPage, ['*'], 'piket_page')->withQueryString()`.
+   - Menambahkan kontrol pilihan entri per halaman (`10`, `20`, `25`, `50` data per halaman) di header card Kalender Piket Harian.
+   - Menambahkan navigasi paginasi standar Pintera (`{{ $piketHarianMendatang->links('pagination.tailadmin') }}`) di footer tabel.
+   - Mengintegrasikan `bindPagination()` pada `resources/js/data-table-filter.js` sehingga tautan paginasi dicegat dan dimuat via AJAX tanpa reload halaman penuh.
+
