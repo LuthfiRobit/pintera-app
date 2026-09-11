@@ -62,3 +62,23 @@ it('guru pemilik asli submit jurnal untuk sesinya sendiri -- diisi_oleh_guru_id 
 
     expect($sesi->fresh()->diisi_oleh_guru_id)->toBeNull();
 });
+
+it('guru pemilik submit ulang SETELAH pernah diisi guru piket -- diisi_oleh_guru_id TIDAK tertimpa null', function () {
+    ['sesi' => $sesi, 'userPiket' => $userPiket, 'guruPiket' => $guruPiket, 'userPemilik' => $userPemilik, 'siswa' => $siswa] = siapkanGuruPiketDanSesiUntukAkuntabilitasTest();
+
+    // Guru piket isi duluan.
+    $this->actingAs($userPiket)->put(route('guru.jurnal-kbm.update', $sesi), [
+        'materi' => 'Diisi guru piket', 'presensi' => [$siswa->id => 'hadir'],
+    ]);
+    expect($sesi->fresh()->diisi_oleh_guru_id)->toBe($guruPiket->id);
+
+    // Guru pemilik asli submit ulang (koreksi kecil) beberapa saat kemudian.
+    $this->actingAs($userPemilik)->put(route('guru.jurnal-kbm.update', $sesi), [
+        'materi' => 'Dikoreksi oleh guru pemilik', 'presensi' => [$siswa->id => 'hadir'],
+    ]);
+
+    // Jejak akuntabilitas HARUS tetap menunjuk ke guru piket, TIDAK tertimpa null.
+    expect($sesi->fresh()->diisi_oleh_guru_id)->toBe($guruPiket->id);
+    expect($sesi->fresh()->materi)->toBe('Dikoreksi oleh guru pemilik');
+});
+

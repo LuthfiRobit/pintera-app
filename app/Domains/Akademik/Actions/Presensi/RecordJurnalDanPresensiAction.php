@@ -18,10 +18,10 @@ final class RecordJurnalDanPresensiAction
         $perluDicek = [];
 
         $sesiTerbaru = DB::transaction(function () use ($sesi, $data, $diisiOlehGuruId, &$perluDicek) {
-            $sesi->update([
+            $sesi->update(array_filter([
                 'materi' => $data->materi,
                 'diisi_oleh_guru_id' => $diisiOlehGuruId,
-            ]);
+            ], fn ($value, $key) => $key !== 'diisi_oleh_guru_id' || $value !== null, ARRAY_FILTER_USE_BOTH));
 
             $statusLamaPerSiswa = $sesi->presensi()->get()->keyBy('siswa_id')
                 ->map(fn ($p) => $p->status->value);
