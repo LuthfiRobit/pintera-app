@@ -467,8 +467,8 @@ it('renders the restyled Aksi dropdown with explicit action labels for a managea
     KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
 
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'))->assertOk()
-        ->assertSee('Edit Assignment')
-        ->assertSee('Hapus Assignment');
+        ->assertSee('Edit Aturan')
+        ->assertSee('Hapus Aturan');
 });
 
 it('narrows the index to the active lembaga plus global assignments when a yayasan-scoped actor has switched into a lembaga', function () {
@@ -608,4 +608,43 @@ it('halaman create dan edit menampilkan breadcrumb Pengaturan Kurikulum', functi
 
     $this->actingAs($manager)->get(route('admin.kurikulum-assignment.create'))
         ->assertOk()->assertSee('Pengaturan Kurikulum')->assertSee('Tambah Aturan');
+});
+
+it('index() mengembalikan partial _daftar untuk request ajax', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $ta = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index'), ['X-Requested-With' => 'XMLHttpRequest']);
+
+    $response->assertOk();
+    $response->assertViewIs('admin.kurikulum-assignment._daftar');
+});
+
+it('index() memfilter berdasarkan tahun_ajaran_id dan bentuk_pendidikan tanpa membuka data lembaga lain', function () {
+    $lembaga = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $ta1 = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $ta2 = TahunAjaran::factory()->create(['lembaga_id' => $lembaga->id]);
+    $manager = actingAsKurikulumAssignmentManager($lembaga);
+    $a1 = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta1->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+    $a2 = KurikulumAssignment::create(['lembaga_id' => $lembaga->id, 'tahun_ajaran_id' => $ta2->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '2', 'kurikulum' => 'merdeka']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index', ['tahun_ajaran_id' => $ta1->id]));
+
+    $response->assertOk();
+    $response->assertViewHas('assignmentList', fn ($list) => $list->count() === 1 && $list->first()->id === $a1->id);
+});
+
+it('filter index() TIDAK bisa dipakai lembaga-scope actor untuk melihat assignment lembaga lain (tetap ter-scope tenant)', function () {
+    $lembagaSaya = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $lembagaLain = Lembaga::factory()->create(['bentuk_pendidikan' => 'SD']);
+    $taLain = TahunAjaran::factory()->create(['lembaga_id' => $lembagaLain->id]);
+    $manager = actingAsKurikulumAssignmentManager($lembagaSaya);
+    KurikulumAssignment::create(['lembaga_id' => $lembagaLain->id, 'tahun_ajaran_id' => $taLain->id, 'bentuk_pendidikan' => 'SD', 'tingkat' => '1', 'kurikulum' => 'k13']);
+
+    $response = $this->actingAs($manager)->get(route('admin.kurikulum-assignment.index', ['bentuk_pendidikan' => 'SD']));
+
+    $response->assertOk();
+    $response->assertViewHas('assignmentList', fn ($list) => $list->isEmpty());
 });

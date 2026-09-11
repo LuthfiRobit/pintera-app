@@ -55,15 +55,36 @@ class KurikulumAssignmentController extends BaseController
             });
         }
 
+        // Filter AJAX -- WAJIB setelah blok tenant-scoping di atas, hanya mempersempit
+        // hasil yang SUDAH ter-scope, tidak pernah membukanya.
+        if ($tahunAjaranId = $request->query('tahun_ajaran_id')) {
+            $query->where('tahun_ajaran_id', $tahunAjaranId);
+        }
+        if ($bentukPendidikan = $request->query('bentuk_pendidikan')) {
+            $query->where('bentuk_pendidikan', $bentukPendidikan);
+        }
+
         $assignmentList = $query->orderByDesc('tahun_ajaran_id')->orderBy('bentuk_pendidikan')->orderByRaw('tingkat IS NULL')->orderBy('tingkat')->get()
             ->each(function (KurikulumAssignment $assignment) use ($actor) {
                 $assignment->canManage = $this->canManageAssignment($actor, $assignment->lembaga_id);
             });
 
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return view('admin.kurikulum-assignment._daftar', [
+                'assignmentList' => $assignmentList,
+            ]);
+        }
+
         return view('admin.kurikulum-assignment.index', [
             'assignmentList' => $assignmentList,
             'isYayasan' => $scope === 'yayasan',
             'activeLembaga' => $activeLembagaId ? Lembaga::find($activeLembagaId) : null,
+            'tahunAjaranList' => $this->tahunAjaranListForScope($request),
+            'bentukPendidikanList' => BentukPendidikan::cases(),
+            'filters' => [
+                'tahun_ajaran_id' => $request->query('tahun_ajaran_id'),
+                'bentuk_pendidikan' => $request->query('bentuk_pendidikan'),
+            ],
         ]);
     }
 
