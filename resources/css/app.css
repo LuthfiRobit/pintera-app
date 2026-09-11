@@ -115,7 +115,12 @@ select.field-select {
     box-shadow: 0 20px 44px rgba(30, 58, 95, 0.14);
     font-family: 'Outfit', ui-sans-serif, system-ui, sans-serif;
     font-size: 13.5px;
-    z-index: 50;
+    z-index: 9999 !important;
+}
+.ts-dropdown .option {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 .ts-dropdown .active {
     background: theme('colors.portal.50');
@@ -123,6 +128,44 @@ select.field-select {
 }
 .ts-dropdown .ts-dropdown-content .option:active {
     background: theme('colors.portal.500');
+}
+
+/* Compact variant of Tom Select for tables and dense forms */
+.ts-wrapper.ts-compact {
+    width: 100%;
+    min-width: 0;
+}
+.ts-wrapper.ts-compact .ts-control {
+    height: 36px !important;
+    min-height: 36px !important;
+    font-size: 12.5px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid theme('colors.gray.200');
+}
+.ts-wrapper.ts-compact:not(.dropdown-active) .ts-control {
+    background-size: 11px 11px;
+    padding-right: 2rem;
+    background-position: right 10px center;
+}
+.ts-wrapper.ts-compact.focus .ts-control,
+.ts-wrapper.ts-compact.input-active .ts-control {
+    border-color: theme('colors.portal.500');
+    box-shadow: 0 0 0 2px rgb(30 58 95 / 0.15);
+}
+.ts-wrapper.ts-compact .ts-control input {
+    font-size: 12.5px !important;
+}
+.ts-dropdown.ts-compact,
+.ts-dropdown.ts-compact-dropdown {
+    font-size: 12.5px;
+    border-radius: 8px;
+}
+.ts-dropdown.ts-compact .option,
+.ts-dropdown.ts-compact-dropdown .option {
+    padding: 6px 10px;
+    font-size: 12.5px;
 }
 
 /* File preview modal — page-flip's book container + the canvas pages PDF.js renders into it */

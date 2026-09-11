@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Domains\Akademik\Actions\KenaikanKelas\ProsesKenaikanKelasAction;
 use App\Domains\Akademik\DataTransferObjects\KenaikanKelasData;
 use App\Models\Kelas;
+use App\Models\Lembaga;
 use App\Models\Semester;
 use App\Models\TahunAjaran;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -38,6 +39,11 @@ class KenaikanKelasController extends BaseController
             }
         }
 
+        $user = $request->user();
+        $isYayasan = $user && method_exists($user, 'widestScopeLevel') && $user->widestScopeLevel() === 'yayasan';
+        $activeLembagaId = $isYayasan ? session('active_lembaga_id') : $user?->lembaga_id;
+        $activeLembaga = ($isYayasan && $activeLembagaId) ? Lembaga::withoutGlobalScopes()->find($activeLembagaId) : null;
+
         return view('portals.lembaga.akademik.kenaikan-kelas.index', [
             'tahunAjaranList' => TahunAjaran::with('lembaga')->orderByDesc('tanggal_mulai')->get(),
             'kelasLamaList' => ($tahunAjaranId && ! $errorTahunAjaran)
@@ -52,6 +58,8 @@ class KenaikanKelasController extends BaseController
             'tahunAjaranId' => $tahunAjaranId,
             'tahunAjaranTujuanId' => $tahunAjaranTujuanId,
             'errorTahunAjaran' => $errorTahunAjaran,
+            'isYayasan' => $isYayasan,
+            'activeLembaga' => $activeLembaga,
         ]);
     }
 

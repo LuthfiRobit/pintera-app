@@ -21,7 +21,7 @@ import { raporFilter } from './rapor-filter';
 import { persetujuanRaporFilter } from './persetujuan-rapor-filter';
 import { catatanWaliKelasForm } from './catatan-wali-kelas-form';
 import { raporWaliKelasFilter } from './rapor-wali-kelas-filter';
-import { kenaikanKelasForm } from './kenaikan-kelas-form';
+import { kenaikanKelasForm, initRowSelect } from './kenaikan-kelas-form';
 import { riwayatIzinCutiSPA } from './riwayat-izin-cuti-spa';
 import { approvalIzinCutiSPA } from './approval-izin-cuti-spa';
 import { otpInput } from './otp-input';
@@ -59,6 +59,7 @@ import TomSelect from 'tom-select';
 window.Alpine = Alpine;
 window.flatpickr = flatpickr;
 window.TomSelect = TomSelect;
+window.initRowSelect = initRowSelect;
 flatpickr.localize(Indonesian);
 
 Alpine.plugin(anchor);

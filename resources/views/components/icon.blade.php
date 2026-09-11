@@ -407,6 +407,24 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><line x1="3" y1="21" x2="21" y2="21"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="3 10 12 3 21 10"/><line x1="4" y1="10" x2="4" y2="21"/><line x1="20" y1="10" x2="20" y2="21"/><line x1="8" y1="14" x2="8" y2="17"/><line x1="12" y1="14" x2="12" y2="17"/><line x1="16" y1="14" x2="16" y2="17"/></svg>
         @break
 
+    @case('tune')
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><path d="M4 8h4M12 8h8M4 16h8M16 16h4M8 5v6M16 13v6"/></svg>
+        @break
+
+    @case('swap_horiz')
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><path d="M8 7h12M16 3l4 4-4 4M16 17H4M8 21l-4-4 4-4"/></svg>
+        @break
+
+    @case('auto_fix_high')
+    @case('magic')
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><path d="m19 11-8-8-8.5 8.5a2.12 2.12 0 0 0 3 3L14 6l5 5ZM18 2l.5 1.5L20 4l-1.5.5L18 6l-.5-1.5L16 4l1.5-.5L18 2Z"/></svg>
+        @break
+
+    @case('help')
+    @case('help_outline')
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.6-1.4c.5.7.4 1.7-.3 2.3l-1.3 1.1c-.3.3-.5.5-.5 1"/><path d="M12 16.5h.01"/></svg>
+        @break
+
     @default
         {{-- Nama ikon tidak dikenal — tampilkan placeholder yang terlihat, bukan diam-diam kosong. --}}
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" {{ $attributes }}><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.6-1.4c.5.7.4 1.7-.3 2.3l-1.3 1.1c-.3.3-.5.5-.5 1"/><path d="M12 16.5h.01"/></svg>
